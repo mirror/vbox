@@ -69,6 +69,7 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/pixmaps
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/icons/hicolor
 install -m 755 -d $RPM_BUILD_ROOT%{_defaultdocdir}/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox
+install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 mv VBoxEFI32.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
@@ -141,15 +142,15 @@ install -D -m 755 vboxweb-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxweb-serv
 ln -sf ../etc/init.d/vboxweb-service $RPM_BUILD_ROOT/sbin/rcvboxweb-service
 %endif
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/virtualbox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxManage
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxmanage
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxsdl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxheadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
-ln -s VirtualBox $RPM_BUILD_ROOT/usr/bin/virtualbox
-ln -s VBoxManage $RPM_BUILD_ROOT/usr/bin/vboxmanage
-ln -s VBoxSDL $RPM_BUILD_ROOT/usr/bin/vboxsdl
-ln -s VBoxHeadless $RPM_BUILD_ROOT/usr/bin/vboxheadless
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png

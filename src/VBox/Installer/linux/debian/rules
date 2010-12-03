@@ -211,6 +211,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    rmdir $$i; \
 	done
 	rmdir $(archdir)/icons
+	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)/ExtensionPacks
 	mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo
 	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
 	sed \
@@ -283,14 +284,14 @@ endif
 	rmdir $(prefix)/opt
 	dh_link \
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBox) \
-	    $(if $(NOQT),,VirtualBox            usr/bin/virtualbox) \
+	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualbox) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
-	    VBoxManage                          usr/bin/vboxmanage \
+	    usr/bin/VBox                        usr/bin/vboxmanage \
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
-	    $(if $(HEADLESS),,VBoxSDL           usr/bin/vboxsdl) \
+	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/vboxsdl) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
-	    VBoxHeadless                        usr/bin/vboxheadless \
+	    usr/bin/VBox                        usr/bin/vboxheadless \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
