@@ -1125,11 +1125,11 @@
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Bitte fügen Sie die Felder für Nutzername, Passwort und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
+        <translation>Bitte fügen Sie die Felder für Nutzername, Passwort und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Bitte fügen Sie die Felder für Nutzername, Passwort, Hostname und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
+        <translation>Bitte fügen Sie die Felder für Nutzername, Passwort, Hostname und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
     </message>
 </context>
 <context>
@@ -1961,7 +1961,7 @@
     </message>
     <message>
         <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt an ob die Fernsteuerung für diese VM aktiviert ist (&lt;img src=:/vrdp_16px.png/&gt;) oder nicht (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
@@ -2162,7 +2162,7 @@
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie haben die 3D-Unterstützung für ein Betriebssystem aktiviert, welches den WDDM-Videotreiber benutzt. Setzen Sie die Größe des Video-RAMs auf mindestens &lt;b&gt;%1&lt;/b&gt; um eine optimale Performance zu erreichen.</translation>
     </message>
 </context>
 <context>
@@ -2537,7 +2537,7 @@
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falls aktiviert wird der Gast versuchen, die gemeinsamen Ordner beim Start automatisch einzubinden.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
@@ -2875,7 +2875,7 @@
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein virtuelles Festplattenabbild. Der Gast kann auf die Daten dieser Datei als Inhalt der virtuellen Festplatte zugreifen.</translation>
     </message>
     <message>
         <source>Set up the virtual hard disk</source>
@@ -2907,7 +2907,7 @@
     </message>
     <message>
         <source>Create a new hard disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Neue Festplatte erzeugen...</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -3579,7 +3579,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, die als Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte erzeugen oder existierendes Abbild durch Klicken auf den entsprechenden Schaltknopf auswählen (öffnet einen entsprechenden Dialog).&lt;/p&gt;&lt;p&gt;Falls die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -5290,7 +5290,7 @@
     </message>
     <message>
         <source>Choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein virtuelles Plattenabbild</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -5306,7 +5306,7 @@
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie ein virtuelles Diskettenabbild</translation>
     </message>
     <message>
         <source>floppy disk</source>
@@ -6529,27 +6529,27 @@
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Regeln für die Port-Weiterleitung enthalten momentan Fehler. Keiner der Host- oder Gast-Ports darf Null sein.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Es wurden Änderungen an den Port-Weiterleitungs-Regeln vorgenommen.&lt;/p&gt;&lt;p&gt;Ihre Änderungen gehen verloren, falls Sie fortfahren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte die virtuelle Maschine in %1 nicht öffnen.</translation>
     </message>
     <message>
         <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; in &lt;i&gt;%2&lt;/i&gt; konnte nicht geöffnet werden, weil sie bereits registriert ist.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; aus der Liste der virtuellen Maschine zu entfernen.&lt;/p&gt;&lt;p&gt;Möchten Sie die entsprechenden Dateien von der Festplatte ebenfalls löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; aus der Liste der virtuellen Maschine zu entfernen.&lt;/p&gt;&lt;p&gt;Möchten Sie die entsprechenden Dateien von der Festplatte ebenfalls löschen? Falls ja, werden die virtuellen Festplatten ebenfalls unwiderruflich gelöscht, falls diese nicht noch an eine andere VM gebunden sind &lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete all files</source>
@@ -6561,7 +6561,7 @@
     </message>
     <message>
         <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie sind im Begriff, die nicht-zugreifbare virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; von der Liste der virtuellen Maschinen zu löschen. Möchten Sie fortfahren?</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -6569,7 +6569,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind dabei, eine virtuelle Festplatte an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie eine neue leere Festplatte erzeugen oder möchten Sie ein bereits vorhandenes Plattenabbild verwenden?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6583,7 +6583,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind dabei, ein neues CD/DVD-ROM-Gerät an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -6593,11 +6593,11 @@
     <message>
         <source>Leave &amp;empty</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kein Medium</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind dabei, ein neues virtuelles Diskettenlaufwerk an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein existierendes Medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
@@ -6607,19 +6607,19 @@
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Gasterweiterungen konnten nicht aktualisiert werden. Das ISO-Abbild mit den Erweiterungen wird jetzt für eine manuelle gemountet.</translation>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht installiert werden.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht deinstalliert werden.</translation>
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie sind im Begriff, das Zusatzpaket &lt;b&gt;%1&lt;/p&gt; zu entfernen und von der Festplatte zu löschen. Sind Sie sicher?</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6860,7 +6860,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die VirtualBox-VM-Definition im Finder.</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
@@ -6868,7 +6868,7 @@
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugt einen Alias für die VirtualBox-VM-Definition auf Ihrem Desktop.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -6876,7 +6876,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die VirtualBox-VM-Definition im Explorer.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
@@ -6884,7 +6884,7 @@
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -6892,7 +6892,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
     </message>
 </context>
 <context>
