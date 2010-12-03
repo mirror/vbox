@@ -11,6 +11,7 @@
     <file alias="os_freebsd_64.png">images/os_freebsd_64.png</file>
     <file alias="os_gentoo.png">images/os_gentoo.png</file>
     <file alias="os_gentoo_64.png">images/os_gentoo_64.png</file>
+    <file alias="os_jrockitve.png">images/os_jrockitve.png</file>
     <file alias="os_l4.png">images/os_l4.png</file>
     <file alias="os_linux_other.png">images/os_linux_other.png</file>
     <file alias="os_linux22.png">images/os_linux22.png</file>
