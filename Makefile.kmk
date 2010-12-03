@@ -702,6 +702,7 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 # should be more flexible wrt to -jN.
 #
 additions-fetch:
+	broken_to_speed_up_the_build_extpack_cycle_when_off_site
 	+ $(KMK) -C tools fetch VBOX_ONLY_ADDITIONS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux    VBOX_ONLY_ADDITIONS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux    VBOX_ONLY_ADDITIONS=1
@@ -1051,6 +1052,7 @@ extpacks-packing:
 # the additions build above, which it in fact is a copy of.
 #
 testsuite-fetch:
+	broken_to_speed_up_the_build_extpack_cycle_when_off_site
 	+ $(KMK) -C tools fetch VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
