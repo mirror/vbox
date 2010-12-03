@@ -47,6 +47,7 @@
 #include <sys/vfs.h>
 
 #include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -472,7 +473,7 @@ static USBDEVICESTATE usbDeterminState(PCUSBDEVICE pDevice)
 
 
 /** Just a worker for USBProxyServiceLinux::getDevices that avoids some code duplication. */
-static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pcszUsbfsRoot, int rc)
+static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pcszUsbfsRoot, bool testfs, int rc)
 {
     /* usbDeterminState requires the address. */
     PUSBDEVICE pDevNew = (PUSBDEVICE)RTMemDup(pDev, sizeof(*pDev));
@@ -482,7 +483,7 @@ static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **p
         if (pDevNew->pszAddress)
         {
             pDevNew->enmState = usbDeterminState(pDevNew);
-            if (pDevNew->enmState != USBDEVICESTATE_UNSUPPORTED)
+            if (pDevNew->enmState != USBDEVICESTATE_UNSUPPORTED || testfs)
             {
                 if (*pppNext)
                     **pppNext = pDevNew;
@@ -525,9 +526,12 @@ static int openDevicesFile(const char *pcszUsbfsRoot, FILE **ppFile)
 }
 
 /**
- * USBProxyService::getDevices() implementation for usbfs.
+ * USBProxyService::getDevices() implementation for usbfs.  The @a testfs flag
+ * tells the function to return information about unsupported devices as well.
+ * This is used as a sanity test to check that a devices file is really what
+ * we expect.
  */
-static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
+static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot, bool testfs)
 {
     PUSBDEVICE pFirst = NULL;
     FILE *pFile = NULL;
@@ -592,7 +596,7 @@ static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
                     /* add */
                     AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
                     if (cHits >= 3)
-                        rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, rc);
+                        rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, testfs, rc);
                     else
                         deviceFreeMembers(&Dev);
 
@@ -785,7 +789,7 @@ static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
          */
         AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
         if (cHits >= 3)
-            rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, rc);
+            rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, testfs, rc);
 
         /*
          * Success?
@@ -1342,7 +1346,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
 /**
  * USBProxyService::getDevices() implementation for sysfs.
  */
-static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot)
+static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot, bool testfs)
 {
 #ifdef VBOX_USB_WITH_SYSFS
     /* Add each of the devices found to the chain. */
@@ -1366,7 +1370,8 @@ static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot)
             fillInDeviceFromSysfs(Dev, pInfo);
         }
         if (   RT_SUCCESS(rc)
-            && Dev->enmState != USBDEVICESTATE_UNSUPPORTED
+            && (   Dev->enmState != USBDEVICESTATE_UNSUPPORTED
+                || testfs)
             && Dev->pszAddress != NULL
            )
         {
@@ -1393,11 +1398,29 @@ static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot)
 #endif  /* !VBOX_USB_WITH_SYSFS */
 }
 
+/** Is inotify available and working on this system?  This is a requirement
+ * for using USB with sysfs */
+/** @todo test the "inotify in glibc but not in the kernel" case. */
+static bool inotifyAvailable(void)
+{
+    int (*inotify_init)(void);
+
+    *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
+    if (!inotify_init)
+        return false;
+    int fd = inotify_init();
+    if (fd == -1)
+        return false;
+    close(fd);
+    return true;
+}
+
 PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs)
 {
     PCUSBDEVTREELOCATION pcBestUsbfs = NULL;
     PCUSBDEVTREELOCATION pcBestSysfs = NULL;
 
+    bool fHaveInotify = inotifyAvailable();
     for (unsigned i = 0; i < RT_ELEMENTS(s_aTreeLocations); ++i)
         if (!s_aTreeLocations[i].fUseSysfs)
         {
@@ -1405,7 +1428,8 @@ PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs)
             {
                 PUSBDEVICE pDevices;
 
-                pDevices = getDevicesFromUsbfs(s_aTreeLocations[i].szDevicesRoot);
+                pDevices = getDevicesFromUsbfs(s_aTreeLocations[i].szDevicesRoot,
+                                               true);
                 if (pDevices)
                 {
                     pcBestUsbfs = &s_aTreeLocations[i];
@@ -1415,9 +1439,20 @@ PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs)
         }
         else
         {
-            if (   !pcBestSysfs
+            if (   fHaveInotify
+                && !pcBestSysfs
                 && RTPathExists(s_aTreeLocations[i].szDevicesRoot))
-                pcBestSysfs = &s_aTreeLocations[i];
+            {
+                PUSBDEVICE pDevices;
+
+                pDevices = getDevicesFromSysfs(s_aTreeLocations[i].szDevicesRoot,
+                                               true);
+                if (pDevices)
+                {
+                    pcBestSysfs = &s_aTreeLocations[i];
+                    deviceListFree(&pDevices);
+                }
+            }
         }
     if (pcBestUsbfs && !fPreferSysfs)
         return pcBestUsbfs;
@@ -1429,7 +1464,7 @@ PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
                                    bool fUseSysfs)
 {
     if (!fUseSysfs)
-        return getDevicesFromUsbfs(pcszDevicesRoot);
+        return getDevicesFromUsbfs(pcszDevicesRoot, false);
     else
-        return getDevicesFromSysfs(pcszDevicesRoot);
+        return getDevicesFromSysfs(pcszDevicesRoot, false);
 }
