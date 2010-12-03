@@ -628,7 +628,8 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VirtualBox \
 	MacOS/VirtualBoxVM \
 	MacOS/VBoxNetAdpCtl \
-	MacOS/VBoxNetDHCP
+	MacOS/VBoxNetDHCP \
+	MacOS/VBoxExtPackHelperApp
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_DI_VBAPP_PROGS += \
  	MacOS/vboxwebsrv
@@ -925,12 +926,12 @@ endif
 ifdef VBOX_WITH_HARDENING
  ifdef VBOX_WITH_COMBINED_PACKAGE
 	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP,\
+		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxExtPackHelperApp,\
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-x86 \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-amd64)
  else
 	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP,\
+		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxExtPackHelperApp,\
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-$(KBUILD_TARGET_ARCH))
  endif
 endif
