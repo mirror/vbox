@@ -79,8 +79,8 @@ Function ${un}UninstallCommon
   Delete /REBOOTOK "$INSTDIR\VBoxVideo.cat"
 !endif
 
-!ifdef VBOX_WITH_LICENSE_INSTALL_TXT
-  Delete /REBOOTOK ${LICENSE_FILE_TXT}
+!ifdef VBOX_WITH_LICENSE_INSTALL_RTF
+  Delete /REBOOTOK "$INSTDIR\${LICENSE_FILE_RTF}"
 !endif
 
   Delete /REBOOTOK "$INSTDIR\VBoxGINA.dll"
