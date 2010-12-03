@@ -192,28 +192,6 @@ RTDECL(void)     VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                      void *pvBuffer);
 RTDECL(int)      VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                        void *pvBuffer);
-
-struct VBVAINFOVIEW;
-/**
- * Callback funtion called from @a VBoxHGSMISendViewInfo to initialise
- * the @a VBVAINFOVIEW structure for each screen.
- *
- * @returns  iprt status code
- * @param  pvData  context data for the callback, passed to @a
- *                 VBoxHGSMISendViewInfo along with the callback
- * @param  pInfo   array of @a VBVAINFOVIEW structures to be filled in
- * @todo  explicitly pass the array size
- */
-typedef DECLCALLBACK(int) FNHGSMIFILLVIEWINFO(void *pvData,
-                                              struct VBVAINFOVIEW *pInfo,
-                                              uint32_t cViews);
-/** Pointer to a FNHGSMIFILLVIEWINFO callback */
-typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
-
-RTDECL(int)      VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                       uint32_t u32Count,
-                                       PFNHGSMIFILLVIEWINFO pfnFill,
-                                       void *pvData);
 RTDECL(void)     VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                              uint32_t *poffVRAMBaseMapping,
                                              uint32_t *pcbMapping,
@@ -241,7 +219,8 @@ RTDECL(int)      VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                           uint32_t fCaps,
                                           uint32_t offVRAMHostArea,
                                           uint32_t cbHostArea);
-RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
+RTDECL(int)      VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                    uint32_t u32Index, uint32_t *pulValue);
 RTDECL(bool)     VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t fFlags,
                                              uint32_t cHotX,
@@ -271,15 +250,47 @@ RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code);
 RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
                                         uint32_t offVRAMBuffer,
                                         uint32_t cbBuffer);
-RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         uint32_t cDisplay,
-                                         int32_t  cOriginX,
-                                         int32_t  cOriginY,
-                                         uint32_t offStart,
-                                         uint32_t cbPitch,
-                                         uint32_t cWidth,
-                                         uint32_t cHeight,
-                                         uint16_t cBPP);
+
+/** @}  */
+
+/** @name Modesetting APIs
+ * @{ */
+
+RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
+
+struct VBVAINFOVIEW;
+/**
+ * Callback funtion called from @a VBoxHGSMISendViewInfo to initialise
+ * the @a VBVAINFOVIEW structure for each screen.
+ *
+ * @returns  iprt status code
+ * @param  pvData  context data for the callback, passed to @a
+ *                 VBoxHGSMISendViewInfo along with the callback
+ * @param  pInfo   array of @a VBVAINFOVIEW structures to be filled in
+ * @todo  explicitly pass the array size
+ */
+typedef DECLCALLBACK(int) FNHGSMIFILLVIEWINFO(void *pvData,
+                                              struct VBVAINFOVIEW *pInfo,
+                                              uint32_t cViews);
+/** Pointer to a FNHGSMIFILLVIEWINFO callback */
+typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
+
+RTDECL(int)      VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                       uint32_t u32Count,
+                                       PFNHGSMIFILLVIEWINFO pfnFill,
+                                       void *pvData);
+RTDECL(void)     VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
+                                           uint16_t cVirtWidth, uint16_t cBPP,
+                                           uint16_t cx, uint16_t cy);
+RTDECL(void)     VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                             uint32_t cDisplay,
+                                             int32_t  cOriginX,
+                                             int32_t  cOriginY,
+                                             uint32_t offStart,
+                                             uint32_t cbPitch,
+                                             uint32_t cWidth,
+                                             uint32_t cHeight,
+                                             uint16_t cBPP);
 
 /** @}  */
 

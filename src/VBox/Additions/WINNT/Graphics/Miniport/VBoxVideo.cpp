@@ -4158,16 +4158,6 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
 #endif
         )
 {
-    /* set the mode characteristics */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, width);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, height);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, bpp);
-    /* enable the mode */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 #ifdef VBOX_WITH_WDDM
     /* encode linear offDisplay to xOffset & yOffset to ensure offset fits USHORT */
     ULONG cbLine = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
@@ -4184,19 +4174,12 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     ULONG yOffset = offDisplay / cbLine;
     Assert(xOffset <= 0xffff);
     Assert(yOffset <= 0xffff);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_X_OFFSET);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, (USHORT)xOffset);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_Y_OFFSET);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, (USHORT)yOffset);
+#else
+    ULONG xOffset = 0, yOffset = 0;
 #endif
+    VBoxVideoSetModeRegisters(width, height, width, bpp, (uint16_t)xOffset,
+                              (uint16_t)yOffset);
     /** @todo read from the port to see if the mode switch was successful */
-
-    /* Tell the host that we now support graphics in the additions.
-     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
-     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
-     *        (for example Qt GUI debug build asserts when seamless is being enabled).
-     */
-    // VBoxVideoSetGraphicsCap(TRUE);
 
     return TRUE;
 }

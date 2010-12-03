@@ -45,7 +45,8 @@ VBoxVideo_SOURCES     = \
 	VBoxVideo.def \
 	VBoxVideo.rc \
 	VBoxVideoHGSMI.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 VBoxVideo_LIBS.x86    = \
 	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
 VBoxVideo_LIBS        = \
@@ -100,6 +101,7 @@ ifdef VBOX_WITH_WDDM
  VBoxVideoWddm_SOURCES     = \
  	VBoxVideoHGSMI.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
  	VBoxVideo.cpp \
     Helper.cpp \
  	wddm/VBoxVideoWddm.cpp \
