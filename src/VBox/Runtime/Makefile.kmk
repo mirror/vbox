@@ -1261,7 +1261,13 @@ endif # linux
 #
 # VBoxRTImp - Import library/hack.
 #
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def r3/win/VBoxRT-openssl-ose.def r3/win/VBoxRT-win64.def)
+else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def r3/win/VBoxRT-openssl-ose.def r3/win/VBoxRT-win32.def)
+else
 $(call VBOX_GENERATE_IMPORT_TARGET_FN,VBoxRTImp,VBoxRT,VBox/VBoxRTImp.def r3/win/VBoxRT-openssl-ose.def)
+endif
 
 
 #
