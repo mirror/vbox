@@ -14333,8 +14333,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IExtPack" extends="$unknown"
-    uuid="94564309-5966-419a-81cc-4aec0b6dbd4d"
+    name="IExtPackBase" extends="$unknown"
+    uuid="58304368-f78a-418c-8fec-d9e4e588d797"
     wsmap="suppress"
     >
     <desc>
@@ -14366,9 +14366,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="usable" type="boolean" readonly="yes">
       <desc>
-        Indicates whether the extension pack is usable or not.  An
-        extension pack that is not compatible with the current VirtualBox
-        version will be flagged as not usable.
+        Indicates whether the extension pack is usable or not.
+
+        There are a number of reasons why an extension pack might be unusable,
+        typical examples would be broken installation/file or that it is
+        incompatible with the current VirtualBox version.
       </desc>
     </attribute>
     <attribute name="whyUnusable" type="wstring" readonly="yes">
@@ -14377,6 +14379,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         empty string if usable and always a non-empty string if not usable.
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IExtPack" extends="IExtPackBase"
+    uuid="60f0c30f-c773-4d3e-9580-3ffa47c24e95"
+    wsmap="suppress"
+    >
+    <desc>
+      Interface for querying information about an extension pack as well as
+      accessing COM objects within it.
+    </desc>
     <method name="queryObject">
       <desc>
         Queries the IUnknown interface to an object in the extension pack
@@ -14393,8 +14406,32 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
+    name="IExtPackFile" extends="IExtPackBase"
+    uuid="58509cab-f905-4acb-8087-ba0ab80d8038"
+    wsmap="suppress"
+    >
+    <desc>
+      Extension pack file (aka tarball, .vbox-extpack) representation returned
+      by IExtPackManager::openExtPackFile.  This provides the base extension
+      pack information with the addition of the file name.  It also provides an
+      alternative to IExtPackManager::install.
+    </desc>
+    <attribute name="filePath" type="wstring" readonly="yes">
+      <desc>
+        The path to the extension pack file.
+      </desc>
+    </attribute>
+
+    <method name="install">
+      <desc>
+        Install the extension pack.
+      </desc>
+    </method>
+  </interface>
+
+  <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="bc386406-2637-454b-8d55-021f9e20445a"
+    uuid="8104df65-74d6-4e33-b374-50aa062b4afd"
     wsmap="suppress"
     >
     <desc>
@@ -14426,7 +14463,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="openExtPackFile">
+      <desc>
+        Attempts to open an extension pack file in preparation for
+        installation.
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>The path of the extension pack tarball.</desc>
+      </param>
+      <param name="file" type="IExtPackFile" dir="return">
+        <desc>The interface of the extension pack file object.</desc>
+      </param>
+    </method>
+
     <method name="install">
+      <desc>
+        Please use openExtPackFile + IExtPackFile::install instead of this
+        interface.   This will be removed later in the beta cycle.
+      </desc>
       <param name="path" type="wstring" dir="in">
         <desc>The path of the extension pack tarball.</desc>
       </param>
@@ -14462,7 +14516,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="frontendName" type="wstring" dir="in">
         <desc>The name of the frontend or component.</desc>
       </param>
-      <param name="plugInModules" type="wstring" dir="out" safearray="yes">
+      <param name="plugInModules" type="wstring" dir="return" safearray="yes">
         <desc>Array containing the plug-in modules (full paths).</desc>
       </param>
     </method>
