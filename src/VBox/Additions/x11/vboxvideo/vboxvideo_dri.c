@@ -174,7 +174,7 @@ Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     if (   (pScrn->displayWidth == 0)
         || (pVBox->pciInfo == NULL)
         || (pVBox->base == NULL)
-        || (pVBox->mapSize == 0))
+        || (pVBox->cbFramebuffer == 0))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "%s: preconditions failed\n",
                    __PRETTY_FUNCTION__);
@@ -255,7 +255,7 @@ Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
         pDRIInfo->ddxDrawableTableEntry = VBOX_MAX_DRAWABLES;
         pDRIInfo->maxDrawableTableEntry = VBOX_MAX_DRAWABLES;
         pDRIInfo->frameBufferPhysicalAddress = (pointer)pScrn->memPhysBase;
-        pDRIInfo->frameBufferSize = pVBox->mapSize;
+        pDRIInfo->frameBufferSize = pVBox->cbFramebuffer;
         pDRIInfo->frameBufferStride =   pScrn->displayWidth
                                       * pScrn->bitsPerPixel / 8;
         pDRIInfo->SAREASize = SAREA_MAX;  /* we have no private bits yet. */

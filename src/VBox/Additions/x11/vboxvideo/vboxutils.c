@@ -58,6 +58,20 @@
     } \
     while (0)
 
+/** Structure to pass cursor image data between realise_cursor() and
+ * load_cursor_image().  The members match the parameters to
+ * @a VBoxHGSMIUpdatePointerShape(). */
+struct vboxCursorImage
+{
+    uint32_t fFlags;
+    uint32_t cHotX;
+    uint32_t cHotY;
+    uint32_t cWidth;
+    uint32_t cHeight;
+    uint8_t *pPixels;
+    uint32_t cbLength;
+};
+
 #ifdef DEBUG_POINTER
 static void
 vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *image)
@@ -68,7 +82,7 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
     unsigned char *mask;
     size_t sizeMask;
 
-    image    += offsetof(VMMDevReqMousePointer, pointerData);
+    image    += sizeof(struct vboxCursorImage);
     mask      = image;
     pitch     = (w + 7) / 8;
     sizeMask  = (pitch * h + 3) & ~3;
@@ -149,20 +163,6 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     return rc;
 }
 
-/**
- * Macro to disable VBVA extensions and return, for use when an
- * unexplained error occurs.
- */
-#define DISABLE_VBVA_AND_RETURN(pScrn, ...) \
-    do \
-    { \
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, __VA_ARGS__); \
-        vboxDisableVbva(pScrn); \
-        pVBox->useVbva = FALSE; \
-        return; \
-    } \
-    while (0)
-
 /**************************************************************************
 * Main functions                                                          *
 **************************************************************************/
@@ -192,111 +192,58 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
 {
     VBVACMDHDR cmdHdr;
     VBOXPtr pVBox;
-    VBVARECORD *pRecord;
-    VBVAMEMORY *pMem;
-    CARD32 indexRecordNext;
-    CARD32 off32Data;
-    CARD32 off32Free;
-    INT32 i32Diff;
-    CARD32 cbHwBufferAvail;
-    int scrnIndex;
     int i;
+    unsigned j;
 
     pVBox = pScrn->driverPrivate;
-    if (pVBox->useVbva == FALSE)
+    if (pVBox->fHaveHGSMI == FALSE)
         return;
-    pMem = pVBox->pVbvaMemory;
-    /* Just return quietly if VBVA is not currently active. */
-    if ((pMem->fu32ModeFlags & VBVA_F_MODE_ENABLED) == 0)
-        return;
-    scrnIndex = pScrn->scrnIndex;
 
-    for (i = 0; i < iRects; i++)
-    {
-        cmdHdr.x = (int16_t)aRects[i].x1 - pVBox->viewportX;
-        cmdHdr.y = (int16_t)aRects[i].y1 - pVBox->viewportY;
-        cmdHdr.w = (uint16_t)(aRects[i].x2 - aRects[i].x1);
-        cmdHdr.h = (uint16_t)(aRects[i].y2 - aRects[i].y1);
+    for (i = 0; i < iRects; ++i)
+        for (j = 0; j < pVBox->cScreens; ++j)
+        {
+            /* Just continue quietly if VBVA is not currently active. */
+            struct VBVABUFFER *pVBVA = pVBox->aVbvaCtx[j].pVBVA;
+            if (   !pVBVA
+                || !(pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
+                continue;
+            if (   aRects[i].x1 >   pVBox->aScreenLocation[j].x
+                                  + pVBox->aScreenLocation[j].cx
+                || aRects[i].y1 >   pVBox->aScreenLocation[j].y
+                                  + pVBox->aScreenLocation[j].cy
+                || aRects[i].x2 <   pVBox->aScreenLocation[j].x
+                || aRects[i].y2 <   pVBox->aScreenLocation[j].y)
+                continue;
+            cmdHdr.x = (int16_t)aRects[i].x1 - pVBox->aScreenLocation[j].x;
+            cmdHdr.y = (int16_t)aRects[i].y1 - pVBox->aScreenLocation[j].y;
+            cmdHdr.w = (uint16_t)(aRects[i].x2 - aRects[i].x1);
+            cmdHdr.h = (uint16_t)(aRects[i].y2 - aRects[i].y1);
 
-        /* Get the active record and move the pointer along */
-        indexRecordNext = (pMem->indexRecordFree + 1) % VBVA_MAX_RECORDS;
-        if (indexRecordNext == pMem->indexRecordFirst)
-        {
-            /* All slots in the records queue are used. */
-            if (VbglR3VideoAccelFlush() < 0)
-                DISABLE_VBVA_AND_RETURN(pScrn,
-                    "Unable to clear the VirtualBox graphics acceleration queue "
-                    "- the request to the virtual machine failed.  Switching to "
-                    "unaccelerated mode.\n");
+            TRACE_LOG("x=%d, y=%d, w=%d, z=%d\n", cmdHdr.x, cmdHdr.y,
+                      cmdHdr.w, cmdHdr.h);
+            
+            VBoxVBVABufferBeginUpdate(&pVBox->aVbvaCtx[j], &pVBox->guestCtx);
+            VBoxVBVAWrite(&pVBox->aVbvaCtx[j], &pVBox->guestCtx, &cmdHdr,
+                          sizeof(cmdHdr));
+            VBoxVBVABufferEndUpdate(&pVBox->aVbvaCtx[j]);
         }
-        if (indexRecordNext == pMem->indexRecordFirst)
-            DISABLE_VBVA_AND_RETURN(pScrn,
-                "Failed to clear the VirtualBox graphics acceleration queue.  "
-                "Switching to unaccelerated mode.\n");
-        pRecord = &pMem->aRecords[pMem->indexRecordFree];
-        /* Mark the record as being updated. */
-        pRecord->cbRecord = VBVA_F_RECORD_PARTIAL;
-        pMem->indexRecordFree = indexRecordNext;
-        /* Compute how many bytes we have in the ring buffer. */
-        off32Free = pMem->off32Free;
-        off32Data = pMem->off32Data;
-        /* Free is writing position. Data is reading position.
-         * Data == Free means buffer is free.
-         * There must be always gap between free and data when data
-         * are in the buffer.
-         * Guest only changes free, host only changes data.
-         */
-        i32Diff = off32Data - off32Free;
-        cbHwBufferAvail = i32Diff > 0 ? i32Diff : VBVA_RING_BUFFER_SIZE + i32Diff;
-        if (cbHwBufferAvail <= VBVA_RING_BUFFER_THRESHOLD)
-        {
-            if (VbglR3VideoAccelFlush() < 0)
-                DISABLE_VBVA_AND_RETURN(pScrn,
-                    "Unable to clear the VirtualBox graphics acceleration queue "
-                    "- the request to the virtual machine failed.  Switching to "
-                    "unaccelerated mode.\n");
-            /* Calculate the free space again. */
-            off32Free = pMem->off32Free;
-            off32Data = pMem->off32Data;
-            i32Diff = off32Data - off32Free;
-            cbHwBufferAvail = i32Diff > 0? i32Diff:
-                                  VBVA_RING_BUFFER_SIZE + i32Diff;
-            if (cbHwBufferAvail <= VBVA_RING_BUFFER_THRESHOLD)
-                DISABLE_VBVA_AND_RETURN(pScrn,
-                    "No space left in the VirtualBox graphics acceleration command buffer, "
-                    "despite clearing the queue.  Switching to unaccelerated mode.\n");
-        }
-        /* Now copy the data into the buffer */
-        if (off32Free + sizeof(cmdHdr) < VBVA_RING_BUFFER_SIZE)
-        {
-            memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr, sizeof(cmdHdr));
-            pMem->off32Free = pMem->off32Free + sizeof(cmdHdr);
-        }
-        else
-        {
-            CARD32 u32First = VBVA_RING_BUFFER_SIZE - off32Free;
-            /* The following is impressively ugly! */
-            CARD8 *pu8Second = (CARD8 *)&cmdHdr + u32First;
-            CARD32 u32Second = sizeof(cmdHdr) - u32First;
-            memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr, u32First);
-            if (u32Second)
-                memcpy(&pMem->au8RingBuffer[0], pu8Second, u32Second);
-            pMem->off32Free = u32Second;
-        }
-        pRecord->cbRecord += sizeof(cmdHdr);
-        /* Mark the record completed. */
-        pRecord->cbRecord &= ~VBVA_F_RECORD_PARTIAL;
-    }
 }
 
-#ifdef PCIACCESS
-/* As of X.org server 1.5, we are using the pciaccess library functions to
- * access PCI.  This structure describes our VMM device. */
-/** Structure describing the VMM device */
-static const struct pci_id_match vboxVMMDevID =
-{ VMMDEV_VENDORID, VMMDEV_DEVICEID, PCI_MATCH_ANY, PCI_MATCH_ANY,
-  0, 0, 0 };
-#endif
+/** Callback to fill in the view structures */
+static int
+vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
+{
+    VBOXPtr pVBox = (VBOXPtr)pvVBox;
+    unsigned i;
+    for (i = 0; i < cViews; ++i)
+    {
+        pViews[i].u32ViewIndex = i;
+        pViews[i].u32ViewOffset = 0;
+        pViews[i].u32ViewSize = pVBox->cbFramebuffer;
+        pViews[i].u32MaxScreenSize = pVBox->cbFramebuffer;
+    }
+    return VINF_SUCCESS;
+}
 
 /**
  * Initialise VirtualBox's accelerated video extensions.
@@ -306,73 +253,47 @@ static const struct pci_id_match vboxVMMDevID =
 static Bool
 vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 {
-#ifdef PCIACCESS
-    struct pci_device_iterator *devIter = NULL;
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    int rc = VINF_SUCCESS;
+    unsigned i;
+    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory,
+             cScreens;
+    void *pvGuestHeapMemory;
 
-    TRACE_ENTRY();
-    pVBox->vmmDevInfo = NULL;
-    devIter = pci_id_match_iterator_create(&vboxVMMDevID);
-    if (devIter)
+    pVBox->cScreens = 1;
+    if (!VBoxHGSMIIsSupported())
     {
-        pVBox->vmmDevInfo = pci_device_next(devIter);
-        pci_iterator_destroy(devIter);
-    }
-    if (pVBox->vmmDevInfo)
-    {
-        if (pci_device_probe(pVBox->vmmDevInfo) != 0)
-        {
-            xf86DrvMsg (scrnIndex, X_ERROR,
-                        "Failed to probe VMM device (vendor=%04x, devid=%04x)\n",
-                        pVBox->vmmDevInfo->vendor_id,
-                        pVBox->vmmDevInfo->device_id);
-        }
-        else
-        {
-            if (pci_device_map_range(pVBox->vmmDevInfo,
-                                     pVBox->vmmDevInfo->regions[1].base_addr,
-                                     pVBox->vmmDevInfo->regions[1].size,
-                                     PCI_DEV_MAP_FLAG_WRITABLE,
-                                     (void **)&pVBox->pVMMDevMemory) != 0)
-                xf86DrvMsg (scrnIndex, X_ERROR,
-                            "Failed to map VMM device range\n");
-        }
-    }
-#else
-    PCITAG pciTagDev;
-    ADDRESS pciAddrDev;
-
-    TRACE_ENTRY();
-    /* Locate the device.  It should already have been enabled by
-       the kernel driver. */
-    pciTagDev = pciFindFirst((unsigned) VMMDEV_DEVICEID << 16 | VMMDEV_VENDORID,
-                             (CARD32) ~0);
-    if (pciTagDev == PCI_NOT_FOUND)
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Could not find the VirtualBox base device on the PCI bus.\n");
+        xf86DrvMsg(scrnIndex, X_ERROR, "The graphics device does not seem to support HGSMI.  Disableing video acceleration.\n");
         return FALSE;
     }
-    /* Read the address and size of the second I/O region. */
-    pciAddrDev = pciReadLong(pciTagDev, PCI_MAP_REG_START + 4);
-    if (pciAddrDev == 0 || pciAddrDev == (CARD32) ~0)
-        RETERROR(scrnIndex, FALSE,
-                 "The VirtualBox base device contains an invalid memory address.\n");
-    if (PCI_MAP_IS64BITMEM(pciAddrDev))
-        RETERROR(scrnIndex, FALSE,
-                 "The VirtualBox base device has a 64bit mapping address.  "
-                 "This is currently not supported.\n");
-    /* Map it.  We hardcode the size as X does not export the
-       function needed to determine it. */
-    pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTagDev, pciAddrDev,
-                                         sizeof(VMMDevMemory));
-#endif
-    if (pVBox->pVMMDevMemory == NULL)
+    VBoxHGSMIGetBaseMappingInfo(pScrn->videoRam * 1024, &offVRAMBaseMapping,
+                                NULL, &offGuestHeapMemory, &cbGuestHeapMemory,
+                                NULL);
+    pvGuestHeapMemory =   ((uint8_t *)pVBox->base) + offVRAMBaseMapping
+                        + offGuestHeapMemory;
+    rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory,
+                                    cbGuestHeapMemory,
+                                    offVRAMBaseMapping + offGuestHeapMemory);
+    if (RT_FAILURE(rc))
     {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Failed to map VirtualBox video extension memory.\n");
+        xf86DrvMsg(scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
         return FALSE;
     }
-    pVBox->pVbvaMemory = &pVBox->pVMMDevMemory->vbvaMemory;
+    pVBox->cbFramebuffer = offVRAMBaseMapping;
+    pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
+    xf86DrvMsg(scrnIndex, X_INFO, "Requested monitor count: %u\n",
+               pVBox->cScreens);
+    rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
+                               vboxFillViewInfo, (void *)pVBox);
+    for (i = 0; i < pVBox->cScreens; ++i)
+    {
+        pVBox->cbFramebuffer -= VBVA_MIN_BUFFER_SIZE;
+        pVBox->aoffVBVABuffer[i] = pVBox->cbFramebuffer;
+        VBoxVBVASetupBufferContext(&pVBox->aVbvaCtx[i],
+                                   pVBox->aoffVBVABuffer[i], 
+                                   VBVA_MIN_BUFFER_SIZE);
+    }
+
     /* Set up the dirty rectangle handler.  Since this seems to be a
        delicate operation, and removing it doubly so, this will
        remain in place whether it is needed or not, and will simply
@@ -395,7 +316,6 @@ vbox_init(int scrnIndex, VBOXPtr pVBox)
     uint32_t fMouseFeatures = 0;
 
     TRACE_ENTRY();
-    pVBox->useVbva = FALSE;
     vrc = VbglR3Init();
     if (RT_FAILURE(vrc))
     {
@@ -422,7 +342,7 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 
     if (!pVBox->useDevice)
         return FALSE;
-    pVBox->useVbva = vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox);
+    pVBox->fHaveHGSMI = vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox);
     return TRUE;
 }
 
@@ -437,7 +357,7 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    rc = VbglR3SetPointerShape(0, 0, 0, 0, 0, NULL, 0);
+    rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, 0, 0, 0, 0, 0, NULL, 0);
     if (RT_FAILURE(rc))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer, VBox error %d.\n", rc);
@@ -455,7 +375,8 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 
     if (!vbox_host_uses_hwcursor(pScrn))
         return;
-    rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, 0, 0, 0, 0, NULL, 0);
+    rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, VBOX_MOUSE_POINTER_VISIBLE,
+                                     0, 0, 0, 0, NULL, 0);
     if (RT_FAILURE(rc)) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
         /* Play safe, and disable the hardware cursor until the next mode
@@ -467,17 +388,19 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 
 static void
 vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
-                           unsigned char *image)
+                           unsigned char *pvImage)
 {
     int rc;
-    VMMDevReqMousePointer *reqp;
-    reqp = (VMMDevReqMousePointer *)image;
+    struct vboxCursorImage *pImage;
+    pImage = (struct vboxCursorImage *)pvImage;
 
 #ifdef DEBUG_POINTER
-    vbox_show_shape(reqp->width, reqp->height, 0, image);
+    vbox_show_shape(pImage->cWidth, pImage->cHeight, 0, pvImage);
 #endif
 
-    rc = VbglR3SetPointerShapeReq(reqp);
+    rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, pImage->fFlags,
+             pImage->cHotX, pImage->cHotY, pImage->cWidth, pImage->cHeight,
+             pImage->pPixels, pImage->cbLength);
     if (RT_FAILURE(rc)) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
         /* Play safe, and disable the hardware cursor until the next mode
@@ -554,7 +477,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     size_t sizeRequest, sizeRgba, sizeMask, srcPitch, dstPitch;
     CARD32 fc, bc, *cp;
     int rc, scrnIndex = infoPtr->pScrn->scrnIndex;
-    VMMDevReqMousePointer *reqp;
+    struct vboxCursorImage *pImage;
 
     pVBox = infoPtr->pScrn->driverPrivate;
     bitsp = pCurs->bits;
@@ -574,7 +497,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     dstPitch = (w + 7) / 8;
     sizeMask = ((dstPitch * h) + 3) & (size_t) ~3;
     sizeRgba = w * h * 4;
-    sizeRequest = sizeMask + sizeRgba + sizeof(VMMDevReqMousePointer);
+    sizeRequest = sizeMask + sizeRgba + sizeof(*pImage);
 
     p = c = calloc (1, sizeRequest);
     if (!c)
@@ -582,15 +505,8 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
                  "Error failed to alloc %lu bytes for cursor\n",
                  (unsigned long) sizeRequest);
 
-    rc = vmmdevInitRequest((VMMDevRequestHeader *)p, VMMDevReq_SetPointerShape);
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
-        free(p);
-        return NULL;
-    }
-
-    m = p + offsetof(VMMDevReqMousePointer, pointerData);
+    pImage = (struct vboxCursorImage *)p;
+    pImage->pPixels = m = p + sizeof(*pImage);
     cp = (CARD32 *)(m + sizeMask);
 
     TRACE_LOG ("w=%d h=%d sm=%d sr=%d p=%d\n",
@@ -655,13 +571,12 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
         PUT_PIXEL('\n');
     }
 
-    reqp = (VMMDevReqMousePointer *)p;
-    reqp->width  = w;
-    reqp->height = h;
-    reqp->xHot   = bitsp->xhot;
-    reqp->yHot   = bitsp->yhot;
-    reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE;
-    reqp->header.size = sizeRequest;
+    pImage->cWidth   = w;
+    pImage->cHeight  = h;
+    pImage->cHotX    = bitsp->xhot;
+    pImage->cHotY    = bitsp->yhot;
+    pImage->fFlags   = VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE;
+    pImage->cbLength = sizeRequest - sizeof(*pImage);
 
 #ifdef DEBUG_POINTER
     ErrorF("shape = %p\n", p);
@@ -774,7 +689,8 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
         pm += (w + 7) / 8;
     }
 
-    rc = VbglR3SetPointerShape(fFlags, bitsp->xhot, bitsp->yhot, w, h, p, sizeData);
+    rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, fFlags, bitsp->xhot,
+                                     bitsp->yhot, w, h, p, sizeData);
     TRACE_LOG(": leaving, returning %d\n", rc);
     free(p);
 }
@@ -789,7 +705,7 @@ vbox_cursor_init(ScreenPtr pScreen)
     Bool rc = TRUE;
 
     TRACE_ENTRY();
-    if (!pVBox->useDevice)
+    if (!pVBox->fHaveHGSMI)
         return FALSE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs) {
@@ -843,20 +759,28 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
 {
     bool rc = TRUE;
     int scrnIndex = pScrn->scrnIndex;
+    unsigned i;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    if (pVBox->useVbva != TRUE)
-        rc = FALSE;
-    if (rc && RT_FAILURE(VbglR3VideoAccelEnable(true)))
+    if (!pVBox->fHaveHGSMI)
+        return FALSE;
+    for (i = 0; i < pVBox->cScreens; ++i)
+    {
+        struct VBVABUFFER *pVBVA;
+
+        pVBVA = (struct VBVABUFFER *) (  ((uint8_t *)pVBox->base)
+                                       + pVBox->aoffVBVABuffer[i]);
+        if (!VBoxVBVAEnable(&pVBox->aVbvaCtx[i], &pVBox->guestCtx, pVBVA, i))
+            rc = FALSE;
+    }
+    if (!rc)
+    {
         /* Request not accepted - disable for old hosts. */
         xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Unable to activate VirtualBox graphics acceleration "
-                   "- the request to the virtual machine failed.  "
-                   "You may be running an old version of VirtualBox.\n");
-    pVBox->useVbva = rc;
-    if (!rc)
-        VbglR3VideoAccelEnable(false);
+                   "Failed to enable screen update reporting for at least one virtual monitor.\n");
+         vboxDisableVbva(pScrn);
+    }
     return rc;
 }
 
@@ -868,26 +792,19 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
  * @returns TRUE for success, FALSE for failure
  * @param   pScrn   Pointer to a structure describing the X screen in use
  */
-Bool
+void
 vboxDisableVbva(ScrnInfoPtr pScrn)
 {
     int rc;
     int scrnIndex = pScrn->scrnIndex;
+    unsigned i;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    if (pVBox->useVbva != TRUE)  /* Ths function should not have been called */
-        return FALSE;
-    rc = VbglR3VideoAccelEnable(false);
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Unable to disable VirtualBox graphics acceleration "
-                   "- the request to the virtual machine failed.\n");
-    }
-    else
-        memset(pVBox->pVbvaMemory, 0, sizeof(VBVAMEMORY));
-    return TRUE;
+    if (!pVBox->fHaveHGSMI)  /* Ths function should not have been called */
+        return;
+    for (i = 0; i < pVBox->cScreens; ++i)
+        VBoxVBVADisable(&pVBox->aVbvaCtx[i], &pVBox->guestCtx, i);
 }
 
 /**
