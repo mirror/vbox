@@ -103,9 +103,9 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless vboxwebsrv webtest; do
+for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
-for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
+for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl VBoxExtPackHelperApp; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 for d in /lib/modules/*; do
@@ -272,6 +272,7 @@ if [ -x /usr/bin/chcon ]; then
   chcon -t java_exec_t    /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1
+  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxExtPackHelperApp > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/vboxwebsrv > /dev/null 2>&1
 fi
 %endif
