@@ -480,6 +480,12 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--cpuexecutioncap &lt;1-100&gt;</computeroutput>: This
+            setting controls how much cpu time a virtual CPU can use. A value of
+            50 implies a single virtual CPU can use up to 50% of a single host CPU.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--synthcpu on|off</computeroutput>: This
             setting determines whether VirtualBox will expose a synthetic CPU
             to the guest to allow live migration between host systems that
@@ -1344,6 +1350,13 @@ Virtual system 0:
         virtual machines. This must be specified in megabytes. For details,
         see <xref linkend="guestadd-balloon" />.</para>
       </listitem>
+
+      <listitem>
+        <para>The <computeroutput>cpuexecutioncap &lt;1-100&gt;</computeroutput>: This
+        operation controls how much cpu time a virtual CPU can use. A value of
+        50 implies a single virtual CPU can use up to 50% of a single host CPU.</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
