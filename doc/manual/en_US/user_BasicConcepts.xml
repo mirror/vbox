@@ -1077,7 +1077,7 @@
       "filters" by specifying certain properties of the USB device.<note>
           <para>The EHCI controller is shipped as a VirtualBox extension
           package, which must be installed separately. See <xref
-          linkend="intro-installing" /> for more installation.</para>
+          linkend="intro-installing" /> for more information.</para>
         </note></para>
 
       <para>Clicking on the "+" button to the right of the "USB Device
