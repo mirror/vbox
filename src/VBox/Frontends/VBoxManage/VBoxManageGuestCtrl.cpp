@@ -348,6 +348,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
             case 'f': /* Flags */
                 /** @todo Needs a bit better processing as soon as we have more flags. */
+                /** @todo Add a hidden flag. */
                 if (!RTStrICmp(ValueUnion.psz, "ignoreorphanedprocesses"))
                     uFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 else

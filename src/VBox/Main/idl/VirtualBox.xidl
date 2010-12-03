@@ -7870,6 +7870,10 @@
     <const name="IgnoreOrphanedProcesses" value="2">
       <desc>Do not report an error when executed processes are still alive when VBoxService or the guest OS is shutting down.</desc>
     </const>
+
+    <const name="Hidden"                  value="4">
+      <desc>Don't show the started process according to the guest OS guidelines.</desc>
+    </const>
   </enum>
 
   <enum

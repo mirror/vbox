@@ -262,7 +262,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                      * system rights, no username/password specified).
                      */
                     rc = pGuest->executeProcessInternal(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
-                                                        ExecuteProcessFlag_WaitForProcessStartOnly,
+                                                          ExecuteProcessFlag_Hidden
+                                                        | ExecuteProcessFlag_WaitForProcessStartOnly,
                                                         ComSafeArrayAsInParam(args),
                                                         ComSafeArrayAsInParam(env),
                                                         Bstr("").raw() /* Username. */,
@@ -409,7 +410,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
                 /*
                  * Start the just copied over installer with system rights
-                 * in silent mode on the guest.
+                 * in silent mode on the guest. Don't use the hidden flag since there
+                 * may be pop ups the user has to process.
                  */
                 ComPtr<IProgress> progressInstaller;
                 ULONG uPID;
@@ -1596,7 +1598,8 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
     if (aFlags)
     {
         if (   !(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
-            && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly))
+            && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly)
+            && !(aFlags & ExecuteProcessFlag_Hidden))
         {
             if (pRC)
                 *pRC = VERR_INVALID_PARAMETER;
@@ -2433,7 +2436,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                          * actual copying, start the guest part now.
                          */
                         rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
-                                            ExecuteProcessFlag_WaitForProcessStartOnly,
+                                              ExecuteProcessFlag_Hidden
+                                            | ExecuteProcessFlag_WaitForProcessStartOnly,
                                             ComSafeArrayAsInParam(args),
                                             ComSafeArrayAsInParam(env),
                                             Bstr(Utf8UserName).raw(),
@@ -2590,7 +2594,7 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         if (SUCCEEDED(rc))
         {
             rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(),
-                                ExecuteProcessFlag_None,
+                                ExecuteProcessFlag_Hidden,
                                 ComSafeArrayAsInParam(args),
                                 ComSafeArrayAsInParam(env),
                                 Bstr(Utf8UserName).raw(),
