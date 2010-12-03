@@ -367,14 +367,14 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
         break;
     /*
      * Mode 2: The period is count + 1 PIT ticks.
-     * When the counter reaches 1 we sent the output low (for channel 0 that
-     * means raise an irq). On the next tick, where we should be decrementing
+     * When the counter reaches 1 we set the output low (for channel 0 that
+     * means lowering IRQ0). On the next tick, where we should be decrementing
      * from 1 to 0, the count is loaded and the output goes high (channel 0
-     * means clearing the irq).
+     * means raising IRQ0 again and triggering timer interrupt).
      *
-     * In VBox we simplify the tick cycle between 1 and 0 and immediately clears
-     * the irq. We also don't set it until we reach 0, which is a tick late - will
-     * try fix that later some day.
+     * In VBox we simplify the tick cycle between 1 and 0 and immediately trigger
+     * the interrupt. We also don't set it until we reach 0, which is a tick late
+     *  - will try to fix that later some day.
      */
     case 2:
         base = (d / s->count) * s->count;
@@ -426,9 +426,8 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
     expire_time = pit_get_next_transition_time(s, current_time);
     irq_level = pit_get_out1(s, current_time) ? PDM_IRQ_LEVEL_HIGH : PDM_IRQ_LEVEL_LOW;
 
-    /* If PIT disabled by HPET - just disconnect ticks from interrupt controllers, and not modify
-     * other moments of device functioning.
-     * @todo: is it correct?
+    /* If PIT is disabled by HPET - simply disconnect ticks from interrupt controllers,
+     * but do not modify other aspects of device operation.
      */
     if (!s->pPitR3->fDisabledByHpet)
     {
