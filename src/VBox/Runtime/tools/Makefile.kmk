@@ -27,30 +27,35 @@
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-# RTManifest is a tool for creating and verifying manifest files.
-PROGRAMS += RTManifest
-RTManifest_TEMPLATE = VBOXR3TSTEXE
-RTManifest_SOURCES = RTManifest.cpp
 
+# RTManifest is a tool for creating and verifying manifest files - build version.
 BLDPROGS += bldRTManifest
 bldRTManifest_TEMPLATE = VBoxAdvBldProg
 bldRTManifest_SOURCES  = RTManifest.cpp
 
-# RTLdrFlt is similar to c++filt, except that it's for VMMR0.r0 stacks.
-PROGRAMS += RTLdrFlt
-RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
-RTLdrFlt_SOURCES = RTLdrFlt.cpp
+ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
-# RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
-PROGRAMS += RTGzip
-RTGzip_TEMPLATE = VBOXR3TSTEXE
-RTGzip_SOURCES = RTGzip.cpp
+ # RTManifest is a tool for creating and verifying manifest files.
+ PROGRAMS += RTManifest
+ RTManifest_TEMPLATE = VBOXR3TSTEXE
+ RTManifest_SOURCES = RTManifest.cpp
 
-# RTTar - our tar clone (for testing the tar/gzip/gunzip streaming code)
-PROGRAMS += RTTar
-RTTar_TEMPLATE = VBOXR3TSTEXE
-RTTar_SOURCES = RTTar.cpp
+ # RTLdrFlt is similar to c++filt, except that it's for VMMR0.r0 stacks.
+ PROGRAMS += RTLdrFlt
+ RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
+ RTLdrFlt_SOURCES = RTLdrFlt.cpp
 
+ # RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
+ PROGRAMS += RTGzip
+ RTGzip_TEMPLATE = VBOXR3TSTEXE
+ RTGzip_SOURCES = RTGzip.cpp
+
+ # RTTar - our tar clone (for testing the tar/gzip/gunzip streaming code)
+ PROGRAMS += RTTar
+ RTTar_TEMPLATE = VBOXR3TSTEXE
+ RTTar_SOURCES = RTTar.cpp
+
+endif # !VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

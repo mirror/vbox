@@ -59,6 +59,7 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  LIBRARIES += RuntimeBldProg
  IMPORT_LIBS += VBoxRTImp
  LIBRARIES.win += RuntimeR0Stub RuntimeRCStub
+ include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
 
