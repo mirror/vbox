@@ -412,7 +412,7 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_IRQ_LEVEL_HIGH                      RT_BIT(0)
 /** Deassert the IRQ (can assume value 0). */
 #define PDM_IRQ_LEVEL_LOW                       0
-/** flip-flop - assert and then deassert it again immediately. */
+/** flip-flop - deassert and then assert the IRQ again immediately. */
 #define PDM_IRQ_LEVEL_FLIP_FLOP                 (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
 /** @} */
 
