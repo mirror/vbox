@@ -26,6 +26,9 @@ fi
 if [ "$1" = "purge" -a ! -f /etc/init.d/vboxnet ] ; then
   update-rc.d vboxnet remove >/dev/null || exit $?
 fi
+if [ "$1" = "purge" -a ! -f /etc/init.d/vboxweb-service ] ; then
+  update-rc.d vboxweb-service remove >/dev/null || exit $?
+fi
 
 #DEBHELPER#
 

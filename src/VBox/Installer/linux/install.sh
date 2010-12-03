@@ -340,6 +340,7 @@ if [ "$ACTION" = "install" ]; then
         chcon -t java_exec_t    $INSTALLATION_DIR/VBoxSDL > /dev/null 2>&1
         chcon -t java_exec_t    $INSTALLATION_DIR/VBoxHeadless > /dev/null 2>&1
         chcon -t java_exec_t    $INSTALLATION_DIR/VBoxNetDHCP > /dev/null 2>&1
+        chcon -t java_exec_t    $INSTALLATION_DIR/VBoxExtPackHelperApp > /dev/null 2>&1
         chcon -t java_exec_t    $INSTALLATION_DIR/vboxwebsrv > /dev/null 2>&1
         chcon -t java_exec_t    $INSTALLATION_DIR/webtest > /dev/null 2>&1
     fi
@@ -352,6 +353,7 @@ if [ "$ACTION" = "install" ]; then
         test -e $INSTALLATION_DIR/VBoxSDL       && chmod 4511 $INSTALLATION_DIR/VBoxSDL
         test -e $INSTALLATION_DIR/VBoxHeadless  && chmod 4511 $INSTALLATION_DIR/VBoxHeadless
         test -e $INSTALLATION_DIR/VBoxNetDHCP   && chmod 4511 $INSTALLATION_DIR/VBoxNetDHCP
+        test -e $INSTALLATION_DIR/VBoxExtPackHelperApp && chmod 4511 $INSTALLATION_DIR/VBoxExtPackHelperApp
 
         ln -sf $INSTALLATION_DIR/VBoxVMM.so   $INSTALLATION_DIR/components/VBoxVMM.so
         ln -sf $INSTALLATION_DIR/VBoxREM.so   $INSTALLATION_DIR/components/VBoxREM.so

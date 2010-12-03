@@ -154,6 +154,11 @@ VBOX_LNX_NO_STRIP = \
 	VBox.sh \
 	VBox.png
 
+ifdef VBOX_WITH_EXTPACK
+ VBOX_LNX_STRIP_BIN += \
+	VBoxExtPackHelperApp
+endif
+
 # Qt4 GUI
 ifdef VBOX_WITH_QTGUI
  include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
