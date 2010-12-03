@@ -20,7 +20,7 @@
 !define PRODUCT_UNINST_KEY          "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY     "HKLM"
 
-!define LICENSE_FILE_TXT            "$INSTDIR\license.txt"
+!define LICENSE_FILE_RTF            "license.rtf"
 
 ; Needed for InstallLib macro: Install libraries in every case
 !define LIBRARY_IGNORE_VERSION
@@ -549,9 +549,9 @@ Function Common_CopyFiles
   SetOutPath "$INSTDIR"
   SetOverwrite on
 
-!ifdef VBOX_WITH_LICENSE_INSTALL_TXT
+!ifdef VBOX_WITH_LICENSE_INSTALL_RTF
   ; Copy license file (if any) into the installation directory
-  FILE /oname=${LICENSE_FILE_TXT} "$%VBOX_BRAND_LICENSE_TXT%"
+  FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
 !endif
 
   FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
