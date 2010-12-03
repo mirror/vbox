@@ -1209,13 +1209,25 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
         rc = VBoxServiceControlExecPrepareArgv(szExecExp, papszArgs, &papszArgsExp);
         if (RT_SUCCESS(rc))
         {
-            /* If no user name specified run with current credentials.
-             * This is prohibited via official Main API! */
-            if (!strlen(pszAsUser))
-                fFlags &= ~RTPROC_FLAGS_SERVICE;
+            uint32_t uProcFlags = 0;
+            if (fFlags)
+            {
+                /* Process Main flag "ExecuteProcessFlag_Hidden". */
+                if (fFlags & RT_BIT(2))
+                    uProcFlags = RTPROC_FLAGS_HIDDEN;
+            }
+
+            /* If no user name specified run with current credentials (e.g.
+             * full service/system rights). This is prohibited via official Main API!
+             *
+             * Otherwise use the RTPROC_FLAGS_SERVICE to use some special authentication
+             * code (at least on Windows) for running processes as different users
+             * started from our system service. */
+            if (strlen(pszAsUser))
+                uProcFlags |= RTPROC_FLAGS_SERVICE;
 
             /* Do normal execution. */
-            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, fFlags,
+            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,
                                 strlen(pszAsUser) ? pszAsUser : NULL,
                                 strlen(pszPassword) ? pszPassword : NULL,
@@ -1307,7 +1319,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
-                                rc = VBoxServiceControlExecCreateProcess(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
+                                rc = VBoxServiceControlExecCreateProcess(pData->pszCmd, pData->papszArgs, hEnv, pData->uFlags,
                                                                          phStdIn, phStdOut, phStdErr,
                                                                          pData->pszUser, pData->pszPassword,
                                                                          &hProcess);
