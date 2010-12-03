@@ -106,7 +106,7 @@ OTHER_CLEAN += \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
-	$(if $(VBOX_WITH_LICENSE_DISPLAY), $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi)
+	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -230,7 +230,6 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi:	$(MAKEFILE_CURRENT) | $$(dir $$@)
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
-ifdef VBOX_WITH_LICENSE_DISPLAY
 $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
@@ -243,7 +242,7 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	             '		<Shortcut Id="startmenuLicRTF_$(lang)" Directory="ProgramMenuDir" Name="L_$(lang)" LongName="$$(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))" WorkingDirectory="INSTALLDIR"/>' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
-endif
+
 
 #
 # .MSI link (all languages).
@@ -472,7 +471,7 @@ VBOX_INS_PROD_LANG := $(VBOX_INS_PROD_LANG)"
 $(PACKAGE_NAME_FINAL): \
 		$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 		$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
-		$(if $(VBOX_WITH_LICENSE_DISPLAY), $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi) \
+		$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
 		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 		$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),	$(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst) \
 		| $$(dir $$@)
