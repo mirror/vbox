@@ -1,6 +1,6 @@
 
-@VBOX_PRODUCT@ for OpenSolaris (TM) Operating System
-----------------------------------------------------
+@VBOX_PRODUCT@ for Solaris (TM) Operating System
+--------------------------------------------------------
 
 Upgrading:
 ----------
@@ -14,9 +14,9 @@ at the end of this document for details.
  |  NOTE  |
  +--------+
 
- VirtualBox 3.1+ includes experimental USB support and requires OpenSolaris
- build 124 or higher. VirtualBox USB support on Solaris 10 is not supported
- due to limitations in the kernel.
+ VirtualBox 3.1+ includes experimental USB support for Solaris 11, Nevada
+ and OpenSolaris build 124 or higher. VirtualBox does not support USB devices
+ attached to the host on Solaris 10 due to limitations in the kernel.
 
 
 Installing:
