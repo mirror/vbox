@@ -37,6 +37,7 @@ if1of ($(KBUILD_TARGET), linux)
  	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
  	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
  	IN_MODULE XFree86Module
+ vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
  vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
@@ -67,9 +68,16 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
+ vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
  vboxvideo_drv_SOURCES = \
-	vboxvideo_70.c \
-	vboxutils.c
+	vboxvideo_13.c \
+	vboxutils.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
+	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
+	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 endif   # target linux
 
 
@@ -96,6 +104,7 @@ vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
 	$(VBOX_PATH_X11_XORG_7_0)/xorg
+vboxvideo_drv_70_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_70_SOURCES  = $(vboxvideo_drv_SOURCES)
 
 
@@ -110,6 +119,7 @@ vboxvideo_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg
+vboxvideo_drv_71_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_71_SOURCES  = $(vboxvideo_drv_SOURCES)
 
 
@@ -128,9 +138,16 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
+vboxvideo_drv_13_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_13_SOURCES = \
 	vboxvideo_13.c \
-	vboxutils.c
+	vboxutils.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
+	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
+	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
 
 #
@@ -151,6 +168,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
+vboxvideo_drv_14_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_14_SOURCES  = $(vboxvideo_drv_13_SOURCES)
 
 
@@ -173,6 +191,7 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
+vboxvideo_drv_15_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_15_SOURCES  = $(vboxvideo_drv_13_SOURCES)
 if1of ($(KBUILD_TARGET), linux solaris)
  vboxvideo_drv_15_SOURCES += \
@@ -196,6 +215,7 @@ vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxvideo_drv_16_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_16_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
@@ -222,6 +242,7 @@ vboxvideo_drv_17_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.99-20090831 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
+vboxvideo_drv_17_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_17_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
@@ -248,6 +269,7 @@ vboxvideo_drv_18_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.8.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
+vboxvideo_drv_18_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_18_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
@@ -274,6 +296,7 @@ vboxvideo_drv_19_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.9.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
+vboxvideo_drv_19_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_19_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
