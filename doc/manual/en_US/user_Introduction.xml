@@ -531,7 +531,7 @@
 
               <listitem>
                 <para>The VirtualBox Remote Desktop Extension (VRDE); see
-                <xref linkend="vrde" />.</para>
+                <xref linkend="vrdp" />.</para>
               </listitem>
             </orderedlist></para>
 
