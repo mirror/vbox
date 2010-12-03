@@ -334,6 +334,15 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
 #endif
                     break;
 
+                case VERR_PDM_DEVICE_NOT_FOUND:
+                    pszError = N_("A virtual device is configured in the VM settings but the device "
+                                  "implementation is missing.\n"
+                                  "A possible reason for this error is a missing extension pack. Note "
+                                  "that as of VirtualBox 4.0, certain features (for example USB 2.0 "
+                                  "support and remote desktop) are only available from an 'extension "
+                                  "pack' which must be downloaded and installed separately");
+                    break;
+
                 default:
                     pszError = N_("Unknown error creating VM");
                     break;
