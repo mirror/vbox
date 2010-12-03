@@ -38,7 +38,7 @@ WARNING: The character device /dev/vboxdrv does not exist. Try
 
          and if that is not successful, try to re-install the package.
 
-	 You will not be able to start VMs until this problem is fixed.
+         You will not be able to start VMs until this problem is fixed.
 EOF
 fi
 
@@ -73,19 +73,16 @@ APP=`which $0`
 APP=`basename $APP`
 APP=${APP##/*/}
 case "$APP" in
-  VirtualBox)
+  VirtualBox|virtualbox)
     exec "/usr/lib/virtualbox/VirtualBox" "$@"
     ;;
-  VBoxManage)
+  VBoxManage|vboxmanage)
     exec "/usr/lib/virtualbox/VBoxManage" "$@"
     ;;
-  VBoxSDL)
+  VBoxSDL|vboxsdl)
     exec "/usr/lib/virtualbox/VBoxSDL" "$@"
     ;;
-  VBoxVRDP)
-    exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
-    ;;
-  VBoxHeadless)
+  VBoxVRDP|VBoxHeadless|vboxheadless)
     exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
     ;;
   vboxwebsrv)
