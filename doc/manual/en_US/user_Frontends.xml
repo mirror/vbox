@@ -5,47 +5,48 @@
   <title>Remote virtual machines</title>
 
   <sect1>
-    <title id="vrdp">The VirtualBox Remote Desktop Extension (VRDE)</title>
+    <title id="vrdp">Remote display (VRDP support)</title>
 
-    <para>VirtualBox, the graphical user interface, has a built-in server for
-    the Microsoft Remote Desktop Protocol (RDP). This allows you to see the
-    output of a virtual machine's window remotely on any other computer and
-    control the virtual machine from there, as if the virtual machine was
-    running locally.<note>
-        <para>The VRDE is shipped as a VirtualBox extension package, which
-        must be installed separately. See <xref linkend="intro-installing" />
-        for more installation.</para>
+    <para>VirtualBox has a built-in server for the VirtualBox Remote Desktop
+    Protocol (VRDP). This allows you to see the output of a virtual machine's
+    window remotely on any other computer and control the virtual machine from
+    there, as if the virtual machine was running locally.</para>
+
+    <para>VRDP is a backwards-compatible extension to Microsoft's Remote
+    Desktop Protocol (RDP). Typically graphics updates and audio are sent from
+    the remote machine to the client, while keyboard and mouse events are sent
+    back. As a result, you can use any standard RDP client to control the
+    remote VM.<note>
+        <para>VRDP support is shipped as as a VirtualBox extension package,
+        the VirtualBox Remote Desktop Extension (VRDE), which must be
+        installed separately. See <xref linkend="intro-installing" /> for more
+        installation.</para>
       </note></para>
 
-    <para>The VirtualBox Remote Desktop Extension (VRDE) is a
-    backwards-compatible extension to Microsoft's Remote Desktop Protocol
-    (RDP). Typically graphics updates and audio are sent from the remote
-    machine to the client, while keyboard and mouse events are sent back. As a
-    result, you can use any standard RDP client to control the remote
-    VM.</para>
-
-    <para>The RDP server is disabled by default. If the VRDE is installed, it
-    can easily be enabled on a per-VM basis either in the VirtualBox Manager
-    in the "Display" settings (see <xref linkend="settings-display" />) or
-    with <computeroutput>VBoxManage</computeroutput>:<screen>VBoxManage modifyvm "VM name" --vrde on</screen></para>
+    <para>The VRDP server is disabled by default. If the extension pack is
+    installed, it can easily be enabled on a per-VM basis either in the
+    VirtualBox Manager in the "Display" settings (see <xref
+    linkend="settings-display" />) or with
+    <computeroutput>VBoxManage</computeroutput>:<screen>VBoxManage modifyvm "VM name" --vrde on</screen></para>
 
     <para>If you use <computeroutput>VBoxHeadless</computeroutput> (described
-    further below), RDP support will be automatically enabled since
+    further below), VRDP support will be automatically enabled since
     VBoxHeadless has no other means of output.</para>
 
     <sect2 id="rdp-viewers">
       <title>Common third-party RDP viewers</title>
 
-      <para>You can use any standard RDP viewer to connect to such a remote
-      virtual machine (examples follow below). For this to work, you must
-      specify the <emphasis role="bold">IP address</emphasis> of your
+      <para>Since VRDP is backwards-compatible to RDP, you can use any
+      standard RDP viewer to connect to such a remote virtual machine
+      (examples follow below). For this to work, you must specify the
+      <emphasis role="bold">IP address</emphasis> of your
       <emphasis>host</emphasis> system (not of the virtual machine!) as the
       server address to connect to, as well as the <emphasis role="bold">port
       number</emphasis> that the RDP server is using.</para>
 
-      <para>By default, the VRDE uses the standard RDP TCP port
+      <para>By default, VRDP uses TCP port
       <computeroutput>3389</computeroutput>. You will need to change the
-      default port if you run more than one RDP server, since the port can
+      default port if you run more than one VRDP server, since the port can
       only be used by one server at a time; you might also need to change it
       on Windows hosts since the default port might already be used by the RDP
       server that is built into Windows itself. Ports 5000 through 5050 are
@@ -56,8 +57,8 @@
       <computeroutput>--vrdpport</computeroutput> option of the
       <computeroutput>VBoxManage modifyvm</computeroutput> command. You can
       specify a comma-separated list of ports or ranges of ports. Use a dash
-      between two port numbers to specify a range. The VRDE will bind to
-      <emphasis role="bold">one</emphasis> of available ports from the
+      between two port numbers to specify a range. The VRDP server will bind
+      to <emphasis role="bold">one</emphasis> of available ports from the
       specified list. For example, <computeroutput>VBoxManage modifyvm "VM
       name" --vrdeport 5000,5010-5012</computeroutput> will configure the
       server to bind to one of the ports 5000, 5010, 5011 or 5012. See <xref
@@ -65,10 +66,8 @@
 
       <para>The actual port used by a running VM can be either queried with
       <computeroutput>VBoxManage showvminfo</computeroutput> command or seen
-      in the GUI on the <computeroutput>Runtime</computeroutput> tab of the
-      <computeroutput>Session Information Dialog</computeroutput>, which is
-      accessible via the <computeroutput>Machine</computeroutput> menu of the
-      VM window.</para>
+      in the GUI on the "Runtime" tab of the "Session Information Dialog",
+      which is accessible via the "Machine" menu of the VM window.</para>
 
       <para>Here follow examples for the most common RDP viewers:<itemizedlist>
           <listitem>
@@ -127,22 +126,22 @@
     </sect2>
 
     <sect2 id="vboxheadless">
-      <title>VBoxHeadless, the RDP-only server</title>
+      <title>VBoxHeadless, the VRDP-only server</title>
 
       <para>While any VM started from the VirtualBox Manager is capable of
       running virtual machines remotely, it is not convenient to have to run
       the full-fledged GUI if you never want to have VMs displayed locally in
       the first place. In particular, if you are running servers whose only
       purpose is to host VMs, and all your VMs are supposed to run remotely
-      over RDP, then it is pointless to have a graphical user interface on the
-      server at all -- especially since, on a Linux or Solaris host,
-      <computeroutput>VirtualBox</computeroutput> comes with dependencies on
-      the Qt and SDL libraries, which is inconvenient if you would rather not
-      have the X Window system on your server at all.</para>
+      over VRDP, then it is pointless to have a graphical user interface on
+      the server at all -- especially since, on a Linux or Solaris host, the
+      VirtualBox manager comes with dependencies on the Qt and SDL libraries,
+      which is inconvenient if you would rather not have the X Window system
+      on your server at all.</para>
 
       <para>VirtualBox therefore comes with yet another front-end called
       <computeroutput>VBoxHeadless</computeroutput>, which produces no visible
-      output on the host at all, but instead only delivers RDP data.<footnote>
+      output on the host at all, but instead only delivers VRDP data.<footnote>
           <para>Before VirtualBox 1.6, the headless server was called
           <computeroutput>VBoxVRDP</computeroutput>. For the sake of backwards
           compatibility, the VirtualBox installation still installs an
@@ -181,9 +180,9 @@
       have enabled the VRDP server in the VM's settings. If this is
       undesirable (for example because you want to access the VM via
       <computeroutput>ssh</computeroutput> only), start the VM like
-      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>To
+      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrdp=off</screen>To
       have the VRDP server use the setting from the VM configuration, as the
-      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
+      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrdp=config</screen></para>
     </sect2>
 
     <sect2>
@@ -292,16 +291,16 @@
     <sect2 id="usb-over-rdp">
       <title>Remote USB</title>
 
-      <para>As a special feature on top of the Remote Desktop Extension,
-      VirtualBox supports remote USB devices over the wire as well. That is,
-      the VirtualBox guest that runs on one computer can access the USB
-      devices of the remote computer on which the RDP data is being displayed
-      the same way as USB devices that are connected to the actual host. This
-      allows for running virtual machines on a VirtualBox host that acts as a
-      server, where a client can connect from elsewhere that needs only a
-      network adapter and a display capable of running an RDP viewer. When USB
-      devices are plugged into the client, the remote VirtualBox server can
-      access them.</para>
+      <para>As a special feature on top of the VRDP support, VirtualBox
+      supports remote USB devices over the wire as well. That is, the
+      VirtualBox guest that runs on one computer can access the USB devices of
+      the remote computer on which the VRDP data is being displayed the same
+      way as USB devices that are connected to the actual host. This allows
+      for running virtual machines on a VirtualBox host that acts as a server,
+      where a client can connect from elsewhere that needs only a network
+      adapter and a display capable of running an RDP viewer. When USB devices
+      are plugged into the client, the remote VirtualBox server can access
+      them.</para>
 
       <para>For these remote USB devices, the same filter rules apply as for
       other USB devices, as described with <xref linkend="settings-usb" />.
@@ -310,12 +309,13 @@
 
       <para>Accessing remote USB devices is only possible if the RDP client
       supports this extension. On Linux and Solaris hosts, the VirtualBox
-      installation provides a suitable RDP client called
+      installation provides a suitable VRDP client called
       <computeroutput>rdesktop-vrdp</computeroutput>. RDP clients for other
       platforms will be provided in future VirtualBox versions.</para>
 
-      <para>To make a remote USB device available to a VM, rdesktop-vrdp
-      should be started as follows:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>Note
+      <para>To make a remote USB device available to a VM,
+      <computeroutput>rdesktop-vrdp</computeroutput> should be started as
+      follows:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>Note
       that <computeroutput>rdesktop-vrdp</computeroutput> can access USB
       devices only through <computeroutput>/proc/bus/usb</computeroutput>.
       Please refer to <xref linkend="usb_linux" /> for further details on how
@@ -462,7 +462,7 @@
     </sect2>
 
     <sect2 id="vrdp-multiconnection">
-      <title>Multiple RDP connections</title>
+      <title>Multiple VRDP connections</title>
 
       <para>The built-in RDP server of VirtualBox supports simultaneous
       connections to the same running VM from different clients. All connected
@@ -524,11 +524,11 @@
     </sect2>
 
     <sect2 id="vrdp-customization">
-      <title>VRDE customization</title>
+      <title>VRDP customization</title>
 
       <para>Starting with VirtualBox 3.2.10, it is possible to disable display
       output, mouse and keyboard input, audio, remote USB or clipboard in the
-      RDP server.</para>
+      VRDP server.</para>
 
       <para>The following commands change corresponding server
       settings:</para>

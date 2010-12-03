@@ -513,10 +513,10 @@
     methods.</para>
 
     <para>Starting with version 4.0, VirtualBox is split into several
-    components for licensing reasons.<orderedlist>
+    components.<orderedlist>
         <listitem>
-          <para>The base package consists of all open source compenents and is
-          entirely licensed under the GNU General Public License V2.</para>
+          <para>The base package consists of all open source components and is
+          licensed under the GNU General Public License V2.</para>
         </listitem>
 
         <listitem>
