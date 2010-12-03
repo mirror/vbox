@@ -358,13 +358,17 @@ PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
     DumpPICState(&pThis->aPics[0], "picSetIrq");
     DumpPICState(&pThis->aPics[1], "picSetIrq");
     STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
-    pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, iLevel & PDM_IRQ_LEVEL_HIGH);
-    pic_update_irq(pThis);
     if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
     {
+        /* A flip-flop lowers the IRQ line and immediately raises it, so
+         * that a rising edge is guaranteed to occur. Note that the IRQ
+         * line must be held high for a while to avoid spurious interrupts.
+         */
         pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, 0);
         pic_update_irq(pThis);
     }
+    pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, iLevel & PDM_IRQ_LEVEL_HIGH);
+    pic_update_irq(pThis);
 }
 
 
