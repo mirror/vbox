@@ -541,6 +541,29 @@
       commands is possible by setting the value to 1 or by removing the
       key.</para>
     </sect2>
+
+    <sect2 id="hostPowerMgmt">
+      <title>Poor performance caused by host power management</title>
+
+      <para>On some hardware platforms and operating systems, virtualization
+          peformance is negatively affected by host CPU power management. The 
+          symptoms may be choppy audio in the guest or erratic guest clock 
+          behavior.
+      </para>
+        
+      <para>Some of the problems may be caused by firmware and/or host operating
+          system bugs. Therefore, updating the firmware and applying operating
+          systems fixes is recommended.</para>
+
+      <para>For optimal virtualization performance, the C1E power state 
+          support in the system's BIOS should be disabled, if such a setting is 
+          available (not all systems support the C1E power state). Disabling 
+          other power management settings may also improve performance. However, 
+          a balance between performance and power consumption must always be 
+          considered.
+      </para>
+
+    </sect2>
   </sect1>
 
   <sect1>
