@@ -1761,7 +1761,9 @@ int main(int argc, char **argv)
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+#ifdef WITH_ELEVATION
     bool fElevated = IsElevated();
+#endif
     for (;;)
     {
         RTGETOPTUNION ValueUnion;
