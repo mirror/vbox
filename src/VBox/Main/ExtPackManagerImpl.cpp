@@ -1657,7 +1657,7 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
              */
             if (hPipeR != NIL_RTPIPE)
             {
-                char    achBuf[16]; ///@todo 1024
+                char    achBuf[1024];
                 size_t  cbRead;
                 vrc = RTPipeReadBlocking(hPipeR, achBuf, sizeof(achBuf), &cbRead);
                 if (RT_SUCCESS(vrc))
@@ -1708,12 +1708,32 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
         } while (   hPipeR != NIL_RTPIPE
                  || hProcess != NIL_RTPROCESS);
 
-        /*
-         * Compose the status code and, on failure, error message.
-         */
         LogRel(("ExtPack: enmReason=%d iStatus=%d stderr='%s'\n",
                 ProcStatus.enmReason, ProcStatus.iStatus, offStdErrBuf ? pszStdErrBuf : ""));
 
+        /*
+         * Look for rcExit=RTEXITCODE_SUCCESS at the end of the error output,
+         * cut it as it is only there to attest the success.
+         */
+        if (offStdErrBuf > 0)
+        {
+            RTStrStripR(pszStdErrBuf);
+            offStdErrBuf = strlen(pszStdErrBuf);
+        }
+
+        if (    offStdErrBuf > 0
+             && !strcmp(pszStdErrBuf, "rcExit=RTEXITCODE_SUCCESS"))
+        {
+            *pszStdErrBuf = '\0';
+            offStdErrBuf  = 0;
+        }
+        else if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+                 && ProcStatus.iStatus   == 0)
+            ProcStatus.iStatus = 666;
+
+        /*
+         * Compose the status code and, on failure, error message.
+         */
         if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
             && ProcStatus.iStatus   == 0
             && offStdErrBuf         == 0)

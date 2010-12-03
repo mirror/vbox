@@ -43,10 +43,31 @@
 #include <VBox/sup.h>
 #include <VBox/version.h>
 
+#if defined(RT_OS_DARWIN)
+# include <sys/types.h>
+# include <unistd.h>                    /* geteuid */
+#endif
+
+#ifdef RT_OS_WINDOWS
+# define _WIN32_WINNT 0x0501
+# include <Objbase.h>                   /* CoInitializeEx */
+# include <Windows.h>                   /* ShellExecuteEx, ++ */
+#endif
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+# include <stdio.h>
+# include <errno.h>
+#endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/* Enable elevation on windows and darwin. */
+#if defined(RT_OS_WINDOWS)
+# define WITH_ELEVATION
+#endif
+
 /** The maximum entry name length.
  * Play short and safe. */
 #define VBOX_EXTPACK_MAX_ENTRY_NAME_LENGTH      128
@@ -277,7 +298,6 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestCreate failed: %Rrc", rc);
 
-    RTEXITCODE    rcExit;
     RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hManifestFile);
     rc = RTManifestReadStandard(hTheirManifest, hVfsIos);
     RTVfsIoStrmRelease(hVfsIos);
@@ -1385,7 +1405,323 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
     return rcExit;
 }
 
+#ifdef WITH_ELEVATION
 
+/**
+ * Copies the content of a file to a stream.
+ *
+ * @param   hSrc                The source file.
+ * @param   pDst                The destination stream.
+ * @param   fComplain           Whether to complain about errors (i.e. is this
+ *                              stderr, if not keep the trap shut because it
+ *                              may be missing when running under VBoxSVC.)
+ */
+static void CopyFileToStdXxx(RTFILE hSrc, PRTSTREAM pDst, bool fComplain)
+{
+    int rc;
+    for (;;)
+    {
+        char abBuf[0x1000];
+        size_t cbRead;
+        rc = RTFileRead(hSrc, abBuf, sizeof(abBuf), &cbRead);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("RTFileRead failed: %Rrc", rc);
+            break;
+        }
+        if (!cbRead)
+            break;
+        rc = RTStrmWrite(pDst, abBuf, cbRead);
+        if (RT_FAILURE(rc))
+        {
+            if (fComplain)
+                RTMsgError("RTStrmWrite failed: %Rrc", rc);
+            break;
+        }
+    }
+    rc = RTStrmFlush(pDst);
+    if (RT_FAILURE(rc) && fComplain)
+        RTMsgError("RTStrmFlush failed: %Rrc", rc);
+}
+
+
+/**
+ * Relaunches ourselves as a elevated process using platform specific facilities.
+ *
+ * @returns Program exit code.
+ * @param   pszExecPath         The executable path.
+ * @param   cArgs               The number of arguments.
+ * @param   papszArgs           The arguments.
+ */
+static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, const char * const *papszArgs)
+{
+    RTEXITCODE rcExit = RTEXITCODE_FAILURE;
+#ifdef RT_OS_WINDOWS
+
+    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    SHELLEXECUTEINFOW   Info;
+
+    Info.cbSize = sizeof(Info);
+    Info.fMask  = SEE_MASK_NOCLOSEPROCESS /*| SEE_MASK_NOASYNC*/;
+    Info.hwnd   = NULL;
+    Info.lpVerb = L"runas";
+    int rc = RTStrToUtf16(pszExecPath, (PRTUTF16 *)&Info.lpFile);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszCmdLine;
+        rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[1], RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTStrToUtf16(pszCmdLine, (PRTUTF16 *)&Info.lpParameters);
+            if (RT_SUCCESS(rc))
+            {
+                Info.lpDirectory = NULL;
+                Info.nShow       = SW_SHOWDEFAULT;
+                Info.hInstApp    = NULL;
+                Info.lpIDList    = NULL;
+                Info.lpClass     = NULL;
+                Info.hkeyClass   = NULL;
+                Info.dwHotKey    = 0;
+                Info.hIcon       = INVALID_HANDLE_VALUE;
+                Info.hProcess    = INVALID_HANDLE_VALUE;
+
+                if (ShellExecuteExW(&Info))
+                {
+                    if (Info.hProcess != INVALID_HANDLE_VALUE)
+                    {
+                        /*
+                         * Wait for the process, make sure the deal with messages.
+                         */
+                        for (;;)
+                        {
+                            DWORD dwRc = MsgWaitForMultipleObjects(1, &Info.hProcess, FALSE, 5000/*ms*/, QS_ALLEVENTS);
+                            if (dwRc == WAIT_OBJECT_0)
+                                break;
+                            if (   dwRc != WAIT_TIMEOUT
+                                && dwRc != WAIT_OBJECT_0 + 1)
+                            {
+                                RTMsgError("MsgWaitForMultipleObjects returned: %#x (%d), err=%u", dwRc, dwRc, GetLastError());
+                                break;
+                            }
+                            MSG Msg;
+                            while (PeekMessageW(&Msg, NULL, 0, 0, PM_REMOVE))
+                            {
+                                TranslateMessage(&Msg);
+                                DispatchMessageW(&Msg);
+                            }
+                        }
+
+                        DWORD dwExitCode;
+                        if (GetExitCodeProcess(Info.hProcess, &dwExitCode))
+                        {
+                            if (dwExitCode >= 0 && dwExitCode < 128)
+                                rcExit = (RTEXITCODE)dwExitCode;
+                            else
+                                rcExit = RTEXITCODE_FAILURE;
+                        }
+                        CloseHandle(Info.hProcess);
+                    }
+                    else
+                        RTMsgError("ShellExecuteExW return INVALID_HANDLE_VALUE as Info.hProcess");
+                }
+                else
+                    RTMsgError("ShellExecuteExW failed: %u (%#x)", GetLastError(), GetLastError());
+
+
+                RTUtf16Free((PRTUTF16)Info.lpParameters);
+            }
+            RTStrFree(pszCmdLine);
+        }
+
+        RTUtf16Free((PRTUTF16)Info.lpFile);
+    }
+    else
+        RTMsgError("RTStrToUtf16 failed: %Rc", rc);
+
+#else
+# error "PORT ME"
+#endif
+    return rcExit;
+}
+
+
+/**
+ * Relaunches ourselves as a elevated process using platform specific facilities.
+ *
+ * @returns Program exit code.
+ * @param   argc                The number of arguments.
+ * @param   argv                The arguments.
+ */
+static RTEXITCODE RelaunchElevated(int argc, char **argv)
+{
+    /*
+     * We need the executable name later, so get it now when it's easy to quit.
+     */
+    char szExecPath[RTPATH_MAX];
+    if (!RTProcGetExecutablePath(szExecPath,sizeof(szExecPath)))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcGetExecutablePath failed");
+
+    /*
+     * Create a couple of temporary files for stderr and stdout.
+     */
+    char szTempDir[RTPATH_MAX - sizeof("/stderr")];
+    int rc = RTPathTemp(szTempDir, sizeof(szTempDir));
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathTemp failed: %Rrc", rc);
+    rc = RTPathAppend(szTempDir, sizeof(szTempDir), "VBoxExtPackHelper-XXXXXX");
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAppend failed: %Rrc", rc);
+    rc = RTDirCreateTemp(szTempDir);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreateTemp failed: %Rrc", rc);
+
+    RTEXITCODE rcExit = RTEXITCODE_FAILURE;
+    char szStdOut[RTPATH_MAX];
+    char szStdErr[RTPATH_MAX];
+    rc = RTPathJoin(szStdOut, sizeof(szStdOut), szTempDir, "stdout");
+    if (RT_SUCCESS(rc))
+        rc = RTPathJoin(szStdErr, sizeof(szStdErr), szTempDir, "stderr");
+    if (RT_SUCCESS(rc))
+    {
+        RTFILE hStdOut;
+        rc = RTFileOpen(&hStdOut, szStdOut, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
+                        | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+        if (RT_SUCCESS(rc))
+        {
+            RTFILE hStdErr;
+            rc = RTFileOpen(&hStdErr, szStdErr, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE
+                            | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Insert the --elevated and stdout/err names into the argument
+                 * list.
+                 */
+                int          cArgs     = argc + 5 + 1;
+                char const **papszArgs = (char const **)RTMemTmpAllocZ((cArgs + 1) * sizeof(const char *));
+                if (papszArgs)
+                {
+                    papszArgs[0] = argv[0];
+                    papszArgs[1] = "--elevated";
+                    papszArgs[2] = "--stdout";
+                    papszArgs[3] = szStdOut;
+                    papszArgs[4] = "--stderr";
+                    papszArgs[5] = szStdErr;
+                    for (int i = 1; i <= argc; i++)
+                        papszArgs[i + 5] = argv[i];
+
+                    /*
+                     * Do the platform specific process execution (waiting included).
+                     */
+                    rcExit = RelaunchElevatedNative(szExecPath, cArgs, papszArgs);
+
+                    /*
+                     * Copy the standard files to our standard handles.
+                     */
+                    CopyFileToStdXxx(hStdErr, g_pStdErr, true /*fComplain*/);
+                    CopyFileToStdXxx(hStdOut, g_pStdOut, false);
+
+                    RTMemTmpFree(papszArgs);
+                }
+
+                RTFileClose(hStdErr);
+                RTFileDelete(szStdErr);
+            }
+            RTFileClose(hStdOut);
+            RTFileDelete(szStdOut);
+        }
+    }
+    RTDirRemove(szTempDir);
+
+    return rcExit;
+}
+
+
+/**
+ * Checks if the process is elevated or not.
+ *
+ * @returns true/false.
+ */
+static bool IsElevated(void)
+{
+# if defined(RT_OS_WINDOWS)
+    /*
+     * Check if we are elevated.
+     */
+    /** @todo This should probably check if UAC is diabled and if we are
+     *  Administrator first. Also needs to check for Vista+ first, probably.
+     */
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_READ, &hToken))
+    {
+        RTMsgError("OpenProcessToken failed: %u (%#x)", GetLastError(), GetLastError());
+        return false;
+    }
+
+    bool  fElevated = true;
+    DWORD cb;
+    DWORD TokenIsElevated = 0;
+    if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevation*/ 20, &TokenIsElevated, sizeof(TokenIsElevated), &cb))
+    {
+        fElevated = TokenIsElevated != 0;
+        if (fElevated)
+        {
+            enum
+            {
+                MY_TokenElevationTypeDefault = 1,
+                MY_TokenElevationTypeFull,
+                MY_TokenElevationTypeLimited
+            } enmType;
+            if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevationType*/ 18, &enmType, sizeof(enmType), &cb))
+            {
+                fElevated = enmType == MY_TokenElevationTypeFull;
+            }
+            else
+            {
+                RTMsgError("GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
+                fElevated = false;
+            }
+        }
+    }
+    else if (   GetLastError() != ERROR_INVALID_PARAMETER
+             && GetLastError() != ERROR_NOT_SUPPORTED)
+    {
+        RTMsgError("GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
+        fElevated = false;
+    }
+    CloseHandle(hToken);
+
+    return fElevated;
+
+# else
+    /*
+     * On Unixy systems, we check if the executable and the current user is
+     * the same.  This heuristic works fine for both hardened and development
+     * builds.
+     */
+    char szExecPath[RTPATH_MAX];
+    int rc = RTProcGetExecutablePath(szExecPath,sizeof(szExecPath));
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("RTProcGetExecutablePath failed: %Rrc", rc);
+        return false;
+    }
+
+    RTFSOBJINFO ObjInfo;
+    rc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (RT_FAILURE(rc)
+    {
+        RTMsgError("RTProcGetExecutablePath failed: %Rrc", rc);
+        return false;
+    }
+
+    RTUID uid = geteuid();
+    return uid == ObjInfo.Attr.u.Unix.Uid;
+# endif
+}
+
+#endif /* WITH_ELEVATION */
 
 int main(int argc, char **argv)
 {
@@ -1412,11 +1748,20 @@ int main(int argc, char **argv)
         { "uninstall",  CMD_UNINSTALL,  RTGETOPT_REQ_NOTHING },
 #define CMD_CLEANUP     1002
         { "cleanup",    CMD_CLEANUP,    RTGETOPT_REQ_NOTHING },
+#ifdef WITH_ELEVATION
+# define OPT_ELEVATED    1090
+        { "--elevated", OPT_ELEVATED,   RTGETOPT_REQ_NOTHING },
+# define OPT_STDOUT      1091
+        { "--stdout",   OPT_STDOUT,     RTGETOPT_REQ_STRING  },
+# define OPT_STDERR      1092
+        { "--stderr",   OPT_STDERR,     RTGETOPT_REQ_STRING  },
+#endif
     };
     RTGETOPTSTATE GetState;
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
+    bool fElevated = IsElevated();
     for (;;)
     {
         RTGETOPTUNION ValueUnion;
@@ -1427,13 +1772,69 @@ int main(int argc, char **argv)
                 return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No command specified");
 
             case CMD_INSTALL:
-                return DoInstall(  argc - GetState.iNext, argv + GetState.iNext);
-
             case CMD_UNINSTALL:
-                return DoUninstall(argc - GetState.iNext, argv + GetState.iNext);
-
             case CMD_CLEANUP:
-                return DoCleanup(  argc - GetState.iNext, argv + GetState.iNext);
+            {
+#ifdef WITH_ELEVATION
+                if (!fElevated)
+                    return RelaunchElevated(argc, argv);
+#endif
+                RTEXITCODE  rcExit;
+                int         cCmdargs     = argc - GetState.iNext;
+                char      **papszCmdArgs = argv + GetState.iNext;
+                switch (ch)
+                {
+                    case CMD_INSTALL:
+                        rcExit = DoInstall(  cCmdargs, papszCmdArgs);
+                        break;
+                    case CMD_UNINSTALL:
+                        rcExit = DoUninstall(cCmdargs, papszCmdArgs);
+                        break;
+                    case CMD_CLEANUP:
+                        rcExit = DoCleanup(  cCmdargs, papszCmdArgs);
+                        break;
+                    default:
+                        AssertReleaseFailedReturn(RTEXITCODE_FAILURE);
+                }
+
+                /*
+                 * Standard error should end with rcExit=RTEXITCODE_SUCCESS on
+                 * success since the exit code may otherwise get lost in the
+                 * process elevation fun.
+                 */
+                RTStrmFlush(g_pStdOut);
+                RTStrmFlush(g_pStdErr);
+                switch (rcExit)
+                {
+                    case RTEXITCODE_SUCCESS:
+                        RTStrmPrintf(g_pStdErr, "rcExit=RTEXITCODE_SUCCESS\n");
+                        break;
+                    default:
+                        RTStrmPrintf(g_pStdErr, "rcExit=%d\n", rcExit);
+                        break;
+                }
+                RTStrmFlush(g_pStdErr);
+                RTStrmFlush(g_pStdOut);
+                return rcExit;
+            }
+
+#ifdef WITH_ELEVATION
+            case OPT_ELEVATED:
+                fElevated = true;
+                break;
+
+            case OPT_STDERR:
+            case OPT_STDOUT:
+            {
+                FILE *pFile = freopen(ValueUnion.psz, "r+", ch == OPT_STDOUT ? stdout : stderr);
+                if (!pFile)
+                {
+                    rc = RTErrConvertFromErrno(errno);
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "freopen on '%s': %Rrc", ValueUnion.psz, rc);
+                }
+                break;
+            }
+#endif
 
             case 'h':
             case 'V':
