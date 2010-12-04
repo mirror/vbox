@@ -172,6 +172,7 @@ xf86OutputCreate
 xf86OutputUseScreenMonitor
 xf86PrintChipsets
 xf86PrintDepthBpp
+xf86PrintModes
 xf86ProcessOptions
 xf86SaveScreen
 xf86Screens
