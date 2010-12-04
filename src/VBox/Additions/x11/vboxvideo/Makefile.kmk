@@ -98,7 +98,8 @@ endif
 vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
- vboxvideo_drv_70_DEFS += _XPG6 __EXTENSIONS__
+ vboxvideo_drv_70_DEFS += __EXTENSIONS__
+ vboxvideo_drv_70_CFLAGSS += -D_XPG6 # Until we have moved the C++ bits into a library
 endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
