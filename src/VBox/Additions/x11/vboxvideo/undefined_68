@@ -92,6 +92,7 @@ xf86errno
 xf86free
 xf86ioctl
 xf86isspace
+xf86malloc
 xf86memchr
 xf86memcpy
 xf86memset
