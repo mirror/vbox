@@ -738,6 +738,7 @@ endif # !win
 ifdef VBOX_WITH_EXTPACK
  PROGRAMS += VBoxExtPackHelperApp
  VBoxExtPackHelperApp_TEMPLATE = VBoxR3SetUidToRoot
+ VBoxExtPackHelperApp_LDFLAGS.darwin = -framework Security
  VBoxExtPackHelperApp_LDFLAGS.win = /SUBSYSTEM:windows
  VBoxExtPackHelperApp_SOURCES = \
 	VBoxExtPackHelperApp.cpp \
