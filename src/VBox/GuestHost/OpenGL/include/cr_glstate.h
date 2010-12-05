@@ -233,6 +233,8 @@ crStateReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
 DECLEXPORT(void) STATE_APIENTRY crStateShareContext(GLboolean value);
 DECLEXPORT(void) STATE_APIENTRY crStateSetSharedContext(CRContext *pCtx);
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateContextIsShared(CRContext *pCtx);
+
+DECLEXPORT(void) STATE_APIENTRY crStateQueryHWState();
 #ifdef __cplusplus
 }
 #endif
