@@ -1599,6 +1599,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, con
                     fwrite(achBuf, 1, cbRead, stdout);
                 }
                 rcExit = RTEXITCODE_SUCCESS;
+                fclose(pSocketStrm);
             }
             else
                 RTMsgError("AuthorizationExecuteWithPrivileges failed: %d", orc);
