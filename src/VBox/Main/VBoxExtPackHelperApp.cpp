@@ -54,6 +54,12 @@
 # include <Windows.h>                   /* ShellExecuteEx, ++ */
 #endif
 
+#ifdef RT_OS_DARWIN
+# include <Security/Authorization.h>
+# include <Security/AuthorizationTags.h>
+# include <CoreFoundation/CoreFoundation.h>
+#endif
+
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
 # include <stdio.h>
 # include <errno.h>
@@ -63,8 +69,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/* Enable elevation on windows and darwin. */
-#if defined(RT_OS_WINDOWS)
+/** Enable elevation on Windows and Darwin. */
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(DOXYGEN_RUNNING)
 # define WITH_ELEVATION
 #endif
 
@@ -470,6 +476,7 @@ static RTEXITCODE ValidateDirInExtPack(const char *pszName, RTVFSOBJ hVfsObj)
     }
     return rcExit;
 }
+
 
 /**
  * Validates a member of an extension pack.
@@ -1539,6 +1546,72 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, con
     else
         RTMsgError("RTStrToUtf16 failed: %Rc", rc);
 
+#elif defined(RT_OS_DARWIN)
+    char szIconName[RTPATH_MAX];
+    int rc = RTPathAppPrivateArch(szIconName, sizeof(szIconName));
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(szIconName, sizeof(szIconName), "../Resources/virtualbox-vbox-128px.png");
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct icon path: %Rrc", rc);
+
+    AuthorizationRef AuthRef;
+    OSStatus orc = AuthorizationCreate(NULL, 0, kAuthorizationFlagDefaults, &AuthRef);
+    if (orc == errAuthorizationSuccess)
+    {
+        /*
+         * Preautorize the privileged execution of ourselves.
+         */
+        AuthorizationItem   AuthItem        = { kAuthorizationRightExecute, 0, NULL, 0 };
+        AuthorizationRights AuthRights      = { 1, &AuthItem };
+
+        static char         s_szPrompt[]    = "VirtualBox needs further rights to make changes to your installation.\n\n";
+        AuthorizationItem   aAuthEnvItems[] =
+        {
+            { kAuthorizationEnvironmentPrompt, strlen(s_szPrompt), s_szPrompt, 0 },
+            { kAuthorizationEnvironmentIcon,   strlen(szIconName), szIconName, 0 }
+        };
+        AuthorizationEnvironment AuthEnv    = { RT_ELEMENTS(aAuthEnvItems), aAuthEnvItems };
+
+        orc = AuthorizationCopyRights(AuthRef, &AuthRights, &AuthEnv,
+                                      kAuthorizationFlagPreAuthorize | kAuthorizationFlagInteractionAllowed
+                                      | kAuthorizationFlagExtendRights,
+                                      NULL);
+        if (orc == errAuthorizationSuccess)
+        {
+            /*
+             * Execute with extra permissions
+             */
+            FILE *pSocketStrm;
+            orc = AuthorizationExecuteWithPrivileges(AuthRef, pszExecPath, kAuthorizationFlagDefaults,
+                                                     (char * const *)&papszArgs[3],
+                                                     &pSocketStrm);
+            if (orc == errAuthorizationSuccess)
+            {
+                /*
+                 * Read the output of the tool, the read will fail when it quits.
+                 */
+                for (;;)
+                {
+                    char achBuf[1024];
+                    size_t cbRead = fread(achBuf, 1, sizeof(achBuf), pSocketStrm);
+                    if (!cbRead)
+                        break;
+                    fwrite(achBuf, 1, cbRead, stdout);
+                }
+                rcExit = RTEXITCODE_SUCCESS;
+            }
+            else
+                RTMsgError("AuthorizationExecuteWithPrivileges failed: %d", orc);
+        }
+        else if (orc == errAuthorizationCanceled)
+            RTMsgError("Authorization canceled by the user");
+        else
+            RTMsgError("AuthorizationCopyRights failed: %d", orc);
+        AuthorizationFree(AuthRef, kAuthorizationFlagDefaults);
+    }
+    else
+        RTMsgError("AuthorizationCreate failed: %d", orc);
+
 #else
 # error "PORT ME"
 #endif
@@ -1596,20 +1669,22 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv)
             {
                 /*
                  * Insert the --elevated and stdout/err names into the argument
-                 * list.
+                 * list.  Note that darwin skips the --stdout bit, so don't
+                 * change the order here.
                  */
                 int          cArgs     = argc + 5 + 1;
                 char const **papszArgs = (char const **)RTMemTmpAllocZ((cArgs + 1) * sizeof(const char *));
                 if (papszArgs)
                 {
-                    papszArgs[0] = argv[0];
-                    papszArgs[1] = "--elevated";
-                    papszArgs[2] = "--stdout";
-                    papszArgs[3] = szStdOut;
-                    papszArgs[4] = "--stderr";
-                    papszArgs[5] = szStdErr;
-                    for (int i = 1; i <= argc; i++)
-                        papszArgs[i + 5] = argv[i];
+                    int iDst = 0;
+                    papszArgs[iDst++] = argv[0];
+                    papszArgs[iDst++] = "--stdout";
+                    papszArgs[iDst++] = szStdOut;
+                    papszArgs[iDst++] = "--stderr";
+                    papszArgs[iDst++] = szStdErr;
+                    papszArgs[iDst++] = "--elevated";
+                    for (int iSrc = 1; iSrc <= argc; iSrc++)
+                        papszArgs[iDst++] = argv[iSrc];
 
                     /*
                      * Do the platform specific process execution (waiting included).
@@ -1701,23 +1776,22 @@ static bool IsElevated(void)
      * builds.
      */
     char szExecPath[RTPATH_MAX];
-    int rc = RTProcGetExecutablePath(szExecPath,sizeof(szExecPath));
+    if (RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)) == NULL)
+    {
+        RTMsgError("RTProcGetExecutablePath failed");
+        return false;
+    }
+
+    RTFSOBJINFO ObjInfo;
+    int rc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_FAILURE(rc))
     {
         RTMsgError("RTProcGetExecutablePath failed: %Rrc", rc);
         return false;
     }
 
-    RTFSOBJINFO ObjInfo;
-    rc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
-    if (RT_FAILURE(rc)
-    {
-        RTMsgError("RTProcGetExecutablePath failed: %Rrc", rc);
-        return false;
-    }
-
-    RTUID uid = geteuid();
-    return uid == ObjInfo.Attr.u.Unix.Uid;
+    return ObjInfo.Attr.u.Unix.uid == geteuid()
+        || ObjInfo.Attr.u.Unix.uid == getuid();
 # endif
 }
 
