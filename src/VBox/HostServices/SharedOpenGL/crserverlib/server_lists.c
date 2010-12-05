@@ -68,6 +68,11 @@ crServerDispatchNewList( GLuint list, GLenum mode )
     cr_server.head_spu->dispatch_table.NewList( list, mode );
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchEndList(void)
+{
+    cr_server.head_spu->dispatch_table.EndList();
+    crStateEndList();
+}
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchCallList( GLuint list )
@@ -78,6 +83,7 @@ crServerDispatchCallList( GLuint list )
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallList( list );
+        crStateQueryHWState();
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */
@@ -205,6 +211,7 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
+        crStateQueryHWState();
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */

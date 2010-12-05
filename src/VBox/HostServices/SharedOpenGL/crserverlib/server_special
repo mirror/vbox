@@ -245,3 +245,4 @@ CopyTexSubImage2D
 GetObjectParameterivARB
 GetObjectParameterfvARB
 BlitFramebufferEXT
+EndList
