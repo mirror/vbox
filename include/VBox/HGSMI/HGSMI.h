@@ -314,7 +314,10 @@ DECLINLINE(HGSMIOFFSET) HGSMIHeapOffset(HGSMIHEAP *pHeap)
 /* needed for heap relocation */
 DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
 {
-    AssertCompileNS((uintptr_t)NIL_RTHEAPSIMPLE == (uintptr_t)NIL_RTHEAPOFFSET);
+#if (__GNUC__ * 100 + __GNUC_MINOR__) < 405
+    /* does not work with gcc-4.5 */
+    AssertCompile((uintptr_t)NIL_RTHEAPSIMPLE == (uintptr_t)NIL_RTHEAPOFFSET);
+#endif
     return pHeap->u.hPtr != NIL_RTHEAPSIMPLE
         ? (HGSMIOFFSET)(pHeap->area.pu8Base - (uint8_t*)pHeap->u.hPtr)
         : HGSMIOFFSET_VOID;
