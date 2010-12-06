@@ -144,7 +144,7 @@
           disks to it.</para>
 
           <para>To change the IDE compatibility mode settings for the SATA
-          controller, please see <xref linkend="vboxmanage-storage" />.</para>
+          controller, please see <xref linkend="vboxmanage-storagectl" />.</para>
         </listitem>
 
         <listitem>

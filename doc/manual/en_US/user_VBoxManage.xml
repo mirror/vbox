@@ -109,7 +109,8 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
         controller and then a virtual disk), use <computeroutput>VBoxManage
         storagectl</computeroutput> and <computeroutput>VBoxManage
         storageattach</computeroutput>; see <xref
-        linkend="vboxmanage-storage" /> for details.</para>
+        linkend="vboxmanage-storagectl" /> and <xref
+        linkend="vboxmanage-storageattach" /> for details.</para>
       </listitem>
 
       <listitem>
