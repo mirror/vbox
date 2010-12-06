@@ -1001,7 +1001,7 @@ FunctionEnd
 Function .onInstSuccess
 
   ; Prevent the installer from running again without telling the user
-  ; to reboot the OS first.
+  ; to reboot the OS first
   Push 1
   Call SetRebootNeeded
 
