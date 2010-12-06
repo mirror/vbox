@@ -717,44 +717,50 @@ void UIVMSettingsDlg::putBackTo()
 
     /* Get updated machine: */
     m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
-    /* If machine is not OK => show the error: */
-    if (!m_machine.isOk())
-        vboxProblem().cannotSaveMachineSettings(m_machine);
-
-    /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
-    UIMachineSettingsGeneral *pGeneralPage =
-        qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-    UIMachineSettingsSystem *pSystemPage =
-        qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
-    if (pGeneralPage && pSystemPage &&
-        pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
-        m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
+    /* If machine is ok => perform final operations: */
+    if (m_machine.isOk())
+    {
+        /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
+        UIMachineSettingsGeneral *pGeneralPage =
+            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
+        UIMachineSettingsSystem *pSystemPage =
+            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+        if (pGeneralPage && pSystemPage &&
+            pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Disable 2D Video Acceleration for non-Windows guests: */
-    if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())
-    {
-        UIMachineSettingsDisplay *pDisplayPage =
-            qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
-        if (pDisplayPage && pDisplayPage->isAcceleration2DVideoSelected())
-            m_machine.SetAccelerate2DVideoEnabled(false);
-    }
+        /* Disable 2D Video Acceleration for non-Windows guests: */
+        if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())
+        {
+            UIMachineSettingsDisplay *pDisplayPage =
+                qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
+            if (pDisplayPage && pDisplayPage->isAcceleration2DVideoSelected())
+                m_machine.SetAccelerate2DVideoEnabled(false);
+        }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifndef VBOX_OSE
-    /* Enable OHCI controller if HID is enabled: */
-    if (pSystemPage && pSystemPage->isHIDEnabled())
-    {
-        CUSBController controller = m_machine.GetUSBController();
-        if (!controller.isNull())
-            controller.SetEnabled(true);
-    }
+        /* Enable OHCI controller if HID is enabled: */
+        if (pSystemPage && pSystemPage->isHIDEnabled())
+        {
+            CUSBController controller = m_machine.GetUSBController();
+            if (!controller.isNull())
+                controller.SetEnabled(true);
+        }
 #endif /* !VBOX_OSE */
 
-    /* Clear the "GUI_FirstRun" extra data key in case if
-     * the boot order or disk configuration were changed: */
-    if (m_fResetFirstRunFlag)
-        m_machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString::null);
+        /* Clear the "GUI_FirstRun" extra data key in case if
+         * the boot order or disk configuration were changed: */
+        if (m_fResetFirstRunFlag)
+            m_machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString::null);
+    }
+    /* If machine is NOT ok => show error message: */
+    else
+    {
+        /* Show final error message: */
+        vboxProblem().cannotSaveMachineSettings(m_machine);
+    }
 }
 
 void UIVMSettingsDlg::retranslateUi()
