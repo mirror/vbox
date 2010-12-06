@@ -1892,7 +1892,7 @@ int main(int argc, char **argv)
     RTEXITCODE rcExit;
 #ifdef WITH_ELEVATION
     bool fElevated;
-    RTEXITCODE rcExit = ElevationCheck(&fElevated);
+    rcExit = ElevationCheck(&fElevated);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 #endif
