@@ -1596,7 +1596,9 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                                         "--cert-dir",   m->strCertificatDirPath.c_str(),
                                                         "--name",       pStrName->c_str(),
                                                         "--tarball",    strTarball.c_str(),
+#ifndef RT_OS_WINDOWS /* Not possible since the app might be launched by some unrelated service. */
                                                         "--tarball-fd", &szTarballFd[0],
+#endif
                                                         NULL);
                             RTFileClose(hFile); hFile = NIL_RTFILE;
                             if (SUCCEEDED(hrc))
