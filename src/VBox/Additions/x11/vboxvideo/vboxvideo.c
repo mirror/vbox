@@ -296,7 +296,6 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 {
     (void) mode;
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
-    int bpp = crtc->scrn->depth == 24 ? 32 : 16;
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
@@ -682,6 +681,28 @@ vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
     TRACE_EXIT();
 }
 
+/** Calculate the BPP from the screen depth */
+static uint16_t
+vboxBPP(ScrnInfoPtr pScrn)
+{
+    return pScrn->depth == 24 ? 32 : 16;
+}
+
+/** Calculate the scan line length for a display width */
+static int32_t
+vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
+{
+    uint64_t cbLine = ((uint64_t)cDisplayWidth * vboxBPP(pScrn) / 8 + 7) & ~7;
+    return cbLine < INT32_MAX ? cbLine : INT32_MAX;
+}
+
+/** Calculate the display pitch from the scan line length */
+static int32_t
+vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
+{
+    return (uint64_t)cbLine * 8 / vboxBPP(pScrn);
+}
+
 /*
  * QUOTE from the XFree86 DESIGN document:
  *
@@ -847,7 +868,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 #endif /* !VBOXVIDEO_13 */
 
     /* Needed before we initialise DRI. */
-    pScrn->displayWidth = pScrn->virtualX;
+    pVBox->cbLine = vboxLineLength(pScrn, pScrn->virtualX);
+    pScrn->displayWidth = vboxDisplayPitch(pScrn, pVBox->cbLine);
 
     xf86PrintModes(pScrn);
 
@@ -1164,6 +1186,26 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     return pScreen->CloseScreen(scrnIndex, pScreen);
 }
 
+static void
+vboxCalcDisplayDimensions(VBOXPtr pVBox, int32_t *pcWidth, int32_t *pcHeight)
+{
+    int32_t cWidth = 0, cHeight = 0;
+    unsigned i;
+    for (i = 0; i < pVBox->cScreens; ++i)
+    {
+        int32_t cWidthScreen =    pVBox->aScreenLocation[i].x
+                                + pVBox->aScreenLocation[i].cx;
+        int32_t cHeightScreen =   pVBox->aScreenLocation[i].y
+                                + pVBox->aScreenLocation[i].cy;
+        if (cWidthScreen > cWidth)
+            cWidth = cWidthScreen;
+        if (cHeightScreen > cWidth)
+            cWidth = cWidthScreen;
+    }
+    *pcWidth = cWidth;
+    *pcHeight = cHeight;
+}
+
 static Bool
 VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 {
@@ -1183,6 +1225,11 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 #else
     rc = VBOXSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay,
                      pScrn->frameX0, pScrn->frameY0);
+    {
+        int32_t cWidth, cHeight;
+        vboxCalcDisplayDimensions(pVBox, &cWidth, &cHeight);
+        VBOXAdjustScreenPixmap(pScrn, cWidth, cHeight);
+    }
     if (rc)
     {
         vboxWriteHostModes(pScrn, pMode);
@@ -1210,7 +1257,6 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     uint32_t xRel = cDisplay ? x - pVBox->aScreenLocation[0].x : 0;
     uint32_t yRel = cDisplay ? y - pVBox->aScreenLocation[0].y : 0;
 
-    int bpp = pScrn->depth == 24 ? 32 : 16;
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
     /* Don't fiddle with the hardware if we are switched
@@ -1219,7 +1265,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     {
         if (cDisplay == 0)
             VBoxVideoSetModeRegisters(cWidth, cHeight, pScrn->displayWidth,
-                                      bpp, x, y);
+                                      vboxBPP(pScrn), x, y);
         /* Tell the host we support graphics */
         if (vbox_device_available(pVBox))
             vboxEnableGraphicsCap(pVBox);
@@ -1228,9 +1274,9 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         && (pVBox->fHaveHGSMI)
         && !pVBox->vtSwitch)
         VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, xRel, yRel,
-                                    (y * pScrn->displayWidth + x) * bpp / 8,
-                                    pScrn->displayWidth * bpp / 8,
-                                    cWidth, cHeight, bpp);
+                                    pVBox->cbLine + x * vboxBPP(pScrn) / 8,
+                                    pVBox->cbLine,
+                                    cWidth, cHeight, vboxBPP(pScrn));
     pVBox->aScreenLocation[cDisplay].cx = cWidth;
     pVBox->aScreenLocation[cDisplay].cy = cHeight;
     pVBox->aScreenLocation[cDisplay].x = x;
@@ -1244,27 +1290,28 @@ static Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     ScreenPtr pScreen = pScrn->pScreen;
     PixmapPtr pPixmap = pScreen->GetScreenPixmap(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    int bpp = pScrn->depth == 24 ? 32 : 16;
+    uint64_t cbLine = vboxLineLength(pScrn, width);
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
-    if ((uint64_t)width * height * bpp / 8 >= pVBox->cbFramebuffer)
+    if (!pPixmap) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to get the screen pixmap.\n");
+        return FALSE;
+    }
+    if (cbLine > UINT32_MAX || cbLine * height >= pVBox->cbFramebuffer)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to set up a virtual screen size of %dx%d with %lu of %d Kb of video memory available.  Please increase the video memory size.\n",
                    width, height, pVBox->cbFramebuffer / 1024, pScrn->videoRam);
         return FALSE;
     }
-    if (!pPixmap) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "Failed to get the screen pixmap.\n");
-        return FALSE;
-    }
     pScreen->ModifyPixmapHeader(pPixmap, width, height,
-                                pScrn->depth, bpp, width * bpp / 8,
+                                pScrn->depth, vboxBPP(pScrn), cbLine,
                                 pVBox->base);
     pScrn->virtualX = width;
     pScrn->virtualY = height;
-    pScrn->displayWidth = width;
+    pScrn->displayWidth = vboxDisplayPitch(pScrn, cbLine);
+    pVBox->cbLine = cbLine;
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
         VBOXDRIUpdateStride(pScrn, pVBox);
@@ -1272,9 +1319,6 @@ static Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
 #ifdef VBOXVIDEO_13
     /* Write the new values to the hardware */
     xf86SetDesiredModes(pScrn);
-#else
-    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
-    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
 #endif
     return TRUE;
 }
