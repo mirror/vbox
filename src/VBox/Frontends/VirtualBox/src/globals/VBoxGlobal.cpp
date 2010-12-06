@@ -4536,13 +4536,6 @@ bool VBoxGlobal::event (QEvent *e)
 {
     switch (e->type())
     {
-        case VBoxDefs::AsyncEventType:
-        {
-            VBoxAsyncEvent *ev = (VBoxAsyncEvent *) e;
-            ev->handle();
-            return true;
-        }
-
         case VBoxDefs::MediaEnumEventType:
         {
             VBoxMediaEnumEvent *ev = (VBoxMediaEnumEvent*) e;
@@ -5278,50 +5271,6 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, CMachine &rMachine, const ch
  *
  *  Shortcut to the static VBoxGlobal::instance() method, for convenience.
  */
-
-VBoxAsyncEvent::VBoxAsyncEvent(uint uDelay)
-    : QEvent((QEvent::Type)VBoxDefs::AsyncEventType)
-    , m_uDelay(uDelay)
-{
-}
-
-void VBoxAsyncEvent::post()
-{
-    UIAsyncEventPoster::post(this);
-}
-
-uint VBoxAsyncEvent::delay() const
-{
-    return m_uDelay;
-}
-
-UIAsyncEventPoster* UIAsyncEventPoster::m_spInstance = 0;
-
-void UIAsyncEventPoster::post(VBoxAsyncEvent *pAsyncEvent)
-{
-    if (!m_spInstance)
-        new UIAsyncEventPoster(pAsyncEvent);
-}
-
-UIAsyncEventPoster::UIAsyncEventPoster(VBoxAsyncEvent *pAsyncEvent)
-    : m_pAsyncEvent(pAsyncEvent)
-{
-    m_spInstance = this;
-    QTimer::singleShot(m_pAsyncEvent->delay(), this, SLOT(sltPostAsyncEvent()));
-}
-
-UIAsyncEventPoster::~UIAsyncEventPoster()
-{
-    m_spInstance = 0;
-}
-
-void UIAsyncEventPoster::sltPostAsyncEvent()
-{
-    if (m_pAsyncEvent)
-        QApplication::postEvent(&vboxGlobal(), m_pAsyncEvent);
-    m_pAsyncEvent = 0;
-    deleteLater();
-}
 
 /**
  *  USB Popup Menu class methods

@@ -71,8 +71,7 @@ struct VBoxDefs
     /** Additional Qt event types. */
     enum
     {
-          AsyncEventType = QEvent::User + 100
-        , ResizeEventType
+          ResizeEventType = QEvent::User + 101
         , RepaintEventType
         , SetRegionEventType
         , ModifierKeyChangeEventType
@@ -169,6 +168,8 @@ struct VBoxDefs
     static QStringList VBoxExtPackFileExts;
     static QStringList OVFFileExts;
 };
+
+Q_DECLARE_METATYPE(VBoxDefs::MediumType);
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
 

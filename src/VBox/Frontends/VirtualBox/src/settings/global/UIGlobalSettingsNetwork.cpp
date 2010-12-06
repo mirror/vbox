@@ -333,7 +333,7 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     CHost host = vbox.GetHost();
     const CHostNetworkInterfaceVector &interfaces = host.GetNetworkInterfaces();
     /* Remove all the old interfaces first: */
-    for (int iNetworkIndex = 0; iNetworkIndex < interfaces.size(); ++iNetworkIndex)
+    for (int iNetworkIndex = 0; iNetworkIndex < interfaces.size() && !failed(); ++iNetworkIndex)
     {
         /* Get iterated interface: */
         const CHostNetworkInterface &iface = interfaces[iNetworkIndex];
@@ -349,21 +349,25 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
             if (host.isOk())
             {
                 progress.WaitForCompletion(-1);
-                // TODO: Fix problem reporter!
-                //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), "", this);
                 if (progress.GetResultCode() != 0)
-                    // TODO: Fix problem reporter!
-                    //vboxProblem().cannotRemoveHostInterface(progress, iface, this);
-                    AssertMsgFailed(("Failed to remove Host-only Network Adapter, result code is %d!\n", progress.GetResultCode()));
+                {
+                    /* Mark the page as failed: */
+                    setFailed(true);
+                    /* Show error message: */
+                    vboxProblem().cannotRemoveHostInterface(progress, iface);
+                }
             }
             else
-                // TODO: Fix problem reporter!
-                //vboxProblem().cannotRemoveHostInterface(host, iface, this);
-                AssertMsgFailed(("Failed to remove Host-only Network Adapter!\n"));
+            {
+                /* Mark the page as failed: */
+                setFailed(true);
+                /* Show error message: */
+                vboxProblem().cannotRemoveHostInterface(host, iface);
+            }
         }
     }
     /* Add all the new interfaces finally: */
-    for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
+    for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size() && !failed(); ++iNetworkIndex)
     {
         /* Get iterated data: */
         const UIHostNetworkData &data = m_cache.m_items[iNetworkIndex];
@@ -372,8 +376,6 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
         CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
         if (host.isOk())
         {
-            // TODO: Fix problem reporter!
-            //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), "", this);
             progress.WaitForCompletion(-1);
             if (progress.GetResultCode() == 0)
             {
@@ -422,14 +424,20 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
                                           data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
             }
             else
-                // TODO: Fix problem reporter!
-                //vboxProblem().cannotCreateHostInterface(progress, this);
-                AssertMsgFailed(("Failed to create Host-only Network Adapter, result code is %d!\n", progress.GetResultCode()));
+            {
+                /* Mark the page as failed: */
+                setFailed(true);
+                /* Show error message: */
+                vboxProblem().cannotCreateHostInterface(progress);
+            }
         }
         else
-            // TODO: Fix problem reporter!
-            //vboxProblem().cannotCreateHostInterface(host, this);
-            AssertMsgFailed(("Failed to create Host-only Network Adapter!\n"));
+        {
+            /* Mark the page as failed: */
+            setFailed(true);
+            /* Show error message: */
+            vboxProblem().cannotCreateHostInterface(host);
+        }
     }
 
     /* Upload properties & settings to data: */

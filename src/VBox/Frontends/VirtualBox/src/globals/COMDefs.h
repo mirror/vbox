@@ -839,8 +839,15 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 
-/* include the generated header containing concrete wrapper definitions */
+/* Include the generated header containing wrapper definitions: */
 #include "COMWrappers.h"
+
+/* Declare metatypes for particular wrappers: */
+Q_DECLARE_METATYPE(CProgress);
+Q_DECLARE_METATYPE(CHost);
+Q_DECLARE_METATYPE(CMachine);
+Q_DECLARE_METATYPE(CConsole);
+Q_DECLARE_METATYPE(CHostNetworkInterface);
 
 /** @} */
 

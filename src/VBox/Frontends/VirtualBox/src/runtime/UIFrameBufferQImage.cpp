@@ -185,20 +185,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
     }
 
     if (bRemind)
-    {
-        class RemindEvent : public VBoxAsyncEvent
-        {
-            ulong mRealBPP;
-        public:
-            RemindEvent (ulong aRealBPP)
-                : VBoxAsyncEvent(0), mRealBPP (aRealBPP) {}
-            void handle()
-            {
-                vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
-            }
-        };
-        (new RemindEvent (pEvent->bitsPerPixel()))->post();
-    }
+        vboxProblem().remindAboutWrongColorDepth(pEvent->bitsPerPixel(), 32);
 }
 
 #endif /* VBOX_GUI_USE_QIMAGE */

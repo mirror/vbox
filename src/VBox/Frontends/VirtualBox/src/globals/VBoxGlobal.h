@@ -862,64 +862,6 @@ inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
 // Helper classes
 ////////////////////////////////////////////////////////////////////////////////
 
-/* Generic asynchronous event.
- * This abstract class is intended to provide a convenient way
- * to execute code on the main GUI thread asynchronously to the calling party.
- * This is done by putting necessary actions to the handle() function
- * in a subclass and then posting an instance of the subclass using post().
- * The instance must be allocated on the heap and will be automatically deleted after processing. */
-class VBoxAsyncEvent : public QEvent
-{
-public:
-
-    /* VBoxAsyncEvent constructor: */
-    VBoxAsyncEvent(uint uDelay = 0);
-
-    /* Worker function. Gets executed on the GUI thread when
-     * the posted event is processed by the main event loop. */
-    virtual void handle() = 0;
-
-    /* Posts this event to the main event loop. The caller loses ownership of
-     * this object after this method returns and must not delete the object. */
-    void post();
-
-    /* Returns delay for this event: */
-    uint delay() const;
-
-private:
-
-    uint m_uDelay;
-};
-
-/* Asynchronous event poster.
- * This class is used to post async event into VBoxGlobal event handler
- * taking into account delay set during async event creation procedure. */
-class UIAsyncEventPoster : public QObject
-{
-    Q_OBJECT;
-
-public:
-
-    /* Async event poster creator: */
-    static void post(VBoxAsyncEvent *pAsyncEvent);
-
-protected:
-
-    /* Constructor/destructor: */
-    UIAsyncEventPoster(VBoxAsyncEvent *pAsyncEvent);
-    ~UIAsyncEventPoster();
-
-private slots:
-
-    /* Async event poster: */
-    void sltPostAsyncEvent();
-
-private:
-
-    static UIAsyncEventPoster *m_spInstance;
-    VBoxAsyncEvent *m_pAsyncEvent;
-};
-
 /**
  *  USB Popup Menu class.
  *  This class provides the list of USB devices attached to the host.

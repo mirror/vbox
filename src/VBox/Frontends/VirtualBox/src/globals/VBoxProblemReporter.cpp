@@ -1257,36 +1257,6 @@ void VBoxProblemReporter::cannotCreateHardDiskStorage (
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotAttachDevice(QWidget *pParent, const CMachine &machine,
-                                             VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot)
-{
-    QString strMessage;
-    switch (type)
-    {
-        case VBoxDefs::MediumType_HardDisk:
-        {
-            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case VBoxDefs::MediumType_DVD:
-        {
-            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case VBoxDefs::MediumType_Floppy:
-        {
-            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        default:
-            break;
-    }
-    message(pParent ? pParent : mainWindowShown(), Error, strMessage, formatErrorInfo(machine));
-}
-
 void VBoxProblemReporter::cannotDetachDevice(QWidget *pParent, const CMachine &machine,
                                              VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot)
 {
@@ -1436,40 +1406,6 @@ int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
         QIMessageBox::Cancel | QIMessageBox::Escape);
 }
 
-void VBoxProblemReporter::cannotCreateHostInterface (
-    const CHost &host, QWidget *parent)
-{
-    message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host-only network interface."),
-        formatErrorInfo (host));
-}
-
-void VBoxProblemReporter::cannotCreateHostInterface (
-    const CProgress &progress, QWidget *parent)
-{
-    message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to create the host-only network interface."),
-        formatErrorInfo (progress.GetErrorInfo()));
-}
-
-void VBoxProblemReporter::cannotRemoveHostInterface (
-    const CHost &host, const CHostNetworkInterface &iface, QWidget *parent)
-{
-    message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to remove the host network interface <b>%1</b>.")
-            .arg (iface.GetName()),
-        formatErrorInfo (host));
-}
-
-void VBoxProblemReporter::cannotRemoveHostInterface (
-    const CProgress &progress, const CHostNetworkInterface &iface, QWidget *parent)
-{
-    message (parent ? parent : mainWindowShown(), Error,
-        tr ("Failed to remove the host network interface <b>%1</b>.")
-            .arg (iface.GetName()),
-        formatErrorInfo (progress.GetErrorInfo()));
-}
-
 void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
                                                  const QString &device)
 {
@@ -1520,80 +1456,6 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
             .arg (device)
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (error));
-}
-
-void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
-                                                    const CMachine &aMachine,
-                                                    const QString  &aName,
-                                                    const QString  &aPath)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res (aMachine);
-
-    message (aParent, Error,
-             tr ("Failed to create the shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>) "
-                 "for the virtual machine <b>%3</b>.")
-                 .arg (aName)
-                 .arg (aPath)
-                 .arg (aMachine.GetName()),
-             formatErrorInfo (res));
-}
-
-void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
-                                                    const CMachine &aMachine,
-                                                    const QString  &aName,
-                                                    const QString  &aPath)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res (aMachine);
-
-    message (aParent, Error,
-             tr ("Failed to remove the shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>) "
-                 "from the virtual machine <b>%3</b>.")
-                 .arg (aName)
-                 .arg (aPath)
-                 .arg (aMachine.GetName()),
-             formatErrorInfo (res));
-}
-
-void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
-                                                    const CConsole &aConsole,
-                                                    const QString  &aName,
-                                                    const QString  &aPath)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res (aConsole);
-
-    message (aParent, Error,
-             tr ("Failed to create the shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>) "
-                 "for the virtual machine <b>%3</b>.")
-                 .arg (aName)
-                 .arg (aPath)
-                 .arg (aConsole.GetMachine().GetName()),
-             formatErrorInfo (res));
-}
-
-void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
-                                                    const CConsole &aConsole,
-                                                    const QString  &aName,
-                                                    const QString  &aPath)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res (aConsole);
-
-    message (aParent, Error,
-             tr ("<p>Failed to remove the shared folder <b>%1</b> "
-                 "(pointing to <nobr><b>%2</b></nobr>) "
-                 "from the virtual machine <b>%3</b>.</p>"
-                 "<p>Please close all programs in the guest OS that "
-                 "may be using this shared folder and try again.</p>")
-                 .arg (aName)
-                 .arg (aPath)
-                 .arg (aConsole.GetMachine().GetName()),
-             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
@@ -2044,37 +1906,6 @@ bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
         tr ("Switch", "seamless"));
 }
 
-void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
-                                                      ulong aWantedBPP)
-{
-    const char *kName = "remindAboutWrongColorDepth";
-
-    /* Close the previous (outdated) window if any. We use kName as
-     * aAutoConfirmId which is also used as the widget name by default. */
-    {
-        QWidget *outdated = VBoxGlobal::findWidget (NULL, kName, "QIMessageBox");
-        if (outdated)
-            outdated->close();
-    }
-
-    int rc = message (mainMachineWindowShown(), Info,
-        tr ("<p>The virtual machine window is optimized to work in "
-            "<b>%1&nbsp;bit</b> color mode but the "
-            "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
-            "<p>Please open the display properties dialog of the guest OS and "
-            "select a <b>%3&nbsp;bit</b> color mode, if it is available, for "
-            "best possible performance of the virtual video subsystem.</p>"
-            "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
-            "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
-            "(16 million colors). You may try to select a different color "
-            "mode to see if this message disappears or you can simply "
-            "disable the message now if you are sure the required color "
-            "mode (%4&nbsp;bit) is not available in the guest OS.</p>")
-            .arg (aWantedBPP).arg (aRealBPP).arg (aWantedBPP).arg (aWantedBPP),
-        kName);
-    NOREF(rc);
-}
-
 /**
  *  Returns @c true if the user has selected to power off the machine.
  */
@@ -2494,6 +2325,91 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &aInfo,
     return QString ("<qt>%1</qt>").arg (formatted);
 }
 
+void VBoxProblemReporter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotCreateHostInterface(host, pParent);
+    else
+        emit sigCannotCreateHostInterface(host, pParent);
+}
+
+void VBoxProblemReporter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotCreateHostInterface(progress, pParent);
+    else
+        emit sigCannotCreateHostInterface(progress, pParent);
+}
+
+void VBoxProblemReporter::cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface,
+                                                    QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotRemoveHostInterface(host, iface ,pParent);
+    else
+        emit sigCannotRemoveHostInterface(host, iface, pParent);
+}
+
+void VBoxProblemReporter::cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface,
+                                                    QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotRemoveHostInterface(progress, iface, pParent);
+    else
+        emit sigCannotRemoveHostInterface(progress, iface, pParent);
+}
+
+void VBoxProblemReporter::cannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+                                             const QString &strLocation, const StorageSlot &storageSlot,
+                                             QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotAttachDevice(machine, type, strLocation, storageSlot, pParent);
+    else
+        emit sigCannotAttachDevice(machine, type, strLocation, storageSlot, pParent);
+}
+
+void VBoxProblemReporter::cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
+                                                   const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotCreateSharedFolder(machine, strName, strPath, pParent);
+    else
+        emit sigCannotCreateSharedFolder(machine, strName, strPath, pParent);
+}
+
+void VBoxProblemReporter::cannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
+                                                   const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotRemoveSharedFolder(machine, strName, strPath, pParent);
+    else
+        emit sigCannotRemoveSharedFolder(machine, strName, strPath, pParent);
+}
+
+void VBoxProblemReporter::cannotCreateSharedFolder(const CConsole &console, const QString &strName,
+                                                   const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotCreateSharedFolder(console, strName, strPath, pParent);
+    else
+        emit sigCannotCreateSharedFolder(console, strName, strPath, pParent);
+}
+
+void VBoxProblemReporter::cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
+                                                   const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    if (thread() == QThread::currentThread())
+        sltCannotRemoveSharedFolder(console, strName, strPath, pParent);
+    else
+        emit sigCannotRemoveSharedFolder(console, strName, strPath, pParent);
+}
+
+void VBoxProblemReporter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
+{
+    emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);
+}
+
 void VBoxProblemReporter::showHelpWebDialog()
 {
     vboxGlobal().openURL ("http://www.virtualbox.org");
@@ -2581,6 +2497,193 @@ void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
 #elif defined (Q_WS_MAC)
     vboxGlobal().openURL("file://" + strLocation);
 #endif
+}
+
+void VBoxProblemReporter::sltCannotCreateHostInterface(const CHost &host, QWidget *pParent)
+{
+    message(pParent ? pParent : mainWindowShown(), Error,
+            tr("Failed to create the host-only network interface."),
+            formatErrorInfo(host));
+}
+
+void VBoxProblemReporter::sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent)
+{
+    message(pParent ? pParent : mainWindowShown(), Error,
+            tr("Failed to create the host-only network interface."),
+            formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void VBoxProblemReporter::sltCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent)
+{
+    message(pParent ? pParent : mainWindowShown(), Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(iface.GetName()),
+            formatErrorInfo(host));
+}
+
+void VBoxProblemReporter::sltCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent)
+{
+    message(pParent ? pParent : mainWindowShown(), Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(iface.GetName()),
+            formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void VBoxProblemReporter::sltCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+                                                const QString &strLocation, const StorageSlot &storageSlot,
+                                                QWidget *pParent)
+{
+    QString strMessage;
+    switch (type)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+        {
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_DVD:
+        {
+            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_Floppy:
+        {
+            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    message(pParent ? pParent : mainWindowShown(), Error, strMessage, formatErrorInfo(machine));
+}
+
+void VBoxProblemReporter::sltCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
+                                                      const QString &strPath, QWidget *pParent)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), Error,
+            tr("Failed to create the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "for the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CMachine(machine).GetName()),
+            formatErrorInfo(machine));
+}
+
+void VBoxProblemReporter::sltCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
+                                                      const QString &strPath, QWidget *pParent)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), Error,
+            tr("Failed to remove the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "from the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CMachine(machine).GetName()),
+            formatErrorInfo(machine));
+}
+
+void VBoxProblemReporter::sltCannotCreateSharedFolder(const CConsole &console, const QString &strName,
+                                                      const QString &strPath, QWidget *pParent)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), Error,
+            tr("Failed to create the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "for the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
+}
+
+void VBoxProblemReporter::sltCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
+                                                      const QString &strPath, QWidget *pParent)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), Error,
+            tr("<p>Failed to remove the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "from the virtual machine <b>%3</b>.</p>"
+               "<p>Please close all programs in the guest OS that "
+               "may be using this shared folder and try again.</p>")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
+}
+
+void VBoxProblemReporter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
+{
+    const char *kName = "remindAboutWrongColorDepth";
+
+    /* Close the previous (outdated) window if any. We use kName as
+     * aAutoConfirmId which is also used as the widget name by default. */
+    {
+        QWidget *outdated = VBoxGlobal::findWidget(NULL, kName, "QIMessageBox");
+        if (outdated)
+            outdated->close();
+    }
+
+    message(mainMachineWindowShown(), Info,
+            tr("<p>The virtual machine window is optimized to work in "
+               "<b>%1&nbsp;bit</b> color mode but the "
+               "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
+               "<p>Please open the display properties dialog of the guest OS and "
+               "select a <b>%3&nbsp;bit</b> color mode, if it is available, for "
+               "best possible performance of the virtual video subsystem.</p>"
+               "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
+               "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
+               "(16 million colors). You may try to select a different color "
+               "mode to see if this message disappears or you can simply "
+               "disable the message now if you are sure the required color "
+               "mode (%4&nbsp;bit) is not available in the guest OS.</p>")
+               .arg(uWantedBPP).arg(uRealBPP).arg(uWantedBPP).arg(uWantedBPP),
+            kName);
+}
+
+VBoxProblemReporter::VBoxProblemReporter()
+{
+    /* Register required objects as meta-types: */
+    qRegisterMetaType<CProgress>();
+    qRegisterMetaType<CHost>();
+    qRegisterMetaType<CMachine>();
+    qRegisterMetaType<CConsole>();
+    qRegisterMetaType<CHostNetworkInterface>();
+    qRegisterMetaType<VBoxDefs::MediumType>();
+    qRegisterMetaType<StorageSlot>();
+
+    /* Prepare required connections: */
+    connect(this, SIGNAL(sigCannotCreateHostInterface(const CHost&, QWidget*)),
+            this, SLOT(sltCannotCreateHostInterface(const CHost&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotCreateHostInterface(const CProgress&, QWidget*)),
+            this, SLOT(sltCannotCreateHostInterface(const CProgress&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotRemoveHostInterface(const CHost&, const CHostNetworkInterface&, QWidget*)),
+            this, SLOT(sltCannotRemoveHostInterface(const CHost&, const CHostNetworkInterface&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
+            this, SLOT(sltCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotAttachDevice(const CMachine&, VBoxDefs::MediumType, const QString&, const StorageSlot&, QWidget*)),
+            this, SLOT(sltCannotAttachDevice(const CMachine&, VBoxDefs::MediumType, const QString&, const StorageSlot&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
+            this, SLOT(sltCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotRemoveSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
+            this, SLOT(sltCannotRemoveSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotCreateSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
+            this, SLOT(sltCannotCreateSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigCannotRemoveSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
+            this, SLOT(sltCannotRemoveSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
+            Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(sigRemindAboutWrongColorDepth(ulong, ulong)),
+            this, SLOT(sltRemindAboutWrongColorDepth(ulong, ulong)), Qt::QueuedConnection);
 }
 
 /* Returns a reference to the global VirtualBox problem reporter instance: */

@@ -1921,7 +1921,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
         m_machine.RemoveStorageController(strControllerName);
     }
     /* Save created controllers: */
-    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size(); ++iControllerIndex)
+    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
     {
         const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
         CStorageController controller = m_machine.AddStorageController(controllerData.m_strControllerName, controllerData.m_controllerBus);
@@ -1929,7 +1929,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
         controller.SetUseHostIOCache(controllerData.m_fUseHostIOCache);
         int cMaxUsedPort = -1;
         /* Save created attachments: */
-        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size(); ++iAttachmentIndex)
+        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
         {
             const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
             VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
@@ -1947,12 +1947,16 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
             }
             else
             {
-                // TODO: Fix problem reporter!
-                //vboxProblem().cannotAttachDevice(this, m_machine, VBoxDefs::MediumType_HardDisk, vboxMedium.location(),
-                //                                 controllerData.m_controllerBus, attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice);
+                /* Mark the page as failed: */
+                setFailed(true);
+                /* Show error message: */
+                vboxProblem().cannotAttachDevice(m_machine, VBoxDefs::MediumType_HardDisk, vboxMedium.location(),
+                                                 StorageSlot(controllerData.m_controllerBus,
+                                                             attachmentData.m_iAttachmentPort,
+                                                             attachmentData.m_iAttachmentDevice));
             }
         }
-        if (controllerData.m_controllerBus == KStorageBus_SATA)
+        if (!failed() && controllerData.m_controllerBus == KStorageBus_SATA)
         {
             ULONG uSataPortsCount = cMaxUsedPort + 1;
             uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());

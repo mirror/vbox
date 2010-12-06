@@ -253,8 +253,6 @@ public:
                                       const QString &aLocaiton,
                                       const CMedium &aHD,
                                       const CProgress &aProgress);
-    void cannotAttachDevice(QWidget *pParent, const CMachine &machine,
-                            VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot);
     void cannotDetachDevice(QWidget *pParent, const CMachine &machine,
                             VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot);
 
@@ -271,14 +269,6 @@ public:
     void cannotGetMediaAccessibility (const VBoxMedium &aMedium);
 
     int confirmDeletingHostInterface (const QString &aName, QWidget *aParent = 0);
-    void cannotCreateHostInterface (const CHost &aHost, QWidget *aParent = 0);
-    void cannotCreateHostInterface (const CProgress &aProgress, QWidget *aParent = 0);
-    void cannotRemoveHostInterface (const CHost &aHost,
-                                    const CHostNetworkInterface &aIface,
-                                    QWidget *aParent = 0);
-    void cannotRemoveHostInterface (const CProgress &aProgress,
-                                    const CHostNetworkInterface &aIface,
-                                    QWidget *aParent = 0);
 
     void cannotAttachUSBDevice (const CConsole &console, const QString &device);
     void cannotAttachUSBDevice (const CConsole &console, const QString &device,
@@ -286,15 +276,6 @@ public:
     void cannotDetachUSBDevice (const CConsole &console, const QString &device);
     void cannotDetachUSBDevice (const CConsole &console, const QString &device,
                                 const CVirtualBoxErrorInfo &error);
-
-    void cannotCreateSharedFolder (QWidget *, const CMachine &,
-                                   const QString &, const QString &);
-    void cannotRemoveSharedFolder (QWidget *, const CMachine &,
-                                   const QString &, const QString &);
-    void cannotCreateSharedFolder (QWidget *, const CConsole &,
-                                   const QString &, const QString &);
-    void cannotRemoveSharedFolder (QWidget *, const CConsole &,
-                                   const QString &, const QString &);
 
     void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
     int cannotFindGuestAdditions (const QString &aSrc1, const QString &aSrc2);
@@ -333,8 +314,6 @@ public:
 
     bool confirmGoingFullscreen (const QString &aHotKey);
     bool confirmGoingSeamless (const QString &aHotKey);
-
-    void remindAboutWrongColorDepth (ulong aRealBPP, ulong aWantedBPP);
 
     bool remindAboutGuruMeditation (const CConsole &aConsole,
                                     const QString &aLogFolder);
@@ -393,10 +372,44 @@ public:
         return formatErrorInfo (aRC.errorInfo(), aRC.rc());
     }
 
+    /* Stuff supporting interthreading: */
+    void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
+    void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent = 0);
+    void cannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+                            const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
+    void cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
+                                  const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
+                                  const QString &strPath, QWidget *pParent = 0);
+    void cannotCreateSharedFolder(const CConsole &console, const QString &strName,
+                                  const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
+                                  const QString &strPath, QWidget *pParent = 0);
+    void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+
 signals:
 
     void sigDownloaderUserManualCreated();
     void sigToCloseAllWarnings();
+
+    /* Stuff supporting interthreading: */
+    void sigCannotCreateHostInterface(const CHost &host, QWidget *pParent);
+    void sigCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
+    void sigCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
+    void sigCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
+    void sigCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+                               const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
+    void sigCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sigCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sigCannotCreateSharedFolder(const CConsole &console, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sigCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
 
 public slots:
 
@@ -406,7 +419,28 @@ public slots:
     void resetSuppressedMessages();
     void sltShowUserManual(const QString &strLocation);
 
+private slots:
+
+    /* Stuff supporting interthreading: */
+    void sltCannotCreateHostInterface(const CHost &host, QWidget *pParent);
+    void sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
+    void sltCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
+    void sltCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
+    void sltCannotAttachDevice(const CMachine &machine, VBoxDefs::MediumType type,
+                               const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
+    void sltCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sltCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sltCannotCreateSharedFolder(const CConsole &console, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sltCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
+                                     const QString &strPath, QWidget *pParent);
+    void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+
 private:
+
+    VBoxProblemReporter();
 
     static VBoxProblemReporter &instance();
 
