@@ -82,7 +82,7 @@ typedef uint32_t VRDEAUDIOFORMAT;
  * Audio input.
  */
 
-/* Audion notifications. */
+/* Audio input notifications. */
 #define VRDE_AUDIOIN_BEGIN     1
 #define VRDE_AUDIOIN_DATA      2
 #define VRDE_AUDIOIN_END       3
@@ -1022,8 +1022,9 @@ typedef struct _VRDEENTRYPOINTS_3
      * Audio input open request.
      *
      * @param hServer      Handle of VRDE server instance.
-     * @param u32ClientId  An identifier that allows the server to find the corresponding client.
      * @param pvCtx        To be used in VRDECallbackAudioIn.
+     * @param u32SamplesPerBlock Preferred number of samples in one block of audio input data.
+     * @param u32ClientId  An identifier that allows the server to find the corresponding client.
      * @param audioFormat  Requested format of audio data.
      *
      * @note Initialized to NULL when the VRDECallbackAudioIn callback is NULL.
@@ -1031,7 +1032,8 @@ typedef struct _VRDEENTRYPOINTS_3
     DECLR3CALLBACKMEMBER(void, VRDEAudioInOpen,(HVRDESERVER hServer,
                                                 void *pvCtx,
                                                 uint32_t u32ClientId,
-                                                VRDEAUDIOFORMAT audioFormat));
+                                                VRDEAUDIOFORMAT audioFormat,
+                                                uint32_t u32SamplesPerBlock));
 
     /**
      * Audio input close request.
