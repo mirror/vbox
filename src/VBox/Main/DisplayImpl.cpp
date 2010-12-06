@@ -872,7 +872,18 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
  *
  *  @thread EMT
  */
-void Display::handleDisplayUpdate (int x, int y, int w, int h)
+void Display::handleDisplayUpdateLegacy (int x, int y, int w, int h)
+{
+    unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
+
+#ifdef DEBUG_sunlover
+    LogFlowFunc (("%d,%d %dx%d (checked)\n", x, y, w, h));
+#endif /* DEBUG_sunlover */
+
+    handleDisplayUpdate (uScreenId, x, y, w, h);
+}
+
+void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int h)
 {
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
     /*
@@ -882,14 +893,8 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("%d,%d %dx%d (%d,%d)\n",
-                  x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
-#endif /* DEBUG_sunlover */
-
-    unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
-
-#ifdef DEBUG_sunlover
-    LogFlowFunc (("%d,%d %dx%d (checked)\n", x, y, w, h));
+    LogFlowFunc (("[%d] %d,%d %dx%d (%d,%d)\n",
+                  uScreenId, x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
 #endif /* DEBUG_sunlover */
 
     IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
@@ -1142,7 +1147,7 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMD
     {
         //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, phdr->x, phdr->y, phdr->w, phdr->h);
-        prgn->pDisplay->handleDisplayUpdate (phdr->x + pFBInfo->xOrigin,
+        prgn->pDisplay->handleDisplayUpdateLegacy (phdr->x + pFBInfo->xOrigin,
                                              phdr->y + pFBInfo->yOrigin, phdr->w, phdr->h);
     }
 
@@ -1160,7 +1165,7 @@ static void vbvaRgnUpdateFramebuffer (VBVADIRTYREGION *prgn, unsigned uScreenId)
     {
         //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, pFBInfo->dirtyRect.xLeft, pFBInfo->dirtyRect.yTop, w, h);
-        prgn->pDisplay->handleDisplayUpdate (pFBInfo->dirtyRect.xLeft + pFBInfo->xOrigin,
+        prgn->pDisplay->handleDisplayUpdateLegacy (pFBInfo->dirtyRect.xLeft + pFBInfo->xOrigin,
                                              pFBInfo->dirtyRect.yTop + pFBInfo->yOrigin, w, h);
     }
 }
@@ -2587,7 +2592,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                     }
                 }
 
-                pDisplay->handleDisplayUpdate(x + pFBInfo->xOrigin, y + pFBInfo->yOrigin, width, height);
+                pDisplay->handleDisplayUpdate(aScreenId, x, y, width, height);
             }
         }
     }
@@ -2723,7 +2728,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
                     }
                 }
 
-                pDisplay->handleDisplayUpdate (pFBInfo->xOrigin, pFBInfo->yOrigin, pFBInfo->w, pFBInfo->h);
+                pDisplay->handleDisplayUpdate (uScreenId, 0, 0, pFBInfo->w, pFBInfo->h);
             }
         }
     }
@@ -3010,7 +3015,7 @@ DECLCALLBACK(void) Display::displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInterfa
      * pfnUpdateDisplayAll in the VGA device.
      */
 
-    pDrv->pDisplay->handleDisplayUpdate(x, y, cx, cy);
+    pDrv->pDisplay->handleDisplayUpdate(VBOX_VIDEO_PRIMARY_SCREEN, x, y, cx, cy);
 }
 
 /**
@@ -3653,8 +3658,8 @@ DECLCALLBACK(void) Display::displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterf
              * under display device lock, so thread safe.
              */
             pFBInfo->cVBVASkipUpdate = 0;
-            pThis->handleDisplayUpdate(pFBInfo->vbvaSkippedRect.xLeft,
-                                       pFBInfo->vbvaSkippedRect.yTop,
+            pThis->handleDisplayUpdate(uScreenId, pFBInfo->vbvaSkippedRect.xLeft - pFBInfo->xOrigin,
+                                       pFBInfo->vbvaSkippedRect.yTop - pFBInfo->yOrigin,
                                        pFBInfo->vbvaSkippedRect.xRight - pFBInfo->vbvaSkippedRect.xLeft,
                                        pFBInfo->vbvaSkippedRect.yBottom - pFBInfo->vbvaSkippedRect.yTop);
         }
@@ -3752,7 +3757,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterfac
      */
     if (RT_LIKELY(pFBInfo->cVBVASkipUpdate == 0))
     {
-        pThis->handleDisplayUpdate(x, y, cx, cy);
+        pThis->handleDisplayUpdate(uScreenId, x - pFBInfo->xOrigin, y - pFBInfo->yOrigin, cx, cy);
     }
     else
     {
