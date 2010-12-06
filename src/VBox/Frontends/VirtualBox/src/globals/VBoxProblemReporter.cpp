@@ -17,26 +17,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxProblemReporter.h"
-
-#include "VBoxGlobal.h"
-#include "VBoxSelectorWnd.h"
-#include "UIProgressDialog.h"
-#include "UIDownloaderUserManual.h"
-#include "UIMachine.h"
-
-#include "VBoxAboutDlg.h"
-
-#include "QIHotKeyEdit.h"
-
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif
-
-/* Qt includes */
+/* Global includes */
 #include <QDir>
 #include <QDesktopWidget>
 #include <QFileInfo>
+#include <QThread>
 #ifdef Q_WS_MAC
 # include <QPushButton>
 #endif
@@ -45,30 +30,22 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 
+/* Local includes */
+#include "VBoxProblemReporter.h"
+#include "VBoxGlobal.h"
+#include "VBoxSelectorWnd.h"
+#include "UIProgressDialog.h"
+#include "UIDownloaderUserManual.h"
+#include "UIMachine.h"
+#include "VBoxAboutDlg.h"
+#include "QIHotKeyEdit.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
+
 #if defined (Q_WS_WIN32)
 #include <Htmlhelp.h>
 #endif
-
-////////////////////////////////////////////////////////////////////////////////
-// VBoxProblemReporter class
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Returns a reference to the global VirtualBox problem reporter instance.
- */
-VBoxProblemReporter &VBoxProblemReporter::instance()
-{
-    static VBoxProblemReporter vboxProblem_instance;
-    return vboxProblem_instance;
-}
-
-bool VBoxProblemReporter::isValid() const
-{
-    return qApp != 0;
-}
-
-// Helpers
-/////////////////////////////////////////////////////////////////////////////
 
 bool VBoxProblemReporter::isAnyWarningShown()
 {
@@ -344,9 +321,6 @@ QWidget* VBoxProblemReporter::mainMachineWindowShown() const
     return 0;
 }
 
-// Generic Problem handlers
-/////////////////////////////////////////////////////////////////////////////
-
 bool VBoxProblemReporter::askForOverridingFile (const QString& aPath, QWidget *aParent /* = NULL */) const
 {
     return messageYesNo (aParent, Question, tr ("A file named <b>%1</b> already exists. Are you sure you want to replace it?<br /><br />Replacing it will overwrite its contents.").arg (aPath));
@@ -390,13 +364,6 @@ bool VBoxProblemReporter::askForOverridingFilesIfExists (const QVector<QString>&
         return true;
 }
 
-void VBoxProblemReporter::cannotDeleteFile (const QString& path, QWidget *aParent /* = NULL */) const
-{
-    message (aParent, Error,
-             tr ("Failed to remove the file <b>%1</b>.<br /><br />Please try to remove the file yourself and try again.")
-             .arg (path));
-}
-
 void VBoxProblemReporter::checkForMountedWrongUSB() const
 {
 #ifdef RT_OS_LINUX
@@ -422,9 +389,6 @@ void VBoxProblemReporter::checkForMountedWrongUSB() const
     }
 #endif
 }
-
-// Special Problem handlers
-/////////////////////////////////////////////////////////////////////////////
 
 void VBoxProblemReporter::showBETAWarning()
 {
@@ -472,22 +436,6 @@ void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
          .arg (aURL));
 }
 
-void VBoxProblemReporter::
-cannotCopyFile (const QString &aSrc, const QString &aDst, int aVRC)
-{
-    PCRTSTATUSMSG msg = RTErrGet (aVRC);
-    Assert (msg);
-
-    QString err = QString ("%1: %2").arg (msg->pszDefine, msg->pszMsgShort);
-    if (err.endsWith ("."))
-        err.truncate (err.length() - 1);
-
-    message (mainWindowShown(), VBoxProblemReporter::Error,
-        tr ("Failed to copy file <b><nobr>%1</nobr></b> to "
-             "<b><nobr>%2</nobr></b> (%3).")
-             .arg (aSrc, aDst, err));
-}
-
 void VBoxProblemReporter::cannotFindLanguage (const QString &aLangID,
                                               const QString &aNlsPath)
 {
@@ -530,19 +478,6 @@ void VBoxProblemReporter::cannotCreateVirtualBox (const CVirtualBox &vbox)
         tr ("<p>Failed to create the VirtualBox COM object.</p>"
             "<p>The application will now terminate.</p>"),
         formatErrorInfo (vbox));
-}
-
-void VBoxProblemReporter::cannotSaveGlobalSettings (const CVirtualBox &vbox,
-                                                    QWidget *parent /* = 0 */)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res (vbox);
-
-    message (parent ? parent : mainWindowShown(), Error,
-             tr ("<p>Failed to save the global VirtualBox settings to "
-                 "<b><nobr>%1</nobr></b>.</p>")
-                 .arg (vbox.GetSettingsFilePath()),
-             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotLoadGlobalConfig (const CVirtualBox &vbox,
@@ -904,19 +839,6 @@ bool VBoxProblemReporter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSup
             tr ("Close VM"), tr ("Continue"));
 }
 
-void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
-                                                   const QString &aPath)
-{
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to change the snapshot folder path of the "
-            "virtual machine <b>%1<b> to <nobr><b>%2</b></nobr>.")
-            .arg (aMachine.GetName())
-            .arg (aPath),
-        formatErrorInfo (aMachine));
-}
-
 bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
@@ -1265,30 +1187,6 @@ void VBoxProblemReporter::cannotDeleteHardDiskStorage (QWidget *aParent,
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-int VBoxProblemReporter::confirmDetachAddControllerSlots (QWidget *aParent) const
-{
-    return messageOkCancel (aParent, Question,
-        tr ("<p>There are hard disks attached to ports of the additional controller. "
-            "If you disable the additional controller, all these hard disks "
-            "will be automatically detached.</p>"
-            "<p>Are you sure you want to "
-            "disable the additional controller?</p>"),
-        0 /* aAutoConfirmId */,
-        tr ("Disable", "hard disk"));
-}
-
-int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) const
-{
-    return messageOkCancel (aParent, Question,
-        tr ("<p>There are hard disks attached to ports of the additional controller. "
-            "If you change the additional controller, all these hard disks "
-            "will be automatically detached.</p>"
-            "<p>Are you sure you want to "
-            "change the additional controller?</p>"),
-        0 /* aAutoConfirmId */,
-        tr ("Change", "hard disk"));
-}
-
 int VBoxProblemReporter::askAboutHardDiskAttachmentCreation(QWidget *pParent,
                                                             const QString &strControllerName)
 {
@@ -1359,36 +1257,64 @@ void VBoxProblemReporter::cannotCreateHardDiskStorage (
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotAttachDevice (QWidget *aParent, const CMachine &aMachine,
-                                              VBoxDefs::MediumType aType, const QString &aLocation,
-                                              KStorageBus aBus, LONG aChannel, LONG aDevice)
+void VBoxProblemReporter::cannotAttachDevice(QWidget *pParent, const CMachine &machine,
+                                             VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot)
 {
-    QString what (deviceToAccusative (aType));
-    if (!aLocation.isNull())
-        what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
-
-    message (aParent, Error,
-             tr ("Failed to attach the %1 to slot <i>%2</i> of the machine <b>%3</b>.")
-                 .arg (what)
-                 .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
-                 .arg (CMachine (aMachine).GetName()),
-             formatErrorInfo (aMachine));
+    QString strMessage;
+    switch (type)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+        {
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_DVD:
+        {
+            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_Floppy:
+        {
+            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    message(pParent ? pParent : mainWindowShown(), Error, strMessage, formatErrorInfo(machine));
 }
 
-void VBoxProblemReporter::cannotDetachDevice (QWidget *aParent, const CMachine &aMachine,
-                                              VBoxDefs::MediumType aType, const QString &aLocation,
-                                              KStorageBus aBus, LONG aChannel, LONG aDevice)
+void VBoxProblemReporter::cannotDetachDevice(QWidget *pParent, const CMachine &machine,
+                                             VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot)
 {
-    QString what (deviceToAccusative (aType));
-    if (!aLocation.isNull())
-        what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
-
-    message (aParent, Error,
-             tr ("Failed to detach the %1 from slot <i>%2</i> of the machine <b>%3</b>.")
-                 .arg (what)
-                 .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
-                 .arg (CMachine (aMachine).GetName()),
-             formatErrorInfo (aMachine));
+    QString strMessage;
+    switch (type)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+        {
+            strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_DVD:
+        {
+            strMessage = tr("Failed to detach the CD/DVD device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case VBoxDefs::MediumType_Floppy:
+        {
+            strMessage = tr("Failed to detach the floppy device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(vboxGlobal().toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    message(pParent ? pParent : mainWindowShown(), Error, strMessage, formatErrorInfo(machine));
 }
 
 int VBoxProblemReporter::cannotRemountMedium (QWidget *aParent, const CMachine &aMachine,
@@ -1450,14 +1376,6 @@ void VBoxProblemReporter::cannotCloseMedium (
             .arg (mediumToAccusative (aMedium.type()))
             .arg (aMedium.location()),
         formatErrorInfo (aResult));
-}
-
-void VBoxProblemReporter::cannotEjectDrive()
-{
-    message (mainWindowShown(), Warning,
-             tr ("Failed to eject the disk from the virtual drive. "
-                 "The drive may be locked by the guest operating system. "
-                 "Please check this and try again."));
 }
 
 void VBoxProblemReporter::cannotOpenSession (const CSession &session)
@@ -1751,55 +1669,6 @@ bool VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
             .arg (aURL).arg (aURL).arg (aSrc),
         0, /* aAutoConfirmId */
         tr ("Mount", "additions"));
-}
-
-void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
-                                                    const QString &aInstalledVer,
-                                                    const QString &aExpectedVer)
-{
-    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Error,
-        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are too "
-            "old: the installed version is %1, the expected version is %2. "
-            "Some features that require Guest Additions (mouse integration, "
-            "guest display auto-resize) will most likely stop "
-            "working properly.</p>"
-            "<p>Please update the Guest Additions to the current version by choosing "
-            "<b>Install Guest Additions</b> from the <b>Devices</b> "
-            "menu.</p>")
-             .arg (aInstalledVer).arg (aExpectedVer),
-        "warnAboutTooOldAdditions");
-}
-
-void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
-                                                 const QString &aInstalledVer,
-                                                 const QString &aExpectedVer)
-{
-    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Warning,
-        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
-            "outdated: the installed version is %1, the expected version is %2. "
-            "Some features that require Guest Additions (mouse integration, "
-            "guest display auto-resize) may not work as expected.</p>"
-            "<p>It is recommended to update the Guest Additions to the current version "
-            " by choosing <b>Install Guest Additions</b> from the <b>Devices</b> "
-            "menu.</p>")
-             .arg (aInstalledVer).arg (aExpectedVer),
-        "warnAboutOldAdditions");
-}
-
-void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
-                                                 const QString &aInstalledVer,
-                                                 const QString &aExpectedVer)
-{
-    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Error,
-        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
-            "too recent for this version of VirtualBox: the installed version "
-            "is %1, the expected version is %2.</p>"
-            "<p>Using a newer version of Additions with an older version of "
-            "VirtualBox is not supported. Please install the current version "
-            "of the Guest Additions by choosing <b>Install Guest Additions</b> "
-            "from the <b>Devices</b> menu.</p>")
-             .arg (aInstalledVer).arg (aExpectedVer),
-        "warnAboutNewAdditions");
 }
 
 bool VBoxProblemReporter::askAboutUserManualDownload(const QString &strMissedLocation)
@@ -2567,22 +2436,6 @@ QString VBoxProblemReporter::mediumToAccusative (VBoxDefs::MediumType aType, boo
     return type;
 }
 
-/* static */
-QString VBoxProblemReporter::deviceToAccusative (VBoxDefs::MediumType aType)
-{
-    QString type =
-        aType == VBoxDefs::MediumType_HardDisk ?
-            tr ("hard disk", "failed to attach ...") :
-        aType == VBoxDefs::MediumType_DVD ?
-            tr ("CD/DVD device", "failed to attach ...") :
-        aType == VBoxDefs::MediumType_Floppy ?
-            tr ("floppy device", "failed to close ...") :
-        QString::null;
-
-    Assert (!type.isNull());
-    return type;
-}
-
 /**
  * Formats the given COM result code as a human-readable string.
  *
@@ -2640,84 +2493,6 @@ QString VBoxProblemReporter::formatErrorInfo (const COMErrorInfo &aInfo,
     QString formatted = doFormatErrorInfo (aInfo, aWrapperRC);
     return QString ("<qt>%1</qt>").arg (formatted);
 }
-
-/* static */
-QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
-                                                HRESULT aWrapperRC /* = S_OK */)
-{
-    /* Compose complex details string with internal <!--EOM--> delimiter to
-     * make it possible to split string into info & details parts which will
-     * be used separately in QIMessageBox */
-    QString formatted;
-
-    if (!aInfo.text().isEmpty())
-        formatted += QString ("<p>%1.</p>").arg (vboxGlobal().emphasize (aInfo.text()));
-
-    formatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=0 "
-                 "cellpadding=0 width=100%>";
-
-    bool haveResultCode = false;
-
-    if (aInfo.isBasicAvailable())
-    {
-#if defined (Q_WS_WIN)
-        haveResultCode = aInfo.isFullAvailable();
-        bool haveComponent = true;
-        bool haveInterfaceID = true;
-#else /* defined (Q_WS_WIN) */
-        haveResultCode = true;
-        bool haveComponent = aInfo.isFullAvailable();
-        bool haveInterfaceID = aInfo.isFullAvailable();
-#endif
-
-        if (haveResultCode)
-        {
-            formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
-                .arg (tr ("Result&nbsp;Code: ", "error info"))
-                .arg (formatRC (aInfo.resultCode()));
-        }
-
-        if (haveComponent)
-            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
-                .arg (tr ("Component: ", "error info"), aInfo.component());
-
-        if (haveInterfaceID)
-        {
-            QString s = aInfo.interfaceID();
-            if (!aInfo.interfaceName().isEmpty())
-                s = aInfo.interfaceName() + ' ' + s;
-            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
-                .arg (tr ("Interface: ", "error info"), s);
-        }
-
-        if (!aInfo.calleeIID().isNull() && aInfo.calleeIID() != aInfo.interfaceID())
-        {
-            QString s = aInfo.calleeIID();
-            if (!aInfo.calleeName().isEmpty())
-                s = aInfo.calleeName() + ' ' + s;
-            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
-                .arg (tr ("Callee: ", "error info"), s);
-        }
-    }
-
-    if (FAILED (aWrapperRC) &&
-        (!haveResultCode || aWrapperRC != aInfo.resultCode()))
-    {
-        formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
-            .arg (tr ("Callee&nbsp;RC: ", "error info"))
-            .arg (formatRC (aWrapperRC));
-    }
-
-    formatted += "</table>";
-
-    if (aInfo.next())
-        formatted = formatted + "<!--EOP-->" + doFormatErrorInfo (*aInfo.next());
-
-    return formatted;
-}
-
-// Public slots
-/////////////////////////////////////////////////////////////////////////////
 
 void VBoxProblemReporter::showHelpWebDialog()
 {
@@ -2806,5 +2581,86 @@ void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
 #elif defined (Q_WS_MAC)
     vboxGlobal().openURL("file://" + strLocation);
 #endif
+}
+
+/* Returns a reference to the global VirtualBox problem reporter instance: */
+VBoxProblemReporter &VBoxProblemReporter::instance()
+{
+    static VBoxProblemReporter global_instance;
+    return global_instance;
+}
+
+QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
+                                                HRESULT aWrapperRC /* = S_OK */)
+{
+    /* Compose complex details string with internal <!--EOM--> delimiter to
+     * make it possible to split string into info & details parts which will
+     * be used separately in QIMessageBox */
+    QString formatted;
+
+    if (!aInfo.text().isEmpty())
+        formatted += QString ("<p>%1.</p>").arg (vboxGlobal().emphasize (aInfo.text()));
+
+    formatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=0 "
+                 "cellpadding=0 width=100%>";
+
+    bool haveResultCode = false;
+
+    if (aInfo.isBasicAvailable())
+    {
+#if defined (Q_WS_WIN)
+        haveResultCode = aInfo.isFullAvailable();
+        bool haveComponent = true;
+        bool haveInterfaceID = true;
+#else /* defined (Q_WS_WIN) */
+        haveResultCode = true;
+        bool haveComponent = aInfo.isFullAvailable();
+        bool haveInterfaceID = aInfo.isFullAvailable();
+#endif
+
+        if (haveResultCode)
+        {
+            formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
+                .arg (tr ("Result&nbsp;Code: ", "error info"))
+                .arg (formatRC (aInfo.resultCode()));
+        }
+
+        if (haveComponent)
+            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
+                .arg (tr ("Component: ", "error info"), aInfo.component());
+
+        if (haveInterfaceID)
+        {
+            QString s = aInfo.interfaceID();
+            if (!aInfo.interfaceName().isEmpty())
+                s = aInfo.interfaceName() + ' ' + s;
+            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
+                .arg (tr ("Interface: ", "error info"), s);
+        }
+
+        if (!aInfo.calleeIID().isNull() && aInfo.calleeIID() != aInfo.interfaceID())
+        {
+            QString s = aInfo.calleeIID();
+            if (!aInfo.calleeName().isEmpty())
+                s = aInfo.calleeName() + ' ' + s;
+            formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
+                .arg (tr ("Callee: ", "error info"), s);
+        }
+    }
+
+    if (FAILED (aWrapperRC) &&
+        (!haveResultCode || aWrapperRC != aInfo.resultCode()))
+    {
+        formatted += QString ("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
+            .arg (tr ("Callee&nbsp;RC: ", "error info"))
+            .arg (formatRC (aWrapperRC));
+    }
+
+    formatted += "</table>";
+
+    if (aInfo.next())
+        formatted = formatted + "<!--EOP-->" + doFormatErrorInfo (*aInfo.next());
+
+    return formatted;
 }
 

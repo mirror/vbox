@@ -19,17 +19,17 @@
 #ifndef __VBoxProblemReporter_h__
 #define __VBoxProblemReporter_h__
 
-#include "COMDefs.h"
-#include "QIMessageBox.h"
-
-/* Qt icludes */
+/* Global includes */
 #include <QObject>
 #include <QPointer>
 
-class VBoxMedium;
+/* Local includes */
+#include "COMDefs.h"
+#include "QIMessageBox.h"
 
-// VBoxProblemReporter class
-////////////////////////////////////////////////////////////////////////////////
+/* Forward declarations */
+class VBoxMedium;
+struct StorageSlot;
 
 /**
  * The VBoxProblemReporter class is a central place to handle all problem/error
@@ -65,12 +65,6 @@ public:
     {
         AutoConfirmed = 0x8000
     };
-
-    static VBoxProblemReporter &instance();
-
-    bool isValid() const;
-
-    // helpers
 
     bool isAnyWarningShown();
     bool isAlreadyShown(const QString &strGuardBlockName) const;
@@ -149,17 +143,13 @@ public:
     QWidget* mainWindowShown() const;
     QWidget* mainMachineWindowShown() const;
 
-    /* Generic problem handlers */
     bool askForOverridingFile (const QString& aPath, QWidget *aParent  = NULL) const;
     bool askForOverridingFiles (const QVector<QString>& aPaths, QWidget *aParent = NULL) const;
     bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
     bool askForOverridingFilesIfExists (const QVector<QString>& aPaths, QWidget *aParent = NULL) const;
 
-    void cannotDeleteFile (const QString& path, QWidget *aParent = NULL) const;
-
     void checkForMountedWrongUSB() const;
 
-    /* Special problem handlers */
     void showBETAWarning();
     void showBEBWarning();
 
@@ -169,7 +159,6 @@ public:
 #endif
 
     void cannotOpenURL (const QString &aURL);
-    void cannotCopyFile (const QString &aSrc, const QString &aDst, int aVRC);
 
     void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);
     void cannotLoadLanguage (const QString &aLangFile);
@@ -177,12 +166,10 @@ public:
     void cannotInitCOM (HRESULT rc);
     void cannotCreateVirtualBox (const CVirtualBox &vbox);
 
-    void cannotSaveGlobalSettings (const CVirtualBox &vbox,
-                                   QWidget *parent = 0);
-
     void cannotLoadGlobalConfig (const CVirtualBox &vbox, const QString &error);
     void cannotSaveGlobalConfig (const CVirtualBox &vbox);
     void cannotSetSystemProperties (const CSystemProperties &props);
+
     void cannotAccessUSB (const COMBaseWithEI &aObj);
 
     void cannotCreateMachine (const CVirtualBox &vbox,
@@ -215,10 +202,9 @@ public:
     void cannotDiscardSavedState (const CConsole &console);
 
     void cannotSendACPIToMachine();
+
     bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported);
     bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported);
-
-    void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
 
     bool askAboutSnapshotRestoring (const QString &aSnapshotName);
     bool askAboutSnapshotDeleting (const QString &aSnapshotName);
@@ -239,7 +225,6 @@ public:
                                    ULONG aBpp, ULONG64 aMinVRAM);
     void cannotSwitchScreenInSeamless(quint64 minVRAM);
     int cannotSwitchScreenInFullscreen(quint64 minVRAM);
-
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
 
@@ -258,9 +243,6 @@ public:
     void cannotDeleteHardDiskStorage (QWidget *aParent, const CMedium &aHD,
                                       const CProgress &aProgress);
 
-    int confirmDetachAddControllerSlots (QWidget *aParent) const;
-    int confirmChangeAddControllerSlots (QWidget *aParent) const;
-
     int askAboutHardDiskAttachmentCreation(QWidget *pParent, const QString &strControllerName);
     int askAboutOpticalAttachmentCreation(QWidget *pParent, const QString &strControllerName);
     int askAboutFloppyAttachmentCreation(QWidget *pParent, const QString &strControllerName);
@@ -271,19 +253,16 @@ public:
                                       const QString &aLocaiton,
                                       const CMedium &aHD,
                                       const CProgress &aProgress);
-    void cannotAttachDevice (QWidget *aParent, const CMachine &aMachine,
-                             VBoxDefs::MediumType aType, const QString &aLocation,
-                             KStorageBus aBus, LONG aChannel, LONG aDevice);
-    void cannotDetachDevice (QWidget *aParent, const CMachine &aMachine,
-                             VBoxDefs::MediumType aType, const QString &aLocation,
-                             KStorageBus aBus, LONG aChannel, LONG aDevice);
+    void cannotAttachDevice(QWidget *pParent, const CMachine &machine,
+                            VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot);
+    void cannotDetachDevice(QWidget *pParent, const CMachine &machine,
+                            VBoxDefs::MediumType type, const QString &strLocation, const StorageSlot &storageSlot);
 
     int cannotRemountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium, bool aMount, bool aRetry);
     void cannotOpenMedium (QWidget *aParent, const CVirtualBox &aVBox,
                            VBoxDefs::MediumType aType, const QString &aLocation);
     void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
                             const COMResult &aResult);
-    void cannotEjectDrive();
 
     void cannotOpenSession (const CSession &session);
     void cannotOpenSession (const CVirtualBox &vbox, const CMachine &machine,
@@ -323,9 +302,6 @@ public:
     void cannotMountGuestAdditions (const QString &aMachineName);
     bool confirmDownloadAdditions (const QString &aURL, ulong aSize);
     bool confirmMountAdditions (const QString &aURL, const QString &aSrc);
-    void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);
-    void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
-    void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
 
     bool askAboutUserManualDownload(const QString &strMissedLocation);
     bool confirmUserManualDownload(const QString &strURL, ulong uSize);
@@ -394,7 +370,6 @@ public:
                            const QString &errorMsg) const;
 
     static QString mediumToAccusative (VBoxDefs::MediumType aType, bool aIsHostDrive = false);
-    static QString deviceToAccusative (VBoxDefs::MediumType aType);
 
     static QString formatRC (HRESULT aRC);
 
@@ -433,6 +408,8 @@ public slots:
 
 private:
 
+    static VBoxProblemReporter &instance();
+
     friend VBoxProblemReporter &vboxProblem();
 
     static QString doFormatErrorInfo (const COMErrorInfo &aInfo,
@@ -442,10 +419,7 @@ private:
     mutable QList<QPointer<QIMessageBox> > m_warnings;
 };
 
-/**
- * Shortcut to the static VBoxProblemReporter::instance() method, for
- * convenience.
- */
+/* Shortcut to the static VBoxProblemReporter::instance() method, for convenience. */
 inline VBoxProblemReporter &vboxProblem() { return VBoxProblemReporter::instance(); }
 
 #endif // __VBoxProblemReporter_h__
