@@ -1444,6 +1444,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
+                                                    /* Wait for whole update process to complete. */
                                                     AdditionsUpdateFlag_None,
                                                     progress.asOutParam()));
             if (FAILED(rc))
@@ -1454,7 +1455,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
                 if (FAILED(rc))
                     vrc = ctrlPrintProgressError(progress);
                 else if (fVerbose)
-                    RTPrintf("Guest Additions installer successfully copied and started.\n");
+                    RTPrintf("Guest Additions update successful.\n");
             }
         }
         ctrlUninitVM(a);
