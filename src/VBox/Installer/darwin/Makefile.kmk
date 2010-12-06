@@ -654,11 +654,11 @@ VBOX_DI_VBAPP_MISC_FILES = \
 	Info.plist \
 	PkgInfo \
 	Resources/virtualbox.icns \
+	Resources/virtualbox.png \
 	Resources/virtualbox-vbox.icns \
 	Resources/virtualbox-vbox-extpack.icns \
 	Resources/virtualbox-ovf.icns \
 	Resources/virtualbox-ova.icns \
-	Resources/virtualbox-vbox-128px.png \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_DOCS_PACKING

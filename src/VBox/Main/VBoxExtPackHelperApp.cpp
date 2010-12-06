@@ -1550,7 +1550,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, con
     char szIconName[RTPATH_MAX];
     int rc = RTPathAppPrivateArch(szIconName, sizeof(szIconName));
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szIconName, sizeof(szIconName), "../Resources/virtualbox-vbox-128px.png");
+        rc = RTPathAppend(szIconName, sizeof(szIconName), "../Resources/virtualbox.png");
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct icon path: %Rrc", rc);
 
