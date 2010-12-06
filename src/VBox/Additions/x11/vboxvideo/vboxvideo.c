@@ -53,6 +53,7 @@
 # include <string.h>
 #endif
 #include "vboxvideo.h"
+#include <iprt/asm-math.h>
 #include "version-generated.h"
 #include "product-generated.h"
 #include <xf86.h>
@@ -700,7 +701,7 @@ vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
 static int32_t
 vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
 {
-    return (uint64_t)cbLine * 8 / vboxBPP(pScrn);
+    return ASMDivU64ByU32RetU32((uint64_t)cbLine * 8, vboxBPP(pScrn));
 }
 
 /*
