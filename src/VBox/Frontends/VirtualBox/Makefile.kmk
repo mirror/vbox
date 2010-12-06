@@ -866,7 +866,6 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
 
-#$(call VBOX_EDIT_VERSION_RULE_FN,src/platform/darwin/Info.plist)
 $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
