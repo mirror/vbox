@@ -452,15 +452,25 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY)
     Display *pDisplay = mParent->getDisplay();
     ComAssertRet(pDisplay, E_FAIL);
 
-    ULONG displayWidth, displayHeight;
-    /* Takes the display lock */
-    HRESULT rc = pDisplay->GetScreenResolution (0, &displayWidth, &displayHeight,
-                                                NULL);
-    if (FAILED(rc))
-        return rc;
+    if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_NEW_PROTOCOL))
+    {
+        ULONG displayWidth, displayHeight;
+        /* Takes the display lock */
+        HRESULT rc = pDisplay->GetScreenResolution(0, &displayWidth, &displayHeight,
+                                                   NULL);
+        if (FAILED(rc))
+            return rc;
 
-    *pcX = displayWidth ? ((x - 1) * 0xFFFF) / displayWidth: 0;
-    *pcY = displayHeight ? ((y - 1) * 0xFFFF) / displayHeight: 0;
+        *pcX = displayWidth ? ((x - 1) * 0xFFFF) / displayWidth: 0;
+        *pcY = displayHeight ? ((y - 1) * 0xFFFF) / displayHeight: 0;
+    }
+    else
+    {
+        int32_t x1, y1, x2, y2;
+        pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
+        *pcX = x1 != x2 ? (x - 1 - x1) * 0xFFFF / (x2 - x1) : 0;
+        *pcY = y1 != y2 ? (y - 1 - y1) * 0xFFFF / (y2 - y1) : 0;
+    }
     return S_OK;
 }
 
@@ -511,7 +521,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
     rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
                         RT_BOOL(  mfVMMDevGuestCaps
-                                & VMMDEV_MOUSE_GUEST_USES_EVENT));
+                                & VMMDEV_MOUSE_NEW_PROTOCOL));
 
 #ifndef VBOXBFE_WITHOUT_COM
     mMouseEvent.reinit(VBoxEventType_OnGuestMouse, true, x, y, dz, dw, fButtons);

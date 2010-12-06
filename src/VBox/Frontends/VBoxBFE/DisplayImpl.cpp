@@ -211,6 +211,19 @@ STDMETHODIMP Display::GetScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG 
     return S_OK;
 }
 
+void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
+                                       int32_t *px2, int32_t *py2)
+{
+    AssertPtrReturnVoid(px1);
+    AssertPtrReturnVoid(py1);
+    AssertPtrReturnVoid(px2);
+    AssertPtrReturnVoid(py2);
+    *px1 = 0;
+    *py1 = 0;
+    *px2 = getWidth();
+    *py2 = getHeight();
+}
+
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
 {
     /* Correct negative x and y coordinates. */
