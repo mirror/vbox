@@ -154,7 +154,7 @@ int pgmR3PoolInit(PVM pVM)
     if (cbRam >= UINT64_C(2) * _1G)
     {
         /* In the nested paging case we require 2 + 513 * (cbRam/1GB) pages to
-         * store the entire page table descriptors.
+         * store all page table descriptors.
          */
         uint64_t u64MaxPages = cbRam  / (_1G / UINT64_C(512));
         if (u64MaxPages > PGMPOOL_IDX_LAST)
