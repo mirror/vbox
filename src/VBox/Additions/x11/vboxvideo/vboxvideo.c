@@ -300,7 +300,7 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
-    VBOXSetMode(crtc->scrn, (uint32_t)crtc->driver_private,
+    VBOXSetMode(crtc->scrn, (uintptr_t)crtc->driver_private,
                 adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     /* Don't remember any modes set while we are seamless, as they are
      * just temporary. */
@@ -1021,7 +1021,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
             /* Setup our virtual CRTCs. */
             pVBox->paCrtcs[i] = xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
-            pVBox->paCrtcs[i]->driver_private = (void *)i;
+            pVBox->paCrtcs[i]->driver_private = (void *)(uintptr_t)i;
 
             /* Set up our virtual outputs. */
             snprintf(szOutput, sizeof(szOutput), "VBOX%u", i);
