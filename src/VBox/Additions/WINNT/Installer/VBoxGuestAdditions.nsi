@@ -1185,7 +1185,7 @@ Function un.onUninstSuccess
   ; to reboot the OS first. This should be done in case of still running drivers
   ; after uninstallation
   Push 1
-  Call SetRebootNeeded
+  Call un.SetRebootNeeded
 
 FunctionEnd
 
