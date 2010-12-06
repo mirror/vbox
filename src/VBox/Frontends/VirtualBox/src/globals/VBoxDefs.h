@@ -22,6 +22,7 @@
 /* Qt includes */
 #include <QEvent>
 #include <QUuid>
+#include <QMetaType>
 
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/log.h>
