@@ -54,6 +54,8 @@ public:
     STDMETHODIMP InvalidateAndUpdate();
     STDMETHODIMP ResizeCompleted();
     STDMETHODIMP GetScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel);
+    void getFramebufferDimensions(int32_t *px1, int32_t *py1, int32_t *px2,
+                                  int32_t *py2);
 
     void resetFramebuffer();
 

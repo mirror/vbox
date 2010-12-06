@@ -265,7 +265,7 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
  * This is for instance the case for the L4 console. */
 #define VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER                  RT_BIT(3)
 /** The guest can read VMMDev events to find out about pointer movement */
-#define VMMDEV_MOUSE_GUEST_USES_EVENT                       RT_BIT(4)
+#define VMMDEV_MOUSE_NEW_PROTOCOL                           RT_BIT(4)
 /** If the guest changes the status of the
  * VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR bit, the host will honour this */
 #define VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR        RT_BIT(5)
@@ -280,7 +280,7 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
       (VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)
 /** The mask of all capabilities which the guest can legitimately change */
 #define VMMDEV_MOUSE_GUEST_MASK \
-      (VMMDEV_MOUSE_NOTIFY_HOST_MASK | VMMDEV_MOUSE_GUEST_USES_EVENT)
+      (VMMDEV_MOUSE_NOTIFY_HOST_MASK | VMMDEV_MOUSE_NEW_PROTOCOL)
 /** The mask of host capability changes for which notification events should
  * be sent */
 #define VMMDEV_MOUSE_NOTIFY_GUEST_MASK \
