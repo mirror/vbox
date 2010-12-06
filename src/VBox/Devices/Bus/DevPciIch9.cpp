@@ -2463,7 +2463,7 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
     {
         PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
         PCIDevSetInterruptLine(pDev, 0x0);
-    }   
+    }
     /* Clear regions too ? */
 }
 
