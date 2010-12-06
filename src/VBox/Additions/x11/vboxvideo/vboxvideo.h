@@ -211,6 +211,11 @@ typedef struct VBOXRec
     /** Position information for each virtual screen for the purposes of
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation[VBOX_VIDEO_MAX_SCREENS];
+#ifdef VBOXVIDEO_13
+    /** The virtual crtcs */
+    struct _xf86Crtc *paCrtcs[VBOX_VIDEO_MAX_SCREENS];
+    struct _xf86Output *paOutputs[VBOX_VIDEO_MAX_SCREENS];
+#endif
     /** Offsets of VBVA buffers in video RAM */
     uint32_t aoffVBVABuffer[VBOX_VIDEO_MAX_SCREENS];
     /** Context information about the VBVA buffers for each screen */

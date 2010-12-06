@@ -300,8 +300,8 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
-    VBOXSetMode(crtc->scrn, 0, adjusted_mode->HDisplay, adjusted_mode->VDisplay,
-                x, y);
+    VBOXSetMode(crtc->scrn, (uint32_t)crtc->driver_private,
+                adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     /* Don't remember any modes set while we are seamless, as they are
      * just temporary. */
     if (!vboxGuestIsSeamless(crtc->scrn))
@@ -712,9 +712,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     VBOXPtr pVBox;
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
-#ifdef VBOXVIDEO_13
-    xf86OutputPtr output;
-#endif
     unsigned DispiId;
 
     TRACE_ENTRY();
@@ -821,9 +818,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
             cBits = 24;
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
             return FALSE;
-#ifndef VBOXVIDEO_13
         vboxAddModes(pScrn, cx, cy);
-#endif
     }
     if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
@@ -839,30 +834,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
      * server lifetime. */
     pScrn->virtualX = 32000;
     pScrn->virtualY = 32000;
-
-    /* Initialise CRTC and output configuration for use with randr1.2. */
-    xf86CrtcConfigInit(pScrn, &VBOXCrtcConfigFuncs);
-
-    /* Setup our single virtual CRTC. */
-    xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
-
-    /* Set up our single virtual output. */
-    output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "VBOX1");
-
-    /* Set a sane minimum and maximum mode size */
-    xf86CrtcSetSizeRange(pScrn, 64, 64, 32000, 32000);
-
-    /* We are not interested in the monitor section in the configuration file. */
-    xf86OutputUseScreenMonitor(output, FALSE);
-    output->possible_crtcs = 1;
-    output->possible_clones = 0;
-
-    /* Now create our initial CRTC/output configuration. */
-    if (!xf86InitialConfiguration(pScrn, TRUE)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Initial CRTC configuration failed!\n");
-        return (FALSE);
-    }
-#else /* !VBOXVIDEO_13 */
+#else
     /* We don't validate with xf86ValidateModes and xf86PruneModes as we
      * already know what we like and what we don't. */
 
@@ -872,11 +844,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     pScrn->virtualX = pScrn->currentMode->HDisplay;
     pScrn->virtualY = pScrn->currentMode->VDisplay;
 
+#endif /* !VBOXVIDEO_13 */
+
+    /* Needed before we initialise DRI. */
     pScrn->displayWidth = pScrn->virtualX;
 
     xf86PrintModes(pScrn);
-
-#endif /* !VBOXVIDEO_13 */
 
     /* Colour weight - we always call this, since we are always in
        truecolour. */
@@ -970,9 +943,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (!miSetPixmapDepths())
         return (FALSE);
 
-    /* Needed before we initialise DRI. */
-    pScrn->displayWidth = pScrn->virtualX;
-
 #ifdef VBOX_DRI
     pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
 #endif
@@ -1016,6 +986,45 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
 
 #ifdef VBOXVIDEO_13
+    /* Initialise CRTC and output configuration for use with randr1.2. */
+    xf86CrtcConfigInit(pScrn, &VBOXCrtcConfigFuncs);
+
+    {
+        uint32_t i;
+
+        for (i = 0; i < pVBox->cScreens; ++i)
+        {
+            char szOutput[256];
+
+            /* Setup our virtual CRTCs. */
+            pVBox->paCrtcs[i] = xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
+            pVBox->paCrtcs[i]->driver_private = (void *)i;
+
+            /* Set up our virtual outputs. */
+            snprintf(szOutput, sizeof(szOutput), "VBOX%u", i);
+            pVBox->paOutputs[i] = xf86OutputCreate(pScrn, &VBOXOutputFuncs,
+                                                   szOutput);
+
+            /* We are not interested in the monitor section in the
+             * configuration file. */
+            xf86OutputUseScreenMonitor(pVBox->paOutputs[i], FALSE);
+            pVBox->paOutputs[i]->possible_crtcs = 1 << i;
+            pVBox->paOutputs[i]->possible_clones = 0;
+            TRACE_LOG("Created crtc (%p) and output %s (%p)\n",
+                      (void *)pVBox->paCrtcs[i], szOutput,
+                      (void *)pVBox->paOutputs[i]);
+        }
+    }
+
+    /* Set a sane minimum and maximum mode size */
+    xf86CrtcSetSizeRange(pScrn, 64, 64, 32000, 32000);
+
+    /* Now create our initial CRTC/output configuration. */
+    if (!xf86InitialConfiguration(pScrn, TRUE)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Initial CRTC configuration failed!\n");
+        return (FALSE);
+    }
+    
     /* Initialise randr 1.2 mode-setting functions and set first mode.
      * Note that the mode won't be usable until the server has resized the
      * framebuffer to something reasonable. */
@@ -1179,10 +1188,10 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
         vboxWriteHostModes(pScrn, pMode);
         xf86PrintModes(pScrn);
     }
-#endif
     if (rc && !vboxGuestIsSeamless(pScrn))
         vboxSaveVideoMode(pScrn, pMode->HDisplay, pMode->VDisplay,
                           pScrn->bitsPerPixel);
+#endif
     if (pVBox->accessEnabled)
         pVBox->EnableDisableFBAccess(scrnIndex, TRUE);
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
@@ -1196,13 +1205,14 @@ static Bool
 VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
             unsigned cHeight, int x, int y)
 {
-    VBOXPtr pVBox;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
     Bool rc = TRUE;
+    uint32_t xRel = cDisplay ? x - pVBox->aScreenLocation[0].x : 0;
+    uint32_t yRel = cDisplay ? y - pVBox->aScreenLocation[0].y : 0;
 
     int bpp = pScrn->depth == 24 ? 32 : 16;
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
-    pVBox = VBOXGetRec(pScrn);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!pVBox->vtSwitch)
@@ -1217,14 +1227,14 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     if (    vbox_device_available(pVBox)
         && (pVBox->fHaveHGSMI)
         && !pVBox->vtSwitch)
-        VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
+        VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, xRel, yRel,
                                     (y * pScrn->displayWidth + x) * bpp / 8,
                                     pScrn->displayWidth * bpp / 8,
                                     cWidth, cHeight, bpp);
-    pVBox->aScreenLocation[0].cx = cWidth;
-    pVBox->aScreenLocation[0].cy = cHeight;
-    pVBox->aScreenLocation[0].x = x;
-    pVBox->aScreenLocation[0].y = y;
+    pVBox->aScreenLocation[cDisplay].cx = cWidth;
+    pVBox->aScreenLocation[cDisplay].cy = cHeight;
+    pVBox->aScreenLocation[cDisplay].x = x;
+    pVBox->aScreenLocation[cDisplay].y = y;
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }

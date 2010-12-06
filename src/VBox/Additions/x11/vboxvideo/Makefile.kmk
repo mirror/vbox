@@ -130,7 +130,7 @@ vboxvideo_drv_71_SOURCES  = $(vboxvideo_drv_SOURCES)
 DLLS += vboxvideo_drv_13
 vboxvideo_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_13_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
-vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS) vboxvideo
+vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS) VBOXVIDEO_13
 vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3) \
 	$(VBOX_PATH_X11_XORG_1_3)/X11 \
