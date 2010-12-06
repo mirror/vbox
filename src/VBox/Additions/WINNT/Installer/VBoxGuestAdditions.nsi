@@ -1000,6 +1000,12 @@ FunctionEnd
 ; This function is called when installation was successful!
 Function .onInstSuccess
 
+  ; Prevent the installer from running again without telling the user
+  ; to reboot the OS first.
+  Push 1
+  Call SetRebootNeeded
+
+  ; Tell VBoxTray to reflect installation success
   Push "${PRODUCT_NAME} successfully updated!"
   Push 0 ; Message type = info
   Call WriteLogVBoxTray
