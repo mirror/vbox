@@ -1808,7 +1808,7 @@ static RTEXITCODE ElevationCheck(bool *pfElevated)
             RTMemFree(pSidAndAttr);
         }
         else if (   GetLastError() == ERROR_INVALID_PARAMETER
-                 && GetLastError() == ERROR_NOT_SUPPORTED)
+                 || GetLastError() == ERROR_NOT_SUPPORTED)
             *pfElevated = true; /* Older Windows version. */
         else
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
