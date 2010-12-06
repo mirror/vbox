@@ -2121,7 +2121,7 @@ static void printIndent(PCDBGFINFOHLP pHlp, int iIndent)
     }
 }
 
-static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
+static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
 {
     for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
     {
@@ -2171,6 +2171,24 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
                                     szDesc, iRegion, u32Addr, u32Addr+iRegionSize);
                 }
             }
+
+            if (fRegisters)
+            {
+                printIndent(pHlp, iIndent + 2);
+                pHlp->pfnPrintf(pHlp, "  PCI registers:\n");
+                for (int iReg = 0; iReg < 0x100; )
+                {
+                    int iPerLine = 0x10;
+                    Assert (0x100 % iPerLine == 0);
+                    printIndent(pHlp, iIndent + 3);
+
+                    while (iPerLine-- > 0)
+                    {
+                        pHlp->pfnPrintf(pHlp, "%02x ", pPciDev->config[iReg++]);
+                    }
+                    pHlp->pfnPrintf(pHlp, "\n");
+                }
+            }
         }
     }
 
@@ -2181,7 +2199,7 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
             PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PPCIBUS);
-            ich9pciBusInfo(pBusSub, pHlp, iIndent + 1);
+            ich9pciBusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
         }
     }
 }
@@ -2197,7 +2215,18 @@ static DECLCALLBACK(void) ich9pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 {
     PPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
 
-    ich9pciBusInfo(pBus, pHlp, 0);
+    if (pszArgs == NULL || !strcmp(pszArgs, "basic"))
+    {
+        ich9pciBusInfo(pBus, pHlp, 0, false);
+    }
+    else if (!strcmp(pszArgs, "verbose"))
+    {
+        ich9pciBusInfo(pBus, pHlp, 0, true);
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'verbose'.\n");
+    }
 }
 
 
@@ -2421,19 +2450,20 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
 static void ich9pciResetDevice(PPCIDEVICE pDev)
 {
-    pDev->config[VBOX_PCI_COMMAND] &= ~(VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY |
-                                        VBOX_PCI_COMMAND_MASTER);
+    PCIDevSetCommand(pDev,
+                     PCIDevGetCommand(pDev)
+                     &
+                     ~(VBOX_PCI_COMMAND_IO |
+                       VBOX_PCI_COMMAND_MEMORY |
+                       VBOX_PCI_COMMAND_MASTER));
 
+    /* Bridge device has its own reset handler clearing PCI registers */
     if (!PCIIsPci2PciBridge(pDev))
     {
         PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
-        PCIDevSetByte(pDev, VBOX_PCI_INTERRUPT_LINE,  0x0);
+        PCIDevSetInterruptLine(pDev, 0x0);
     }
-    else
-    {
-        /* @todo: reset devices behind the bridge too */
-    }
-    /* Regions ? */
+    /* Clear regions too ? */
 }
 
 
@@ -2455,6 +2485,16 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     ich9pciFakePCIBIOS(pDevIns);
 }
 
+static void ich9pciRelocateDevice(PPCIDEVICE pDev, RTGCINTPTR offDelta)
+{
+    if (pDev)
+    {
+        pDev->Int.s.pBusRC += offDelta;
+        if (pDev->Int.s.pMsixPageRC)
+            pDev->Int.s.pMsixPageRC += offDelta;
+    }
+}
+
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
@@ -2469,14 +2509,7 @@ static DECLCALLBACK(void) ich9pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
 
     /* Relocate RC pointers for the attached pci devices. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-    {
-        if (pBus->apDevices[i])
-        {
-            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
-            if (pBus->apDevices[i]->Int.s.pMsixPageRC)
-                pBus->apDevices[i]->Int.s.pMsixPageRC += offDelta;
-        }
-    }
+        ich9pciRelocateDevice(pBus->apDevices[i], offDelta);
 
 }
 
@@ -2615,6 +2648,13 @@ static DECLCALLBACK(void) ich9pcibridgeReset(PPDMDEVINS pDevIns)
     PCIDevSetByte(&pBus->aPciDev, VBOX_PCI_PRIMARY_BUS, 0);
     PCIDevSetByte(&pBus->aPciDev, VBOX_PCI_SECONDARY_BUS, 0);
     PCIDevSetByte(&pBus->aPciDev, VBOX_PCI_SUBORDINATE_BUS, 0);
+
+    /* PCI-specific reset for each device. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    {
+        if (pBus->apDevices[i])
+            ich9pciResetDevice(pBus->apDevices[i]);
+    }
 }
 
 
@@ -2628,11 +2668,7 @@ static DECLCALLBACK(void) ich9pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR o
 
     /* Relocate RC pointers for the attached pci devices. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-    {
-        if (pBus->apDevices[i])
-            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
-    }
-
+        ich9pciRelocateDevice(pBus->apDevices[i], offDelta);
 }
 
 /**
