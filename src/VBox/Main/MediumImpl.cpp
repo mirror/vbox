@@ -967,10 +967,12 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                                               | MediumFormatCapabilities_CreateDynamic))
        )
     {
-        /* storage for hard disks of this format can neither be explicitly
+        /* Storage for hard disks of this format can neither be explicitly
          * created by VirtualBox nor deleted, so we place the hard disk to
-         * Created state here and also add it to the registry */
-        m->state = MediumState_Created;
+         * Inaccessible state here and also add it to the registry. The
+         * state means that one has to use RefreshState() to update the
+         * medium format specific fields. */
+        m->state = MediumState_Inaccessible;
         // create new UUID
         unconst(m->id).create();
 
