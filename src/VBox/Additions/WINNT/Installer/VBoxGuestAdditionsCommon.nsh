@@ -234,7 +234,7 @@ FunctionEnd
 Function ${un}IsRebootNeeded
 
   Push $0
-  ReadRegDWORD $0 HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce" "VBoxGuestAdditionsRebootNeeded"
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce\VBoxGuestAdditions" "RebootNeeded"
   Push $0
 
 FunctionEnd
@@ -246,7 +246,7 @@ FunctionEnd
 Function ${un}SetRebootNeeded
 
   Pop $0
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce" "VBoxGuestAdditionsRebootNeeded" $0
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce\VBoxGuestAdditions" "RebootNeeded" $0
 
 FunctionEnd
 !macroend
