@@ -122,7 +122,8 @@ public:
 
     // public methods only for internal purposes
     int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
-    void handleDisplayUpdate (int x, int y, int cx, int cy);
+    void handleDisplayUpdateLegacy (int x, int y, int cx, int cy);
+    void handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int h);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
 #endif
