@@ -1105,6 +1105,15 @@ Function .onInit
     Abort
   ${EndIf}
 
+  ; Is a reboot needed first in order to (re-)install the Guest Additions?
+  Call IsRebootNeeded
+  Pop $0
+  ${If} $0 == "1"
+    MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 $(VBOX_REBOOT_REQUIRED) /SD IDNO IDNO +2
+      Reboot ; IDYES
+      Abort  ; IDNO
+  ${EndIf}
+
   ; Only uninstall?
   ${If} $g_bUninstall == "true"
     Call Uninstall_Innotek
@@ -1165,6 +1174,12 @@ Function un.onUninstSuccess
 
   HideWindow
   MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_UNINST_SUCCESS) /SD IDOK
+
+  ; Prevent the installer from running again without telling the user
+  ; to reboot the OS first. This should be done in case of still running drivers
+  ; after uninstallation
+  Push 1
+  Call SetRebootNeeded
 
 FunctionEnd
 
@@ -1232,7 +1247,7 @@ Section Uninstall
 
 restart:
 
-  DetailPrint "Rebooting ..."
+  DetailPrint "Restarting computer ..."
   Reboot
 
 exit:
