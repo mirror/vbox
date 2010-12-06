@@ -177,6 +177,7 @@ RT_C_DECLS_END
 /* Prototypes */
 static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 #ifdef IN_RING3
+static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
 static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName);
 static void ich9pciUpdateMappings(PCIDevice *pDev);
 static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32Address, unsigned len);
@@ -2457,12 +2458,12 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
                        VBOX_PCI_COMMAND_MEMORY |
                        VBOX_PCI_COMMAND_MASTER));
 
-    /* Bridge device has its own reset handler clearing PCI registers */
+    /* Bridge device reset handlers processed later */
     if (!PCIIsPci2PciBridge(pDev))
     {
         PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
         PCIDevSetInterruptLine(pDev, 0x0);
-    }
+    }   
     /* Clear regions too ? */
 }
 
@@ -2480,6 +2481,12 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     {
         if (pBus->apDevices[i])
             ich9pciResetDevice(pBus->apDevices[i]);
+    }
+
+    for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+    {
+        if (pBus->papBridgesR3[iBridge])
+            ich9pcibridgeReset(pBus->papBridgesR3[iBridge]->pDevIns);
     }
 
     ich9pciFakePCIBIOS(pDevIns);
@@ -2640,7 +2647,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
 /**
  * @copydoc FNPDMDEVRESET
  */
-static DECLCALLBACK(void) ich9pcibridgeReset(PPDMDEVINS pDevIns)
+static void ich9pcibridgeReset(PPDMDEVINS pDevIns)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
@@ -2761,7 +2768,7 @@ const PDMDEVREG g_DevicePciIch9Bridge =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    ich9pcibridgeReset,
+    NULL, /* Must be NULL, to make sure only bus driver handles reset */
     /* pfnSuspend */
     NULL,
     /* pfnResume */
