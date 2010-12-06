@@ -52,6 +52,9 @@
 # define _WIN32_WINNT 0x0501
 # include <Objbase.h>                   /* CoInitializeEx */
 # include <Windows.h>                   /* ShellExecuteEx, ++ */
+# ifdef DEBUG
+#  include <Sddl.h>
+# endif
 #endif
 
 #ifdef RT_OS_DARWIN
@@ -1717,58 +1720,134 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv)
 /**
  * Checks if the process is elevated or not.
  *
- * @returns true/false.
+ * @returns RTEXITCODE_SUCCESS if preconditions are fine,
+ *          otherwise error message + RTEXITCODE_FAILURE.
+ * @param   pfElevated      Where to store the elevation indicator.
  */
-static bool IsElevated(void)
+static RTEXITCODE ElevationCheck(bool *pfElevated)
 {
+    *pfElevated = false;
+
 # if defined(RT_OS_WINDOWS)
-    /*
-     * Check if we are elevated.
-     */
     /** @todo This should probably check if UAC is diabled and if we are
      *  Administrator first. Also needs to check for Vista+ first, probably.
      */
-    HANDLE hToken;
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_READ, &hToken))
-    {
-        RTMsgError("OpenProcessToken failed: %u (%#x)", GetLastError(), GetLastError());
-        return false;
-    }
+    DWORD       cb;
+    RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
+    HANDLE      hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "OpenProcessToken failed: %u (%#x)", GetLastError(), GetLastError());
 
-    bool  fElevated = true;
-    DWORD cb;
-    DWORD TokenIsElevated = 0;
-    if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevation*/ 20, &TokenIsElevated, sizeof(TokenIsElevated), &cb))
+    /*
+     * Check if we're member of the Administrators group. If we aren't, there
+     * is no way to elevate ourselves to system admin.
+     * N.B. CheckTokenMembership does not do the job here (due to attributes?).
+     */
+    BOOL                        fIsAdmin    = FALSE;
+    SID_IDENTIFIER_AUTHORITY    NtAuthority = SECURITY_NT_AUTHORITY;
+    PSID                        pAdminGrpSid;
+    if (AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGrpSid))
     {
-        fElevated = TokenIsElevated != 0;
-        if (fElevated)
+# ifdef DEBUG
+        char *pszAdminGrpSid = NULL;
+        ConvertSidToStringSid(pAdminGrpSid, &pszAdminGrpSid);
+# endif
+
+        if (   !GetTokenInformation(hToken, TokenGroups, NULL, 0, &cb)
+            && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
         {
-            enum
+            PTOKEN_GROUPS pTokenGroups = (PTOKEN_GROUPS)RTMemAllocZ(cb);
+            if (GetTokenInformation(hToken, TokenGroups, pTokenGroups, cb, &cb))
             {
-                MY_TokenElevationTypeDefault = 1,
-                MY_TokenElevationTypeFull,
-                MY_TokenElevationTypeLimited
-            } enmType;
-            if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevationType*/ 18, &enmType, sizeof(enmType), &cb))
-            {
-                fElevated = enmType == MY_TokenElevationTypeFull;
+                for (DWORD iGrp = 0; iGrp < pTokenGroups->GroupCount; iGrp++)
+                {
+# ifdef DEBUG
+                    char *pszGrpSid = NULL;
+                    ConvertSidToStringSid(pTokenGroups->Groups[iGrp].Sid, &pszGrpSid);
+# endif
+                    if (EqualSid(pAdminGrpSid, pTokenGroups->Groups[iGrp].Sid))
+                    {
+                        /* That it's listed is enough I think, ignore attributes. */
+                        fIsAdmin = TRUE;
+                        break;
+                    }
+                }
             }
             else
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation(TokenGroups,cb) failed: %u (%#x)", GetLastError(), GetLastError());
+            RTMemFree(pTokenGroups);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation(TokenGroups,0) failed: %u (%#x)", GetLastError(), GetLastError());
+
+        FreeSid(pAdminGrpSid);
+    }
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "AllocateAndInitializeSid failed: %u (%#x)", GetLastError(), GetLastError());
+    if (fIsAdmin)
+    {
+# if 1
+        /*
+         * Check the integrity level (Vista / UAC).
+         */
+#  define MY_SECURITY_MANDATORY_HIGH_RID 0x00003000L
+#  define MY_TokenIntegrityLevel         ((TOKEN_INFORMATION_CLASS)25)
+        if (   !GetTokenInformation(hToken, MY_TokenIntegrityLevel, NULL, 0, &cb)
+            && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+        {
+            PSID_AND_ATTRIBUTES pSidAndAttr = (PSID_AND_ATTRIBUTES)RTMemAlloc(cb);
+            if (GetTokenInformation(hToken, MY_TokenIntegrityLevel, pSidAndAttr, cb, &cb))
             {
-                RTMsgError("GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
-                fElevated = false;
+                DWORD dwIntegrityLevel = *GetSidSubAuthority(pSidAndAttr->Sid, *GetSidSubAuthorityCount(pSidAndAttr->Sid) - 1U);
+
+                if (dwIntegrityLevel >= MY_SECURITY_MANDATORY_HIGH_RID)
+                    *pfElevated = true;
+            }
+            else
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
+            RTMemFree(pSidAndAttr);
+        }
+        else if (   GetLastError() == ERROR_INVALID_PARAMETER
+                 && GetLastError() == ERROR_NOT_SUPPORTED)
+            *pfElevated = true; /* Older Windows version. */
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
+
+# else
+        /*
+         * Check elevation (Vista / UAC).
+         */
+        DWORD TokenIsElevated = 0;
+        if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevation*/ 20, &TokenIsElevated, sizeof(TokenIsElevated), &cb))
+        {
+            fElevated = TokenIsElevated != 0;
+            if (fElevated)
+            {
+                enum
+                {
+                    MY_TokenElevationTypeDefault = 1,
+                    MY_TokenElevationTypeFull,
+                    MY_TokenElevationTypeLimited
+                } enmType;
+                if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevationType*/ 18, &enmType, sizeof(enmType), &cb))
+                     *pfElevated = enmType == MY_TokenElevationTypeFull;
+                else
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
             }
         }
+        else if (   GetLastError() == ERROR_INVALID_PARAMETER
+                 && GetLastError() == ERROR_NOT_SUPPORTED)
+            *pfElevated = true; /* Older Windows version. */
+        else if (   GetLastError() != ERROR_INVALID_PARAMETER
+                 && GetLastError() != ERROR_NOT_SUPPORTED)
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
+# endif
     }
-    else if (   GetLastError() != ERROR_INVALID_PARAMETER
-             && GetLastError() != ERROR_NOT_SUPPORTED)
-    {
-        RTMsgError("GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
-        fElevated = false;
-    }
-    CloseHandle(hToken);
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Membership in the Administrators group is required to perform this action");
 
-    return fElevated;
+    CloseHandle(hToken);
+    return rcExit;
 
 # else
     /*
@@ -1778,21 +1857,16 @@ static bool IsElevated(void)
      */
     char szExecPath[RTPATH_MAX];
     if (RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)) == NULL)
-    {
-        RTMsgError("RTProcGetExecutablePath failed");
-        return false;
-    }
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcGetExecutablePath failed");
 
     RTFSOBJINFO ObjInfo;
     int rc = RTPathQueryInfoEx(szExecPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_FAILURE(rc))
-    {
-        RTMsgError("RTProcGetExecutablePath failed: %Rrc", rc);
-        return false;
-    }
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathQueryInfoEx failed");
 
-    return ObjInfo.Attr.u.Unix.uid == geteuid()
-        || ObjInfo.Attr.u.Unix.uid == getuid();
+    *pfElevated = ObjInfo.Attr.u.Unix.uid == geteuid()
+               || ObjInfo.Attr.u.Unix.uid == getuid();
+    return RTEXITCODE_SUCCESS;
 # endif
 }
 
@@ -1811,6 +1885,16 @@ int main(int argc, char **argv)
     rc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, szErr, sizeof(szErr));
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", szErr);
+
+#ifdef WITH_ELEVATION
+    /*
+     * Elevation check.
+     */
+    bool fElevated;
+    RTEXITCODE  rcExit = ElevationCheck(&fElevated);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+#endif
 
     /*
      * Parse the top level arguments until we find a command.
@@ -1836,9 +1920,6 @@ int main(int argc, char **argv)
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
-#ifdef WITH_ELEVATION
-    bool fElevated = IsElevated();
-#endif
     for (;;)
     {
         RTGETOPTUNION ValueUnion;
@@ -1856,7 +1937,6 @@ int main(int argc, char **argv)
                 if (!fElevated)
                     return RelaunchElevated(argc, argv);
 #endif
-                RTEXITCODE  rcExit;
                 int         cCmdargs     = argc - GetState.iNext;
                 char      **papszCmdArgs = argv + GetState.iNext;
                 switch (ch)
