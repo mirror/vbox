@@ -230,29 +230,6 @@ FunctionEnd
 !insertmacro CheckArchitecture ""
 !insertmacro CheckArchitecture "un."
 
-!macro IsRebootNeeded un
-Function ${un}IsRebootNeeded
-
-  Push $0
-  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce\VBoxGuestAdditions" "RebootNeeded"
-  Push $0
-
-FunctionEnd
-!macroend
-!insertmacro IsRebootNeeded ""
-!insertmacro IsRebootNeeded "un."
-
-!macro SetRebootNeeded un
-Function ${un}SetRebootNeeded
-
-  Pop $0
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce\VBoxGuestAdditions" "RebootNeeded" $0
-
-FunctionEnd
-!macroend
-!insertmacro SetRebootNeeded ""
-!insertmacro SetRebootNeeded "un."
-
 !macro GetWindowsVer un
 Function ${un}GetWindowsVer
 
