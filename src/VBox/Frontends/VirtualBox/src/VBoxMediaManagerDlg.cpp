@@ -1217,7 +1217,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     {
                         CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
                         vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk, aMedium.location(),
-                                                          controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                                                          StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()));
                         success = false;
                         break;
                     }

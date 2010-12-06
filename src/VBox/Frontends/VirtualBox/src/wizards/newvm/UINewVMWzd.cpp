@@ -832,13 +832,13 @@ bool UINewVMWzdPage5::constructMachine()
                 m.AttachDevice(ctrHdName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!m.isOk())
                     vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_HardDisk,
-                                                     field("hardDiskLocation").toString(), ctrHdBus, 0, 0);
+                                                     field("hardDiskLocation").toString(), StorageSlot(ctrHdBus, 0, 0));
             }
 
             /* Attach empty CD/DVD ROM Device */
             m.AttachDevice(ctrDvdName, 1, 0, KDeviceType_DVD, CMedium());
             if (!m.isOk())
-                vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), ctrDvdBus, 1, 0);
+                vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), StorageSlot(ctrDvdBus, 1, 0));
 
             if (m.isOk())
             {
