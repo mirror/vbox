@@ -351,7 +351,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         else
                         {
                             /* Show the power down progress dialog: */
-                            vboxProblem().showModalProgressDialog(progress, machine.GetName());
+                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", 0, true);
                             if (progress.GetResultCode() != 0)
                                 vboxProblem().cannotStopMachine(progress);
                             else

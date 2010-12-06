@@ -1004,7 +1004,7 @@ void UIMachineLogic::sltTakeSnapshot()
         if (console.isOk())
         {
             /* Show the "Taking Snapshot" progress dialog */
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0, 0);
+            vboxProblem().showModalProgressDialog(progress, machine.GetName());
 
             if (progress.GetResultCode() != 0)
                 vboxProblem().cannotTakeSnapshot(progress);

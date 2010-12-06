@@ -152,6 +152,9 @@
     <file alias="progress_import_90px.png">images/progress_import_90px.png</file>
     <file alias="progress_export_90px.png">images/progress_export_90px.png</file>
     <file alias="progress_install_guest_additions_90px.png">images/progress_install_guest_additions_90px.png</file>
+    <file alias="progress_start_90px.png">images/progress_start_90px.png</file>
+    <file alias="progress_poweroff_90px.png">images/progress_poweroff_90px.png</file>
+    <file alias="progress_delete_90px.png">images/progress_delete_90px.png</file>
     <file alias="status_check_16px.png">images/status_check_16px.png</file>
     <file alias="status_check_32px.png">images/status_check_32px.png</file>
     <file alias="status_error_16px.png">images/status_error_16px.png</file>
