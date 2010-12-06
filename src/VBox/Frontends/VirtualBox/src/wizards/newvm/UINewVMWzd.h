@@ -199,7 +199,5 @@ private:
     int m_iSASCount;
 };
 
-Q_DECLARE_METATYPE(CMachine);
-
 #endif // __UINewVMWzd_h__
 

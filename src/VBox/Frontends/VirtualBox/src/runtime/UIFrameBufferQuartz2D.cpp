@@ -412,20 +412,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
 #endif
 
 //    if (remind)
-//    {
-//        class RemindEvent : public VBoxAsyncEvent
-//        {
-//            ulong mRealBPP;
-//        public:
-//            RemindEvent (ulong aRealBPP)
-//                : mRealBPP (aRealBPP) {}
-//            void handle()
-//            {
-//                vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
-//            }
-//        };
-//        (new RemindEvent (aEvent->bitsPerPixel()))->post();
-//    }
+//        vboxProblem().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
 }
 
 void UIFrameBufferQuartz2D::clean()

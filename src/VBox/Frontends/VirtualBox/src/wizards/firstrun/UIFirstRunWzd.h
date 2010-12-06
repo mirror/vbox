@@ -125,7 +125,5 @@ private:
     CMachine m_Machine;
 };
 
-Q_DECLARE_METATYPE(CMachine);
-
 #endif // __UIFirstRunWzd_h__
 

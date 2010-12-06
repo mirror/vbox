@@ -355,14 +355,13 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
 {
-    /* Save machine items from internal cache: */
-    /* Check if items were changed: */
+    /* Check if items were NOT changed: */
     if (!mIsListViewChanged)
         return;
 
     /* Delete all machine folders first: */
     const CSharedFolderVector &folders = machine.GetSharedFolders();
-    for (int iFolderIndex = 0; iFolderIndex < folders.size(); ++iFolderIndex)
+    for (int iFolderIndex = 0; iFolderIndex < folders.size() && !failed(); ++iFolderIndex)
     {
         const CSharedFolder &folder = folders[iFolderIndex];
         QString strFolderName = folder.GetName();
@@ -370,13 +369,15 @@ void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
         machine.RemoveSharedFolder(strFolderName);
         if (!machine.isOk())
         {
-            // TODO: Fix problem reporter!
-            //vboxProblem().cannotRemoveSharedFolder(this, machine, strFolderName, strFolderPath);
+            /* Mark the page as failed: */
+            setFailed(true);
+            /* Show error message: */
+            vboxProblem().cannotRemoveSharedFolder(machine, strFolderName, strFolderPath);
         }
     }
 
     /* Save all new machine folders: */
-    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size(); ++iFolderIndex)
+    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size() && !failed(); ++iFolderIndex)
     {
         const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
         if (data.m_type == MachineType)
@@ -384,8 +385,10 @@ void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
             machine.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
             if (!machine.isOk())
             {
-                // TODO: Fix problem reporter!
-                //vboxProblem().cannotCreateSharedFolder(this, machine, data.m_strName, data.m_strHostPath);
+                /* Mark the page as failed: */
+                setFailed(true);
+                /* Show error message: */
+                vboxProblem().cannotCreateSharedFolder(machine, data.m_strName, data.m_strHostPath);
             }
         }
     }
@@ -393,14 +396,13 @@ void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
 
 void UIMachineSettingsSF::saveFromCacheToConsole(CConsole &console)
 {
-    /* Save console items from internal cache: */
-    /* Check if items were changed: */
+    /* Check if items were NOT changed: */
     if (!mIsListViewChanged)
         return;
 
     /* Delete all console folders first: */
     const CSharedFolderVector &folders = console.GetSharedFolders();
-    for (int iFolderIndex = 0; iFolderIndex < folders.size(); ++iFolderIndex)
+    for (int iFolderIndex = 0; iFolderIndex < folders.size() && !failed(); ++iFolderIndex)
     {
         const CSharedFolder &folder = folders[iFolderIndex];
         QString strFolderName = folder.GetName();
@@ -408,13 +410,15 @@ void UIMachineSettingsSF::saveFromCacheToConsole(CConsole &console)
         console.RemoveSharedFolder(strFolderName);
         if (!console.isOk())
         {
-            // TODO: Fix problem reporter!
-            //vboxProblem().cannotRemoveSharedFolder(this, console, strFolderName, strFolderPath);
+            /* Mark the page as failed: */
+            setFailed(true);
+            /* Show error message: */
+            vboxProblem().cannotRemoveSharedFolder(console, strFolderName, strFolderPath);
         }
     }
 
     /* Save all new console folders: */
-    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size(); ++iFolderIndex)
+    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size() && !failed(); ++iFolderIndex)
     {
         const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
         if (data.m_type == ConsoleType)
@@ -422,8 +426,10 @@ void UIMachineSettingsSF::saveFromCacheToConsole(CConsole &console)
             console.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
             if (!console.isOk())
             {
-                // TODO: Fix problem reporter!
-                //vboxProblem().cannotCreateSharedFolder(this, console, data.m_strName, data.m_strHostPath);
+                /* Mark the page as failed: */
+                setFailed(true);
+                /* Show error message: */
+                vboxProblem().cannotCreateSharedFolder(console, data.m_strName, data.m_strHostPath);
             }
         }
     }

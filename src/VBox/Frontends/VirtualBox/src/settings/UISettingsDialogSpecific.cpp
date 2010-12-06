@@ -261,6 +261,8 @@ protected:
              * it can be busy idle-processing for loaded pages: */
             if (!m_fConditionDone)
                 m_condition.wakeAll();
+            if (pPage->failed())
+                break;
         }
         /* Notify listeners about all pages were processed: */
         emit sigNotifyAboutPagesProcessed();

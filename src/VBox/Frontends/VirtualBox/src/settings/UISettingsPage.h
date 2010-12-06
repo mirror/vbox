@@ -98,6 +98,10 @@ public:
     bool processed() const;
     void setProcessed(bool fProcessed);
 
+    /* Page 'failed' stuff: */
+    bool failed() const;
+    void setFailed(bool fFailed);
+
 protected:
 
     /* Settings page constructor, hidden: */
@@ -107,6 +111,7 @@ protected:
     UISettingsPageType m_type;
     int m_cId;
     bool m_fProcessed;
+    bool m_fFailed;
     QWidget *m_pFirstWidget;
 };
 

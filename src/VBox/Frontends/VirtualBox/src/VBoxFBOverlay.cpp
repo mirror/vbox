@@ -3936,20 +3936,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
 //    }
 
     if (remind)
-    {
-        class RemindEvent : public VBoxAsyncEvent
-        {
-            ulong mRealBPP;
-        public:
-            RemindEvent (ulong aRealBPP)
-                : VBoxAsyncEvent(0), mRealBPP (aRealBPP) {}
-            void handle()
-            {
-                vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
-            }
-        };
-        (new RemindEvent (size.bitsPerPixel()))->post();
-    }
+        vboxProblem().remindAboutWrongColorDepth(size.bitsPerPixel(), 32);
 }
 
 VBoxVHWAColorFormat::VBoxVHWAColorFormat (uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b) :
