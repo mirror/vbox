@@ -430,9 +430,14 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
                     break;
 
                 case VBOX_HGCM_SVC_PARM_PTR:
-                    memcpy(paParms[i].u.pointer.addr,
-                           pBuf->pParms[i].u.pointer.addr,
-                           pBuf->pParms[i].u.pointer.size);
+                    if (paParms[i].u.pointer.size >= pBuf->pParms[i].u.pointer.size)
+                    {
+                        memcpy(paParms[i].u.pointer.addr,
+                               pBuf->pParms[i].u.pointer.addr,
+                               pBuf->pParms[i].u.pointer.size);
+                    }
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
                     break;
 
                 default:
