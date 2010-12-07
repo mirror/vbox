@@ -20,15 +20,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
-#include <VBox/com/com.h>
-#include <VBox/com/string.h>
-#include <VBox/com/Guid.h>
-#include <VBox/com/array.h>
-#include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
+# include <VBox/com/com.h>
+# include <VBox/com/string.h>
+# include <VBox/com/Guid.h>
+# include <VBox/com/array.h>
+# include <VBox/com/ErrorInfo.h>
+# include <VBox/com/errorprint.h>
+# include <VBox/com/EventQueue.h>
 
-#include <VBox/com/VirtualBox.h>
+# include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/asm.h>
@@ -911,7 +911,10 @@ int handleExtPack(HandlerArg *a)
 
         Bstr bstrTarball(szPath);
         Bstr bstrName;
-        CHECK_ERROR2_RET(ptrExtPackMgr, Install(bstrTarball.raw(), bstrName.asOutParam()), RTEXITCODE_FAILURE);
+        ComPtr<IExtPackFile> ptrExtPackFile;
+        CHECK_ERROR2_RET(ptrExtPackMgr, OpenExtPackFile(bstrTarball.raw(), ptrExtPackFile.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(ptrExtPackFile, COMGETTER(Name)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(ptrExtPackFile, Install(), RTEXITCODE_FAILURE);
         RTPrintf("Successfully installed \"%lS\".\n", bstrName.raw());
     }
     else if (!strcmp(a->argv[0], "uninstall"))

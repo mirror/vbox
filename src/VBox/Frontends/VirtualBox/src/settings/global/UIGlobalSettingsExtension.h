@@ -50,6 +50,8 @@ public:
     /* Constructor: */
     UIGlobalSettingsExtension();
 
+    static bool doInstallation(QString const &strFilePath, QWidget *pParent, QString *pstrExtPackName);
+
 protected:
 
     /* Load data to cashe from corresponding external object(s),

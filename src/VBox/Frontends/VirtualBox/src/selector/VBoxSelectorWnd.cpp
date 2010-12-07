@@ -38,6 +38,7 @@
 #include "VBoxVMLogViewer.h"
 #include "QIFileDialog.h"
 #include "UIDesktopServices.h"
+#include "UIGlobalSettingsExtension.h" /* extension pack installation */
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -1010,10 +1011,7 @@ void VBoxSelectorWnd::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
             }
             else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxExtPackFileExts))
             {
-                CExtPackManager extPackManager = vboxGlobal().virtualBox().GetExtensionPackManager();
-                extPackManager.Install(strFile);
-                if (!extPackManager.isOk())
-                    vboxProblem().cannotInstallExtPack(strFile, extPackManager, this);
+                UIGlobalSettingsExtension::doInstallation(strFile, this, NULL);
             }
         }
     }

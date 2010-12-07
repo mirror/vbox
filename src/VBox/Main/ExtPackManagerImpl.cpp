@@ -87,6 +87,10 @@ public:
     Utf8Str             strExtPackFile;
     /** The file handle of the extension pack file. */
     RTFILE              hExtPackFile;
+    /** Pointer to the extension pack manager. */
+    ComObjPtr<ExtPackManager> ptrExtPackMgr;
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -118,6 +122,8 @@ public:
     VBOXEXTPACKCTX      enmContext;
     /** Set if we've made the pfnVirtualBoxReady or pfnConsoleReady call. */
     bool                fMadeReadyCall;
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /** List of extension packs. */
@@ -142,6 +148,8 @@ struct ExtPackManager::Data
     VirtualBox         *pVirtualBox;
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 
@@ -165,8 +173,9 @@ HRESULT ExtPackFile::FinalConstruct()
  *
  * @returns COM status code.
  * @param   a_pszFile       The path to the extension pack file.
+ * @param   a_pExtPackMgr   Pointer to the extension pack manager.
  */
-HRESULT ExtPackFile::initWithFile(const char *a_pszFile)
+HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtPackMgr)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -180,12 +189,89 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile)
     m->fUsable                      = false;
     m->strWhyUnusable               = tr("ExtPack::init failed");
     m->strExtPackFile               = a_pszFile;
+    m->hExtPackFile                 = NIL_RTFILE;
+    m->ptrExtPackMgr                = a_pExtPackMgr;
 
-    /*
-     * Probe the extension pack (this code is shared with refresh()).
-     */
+    iprt::MiniString *pstrTarName = VBoxExtPackExtractNameFromTarballPath(a_pszFile);
+    if (pstrTarName)
+    {
+        m->Desc.strName = *pstrTarName;
+        delete pstrTarName;
+        pstrTarName = NULL;
+    }
 
     autoInitSpan.setSucceeded();
+
+    /*
+     * Try open the extension pack and check that it is a regular file.
+     */
+    int vrc = RTFileOpen(&m->hExtPackFile, a_pszFile,
+                         RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+    if (RT_FAILURE(vrc))
+    {
+        if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+            return initFailed(tr("'%s' file not found"), a_pszFile);
+        return initFailed(tr("RTFileOpen('%s',,) failed with %Rrc"), a_pszFile, vrc);
+    }
+
+    RTFSOBJINFO ObjInfo;
+    vrc = RTFileQueryInfo(m->hExtPackFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_FAILURE(vrc))
+        return initFailed(tr("RTFileQueryInfo failed with %Rrc on '%s'"), vrc, a_pszFile);
+    if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
+        return initFailed(tr("Not a regular file: %s"), a_pszFile);
+
+    /*
+     * Validate the tarball and extract the XML file.
+     */
+    char        szError[8192];
+    RTVFSFILE   hXmlFile;
+    vrc = VBoxExtPackValidateTarball(m->hExtPackFile, NULL /*pszExtPackName*/, a_pszFile,
+                                     szError, sizeof(szError), NULL /*phValidManifest*/, &hXmlFile);
+    if (RT_FAILURE(vrc))
+        return initFailed(tr("%s"), szError);
+
+    /*
+     * Parse the XML.
+     */
+    iprt::MiniString strSavedName(m->Desc.strName);
+    iprt::MiniString *pStrLoadErr = VBoxExtPackLoadDescFromVfsFile(hXmlFile, &m->Desc, &m->ObjInfoDesc);
+    RTVfsFileRelease(hXmlFile);
+    if (pStrLoadErr != NULL)
+    {
+        m->strWhyUnusable.printf(tr("Failed to the xml file: %s"), pStrLoadErr->c_str());
+        m->Desc.strName = strSavedName;
+        delete pStrLoadErr;
+        return S_OK;
+    }
+
+    /*
+     * Match the tarball name with the name from the XML.
+     */
+    /** @todo drop this restriction after the old install interface is
+     *        dropped. */
+    if (!strSavedName.equalsIgnoreCase(m->Desc.strName))
+        return initFailed(tr("Extension pack name mismatch between the downloaded file and the XML inside it (xml='%s' file='%s')"),
+                          m->Desc.strName.c_str(), strSavedName.c_str());
+
+    m->fUsable = true;
+    m->strWhyUnusable.setNull();
+    return S_OK;
+}
+
+/**
+ * Protected helper that formats the strExtPackFile value.
+ *
+ * @returns S_OK
+ * @param   a_pszWhyFmt         Why it failed, format string.
+ * @param   ...                 The format arguments.
+ */
+HRESULT ExtPackFile::initFailed(const char *a_pszWhyFmt, ...)
+{
+    va_list va;
+    va_start(va, a_pszWhyFmt);
+    m->strExtPackFile.printfV(a_pszWhyFmt, va);
+    va_end(va);
     return S_OK;
 }
 
@@ -207,6 +293,8 @@ void ExtPackFile::uninit()
     if (!autoUninitSpan.uninitDone() && m != NULL)
     {
         VBoxExtPackFreeDesc(&m->Desc);
+        RTFileClose(m->hExtPackFile);
+        m->hExtPackFile = NIL_RTFILE;
 
         delete m;
         m = NULL;
@@ -325,7 +413,16 @@ STDMETHODIMP ExtPackFile::COMGETTER(FilePath)(BSTR *a_pbstrPath)
 
 STDMETHODIMP ExtPackFile::Install(void)
 {
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        if (m->fUsable)
+            hrc = m->ptrExtPackMgr->doInstall(this);
+        else
+            hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+    }
+    return hrc;
 }
 
 
@@ -1451,11 +1548,15 @@ HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZon
     }
     /* else: ignore, the directory probably does not exist or something. */
 
+#if 0
     /*
      * Look for things in the drop zone.
      */
     if (SUCCEEDED(hrc) && a_fCheckDropZone)
         processDropZone();
+#else
+    NOREF(a_fCheckDropZone);
+#endif
 
     if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
@@ -1533,128 +1634,12 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarball, IExtPackFile
     Utf8Str strTarball(a_bstrTarball);
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
 
-    return E_NOTIMPL;
-}
-
-STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
-{
-    CheckComArgNotNull(a_bstrTarball);
-    CheckComArgOutPointerValid(a_pbstrName);
-    Utf8Str strTarball(a_bstrTarball);
-    AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
+    ComObjPtr<ExtPackFile> NewExtPackFile;
+    HRESULT hrc = NewExtPackFile.createObject();
     if (SUCCEEDED(hrc))
-    {
-        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
-        /*
-         * Check that the file exists and that we can access it.
-         */
-        if (RTFileExists(strTarball.c_str()))
-        {
-            RTFILE hFile;
-            int vrc = RTFileOpen(&hFile, strTarball.c_str(),
-                                 RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN | RTFILE_O_INHERIT);
-            if (RT_SUCCESS(vrc))
-            {
-                RTFSOBJINFO ObjInfo;
-                vrc = RTFileQueryInfo(hFile, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-                if (   RT_SUCCESS(vrc)
-                    && RTFS_IS_FILE(ObjInfo.Attr.fMode))
-                {
-                    /*
-                     * Derive the name of the extension pack from the file
-                     * name, saving us the trouble of having to unpack it and
-                     * parse its XML to figure it out.   While this restricts
-                     * the filename a bit, it also forces it to be clearer, so
-                     * it shouldn't really be a problem.
-                     */
-                    iprt::MiniString *pStrName = VBoxExtPackExtractNameFromTarballPath(strTarball.c_str());
-                    if (pStrName)
-                    {
-                        /*
-                         * Refresh the data we have on the extension pack as it
-                         * may be made stale by direct meddling or some other user.
-                         */
-                        ExtPack *pExtPack;
-                        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
-                        if (SUCCEEDED(hrc) && !pExtPack)
-                        {
-                            /*
-                             * Run the set-uid-to-root binary that performs the actual
-                             * installation.  Then create an object for the packet (we
-                             * do this even on failure, to be on the safe side).
-                             */
-                            char szTarballFd[64];
-                            RTStrPrintf(szTarballFd, sizeof(szTarballFd), "0x%RX64",
-                                        (uint64_t)RTFileToNative(hFile));
-
-                            hrc = runSetUidToRootHelper("install",
-                                                        "--base-dir",   m->strBaseDir.c_str(),
-                                                        "--cert-dir",   m->strCertificatDirPath.c_str(),
-                                                        "--name",       pStrName->c_str(),
-                                                        "--tarball",    strTarball.c_str(),
-#ifndef RT_OS_WINDOWS /* Not possible since the app might be launched by some unrelated service. */
-                                                        "--tarball-fd", &szTarballFd[0],
-#endif
-                                                        NULL);
-                            RTFileClose(hFile); hFile = NIL_RTFILE;
-                            if (SUCCEEDED(hrc))
-                            {
-                                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnsuableIsError*/, &pExtPack);
-                                if (SUCCEEDED(hrc))
-                                {
-                                    LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
-                                    pExtPack->callInstalledHook(m->pVirtualBox, &autoLock);
-
-                                    /*
-                                     * Finally, return the name.
-                                     */
-                                    hrc = pExtPack->COMGETTER(Name)(a_pbstrName);
-                                }
-                            }
-                            else
-                            {
-                                ErrorInfoKeeper Eik;
-                                refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, NULL);
-                            }
-                        }
-                        else if (SUCCEEDED(hrc))
-                            hrc = setError(E_FAIL,
-                                           tr("Extension pack '%s' is already installed."
-                                              " In case of a reinstallation, please uninstall it first"),
-                                           pStrName->c_str());
-                        delete pStrName;
-                    }
-                    else
-                        hrc = setError(E_FAIL, tr("Malformed '%s' file name"), strTarball.c_str());
-                }
-                else if (RT_SUCCESS(vrc))
-                    hrc = setError(E_FAIL, tr("'%s' is not a regular file"), strTarball.c_str());
-                else
-                    hrc = setError(E_FAIL, tr("Failed to query info on '%s' (%Rrc)"), strTarball.c_str(), vrc);
-                RTFileClose(hFile);
-            }
-            else
-                hrc = setError(E_FAIL, tr("Failed to open '%s' (%Rrc)"), strTarball.c_str(), vrc);
-        }
-        else if (RTPathExists(strTarball.c_str()))
-            hrc = setError(E_FAIL, tr("'%s' is not a regular file"), strTarball.c_str());
-        else
-            hrc = setError(E_FAIL, tr("File '%s' was inaccessible or not found"), strTarball.c_str());
-
-        /*
-         * Do VirtualBoxReady callbacks now for any freshly installed
-         * extension pack (old ones will not be called).
-         */
-        if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
-        {
-            autoLock.release();
-            callAllVirtualBoxReadyHooks();
-        }
-    }
+        hrc = NewExtPackFile->initWithFile(strTarball.c_str(), this);
+    if (SUCCEEDED(hrc))
+        NewExtPackFile.queryInterfaceTo(a_ppExtPackFile);
 
     return hrc;
 }
@@ -2156,7 +2141,81 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
     return hrc;
 }
 
+/**
+ * Worker for IExtPackFile::Install.
+ *
+ * @returns COM status code.
+ * @param   a_pExtPackFile  The extension pack file, caller checks that it's
+ *                          usable.
+ */
+HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile)
+{
+    AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
+    iprt::MiniString const * const pStrName     = &a_pExtPackFile->m->Desc.strName;
+    iprt::MiniString const * const pStrTarball  = &a_pExtPackFile->m->strExtPackFile;
 
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        /*
+         * Refresh the data we have on the extension pack as it
+         * may be made stale by direct meddling or some other user.
+         */
+        ExtPack *pExtPack;
+        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+        if (SUCCEEDED(hrc) && !pExtPack)
+        {
+            /*
+             * Run the privileged helper binary that performs the actual
+             * installation.  Then create an object for the packet (we do this
+             * even on failure, to be on the safe side).
+             */
+/** @todo add a hash (SHA-256) of the tarball or maybe just the manifest. */
+            hrc = runSetUidToRootHelper("install",
+                                        "--base-dir",   m->strBaseDir.c_str(),
+                                        "--cert-dir",   m->strCertificatDirPath.c_str(),
+                                        "--name",       pStrName->c_str(),
+                                        "--tarball",    pStrTarball->c_str(),
+                                        NULL);
+            if (SUCCEEDED(hrc))
+            {
+                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnsuableIsError*/, &pExtPack);
+                if (SUCCEEDED(hrc))
+                {
+                    LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
+                    pExtPack->callInstalledHook(m->pVirtualBox, &autoLock);
+                }
+            }
+            else
+            {
+                ErrorInfoKeeper Eik;
+                refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, NULL);
+            }
+        }
+        else if (SUCCEEDED(hrc))
+            hrc = setError(E_FAIL,
+                           tr("Extension pack '%s' is already installed."
+                              " In case of a reinstallation, please uninstall it first"),
+                           pStrName->c_str());
+
+        /*
+         * Do VirtualBoxReady callbacks now for any freshly installed
+         * extension pack (old ones will not be called).
+         */
+        if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
+        {
+            autoLock.release();
+            callAllVirtualBoxReadyHooks();
+        }
+    }
+
+    return hrc;
+}
+
+#if 0
 /**
  * Processes anything new in the drop zone.
  */
@@ -2240,6 +2299,7 @@ void ExtPackManager::processDropZone(void)
     } /* foreach dir entry */
     RTDirClose(pDir);
 }
+#endif
 
 
 /**
