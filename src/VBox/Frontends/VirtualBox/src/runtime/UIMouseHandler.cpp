@@ -662,8 +662,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
     if (wheelDirection == Qt::Vertical)
     {
         /* The absolute value of wheel delta is 120 units per every wheel move;
-         * positive deltas correspond to counterclockwize rotations (usually up),
-         * negative deltas correspond to clockwize (usually down). */
+         * positive deltas correspond to counterclockwise rotations (usually up),
+         * negative deltas correspond to clockwise (usually down). */
         iWheelVertical = - (wheelDelta / 120);
     }
     else if (wheelDirection == Qt::Horizontal)
