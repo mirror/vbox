@@ -415,6 +415,7 @@ void VBoxProblemReporter::cannotFindLicenseFiles (const QString &aPath)
              "<nobr><b>%1</b></nobr>.")
              .arg (aPath));
 }
+#endif
 
 void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
                                                  const QString &aPath)
@@ -425,7 +426,6 @@ void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
              "Check file permissions.")
              .arg (aPath));
 }
-#endif
 
 void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
 {
