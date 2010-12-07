@@ -19,18 +19,12 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-VBOX_PATH_DEVICES_SRC := $(PATH_SUB_CURRENT)
-
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
 else ifndef VBOX_WITHOUT_ETHERBOOT
- # Subdir with complex makefile.
- SUBDIRS_LIBRARIES += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
- SUBDIRS_CLEAN     += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
- # Disable the unsafe pass order optimizations.
- KBUILD_SAFE_PARALLEL = 1
+ include $(PATH_SUB_CURRENT)/PC/Etherboot-src/Makefile.kmk
 endif
 if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
