@@ -139,6 +139,9 @@ ifdef VBOX_WITH_DOCS
  	user_Storage.xml \
  	user_Networking.xml
 
+ VBOX_MANUAL_XML_FILES_INCL_CHANGELOG = $(VBOX_MANUAL_XML_FILES) \
+ 	user_ChangeLog.xml
+
  VBOX_SDKREF_XML_FILES = \
  	SDKRef.xml
 
@@ -171,7 +174,7 @@ ifdef VBOX_WITH_DOCS
  endif
 
  OTHER_CLEAN += \
- 	$(foreach f,$(VBOX_MANUAL_LANGUAGES), $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_XML_FILES))) \
+ 	$(foreach f,$(VBOX_MANUAL_LANGUAGES), $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG))) \
  	$(foreach f,en_US,                    $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_SDKREF_XML_FILES))) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES), $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_LATEX_FILES_TARGET))) \
  	$(foreach f,en_US,                    $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_SDKREF_LATEX_FILES_TARGET))) \
@@ -270,8 +273,8 @@ HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
 #
 
 # Only one changelog for all languages
-$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG): $(VBOX_PATH_MANUAL_SRC)/$(VBOX_MANUAL_XML_CHANGELOG) | $$(dir $$@)
-	$(QUIET)$(INSTALL) -m 0644 $< $@
+# $(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG): $(VBOX_PATH_MANUAL_SRC)/$(VBOX_MANUAL_XML_CHANGELOG) | $$(dir $$@)
+# 	$(QUIET)$(INSTALL) -m 0644 $< $@
 
 # intermediate step to do some variable replacement in the document
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(filter-out user_VBoxManage.xml,$(VBOX_MANUAL_XML_FILES)))): \
@@ -287,6 +290,26 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/
 	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
 	               --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
+
+$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeLog.xml): \
+		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
+		$(VBOX_PATH_MANUAL_SRC)/% $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml | $$(dir $$@)
+	$(call MSG_L1,Pre-processing [3] $(@F) to $@)
+	$(QUIET)$(RM) -f $@ $@.tmp $@.tmp2
+	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
+	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
+	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
+	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
+	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
+	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
+	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+	               --output $@.tmp $<
+	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/!d' \
+	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' \
+	               --output $@ $@.tmp
+	$(QUIET)$(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' --append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
+	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/,$$!d' \
+	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' --append $@ $@.tmp
 
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
@@ -494,7 +517,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 # generate temporary LaTeX source from processed XML
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.tex): \
 				$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.tex : \
-				$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES)) \
+				$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 				$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
 				$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
 				$(MAKEFILE_CURRENT)
@@ -582,7 +605,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/VirtualBox.c
 
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htmlhelp.hhp): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp: \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES)) \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/docbook-htmlhelp-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/titlepage-htmlhelp.xsl \
@@ -645,7 +668,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG)
 	$(call MSG_L1,xsltproc $<)
@@ -657,7 +680,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG)
 	$(call MSG_L1,xsltproc $<)
