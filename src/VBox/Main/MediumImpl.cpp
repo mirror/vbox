@@ -2417,9 +2417,11 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
 
     ComObjPtr<Progress> pProgress;
 
+    GuidList llRegistriesThatNeedSaving;
     HRESULT rc = deleteStorage(&pProgress,
                                false /* aWait */,
-                               NULL);
+                               &llRegistriesThatNeedSaving);
+    m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
     if (SUCCEEDED(rc))
         pProgress.queryInterfaceTo(aProgress);
