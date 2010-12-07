@@ -1644,8 +1644,13 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
                         tr("Cannot change the type of medium '%s' because it is a differencing medium"),
                         m->strLocationFull.c_str());
 
-    /* cannot change the type of a medium being in use by more than one VM */
-    if (m->backRefs.size() > 1)
+    /* Cannot change the type of a medium being in use by more than one VM.
+     * If the change is to Immutable then it must not be attached to any VM,
+     * otherwise assumptions elsewhere are violated and the VM becomes
+     * inaccessible. Attaching an immutable medium triggers the diff creation,
+     * and this is vital for the correct operation. */
+    if (   m->backRefs.size() > 1
+        || (aType == MediumType_Immutable && m->backRefs.size() > 0))
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot change the type of medium '%s' because it is attached to %d virtual machines"),
                         m->strLocationFull.c_str(), m->backRefs.size());
