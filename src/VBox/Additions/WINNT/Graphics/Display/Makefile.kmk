@@ -65,12 +65,18 @@ VBoxDisp_LIBS = \
 ifdef VBOX_WITH_WDDM
 
  ifeq ($(KBUILD_TARGET_ARCH), amd64)
-  $(warning VBoxVideoD3D: make it 32bit for 64bit builds)
+ # VBOXDISP_BUILD_32WITH64=1
+  ifndef VBOXDISP_BUILD_32WITH64
+   $(warning VBoxVideoD3D: make it 32bit for 64bit builds)
+  endif
  endif
 
 DLLS += VBoxDispD3D
  if defined(VBOX_SIGNING_MODE)
 VBoxDispD3D_NOINST = true
+ endif
+ ifdef VBOXDISP_BUILD_32WITH64
+VBoxDispD3D_BLD_TRG_ARCH = x86
  endif
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
 VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP
@@ -109,14 +115,14 @@ VBoxDispD3D_LIBS     = \
 VBoxDispD3D_SDKS     = WINDDKWLH
 # VBoxDispD3D_INCS    += ../Wine/include
 
- ifeq ($(KBUILD_TARGET_ARCH), amd64)
+ ifdef VBOXDISP_BUILD_32WITH64
 DLLS += VBoxDispD3D64
 VBoxDispD3D64_EXTENDS  = VBoxDispD3D
 VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D_SOURCES))
+VBoxDispD3D64_BLD_TRG_ARCH = amd64
  endif
-endif
 
-ifdef VBOX_WITH_CRHGSMI
+ ifdef VBOX_WITH_CRHGSMI
 #
 # VBoxCrHgsmi
 #
@@ -127,6 +133,7 @@ VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
 	wddm/VBoxUhgsmiKmt.cpp
 VBoxCrHgsmi_SDKS        = WINDDKWLH
+ endif
 endif
 
 ifdef VBOXVIDEOWINDBG
