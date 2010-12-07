@@ -686,6 +686,113 @@ RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, const char *pszTag, RT_S
  */
 RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
+/** @def RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
+ * Define RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF to enable electric fence new and
+ * delete operators for classes which uses the RTMEMEF_NEW_AND_DELETE_OPERATORS
+ * macro.
+ */
+/** @def RTMEMEF_NEW_AND_DELETE_OPERATORS
+ * Defines the electric fence new and delete operators for a class when
+ * RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF is define.
+ */
+#if defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) && !defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF)
+# if defined(RT_EXCEPTIONS_ENABLED)
+#  define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
+        void *operator new(size_t cb) throw(std::bad_alloc) \
+        { \
+            void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+            if (RT_UNLIKELY(!pv)) \
+                throw std::bad_alloc(); \
+            return pv; \
+        } \
+        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) throw() \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        void *operator new[](size_t cb) throw(std::bad_alloc) \
+        { \
+            void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+            if (RT_UNLIKELY(!pv)) \
+                throw std::bad_alloc(); \
+            return pv; \
+        } \
+        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) throw() \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        \
+        void operator delete(void *pv) throw() \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) throw() \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete[](void *pv) throw() \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) throw() \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        \
+        typedef int UsingElectricNewAndDeleteOperators
+# else
+#  define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
+        void *operator new(size_t cb) \
+        { \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        void *operator new[](size_t cb) \
+        { \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        \
+        void operator delete(void *pv) \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete[](void *pv) \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        \
+        typedef int UsingElectricNewAndDeleteOperators
+# endif
+#else
+# define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
+        typedef int UsingDefaultNewAndDeleteOperators
+#endif
+#ifdef DOXYGEN_RUNNING
+# define RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
+#endif
+
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
  */
