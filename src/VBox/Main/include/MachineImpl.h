@@ -632,7 +632,7 @@ public:
     virtual HRESULT onCPUExecutionCapChange(ULONG /* aExecutionCap */) { return S_OK; }
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
-    virtual HRESULT onBandwidthGroupChange(IBandwidthGroup */* aBandwidthGroup */) { return S_OK; }
+    virtual HRESULT onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
 
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
