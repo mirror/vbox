@@ -503,7 +503,6 @@ HRESULT VirtualBox::init()
         /* extension manager */
         rc = unconst(m->ptrExtPackManager).createObject();
         if (SUCCEEDED(rc))
-            /** @todo Define drop zone location. */
             rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
         if (FAILED(rc))
             throw rc;
