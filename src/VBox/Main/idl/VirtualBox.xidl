@@ -14431,7 +14431,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="8104df65-74d6-4e33-b374-50aa062b4afd"
+    uuid="70d808a9-176f-4d45-adad-7c509b8309b3"
     wsmap="suppress"
     >
     <desc>
@@ -14473,19 +14473,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="file" type="IExtPackFile" dir="return">
         <desc>The interface of the extension pack file object.</desc>
-      </param>
-    </method>
-
-    <method name="install">
-      <desc>
-        Please use openExtPackFile + IExtPackFile::install instead of this
-        interface.   This will be removed later in the beta cycle.
-      </desc>
-      <param name="path" type="wstring" dir="in">
-        <desc>The path of the extension pack tarball.</desc>
-      </param>
-      <param name="name" type="wstring" dir="return">
-        <desc>The name of the installed extension pack.</desc>
       </param>
     </method>
 

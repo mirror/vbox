@@ -337,7 +337,9 @@ public:
 
     void cannotUpdateGuestAdditions (const CProgress &aProgress, QWidget *aParent /* = NULL */) const;
 
-    void cannotInstallExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent = 0);
+    void cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent = 0);
+    void badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0);
+    void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0);
     void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent = 0);
     bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent = 0);
 
