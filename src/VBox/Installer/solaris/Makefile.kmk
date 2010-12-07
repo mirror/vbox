@@ -179,6 +179,7 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
 	VBoxNetDHCP \
+	$(if $(VBOX_WITH_EXTPACK),VBoxExtPackHelperApp,) \
 	VBoxSVC \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
