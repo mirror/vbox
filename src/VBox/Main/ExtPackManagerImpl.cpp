@@ -136,9 +136,6 @@ struct ExtPackManager::Data
 {
     /** The directory where the extension packs are installed. */
     Utf8Str             strBaseDir;
-    /** The directory where the extension packs can be dropped for automatic
-     * installation. */
-    Utf8Str             strDropZoneDir;
     /** The directory where the certificates this installation recognizes are
      * stored. */
     Utf8Str             strCertificatDirPath;
@@ -1451,14 +1448,9 @@ HRESULT ExtPackManager::FinalConstruct()
  *
  * @returns COM status code.
  * @param   a_pVirtualBox           Pointer to the VirtualBox object.
- * @param   a_pszDropZoneDir        The path to the drop zone directory.
- * @param   a_fCheckDropZone        Whether to check the drop zone for new
- *                                  extensions or not.  Only VBoxSVC does this
- *                                  and then only when wanted.
  * @param   a_enmContext            The context we're in.
  */
-HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZoneDir, bool a_fCheckDropZone,
-                             VBOXEXTPACKCTX a_enmContext)
+HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmContext)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -1484,7 +1476,6 @@ HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZon
     m = new Data;
     m->strBaseDir           = szBaseDir;
     m->strCertificatDirPath = szCertificatDir;
-    m->strDropZoneDir       = a_pszDropZoneDir;
     m->pVirtualBox          = a_pVirtualBox;
     m->enmContext           = a_enmContext;
 
@@ -1547,16 +1538,6 @@ HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZon
         RTDirClose(pDir);
     }
     /* else: ignore, the directory probably does not exist or something. */
-
-#if 0
-    /*
-     * Look for things in the drop zone.
-     */
-    if (SUCCEEDED(hrc) && a_fCheckDropZone)
-        processDropZone();
-#else
-    NOREF(a_fCheckDropZone);
-#endif
 
     if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
@@ -2214,92 +2195,6 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile)
 
     return hrc;
 }
-
-#if 0
-/**
- * Processes anything new in the drop zone.
- */
-void ExtPackManager::processDropZone(void)
-{
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (FAILED(hrc))
-        return;
-    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->strDropZoneDir.isEmpty())
-        return;
-
-    PRTDIR pDir;
-    int vrc = RTDirOpen(&pDir, m->strDropZoneDir.c_str());
-    if (RT_FAILURE(vrc))
-        return;
-    for (;;)
-    {
-        RTDIRENTRYEX Entry;
-        vrc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-        if (RT_FAILURE(vrc))
-        {
-            AssertMsg(vrc == VERR_NO_MORE_FILES, ("%Rrc\n", vrc));
-            break;
-        }
-
-        /*
-         * We're looking for files with the right extension.  Symbolic links
-         * will be ignored.
-         */
-        if (   RTFS_IS_FILE(Entry.Info.Attr.fMode)
-            && RTStrICmp(RTPathExt(Entry.szName), VBOX_EXTPACK_SUFFIX) == 0)
-        {
-            /* We create (and check for) a blocker file to prevent this
-               extension pack from being installed more than once. */
-            char szPath[RTPATH_MAX];
-            vrc = RTPathJoin(szPath, sizeof(szPath), m->strDropZoneDir.c_str(), Entry.szName);
-            if (RT_SUCCESS(vrc))
-                vrc = RTPathAppend(szPath, sizeof(szPath), "-done");
-            AssertRC(vrc);
-            if (RT_SUCCESS(vrc))
-            {
-                RTFILE hFile;
-                vrc = RTFileOpen(&hFile, szPath,  RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE);
-                if (RT_SUCCESS(vrc))
-                {
-                    /* Construct the full path to the extension pack and invoke
-                       the Install method to install it.  Write errors to the
-                       done file. */
-                    vrc = RTPathJoin(szPath, sizeof(szPath), m->strDropZoneDir.c_str(), Entry.szName); AssertRC(vrc);
-                    Bstr strName;
-                    hrc = Install(Bstr(szPath).raw(), strName.asOutParam());
-                    if (SUCCEEDED(hrc))
-                        RTFileWrite(hFile, "succeeded\n", sizeof("succeeded\n"), NULL);
-                    else
-                    {
-                        Utf8Str strErr;
-                        com::ErrorInfo Info;
-                        if (Info.isFullAvailable())
-                            strErr.printf("failed\n"
-                                          "%ls\n"
-                                          "Details: code %Rhrc (%#RX32), component %ls, interface %ls, callee %ls\n"
-                                          ,
-                                          Info.getText().raw(),
-                                          Info.getResultCode(),
-                                          Info.getResultCode(),
-                                          Info.getComponent().raw(),
-                                          Info.getInterfaceName().raw(),
-                                          Info.getCalleeName().raw());
-                        else
-                            strErr.printf("failed\n"
-                                          "hrc=%Rhrc (%#RX32)\n", hrc, hrc);
-                        RTFileWrite(hFile, strErr.c_str(), strErr.length(), NULL);
-                    }
-                    RTFileClose(hFile);
-                }
-            }
-        }
-    } /* foreach dir entry */
-    RTDirClose(pDir);
-}
-#endif
 
 
 /**
