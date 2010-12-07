@@ -1076,25 +1076,16 @@ void VBoxMediaManagerDlg::doRemoveMedium()
 
             if (deleteStorage)
             {
-                bool success = false;
-
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
-                    vboxProblem().showModalProgressDialog (progress, windowTitle(), ":/progress_delete_90px.png", this, true);
-                    if (progress.isOk() && progress.GetResultCode() == S_OK)
-                        success = true;
+                    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_delete_90px.png", this, true);
+                    if (!(progress.isOk() && progress.GetResultCode() == S_OK))
+                    {
+                        vboxProblem().cannotDeleteHardDiskStorage(this, hardDisk, progress);
+                        return;
+                    }
                 }
-
-                if (success)
-                    vboxGlobal().removeMedium (VBoxDefs::MediumType_HardDisk, id);
-                else
-                    vboxProblem().cannotDeleteHardDiskStorage (this, hardDisk, progress);
-
-                /* We don't want to close the hard disk because it was
-                 * implicitly closed and removed from the list of known media
-                 * on storage deletion */
-                return;
             }
 
             hardDisk.Close();
