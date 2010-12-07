@@ -23,7 +23,7 @@ Version:   %BUILDVER%_%BUILDREL%
 Release:   1
 URL:       http://www.virtualbox.org/
 Source:    VirtualBox.tar.bz2
-License:   VirtualBox Personal Use and Evaluation License (PUEL)
+License:   GPLv2
 Group:     Applications/System
 Vendor:    Oracle Corporation
 BuildRoot: %BUILDROOT%
