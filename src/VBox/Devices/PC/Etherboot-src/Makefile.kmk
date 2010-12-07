@@ -125,7 +125,7 @@ MM_VERSION=     $(VERSION_MAJOR).$(VERSION_MINOR)
 EB_CFLAGS+=     -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_MINOR=$(VERSION_MINOR) \
                 -DVERSION=\"$(VERSION)\" $(OLDGAS) \
-                -I include -I arch/$(ARCH)/include \
+                -I $(PATH_SUB_CURRENT)/include -I $(PATH_SUB_CURRENT)/arch/$(ARCH)/include \
                 -DARCH=$(ARCH) \
 		$(VBOX_GCC_Wno-pointer-sign) -Wno-unused
 
@@ -156,15 +156,15 @@ START=  $(PATH_TARGET)/start32.o $(PATH_TARGET)/bios.o \
 
 # Linker scripts.
 ifeq ($(KBUILD_TARGET),win)
-LDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/etherboot-pe.lds
-PLDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.prefix-pe.lds
-PREFULDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/prefixudata-pe.lds
-PREFZLDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/prefixzdata-pe.lds
+LDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/etherboot-pe.lds
+PLDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.prefix-pe.lds
+PREFULDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/prefixudata-pe.lds
+PREFZLDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/prefixzdata-pe.lds
 else
-LDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.lds
-PLDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.prefix.lds
-PREFULDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/prefixudata.lds
-PREFZLDSCRIPT = $(PATH_SUB_CURRENT)/arch/i386/core/prefixzdata.lds
+LDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.lds
+PLDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/etherboot.prefix.lds
+PREFULDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/prefixudata.lds
+PREFZLDSCRIPT := $(PATH_SUB_CURRENT)/arch/i386/core/prefixzdata.lds
 endif
 
 # Generic prefix objects.
