@@ -374,11 +374,11 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>切換到全螢幕模式</translation>
+        <translation type="obsolete">切換到全螢幕模式</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>切換到無縫桌面整合模式</translation>
+        <translation type="obsolete">切換到無縫桌面整合模式</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -402,11 +402,11 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>啟用滑鼠整合(&amp;M)</translation>
+        <translation type="obsolete">啟用滑鼠整合(&amp;M)</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>啟用暫時停用的主機滑鼠指標整合</translation>
+        <translation type="obsolete">啟用暫時停用的主機滑鼠指標整合</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -434,7 +434,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>工作階段資訊對話方塊(&amp;N)</translation>
+        <translation type="obsolete">工作階段資訊對話方塊(&amp;N)</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -450,11 +450,11 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>繼續執行(&amp;E)</translation>
+        <translation type="obsolete">繼續執行(&amp;E)</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>繼續執行虛擬機器</translation>
+        <translation type="obsolete">繼續執行虛擬機器</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -560,39 +560,39 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation>進入全螢幕模式(&amp;F)</translation>
+        <translation type="obsolete">進入全螢幕模式(&amp;F)</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation>結束全螢幕模式(&amp;F)</translation>
+        <translation type="obsolete">結束全螢幕模式(&amp;F)</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation>切換到標準模式</translation>
+        <translation type="obsolete">切換到標準模式</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation>進入無縫模式(&amp;L)</translation>
+        <translation type="obsolete">進入無縫模式(&amp;L)</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation>結束無縫模式(&amp;L)</translation>
+        <translation type="obsolete">結束無縫模式(&amp;L)</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation>啟用客體顯示自動調整大小(&amp;G)</translation>
+        <translation type="obsolete">啟用客體顯示自動調整大小(&amp;G)</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation>停用客體顯示自動調整大小(&amp;G)</translation>
+        <translation type="obsolete">停用客體顯示自動調整大小(&amp;G)</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation>當視窗已調整大小時停用自動調整客體顯示的大小</translation>
+        <translation type="obsolete">當視窗已調整大小時停用自動調整客體顯示的大小</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation>啟用遠端顯示(&amp;E)</translation>
+        <translation type="obsolete">啟用遠端顯示(&amp;E)</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
@@ -600,11 +600,11 @@
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation>停用遠端顯示(&amp;D)</translation>
+        <translation type="obsolete">停用遠端顯示(&amp;D)</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation>停用遠端桌面 (RDP) 連線到這部機器</translation>
+        <translation type="obsolete">停用遠端桌面 (RDP) 連線到這部機器</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
@@ -614,7 +614,334 @@
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>停用記錄(&amp;L)...</translation>
+        <translation type="obsolete">停用記錄(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and fullscreen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Scale Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and scale mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto-resize &amp;Guest Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation type="unfinished">沒有任何描述。按下方的 [編輯] 按鈕來加入它。</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">編輯</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation type="unfinished">編輯 (Ctrl+E)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished">作業系統類型</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">基本記憶體</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="unfinished">開機順序</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="unfinished">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">巢狀分頁</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">視訊記憶體</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished">螢幕</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished">(CD/DVD)</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished">未附加</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">主機驅動程式</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">控制器</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">橋接介面卡, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">內部網路，「%1」</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">「僅限主機」介面卡，「%1」</translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">VDE 網路, 「%1」</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">介面卡 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">連接埠 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">連接埠 %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">裝置篩選器</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 個啟用)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">共用資料夾</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">無</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished">無</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation type="unfinished">選取的虛擬機器是 &lt;i&gt;不可存取&lt;/i&gt;。 請核閱顯示於下方的錯誤訊息，如果您想要重複檢查可存取性，請按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕:</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation type="unfinished">一般</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished">系統</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished">顯示</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">存放裝置</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation type="unfinished">音效</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation type="unfinished">網路</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">序列埠</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">串列埠</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">共用資料夾</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation type="unfinished">描述</translation>
     </message>
 </context>
 <context>
@@ -668,65 +995,145 @@
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>在此您可以變更選取虛擬機器的額外組態值。 您可以在項目連按兩下修改大多數已顯示的內容。</translation>
+        <translation type="obsolete">在此您可以變更選取虛擬機器的額外組態值。 您可以在項目連按兩下修改大多數已顯示的內容。</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>應用裝置匯出設定值</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished">請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 儲存伺服器。</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished">本機檔案系統(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished">簡單存放系統 (S3)(&amp;S)</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 儲存伺服器。</translation>
+        <translation type="obsolete">請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 儲存伺服器。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>本機檔案系統(&amp;L)</translation>
+        <translation type="obsolete">本機檔案系統(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>簡單存放系統 (S3)(&amp;S)</translation>
+        <translation type="obsolete">簡單存放系統 (S3)(&amp;S)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>應用裝置匯出設定值</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished">使用者名稱(&amp;U):</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished">密碼(&amp;P):</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished">主機名稱(&amp;H):</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished">貯體(&amp;B):</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">檔案(&amp;F):</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished">以傳統 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished">寫入傳統 OVF 0.9 (&amp;W)</translation>
+    </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished">應用裝置</translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished">選取要匯出的檔案</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation>使用者名稱(&amp;U):</translation>
+        <translation type="obsolete">使用者名稱(&amp;U):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>密碼(&amp;P):</translation>
+        <translation type="obsolete">密碼(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>主機名稱(&amp;H):</translation>
+        <translation type="obsolete">主機名稱(&amp;H):</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>貯體(&amp;B):</translation>
+        <translation type="obsolete">貯體(&amp;B):</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>檔案(&amp;F):</translation>
+        <translation type="obsolete">檔案(&amp;F):</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>以傳統 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
+        <translation type="obsolete">以傳統 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>寫入傳統 OVF 0.9 (&amp;W)</translation>
+        <translation type="obsolete">寫入傳統 OVF 0.9 (&amp;W)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
@@ -734,27 +1141,27 @@
     </message>
     <message>
         <source>Appliance</source>
-        <translation>應用裝置</translation>
+        <translation type="obsolete">應用裝置</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation>選取要匯出的檔案</translation>
+        <translation type="obsolete">選取要匯出的檔案</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation>請選擇要匯出 OVF 的檔案名稱。</translation>
+        <translation type="obsolete">請選擇要匯出 OVF 的檔案名稱。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
+        <translation type="obsolete">請完成額外欄位，比如使用者名稱、密碼和貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
+        <translation type="obsolete">請完成額外欄位，比如使用者名稱、密碼、主機名稱和貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -767,6 +1174,10 @@
     <message>
         <source>Exporting Appliance ...</source>
         <translation>正在匯出應用裝置...</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished">在此您可以變更選取虛擬機器的額外組態值。 您可以在項目連按兩下修改大多數已顯示的內容。</translation>
     </message>
 </context>
 <context>
@@ -845,6 +1256,511 @@
         <source>Source</source>
         <comment>summary</comment>
         <translation>來源</translation>
+    </message>
+</context>
+<context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">一般</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished">輸入</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">更新</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">語言</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">網路</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished">VirtualBox - %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsExtension</name>
+    <message>
+        <source>&amp;Extension Packages:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all installed packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished">版本</translation>
+    </message>
+    <message>
+        <source>Add package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsGeneral</name>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation>顯示預設虛擬機器資料夾的路徑。 當加入現有或新建虛擬機器時，如果沒有特別指定，就會使用這個資料夾。</translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation>顯示提供遠端顯示 (VRDP) 用戶端驗證的程式庫路徑。</translation>
+    </message>
+    <message>
+        <source>Default &amp;Hard Disk Folder:</source>
+        <translation type="obsolete">預設硬碟資料夾(&amp;H):</translation>
+    </message>
+    <message>
+        <source>Default &amp;Machine Folder:</source>
+        <translation>預設機器資料夾(&amp;M):</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation>VRDP 驗證程式庫(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">顯示預設硬碟資料夾的路徑。 當加入現有或新建虛擬硬碟時，如果沒有特別指定，就會使用這個資料夾。</translation>
+    </message>
+    <message>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation>勾選時，應用程式將在系統通知區提供含內容功能表的圖示。</translation>
+    </message>
+    <message>
+        <source>&amp;Show System Tray Icon</source>
+        <translation>顯示系統通知區圖示(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <translation>在全螢幕中自動顯示停駐和功能表列(&amp;A)</translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsInput</name>
+    <message>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished">Host 鍵(&amp;K):</translation>
+    </message>
+    <message>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <translation type="unfinished">顯示於虛擬機器視窗中使用的 Host 鍵。 啟動輸入欄位並按下新的 Host 鍵。 請注意，無法使用字母數字、游標移動與編輯鍵。</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished">重設熱鍵</translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished">重設在 VM 視窗中用來作為熱鍵的按鍵。</translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">勾選時，每次虛擬機器視窗啟動時，鍵盤會自動擷取。 當擷取鍵盤時，所有的按鍵動作 (包括系統的 Alt-Tab) 都會針對虛擬機器。</translation>
+    </message>
+    <message>
+        <source>&amp;Auto Capture Keyboard</source>
+        <translation type="unfinished">自動擷取鍵盤(&amp;A)</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsLanguage</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation>(內建)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;不可用&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;未知&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>預設值</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>語言:</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language:</source>
+        <translation>介面語言(&amp;I):</translation>
+    </message>
+    <message>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation>列出所有可用的使用者介面語言。 生效的語言以&lt;b&gt;粗體&lt;/b&gt;顯示。 選取&lt;i&gt;預設值&lt;/i&gt;來重設為系統預設語言。</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名稱</translation>
+    </message>
+    <message>
+        <source>Id</source>
+        <translation>Id</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>語言</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>作者</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>作者:</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetwork</name>
+    <message>
+        <source>%1 network</source>
+        <comment>&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1 網路</translation>
+    </message>
+    <message>
+        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv4 位址錯誤</translation>
+    </message>
+    <message>
+        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv4 網路遮罩錯誤</translation>
+    </message>
+    <message>
+        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv6 位址錯誤</translation>
+    </message>
+    <message>
+        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 伺服器位址錯誤</translation>
+    </message>
+    <message>
+        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 伺服器網路遮罩錯誤</translation>
+    </message>
+    <message>
+        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 位址下界限錯誤</translation>
+    </message>
+    <message>
+        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 位址上界限錯誤</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation>介面卡</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation>自動組態</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation>手動組態</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation>IPv4 位址</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation>未設定</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation>IPv4 網路遮罩</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation>未設定</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation>IPv6 位址</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation>IPv6 網路遮罩長度</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation>未設定</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>DHCP 伺服器</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation>啟用</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation>停用</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>位址</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation>網路遮罩</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation>下界限</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation>未設定</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation>上界限</translation>
+    </message>
+    <message>
+        <source>&amp;Add host-only network</source>
+        <translation>加入「僅限主機」網路(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Remove host-only network</source>
+        <translation>移除「僅限主機」網路(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Edit host-only network</source>
+        <translation>編輯「僅限主機」網路(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>creating/removing host-only network</comment>
+        <translation type="obsolete">正在執行</translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks:</source>
+        <translation>「僅限主機」網路(&amp;H):</translation>
+    </message>
+    <message>
+        <source>Lists all available host-only networks.</source>
+        <translation>列出所有可用「僅限主機」網路。</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名稱</translation>
+    </message>
+    <message>
+        <source>New Host-Only Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetails</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>「僅限主機」網路詳細資料</translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation>介面卡(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation>手動組態(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation>使用手動組態這個「僅限主機」網路卡。</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation>IPv4 位址(&amp;I):</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation>顯示這個介面卡的主機 IPv4 位址。</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation>IPv4 網路遮罩(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation>顯示這個介面卡的主機 IPv4 網路遮罩。</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation>IPv6 位址(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation>顯示這個介面卡的主機 IPv6 位址若支援 IPv6 。</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation>IPv6 網路遮罩長度(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation>顯示這個介面卡的主機 IPv6 網路遮罩前置長度若支援 IPv6 。</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation>DHCP 伺服器(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>啟用伺服器(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation>指示機器啟動時是否啟用 DHCP 伺服器。</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation>伺服器位址(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務位址。</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation>伺服器遮罩(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務網路遮罩。</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation>位址下界限(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址下界限。</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation>位址上界限(&amp;U):</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址上界限。</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsUpdate</name>
+    <message>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
+        <translation>勾選時，應用程式將定時連線到 VirtualBox 網站並檢查新的 VirtualBox 版本是否可用。</translation>
+    </message>
+    <message>
+        <source>&amp;Check for updates</source>
+        <translation>檢查更新(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Once per:</source>
+        <translation>間隔(&amp;O):</translation>
+    </message>
+    <message>
+        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
+        <translation>指定應執行檢查新版本的頻率。 請注意，如果您要完全停用這個檢查，只需清除上方核取方塊。</translation>
+    </message>
+    <message>
+        <source>Next Check:</source>
+        <translation>下次檢查:</translation>
+    </message>
+    <message>
+        <source>Check for:</source>
+        <translation>檢查:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;選擇這個，如果您只想要有關 VirtualBox 的穩定版更新通知。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation>穩定發佈版本(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 的發佈通知。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation>所有新的發佈(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 發佈和 VirtualBox 預先發佈的版本通知。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation>所有新的發佈與預先發佈(&amp;P)</translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">說明(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -992,11 +1908,11 @@
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>指示啟用 (&lt;img src=:/vrdp_16px.png/&gt;) 或未啟用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;) 遠端顯示 (VRDP 伺服器) 。</translation>
+        <translation type="obsolete">指示啟用 (&lt;img src=:/vrdp_16px.png/&gt;) 或未啟用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;) 遠端顯示 (VRDP 伺服器) 。</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP 伺服器正在偵聽連接埠 %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP 伺服器正在偵聽連接埠 %1</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1015,6 +1931,14 @@
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>指示客體作業系統擷取 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未擷取 (&lt;img src=:/hostkey_16px.png/&gt;) 鍵盤。</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1074,6 +1998,1312 @@
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>沒有已支援的裝置連接到主機 PC</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsAudio</name>
+    <message>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
+        <translation>勾選時，虛擬 PCI 音效卡將插入到虛擬機器並使用指定的驅動程式與主機音訊系統通訊。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Audio</source>
+        <translation>啟用音效(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation>主機音效驅動程式(&amp;D):</translation>
+    </message>
+    <message>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation>控制音效輸出驅動程式。 &lt;b&gt;空的音效驅動程式&lt;/b&gt; 使客體擁有音效卡，然而會忽略它的聲音輸出。</translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation>音效控制器(&amp;C):</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>選擇虛擬音效卡的類型。 VirtualBox 將在虛擬機器提供不同的音效硬體，取決於這個值。</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation>您已指派少於 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體，這是切換虛擬機器為全螢幕或無縫模式所需的最小量。</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation>視訊(&amp;V)</translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation>視訊記憶體(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation>控制要提供給虛擬機器的視訊記憶體數量。</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>延伸功能:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation>勾選時，虛擬機器將給予存取在主機可用的 3D 圖形能力。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation>啟用 3D 加速(&amp;3)</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>遠端顯示(&amp;R)</translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation>勾選時，虛擬機器將作為遠端桌面協定 (RDP) 伺服器，允許遠端用戶端使用標準的 RDP 用戶端連線與操作虛擬機器 (當它正在執行時)。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>啟用伺服器(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation>伺服器埠(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation>驗證方法(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation>定義 VRDP 驗證方法。</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation>驗證逾時(&amp;T):</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation>指定客體驗證的逾時，以毫秒為單位。</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation>您已指派少於 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體，這是有效播放 HD 視訊所需的最小量。</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation>勾選時，虛擬機器將給予存取在主機可用的視訊加速能力。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation>啟用 2D 視訊加速(&amp;2)</translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation>VRDP 伺服器連接埠號。 您可以指定 &lt;tt&gt;0&lt;/tt&gt; (零)，來選擇連接埠 3389， RDP 的標準連接埠。</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation>監視器數量(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation>控制提供給虛擬機器的虛擬監視器總數。</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsGeneral</name>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <translation>顯示將儲存這個虛擬機器快照的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
+    </message>
+    <message>
+        <source>&amp;Basic</source>
+        <translation>基本(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Displays the name of the virtual machine.</source>
+        <translation>顯示虛擬機器的名稱。</translation>
+    </message>
+    <message>
+        <source>&amp;Advanced</source>
+        <translation>進階(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard:</source>
+        <translation>共用剪貼簿(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>選取在客體與主機作業系統之間將複製哪個剪貼簿資料。 這個功能需要在客體作業系統安裝 Guest Additions 。</translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder:</source>
+        <translation>快照資料夾(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation>描述(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation>顯示虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation>如果勾選，任何在機器執行期間對於掛載的光碟與軟碟所進行的變更，將會儲存在設定檔之中，以便於每次執行之間保存掛載媒體的組態。</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation>卸除式媒體:</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation>記住執行階段變更(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation>迷你工具列:</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation>如果勾選，在全螢幕及無縫模式顯示迷你工具列。</translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation>在全螢幕/無縫模式顯示(&amp;F)</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation>如果勾選，在螢幕上方顯示迷你工具列，而不是它的預設位置在螢幕的下方。</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>顯示在螢幕上方(&amp;T)</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetwork</name>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation>勾選時，會將這個虛擬網路卡插入虛擬機器內。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Network Adapter</source>
+        <translation>啟用網路卡(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>選擇虛擬網路卡的類型。 VirtualBox 將取決於這個值在虛擬機器提供不同的網路硬體。</translation>
+    </message>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation>附加到(&amp;A):</translation>
+    </message>
+    <message>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation>控制這個虛擬介面卡如何附加到主機作業系統的真實網路。</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>介面卡類型(&amp;T):</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation>未選取橋接網路卡</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation>未指定內部網路名稱</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation>未選取「僅限主機」網路卡</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation>未選取</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
+        <translation>選取&lt;b&gt;橋接介面卡&lt;/b&gt;或&lt;b&gt;「僅限主機」介面卡&lt;/b&gt;附件的網路卡名稱與&lt;b&gt;內部網路&lt;/b&gt;附件的網路名稱。</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation>進階(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation>顯示或隱藏額外網路卡選項。</translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation>Mac 位址(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation>顯示這個介面卡的 MAC 位址。 它包含確切地 12 個字元從 {0-9,A-F} 選擇。 請注意第二個字元必須是一個偶數數位。</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation>產生新的隨機 MAC 位址。</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation>指示機器啟動時是否已插入虛擬網路線。</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation>線路已連接(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation>連接埠 %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation>勾選時，表示啟用給予的虛擬機器串列埠。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation>啟用串列埠(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>連接埠號(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>顯示串列埠號。您可以選擇標準串列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>IRQ (&amp;I):</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>I/O 連接埠(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation>連接埠路徑(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation>顯示主機串列埠裝置名稱。</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>顯示這個串列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>顯示這個串列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallelPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>選取重複的連接埠號</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>未指定連接埠路徑</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>輸入重複的連接埠路徑</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSF</name>
+    <message>
+        <source>Adds a new shared folder definition.</source>
+        <translation>加入新的共用資料夾定義。</translation>
+    </message>
+    <message>
+        <source>Edits th the selected shared folder definition.</source>
+        <translation type="obsolete">編輯選取的共用資料夾定義。</translation>
+    </message>
+    <message>
+        <source>Removes the selected shared folder definition.</source>
+        <translation>移除選取的共用資料夾定義。</translation>
+    </message>
+    <message>
+        <source> Machine Folders</source>
+        <translation>機器資料夾</translation>
+    </message>
+    <message>
+        <source> Transient Folders</source>
+        <translation>瞬變資料夾</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>完整</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>唯讀</translation>
+    </message>
+    <message>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation>列出所有可存取這個機器的共用資料夾。 從類似 DOS 的作業系統使用 &apos;net use x: \\vboxsvr\share&apos; 存取名為 &lt;i&gt; share &lt;/i&gt; 的共用資料夾，或從 Linux 作業系統 &apos;mount -t vboxsf share mount_point&apos; 來存取它。 這個功能需要 Guest Additions 。</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名稱</translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation>路徑</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>存取</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="obsolete">全域資料夾</translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation>加入共用資料夾(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation>編輯共用資料夾(&amp;E)</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation>移除共用資料夾(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation>資料夾清單(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">是</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSFDetails</name>
+    <message>
+        <source>Add Share</source>
+        <translation>加入共用</translation>
+    </message>
+    <message>
+        <source>Edit Share</source>
+        <translation>編輯共用</translation>
+    </message>
+    <message>
+        <source>Dialog</source>
+        <translation>Dialog</translation>
+    </message>
+    <message>
+        <source>Folder Path:</source>
+        <translation>資料夾路徑:</translation>
+    </message>
+    <message>
+        <source>Folder Name:</source>
+        <translation>資料夾名稱:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation>顯示共用資料夾的名稱 (客體作業系統將看到的)。</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>勾選時，客體作業系統將不能寫入指定的共用資料夾。</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>唯讀(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation>永久性(&amp;M)</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation>連接埠 %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation>勾選時，表示啟用給予的虛擬機器序列埠。</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation>啟用序列埠(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>連接埠號(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>顯示序列埠號。您可以選擇標準序列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>IRQ (&amp;I):</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>I/O 連接埠(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode:</source>
+        <translation>連接埠模式(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation>控制這個序列埠的工作模式。如果您選取&lt;b&gt;已中斷連接&lt;/b&gt;，客體作業系統將會偵測到序列埠但無法操作它。</translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
+        <translation>如果勾選，在&lt;b&gt;連接埠路徑&lt;/b&gt;欄位中指定的管道將由虛擬機器於啟動時建立。 否則，虛擬機器將假設管道存在並嘗試使用它。</translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation>建立管道(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation>當連接埠工作在&lt;b&gt;主機管道&lt;/b&gt;模式時顯示主機中序列埠管道的路徑，或者當連接埠工作在&lt;b&gt;主機裝置&lt;/b&gt;模式時顯示主機序列裝置名稱。</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation>連接埠/檔案路徑(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>顯示這個序列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerialPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>選取重複的連接埠號</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>未指定連接埠路徑</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>輸入重複的連接埠路徑</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsStorage</name>
+    <message>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
+        <translation type="obsolete">如果勾選，顯示附加到插槽的差異硬碟而不是它們的基礎硬碟 (顯示間接附件) 並允許附加明確的差異硬碟。 勾選此，如果您需要複雜的硬碟設定。</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;匯流排:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;類型:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;展開/摺疊項目&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;加入硬碟&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;加入&amp;nbsp;CD/DVD&amp;nbsp;裝置&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;加入軟碟裝置&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation>未選取 &lt;i&gt;%1&lt;/i&gt; 的硬碟。</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation>&lt;i&gt;%1&lt;/i&gt; 使用已經附加到 &lt;i&gt;%2&lt;/i&gt; 的媒體。</translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation>加入控制器</translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation>加入 IDE 控制器</translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation>加入 SATA 控制器</translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation>加入 SCSI 控制器</translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation>加入軟碟控制器</translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation>移除控制器</translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation>加入附件</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation>加入硬碟</translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation>加入 CD/DVD 裝置</translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation>加入軟碟裝置</translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation>移除附件</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation>新增控制器至存放裝置樹的尾端。</translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation>移除存放裝置樹中反白的控制器。</translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation>使用目前選取的控制器為上層新增附件至存放裝置樹。</translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation>移除存放裝置樹中反白的附件。</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation>IDE 控制器</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation>SATA 控制器</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation>SCSI 控制器</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation>軟碟控制器</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation>硬碟(&amp;D):</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="obsolete">CD/DVD 裝置(&amp;C):</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="obsolete">軟碟裝置(&amp;F):</translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation>存放裝置樹(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation>包含這個機器的所有存放控制器與附加到它們的虛擬機器及主機裝置。</translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation>資訊</translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation>存放裝置樹能包含數個不同類型的控制器。 這個機器目前沒有控制器。</translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation>屬性</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation>變更目前在存放裝置樹選取的儲存控制器名稱。</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation>類型(&amp;T):</translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation>選取目前在存放裝置樹選取的存放控制器的子類型。</translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="obsolete">插槽(&amp;L):</translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation>選取這個附件所使用的存放控制器的插槽。 可用插槽根據控制器的類型與其它附加的附件而定。</translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="obsolete">選取這個附件使用的虛擬磁碟映像或主機磁碟機。</translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="obsolete">開啟虛擬媒體管理員來選取這個附件的虛擬映像。</translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="obsolete">開啟虛擬媒體管理員</translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="obsolete">差異磁碟(&amp;I)</translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation>勾選時，允許客體直接傳送 ATAPI 命令至主機光碟機，如此才能在虛擬機器中使用連接到主機的 CD/DVD 燒錄機。 請注意，目前尚未支援在虛擬機器中燒錄音樂 CD。</translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation>透通(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation>虛擬大小:</translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation>實際大小:</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>大小:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>位置:</translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation>類型 (格式):</translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation>附加到:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation>允許使用主機 I/O 快取能力。</translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation>使用主機 I/O 快取</translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation>加入 SAS 控制器</translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation>SAS 控制器</translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="obsolete">存放控制器</translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="obsolete">存放控制器 1</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual CD/DVD drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual floppy drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new hard disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove disk from virtual drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation>您已指派超過您電腦記憶體 (&lt;b&gt;%2&lt;/b&gt;) 的 &lt;b&gt;%1%&lt;/b&gt; 到虛擬機器。 您主機的作業系統沒有足夠的剩餘記憶體。 請選取較小的量。</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation>您已指派超過您電腦記憶體 (&lt;b&gt;%2&lt;/b&gt;) 的 &lt;b&gt;%1%&lt;/b&gt; 到虛擬機器。 您主機的作業系統可能沒有足夠的剩餘記憶體。 繼續則風險自負。</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation>由於效能原因，附加到虛擬機器的虛擬 CPU 數不可多於主機中實體 CPU 數 (&lt;b&gt;%1&lt;/b&gt; 個) 的兩倍。 請降低虛擬 CPU 數。</translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation>您已指派超過您主機系統實體 CPU  (&lt;b&gt;%1&lt;/b&gt; 個) 的虛擬 CPU 到此虛擬機器。 這很可能會降低您虛擬機器的效能。 請考慮降低除虛擬 CPU 數。</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非同時啟用 IO-APIC 功能否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將會自動完成。</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非也啟用硬體虛擬化 (VT-x/AMD-V) 否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將自動完成。</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation>主機板(&amp;M)</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation>基本記憶體(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation>控制要提供給虛擬機器的記憶體數量。如果您指派太多，機器可能無法啟動。</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation>開機順序(&amp;B):</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation>定義開機裝置順序。 使用左方的核取方塊來啟用或停用個別開機裝置。 上移與下移項目來變更順序。</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation>下移 (Ctrl-Down)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation>上移選取的開機裝置。</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation>上移 (Ctrl-Up)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation>下移選取的開機裝置。</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>延伸功能:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>勾選時，虛擬機器將支援 Input Output APIC (IO APIC)，這可能略微降低性能。 &lt;b&gt;注意:&lt;/b&gt; 安裝 Windows 客體作業系統後不要停用這個功能!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation>啟用 &amp;IO APIC</translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation>處理器(&amp;P)</translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation>處理器(&amp;P):</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation>勾選時，主機 CPU 的 Physical Address Extension (PAE) 功能將暴露於虛擬機器。</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation>啟用 PAE/NX (&amp;E)</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation>加速(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation>硬體虛擬化:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation>勾選時，虛擬機器將嘗試使用主機 CPU 的硬體虛擬化擴充比如 Intel VT-x 和 AMD-V 。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation>啟用 VT-x/AMD-V (&amp;V)</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的巢狀分頁擴充。</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation>啟用巢狀分頁(&amp;G)</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation>勾選時，客體將支援Extended Firmware Interface (EFI)，某種客體作業系統開機是需要的。 非 EFI 感知的作業系統將無法開機，如果啟用這個選項。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation>啟用 EFI (僅特殊作業系統)(&amp;E)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation>如果勾選，RTC 裝置將報告 UTC 的時間，否則是本機 (主機) 時間。 Unix 通常要求硬體時鐘設定為 UTC 。</translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation>在 UTC 時間的硬體時鐘(&amp;U)</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation>控制在虛擬機器中的虛擬 CPU 數。 您需要在您的主機系統支援硬體虛擬化以使用一個以上的 CPU。</translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation>如果勾選，將支援絕對指標裝置 (USB 平板)。 否則，將只模擬標準 PS/2 滑鼠。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation>啟用絕對指標裝置(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Chipset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines chipset type used in this VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSB</name>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation>加入空的篩選器(&amp;A)</translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation>從裝置加入篩選器(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Filter</source>
+        <translation>編輯篩選器(&amp;E)</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation>移除篩選器(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation>上移篩選器(&amp;M)</translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation>下移篩選器(&amp;O)</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation>加入一個所有欄位最初設定為空字串的新 USB 篩選器。 請注意，這些篩選器會符合任何附加的 USB 裝置。</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation>加入一個所有欄位設定為已附加到主機 PC 的選取 USB 裝置之新 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>Edits the selected USB filter.</source>
+        <translation>編輯選取的 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>Removes the selected USB filter.</source>
+        <translation>移除選取的 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter up.</source>
+        <translation>上移選取的 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter down.</source>
+        <translation>下移選取的 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation>新增篩選器 %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation>勾選時，啟用這個機器的虛擬 USB 控制器。</translation>
+    </message>
+    <message>
+        <source>Enable &amp;USB Controller</source>
+        <translation>啟用 USB 控制器(&amp;U)</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>勾選時，啟用這個機器的虛擬 USB EHCI 控制器。 USB EHCI 控制器提供 USB 2.0 支援。</translation>
+    </message>
+    <message>
+        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
+        <translation>啟用 USB 2.0 (EHCI) 控制器(&amp;H)</translation>
+    </message>
+    <message>
+        <source>USB Device &amp;Filters</source>
+        <translation>USB 裝置篩選器(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
+        <translation>列出這個機器的所有 USB 篩選器。 左側的核取方塊定義是否啟用特定的篩選器。 使用內容功能表或右側的按鈕加入或移除 USB 篩選器。</translation>
+    </message>
+    <message>
+        <source>[filter]</source>
+        <translation>[篩選器]</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;供應商 ID: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;產品 ID: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;修訂: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;產品: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;製造商: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;序號: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;連接埠: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;狀態: %1&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSBFilterDetails</name>
+    <message>
+        <source>Any</source>
+        <comment>remote</comment>
+        <translation>任何</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation>是</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation>否</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>名稱(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Displays the filter name.</source>
+        <translation>顯示篩選器名稱。</translation>
+    </message>
+    <message>
+        <source>&amp;Vendor ID:</source>
+        <translation>供應商 ID (&amp;V):</translation>
+    </message>
+    <message>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>定義供應商 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>&amp;Product ID:</source>
+        <translation>產品 ID (&amp;P):</translation>
+    </message>
+    <message>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>定義產品 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>&amp;Revision:</source>
+        <translation>修訂(&amp;R):</translation>
+    </message>
+    <message>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
+        <translation>定義修訂號篩選器。&lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;IIFF&lt;/tt&gt; 其中 &lt;tt&gt;I&lt;/tt&gt; 是十進位數字的整數部分 &lt;tt&gt;F&lt;/tt&gt; 是十進位數字的小數部分。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>&amp;Manufacturer:</source>
+        <translation>製造商(&amp;M):</translation>
+    </message>
+    <message>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>定義製造商篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>Pro&amp;duct:</source>
+        <translation>產品(&amp;D):</translation>
+    </message>
+    <message>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>定義產品名稱篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>&amp;Serial No.:</source>
+        <translation>序號(&amp;S):</translation>
+    </message>
+    <message>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>定義產序號篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>Por&amp;t:</source>
+        <translation>連接埠(&amp;T):</translation>
+    </message>
+    <message>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>定義主機 USB 連接埠篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
+    </message>
+    <message>
+        <source>R&amp;emote:</source>
+        <translation>遠端(&amp;E):</translation>
+    </message>
+    <message>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
+        <translation>定義這個篩選器是否套用到本機附加的主機電腦之 USB 裝置 (&lt;i&gt;否&lt;/i&gt;) ，到 VRDP 用戶端的電腦 (&lt;i&gt;是&lt;/i&gt;)，或同時 (&lt;i&gt;任何&lt;/i&gt;)。</translation>
+    </message>
+    <message>
+        <source>&amp;Action:</source>
+        <translation>動作(&amp;A):</translation>
+    </message>
+    <message>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation>定義當附加相符的裝置時主機電腦執行的動作: 在主機作業系統放棄 (&lt;i&gt;忽略&lt;/i&gt;) 或由虛擬機器擷取它作為之後使用 (&lt;i&gt;保留&lt;/i&gt;)。</translation>
+    </message>
+    <message>
+        <source>USB Filter Details</source>
+        <translation>USB 篩選器詳細資料</translation>
     </message>
 </context>
 <context>
@@ -1300,14 +3530,14 @@
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取要作為虛擬機器開機硬碟的硬碟映像。 您可以使用 [&lt;b&gt;新建硬碟&lt;/b&gt;] 建立一個新的硬碟或 [&lt;b&gt;使用現有硬碟&lt;/b&gt;] 從下拉式清單選取現有的硬碟檔或按下右方按鈕 (調用虛擬媒體管理對話方塊)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟安裝，您也可以跳過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選取要作為虛擬機器開機硬碟的硬碟映像。 您可以使用 [&lt;b&gt;新建硬碟&lt;/b&gt;] 建立一個新的硬碟或 [&lt;b&gt;使用現有硬碟&lt;/b&gt;] 從下拉式清單選取現有的硬碟檔或按下右方按鈕 (調用虛擬媒體管理對話方塊)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟安裝，您也可以跳過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1323,11 +3553,23 @@
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建議的開機硬碟大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
+        <translation type="obsolete">建議的開機硬碟大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
         <translation>開機硬碟(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1358,7 +3600,7 @@
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -1368,6 +3610,305 @@
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;如果以上正確，按下 [&lt;b&gt;%1&lt;/b&gt;] 按鈕。 一旦您按下，將建立新的虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您可以在任何時候透過主視窗的功能表存取 [&lt;b&gt;設定值&lt;/b&gt;] 對話方塊，改變已建立虛擬機器的這些和所有其它設定。&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIProgressDialog</name>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation>剩下幾秒鐘</translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation>正在取消...</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation>取消(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation>取消目前操作</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation>剩下 %1, %2</translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation>剩下 %1</translation>
+    </message>
+</context>
+<context>
+    <name>UISession</name>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished">於 &lt;b&gt;%1&lt;/b&gt; 頁, %2</translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation type="unfinished">偵測到無效的設定值</translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished">偵測到非最佳設定值</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">設定值</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">關閉虛擬機器</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation type="unfinished">您想要:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;儲存虛擬機器的目前執行狀態到主機 PC 的實體硬碟。&lt;/p&gt;&lt;p&gt;下次啟動這個機器，它將從儲存狀態還原並從您儲存的相同位置繼續執行，讓您立即繼續您的工作。&lt;/p&gt;&lt;p&gt;請注意儲存機器狀態可能需要很長時間取決於客體作業系統類型與分配至虛擬機器的記憶體量。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation type="unfinished">儲存機器狀態(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;傳送 ACPI 電源按鈕按下事件到虛擬機器。&lt;/p&gt;&lt;p&gt;通常，執行在虛擬機器內的客體作業系統將偵測這個事件，並執行乾淨關閉程序。 這是推薦關閉虛擬機器的方法，因為所有內部執行的應用程式將有機會儲存其資料和狀態。&lt;/p&gt;&lt;p&gt;如果機器不回應這個動作，客體作業系統可能組態不正確，或根本不明白 ACPI 電源按鈕事件。 在這種情況下您應該選擇&lt;b&gt;關閉機器電源&lt;/b&gt;動作停止虛擬機器執行。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished">傳送關機訊號(&amp;E)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;關閉虛擬機器。&lt;/p&gt;&lt;p&gt;請注意這個動作將立即停止機器執行，以致執行在客體內部的作業系統無法執行乾淨關機程序，這可能會導致虛擬機器中的&lt;i&gt;資料遺失&lt;/i&gt;。 建議只有在虛擬機器對&lt;b&gt;傳送關機訊號&lt;/b&gt;動作沒有回應時才選取這個動作。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation type="unfinished">關閉機器(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished">還原儲存在目前快照的機器狀態</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;勾選時，機器將在關閉之後返回目前快照中儲存的狀態。 這是有用的，如果您確認要放棄您最後的工作階段結果並再次啟動該快照。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished">還原目前快照「%1」(&amp;R)</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">詳細資料(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="unfinished">快照(&amp;S)</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>無法存取</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自從 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;工作階段 %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不可存取自從 %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">顯示(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">切換到選取虛擬機器的視窗</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">啟動(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">啟動選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="obsolete">繼續執行(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="obsolete">繼續執行虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="obsolete">暫停(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="obsolete">暫停虛擬機器的執行</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">一般</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">系統</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">顯示</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">存放裝置</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">音效</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">網路</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">連接埠</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">序列埠</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished">串列埠</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">共用資料夾</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished">%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">您已針對這個 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">您已啟用 2D 視訊加速。 由於 2D 視訊加速只支援 Windows 客體，這個功能將停用。</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished">您已啟用 USB HID (人性化介面裝置)。 除非同時啟用 USB 模擬否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值時這將會自動完成。</translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1490,7 +4031,7 @@
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
@@ -1501,47 +4042,47 @@
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>關閉虛擬機器</translation>
+        <translation type="obsolete">關閉虛擬機器</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>您想要:</translation>
+        <translation type="obsolete">您想要:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>儲存機器狀態(&amp;S)</translation>
+        <translation type="obsolete">儲存機器狀態(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>關閉機器(&amp;P)</translation>
+        <translation type="obsolete">關閉機器(&amp;P)</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>傳送關機訊號(&amp;E)</translation>
+        <translation type="obsolete">傳送關機訊號(&amp;E)</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;勾選時，機器將在關閉之後返回目前快照中儲存的狀態。 這是有用的，如果您確認要放棄您最後的工作階段結果並再次啟動該快照。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;勾選時，機器將在關閉之後返回目前快照中儲存的狀態。 這是有用的，如果您確認要放棄您最後的工作階段結果並再次啟動該快照。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;儲存虛擬機器的目前執行狀態到主機 PC 的實體硬碟。&lt;/p&gt;&lt;p&gt;下次啟動這個機器，它將從儲存狀態還原並從您儲存的相同位置繼續執行，讓您立即繼續您的工作。&lt;/p&gt;&lt;p&gt;請注意儲存機器狀態可能需要很長時間取決於客體作業系統類型與分配至虛擬機器的記憶體量。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;儲存虛擬機器的目前執行狀態到主機 PC 的實體硬碟。&lt;/p&gt;&lt;p&gt;下次啟動這個機器，它將從儲存狀態還原並從您儲存的相同位置繼續執行，讓您立即繼續您的工作。&lt;/p&gt;&lt;p&gt;請注意儲存機器狀態可能需要很長時間取決於客體作業系統類型與分配至虛擬機器的記憶體量。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;傳送 ACPI 電源按鈕按下事件到虛擬機器。&lt;/p&gt;&lt;p&gt;通常，執行在虛擬機器內的客體作業系統將偵測這個事件，並執行乾淨關閉程序。 這是推薦關閉虛擬機器的方法，因為所有內部執行的應用程式將有機會儲存其資料和狀態。&lt;/p&gt;&lt;p&gt;如果機器不回應這個動作，客體作業系統可能組態不正確，或根本不明白 ACPI 電源按鈕事件。 在這種情況下您應該選擇&lt;b&gt;關閉機器電源&lt;/b&gt;動作停止虛擬機器執行。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;傳送 ACPI 電源按鈕按下事件到虛擬機器。&lt;/p&gt;&lt;p&gt;通常，執行在虛擬機器內的客體作業系統將偵測這個事件，並執行乾淨關閉程序。 這是推薦關閉虛擬機器的方法，因為所有內部執行的應用程式將有機會儲存其資料和狀態。&lt;/p&gt;&lt;p&gt;如果機器不回應這個動作，客體作業系統可能組態不正確，或根本不明白 ACPI 電源按鈕事件。 在這種情況下您應該選擇&lt;b&gt;關閉機器電源&lt;/b&gt;動作停止虛擬機器執行。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;關閉虛擬機器。&lt;/p&gt;&lt;p&gt;請注意這個動作將立即停止機器執行，以致執行在客體內部的作業系統無法執行乾淨關機程序，這可能會導致虛擬機器中的&lt;i&gt;資料遺失&lt;/i&gt;。 建議只有在虛擬機器對&lt;b&gt;傳送關機訊號&lt;/b&gt;動作沒有回應時才選取這個動作。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;關閉虛擬機器。&lt;/p&gt;&lt;p&gt;請注意這個動作將立即停止機器執行，以致執行在客體內部的作業系統無法執行乾淨關機程序，這可能會導致虛擬機器中的&lt;i&gt;資料遺失&lt;/i&gt;。 建議只有在虛擬機器對&lt;b&gt;傳送關機訊號&lt;/b&gt;動作沒有回應時才選取這個動作。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>還原儲存在目前快照的機器狀態</translation>
+        <translation type="obsolete">還原儲存在目前快照的機器狀態</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>還原目前快照「%1」(&amp;R)</translation>
+        <translation type="obsolete">還原目前快照「%1」(&amp;R)</translation>
     </message>
 </context>
 <context>
@@ -1610,443 +4151,58 @@
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>一般</translation>
+        <translation type="obsolete">一般</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>輸入</translation>
+        <translation type="obsolete">輸入</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>更新</translation>
+        <translation type="obsolete">更新</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>語言</translation>
+        <translation type="obsolete">語言</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>網路</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>顯示預設虛擬機器資料夾的路徑。 當加入現有或新建虛擬機器時，如果沒有特別指定，就會使用這個資料夾。</translation>
-    </message>
-    <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>顯示提供遠端顯示 (VRDP) 用戶端驗證的程式庫路徑。</translation>
-    </message>
-    <message>
-        <source>Default &amp;Hard Disk Folder:</source>
-        <translation>預設硬碟資料夾(&amp;H):</translation>
-    </message>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation>預設機器資料夾(&amp;M):</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation>VRDP 驗證程式庫(&amp;R):</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>顯示預設硬碟資料夾的路徑。 當加入現有或新建虛擬硬碟時，如果沒有特別指定，就會使用這個資料夾。</translation>
-    </message>
-    <message>
-        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>勾選時，應用程式將在系統通知區提供含內容功能表的圖示。</translation>
-    </message>
-    <message>
-        <source>&amp;Show System Tray Icon</source>
-        <translation>顯示系統通知區圖示(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>在全螢幕中自動顯示停駐和功能表列(&amp;A)</translation>
+        <translation type="obsolete">網路</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>Host 鍵(&amp;K):</translation>
+        <translation type="obsolete">Host 鍵(&amp;K):</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>顯示於虛擬機器視窗中使用的 Host 鍵。 啟動輸入欄位並按下新的 Host 鍵。 請注意，無法使用字母數字、游標移動與編輯鍵。</translation>
+        <translation type="obsolete">顯示於虛擬機器視窗中使用的 Host 鍵。 啟動輸入欄位並按下新的 Host 鍵。 請注意，無法使用字母數字、游標移動與編輯鍵。</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>勾選時，每次虛擬機器視窗啟動時，鍵盤會自動擷取。 當擷取鍵盤時，所有的按鍵動作 (包括系統的 Alt-Tab) 都會針對虛擬機器。</translation>
+        <translation type="obsolete">勾選時，每次虛擬機器視窗啟動時，鍵盤會自動擷取。 當擷取鍵盤時，所有的按鍵動作 (包括系統的 Alt-Tab) 都會針對虛擬機器。</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>自動擷取鍵盤(&amp;A)</translation>
+        <translation type="obsolete">自動擷取鍵盤(&amp;A)</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>重設熱鍵</translation>
+        <translation type="obsolete">重設熱鍵</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>重設在 VM 視窗中用來作為熱鍵的按鍵。</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation>(內建)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation>&lt;不可用&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation>&lt;未知&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation>預設值</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation>語言:</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language:</source>
-        <translation>介面語言(&amp;I):</translation>
-    </message>
-    <message>
-        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>列出所有可用的使用者介面語言。 生效的語言以&lt;b&gt;粗體&lt;/b&gt;顯示。 選取&lt;i&gt;預設值&lt;/i&gt;來重設為系統預設語言。</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Id</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>語言</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>作者</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation>作者:</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>%1 network</source>
-        <comment>&lt;adapter name&gt; network</comment>
-        <translation>%1 網路</translation>
-    </message>
-    <message>
-        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv4 位址錯誤</translation>
-    </message>
-    <message>
-        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv4 網路遮罩錯誤</translation>
-    </message>
-    <message>
-        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的主機 IPv6 位址錯誤</translation>
-    </message>
-    <message>
-        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 伺服器位址錯誤</translation>
-    </message>
-    <message>
-        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 伺服器網路遮罩錯誤</translation>
-    </message>
-    <message>
-        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 位址下界限錯誤</translation>
-    </message>
-    <message>
-        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;的 DHCP 位址上界限錯誤</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation>介面卡</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation>自動組態</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation>手動組態</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation>IPv4 位址</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation>未設定</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation>IPv4 網路遮罩</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation>未設定</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation>IPv6 位址</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask Length</source>
-        <translation>IPv6 網路遮罩長度</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation>未設定</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation>DHCP 伺服器</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation>啟用</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation>停用</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>位址</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation>網路遮罩</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation>下界限</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation>未設定</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation>上界限</translation>
-    </message>
-    <message>
-        <source>&amp;Add host-only network</source>
-        <translation>加入「僅限主機」網路(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;Remove host-only network</source>
-        <translation>移除「僅限主機」網路(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Edit host-only network</source>
-        <translation>編輯「僅限主機」網路(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>creating/removing host-only network</comment>
-        <translation>正在執行</translation>
-    </message>
-    <message>
-        <source>&amp;Host-only Networks:</source>
-        <translation>「僅限主機」網路(&amp;H):</translation>
-    </message>
-    <message>
-        <source>Lists all available host-only networks.</source>
-        <translation>列出所有可用「僅限主機」網路。</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetails</name>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation>「僅限主機」網路詳細資料</translation>
-    </message>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation>介面卡(&amp;A)</translation>
-    </message>
-    <message>
-        <source>Manual &amp;Configuration</source>
-        <translation>手動組態(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>使用手動組態這個「僅限主機」網路卡。</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation>IPv4 位址(&amp;I):</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>顯示這個介面卡的主機 IPv4 位址。</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation>IPv4 網路遮罩(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>顯示這個介面卡的主機 IPv4 網路遮罩。</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation>IPv6 位址(&amp;P):</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>顯示這個介面卡的主機 IPv6 位址若支援 IPv6 。</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>IPv6 網路遮罩長度(&amp;L):</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>顯示這個介面卡的主機 IPv6 網路遮罩前置長度若支援 IPv6 。</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation>DHCP 伺服器(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>啟用伺服器(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>指示機器啟動時是否啟用 DHCP 伺服器。</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation>伺服器位址(&amp;R):</translation>
-    </message>
-    <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務位址。</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation>伺服器遮罩(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務網路遮罩。</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation>位址下界限(&amp;L):</translation>
-    </message>
-    <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址下界限。</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation>位址上界限(&amp;U):</translation>
-    </message>
-    <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址上界限。</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>勾選時，應用程式將定時連線到 VirtualBox 網站並檢查新的 VirtualBox 版本是否可用。</translation>
-    </message>
-    <message>
-        <source>&amp;Check for updates</source>
-        <translation>檢查更新(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation>間隔(&amp;O):</translation>
-    </message>
-    <message>
-        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>指定應執行檢查新版本的頻率。 請注意，如果您要完全停用這個檢查，只需清除上方核取方塊。</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation>下次檢查:</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation>檢查:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選擇這個，如果您只想要有關 VirtualBox 的穩定版更新通知。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Stable release versions</source>
-        <translation>穩定發佈版本(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 的發佈通知。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;All new releases</source>
-        <translation>所有新的發佈(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 發佈和 VirtualBox 預先發佈的版本通知。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation>所有新的發佈與預先發佈(&amp;P)</translation>
+        <translation type="obsolete">重設在 VM 視窗中用來作為熱鍵的按鍵。</translation>
     </message>
 </context>
 <context>
@@ -2219,12 +4375,12 @@
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>已關閉</translation>
+        <translation type="obsolete">已關閉</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>開啟</translation>
+        <translation type="obsolete">開啟</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -2234,7 +4390,7 @@
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>正在關閉</translation>
+        <translation type="obsolete">正在關閉</translation>
     </message>
     <message>
         <source>None</source>
@@ -2279,17 +4435,17 @@
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>空</translation>
+        <translation type="obsolete">空</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>外部</translation>
+        <translation type="obsolete">外部</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>客體</translation>
+        <translation type="obsolete">客體</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -2774,17 +4930,17 @@
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>遠端顯示伺服器連接埠</translation>
+        <translation type="obsolete">遠端顯示伺服器連接埠</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>遠端顯示伺服器</translation>
+        <translation type="obsolete">遠端顯示伺服器</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Display</source>
@@ -3052,7 +5208,7 @@
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
+        <translation type="obsolete">^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
     </message>
     <message>
         <source>B</source>
@@ -3113,6 +5269,122 @@
         <comment>New Storage UI : Slot Name</comment>
         <translation>SAS P連接埠 %1</translation>
     </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">停用</translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">硬碟</translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">所有檔案 (*)</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">空</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">外部</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">客體</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">ICH9</translation>
+    </message>
+    <message>
+        <source>and</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished">MB</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -3133,7 +5405,7 @@
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>說明(&amp;H)</translation>
+        <translation type="obsolete">說明(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -3280,7 +5552,7 @@
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>所有硬碟映像 (%1)</translation>
+        <translation type="obsolete">所有硬碟映像 (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -3292,7 +5564,7 @@
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>CD/DVD-ROM 映像 (*.iso);;所有檔案 (*)</translation>
+        <translation type="obsolete">CD/DVD-ROM 映像 (*.iso);;所有檔案 (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -3300,7 +5572,7 @@
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>軟碟映像 (*.img);;所有檔案 (*)</translation>
+        <translation type="obsolete">軟碟映像 (*.img);;所有檔案 (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -3362,6 +5634,22 @@
         <comment>VMM: Floppy Image</comment>
         <translation>附加到</translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">硬碟</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -3376,6 +5664,10 @@
     <message>
         <source>Close VM</source>
         <translation>關閉 VM</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3506,11 +5798,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要永久刪除虛擬機器 &lt;b&gt;%1&lt;/b&gt;嗎? &lt;/p&gt;&lt;p&gt;這個操作無法復原。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您確定要永久刪除虛擬機器 &lt;b&gt;%1&lt;/b&gt;嗎? &lt;/p&gt;&lt;p&gt;這個操作無法復原。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要取消登錄無法存取的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;&lt;p&gt;您將無法從 GUI 再次登錄它。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您確定要取消登錄無法存取的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;&lt;p&gt;您將無法從 GUI 再次登錄它。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -3628,19 +5920,19 @@
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 太舊: 安裝版本為 %1，預期版本為 %2。 某些功能需要 Guest Additions (滑鼠整合、自動調整客體顯示大小) 很可能會停止正常工作。&lt;/p&gt;&lt;p&gt;請從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來更新 Guest Additions 為目前版本。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 太舊: 安裝版本為 %1，預期版本為 %2。 某些功能需要 Guest Additions (滑鼠整合、自動調整客體顯示大小) 很可能會停止正常工作。&lt;/p&gt;&lt;p&gt;請從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來更新 Guest Additions 為目前版本。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 已過期: 安裝版本為 %1，預期版本為 %2。 某些功能需要 Guest Additions (滑鼠整合、自動調整客體顯示大小) 可能無法如預期的工作。&lt;/p&gt;&lt;p&gt;建議從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來更新 Guest Additions 為目前版本。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 已過期: 安裝版本為 %1，預期版本為 %2。 某些功能需要 Guest Additions (滑鼠整合、自動調整客體顯示大小) 可能無法如預期的工作。&lt;/p&gt;&lt;p&gt;建議從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來更新 Guest Additions 為目前版本。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 是 VirtualBox 的最近版本: 安裝版本為 %1，預期版本為 %2。 不支援使用 Guest Additions 的較新版本連同 VirtualBox 的較舊版本。 請從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來安裝 Guest Additions 的目前版本。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;安裝在客體作業系統的 VirtualBox Guest Additions 是 VirtualBox 的最近版本: 安裝版本為 %1，預期版本為 %2。 不支援使用 Guest Additions 的較新版本連同 VirtualBox 的較舊版本。 請從&lt;b&gt;裝置&lt;/b&gt;功能表選擇&lt;b&gt;安裝 Guest Additions &lt;/b&gt;來安裝 Guest Additions 的目前版本。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>將虛擬機器的快照資料夾路徑從 &lt;b&gt;%1&lt;b&gt; 變更到 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 時失敗。</translation>
+        <translation type="obsolete">將虛擬機器的快照資料夾路徑從 &lt;b&gt;%1&lt;b&gt; 變更到 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 時失敗。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -3688,7 +5980,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;儲存全域 VirtualBox 設定值到 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 失敗。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;儲存全域 VirtualBox 設定值到 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 失敗。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -3709,12 +6001,12 @@
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>刪除</translation>
+        <translation type="obsolete">刪除</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>解除登錄</translation>
+        <translation type="obsolete">解除登錄</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -3724,7 +6016,7 @@
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Download</source>
@@ -3782,7 +6074,7 @@
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>複製檔案 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 到 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) 時失敗。</translation>
+        <translation type="obsolete">複製檔案 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 到 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) 時失敗。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -3958,7 +6250,7 @@
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>移除檔案 &lt;b&gt;%1&lt;/b&gt; 失敗。&lt;br /&gt;&lt;br /&gt;請試著自行移除檔案並重試。</translation>
+        <translation type="obsolete">移除檔案 &lt;b&gt;%1&lt;/b&gt; 失敗。&lt;br /&gt;&lt;br /&gt;請試著自行移除檔案並重試。</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -3990,16 +6282,16 @@
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;硬碟附加到額外控制器的連接埠。 如果您停用額外控制器，這些所有硬碟將自動解除附加。&lt;/p&gt;&lt;p&gt;您確定要停用額外控制器嗎?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;硬碟附加到額外控制器的連接埠。 如果您停用額外控制器，這些所有硬碟將自動解除附加。&lt;/p&gt;&lt;p&gt;您確定要停用額外控制器嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;硬碟附加到額外控制器的連接埠。 如果您變更額外控制器，這些所有硬碟將自動解除附加。&lt;/p&gt;&lt;p&gt;您確定要變更額外控制器嗎?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;硬碟附加到額外控制器的連接埠。 如果您變更額外控制器，這些所有硬碟將自動解除附加。&lt;/p&gt;&lt;p&gt;您確定要變更額外控制器嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation>變更</translation>
+        <translation type="obsolete">變更</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -4099,29 +6391,29 @@
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;沒有未使用的媒體可作為最近建立的附件。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;建立&lt;/b&gt;] 按鈕開始&lt;i&gt;新增虛擬磁碟&lt;/i&gt;精靈並建立新媒體，或按下 [&lt;b&gt;選取&lt;/b&gt;] 如果您想開啟&lt;i&gt;虛擬媒體管理員&lt;/i&gt;。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;沒有未使用的媒體可作為最近建立的附件。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;建立&lt;/b&gt;] 按鈕開始&lt;i&gt;新增虛擬磁碟&lt;/i&gt;精靈並建立新媒體，或按下 [&lt;b&gt;選取&lt;/b&gt;] 如果您想開啟&lt;i&gt;虛擬媒體管理員&lt;/i&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation>建立(&amp;C)</translation>
+        <translation type="obsolete">建立(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation>選取(&amp;S)</translation>
+        <translation type="obsolete">選取(&amp;S)</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;沒有未使用的媒體可作為最近建立的附件。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;選取&lt;/b&gt;] 如果您想開啟&lt;i&gt;虛擬媒體管理員&lt;/i&gt;。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;沒有未使用的媒體可作為最近建立的附件。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;選取&lt;/b&gt;] 如果您想開啟&lt;i&gt;虛擬媒體管理員&lt;/i&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>附加 %1 至機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 失敗。</translation>
+        <translation type="obsolete">附加 %1 至機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 失敗。</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離 %1 失敗。</translation>
+        <translation type="obsolete">從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離 %1 失敗。</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -4145,7 +6437,7 @@
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>從虛擬磁碟機退出磁碟失敗。 磁碟機可能由客體作業系統鎖定。 請檢查此並重試。</translation>
+        <translation type="obsolete">從虛擬磁碟機退出磁碟失敗。 磁碟機可能由客體作業系統鎖定。 請檢查此並重試。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
@@ -4188,17 +6480,17 @@
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation>硬碟</translation>
+        <translation type="obsolete">硬碟</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation>CD/DVD 裝置</translation>
+        <translation type="obsolete">CD/DVD 裝置</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation>軟碟裝置</translation>
+        <translation type="obsolete">軟碟裝置</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -4257,34 +6549,135 @@
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox 使用者手冊已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載但無法本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請為該檔案選擇另一個位置。&lt;/p&gt;</translation>
     </message>
-</context>
-<context>
-    <name>UIProgressDialog</name>
     <message>
-        <source>A few seconds remaining</source>
-        <translation>剩下幾秒鐘</translation>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Canceling...</source>
-        <translation>正在取消...</translation>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel the current operation</source>
-        <translation>取消目前操作</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation>剩下 %1, %2</translation>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation>剩下 %1</translation>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">移除</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4317,7 +6710,7 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>詳細資料(&amp;D)</translation>
+        <translation type="obsolete">詳細資料(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -4354,11 +6747,11 @@
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>刪除(&amp;D)</translation>
+        <translation type="obsolete">刪除(&amp;D)</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>刪除選取的虛擬機器</translation>
+        <translation type="obsolete">刪除選取的虛擬機器</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -4378,15 +6771,15 @@
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>快照(&amp;S)</translation>
+        <translation type="obsolete">快照(&amp;S)</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>描述(&amp;E)</translation>
+        <translation type="obsolete">描述(&amp;E)</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>描述(&amp;E) *</translation>
+        <translation type="obsolete">描述(&amp;E) *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -4479,28 +6872,104 @@
         <comment>Non Mac OS X version</comment>
         <translation>檔案(&amp;F)</translation>
     </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">加入(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;請從左手邊的清單選取設定分類並將滑鼠移至設定項目上方以取得更多資訊&lt;/i&gt;。</translation>
+        <translation type="obsolete">&lt;i&gt;請從左手邊的清單選取設定分類並將滑鼠移至設定項目上方以取得更多資訊&lt;/i&gt;。</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>偵測到無效的設定值</translation>
+        <translation type="obsolete">偵測到無效的設定值</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>設定值</translation>
+        <translation type="obsolete">設定值</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>偵測到非最佳設定值</translation>
+        <translation type="obsolete">偵測到非最佳設定值</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>於 &lt;b&gt;%1&lt;/b&gt; 頁, %2</translation>
+        <translation type="obsolete">於 &lt;b&gt;%1&lt;/b&gt; 頁, %2</translation>
     </message>
 </context>
 <context>
@@ -4688,24 +7157,24 @@
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>顯示選取器視窗</translation>
+        <translation type="obsolete">顯示選取器視窗</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>顯示指派到這個功能表的選取器視窗</translation>
+        <translation type="obsolete">顯示指派到這個功能表的選取器視窗</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>隱藏通知區圖示</translation>
+        <translation type="obsolete">隱藏通知區圖示</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>從系統通知區移除這個圖示</translation>
+        <translation type="obsolete">從系統通知區移除這個圖示</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>其它機器(&amp;O)...</translation>
+        <translation type="obsolete">其它機器(&amp;O)...</translation>
     </message>
 </context>
 <context>
@@ -4812,22 +7281,22 @@
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>沒有任何描述。按下方的 [編輯] 按鈕來加入它。</translation>
+        <translation type="obsolete">沒有任何描述。按下方的 [編輯] 按鈕來加入它。</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>編輯</translation>
+        <translation type="obsolete">編輯</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>編輯 (Ctrl+E)</translation>
+        <translation type="obsolete">編輯 (Ctrl+E)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>選取的虛擬機器是 &lt;i&gt;不可存取&lt;/i&gt;。 請核閱顯示於下方的錯誤訊息，如果您想要重複檢查可存取性，請按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕:</translation>
+        <translation type="obsolete">選取的虛擬機器是 &lt;i&gt;不可存取&lt;/i&gt;。 請核閱顯示於下方的錯誤訊息，如果您想要重複檢查可存取性，請按下 [&lt;b&gt;重新整理&lt;/b&gt;] 按鈕:</translation>
     </message>
 </context>
 <context>
@@ -4905,7 +7374,7 @@
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
-        <translation>不可用</translation>
+        <translation type="obsolete">不可用</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
@@ -4919,54 +7388,10 @@
         <source>Network Statistics</source>
         <translation>網路狀態</translation>
     </message>
-</context>
-<context>
-    <name>UIVMListView</name>
     <message>
-        <source>Inaccessible</source>
-        <translation>無法存取</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自從 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;工作階段 %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不可存取自從 %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>顯示(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>切換到選取虛擬機器的視窗</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>啟動(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>啟動選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>繼續執行(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>繼續執行虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>暫停(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>暫停虛擬機器的執行</translation>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished">不可用</translation>
     </message>
 </context>
 <context>
@@ -5005,1197 +7430,82 @@
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>勾選時，虛擬 PCI 音效卡將插入到虛擬機器並使用指定的驅動程式與主機音訊系統通訊。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation>啟用音效(&amp;A)</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation>主機音效驅動程式(&amp;D):</translation>
-    </message>
-    <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>控制音效輸出驅動程式。 &lt;b&gt;空的音效驅動程式&lt;/b&gt; 使客體擁有音效卡，然而會忽略它的聲音輸出。</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation>音效控制器(&amp;C):</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>選擇虛擬音效卡的類型。 VirtualBox 將在虛擬機器提供不同的音效硬體，取決於這個值。</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsDisplay</name>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>您已指派少於 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體，這是切換虛擬機器為全螢幕或無縫模式所需的最小量。</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Video</source>
-        <translation>視訊(&amp;V)</translation>
-    </message>
-    <message>
-        <source>Video &amp;Memory:</source>
-        <translation>視訊記憶體(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>控制要提供給虛擬機器的視訊記憶體數量。</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>延伸功能:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation>勾選時，虛擬機器將給予存取在主機可用的 3D 圖形能力。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation>啟用 3D 加速(&amp;3)</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation>遠端顯示(&amp;R)</translation>
-    </message>
-    <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>勾選時，虛擬機器將作為遠端桌面協定 (RDP) 伺服器，允許遠端用戶端使用標準的 RDP 用戶端連線與操作虛擬機器 (當它正在執行時)。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>啟用伺服器(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation>伺服器埠(&amp;P):</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation>驗證方法(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Defines the VRDP authentication method.</source>
-        <translation>定義 VRDP 驗證方法。</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation>驗證逾時(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>指定客體驗證的逾時，以毫秒為單位。</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>您已指派少於 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體，這是有效播放 HD 視訊所需的最小量。</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>勾選時，虛擬機器將給予存取在主機可用的視訊加速能力。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation>啟用 2D 視訊加速(&amp;2)</translation>
-    </message>
-    <message>
-        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation>VRDP 伺服器連接埠號。 您可以指定 &lt;tt&gt;0&lt;/tt&gt; (零)，來選擇連接埠 3389， RDP 的標準連接埠。</translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation>監視器數量(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation>控制提供給虛擬機器的虛擬監視器總數。</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>一般</translation>
+        <translation type="obsolete">一般</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>存放裝置</translation>
+        <translation type="obsolete">存放裝置</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>硬碟</translation>
+        <translation type="obsolete">硬碟</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>軟碟</translation>
+        <translation type="obsolete">軟碟</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>音效</translation>
+        <translation type="obsolete">音效</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>網路</translation>
+        <translation type="obsolete">網路</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>連接埠</translation>
+        <translation type="obsolete">連接埠</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>序列埠</translation>
+        <translation type="obsolete">序列埠</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>串列埠</translation>
+        <translation type="obsolete">串列埠</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>共用資料夾</translation>
+        <translation type="obsolete">共用資料夾</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>系統</translation>
+        <translation type="obsolete">系統</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>顯示</translation>
+        <translation type="obsolete">顯示</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>您已針對這個 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
+        <translation type="obsolete">您已針對這個 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>您已針對這個 VM 選取 64 位元的客體作業系統類型。 VirtualBox 目前不支援在 32 位元主機執行多個虛擬 CPU 的 64 位元客體。</translation>
+        <translation type="obsolete">您已針對這個 VM 選取 64 位元的客體作業系統類型。 VirtualBox 目前不支援在 32 位元主機執行多個虛擬 CPU 的 64 位元客體。</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>您已啟用 2D 視訊加速。 由於 2D 視訊加速只支援 Windows 客體，這個功能將停用。</translation>
+        <translation type="obsolete">您已啟用 2D 視訊加速。 由於 2D 視訊加速只支援 Windows 客體，這個功能將停用。</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已啟用 USB HID (人性化介面裝置)。 除非同時啟用 USB 模擬否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值時這將會自動完成。</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsGeneral</name>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>顯示將儲存這個虛擬機器快照的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
-    </message>
-    <message>
-        <source>&amp;Basic</source>
-        <translation>基本(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>名稱(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Displays the name of the virtual machine.</source>
-        <translation>顯示虛擬機器的名稱。</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation>進階(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation>共用剪貼簿(&amp;S):</translation>
-    </message>
-    <message>
-        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>選取在客體與主機作業系統之間將複製哪個剪貼簿資料。 這個功能需要在客體作業系統安裝 Guest Additions 。</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation>快照資料夾(&amp;N):</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation>描述(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>顯示虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
-    </message>
-    <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>如果勾選，任何在機器執行期間對於掛載的光碟與軟碟所進行的變更，將會儲存在設定檔之中，以便於每次執行之間保存掛載媒體的組態。</translation>
-    </message>
-    <message>
-        <source>Removable Media:</source>
-        <translation>卸除式媒體:</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Runtime Changes</source>
-        <translation>記住執行階段變更(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation>迷你工具列:</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>如果勾選，在全螢幕及無縫模式顯示迷你工具列。</translation>
-    </message>
-    <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>在全螢幕/無縫模式顯示(&amp;F)</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>如果勾選，在螢幕上方顯示迷你工具列，而不是它的預設位置在螢幕的下方。</translation>
-    </message>
-    <message>
-        <source>Show At &amp;Top Of Screen</source>
-        <translation>顯示在螢幕上方(&amp;T)</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsStorage</name>
-    <message>
-        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>如果勾選，顯示附加到插槽的差異硬碟而不是它們的基礎硬碟 (顯示間接附件) 並允許附加明確的差異硬碟。 勾選此，如果您需要複雜的硬碟設定。</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;匯流排:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;類型:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;展開/摺疊項目&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;加入硬碟&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;加入&amp;nbsp;CD/DVD&amp;nbsp;裝置&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;加入軟碟裝置&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>未選取 &lt;i&gt;%1&lt;/i&gt; 的硬碟。</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; 使用已經附加到 &lt;i&gt;%2&lt;/i&gt; 的媒體。</translation>
-    </message>
-    <message>
-        <source>Add Controller</source>
-        <translation>加入控制器</translation>
-    </message>
-    <message>
-        <source>Add IDE Controller</source>
-        <translation>加入 IDE 控制器</translation>
-    </message>
-    <message>
-        <source>Add SATA Controller</source>
-        <translation>加入 SATA 控制器</translation>
-    </message>
-    <message>
-        <source>Add SCSI Controller</source>
-        <translation>加入 SCSI 控制器</translation>
-    </message>
-    <message>
-        <source>Add Floppy Controller</source>
-        <translation>加入軟碟控制器</translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation>移除控制器</translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation>加入附件</translation>
-    </message>
-    <message>
-        <source>Add Hard Disk</source>
-        <translation>加入硬碟</translation>
-    </message>
-    <message>
-        <source>Add CD/DVD Device</source>
-        <translation>加入 CD/DVD 裝置</translation>
-    </message>
-    <message>
-        <source>Add Floppy Device</source>
-        <translation>加入軟碟裝置</translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation>移除附件</translation>
-    </message>
-    <message>
-        <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>新增控制器至存放裝置樹的尾端。</translation>
-    </message>
-    <message>
-        <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>移除存放裝置樹中反白的控制器。</translation>
-    </message>
-    <message>
-        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>使用目前選取的控制器為上層新增附件至存放裝置樹。</translation>
-    </message>
-    <message>
-        <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>移除存放裝置樹中反白的附件。</translation>
-    </message>
-    <message>
-        <source>IDE Controller</source>
-        <translation>IDE 控制器</translation>
-    </message>
-    <message>
-        <source>SATA Controller</source>
-        <translation>SATA 控制器</translation>
-    </message>
-    <message>
-        <source>SCSI Controller</source>
-        <translation>SCSI 控制器</translation>
-    </message>
-    <message>
-        <source>Floppy Controller</source>
-        <translation>軟碟控制器</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation>硬碟(&amp;D):</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Device:</source>
-        <translation>CD/DVD 裝置(&amp;C):</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device:</source>
-        <translation>軟碟裝置(&amp;F):</translation>
-    </message>
-    <message>
-        <source>&amp;Storage Tree</source>
-        <translation>存放裝置樹(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>包含這個機器的所有存放控制器與附加到它們的虛擬機器及主機裝置。</translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation>資訊</translation>
-    </message>
-    <message>
-        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>存放裝置樹能包含數個不同類型的控制器。 這個機器目前沒有控制器。</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation>屬性</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>名稱(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>變更目前在存放裝置樹選取的儲存控制器名稱。</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation>類型(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation>選取目前在存放裝置樹選取的存放控制器的子類型。</translation>
-    </message>
-    <message>
-        <source>S&amp;lot:</source>
-        <translation>插槽(&amp;L):</translation>
-    </message>
-    <message>
-        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>選取這個附件所使用的存放控制器的插槽。 可用插槽根據控制器的類型與其它附加的附件而定。</translation>
-    </message>
-    <message>
-        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation>選取這個附件使用的虛擬磁碟映像或主機磁碟機。</translation>
-    </message>
-    <message>
-        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation>開啟虛擬媒體管理員來選取這個附件的虛擬映像。</translation>
-    </message>
-    <message>
-        <source>Open Virtual Media Manager</source>
-        <translation>開啟虛擬媒體管理員</translation>
-    </message>
-    <message>
-        <source>D&amp;ifferencing Disks</source>
-        <translation>差異磁碟(&amp;I)</translation>
-    </message>
-    <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>勾選時，允許客體直接傳送 ATAPI 命令至主機光碟機，如此才能在虛擬機器中使用連接到主機的 CD/DVD 燒錄機。 請注意，目前尚未支援在虛擬機器中燒錄音樂 CD。</translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation>透通(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation>虛擬大小:</translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation>實際大小:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation>大小:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>位置:</translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation>類型 (格式):</translation>
-    </message>
-    <message>
-        <source>Attached To:</source>
-        <translation>附加到:</translation>
-    </message>
-    <message>
-        <source>Allows to use host I/O caching capabilities.</source>
-        <translation>允許使用主機 I/O 快取能力。</translation>
-    </message>
-    <message>
-        <source>Use host I/O cache</source>
-        <translation>使用主機 I/O 快取</translation>
-    </message>
-    <message>
-        <source>Add SAS Controller</source>
-        <translation>加入 SAS 控制器</translation>
-    </message>
-    <message>
-        <source>SAS Controller</source>
-        <translation>SAS 控制器</translation>
-    </message>
-    <message>
-        <source>Storage Controller</source>
-        <translation>存放控制器</translation>
-    </message>
-    <message>
-        <source>Storage Controller 1</source>
-        <translation>存放控制器 1</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>勾選時，會將這個虛擬網路卡插入虛擬機器內。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation>啟用網路卡(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>選擇虛擬網路卡的類型。 VirtualBox 將取決於這個值在虛擬機器提供不同的網路硬體。</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation>附加到(&amp;A):</translation>
-    </message>
-    <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>控制這個虛擬介面卡如何附加到主機作業系統的真實網路。</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation>介面卡類型(&amp;T):</translation>
-    </message>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation>未選取橋接網路卡</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation>未指定內部網路名稱</translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation>未選取「僅限主機」網路卡</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation>未選取</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>名稱(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>選取&lt;b&gt;橋接介面卡&lt;/b&gt;或&lt;b&gt;「僅限主機」介面卡&lt;/b&gt;附件的網路卡名稱與&lt;b&gt;內部網路&lt;/b&gt;附件的網路名稱。</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation>進階(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Shows or hides additional network adapter options.</source>
-        <translation>顯示或隱藏額外網路卡選項。</translation>
-    </message>
-    <message>
-        <source>&amp;Mac Address:</source>
-        <translation>Mac 位址(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>顯示這個介面卡的 MAC 位址。 它包含確切地 12 個字元從 {0-9,A-F} 選擇。 請注意第二個字元必須是一個偶數數位。</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation>產生新的隨機 MAC 位址。</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>指示機器啟動時是否已插入虛擬網路線。</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation>線路已連接(&amp;C)</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation>連接埠 %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>勾選時，表示啟用給予的虛擬機器串列埠。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Parallel Port</source>
-        <translation>啟用串列埠(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>連接埠號(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>顯示串列埠號。您可以選擇標準串列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>IRQ (&amp;I):</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>I/O 連接埠(&amp;R):</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation>連接埠路徑(&amp;P):</translation>
-    </message>
-    <message>
-        <source>Displays the host parallel device name.</source>
-        <translation>顯示主機串列埠裝置名稱。</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個串列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>顯示這個串列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallelPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>選取重複的連接埠號</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>未指定連接埠路徑</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>輸入重複的連接埠路徑</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation>加入新的共用資料夾定義。</translation>
-    </message>
-    <message>
-        <source>Edits th the selected shared folder definition.</source>
-        <translation>編輯選取的共用資料夾定義。</translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation>移除選取的共用資料夾定義。</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation>機器資料夾</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation>瞬變資料夾</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation>完整</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation>唯讀</translation>
-    </message>
-    <message>
-        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>列出所有可存取這個機器的共用資料夾。 從類似 DOS 的作業系統使用 &apos;net use x: \\vboxsvr\share&apos; 存取名為 &lt;i&gt; share &lt;/i&gt; 的共用資料夾，或從 Linux 作業系統 &apos;mount -t vboxsf share mount_point&apos; 來存取它。 這個功能需要 Guest Additions 。</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation>路徑</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation>存取</translation>
-    </message>
-    <message>
-        <source> Global Folders</source>
-        <translation>全域資料夾</translation>
-    </message>
-    <message>
-        <source>&amp;Add Shared Folder</source>
-        <translation>加入共用資料夾(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Shared Folder</source>
-        <translation>編輯共用資料夾(&amp;E)</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Shared Folder</source>
-        <translation>移除共用資料夾(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Folders List</source>
-        <translation>資料夾清單(&amp;F)</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Add Share</source>
-        <translation>加入共用</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation>編輯共用</translation>
-    </message>
-    <message>
-        <source>Dialog</source>
-        <translation>Dialog</translation>
-    </message>
-    <message>
-        <source>Folder Path:</source>
-        <translation>資料夾路徑:</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation>資料夾名稱:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>顯示共用資料夾的名稱 (客體作業系統將看到的)。</translation>
-    </message>
-    <message>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>勾選時，客體作業系統將不能寫入指定的共用資料夾。</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation>唯讀(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation>永久性(&amp;M)</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>連接埠 %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>勾選時，表示啟用給予的虛擬機器序列埠。</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Serial Port</source>
-        <translation>啟用序列埠(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>連接埠號(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>顯示序列埠號。您可以選擇標準序列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>IRQ (&amp;I):</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>I/O 連接埠(&amp;R):</translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode:</source>
-        <translation>連接埠模式(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>控制這個序列埠的工作模式。如果您選取&lt;b&gt;已中斷連接&lt;/b&gt;，客體作業系統將會偵測到序列埠但無法操作它。</translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>如果勾選，在&lt;b&gt;連接埠路徑&lt;/b&gt;欄位中指定的管道將由虛擬機器於啟動時建立。 否則，虛擬機器將假設管道存在並嘗試使用它。</translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation>建立管道(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>當連接埠工作在&lt;b&gt;主機管道&lt;/b&gt;模式時顯示主機中序列埠管道的路徑，或者當連接埠工作在&lt;b&gt;主機裝置&lt;/b&gt;模式時顯示主機序列裝置名稱。</translation>
-    </message>
-    <message>
-        <source>Port/File &amp;Path:</source>
-        <translation>連接埠/檔案路徑(&amp;P):</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>顯示這個序列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerialPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>選取重複的連接埠號</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>未指定連接埠路徑</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>輸入重複的連接埠路徑</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSystem</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>您已指派超過您電腦記憶體 (&lt;b&gt;%2&lt;/b&gt;) 的 &lt;b&gt;%1%&lt;/b&gt; 到虛擬機器。 您主機的作業系統沒有足夠的剩餘記憶體。 請選取較小的量。</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>您已指派超過您電腦記憶體 (&lt;b&gt;%2&lt;/b&gt;) 的 &lt;b&gt;%1%&lt;/b&gt; 到虛擬機器。 您主機的作業系統可能沒有足夠的剩餘記憶體。 繼續則風險自負。</translation>
-    </message>
-    <message>
-        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>由於效能原因，附加到虛擬機器的虛擬 CPU 數不可多於主機中實體 CPU 數 (&lt;b&gt;%1&lt;/b&gt; 個) 的兩倍。 請降低虛擬 CPU 數。</translation>
-    </message>
-    <message>
-        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>您已指派超過您主機系統實體 CPU  (&lt;b&gt;%1&lt;/b&gt; 個) 的虛擬 CPU 到此虛擬機器。 這很可能會降低您虛擬機器的效能。 請考慮降低除虛擬 CPU 數。</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非同時啟用 IO-APIC 功能否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將會自動完成。</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非也啟用硬體虛擬化 (VT-x/AMD-V) 否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將自動完成。</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>%1 is 1 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Motherboard</source>
-        <translation>主機板(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory:</source>
-        <translation>基本記憶體(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>控制要提供給虛擬機器的記憶體數量。如果您指派太多，機器可能無法啟動。</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation>開機順序(&amp;B):</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>定義開機裝置順序。 使用左方的核取方塊來啟用或停用個別開機裝置。 上移與下移項目來變更順序。</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation>下移 (Ctrl-Down)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation>上移選取的開機裝置。</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation>上移 (Ctrl-Up)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation>下移選取的開機裝置。</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>延伸功能:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>勾選時，虛擬機器將支援 Input Output APIC (IO APIC)，這可能略微降低性能。 &lt;b&gt;注意:&lt;/b&gt; 安裝 Windows 客體作業系統後不要停用這個功能!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>啟用 &amp;IO APIC</translation>
-    </message>
-    <message>
-        <source>&amp;Processor</source>
-        <translation>處理器(&amp;P)</translation>
-    </message>
-    <message>
-        <source>&amp;Processor(s):</source>
-        <translation>處理器(&amp;P):</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>勾選時，主機 CPU 的 Physical Address Extension (PAE) 功能將暴露於虛擬機器。</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation>啟用 PAE/NX (&amp;E)</translation>
-    </message>
-    <message>
-        <source>Acce&amp;leration</source>
-        <translation>加速(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation>硬體虛擬化:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>勾選時，虛擬機器將嘗試使用主機 CPU 的硬體虛擬化擴充比如 Intel VT-x 和 AMD-V 。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>啟用 VT-x/AMD-V (&amp;V)</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的巢狀分頁擴充。</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation>啟用巢狀分頁(&amp;G)</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>勾選時，客體將支援Extended Firmware Interface (EFI)，某種客體作業系統開機是需要的。 非 EFI 感知的作業系統將無法開機，如果啟用這個選項。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation>啟用 EFI (僅特殊作業系統)(&amp;E)</translation>
-    </message>
-    <message>
-        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>如果勾選，RTC 裝置將報告 UTC 的時間，否則是本機 (主機) 時間。 Unix 通常要求硬體時鐘設定為 UTC 。</translation>
-    </message>
-    <message>
-        <source>Hardware clock in &amp;UTC time</source>
-        <translation>在 UTC 時間的硬體時鐘(&amp;U)</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation>控制在虛擬機器中的虛擬 CPU 數。 您需要在您的主機系統支援硬體虛擬化以使用一個以上的 CPU。</translation>
-    </message>
-    <message>
-        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation>如果勾選，將支援絕對指標裝置 (USB 平板)。 否則，將只模擬標準 PS/2 滑鼠。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;absolute pointing device</source>
-        <translation>啟用絕對指標裝置(&amp;A)</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>&amp;Add Empty Filter</source>
-        <translation>加入空的篩選器(&amp;A)</translation>
-    </message>
-    <message>
-        <source>A&amp;dd Filter From Device</source>
-        <translation>從裝置加入篩選器(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Filter</source>
-        <translation>編輯篩選器(&amp;E)</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Filter</source>
-        <translation>移除篩選器(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Move Filter Up</source>
-        <translation>上移篩選器(&amp;M)</translation>
-    </message>
-    <message>
-        <source>M&amp;ove Filter Down</source>
-        <translation>下移篩選器(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>加入一個所有欄位最初設定為空字串的新 USB 篩選器。 請注意，這些篩選器會符合任何附加的 USB 裝置。</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>加入一個所有欄位設定為已附加到主機 PC 的選取 USB 裝置之新 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>Edits the selected USB filter.</source>
-        <translation>編輯選取的 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation>移除選取的 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation>上移選取的 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation>下移選取的 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation>新增篩選器 %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>勾選時，啟用這個機器的虛擬 USB 控制器。</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation>啟用 USB 控制器(&amp;U)</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>勾選時，啟用這個機器的虛擬 USB EHCI 控制器。 USB EHCI 控制器提供 USB 2.0 支援。</translation>
-    </message>
-    <message>
-        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>啟用 USB 2.0 (EHCI) 控制器(&amp;H)</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation>USB 裝置篩選器(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>列出這個機器的所有 USB 篩選器。 左側的核取方塊定義是否啟用特定的篩選器。 使用內容功能表或右側的按鈕加入或移除 USB 篩選器。</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation>[篩選器]</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation>任何</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation>是</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation>否</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>名稱(&amp;N):</translation>
-    </message>
-    <message>
-        <source>Displays the filter name.</source>
-        <translation>顯示篩選器名稱。</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation>供應商 ID (&amp;V):</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>定義供應商 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation>產品 ID (&amp;P):</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>定義產品 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation>修訂(&amp;R):</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>定義修訂號篩選器。&lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;IIFF&lt;/tt&gt; 其中 &lt;tt&gt;I&lt;/tt&gt; 是十進位數字的整數部分 &lt;tt&gt;F&lt;/tt&gt; 是十進位數字的小數部分。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation>製造商(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義製造商篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation>產品(&amp;D):</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義產品名稱篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation>序號(&amp;S):</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義產序號篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation>連接埠(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義主機 USB 連接埠篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation>遠端(&amp;E):</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>定義這個篩選器是否套用到本機附加的主機電腦之 USB 裝置 (&lt;i&gt;否&lt;/i&gt;) ，到 VRDP 用戶端的電腦 (&lt;i&gt;是&lt;/i&gt;)，或同時 (&lt;i&gt;任何&lt;/i&gt;)。</translation>
-    </message>
-    <message>
-        <source>&amp;Action:</source>
-        <translation>動作(&amp;A):</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>定義當附加相符的裝置時主機電腦執行的動作: 在主機作業系統放棄 (&lt;i&gt;忽略&lt;/i&gt;) 或由虛擬機器擷取它作為之後使用 (&lt;i&gt;保留&lt;/i&gt;)。</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation>USB 篩選器詳細資料</translation>
+        <translation type="obsolete">您已啟用 USB HID (人性化介面裝置)。 除非同時啟用 USB 模擬否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值時這將會自動完成。</translation>
     </message>
 </context>
 </TS>

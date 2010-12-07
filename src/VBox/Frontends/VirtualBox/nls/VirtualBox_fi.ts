@@ -448,7 +448,7 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Vaihda kokoruututilaan</translation>
+        <translation type="obsolete">Vaihda kokoruututilaan</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -456,11 +456,11 @@
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Vaihda saumattoman työpöytäintegraation tilaan</translation>
+        <translation type="obsolete">Vaihda saumattoman työpöytäintegraation tilaan</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">&amp;Muuta automaattisesti asiakkaan näytön kokoa</translation>
+        <translation type="unfinished">&amp;Muuta automaattisesti asiakkaan näytön kokoa</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -484,11 +484,11 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Ota &amp;hiirituki käyttöön</translation>
+        <translation type="obsolete">Ota &amp;hiirituki käyttöön</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Ota väliaikaisesti käytöstä poistettu hiiren kohdistimen integrointi käyttöön</translation>
+        <translation type="obsolete">Ota väliaikaisesti käytöstä poistettu hiiren kohdistimen integrointi käyttöön</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -516,7 +516,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Näytä &amp;tietoikkuna</translation>
+        <translation type="obsolete">Näytä &amp;tietoikkuna</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -531,12 +531,8 @@
         <translation>Keskeytä virtuaalikoneen suoritus</translation>
     </message>
     <message>
-        <source>R&amp;esume</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Jatka virtuaalikoneen suorittamista</translation>
+        <translation type="obsolete">Jatka virtuaalikoneen suorittamista</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -650,51 +646,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable remote desktop (RDP) connections to this machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -703,9 +655,327 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable &amp;Logging...</source>
-        <comment>debug action</comment>
+        <source>Switch to &amp;Fullscreen</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and fullscreen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Scale Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and scale mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation type="unfinished">Ei kuvausta. Napsauta Muokkaa-painiketta ja lisää se.</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">Muokkaa</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation type="unfinished">Muokkaa (Ctrl+M)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Nimi</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Käyttöjärjestelmän tyyppi</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Järjestelmämuisti</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%4 MB&lt;/nobr&gt; {1 ?}</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Käynnistysjärjestys</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="unfinished">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Sisäkkäinen sivutus</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Videomuisti</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished">3D</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished">Ei liitetty</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Isäntäkoneen ajuri</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Ohjain</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Sisäinen verkko, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Sovitin %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Portti %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Portti %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Laitesuodattimet</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 käytössä)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Jaetut kansiot</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Ei mitään</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished">Ei mitään</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation type="unfinished">Valittu virtuaalikone ei ole &lt;i&gt;saatavilla&lt;/i&gt;. Tutki allaolevaa virheviestiä ja paina nappia &lt;b&gt;Päivitä&lt;/b&gt;, jos haluat testata saatavuutta uudestaan:</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Yleiset</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Levykuvat</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Ääni</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Verkko</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Sarjaportit</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Rinnakkaisportit</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Jaetut kansiot</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Kuvaus</translation>
     </message>
 </context>
 <context>
@@ -845,15 +1115,12 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished">Tästä voit valita valituille virtuaalikoneille ylimääräisiä asetusarvoja. Voit muokata useimpia ylläolevista ominaisuuksista kaksoisnapsauttamalla kyseistä kohtaa.</translation>
+        <translation type="obsolete">Tästä voit valita valituille virtuaalikoneille ylimääräisiä asetusarvoja. Voit muokata useimpia ylläolevista ominaisuuksista kaksoisnapsauttamalla kyseistä kohtaa.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation type="unfinished">Laitteistokuvan viennin asetukset</translation>
     </message>
-</context>
-<context>
-    <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation type="unfinished"></translation>
@@ -870,13 +1137,13 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Simple Storage System (S3)</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Appliance Export Settings</source>
         <translation type="unfinished">Laitteistokuvan viennin asetukset</translation>
     </message>
-</context>
-<context>
-    <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
         <translation type="unfinished"></translation>
@@ -906,8 +1173,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Appliance Export Settings</source>
-        <translation type="unfinished">Laitteistokuvan viennin asetukset</translation>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Appliance</source>
@@ -918,11 +1189,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Valitse tiedosto johon viedään</translation>
     </message>
     <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open Virtualization Format (%1)</source>
         <translation type="unfinished">Avoin virtualisointimuoto (%1)</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF to.</source>
+        <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -932,6 +1207,25 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished">Laitteistokuvan viennin asetukset</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">Laitteistokuva</translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">Valitse tiedosto johon viedään</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Avoin virtualisointimuoto (%1)</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -944,6 +1238,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Exporting Appliance ...</source>
         <translation type="unfinished">Viedään laitteistokuvaa...</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished">Tästä voit valita valituille virtuaalikoneille ylimääräisiä asetusarvoja. Voit muokata useimpia ylläolevista ominaisuuksista kaksoisnapsauttamalla kyseistä kohtaa.</translation>
     </message>
 </context>
 <context>
@@ -1152,6 +1450,519 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Yleiset</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished">Syöte</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">Päivitä</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">Kieli</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Verkko</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished">VirtualBox - %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsExtension</name>
+    <message>
+        <source>&amp;Extension Packages:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all installed packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nimi</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished">Versio</translation>
+    </message>
+    <message>
+        <source>Add package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsGeneral</name>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation>Näyttää polun virtuaalikoneiden oletuskansioon. Tätä kansiota käytetään luotaessa uusia virtuaalikoneita, jos ei erikseen toisin määritellä.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation>Näyttää polun kirjastoon, jolla toteutetaan VRDP-etätyöpöytäasiakkaiden todentaminen.</translation>
+    </message>
+    <message>
+        <source>Default &amp;Hard Disk Folder:</source>
+        <translation type="obsolete">&amp;Kiintolevykuvien oletuskansio:</translation>
+    </message>
+    <message>
+        <source>Default &amp;Machine Folder:</source>
+        <translation>&amp;Virtuaalikoneiden oletuskansio:</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation>&amp;VRDP-todentamiskirjasto:</translation>
+    </message>
+    <message>
+        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
+        <translation type="obsolete">Jos käytössä, telakan kuvake muuttuu ikkunan sisällön mukana reaaliaikaisesti.</translation>
+    </message>
+    <message>
+        <source>&amp;Dock Icon Realtime Preview</source>
+        <translation type="obsolete">&amp;Telakkakuvakkeen tosiaikainen päivitys</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Näyttää polun kiintolevykuvien oletuskansioon. Tätä kansiota käytetään lisättäessä olemassaolevia tai luotaessa uusia virtuaalisia kiintolevyjä, jos ei erikseen toisin määritellä.</translation>
+    </message>
+    <message>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation>Jos asetettu, ohjelma näyttää kontekstivalikolla varustetun kuvakkeen ilmoitusalueella.</translation>
+    </message>
+    <message>
+        <source>&amp;Show System Tray Icon</source>
+        <translation>&amp;Näytä ilmoitusalueen kuvake</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsInput</name>
+    <message>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished">&amp;Isäntänäppäin:</translation>
+    </message>
+    <message>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <translation type="unfinished">Näyttää virtuaalikoneen ikkunassa käytettävän isäntänäppäimen. Kohdista syötekohtaan ja syötä uusi isäntänäppäin. Huomaa, ettei numeroita, kirjaimia, kursori- tai muokkausnäppäimiä voi käyttää isäntänäppäimenä.</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">Jos asetettu, näppäimistö kaapataan automaattisesti aina kun virtuaalikoneen ikkuna on valittu. Kun näppäimistö on kaapattu, kaikki näppäilyt ohjataan virtuaalikoneeseen, mukaanlukien järjestelmänäppäilyt kuten Alt-Tab.</translation>
+    </message>
+    <message>
+        <source>&amp;Auto Capture Keyboard</source>
+        <translation type="unfinished">Kaappaa näppäimistö &amp;automaattisesti</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsLanguage</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation> (sisäänrakennettu)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;Ei käytettävissä&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;tuntematon&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>Oletus</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Kieli:</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language:</source>
+        <translation>&amp;Käyttöliittymän kielet:</translation>
+    </message>
+    <message>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation>Näyttää luettelon mahdollisista käyttöliittymän kielistä. Käytössä oleva kieli on &lt;b&gt;korostettu&lt;/b&gt;. Valitse &lt;i&gt;Oletus&lt;/i&gt;, jos haluat käyttää järjestelmän oletuskieltä.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nimi</translation>
+    </message>
+    <message>
+        <source>Id</source>
+        <translation>Tunniste</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Kieli</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>Tekijä</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>Tekijä(t):</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetwork</name>
+    <message>
+        <source>%1 network</source>
+        <comment>&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1-verkko</translation>
+    </message>
+    <message>
+        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv4-osoite o virheellinen</translation>
+    </message>
+    <message>
+        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv4-verkkopeite on virheellinen</translation>
+    </message>
+    <message>
+        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv6-osoite on virheellinen</translation>
+    </message>
+    <message>
+        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; osoite on virheellinen </translation>
+    </message>
+    <message>
+        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; verkkopeite on virheellinen</translation>
+    </message>
+    <message>
+        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; alempi osoiteraja on virheellinen </translation>
+    </message>
+    <message>
+        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; ylempi osoiteraja on virheellinen </translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation>Sovitin</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation>Automaattisesti määritelty</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation>Käsin määritelty</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation>IPv4-osoite</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation>Ei asetettu</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation>IPv4-verkkopeite</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation>Ei asetettu</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation>IPv6-osoite</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation>IPv6-verkkopeitteen pituus</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation>Ei asetettu</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>DHCP-palvelin</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation>Käytössä</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation>Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>Osoite</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation>Verkkopeite</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation>Alaraja</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation>Ei asetettu</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation>Yläraja</translation>
+    </message>
+    <message>
+        <source>&amp;Add host-only network</source>
+        <translation>&amp;Lisää laitteiston sisäinen verkko</translation>
+    </message>
+    <message>
+        <source>&amp;Remove host-only network</source>
+        <translation>&amp;Poista laitteiston sisäinen verkko</translation>
+    </message>
+    <message>
+        <source>&amp;Edit host-only network</source>
+        <translation>&amp;Muokkaa laitteiston sisäistä verkkoa</translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>creating/removing host-only network</comment>
+        <translation type="obsolete">Suoritetaan</translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks:</source>
+        <translation>&amp;Laitteiston sisäiset verkot:</translation>
+    </message>
+    <message>
+        <source>Lists all available host-only networks.</source>
+        <translation>Luettelo laitteiston sisäisistä verkoista.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nimi</translation>
+    </message>
+    <message>
+        <source>New Host-Only Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetails</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>Laitteiston sisäisen verkon tiedot</translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation>&amp;Verkkosovitin</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation>Oma &amp;määrittely</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation>Käytä käsin asetettuja asetuksia tälle laitteiston sisäiselle verkkosovittimelle.</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation>&amp;IPv4-osoite:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation>Näyttää tämän sovittimen IPv4-osoitteen.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation>IPv4-&amp;verkkopeite:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation>Näyttää tämän sovittimen IPv4-verkkopeitteen.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation>I&amp;Pv6-osoite:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation>Näyttää tämän sovittimen IPv6-osoitteen, jos IPv6 on tuettu.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation>IPv6-verkkopeitteen &amp;pituus:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation>Näyttää tämän sovittimen IPv6-verkkopeitteen pituuden, jos IPv6 on tuettu.</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation>&amp;DHCP-palvelin</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>Ota palvelin &amp;käyttöön</translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation>Määrittää, käynnistetäänkö DHCP-palvelin tietokoneen käynnistyksen yhteydessä.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation>Palvelimen &amp;osoite:</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Näyttää osoitteen DHCP-palvelimelle, joka tarjoaa osoitteita tälle laitteiston sisäiselle verkkosovittimelle.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation>Palvelimen v&amp;erkkopeite:</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Näyttää verkkopeitteen DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation>Osoiteavaruuden &amp;alaraja:</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Näyttää alarajan DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation>Osoiteavaruuden &amp;yläraja:</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Näyttää ylärajan DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsUpdate</name>
+    <message>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
+        <translation>Jos asetettu, ohjelma ottaa annetuin väliajoin yhteyttä VirtualBoxin www-sivuilla ja tarkistaa, onko uusi VirtualBoxin versio saatavilla.</translation>
+    </message>
+    <message>
+        <source>&amp;Check for updates</source>
+        <translation>&amp;Etsi päivityksiä</translation>
+    </message>
+    <message>
+        <source>&amp;Once per:</source>
+        <translation>&amp;Kerran joka:</translation>
+    </message>
+    <message>
+        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
+        <translation>Määrittää, kuinka usein uuden version tarkastus tehdään. Huomaa että voit poistaa uusien versioden tarkastuksen käytöstä poistamalla ylläolean asetuksen.</translation>
+    </message>
+    <message>
+        <source>Next Check:</source>
+        <translation>Seuraava tarkistus:</translation>
+    </message>
+    <message>
+        <source>Check for:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">O&amp;hje</translation>
+    </message>
+</context>
+<context>
     <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
@@ -1348,11 +2159,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Ilmaisee, onko etätyöpöytä (VRDP-palvelin) käytössä (&lt;img src=:/vrdp_16px.png/&gt;) vai ei (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Ilmaisee, onko etätyöpöytä (VRDP-palvelin) käytössä (&lt;img src=:/vrdp_16px.png/&gt;) vai ei (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP-palvelin kuuntelee porttissa %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP-palvelin kuuntelee porttissa %1</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1371,6 +2182,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>Ilmaisee, onko näppäimistö kaapattu virtuaalikoneeseen (&lt;img src=:/hostkey_captured_16px.png/&gt;) vai ei (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1430,6 +2249,1745 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>Tuettuja laitteita ei ole yhdistettynä isäntätietokoneeseen</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsAudio</name>
+    <message>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
+        <translation>Jos asetettu, liitetään virtuaalinen PCI-äänikortti virtuaalikoneeseen, joka käyttää annettua ajuria isäntäkoneen äänikortin käsittelyyn.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Audio</source>
+        <translation>Ota ää&amp;net käyttöön</translation>
+    </message>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation>Isäntäkoneen ääni&amp;ajuri:</translation>
+    </message>
+    <message>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation>Ohjaa äänikortin ajuria. &lt;b&gt;NULL-ajuri&lt;/b&gt; näyttää äänikortin virtuaalikoneelle, mutta sen käsittely isäntäkoneessa jätetään huomioimatta.</translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation>Ääni&amp;ohjain:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>Valitsee virtuaalisen äänikortin tyypin. Riippuen tästä arvosta, VirtualBox tarjoaa erityyppisiä äänilaitteita virtuaalikoneelle.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Laajennetut ominaisuudet:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">Ota &amp;3D-kiihdytys käyttöön</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation type="unfinished">Jos valittu, virtuaalikone toimii Remote Desktop Protocol (RDP) -palvelimena, sallien virtuaalipalvelimen ohjauksen ja etäkäytön RDP-asiakasohjelmalla palvelimen ollessa käynnissä.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">Ota palvelin &amp;käyttöön</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation type="unfinished">Palvelimen &amp;portti:</translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="obsolete">Näyttää VRDP-palvelin porttinumeron. Voit asettaa arvoksi &lt;tt&gt;0&lt;/tt&gt; (nolla), jolloin portti palautetaan oletusarvoonsa.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation type="unfinished">Todennus&amp;menetelmä:</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation type="unfinished">Todentamisen &amp;aikakatkaisu:</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsGeneral</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
+    </message>
+    <message>
+        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="obsolete">tähän virtuaalikoneeseen on liitetty 64-bittinen virtuaalikäyttöjärjestelmäasiakas, joka vaatii isäntäjärjestelmän virtualisointitoiminnot (VT-x/AMD-V). Jos nämä ominaisuudet eivät ole käytössä, virtuaalikone ei löydä 64-bittistä prosessoria eikä pysty käynnistymään, joten tämä tämä toiminto otetaan käyttöön automaattisesti kun hyväksyt asetukset painamalla OK.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <translation>Näytä polku, jonne tämän virtuaalikoneen palautuspisteet tallennetaan. Huomaa, että palautuspisteet voivat viedä paljon levytilaa.</translation>
+    </message>
+    <message>
+        <source>&amp;Basic</source>
+        <translation>&amp;Perus</translation>
+    </message>
+    <message>
+        <source>Identification</source>
+        <translation type="obsolete">Tunniste</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Nimi:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the virtual machine.</source>
+        <translation>Näyttää virtuaalikoneen nimen.</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Järjestelmä&amp;muistin koko</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="obsolete">Määrittää virtuaalikoneelle annetun muistin määrän. Jos annat liian paljon muistia, virtuaalikone ei välttämättä käynnisty.</translation>
+    </message>
+    <message>
+        <source>&lt;</source>
+        <translation type="obsolete">&lt;</translation>
+    </message>
+    <message>
+        <source>&gt;</source>
+        <translation type="obsolete">&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&amp;Video Memory Size</source>
+        <translation type="obsolete">&amp;Videomuistin määrä</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="obsolete">Säätää virtuaalikoneen videomuistin määrää.</translation>
+    </message>
+    <message>
+        <source>&amp;Advanced</source>
+        <translation>&amp;Lisäasetukset</translation>
+    </message>
+    <message>
+        <source>Boo&amp;t Order:</source>
+        <translation type="obsolete">&amp;Käynnistysjärjestys:</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="obsolete">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
+    </message>
+    <message>
+        <source>[device]</source>
+        <translation type="obsolete">[laite]</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="obsolete">Siirrä ylös (Ctrl+ylös)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="obsolete">Siirrä käynnistyslaitetta ylös.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="obsolete">Siirrä alas (Ctrl+alas)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="obsolete">Siirrä käynnistyslaitetta alas..</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="obsolete">Laajennetut ominaisuudet:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone tukee ACPI-liityntää. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
+    </message>
+    <message>
+        <source>Enable A&amp;CPI</source>
+        <translation type="obsolete">Ota A&amp;CPI käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
+    </message>
+    <message>
+        <source>Enable IO A&amp;PIC</source>
+        <translation type="obsolete">Ota IO AC&amp;PI käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone yrittää käyttää isäntäkoneen laitteistovirtualisoinnin laajennoksia, kuten Intel VT-X tai AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="obsolete">Ota &amp;VT-x/AMD-V käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone yrittää käyttää Intel VT-x ja AMD-V -virtualisoinnin sisäittäisen sivutuksen ominaisuutta.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="obsolete">Käytä sisäkkäistä &amp;sivutusta</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="obsolete">Jos asetettu, paljastetaan isäntäkoneen prosessorin PAE-ominaisuus virtuaalikoneelle.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="obsolete">Ota PA&amp;E/NX käyttöön</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard:</source>
+        <translation>&amp;Jaettu leikepöytä:</translation>
+    </message>
+    <message>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>Määrittää tavan, jolla leikepöytä jaetaan virtuaalikoneen ja isäntäkoneen välillä. Huomaa, että tämä ominaisuus vaatii asiakaslisäosien asennuksen virtuaalikoneeseen.</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">Määrittää virtuaalisen IDE-ohjaimen tyypin. Tästä arvosta riippuen VirtualBox näyttää erityyppisen IDE-ohjaimen virtuaalikoneelle.</translation>
+    </message>
+    <message>
+        <source>&amp;IDE Controller Type:</source>
+        <translation type="obsolete">&amp;IDE-ohjaimen tyyppi:</translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder:</source>
+        <translation>P&amp;alautuspisteiden kansio:</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation>&amp;Kuvaus</translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation>Näyttää virtuaalikoneen kuvauksen. Kuvauskenttää on näppärä käyttää selittämää asennetun virtuaalikoneen määrittelyn yksityiskohtia.</translation>
+    </message>
+    <message>
+        <source>&amp;Other</source>
+        <translation type="obsolete">&amp;Muu</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation>Jos asetettu, muutokset CD/DVD- ja levykeasemiin virtuaalikoneen ollessa käynnissä tallennetaan asetustiedostoon, jotta samat liitosasetukset säilytetään virtuaalikoneen suorituskertojen välillä.</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Mounted Media</source>
+        <translation type="obsolete">&amp;Muista liitetyt mediat</translation>
+    </message>
+    <message>
+        <source>Runtime:</source>
+        <translation type="obsolete">Suoritusympäristö:</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;75%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei jää tarpeeksi muistia käyttöön, valitse pienempi muistimäärä.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;50%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei välttämättä jää tarpeeksi muistia käyttöön. Jatka näin omalla riskilläsi.</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="obsolete">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="obsolete">Ota &amp;3D-kiihdytys käyttöön</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetwork</name>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="unfinished">sillattua verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="unfinished">sisäisen verkon nimeä ei ole annettu</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">Ei valittu</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <comment>network</comment>
+        <translation type="obsolete">Sovitin</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>adapter</comment>
+        <translation type="obsolete">Ei valittu</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>internal</comment>
+        <translation type="obsolete">Verkko</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network</comment>
+        <translation type="obsolete">Ei valittu</translation>
+    </message>
+    <message>
+        <source>MAC Address</source>
+        <translation type="obsolete">MAC-osoite</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>address</comment>
+        <translation type="obsolete">Ei valittu</translation>
+    </message>
+    <message>
+        <source>Cable</source>
+        <translation type="obsolete">Kaapeli</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>cable</comment>
+        <translation type="obsolete">Liitetty</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>cable</comment>
+        <translation type="obsolete">Ei liitetty</translation>
+    </message>
+    <message>
+        <source>Select TAP setup application</source>
+        <translation type="obsolete">Valitse TAP-määritteykomento</translation>
+    </message>
+    <message>
+        <source>Select TAP terminate application</source>
+        <translation type="obsolete">Valitse TAP-poistokomento</translation>
+    </message>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation>jos asetettu, liittää verkkosovittimen virtuaalikoneeseen.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Network Adapter</source>
+        <translation>&amp;Käytä verkkosovitinta</translation>
+    </message>
+    <message>
+        <source>A&amp;dapter Type:</source>
+        <translation type="obsolete">&amp;Sovittimen tyyppi:</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>Sovittimen &amp;tyyppi:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>Valitsee virtuaalisen verkkosovittimen tyypin. Tästä arvosta riippuen VirtualBox tarjoaa erilaisia verkkolaitteita virtuaalikoneelle.</translation>
+    </message>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation>&amp;Liitetty laitteeseen:</translation>
+    </message>
+    <message>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation>Määrittää, kuinka virtuaalinen verkkosovitin liitetään isäntäkoneen verkkoon.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nimi:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open extended settings dialog for current attachment type.</source>
+        <translation type="obsolete">Avaa tämänhetkisen liitostavan lisäasetukset.</translation>
+    </message>
+    <message>
+        <source>&amp;Network Name:</source>
+        <translation type="obsolete">&amp;Verkon nimi:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
+    </message>
+    <message>
+        <source>&amp;MAC Address:</source>
+        <translation type="obsolete">&amp;MAC-osoite:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished">Näyttää tämän sovittimen MAC-osoitteen. Arvo sisältää tasan 12 merkkiä joukosta (0-9,A-F). Huomaa, että toisen merkin täytyy olla parillinen numero.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="unfinished">Luo uuden satunnaisen MAC-osoitteen.</translation>
+    </message>
+    <message>
+        <source>&amp;Generate</source>
+        <translation type="obsolete">L&amp;uo</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="unfinished">Kertoo, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
+    </message>
+    <message>
+        <source>Ca&amp;ble Connected</source>
+        <translation type="obsolete">Kaapeli k&amp;ytketty</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Name:</source>
+        <translation type="obsolete">&amp;Verkkosovittimen nimi:</translation>
+    </message>
+    <message>
+        <source>Displays the TAP interface name.</source>
+        <translation type="obsolete">Näyttää TAP-laitteen nimen.</translation>
+    </message>
+    <message>
+        <source>&amp;Setup Application:</source>
+        <translation type="obsolete">&amp;Määrittelykomento:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to set up the TAP interface.</source>
+        <translation type="obsolete">Näyttää komennon, jolla TAP-verkkosovitin määritellään.</translation>
+    </message>
+    <message>
+        <source>Selects the setup application.</source>
+        <translation type="obsolete">Valitsee määrittelykomennon.</translation>
+    </message>
+    <message>
+        <source>&amp;Terminate Application:</source>
+        <translation type="obsolete">&amp;Poistokomento:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to terminate the TAP interface.</source>
+        <translation type="obsolete">Näyttää komennon, jolla TAP-verkkosovitin poistetaan käytöstä.</translation>
+    </message>
+    <message>
+        <source>Selects the terminate application.</source>
+        <translation type="obsolete">Valitsee poistokomennon.</translation>
+    </message>
+    <message>
+        <source>Host Interface Settings</source>
+        <translation type="obsolete">Isäntäliitännän asetukset</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="unfinished">&amp;Kaapeli liitetty</translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkDetails</name>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="obsolete">sillattua verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="obsolete">sisäisen verkon nimeä ei ole annettu</translation>
+    </message>
+    <message>
+        <source>no host-only adapter is selected</source>
+        <translation type="obsolete">laitteiston sisäistä verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <source>Basic Details</source>
+        <translation type="obsolete">Perustiedot</translation>
+    </message>
+    <message>
+        <source>Bridged Network Details</source>
+        <translation type="obsolete">Sillatun verkon tiedot</translation>
+    </message>
+    <message>
+        <source>Internal Network Details</source>
+        <translation type="obsolete">Sisäisen verkon tiedot</translation>
+    </message>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation type="obsolete">Laitteiston sisäisen verkon yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <translation type="obsolete">Ei valittu</translation>
+    </message>
+    <message>
+        <source>Host Settings</source>
+        <translation type="obsolete">Laitteen asetukset</translation>
+    </message>
+    <message>
+        <source>&amp;Bridged Network Adapter:</source>
+        <translation type="obsolete">&amp;Sillatun verkon sovitun:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <translation type="obsolete">Näyttää sillatulle verkolle valitun isäntäkoneen verkkosovittimen nimen.</translation>
+    </message>
+    <message>
+        <source>Internal &amp;Network:</source>
+        <translation type="obsolete">Sisäinen &amp;verkko:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
+    </message>
+    <message>
+        <source>Host-only &amp;Network Adapter:</source>
+        <translation type="obsolete">Laitteiston &amp;sisäinen verkkosovitin:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <translation type="obsolete">Näyttää laitteiston sisäiselle verkkosovittimelle valitun VirtualBoxin verkkosovittimen nimen.</translation>
+    </message>
+    <message>
+        <source>Guest Settings</source>
+        <translation type="obsolete">Vierasjärjestelmän asetukset</translation>
+    </message>
+    <message>
+        <source>Guest &amp;MAC Address:</source>
+        <translation type="obsolete">Vierasjärjestelmän &amp;MAC-osoite:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="obsolete">Näyttää tämän sovittimen MAC-osoitteen. Arvo sisältää tasan 12 merkkiä joukosta (0-9,A-F). Huomaa, että toisen merkin täytyy olla parillinen numero.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="obsolete">Luo uuden satunnaisen MAC-osoitteen.</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="obsolete">&amp;Kaapeli liitetty</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="obsolete">Ilmaisee, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Isäntäkoneen verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Sisäistä verkkonimeä ei ole asetettu</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation>Portti %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation>Jos asetettu, otetaan annettu rinnakkaisportti käyttöön virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation>Ota &amp;rinnakkaisportti käyttöön</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Portin &amp;numero:</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>Näyttää rinnakkaisportin porttinumeron. Voit valita jonkun standardiporteista tai valita &lt;b&gt;itsemääritelty&lt;/b&gt; ja syöttää haluamasi portin parametrit.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;Keskeytys:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Näyttää rinnakkaisportin keskeytysnumeron. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>IO-po&amp;rtti:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">Näyttää rinnakkaisportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation>Portin &amp;polku:</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation>Näyttää isäntäkoneen rinnakkaisportin laitenimen.</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallelPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Portin numero on valittu kahdesti</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>Portin polkua ei ole annettu</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Portin polku on valittu kahdesti</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSF</name>
+    <message>
+        <source>&amp;Add New Shared Folder</source>
+        <translation type="obsolete">&amp;Lisää uusi jaettu kansio</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Selected Shared Folder</source>
+        <translation type="obsolete">&amp;Muokkaa valittua jaettua kansiota</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Selected Shared Folder</source>
+        <translation type="obsolete">&amp;Poista valittu jaettu kansio</translation>
+    </message>
+    <message>
+        <source>Adds a new shared folder definition.</source>
+        <translation>Lisää uuden jaettujen kansioiden määrittelyn.</translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation>Muokkaa valitun jaetun kansion määrityksiä.</translation>
+    </message>
+    <message>
+        <source>Removes the selected shared folder definition.</source>
+        <translation>Poistaa valitun jaettujen kansiouden määrityksen.</translation>
+    </message>
+    <message>
+        <source> Machine Folders</source>
+        <translation>Konekansiot</translation>
+    </message>
+    <message>
+        <source> Transient Folders</source>
+        <translation> Väliaikaiskansiot</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>Täysi</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>Vain luku</translation>
+    </message>
+    <message>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation>Näyttää luettelon kaikista käytettävissä olevista jaetuista kansioista. Pääset käsiksi jaettuun &lt;i&gt;levyjakoon&lt;/i&gt; DOS-tyylisistä virtuaalikoneista komennolla &apos;net use x: \\vboxsvr\share&apos; ja linux-virtuaalikoneista komennolla &apos;mount -t vboxsf levyjako liitospiste&apos;. Tämä ominaisuus vaatii asiakaslisäosien asennuksen. </translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nimi</translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation>Polku</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>Oikeudet</translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">Kyllä</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSFDetails</name>
+    <message>
+        <source>Add Share</source>
+        <translation>Lisää jako</translation>
+    </message>
+    <message>
+        <source>Edit Share</source>
+        <translation>Muokkaa jakoa</translation>
+    </message>
+    <message>
+        <source>Dialog</source>
+        <translation>Valintaikkuna</translation>
+    </message>
+    <message>
+        <source>Folder Path:</source>
+        <translation>Kansion polku:</translation>
+    </message>
+    <message>
+        <source>Folder Name:</source>
+        <translation>Kansion nimi:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation>Näytä jaetun kansion nimi (kuten asiakasjärjestelmä näkee sen).</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>Jos asetettu, virtuaalikone ei voi kirjoittaa annettuun jaettun kansioon.</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>&amp;Vain luku</translation>
+    </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation>&amp;Tee pysyväksi</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation>Portti %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation>Jos asetettu, ottaa annetun sarjaportin käyttöön virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation>Ota &amp;sarjaportti käyttöön</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Portti&amp;numero:</translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>Näyttää sarjaportin numeron. Voit valita jonkun standardeista sarjaporteista tai valita &lt;b&gt;Itsemääritelty&lt;/b&gt; ja antaa portin ominaisuudet itse.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;Keskeytys:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Näyttää sarjaportin keskeytysnumeron.  Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>IO-po&amp;rtti:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">Näyttää sarjaportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode:</source>
+        <translation>Portin &amp;tila:</translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation>Ohjaa tämän sarjaportin toimintatilaa. Jos valitset &lt;b&gt;Pois käytöstä&lt;/b&gt;, virtuaalikone havaitsee sarjaportin mutta ei voi käyttää sitä.</translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
+        <translation>Jos asetettu, kentässä &lt;b&gt;Portin polku&lt;/b&gt; määritelty putki luodaan virtuaalikoneen käynnistyessä. Muussa tapauksessa virtuaalikone yrittää käyttää olemassaolevaa putkea.</translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation>&amp;Luo putki</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation type="obsolete">Portin &amp;polku:</translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation>Näyttää polun sarjaportin putkitiedostoon, kun portti on &lt;b&gt;Isännän putki&lt;/b&gt;-tilassa, tai isäntäkoneen sarjaportin laitenimen, kun portti on &lt;b&gt;Isäntälaite&lt;/b&gt;-tilassa.</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerialPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Porttinumero on valittu kahteen kertaan</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>Portin polkua ei ole määritelty</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Portin polku on valittu kahdesti</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsStorage</name>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="obsolete">Kohteelle &lt;i&gt;%1&lt;/i&gt; ei ole valittu kiintolevyä</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; käyttää kiintolevyä, joka on jo liitetty virtuaalikoneeseen &lt;i&gt;%2&lt;/2&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Add Attachment</source>
+        <translation type="obsolete">&amp;Lisää liitos</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Attachment</source>
+        <translation type="obsolete">&amp;Poista liitos</translation>
+    </message>
+    <message>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="obsolete">&amp;Valitse kiintolevy</translation>
+    </message>
+    <message>
+        <source>Adds a new hard disk attachment.</source>
+        <translation type="obsolete">Lisää uuden kiintolevyliitoksen.</translation>
+    </message>
+    <message>
+        <source>Removes the highlighted hard disk attachment.</source>
+        <translation type="obsolete">Poistaa korostetun kiintolevyliitoksen.</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
+        <translation type="obsolete">Jos asetettu, ottaa SATA-ohjaimen käyttöön virtuaalikoneessa. Huomaa, ettet voi liittää kiintolevyjä SATA-portteihin,jos virtuaalinen SATA-ohjain ei ole käytössä.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="obsolete">&amp;Ota SATA-ohjain käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
+        <translation type="obsolete">Jos asetettu, otetaan ylimääräinen virtuaaliohjain (SATA tai SCSI) käyttöön tässä virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Additional Controller</source>
+        <translation type="obsolete">&amp;Ota lisäohjain käyttöön</translation>
+    </message>
+    <message>
+        <source>&amp;Attachments</source>
+        <translation type="obsolete">&amp;Liitokset</translation>
+    </message>
+    <message>
+        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
+        <translation type="obsolete">Näyttää luettelon virtuaalikoneeseen liitetyistä kiintolevyistä. Napsauta hiirellä tai paina &lt;tt&gt;välilyöntiä&lt;/tt&gt; korostetun kohdan päällä ja valitse pudotusvalikosta haluttu arvo. Voit lisätä ja poistaa kiintolevyliitoksia kontekstivalikosta tai oikealla olevista napeista.</translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="obsolete">Käynnistää virtuaalimedioiden hallinnan, jolla voit valita korostettuun paikkaan liitettävän kiintolevyn.</translation>
+    </message>
+    <message>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
+        <translation type="obsolete">Jos asetettu, näytetään paikkaan liitetyt todelliset erotellut kiintolevyt niiden pohjakiintolevyn sijasta. Tämä näytetään vain epäsuorien liitosten kohdalla. Voit myös erikseen liittää muita eroteltuja kiintolevyjä. Käytä tätä vain, jos tarvitset monimutkaisia kiintolevymäärittelyjä.</translation>
+    </message>
+    <message>
+        <source>&amp;Show Differencing Hard Disks</source>
+        <translation type="obsolete">&amp;Näytä erotellut kiintolevyt</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">Määrittää virtuaalisen IDE-ohjaimen tyypin. Tästä arvosta riippuen VirtualBox näyttää erityyppisen IDE-ohjaimen virtuaalikoneelle.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation type="unfinished">Lisää liitos</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation type="unfinished">Poista liitos</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nimi:</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <translation type="unfinished">Isäntäkoneen asema</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="unfinished">Levykuva</translation>
+    </message>
+    <message>
+        <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual CD/DVD drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual floppy drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new hard disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove disk from virtual drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="unfinished">Määrittää virtuaalikoneelle annetun muistin määrän. Jos annat liian paljon muistia, virtuaalikone ei välttämättä käynnisty.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="unfinished">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="unfinished">Siirrä alas (Ctrl+alas)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="unfinished">Siirrä ylös (Ctrl+ylös)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Laajennetut ominaisuudet:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Jos asetettu, virtuaalikone tukee ACPI-liityntää. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="unfinished">Jos asetettu, paljastetaan isäntäkoneen prosessorin PAE-ominaisuus virtuaalikoneelle.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished">Ota PA&amp;E/NX käyttöön</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="unfinished">Jos asetettu, virtuaalikone yrittää käyttää isäntäkoneen laitteistovirtualisoinnin laajennoksia, kuten Intel VT-X tai AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished">Ota &amp;VT-x/AMD-V käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="unfinished">Jos asetettu, virtuaalikone yrittää käyttää Intel VT-x ja AMD-V -virtualisoinnin sisäittäisen sivutuksen ominaisuutta.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="unfinished">Käytä sisäkkäistä &amp;sivutusta</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Chipset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines chipset type used in this VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSB</name>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation>&amp;Lisää tyhjä suodatin</translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation>&amp;Lisää suodatin laitteelta</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Filter</source>
+        <translation>&amp;Muokkaa suodinta</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation>&amp;Poista suodatin</translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation>Siirrä suodatinta &amp;ylös</translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation>Siirrä suodatinta &amp;alas</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation>Lisää uuden USB-suodattimen, jossa kaikki kentät ovat oletuksena tyhjiä. Huomaa, että tällainen suodatin täsmää kaikkiin USB-laitteisiin.</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation>Lisää uuden USB-suodattimen, jossa kentän arvot on asetettu vastaamaan valittua isäntäkoneeseen liitettyä USB-laitetta.</translation>
+    </message>
+    <message>
+        <source>Edits the selected USB filter.</source>
+        <translation>Muokkaa valittua USB-suodatinta.</translation>
+    </message>
+    <message>
+        <source>Removes the selected USB filter.</source>
+        <translation>Poistaa valitun USB-suodattimen.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter up.</source>
+        <translation>Siirrä valittua USB-suodatinta ylös.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter down.</source>
+        <translation>Siirrä valittua USB-suodatinta alas.</translation>
+    </message>
+    <message>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation>Uusi suodatin %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation>Jos asetettu, ottaa käyttöön virtuaalisen USB-ohjaimen virtuaalikoneessa.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;USB Controller</source>
+        <translation>Ota &amp;USB-ohjain käyttöön</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Jos asetettu, ottaa käyttöön virtuaalisen USB EHCI-ohjaimen tässä virtuaalikoneessa. USB EHCI-ohjain tarjoaa USB 2.0-tuen.</translation>
+    </message>
+    <message>
+        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
+        <translation>Käytä USB 2.0 (E&amp;HCI)-ohjainta</translation>
+    </message>
+    <message>
+        <source>USB Device &amp;Filters</source>
+        <translation>USB-laite&amp;suodattimet</translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
+        <translation>Näyttää luettelon kaikista USB-suotimista tässä koneessa. Valintaruutu vasemmalla kertoo, onko kyseinen suodatin käytössä vai ei. Voit lisätä ja poistaa USB-suodattimia kontekstivalikosta tai käyttäen nappeja oikealla.</translation>
+    </message>
+    <message>
+        <source>[filter]</source>
+        <translation>[suodatin]</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Valmistajan tunniste: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Tuotteen tunniste: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Revisio: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Tuote: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Valmistaja: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Sarjanumero: %1&lt;(/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Portti: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Tila: %1&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSBFilterDetails</name>
+    <message>
+        <source>Any</source>
+        <comment>remote</comment>
+        <translation>Mikä tahansa</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation>Kyllä</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation>Ei</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Nimi:</translation>
+    </message>
+    <message>
+        <source>Displays the filter name.</source>
+        <translation>Näytä suodattimen nimi.</translation>
+    </message>
+    <message>
+        <source>&amp;Vendor ID:</source>
+        <translation>&amp;Valmistajan tunniste:</translation>
+    </message>
+    <message>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Määrittää suotimen valmistajan tunnisteelle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;XXXX&lt;/tt&gt;, missä X on heksadesimaalinen luku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>&amp;Product ID:</source>
+        <translation>T&amp;uotteen tunniste:</translation>
+    </message>
+    <message>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Määrittää suotimen tuotteen tunnisteelle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;XXXX&lt;/tt&gt;, missä X on heksadesimaalinen luku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>&amp;Revision:</source>
+        <translation>&amp;Revisio:</translation>
+    </message>
+    <message>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
+        <translation>Määrittää suotimen revisionumerolle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;IIFF&lt;/tt&gt;, missä I on kokonaislukuosan desimaalinumero ja F on pisteen jälkeisen osan desimaaliluku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>&amp;Manufacturer:</source>
+        <translation>V&amp;almistaja:</translation>
+    </message>
+    <message>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Määrittää suotimen valmistajan nimelle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>Pro&amp;duct:</source>
+        <translation>&amp;Tuote:</translation>
+    </message>
+    <message>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Määrittää suotimen tuotteen nimelle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>&amp;Serial No.:</source>
+        <translation>&amp;Sarjanumero:</translation>
+    </message>
+    <message>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Määrittää suotimen sarjanumerolle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>Por&amp;t:</source>
+        <translation>Por&amp;tti:</translation>
+    </message>
+    <message>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Määrittää suotimen USB-portille &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
+    </message>
+    <message>
+        <source>R&amp;emote:</source>
+        <translation>&amp;Etälaitteet:</translation>
+    </message>
+    <message>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
+        <translation>Määrittää täsmääkö suodatin isäntäkoneeseen liitettyihin USB-laitteisiin (&lt;i&gt;Ei&lt;/i&gt;), VRDP-asiakkaan laitteisiin (&lt;i&gt;Kyllä&lt;/i&gt;) vai molempiin (&lt;i&gt;Mikä tahansa&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>&amp;Action:</source>
+        <translation>&amp;Toiminto:</translation>
+    </message>
+    <message>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation>Määrittää mitä isäntäkone tekee, kun täsmäävä laite havaitaan: anna laite isäntäkoneen käyttöön (&lt;i&gt;Älä käytä&lt;/i&gt;) tai varaa se virtuaalikoneiden käyttöön (&lt;i&gt;Varaa&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>USB Filter Details</source>
+        <translation>USB-suotimen tiedot</translation>
     </message>
 </context>
 <context>
@@ -2005,14 +4563,14 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -2032,10 +4590,22 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">Käynnistyskiintolevyn suositeltu koko on &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation type="obsolete">Käynnistyskiintolevyn suositeltu koko on &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2067,7 +4637,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -2076,6 +4646,305 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nimi</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIProgressDialog</name>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished">&amp;Peru</translation>
+    </message>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISession</name>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished">Sivulla &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished">Havaittiin epäoptimaalisia asetuksia</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Asetukset</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">Sulje virtuaalikone</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation type="unfinished">Valitse toiminto:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Tallentaa virtuaalikoneen tämänhetkisen suoritustilan isäntätietokoneen kiintolevylle.&lt;/p&gt;&lt;p&gt;Kun virtuaalikone käynnistetään seuraavan kerran, sen tila palautetaan tiedostosta ja se jatkaa toimintaansa tallennetusta tilasta, joten voit jatkaa töitä siitä mihin jäit.&lt;/p&gt;&lt;p&gt;Huomaa, että virtuaalikoneen suoritustilan tallennus saattaa kestää pitkään, riippuen asiakaskäyttöjärjestelmän tyypistä ja virtuaalikoneelle annetun muistin määrästä.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation type="unfinished">&amp;Tallenna koneen tila</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Lähettää virtanapin painamisesta kertovan ACPI-tapahtuman virtuaalikoneelle.&lt;/p&gt;&lt;p&gt;Yleensä virtuaalikoneen käyttöjärjestelmä havaitsee tämän tapahtuman ja suorittaa hallitun sammutuksen. Tämä on suositeltava tapa sammuttaa virtuaalikone, koska kaikki virtuaalikoneen sovellukset saavat mahdollisuuden tallentaa tiedostot ja tilansa.&lt;/p&gt;&lt;p&gt;Jos virtuaaalikone ei vastaa tähän tapahtumaan, voi virtuaalikoneen käyttöjärjestelmä olla väärin asetettu tai ei ymmärrä virtanapin ACPI-tapahtumaa lainkaan. Tässä tapauksessa virtuaalikone tulisi sammuttaa toiminnolla &lt;p&gt;Sammuta virtuaalikone&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished">Läh&amp;etä sammuta-signaali</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Sammuttaa virtuaalikoneen.&lt;/p&gt;&lt;p&gt;Huomaa, että tämä toiminto lopettaa virtuaalikoneen suorituksen heti siten, ettei virtuaalikoneen käyttöjärjestelmä pääse sammutamaan itseään hallitusti ja täten &lt;i&gt;tietoa saatetaan hukata&lt;/i&gt; virtuaalikoneessa. Tämän valinnan käyttön on suositeltavaa vain, jos virtuaalikone ei vastaa toimintoon &lt;b&gt;Lähetä sammutusviesti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation type="unfinished">&amp;Sammuta kone</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Kun tämä on asetettu, virtuaalikoneen tila palautetaan tämänhetkisestä palautuspisteeseen sammutuksen jälkeeen. Tämä on näppärää, jos olet varma että haluat hylätä viimeisten istuntojen muutokset ja vaihtaa takaisin viimeisimpään palautuspisteeseen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">&amp;Yksityiskohdat</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="unfinished">&amp;Palautuspisteet</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>Ei saatavilla</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 viimeksi %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Istunto %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Saavuttamattomissa %2 lähtien&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">&amp;Näytä</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">Siirry valitun virtuaalikoneen ikkunaan</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">&amp;Käynnistä</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">Käynnistä valittu virtuaalikone</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="obsolete">&amp;Jatka</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="obsolete">Jatka virtuaalikoneen suorittamista</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="obsolete">&amp;Keskeytä</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="obsolete">Keskeytä virtuaalikoneen suoritus</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Yleiset</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">Levykuvat</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">Ääni</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Verkko</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">Portit</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">Sarjaportit</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished">Rinnakkaisportit</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">Jaetut kansiot</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished">%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2287,7 +5156,7 @@ Version %1</source>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2303,15 +5172,15 @@ Version %1</source>
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Sulje virtuaalikone</translation>
+        <translation type="obsolete">Sulje virtuaalikone</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Valitse toiminto:</translation>
+        <translation type="obsolete">Valitse toiminto:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>&amp;Tallenna koneen tila</translation>
+        <translation type="obsolete">&amp;Tallenna koneen tila</translation>
     </message>
     <message>
         <source>Alt+S</source>
@@ -2319,7 +5188,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>&amp;Sammuta kone</translation>
+        <translation type="obsolete">&amp;Sammuta kone</translation>
     </message>
     <message>
         <source>Alt+P</source>
@@ -2359,31 +5228,23 @@ Version %1</source>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>Läh&amp;etä sammuta-signaali</translation>
+        <translation type="obsolete">Läh&amp;etä sammuta-signaali</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kun tämä on asetettu, virtuaalikoneen tila palautetaan tämänhetkisestä palautuspisteeseen sammutuksen jälkeeen. Tämä on näppärää, jos olet varma että haluat hylätä viimeisten istuntojen muutokset ja vaihtaa takaisin viimeisimpään palautuspisteeseen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kun tämä on asetettu, virtuaalikoneen tila palautetaan tämänhetkisestä palautuspisteeseen sammutuksen jälkeeen. Tämä on näppärää, jos olet varma että haluat hylätä viimeisten istuntojen muutokset ja vaihtaa takaisin viimeisimpään palautuspisteeseen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tallentaa virtuaalikoneen tämänhetkisen suoritustilan isäntätietokoneen kiintolevylle.&lt;/p&gt;&lt;p&gt;Kun virtuaalikone käynnistetään seuraavan kerran, sen tila palautetaan tiedostosta ja se jatkaa toimintaansa tallennetusta tilasta, joten voit jatkaa töitä siitä mihin jäit.&lt;/p&gt;&lt;p&gt;Huomaa, että virtuaalikoneen suoritustilan tallennus saattaa kestää pitkään, riippuen asiakaskäyttöjärjestelmän tyypistä ja virtuaalikoneelle annetun muistin määrästä.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Tallentaa virtuaalikoneen tämänhetkisen suoritustilan isäntätietokoneen kiintolevylle.&lt;/p&gt;&lt;p&gt;Kun virtuaalikone käynnistetään seuraavan kerran, sen tila palautetaan tiedostosta ja se jatkaa toimintaansa tallennetusta tilasta, joten voit jatkaa töitä siitä mihin jäit.&lt;/p&gt;&lt;p&gt;Huomaa, että virtuaalikoneen suoritustilan tallennus saattaa kestää pitkään, riippuen asiakaskäyttöjärjestelmän tyypistä ja virtuaalikoneelle annetun muistin määrästä.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lähettää virtanapin painamisesta kertovan ACPI-tapahtuman virtuaalikoneelle.&lt;/p&gt;&lt;p&gt;Yleensä virtuaalikoneen käyttöjärjestelmä havaitsee tämän tapahtuman ja suorittaa hallitun sammutuksen. Tämä on suositeltava tapa sammuttaa virtuaalikone, koska kaikki virtuaalikoneen sovellukset saavat mahdollisuuden tallentaa tiedostot ja tilansa.&lt;/p&gt;&lt;p&gt;Jos virtuaaalikone ei vastaa tähän tapahtumaan, voi virtuaalikoneen käyttöjärjestelmä olla väärin asetettu tai ei ymmärrä virtanapin ACPI-tapahtumaa lainkaan. Tässä tapauksessa virtuaalikone tulisi sammuttaa toiminnolla &lt;p&gt;Sammuta virtuaalikone&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Lähettää virtanapin painamisesta kertovan ACPI-tapahtuman virtuaalikoneelle.&lt;/p&gt;&lt;p&gt;Yleensä virtuaalikoneen käyttöjärjestelmä havaitsee tämän tapahtuman ja suorittaa hallitun sammutuksen. Tämä on suositeltava tapa sammuttaa virtuaalikone, koska kaikki virtuaalikoneen sovellukset saavat mahdollisuuden tallentaa tiedostot ja tilansa.&lt;/p&gt;&lt;p&gt;Jos virtuaaalikone ei vastaa tähän tapahtumaan, voi virtuaalikoneen käyttöjärjestelmä olla väärin asetettu tai ei ymmärrä virtanapin ACPI-tapahtumaa lainkaan. Tässä tapauksessa virtuaalikone tulisi sammuttaa toiminnolla &lt;p&gt;Sammuta virtuaalikone&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sammuttaa virtuaalikoneen.&lt;/p&gt;&lt;p&gt;Huomaa, että tämä toiminto lopettaa virtuaalikoneen suorituksen heti siten, ettei virtuaalikoneen käyttöjärjestelmä pääse sammutamaan itseään hallitusti ja täten &lt;i&gt;tietoa saatetaan hukata&lt;/i&gt; virtuaalikoneessa. Tämän valinnan käyttön on suositeltavaa vain, jos virtuaalikone ei vastaa toimintoon &lt;b&gt;Lähetä sammutusviesti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;p&gt;Sammuttaa virtuaalikoneen.&lt;/p&gt;&lt;p&gt;Huomaa, että tämä toiminto lopettaa virtuaalikoneen suorituksen heti siten, ettei virtuaalikoneen käyttöjärjestelmä pääse sammutamaan itseään hallitusti ja täten &lt;i&gt;tietoa saatetaan hukata&lt;/i&gt; virtuaalikoneessa. Tämän valinnan käyttön on suositeltavaa vain, jos virtuaalikone ei vastaa toimintoon &lt;b&gt;Lähetä sammutusviesti&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3193,451 +6054,50 @@ Version %1</source>
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Yleiset</translation>
+        <translation type="obsolete">Yleiset</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Syöte</translation>
+        <translation type="obsolete">Syöte</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Päivitä</translation>
+        <translation type="obsolete">Päivitä</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Kieli</translation>
+        <translation type="obsolete">Kieli</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Verkko</translation>
+        <translation type="obsolete">Verkko</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Näyttää polun virtuaalikoneiden oletuskansioon. Tätä kansiota käytetään luotaessa uusia virtuaalikoneita, jos ei erikseen toisin määritellä.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Näyttää polun kirjastoon, jolla toteutetaan VRDP-etätyöpöytäasiakkaiden todentaminen.</translation>
-    </message>
-    <message>
-        <source>Default &amp;Hard Disk Folder:</source>
-        <translation>&amp;Kiintolevykuvien oletuskansio:</translation>
-    </message>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation>&amp;Virtuaalikoneiden oletuskansio:</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation>&amp;VRDP-todentamiskirjasto:</translation>
-    </message>
-    <message>
-        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">Jos käytössä, telakan kuvake muuttuu ikkunan sisällön mukana reaaliaikaisesti.</translation>
-    </message>
-    <message>
-        <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="obsolete">&amp;Telakkakuvakkeen tosiaikainen päivitys</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Näyttää polun kiintolevykuvien oletuskansioon. Tätä kansiota käytetään lisättäessä olemassaolevia tai luotaessa uusia virtuaalisia kiintolevyjä, jos ei erikseen toisin määritellä.</translation>
-    </message>
-    <message>
-        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Jos asetettu, ohjelma näyttää kontekstivalikolla varustetun kuvakkeen ilmoitusalueella.</translation>
-    </message>
-    <message>
-        <source>&amp;Show System Tray Icon</source>
-        <translation>&amp;Näytä ilmoitusalueen kuvake</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>&amp;Isäntänäppäin:</translation>
+        <translation type="obsolete">&amp;Isäntänäppäin:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Näyttää virtuaalikoneen ikkunassa käytettävän isäntänäppäimen. Kohdista syötekohtaan ja syötä uusi isäntänäppäin. Huomaa, ettei numeroita, kirjaimia, kursori- tai muokkausnäppäimiä voi käyttää isäntänäppäimenä.</translation>
+        <translation type="obsolete">Näyttää virtuaalikoneen ikkunassa käytettävän isäntänäppäimen. Kohdista syötekohtaan ja syötä uusi isäntänäppäin. Huomaa, ettei numeroita, kirjaimia, kursori- tai muokkausnäppäimiä voi käyttää isäntänäppäimenä.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Jos asetettu, näppäimistö kaapataan automaattisesti aina kun virtuaalikoneen ikkuna on valittu. Kun näppäimistö on kaapattu, kaikki näppäilyt ohjataan virtuaalikoneeseen, mukaanlukien järjestelmänäppäilyt kuten Alt-Tab.</translation>
+        <translation type="obsolete">Jos asetettu, näppäimistö kaapataan automaattisesti aina kun virtuaalikoneen ikkuna on valittu. Kun näppäimistö on kaapattu, kaikki näppäilyt ohjataan virtuaalikoneeseen, mukaanlukien järjestelmänäppäilyt kuten Alt-Tab.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>Kaappaa näppäimistö &amp;automaattisesti</translation>
-    </message>
-    <message>
-        <source>Reset Host Key</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation> (sisäänrakennettu)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation>&lt;Ei käytettävissä&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation>&lt;tuntematon&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation>Oletus</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation>Kieli:</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language:</source>
-        <translation>&amp;Käyttöliittymän kielet:</translation>
-    </message>
-    <message>
-        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Näyttää luettelon mahdollisista käyttöliittymän kielistä. Käytössä oleva kieli on &lt;b&gt;korostettu&lt;/b&gt;. Valitse &lt;i&gt;Oletus&lt;/i&gt;, jos haluat käyttää järjestelmän oletuskieltä.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nimi</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Tunniste</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Kieli</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Tekijä</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation>Tekijä(t):</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>%1 network</source>
-        <comment>&lt;adapter name&gt; network</comment>
-        <translation>%1-verkko</translation>
-    </message>
-    <message>
-        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv4-osoite o virheellinen</translation>
-    </message>
-    <message>
-        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv4-verkkopeite on virheellinen</translation>
-    </message>
-    <message>
-        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Laitteen &lt;b&gt;%1&lt;/b&gt; IPv6-osoite on virheellinen</translation>
-    </message>
-    <message>
-        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; osoite on virheellinen </translation>
-    </message>
-    <message>
-        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; verkkopeite on virheellinen</translation>
-    </message>
-    <message>
-        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; alempi osoiteraja on virheellinen </translation>
-    </message>
-    <message>
-        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP-palvelimen &lt;b&gt;%1&lt;/b&gt; ylempi osoiteraja on virheellinen </translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation>Sovitin</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation>Automaattisesti määritelty</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation>Käsin määritelty</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation>IPv4-osoite</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation>Ei asetettu</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation>IPv4-verkkopeite</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation>Ei asetettu</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation>IPv6-osoite</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask Length</source>
-        <translation>IPv6-verkkopeitteen pituus</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation>Ei asetettu</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation>DHCP-palvelin</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation>Käytössä</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation>Ei käytössä</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>Osoite</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation>Verkkopeite</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation>Alaraja</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation>Ei asetettu</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation>Yläraja</translation>
-    </message>
-    <message>
-        <source>&amp;Add host-only network</source>
-        <translation>&amp;Lisää laitteiston sisäinen verkko</translation>
-    </message>
-    <message>
-        <source>&amp;Remove host-only network</source>
-        <translation>&amp;Poista laitteiston sisäinen verkko</translation>
-    </message>
-    <message>
-        <source>&amp;Edit host-only network</source>
-        <translation>&amp;Muokkaa laitteiston sisäistä verkkoa</translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>creating/removing host-only network</comment>
-        <translation>Suoritetaan</translation>
-    </message>
-    <message>
-        <source>&amp;Host-only Networks:</source>
-        <translation>&amp;Laitteiston sisäiset verkot:</translation>
-    </message>
-    <message>
-        <source>Lists all available host-only networks.</source>
-        <translation>Luettelo laitteiston sisäisistä verkoista.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nimi</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetails</name>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation>Laitteiston sisäisen verkon tiedot</translation>
-    </message>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation>&amp;Verkkosovitin</translation>
-    </message>
-    <message>
-        <source>Manual &amp;Configuration</source>
-        <translation>Oma &amp;määrittely</translation>
-    </message>
-    <message>
-        <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Käytä käsin asetettuja asetuksia tälle laitteiston sisäiselle verkkosovittimelle.</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation>&amp;IPv4-osoite:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>Näyttää tämän sovittimen IPv4-osoitteen.</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation>IPv4-&amp;verkkopeite:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>Näyttää tämän sovittimen IPv4-verkkopeitteen.</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation>I&amp;Pv6-osoite:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Näyttää tämän sovittimen IPv6-osoitteen, jos IPv6 on tuettu.</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>IPv6-verkkopeitteen &amp;pituus:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Näyttää tämän sovittimen IPv6-verkkopeitteen pituuden, jos IPv6 on tuettu.</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation>&amp;DHCP-palvelin</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>Ota palvelin &amp;käyttöön</translation>
-    </message>
-    <message>
-        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>Määrittää, käynnistetäänkö DHCP-palvelin tietokoneen käynnistyksen yhteydessä.</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation>Palvelimen &amp;osoite:</translation>
-    </message>
-    <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Näyttää osoitteen DHCP-palvelimelle, joka tarjoaa osoitteita tälle laitteiston sisäiselle verkkosovittimelle.</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation>Palvelimen v&amp;erkkopeite:</translation>
-    </message>
-    <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Näyttää verkkopeitteen DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation>Osoiteavaruuden &amp;alaraja:</translation>
-    </message>
-    <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Näyttää alarajan DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation>Osoiteavaruuden &amp;yläraja:</translation>
-    </message>
-    <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Näyttää ylärajan DHCP-palvelimen antamille osoitteille, joita tarjoataan tälle laitteiston sisäiselle verkkosovittimelle.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Jos asetettu, ohjelma ottaa annetuin väliajoin yhteyttä VirtualBoxin www-sivuilla ja tarkistaa, onko uusi VirtualBoxin versio saatavilla.</translation>
-    </message>
-    <message>
-        <source>&amp;Check for updates</source>
-        <translation>&amp;Etsi päivityksiä</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation>&amp;Kerran joka:</translation>
-    </message>
-    <message>
-        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Määrittää, kuinka usein uuden version tarkastus tehdään. Huomaa että voit poistaa uusien versioden tarkastuksen käytöstä poistamalla ylläolean asetuksen.</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation>Seuraava tarkistus:</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Stable release versions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;All new releases</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Kaappaa näppäimistö &amp;automaattisesti</translation>
     </message>
 </context>
 <context>
@@ -3939,12 +6399,12 @@ Version %1</source>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Suljettu</translation>
+        <translation type="obsolete">Suljettu</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Avoinna</translation>
+        <translation type="obsolete">Avoinna</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -3954,7 +6414,7 @@ Version %1</source>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Suljetaan</translation>
+        <translation type="obsolete">Suljetaan</translation>
     </message>
     <message>
         <source>None</source>
@@ -4019,17 +6479,17 @@ Version %1</source>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>NULL</translation>
+        <translation type="obsolete">NULL</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>Ulkoinen</translation>
+        <translation type="obsolete">Ulkoinen</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>Asiakas</translation>
+        <translation type="obsolete">Asiakas</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4608,19 +7068,9 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remote Display Server Port</source>
-        <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote Display Server</source>
-        <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished">Ei käytössä</translation>
+        <translation type="obsolete">Ei käytössä</translation>
     </message>
     <message>
         <source>Display</source>
@@ -4892,11 +7342,6 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
-        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
         <translation type="unfinished"></translation>
@@ -4954,6 +7399,122 @@ Version %1</source>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">Ei käytössä</translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">kiintolevy</translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">NULL</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Ulkoinen</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Asiakas</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">ICH9</translation>
+    </message>
+    <message>
+        <source>and</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
@@ -5274,7 +7835,7 @@ Version %1</source>
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">O&amp;hje</translation>
+        <translation type="obsolete">O&amp;hje</translation>
     </message>
 </context>
 <context>
@@ -5440,7 +8001,7 @@ Version %1</source>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>Kaikki levykuvatiedostot (%1)</translation>
+        <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -5452,7 +8013,7 @@ Version %1</source>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>CD/DVD-ROM-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
+        <translation type="obsolete">CD/DVD-ROM-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -5460,7 +8021,7 @@ Version %1</source>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
+        <translation type="obsolete">Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -5522,6 +8083,22 @@ Version %1</source>
         <comment>VMM: Floppy Image</comment>
         <translation type="unfinished">Liitetty kohteeseen</translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">kiintolevy</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -5536,6 +8113,10 @@ Version %1</source>
     <message>
         <source>Close VM</source>
         <translation type="unfinished">Sulje VM</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5645,7 +8226,7 @@ Version %1</source>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>Tiedostoa &lt;b&gt;%1&lt;/b&gt; ei voitu poistaa.&lt;br /&gt;&lt;br /&gt;Yritä poistaa se muulla tavoin &amp; yritä uudestaan.</translation>
+        <translation type="obsolete">Tiedostoa &lt;b&gt;%1&lt;/b&gt; ei voitu poistaa.&lt;br /&gt;&lt;br /&gt;Yritä poistaa se muulla tavoin &amp; yritä uudestaan.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -5765,11 +8346,11 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Haluatko varmasti poistaa pysyvästi virtuaalikoneen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tätä toimintoa ei voi perua.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Haluatko varmasti poistaa pysyvästi virtuaalikoneen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tätä toimintoa ei voi perua.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Haluatko varmasti perua saavuttamattomissa olevan virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; rekisteröinnin?&lt;/p&gt;&lt;p&gt;Et voi enää lisätä sitä takaisin graafisesta käyttöliittymästä.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Haluatko varmasti perua saavuttamattomissa olevan virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; rekisteröinnin?&lt;/p&gt;&lt;p&gt;Et voi enää lisätä sitä takaisin graafisesta käyttöliittymästä.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -5931,19 +8512,19 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian vanhoja: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian vanhoja: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat vanhentuneet: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat vanhentuneet: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian uusia tälle VirtualBoxin versiolle: asennettu versio on %1, ja vaadittu versio on %2. Uudempien lisäosien version käyttäminen vanhemman VirtualBoxin kanssa ei ole tuettu.&lt;/p&gt;&lt;p&gt;Asenna asiakslisäosat tähän versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian uusia tälle VirtualBoxin versiolle: asennettu versio on %1, ja vaadittu versio on %2. Uudempien lisäosien version käyttäminen vanhemman VirtualBoxin kanssa ei ole tuettu.&lt;/p&gt;&lt;p&gt;Asenna asiakslisäosat tähän versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Palautuspisteiden kansion polun vaihto virtuaalikoneelle &lt;b&gt;%1&lt;b&gt; arvoon &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; epäonnistui.</translation>
+        <translation type="obsolete">Palautuspisteiden kansion polun vaihto virtuaalikoneelle &lt;b&gt;%1&lt;b&gt; arvoon &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; epäonnistui.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -5999,7 +8580,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBoxin yhteisiä asetuksia ei voitu tallentaa tiedostoon &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBoxin yhteisiä asetuksia ei voitu tallentaa tiedostoon &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -6020,12 +8601,12 @@ Version %1</source>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>Poista</translation>
+        <translation type="obsolete">Poista</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>Peru rekisteröinti</translation>
+        <translation type="obsolete">Peru rekisteröinti</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -6054,7 +8635,7 @@ Version %1</source>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>Poista käytöstä</translation>
+        <translation type="obsolete">Poista käytöstä</translation>
     </message>
     <message>
         <source>Download</source>
@@ -6127,7 +8708,7 @@ Version %1</source>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>Tiedostoa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ei voitu kopioida kohteeseen &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+        <translation type="obsolete">Tiedostoa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ei voitu kopioida kohteeseen &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -6278,16 +8859,16 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lisäohjaimen portteihin on liitetty kiintolevyjä. Jos poistat lisäohjaimen käytöstä, irrotetaan kaikki nämä kiintolevyt automaattisesti. &lt;/p&gt;&lt;p&gt;Haluatko varmasti poistaa lisäohjaimen käytöstä?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Lisäohjaimen portteihin on liitetty kiintolevyjä. Jos poistat lisäohjaimen käytöstä, irrotetaan kaikki nämä kiintolevyt automaattisesti. &lt;/p&gt;&lt;p&gt;Haluatko varmasti poistaa lisäohjaimen käytöstä?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lisäohjaimen portteihin on liitetty kiintolevyjä. Jos muutat lisäohjelman määrittelyä, irrotetaan kaikki nämä kiintolevyt automaattisesti. &lt;/p&gt;&lt;p&gt;Haluatko varmasti muuttaa lisäohjaimen määrittelyä?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Lisäohjaimen portteihin on liitetty kiintolevyjä. Jos muutat lisäohjelman määrittelyä, irrotetaan kaikki nämä kiintolevyt automaattisesti. &lt;/p&gt;&lt;p&gt;Haluatko varmasti muuttaa lisäohjaimen määrittelyä?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation>Muuta</translation>
+        <translation type="obsolete">Muuta</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -6452,30 +9033,14 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation type="unfinished">&amp;Luo</translation>
+        <translation type="obsolete">&amp;Luo</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation type="unfinished">&amp;Valitse</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&amp;Valitse</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6495,10 +9060,6 @@ Version %1</source>
     </message>
     <message>
         <source>Force Unmount</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6542,17 +9103,7 @@ Version %1</source>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished">kiintolevy</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">kiintolevy</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -6611,33 +9162,135 @@ Version %1</source>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIProgressDialog</name>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Peru</translation>
-    </message>
-    <message>
-        <source>A few seconds remaining</source>
+        <source>Failed to open virtual machine located in %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Canceling...</source>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel the current operation</source>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">Poista</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6742,7 +9395,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Yksityiskohdat</translation>
+        <translation type="obsolete">&amp;Yksityiskohdat</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
@@ -6815,7 +9468,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Poista</translation>
+        <translation type="obsolete">&amp;Poista</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6823,7 +9476,7 @@ Version %1</source>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>Poista valittu virtuaalikone</translation>
+        <translation type="obsolete">Poista valittu virtuaalikone</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -6887,15 +9540,15 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>&amp;Palautuspisteet</translation>
+        <translation type="obsolete">&amp;Palautuspisteet</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>Ku&amp;vaus</translation>
+        <translation type="obsolete">Ku&amp;vaus</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>Ku&amp;vaus *</translation>
+        <translation type="obsolete">Ku&amp;vaus *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -7024,28 +9677,104 @@ Version %1</source>
         <comment>Non Mac OS X version</comment>
         <translation type="unfinished">&amp;Tiedosto</translation>
     </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Lisää...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Valitse vasemmalla olevasta luettelosta asetusluokka ja siirrä hiiren kohdistin asetuksen päälle saadaksesi lisätietoja&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Valitse vasemmalla olevasta luettelosta asetusluokka ja siirrä hiiren kohdistin asetuksen päälle saadaksesi lisätietoja&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>Sivulla &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation type="obsolete">Sivulla &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Havaittiin virheellisiä asetuksia</translation>
+        <translation type="obsolete">Havaittiin virheellisiä asetuksia</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation type="obsolete">Asetukset</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Havaittiin epäoptimaalisia asetuksia</translation>
+        <translation type="obsolete">Havaittiin epäoptimaalisia asetuksia</translation>
     </message>
 </context>
 <context>
@@ -7479,24 +10208,24 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>Näytä valintaikkuna</translation>
+        <translation type="obsolete">Näytä valintaikkuna</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>Näytä tähän valikkoon liittyvä valintaikkuna</translation>
+        <translation type="obsolete">Näytä tähän valikkoon liittyvä valintaikkuna</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>Piilota ilmoitusalueen kuvake</translation>
+        <translation type="obsolete">Piilota ilmoitusalueen kuvake</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>Poista kuvake ilmoitusalueelta</translation>
+        <translation type="obsolete">Poista kuvake ilmoitusalueelta</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>&amp;Muut koneet...</translation>
+        <translation type="obsolete">&amp;Muut koneet...</translation>
     </message>
 </context>
 <context>
@@ -7661,15 +10390,15 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Ei kuvausta. Napsauta Muokkaa-painiketta ja lisää se.</translation>
+        <translation type="obsolete">Ei kuvausta. Napsauta Muokkaa-painiketta ja lisää se.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Muokkaa</translation>
+        <translation type="obsolete">Muokkaa</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Muokkaa (Ctrl+M)</translation>
+        <translation type="obsolete">Muokkaa (Ctrl+M)</translation>
     </message>
     <message>
         <source>Ctrl+E</source>
@@ -7680,7 +10409,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>Valittu virtuaalikone ei ole &lt;i&gt;saatavilla&lt;/i&gt;. Tutki allaolevaa virheviestiä ja paina nappia &lt;b&gt;Päivitä&lt;/b&gt;, jos haluat testata saatavuutta uudestaan:</translation>
+        <translation type="obsolete">Valittu virtuaalikone ei ole &lt;i&gt;saatavilla&lt;/i&gt;. Tutki allaolevaa virheviestiä ja paina nappia &lt;b&gt;Päivitä&lt;/b&gt;, jos haluat testata saatavuutta uudestaan:</translation>
     </message>
 </context>
 <context>
@@ -7807,11 +10536,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>VBoxVMInformationDlg</translation>
     </message>
     <message>
-        <source>Not Available</source>
-        <comment>details report (VRDP server port)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Storage Statistics</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7828,6 +10552,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <comment>details report</comment>
         <translation type="obsolete">Sisäkkäinen sivutus</translation>
     </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
@@ -7839,55 +10568,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Inaccessible</source>
         <translation type="obsolete">Ei käytettävissä</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation>Ei saatavilla</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 viimeksi %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Istunto %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Saavuttamattomissa %2 lähtien&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Näytä</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Siirry valitun virtuaalikoneen ikkunaan</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Käynnistä</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Käynnistä valittu virtuaalikone</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>&amp;Jatka</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>Jatka virtuaalikoneen suorittamista</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>&amp;Keskeytä</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>Keskeytä virtuaalikoneen suoritus</translation>
     </message>
 </context>
 <context>
@@ -8009,33 +10689,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>Jos asetettu, liitetään virtuaalinen PCI-äänikortti virtuaalikoneeseen, joka käyttää annettua ajuria isäntäkoneen äänikortin käsittelyyn.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation>Ota ää&amp;net käyttöön</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation>Isäntäkoneen ääni&amp;ajuri:</translation>
-    </message>
-    <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Ohjaa äänikortin ajuria. &lt;b&gt;NULL-ajuri&lt;/b&gt; näyttää äänikortin virtuaalikoneelle, mutta sen käsittely isäntäkoneessa jätetään huomioimatta.</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation>Ääni&amp;ohjain:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>Valitsee virtuaalisen äänikortin tyypin. Riippuen tästä arvosta, VirtualBox tarjoaa erityyppisiä äänilaitteita virtuaalikoneelle.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMSettingsCD</name>
     <message>
         <source>Host CD/DVD drive is not selected</source>
@@ -8088,109 +10741,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Käynnistää virtuaalimedioiden hallinan liitettävän CD/DVD-levykuvan liittämiseksi.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsDisplay</name>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Video</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Video &amp;Memory:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="unfinished">MB</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished">Laajennetut ominaisuudet:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Ota &amp;3D-kiihdytys käyttöön</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Jos valittu, virtuaalikone toimii Remote Desktop Protocol (RDP) -palvelimena, sallien virtuaalipalvelimen ohjauksen ja etäkäytön RDP-asiakasohjelmalla palvelimen ollessa käynnissä.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation type="unfinished">Ota palvelin &amp;käyttöön</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation type="unfinished">Palvelimen &amp;portti:</translation>
-    </message>
-    <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="obsolete">Näyttää VRDP-palvelin porttinumeron. Voit asettaa arvoksi &lt;tt&gt;0&lt;/tt&gt; (nolla), jolloin portti palautetaan oletusarvoonsa.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">Todennus&amp;menetelmä:</translation>
-    </message>
-    <message>
-        <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">Todentamisen &amp;aikakatkaisu:</translation>
-    </message>
-    <message>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8802,51 +11352,51 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>General</source>
-        <translation>Yleiset</translation>
+        <translation type="obsolete">Yleiset</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Levykuvat</translation>
+        <translation type="obsolete">Levykuvat</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>Kiintolevyt</translation>
+        <translation type="obsolete">Kiintolevyt</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Levyke</translation>
+        <translation type="obsolete">Levyke</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Ääni</translation>
+        <translation type="obsolete">Ääni</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Verkko</translation>
+        <translation type="obsolete">Verkko</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>Portit</translation>
+        <translation type="obsolete">Portit</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Sarjaportit</translation>
+        <translation type="obsolete">Sarjaportit</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Rinnakkaisportit</translation>
+        <translation type="obsolete">Rinnakkaisportit</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Jaetut kansiot</translation>
+        <translation type="obsolete">Jaetut kansiot</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -8854,35 +11404,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
         <translation type="obsolete">Sivulla &lt;b&gt;%1&lt;/b&gt;, %2</translation>
-    </message>
-    <message>
-        <source>System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8930,1468 +11456,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Käynnistää virtuaalimedian hallinnan liitettävän levykelevykuvan valitsemiseksi.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsGeneral</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
-    </message>
-    <message>
-        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="obsolete">tähän virtuaalikoneeseen on liitetty 64-bittinen virtuaalikäyttöjärjestelmäasiakas, joka vaatii isäntäjärjestelmän virtualisointitoiminnot (VT-x/AMD-V). Jos nämä ominaisuudet eivät ole käytössä, virtuaalikone ei löydä 64-bittistä prosessoria eikä pysty käynnistymään, joten tämä tämä toiminto otetaan käyttöön automaattisesti kun hyväksyt asetukset painamalla OK.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Näytä polku, jonne tämän virtuaalikoneen palautuspisteet tallennetaan. Huomaa, että palautuspisteet voivat viedä paljon levytilaa.</translation>
-    </message>
-    <message>
-        <source>&amp;Basic</source>
-        <translation>&amp;Perus</translation>
-    </message>
-    <message>
-        <source>Identification</source>
-        <translation type="obsolete">Tunniste</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Nimi:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the virtual machine.</source>
-        <translation>Näyttää virtuaalikoneen nimen.</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">Järjestelmä&amp;muistin koko</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">Määrittää virtuaalikoneelle annetun muistin määrän. Jos annat liian paljon muistia, virtuaalikone ei välttämättä käynnisty.</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">&amp;Videomuistin määrä</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">Säätää virtuaalikoneen videomuistin määrää.</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation>&amp;Lisäasetukset</translation>
-    </message>
-    <message>
-        <source>Boo&amp;t Order:</source>
-        <translation type="obsolete">&amp;Käynnistysjärjestys:</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
-    </message>
-    <message>
-        <source>[device]</source>
-        <translation type="obsolete">[laite]</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation type="obsolete">Siirrä ylös (Ctrl+ylös)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation type="obsolete">Siirrä käynnistyslaitetta ylös.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation type="obsolete">Siirrä alas (Ctrl+alas)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation type="obsolete">Siirrä käynnistyslaitetta alas..</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="obsolete">Laajennetut ominaisuudet:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone tukee ACPI-liityntää. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
-    </message>
-    <message>
-        <source>Enable A&amp;CPI</source>
-        <translation type="obsolete">Ota A&amp;CPI käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
-    </message>
-    <message>
-        <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">Ota IO AC&amp;PI käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone yrittää käyttää isäntäkoneen laitteistovirtualisoinnin laajennoksia, kuten Intel VT-X tai AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">Ota &amp;VT-x/AMD-V käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone yrittää käyttää Intel VT-x ja AMD-V -virtualisoinnin sisäittäisen sivutuksen ominaisuutta.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation type="obsolete">Käytä sisäkkäistä &amp;sivutusta</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="obsolete">Jos asetettu, paljastetaan isäntäkoneen prosessorin PAE-ominaisuus virtuaalikoneelle.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="obsolete">Ota PA&amp;E/NX käyttöön</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Jaettu leikepöytä:</translation>
-    </message>
-    <message>
-        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Määrittää tavan, jolla leikepöytä jaetaan virtuaalikoneen ja isäntäkoneen välillä. Huomaa, että tämä ominaisuus vaatii asiakaslisäosien asennuksen virtuaalikoneeseen.</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">Määrittää virtuaalisen IDE-ohjaimen tyypin. Tästä arvosta riippuen VirtualBox näyttää erityyppisen IDE-ohjaimen virtuaalikoneelle.</translation>
-    </message>
-    <message>
-        <source>&amp;IDE Controller Type:</source>
-        <translation type="obsolete">&amp;IDE-ohjaimen tyyppi:</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation>P&amp;alautuspisteiden kansio:</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation>&amp;Kuvaus</translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>Näyttää virtuaalikoneen kuvauksen. Kuvauskenttää on näppärä käyttää selittämää asennetun virtuaalikoneen määrittelyn yksityiskohtia.</translation>
-    </message>
-    <message>
-        <source>&amp;Other</source>
-        <translation type="obsolete">&amp;Muu</translation>
-    </message>
-    <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Jos asetettu, muutokset CD/DVD- ja levykeasemiin virtuaalikoneen ollessa käynnissä tallennetaan asetustiedostoon, jotta samat liitosasetukset säilytetään virtuaalikoneen suorituskertojen välillä.</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Mounted Media</source>
-        <translation type="obsolete">&amp;Muista liitetyt mediat</translation>
-    </message>
-    <message>
-        <source>Runtime:</source>
-        <translation type="obsolete">Suoritusympäristö:</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;75%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei jää tarpeeksi muistia käyttöön, valitse pienempi muistimäärä.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;50%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei välttämättä jää tarpeeksi muistia käyttöön. Jatka näin omalla riskilläsi.</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="obsolete">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="obsolete">Ota &amp;3D-kiihdytys käyttöön</translation>
-    </message>
-    <message>
-        <source>Removable Media:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show At &amp;Top Of Screen</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsStorage</name>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="obsolete">Kohteelle &lt;i&gt;%1&lt;/i&gt; ei ole valittu kiintolevyä</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; käyttää kiintolevyä, joka on jo liitetty virtuaalikoneeseen &lt;i&gt;%2&lt;/2&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Add Attachment</source>
-        <translation type="obsolete">&amp;Lisää liitos</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Attachment</source>
-        <translation type="obsolete">&amp;Poista liitos</translation>
-    </message>
-    <message>
-        <source>&amp;Select Hard Disk</source>
-        <translation type="obsolete">&amp;Valitse kiintolevy</translation>
-    </message>
-    <message>
-        <source>Adds a new hard disk attachment.</source>
-        <translation type="obsolete">Lisää uuden kiintolevyliitoksen.</translation>
-    </message>
-    <message>
-        <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="obsolete">Poistaa korostetun kiintolevyliitoksen.</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">Jos asetettu, ottaa SATA-ohjaimen käyttöön virtuaalikoneessa. Huomaa, ettet voi liittää kiintolevyjä SATA-portteihin,jos virtuaalinen SATA-ohjain ei ole käytössä.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">&amp;Ota SATA-ohjain käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="obsolete">Jos asetettu, otetaan ylimääräinen virtuaaliohjain (SATA tai SCSI) käyttöön tässä virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Additional Controller</source>
-        <translation type="obsolete">&amp;Ota lisäohjain käyttöön</translation>
-    </message>
-    <message>
-        <source>&amp;Attachments</source>
-        <translation type="obsolete">&amp;Liitokset</translation>
-    </message>
-    <message>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">Näyttää luettelon virtuaalikoneeseen liitetyistä kiintolevyistä. Napsauta hiirellä tai paina &lt;tt&gt;välilyöntiä&lt;/tt&gt; korostetun kohdan päällä ja valitse pudotusvalikosta haluttu arvo. Voit lisätä ja poistaa kiintolevyliitoksia kontekstivalikosta tai oikealla olevista napeista.</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Käynnistää virtuaalimedioiden hallinnan, jolla voit valita korostettuun paikkaan liitettävän kiintolevyn.</translation>
-    </message>
-    <message>
-        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>Jos asetettu, näytetään paikkaan liitetyt todelliset erotellut kiintolevyt niiden pohjakiintolevyn sijasta. Tämä näytetään vain epäsuorien liitosten kohdalla. Voit myös erikseen liittää muita eroteltuja kiintolevyjä. Käytä tätä vain, jos tarvitset monimutkaisia kiintolevymäärittelyjä.</translation>
-    </message>
-    <message>
-        <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="obsolete">&amp;Näytä erotellut kiintolevyt</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">Määrittää virtuaalisen IDE-ohjaimen tyypin. Tästä arvosta riippuen VirtualBox näyttää erityyppisen IDE-ohjaimen virtuaalikoneelle.</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add IDE Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add SATA Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add SCSI Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Floppy Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation type="unfinished">Lisää liitos</translation>
-    </message>
-    <message>
-        <source>Add Hard Disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add CD/DVD Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Floppy Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation type="unfinished">Poista liitos</translation>
-    </message>
-    <message>
-        <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>IDE Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SATA Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SCSI Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Floppy Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Device:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Storage Tree</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nimi:</translation>
-    </message>
-    <message>
-        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;lot:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;ifferencing Disks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attached To:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use host I/O cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add SAS Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SAS Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage Controller 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">sillattua verkkosovitinta ei ole valittu</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation type="unfinished">sisäisen verkon nimeä ei ole annettu</translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation type="unfinished">Ei valittu</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <comment>network</comment>
-        <translation type="obsolete">Sovitin</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>adapter</comment>
-        <translation type="obsolete">Ei valittu</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <comment>internal</comment>
-        <translation type="obsolete">Verkko</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network</comment>
-        <translation type="obsolete">Ei valittu</translation>
-    </message>
-    <message>
-        <source>MAC Address</source>
-        <translation type="obsolete">MAC-osoite</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>address</comment>
-        <translation type="obsolete">Ei valittu</translation>
-    </message>
-    <message>
-        <source>Cable</source>
-        <translation type="obsolete">Kaapeli</translation>
-    </message>
-    <message>
-        <source>Connected</source>
-        <comment>cable</comment>
-        <translation type="obsolete">Liitetty</translation>
-    </message>
-    <message>
-        <source>Not connected</source>
-        <comment>cable</comment>
-        <translation type="obsolete">Ei liitetty</translation>
-    </message>
-    <message>
-        <source>Select TAP setup application</source>
-        <translation type="obsolete">Valitse TAP-määritteykomento</translation>
-    </message>
-    <message>
-        <source>Select TAP terminate application</source>
-        <translation type="obsolete">Valitse TAP-poistokomento</translation>
-    </message>
-    <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>jos asetettu, liittää verkkosovittimen virtuaalikoneeseen.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation>&amp;Käytä verkkosovitinta</translation>
-    </message>
-    <message>
-        <source>A&amp;dapter Type:</source>
-        <translation type="obsolete">&amp;Sovittimen tyyppi:</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation>Sovittimen &amp;tyyppi:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>Valitsee virtuaalisen verkkosovittimen tyypin. Tästä arvosta riippuen VirtualBox tarjoaa erilaisia verkkolaitteita virtuaalikoneelle.</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation>&amp;Liitetty laitteeseen:</translation>
-    </message>
-    <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Määrittää, kuinka virtuaalinen verkkosovitin liitetään isäntäkoneen verkkoon.</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nimi:</translation>
-    </message>
-    <message>
-        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="obsolete">Avaa tämänhetkisen liitostavan lisäasetukset.</translation>
-    </message>
-    <message>
-        <source>&amp;Network Name:</source>
-        <translation type="obsolete">&amp;Verkon nimi:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address:</source>
-        <translation type="obsolete">&amp;MAC-osoite:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Näyttää tämän sovittimen MAC-osoitteen. Arvo sisältää tasan 12 merkkiä joukosta (0-9,A-F). Huomaa, että toisen merkin täytyy olla parillinen numero.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Luo uuden satunnaisen MAC-osoitteen.</translation>
-    </message>
-    <message>
-        <source>&amp;Generate</source>
-        <translation type="obsolete">L&amp;uo</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Kertoo, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
-    </message>
-    <message>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="obsolete">Kaapeli k&amp;ytketty</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Name:</source>
-        <translation type="obsolete">&amp;Verkkosovittimen nimi:</translation>
-    </message>
-    <message>
-        <source>Displays the TAP interface name.</source>
-        <translation type="obsolete">Näyttää TAP-laitteen nimen.</translation>
-    </message>
-    <message>
-        <source>&amp;Setup Application:</source>
-        <translation type="obsolete">&amp;Määrittelykomento:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="obsolete">Näyttää komennon, jolla TAP-verkkosovitin määritellään.</translation>
-    </message>
-    <message>
-        <source>Selects the setup application.</source>
-        <translation type="obsolete">Valitsee määrittelykomennon.</translation>
-    </message>
-    <message>
-        <source>&amp;Terminate Application:</source>
-        <translation type="obsolete">&amp;Poistokomento:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="obsolete">Näyttää komennon, jolla TAP-verkkosovitin poistetaan käytöstä.</translation>
-    </message>
-    <message>
-        <source>Selects the terminate application.</source>
-        <translation type="obsolete">Valitsee poistokomennon.</translation>
-    </message>
-    <message>
-        <source>Host Interface Settings</source>
-        <translation type="obsolete">Isäntäliitännän asetukset</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows or hides additional network adapter options.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Mac Address:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation type="unfinished">&amp;Kaapeli liitetty</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkDetails</name>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation type="obsolete">sillattua verkkosovitinta ei ole valittu</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation type="obsolete">sisäisen verkon nimeä ei ole annettu</translation>
-    </message>
-    <message>
-        <source>no host-only adapter is selected</source>
-        <translation type="obsolete">laitteiston sisäistä verkkosovitinta ei ole valittu</translation>
-    </message>
-    <message>
-        <source>Basic Details</source>
-        <translation type="obsolete">Perustiedot</translation>
-    </message>
-    <message>
-        <source>Bridged Network Details</source>
-        <translation type="obsolete">Sillatun verkon tiedot</translation>
-    </message>
-    <message>
-        <source>Internal Network Details</source>
-        <translation type="obsolete">Sisäisen verkon tiedot</translation>
-    </message>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation type="obsolete">Laitteiston sisäisen verkon yksityiskohdat</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <translation type="obsolete">Ei valittu</translation>
-    </message>
-    <message>
-        <source>Host Settings</source>
-        <translation type="obsolete">Laitteen asetukset</translation>
-    </message>
-    <message>
-        <source>&amp;Bridged Network Adapter:</source>
-        <translation type="obsolete">&amp;Sillatun verkon sovitun:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="obsolete">Näyttää sillatulle verkolle valitun isäntäkoneen verkkosovittimen nimen.</translation>
-    </message>
-    <message>
-        <source>Internal &amp;Network:</source>
-        <translation type="obsolete">Sisäinen &amp;verkko:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
-    </message>
-    <message>
-        <source>Host-only &amp;Network Adapter:</source>
-        <translation type="obsolete">Laitteiston &amp;sisäinen verkkosovitin:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="obsolete">Näyttää laitteiston sisäiselle verkkosovittimelle valitun VirtualBoxin verkkosovittimen nimen.</translation>
-    </message>
-    <message>
-        <source>Guest Settings</source>
-        <translation type="obsolete">Vierasjärjestelmän asetukset</translation>
-    </message>
-    <message>
-        <source>Guest &amp;MAC Address:</source>
-        <translation type="obsolete">Vierasjärjestelmän &amp;MAC-osoite:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">Näyttää tämän sovittimen MAC-osoitteen. Arvo sisältää tasan 12 merkkiä joukosta (0-9,A-F). Huomaa, että toisen merkin täytyy olla parillinen numero.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">Luo uuden satunnaisen MAC-osoitteen.</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation type="obsolete">&amp;Kaapeli liitetty</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">Ilmaisee, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkPage</name>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Isäntäkoneen verkkosovitinta ei ole valittu</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Sisäistä verkkonimeä ei ole asetettu</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation>Portti %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>Jos asetettu, otetaan annettu rinnakkaisportti käyttöön virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Parallel Port</source>
-        <translation>Ota &amp;rinnakkaisportti käyttöön</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Portin &amp;numero:</translation>
-    </message>
-    <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Näyttää rinnakkaisportin porttinumeron. Voit valita jonkun standardiporteista tai valita &lt;b&gt;itsemääritelty&lt;/b&gt; ja syöttää haluamasi portin parametrit.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;Keskeytys:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Näyttää rinnakkaisportin keskeytysnumeron. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>IO-po&amp;rtti:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Näyttää rinnakkaisportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation>Portin &amp;polku:</translation>
-    </message>
-    <message>
-        <source>Displays the host parallel device name.</source>
-        <translation>Näyttää isäntäkoneen rinnakkaisportin laitenimen.</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallelPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Portin numero on valittu kahdesti</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>Portin polkua ei ole annettu</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Portin polku on valittu kahdesti</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>&amp;Add New Shared Folder</source>
-        <translation type="obsolete">&amp;Lisää uusi jaettu kansio</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="obsolete">&amp;Muokkaa valittua jaettua kansiota</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="obsolete">&amp;Poista valittu jaettu kansio</translation>
-    </message>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation>Lisää uuden jaettujen kansioiden määrittelyn.</translation>
-    </message>
-    <message>
-        <source>Edits the selected shared folder definition.</source>
-        <translation>Muokkaa valitun jaetun kansion määrityksiä.</translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation>Poistaa valitun jaettujen kansiouden määrityksen.</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation>Konekansiot</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation> Väliaikaiskansiot</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation>Täysi</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation>Vain luku</translation>
-    </message>
-    <message>
-        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Näyttää luettelon kaikista käytettävissä olevista jaetuista kansioista. Pääset käsiksi jaettuun &lt;i&gt;levyjakoon&lt;/i&gt; DOS-tyylisistä virtuaalikoneista komennolla &apos;net use x: \\vboxsvr\share&apos; ja linux-virtuaalikoneista komennolla &apos;mount -t vboxsf levyjako liitospiste&apos;. Tämä ominaisuus vaatii asiakaslisäosien asennuksen. </translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nimi</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation>Polku</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation>Oikeudet</translation>
-    </message>
-    <message>
-        <source> Global Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add Shared Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Folders List</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Add Share</source>
-        <translation>Lisää jako</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation>Muokkaa jakoa</translation>
-    </message>
-    <message>
-        <source>Dialog</source>
-        <translation>Valintaikkuna</translation>
-    </message>
-    <message>
-        <source>Folder Path:</source>
-        <translation>Kansion polku:</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation>Kansion nimi:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Näytä jaetun kansion nimi (kuten asiakasjärjestelmä näkee sen).</translation>
-    </message>
-    <message>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Jos asetettu, virtuaalikone ei voi kirjoittaa annettuun jaettun kansioon.</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation>&amp;Vain luku</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation>&amp;Tee pysyväksi</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>Portti %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Jos asetettu, ottaa annetun sarjaportin käyttöön virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Serial Port</source>
-        <translation>Ota &amp;sarjaportti käyttöön</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Portti&amp;numero:</translation>
-    </message>
-    <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Näyttää sarjaportin numeron. Voit valita jonkun standardeista sarjaporteista tai valita &lt;b&gt;Itsemääritelty&lt;/b&gt; ja antaa portin ominaisuudet itse.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;Keskeytys:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Näyttää sarjaportin keskeytysnumeron.  Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>IO-po&amp;rtti:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Näyttää sarjaportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode:</source>
-        <translation>Portin &amp;tila:</translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Ohjaa tämän sarjaportin toimintatilaa. Jos valitset &lt;b&gt;Pois käytöstä&lt;/b&gt;, virtuaalikone havaitsee sarjaportin mutta ei voi käyttää sitä.</translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Jos asetettu, kentässä &lt;b&gt;Portin polku&lt;/b&gt; määritelty putki luodaan virtuaalikoneen käynnistyessä. Muussa tapauksessa virtuaalikone yrittää käyttää olemassaolevaa putkea.</translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation>&amp;Luo putki</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation type="obsolete">Portin &amp;polku:</translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Näyttää polun sarjaportin putkitiedostoon, kun portti on &lt;b&gt;Isännän putki&lt;/b&gt;-tilassa, tai isäntäkoneen sarjaportin laitenimen, kun portti on &lt;b&gt;Isäntälaite&lt;/b&gt;-tilassa.</translation>
-    </message>
-    <message>
-        <source>Port/File &amp;Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerialPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Porttinumero on valittu kahteen kertaan</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>Portin polkua ei ole määritelty</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Portin polku on valittu kahdesti</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSystem</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
-    </message>
-    <message>
-        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Motherboard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Määrittää virtuaalikoneelle annetun muistin määrän. Jos annat liian paljon muistia, virtuaalikone ei välttämättä käynnisty.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="unfinished">MB</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Siirrä alas (Ctrl+alas)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Siirrä ylös (Ctrl+ylös)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished">Laajennetut ominaisuudet:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Jos asetettu, virtuaalikone tukee ACPI-liityntää. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Processor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Processor(s):</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">Jos asetettu, paljastetaan isäntäkoneen prosessorin PAE-ominaisuus virtuaalikoneelle.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">Ota PA&amp;E/NX käyttöön</translation>
-    </message>
-    <message>
-        <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Jos asetettu, virtuaalikone yrittää käyttää isäntäkoneen laitteistovirtualisoinnin laajennoksia, kuten Intel VT-X tai AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Ota &amp;VT-x/AMD-V käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Jos asetettu, virtuaalikone yrittää käyttää Intel VT-x ja AMD-V -virtualisoinnin sisäittäisen sivutuksen ominaisuutta.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">Käytä sisäkkäistä &amp;sivutusta</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware clock in &amp;UTC time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;absolute pointing device</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>&amp;Add Empty Filter</source>
-        <translation>&amp;Lisää tyhjä suodatin</translation>
-    </message>
-    <message>
-        <source>A&amp;dd Filter From Device</source>
-        <translation>&amp;Lisää suodatin laitteelta</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Filter</source>
-        <translation>&amp;Muokkaa suodinta</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Filter</source>
-        <translation>&amp;Poista suodatin</translation>
-    </message>
-    <message>
-        <source>&amp;Move Filter Up</source>
-        <translation>Siirrä suodatinta &amp;ylös</translation>
-    </message>
-    <message>
-        <source>M&amp;ove Filter Down</source>
-        <translation>Siirrä suodatinta &amp;alas</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Lisää uuden USB-suodattimen, jossa kaikki kentät ovat oletuksena tyhjiä. Huomaa, että tällainen suodatin täsmää kaikkiin USB-laitteisiin.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Lisää uuden USB-suodattimen, jossa kentän arvot on asetettu vastaamaan valittua isäntäkoneeseen liitettyä USB-laitetta.</translation>
-    </message>
-    <message>
-        <source>Edits the selected USB filter.</source>
-        <translation>Muokkaa valittua USB-suodatinta.</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation>Poistaa valitun USB-suodattimen.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation>Siirrä valittua USB-suodatinta ylös.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation>Siirrä valittua USB-suodatinta alas.</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation>Uusi suodatin %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Jos asetettu, ottaa käyttöön virtuaalisen USB-ohjaimen virtuaalikoneessa.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation>Ota &amp;USB-ohjain käyttöön</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Jos asetettu, ottaa käyttöön virtuaalisen USB EHCI-ohjaimen tässä virtuaalikoneessa. USB EHCI-ohjain tarjoaa USB 2.0-tuen.</translation>
-    </message>
-    <message>
-        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>Käytä USB 2.0 (E&amp;HCI)-ohjainta</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation>USB-laite&amp;suodattimet</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Näyttää luettelon kaikista USB-suotimista tässä koneessa. Valintaruutu vasemmalla kertoo, onko kyseinen suodatin käytössä vai ei. Voit lisätä ja poistaa USB-suodattimia kontekstivalikosta tai käyttäen nappeja oikealla.</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation>[suodatin]</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation>Mikä tahansa</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation>Kyllä</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation>Ei</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Nimi:</translation>
-    </message>
-    <message>
-        <source>Displays the filter name.</source>
-        <translation>Näytä suodattimen nimi.</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation>&amp;Valmistajan tunniste:</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Määrittää suotimen valmistajan tunnisteelle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;XXXX&lt;/tt&gt;, missä X on heksadesimaalinen luku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation>T&amp;uotteen tunniste:</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Määrittää suotimen tuotteen tunnisteelle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;XXXX&lt;/tt&gt;, missä X on heksadesimaalinen luku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation>&amp;Revisio:</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Määrittää suotimen revisionumerolle. &lt;i&gt;Tarkan osuman&lt;/i&gt; merkkijono on muodossa &lt;tt&gt;IIFF&lt;/tt&gt;, missä I on kokonaislukuosan desimaalinumero ja F on pisteen jälkeisen osan desimaaliluku. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation>V&amp;almistaja:</translation>
-    </message>
-    <message>
-        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Määrittää suotimen valmistajan nimelle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation>&amp;Tuote:</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Määrittää suotimen tuotteen nimelle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation>&amp;Sarjanumero:</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Määrittää suotimen sarjanumerolle &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation>Por&amp;tti:</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Määrittää suotimen USB-portille &lt;i&gt;tarkka osuma&lt;/i&gt;-merkkijonona. Tyhjä merkkijono täsmää mihin tahansa arvoon.</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation>&amp;Etälaitteet:</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Määrittää täsmääkö suodatin isäntäkoneeseen liitettyihin USB-laitteisiin (&lt;i&gt;Ei&lt;/i&gt;), VRDP-asiakkaan laitteisiin (&lt;i&gt;Kyllä&lt;/i&gt;) vai molempiin (&lt;i&gt;Mikä tahansa&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>&amp;Action:</source>
-        <translation>&amp;Toiminto:</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Määrittää mitä isäntäkone tekee, kun täsmäävä laite havaitaan: anna laite isäntäkoneen käyttöön (&lt;i&gt;Älä käytä&lt;/i&gt;) tai varaa se virtuaalikoneiden käyttöön (&lt;i&gt;Varaa&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation>USB-suotimen tiedot</translation>
     </message>
 </context>
 <context>

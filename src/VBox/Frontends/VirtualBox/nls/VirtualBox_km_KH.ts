@@ -378,7 +378,7 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់</translation>
+        <translation type="obsolete">ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -386,11 +386,11 @@
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>ប្ដូរ​ទៅ​របៀប​បញ្ចូល​ផ្ទៃតុ​គ្មាន​ថ្នេរ</translation>
+        <translation type="obsolete">ប្ដូរ​ទៅ​របៀប​បញ្ចូល​ផ្ទៃតុ​គ្មាន​ថ្នេរ</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+        <translation type="unfinished">បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -414,11 +414,11 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>បើក​ការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
+        <translation type="obsolete">បើក​ការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>បើក​​ការ​រួម​បញ្ចូល​ព្រួញកណ្ដុរ​របស់​ម៉ាស៊ីន​ដែលបាន​បិទ​ជា​បណ្ដោះអាសន្ន</translation>
+        <translation type="obsolete">បើក​​ការ​រួម​បញ្ចូល​ព្រួញកណ្ដុរ​របស់​ម៉ាស៊ីន​ដែលបាន​បិទ​ជា​បណ្ដោះអាសន្ន</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -446,7 +446,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>ប្រអប់​ព័ត៌មាន​សម័យ</translation>
+        <translation type="obsolete">ប្រអប់​ព័ត៌មាន​សម័យ</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -462,11 +462,7 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>បន្ត</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation></translation>
+        <translation type="obsolete">បន្ត</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -580,51 +576,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disable remote desktop (RDP) connections to this machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -633,9 +585,327 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable &amp;Logging...</source>
-        <comment>debug action</comment>
+        <source>Switch to &amp;Fullscreen</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and fullscreen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Scale Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and scale mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation type="unfinished">គ្មាន​សេចក្ដី​ពិពណ៌នា​ទេ ។ ចុច​ប៊ុតុង កែសម្រួល​ខា​ងក្រោម​ដើម្បី​បន្ថែម​វា ។</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">កែសម្រួល</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation type="unfinished">កែសម្រួល (បញ្ជា(Ctrl)+E)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1 មេកាបៃ​&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="unfinished">លំដាប់​ចាប់ផ្ដើម</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="unfinished">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">សតិ​វីដេអូ</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished">(ស៊ីឌី​/​ឌី​វីឌី​)</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished">មិន​បានភ្ជាប់</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">កម្មវិធី​បញ្ជា​ម៉ាស៊ីន</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">វត្ថុ​បញ្ជា</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">​អាដាប់​ទ័រប្រ៊ីដ្យ​​ %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">បណ្តាញ​ខាង​ក្នុង &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">​អាដាប់​ទ័រ​​ ម៉ាស៊ីន​​-​តែ​មួយ &apos;%1&apos;​</translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">អាដាប់ទ័រ %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">ច្រក %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">ច្រក %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">តម្រង​ឧបករណ៍</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 សកម្មភាព)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">គ្មាន</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished">គ្មាន</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation type="unfinished">ម៉ាស៊ីន​និម្មិត​ដែល​បាន​ជ្រើស​ &lt;i&gt;មិន​អាច​ចូលដំណើរការ​បានទេ&lt;/i&gt; ។ សូម​ពិនិត្យ​មើល​សារ​កំហុស​ដែល​បានបង្ហាញ​ខាង​ក្រោម ហើយ​ចុច​ប៊ូតុង &lt;b&gt;ធ្វើ​ឲ្យ​ស្រស់&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​ធ្វើការ​ពិនិត្យ​ការ​ចូលដំណើរការ​​ឡើង​វិញ ៖</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ទូទៅ</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ប្រព័ន្ធ</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished">បង្ហាញ​</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation type="unfinished">អូឌីយ៉ូ</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation type="unfinished">បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation type="unfinished">សេច​ក្តី​ពិណណ៌នា​</translation>
     </message>
 </context>
 <context>
@@ -829,15 +1099,12 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished">នៅ​ទី​នេះ អ្នក​​អាច​ប្តូរ​តម្លៃ​​​កំណត់​រចនា​សម្ព័ន្ធ​​​បន្ថែម​របស់​​ម៉ាស៊ីន​និម្មិត​​​ដែល​​បាន​ជ្រើស​ ។ អ្នក​អាច​កែប្រែ​លក្ខណសម្បត្តិ​ភាគច្រើន ដែលបាន​បង្ហាញ​ដោយ​ចុច​ទ្វេរដង​លើ​ធាតុ ។ ។</translation>
+        <translation type="obsolete">នៅ​ទី​នេះ អ្នក​​អាច​ប្តូរ​តម្លៃ​​​កំណត់​រចនា​សម្ព័ន្ធ​​​បន្ថែម​របស់​​ម៉ាស៊ីន​និម្មិត​​​ដែល​​បាន​ជ្រើស​ ។ អ្នក​អាច​កែប្រែ​លក្ខណសម្បត្តិ​ភាគច្រើន ដែលបាន​បង្ហាញ​ដោយ​ចុច​ទ្វេរដង​លើ​ធាតុ ។ ។</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation type="unfinished">​កំណត់​ការ​នាំ​ចេញ​ឧបករណ៍​</translation>
     </message>
-</context>
-<context>
-    <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation type="unfinished">សូម​បញ្ជាក់​គោល​ដៅ​សម្រាប់​នាំ​ចេញ​​ OVF ។ អ្នក​អាច​ជ្រើស​​រវាង​​ការ​នាំ​ចេញ​ប្រព័ន្ធ​ឯកសារ​មូល​ដ្ឋាន​​ ការ​ផ្ទុក​ OVF ឡើង​ទៅ​​កាន់​ Sun អាច​ជា​​សេវា​ ឬម៉ា​ស៊ីន​បម្រើ​ផ្ទុក S3 ។</translation>
@@ -854,13 +1121,29 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Simple Storage System (S3)</source>
         <translation type="unfinished">ប្រព័ន្ធ​ផ្ទុក​ធម្មតា (S3)</translation>
     </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="obsolete">សូម​បញ្ជាក់​គោល​ដៅ​សម្រាប់​នាំ​ចេញ​​ OVF ។ អ្នក​អាច​ជ្រើស​​រវាង​​ការ​នាំ​ចេញ​ប្រព័ន្ធ​ឯកសារ​មូល​ដ្ឋាន​​ ការ​ផ្ទុក​ OVF ឡើង​ទៅ​​កាន់​ Sun អាច​ជា​​សេវា​ ឬម៉ា​ស៊ីន​បម្រើ​ផ្ទុក S3 ។</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">ប្រព័ន្ធ​ឯកសារ​មូលដ្ឋាន ​</translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="obsolete">ពពក​របស់ Sun</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="obsolete">ប្រព័ន្ធ​ផ្ទុក​ធម្មតា (S3)</translation>
+    </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation type="unfinished">​កំណត់​ការ​នាំ​ចេញ​ឧបករណ៍​</translation>
     </message>
-</context>
-<context>
-    <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
         <translation type="unfinished">ឈ្មោះ​អ្នក​ប្រើ​ ៖</translation>
@@ -890,8 +1173,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">សេរ​សេរ​ OVF 0.9 ចាស់ៗ</translation>
     </message>
     <message>
-        <source>Appliance Export Settings</source>
-        <translation type="unfinished">​កំណត់​ការ​នាំ​ចេញ​ឧបករណ៍​</translation>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Appliance</source>
@@ -902,12 +1189,16 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">ជ្រើស​ឯកសាត​ត្រូវ​នាំចេញ</translation>
     </message>
     <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open Virtualization Format (%1)</source>
         <translation type="unfinished">Open Virtualization Format (%1)</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished">សូម​ជ្រើស​ឈ្មោះ​ឯកសារ​​ ដើម្បី​នាំ​ចូល​ OVF ។</translation>
+        <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
@@ -916,6 +1207,61 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation type="unfinished">សូម​បំពេញ​វាល​ដែល​បន្ថែម ​ដូចជា​​ឈ្មោះ​អ្នក​ប្រើ​ ពាក្យ​សម្ងាត់​ ឈ្មោះ​ម៉ាស៊ីន​ និង​សញ្ញា​សម្គាល់​ ហើយ​​​ផ្តល់​ឈ្មោះ​ឯកសារ​សម្រាប់​គោល​ដៅ​ OVF ។</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">ឈ្មោះ​អ្នក​ប្រើ​ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">ឈ្មោះ​ម៉ាស៊ីន​ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">ធុង​ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">ឯកសារ​ ៖</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">សរ​សេរ​ក្នុង​​ទ្រង់​ទ្រាយ​ OVF 0.9 ​ចាស់ៗ​ សម្រាប់​ភាព​ឆប​គ្នា​ជាមួយផលិត​ផលនិម្មិត​ផ្សេង​ទៀត​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">សេរ​សេរ​ OVF 0.9 ចាស់ៗ</translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished">​កំណត់​ការ​នាំ​ចេញ​ឧបករណ៍​</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">ឧបករណ៍​</translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">ជ្រើស​ឯកសាត​ត្រូវ​នាំចេញ</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">សូម​ជ្រើស​ឈ្មោះ​ឯកសារ​​ ដើម្បី​នាំ​ចូល​ OVF ។</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">សូម​បំពេញ​​វាល​​ដែល​បន្ថែម ​ដូចជា​​ឈ្មោះ​អ្នក​ប្រើ​ ពាក្យ​សម្ងាត់​ និងសញ្ញា​សម្គាល់​​ ហើយ​​​ផ្តល់​ឈ្មោះ​​ឯកសារ​សម្រាប់​គោលដៅ ​OVF ។</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">សូម​បំពេញ​វាល​ដែល​បន្ថែម ​ដូចជា​​ឈ្មោះ​អ្នក​ប្រើ​ ពាក្យ​សម្ងាត់​ ឈ្មោះ​ម៉ាស៊ីន​ និង​សញ្ញា​សម្គាល់​ ហើយ​​​ផ្តល់​ឈ្មោះ​ឯកសារ​សម្រាប់​គោល​ដៅ​ OVF ។</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -928,6 +1274,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Exporting Appliance ...</source>
         <translation type="unfinished">កំពុង​នាំចេញ​ឧបករណ៍...</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished">នៅ​ទី​នេះ អ្នក​​អាច​ប្តូរ​តម្លៃ​​​កំណត់​រចនា​សម្ព័ន្ធ​​​បន្ថែម​របស់​​ម៉ាស៊ីន​និម្មិត​​​ដែល​​បាន​ជ្រើស​ ។ អ្នក​អាច​កែប្រែ​លក្ខណសម្បត្តិ​ភាគច្រើន ដែលបាន​បង្ហាញ​ដោយ​ចុច​ទ្វេរដង​លើ​ធាតុ ។ ។</translation>
     </message>
 </context>
 <context>
@@ -1108,6 +1458,608 @@ p, li { white-space: pre-wrap; }
         <source>Source</source>
         <comment>summary</comment>
         <translation type="unfinished">ប្រភព</translation>
+    </message>
+</context>
+<context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">ទូទៅ</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished">បញ្ចូល</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">ធ្វើ​ឲ្យ​ទាន់សម័យ</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">ភាសា</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished">VirtualBox - %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsExtension</name>
+    <message>
+        <source>&amp;Extension Packages:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all installed packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished">កំណែ​</translation>
+    </message>
+    <message>
+        <source>Add package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsGeneral</name>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation>បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ម៉ាស៊ីន​និម្មិត​លំនាំដើម ។ ថត​នេះ​ត្រូវ​បាន​ប្រើ ប្រសិនបើ​មិន​បានបញ្ជាក់ជាក់លាក់​ទេ នៅពេល​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation>បង្ហាញ​ផ្លូវ​ទៅ​បណ្ណាល័យ ដែល​ផ្ដល់​នូវ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​សម្រាប់​ម៉ាស៊ីន​ភ្ញៀវ​បង្ហាញ​ពី​ចម្ងាយ (​VRDP) ។</translation>
+    </message>
+    <message>
+        <source>Default &amp;Hard Disk Folder:</source>
+        <translation type="obsolete">ថត​ថាសរឹង​លំនាំដើម ៖</translation>
+    </message>
+    <message>
+        <source>Default &amp;Machine Folder:</source>
+        <translation>ថត​ម៉ាស៊ីន​លំនាំដើម ៖</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation>បណ្ណាល័យ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ៖</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ថាសរឹង​លំនាំដើម ។ ថត​នេះ​ត្រូ​វបានប្រើ ប្រសិនបើ​គ្មាន​ការ​កំណត់​ជាក់លាក់ នៅពេលបន្ថែម​ថាសរឹង​និម្មិត​ថ្មី​ ឬ​មាន​ស្រាប់ ។</translation>
+    </message>
+    <message>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក កម្មវិធី​នឹង​ផ្ដល់​នូវ​រូបតំណាង​ដែល​មាន​ម៉ឺនុយ​បរិបទ​នៅ​ក្នុង​ថាស​ប្រព័ន្ធ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Show System Tray Icon</source>
+        <translation>បង្ហាញ​រូបតំណាង​ថាស​ប្រព័ន្ធ</translation>
+    </message>
+    <message>
+        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
+        <translation type="obsolete">នៅពេលបានគូស​ធីក រូប​តំណាង​ចូលផែ​នឹង​ជះឥទ្ធិពល​លើ​មាតិកា​បង្អួច​ VM នៅ​ក្នុង realtime ។</translation>
+    </message>
+    <message>
+        <source>&amp;Dock Icon Realtime Preview</source>
+        <translation type="obsolete">មើល​រូបតំណាង​ចូលផែ Realtime ជា​មុន</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <translation>បង្ហាញ​ចត​ដោយ​ស្វ័យ​ប្រវត្តិ​ និងរបារ​ម៉ឺនុយ​​អេក្រង់​ពេញ​</translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsInput</name>
+    <message>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished">គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
+    </message>
+    <message>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <translation type="unfinished">បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">នៅពេល​បានគូស​ធីក ក្ដារចុច​ត្រូ​វបាន​ចាប់យក​ដោយ​ស្វ័យ​ប្រវត្តិ​រាល់ពេល​ដែល​បង្អួច VM ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម ។ នៅពេល​ក្ដារចុច​ត្រូវ​បាន​ចាប់យក  keystrokes (រួម​មាន​ប្រព័ន្ធ​​មួយ ដូចជា ជំនួស(Alt)-ថេប(Tab)) ត្រូវ​បាន​បញ្ជូន​ទៅ​កាន់ VM ។</translation>
+    </message>
+    <message>
+        <source>&amp;Auto Capture Keyboard</source>
+        <translation type="unfinished">ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsLanguage</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation> (ជាប់)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;មិនអាច​ប្រើបាន&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;មិនស្គាល់&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>លំនាំដើម</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>ភាសា ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language:</source>
+        <translation>ភាសា​ចំណុច​ប្រទាក់ ៖</translation>
+    </message>
+    <message>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation>រាយ​ភាសា​ចំណុច​ប្រទាក់​អ្នក​ប្រើ​ដែល​អាច​ប្រើ​បាន ។ ភាសា​ដែល​មានប្រសិទ្ធភាព​ត្រូវ​បាន​សរសេរ​ &lt;b&gt;ដិត&lt;/b&gt; ។ ជ្រើស &lt;i&gt;លំនាំដើម&lt;/i&gt; ដើម្បី​កំណត់​ភាសា​លំនាំដើម​របស់​ប្រព័ន្ធ​ឡើង​វិញ ។</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Id</source>
+        <translation>លេខសម្គាល់</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>ភាសា</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>អ្នកនិពន្ធ</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>អ្នកនិពន្ធ ៖</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetwork</name>
+    <message>
+        <source>%1 network</source>
+        <comment>
+
+
+&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1 បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>អាសយដ្ឋាន IPv4 ម៉ាស៊ីន​របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ</translation>
+    </message>
+    <message>
+        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>របាំង​បណ្ដាញ​ម៉ាស៊ីន IPv4 របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវទេ</translation>
+    </message>
+    <message>
+        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន IPv6 របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
+    </message>
+    <message>
+        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ DHCP របស់&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
+    </message>
+    <message>
+        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>របាំង​បណ្ដាញ​ម៉ាស៊ីន​បម្រើ DHCP​ របស់&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវទេ</translation>
+    </message>
+    <message>
+        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>ដែន​អាសយដ្ឋាន​ទាប​របស់ DHCP នៃ&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
+    </message>
+    <message>
+        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>ដែន​អាសយដ្ឋាន​ខ្ពស់​របស់ DHCP នៃ&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation>អាដាប់​ទ័រ</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>
+
+
+
+interface</comment>
+        <translation type="obsolete">បាន​កំណត់​រចនាសម្ព័ន្ធ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>
+
+
+
+interface</comment>
+        <translation type="obsolete">បាន​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ​</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation>អាសយ​ដ្ឋាន IPv4​</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>
+
+
+
+address</comment>
+        <translation type="obsolete">មិន​បាន​​កំណត់​</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation>របាំង​បណ្តាញ​ IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>
+
+
+
+mask</comment>
+        <translation type="obsolete">មិនបាន​​កំណត់​</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation>អាសយ​ដ្ឋាន​ IPv6</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation>ប្រវែង​របាំង​បណ្តាញ​ IPv6</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>
+
+
+
+length</comment>
+        <translation type="obsolete">មិន​បាន​​កំណត់​</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>ម៉ាស៊ីន​បម្រើ​ DHCP</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>
+
+
+
+server</comment>
+        <translation type="obsolete">បាន​បើក</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>
+
+
+
+server</comment>
+        <translation type="obsolete">​បាន​បើក</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>អាសយដ្ឋាន​</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation>របាំង​បណ្តាញ​</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation>ព្រំ​ដែន​ទាប​​</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>
+
+
+
+bound</comment>
+        <translation type="obsolete">មិន​បាន​កំណត់​</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation>ព្រំ​ដែន​ខ្ពស់​</translation>
+    </message>
+    <message>
+        <source>&amp;Add host-only network</source>
+        <translation>សម្រាប់​តែ​បណ្ដាញ​ម៉ាស៊ីនប៉ុណ្ណោះ</translation>
+    </message>
+    <message>
+        <source>&amp;Remove host-only network</source>
+        <translation>យក​បណ្ដាញ​ម៉ាស៊ីន​ចេញ​ប៉ុណ្ណោះ</translation>
+    </message>
+    <message>
+        <source>&amp;Edit host-only network</source>
+        <translation>កែសម្រួល​បណ្ដាញម៉ាស៊ីន​ប៉ុណ្ណោះ​</translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>
+
+
+
+creating/removing host-only network</comment>
+        <translation type="obsolete">ការ​អនុវត្ត​</translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks:</source>
+        <translation>បណ្ដាញ​ម៉ាស៊ីន​ប៉ុណ្ណោះ ៖</translation>
+    </message>
+    <message>
+        <source>Lists all available host-only networks.</source>
+        <translation>រាយ​បណ្ដាញ​ម៉ាស៊ីន​ដែលអាច​ប្រើបាន ។</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>%1 network</source>
+        <comment>&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1 បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">បាន​កំណត់​រចនាសម្ព័ន្ធ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">បាន​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ​</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>creating/removing host-only network</comment>
+        <translation type="obsolete">ការ​អនុវត្ត​</translation>
+    </message>
+    <message>
+        <source>New Host-Only Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetails</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>សេច​ក្តី​លម្អិត​បណ្តាញ​​ម៉ាស៊ីន​</translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation>អាដាប់ទ័រ</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation>ការ​កំណត់​រចនា​សម្ព័ន្ធ​ដោយ​ដៃ​</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation>ប្រើ​ការ​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ ​សម្រាប់​​​អាដាប់​ទ័រ​​បណ្តាញ​ម៉ាស៊ីន​​-តែ​​មួយ​នេះ​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation>អា​សយ​ដ្ឋាន​ IPv4 ៖</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation>បង្ហាញ​អា​សយ​ដ្ឋាន​​ម៉ាស៊ីន​ IPv4 សម្រាប់​​អាដាប់​ទ័រ​​នេះ​ ។</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation>របាំង​បណ្តាញ​ IPv4 ៖</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation>បង្ហាញ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv4 សម្រាប់​អាដាប់​ទ័រ​នេះ​ ។</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation>អាសយដ្ឋាន​ IPv6 ៖</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation>បង្ហាញ​​អា​សយដ្ឋាន​ម៉ាស៊ីន​ IPv6 សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ ។</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation>ប្រ​វែង​របាំង​បណ្តាញ​ IPv6 ៖</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation>បង្ហាញ​ប្រ​វែង​​បុព្វបទ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv6​ សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation>ម៉ាស៊ីន​បម្រើ​ DHCP</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>បើក​ម៉ាស៊ីន​បម្រើ​</translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation>បង្ហាញ​​ថា​តើ​ម៉ា​ស៊ីន​បម្រើ​​ DHCP ត្រូវ​បាន​បើក​នៅពេល​ចាប់ផ្ដើម​ដែរ​ឬទេ ។</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ​ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>បង្ហាញ​អាសយដ្ឋាន​បម្រើ​ម៉ាស៊ីន​​របស់​ DHCP ដែល​ភ្ជាប់​​បណ្តាញ​ជាមួយ​កម្ម​វិធី​សម្រួល​​ម៉ាស៊ីន​​-តែ​មួយនេះ​​ ។</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation>របាំង​ម៉ា​ស៊ីនបម្រើ​ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>បង្ហាញ​របាំង​បណ្តាញ​​សេវា​​បម្រើ​ម៉ា​ស៊ីន​របស់​ DHCP ដែល​ភ្ជាប់​​​ជា​មួយ​កម្ម​វិធី​សម្រួល​ម៉ា​ស៊ីន​​-​តែ​មួយ​នេះ​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation>ព្រំ​ដែន​អា​សយ​ដ្ឋាន​ទាប​ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>បង្ហាញ​ព្រំដែន​អាសយដ្ឋានទាប​ដែល​បានផ្ដល់ដោយ​សេវា​ម៉ាស៊ីន​បម្រើ DHCP ដែល​បានភ្ជាប់​ជា​មួយនឹងកម្មវិធី​សម្រួល​ម៉ាស៊ីន​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation>ព្រំដែន​អា​សយដ្ឋានខ្ពស់​ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>បង្ហាញ​ព្រំដែន​អាសយដ្ឋាន​ខ្ពស់​ដែលបានផ្ដល់​ដោយ​ម៉ាស៊ីន​បម្រើ DHCP ដោយ​ផ្ដល់​សេវា​បណ្ដាញ​ភ្ជាប់​ជា​មួយ​នឹង​អាដាប់ទ័រ​ម៉ាស៊ីន​ ។</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsUpdate</name>
+    <message>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
+        <translation>នៅពេល​បាន​គូសធីក កម្មវិធី​នឹង​តភ្ជាប់​ទៅ​កាន់តំបន់បណ្ដាញ VirtualBox តាម​កាល​កំណត់ ហើយ​ពិនិត្យ​មើល​ថាតើ​មានកំណែ VirtualBox ដែរឬទេ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Check for updates</source>
+        <translation>ពិនិត្យ​មើល​ភាព​ទាន់សម័យ</translation>
+    </message>
+    <message>
+        <source>&amp;Once per:</source>
+        <translation>ម្ដង​ក្នុង ៖</translation>
+    </message>
+    <message>
+        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
+        <translation>បញ្ជាក់​វិធី​ដែល​កំណែ​ថ្មី​ពិនិត្យ​មើល​គួរ​ត្រូវ​បាន​អនុវត្ត​ ។ ចំណាំថា ប្រសិនបើ​ង្នក​ចង់​បញ្ចប់ បិទ​ការ​ពិនិត្យនេះ គ្រាន់តែ​ជម្រះ​ប្រអប់​គូស​ធីក​ខាង​លើ ។</translation>
+    </message>
+    <message>
+        <source>Next Check:</source>
+        <translation>ការ​ពិនិត្យ​មើល​បន្ទាប់ ៖</translation>
+    </message>
+    <message>
+        <source>Check for:</source>
+        <translation>ពិនិត្យ​មើល ៖</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិនបើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ភាព​ទាន់សម័យ​ស្ថិតស្ថេរ​ដល់ VirtualBox ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation>កំណែ​ចេញ​ផ្សាយ​ស្ថិតស្ថេរ​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិន​បើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ការ​ចេញផ្សាយ​ VirtualBox ថ្មី ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation>ការ​ចេញផ្សាយ​ថ្មី​ទាំងអស់​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ជ្រើស​វាដើម្បី​ឲ្យ​ជូន​ដំណឹង​អំពី​​កំណែ​​ចេញផ្សាយ​​​របស់ VirtualBox និង​និងចេញ​ផ្សាយ​មុន​របស់ VirtualBox ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation>ការ​ចេញ​ផ្សាយ​ថ្មី និង​ចេញ​ផ្សាយ​មុន​ទាំងអស់</translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">ជំនួយ</translation>
     </message>
 </context>
 <context>
@@ -1307,11 +2259,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>បង្ហាញ​ថាតើ​ការ​បង្ហាញ​ពី​ចម្ងាយ (ម៉ាស៊ីន​បម្រើ VRDP) ត្រូវ​បានបើក (&lt;img src=:/vrdp_16px.png/&gt;) ឬ​អត់ (&lt;img src=:/vrdp_disabled_16px.png/&gt;) ។</translation>
+        <translation type="obsolete">បង្ហាញ​ថាតើ​ការ​បង្ហាញ​ពី​ចម្ងាយ (ម៉ាស៊ីន​បម្រើ VRDP) ត្រូវ​បានបើក (&lt;img src=:/vrdp_16px.png/&gt;) ឬ​អត់ (&lt;img src=:/vrdp_disabled_16px.png/&gt;) ។</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;ម៉ាស៊ីន​បម្រើ VRDP កំពុង​ស្ដាប់​ច្រក %1</translation>
+        <translation type="obsolete">&lt;hr&gt;ម៉ាស៊ីន​បម្រើ VRDP កំពុង​ស្ដាប់​ច្រក %1</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1330,6 +2282,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>បង្ហាញ​ថាតើ​ក្ដារចុច​ត្រូវ​បានចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ (&lt;img src=:/hostkey_captured_16px.png/&gt;) ឬ​មិនមែន (&lt;img src=:/hostkey_16px.png/&gt;) ។</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1389,6 +2349,1325 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>គ្មាន​ឧបករណ៍​ដែលបានគាំទ្រ​ទេ​ បានភ្ជាប់​ទៅកាន់​ម៉ាស៊ីន​ទេ</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsAudio</name>
+    <message>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក កាត​អូឌីយ៉ូ PCI និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ​ដែល​ប្រើ​កម្មវិធី​បញ្ជា​ដែល​បានបញ្ជាក់​ទាក់ទង​ទៅ​កាត​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Audio</source>
+        <translation>បើក​អូឌីយ៉ូ</translation>
+    </message>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation>កម្មវិធី​បញ្ជា​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ៖</translation>
+    </message>
+    <message>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation>ត្រួតពិនិត្យ​កម្មវិធី​បញ្ជា​លទ្ធផល​អូឌីយ៉ូ ។ &lt;b&gt;គ្មាន​កម្មវិធី​បញ្ជា​អូឌីយ៉ូ&lt;/b&gt; ធ្វើ​ឲ្យ​ម៉ាស៊ីន​ភ្ញៀវ​ឃើញ​កាត​អូឌីយ៉ូ ទោះ​ជា​យ៉ាង​ណា​រាល់​ពេល​ចូលដំណើរការ​វា​នឹង​ត្រូ​វបាន​មិនអើពើ ។</translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation>វត្ថុ​បញ្ជា​អូឌីយ៉ូ ៖</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>ជ្រើស​ប្រភេទ​កាត​សំឡេង​និម្មិត ។ ដោយ​អាស្រ័យ​លើ​តម្លៃនេះ VirtualBox នឹ​ងផ្ដល់​នូវ​ផ្នែក​រឹង​អូឌីយ៉ូ​ផ្សេងៗ​គ្នា​ដល់​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation>អ្នកបានផ្ដល់​សតិវីដេអូតិច​ជាង &lt;b&gt;%1&lt;/b&gt; ដែល​ជា​ចំនួន​អប្បបរមាដែលបានទាមទារ​ដើម្បី​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅរបៀប​​ពេញអេក្រង់ ឬ​ពង្រីក ។</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation>អ្នក​បានផ្ដល់​សតិ​វីដេអូតិច​ជាង &lt;b&gt;%1&lt;/b&gt; ដែលជា​ចំនួន​អប្បបរមា​សម្រាប់​វីដេអូ HD ដើម្បីចាក់​ឲ្យ​មាន​ប្រសិទ្ធភាព ។</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation>វីដេអូ​</translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation>សតិ​វីដេអូ​ ៖</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​វីដេ​អូ​​ដែល​បានផ្ដល់​ឲ្យ​​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>លក្ខណសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​​អាច​រក​បាន​​នៅ​លើ​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation>បើក​ការបង្កើន​ល្បឿន​ត្រីមាត្រ​</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation>នៅ​ពេល​ដែល​បាន​គូស​ធីក​ ម៉ាស៊ីន​​និម្មិត​​នឹង​ចូល​ដំណើរ​ការ​សមត្ថ​ភាព​​បង្កើនល្បឿន​វីដេអូ​ដែល​អាច​ប្រើ​​បាន​​លើម៉ាស៊ីន​ ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation>បើក​ការ​បង្កើន​ល្បឿន​ទ្វេមាត្រ</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>កា​របង្ហាញ​ពី​ចម្ងាយ​</translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក VM នឹង​ដើរតួ​ជា​ម៉ាស៊ីន​បម្រើ​ពិធីការ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ដោយ​អនុញ្ញាត​ឲ្យ​ម៉ាស៊ីនភ្ញៀវ​ពី​ចម្ងាយ​តភ្ជាប់​ និង​ប្រតិបត្តិ​ VM (នៅ​ពេល​កំពុង​រត់) ដោយ​ប្រើ​ម៉ាស៊ីន​ភ្ញៀវ RDP ស្តង់ដារ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>បើក​ម៉ាស៊ីនបម្រើ​</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation>ច្រក​ម៉ាស៊ីនបម្រើ ៖</translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation>លេខ​​ច្រក​ម៉ាស៊ីន​​បម្រើ​ VRDP ។ អ្នក​អាច​បញ្ជាក់​​ &lt;tt&gt;0&lt;/tt&gt; (សូន្យ​) ដើម្បី​ជ្រើស​ច្រក​ ៣៣៨៩ ច្រក​ស្តង់​ដារ​សម្រាប់​ RDP ។</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation>វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation>កំណត់​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ។</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation>អស់ពេល​ក្នុងការ​​​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation>បញ្ជាក់​ការ​អស់ពេល ​សម្រាប់​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ គិត​​ជា​មិល្លី​វិនាទី ។</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsGeneral</name>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Basic</source>
+        <translation>មូលដ្ឋាន</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>ឈ្មោះ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the name of the virtual machine.</source>
+        <translation>បង្ហាញ​ឈ្មោះ​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>&amp;Advanced</source>
+        <translation>កម្រិតខ្ពស់</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard:</source>
+        <translation>ក្ដារតម្បៀតខ្ទាស់​ដែល​បាន​ចែករំលែក ៖</translation>
+    </message>
+    <message>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>កំណត់​របៀប​ចែករំលែក​ក្ដារតម្បៀតខ្ទាស់​រវាង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ និង​របស់ម៉ាស៊ីន ។ ចំណាំ​ថា លក្ខណៈពិសេស​នេះ​តម្រូវ​ឲ្យ​ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​ក្នុង​ប្រព័ន្ធប្រតិបត្តិការ​របស់​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder:</source>
+        <translation>ថត​រូបថត ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation>សេចក្ដី​ពិពណ៌នា</translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation>បង្ហាញ​សេចក្ដីពិពណ៌នា​របស់ម៉ាស៊ីន​និម្មិត ។ វាល​សេចក្ដី​ពិពន៌នា​មានប្រយោជន៍​សម្រាប់​ផ្ដល់​យោបល់​អំពី​សេចក្ដី​លម្អិត​កំណត់​រចនាសម្ព័ន្ធ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បាន​ដំឡើង ។</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation>ប្រសិនបើបាន​គូស​ធីក ការ​ផ្លាស់ប្ដូរ​ទៅ​មេឌៀ​ថាសទន់ ឬ​ស៊ីឌី/ឌីវីឌី​ដែល​បានម៉ោន​ បាន អនុវត្ត​កំឡុង​ពេល​​ប្រតិបត្តិការ​ម៉ាស៊ីន នឹង​ត្រូវ​បាន​រក្សាទុក​ក្នុង​ឯកសារ​កំណត់​ ដើម្បី​បម្រុង​ទុក​នូវ​ការ​កំណត់​រចនាសម្ព័ន្ធ​របស់​មេឌៀ​ដែល​បានម៉ោន​​ចន្លោះ​ពេល​រត់ ។</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation>មេឌៀ​ចល័ត ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation>ចង់​ចាំ​ការផ្លាស់​ប្តូរ​ពេល​ដំណើរ​ការ​</translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation>របារ​ឧបករណ៍​តូច​ ៖</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation>​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>បង្ហាញ​កំពូល​​អេក្រង់​</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetwork</name>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation>នៅពេល​គូស​ធីក ដោត​អាដាប់ទ័រ​បណ្ដាញ​និម្មិត​ទៅ​ក្នុងម៉ាស៊ីន​នកម្មិត ។</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Network Adapter</source>
+        <translation>បើក​អាដាប់ទ័រ​បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>ជ្រើស​ប្រភេទ​អាដាប់ទ័រ​បណ្ដាញ​និម្មិត ។ អាស្រ័យ​លើ​តម្លៃ​នេះ VirtualBox នឹង​ផ្ដល់​នូវ​ផ្នែករឹង​​បណ្ដាញ​ផ្សេង​ទៅ​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation>បាន​ភ្ជាប់​ទៅ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation>បង្ហាញ​អាសយដ្ឋាន MAC របស់​អាដាប់ទ័រ​នេះ ។ វា​មាន​តួអក្សរ​យ៉ាង​ជាក់លាក់​ចំនួន​ ១២ ដែល​បាន​ជ្រើស​ពី {0-9,A-F} ។ ចំណាំ​ថា​តួអក្សរ​ទីពីរ​ត្រូវ​តែ​ជា​​តួលេខ​គូ ។</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation>បង្កើត​អាសយដ្ឋាន MAC ចៃដន្យ​ថ្មី ។</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation>បង្ហាញ​ថាតើ​ខ្សែ​បណ្ដាញ​និម្មិត​ត្រូ​វបានដោត​​នៅពេល​ម៉ាស៊ីន​ចាប់ផ្ដើម​ ឬ​ក៏អត់ ។</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation>មិន​​​មាន​អាដាប់​ទ័រ​បណ្តាញប្រ៊ីដ្យ​ត្រូវ​បានជ្រើស​រើស​ទេ​</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation>មិនមាន​ឈ្មោះ​បណ្ដាញ​ខាង​ក្នុង​ត្រូវ​បានបញ្ជាក់ទេ</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation>មិនមាន​អាដាប់ទំព័រ​ម៉ាស៊ីន​ត្រូវ​បាន​ជ្រើស​ទេ</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>
+
+network adapter name</comment>
+        <translation type="obsolete">មិន​​បាន​ជ្រើស​ឡើយ​</translation>
+    </message>
+    <message>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation>ត្រួតពិនិត្យ​វិធី​ដែល​អាដាប់ទ័រ​និម្មិត​នេះ​ត្រូវ​បាន​ភ្ជាប់​ទៅ​បណ្ដាញ​ពិតប្រាកដ​​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>ឈ្មោះ ៖</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
+        <translation>ជ្រើស​ឈ្មោះ​អាដាប់ទ័រ​បណ្ដាញ​សម្រាប់ &lt;b&gt;អាដាប់ទ័រ​ប្រ៊ីដ្យ&lt;/b&gt; ឬ &lt;b&gt;អាដាប់ទ័រម៉ាស៊ីន&lt;/b&gt; ការ​ភ្ជាប់ និង​ឈ្មោះ​​របស់​បណ្ដាញ ការ​ភ្ជាប់&lt;b&gt;បណ្ដាញ​ខាង​ក្នុង&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation>កម្រិត​ខ្ពស់​</translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation>បង្ហាញ​ ឬ​លាក់​ជម្រើស​អាដាប់ទ័រ​បណ្ដាញ​បន្ថែម ។</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>ប្រភេទ​អាដាប់​ទ័រ​ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation>អាសយដ្ឋាន Mac ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation> បាន​តភ្ជាប់​ខ្សែ​</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">មិន​​បាន​ជ្រើស​ឡើយ​</translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation>ច្រក %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក បើក​ច្រក​ប៉ារ៉ាឡែល​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation>បើក​ច្រក​ស្រប</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>លេខ​ច្រក ៖</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>បង្ហាញលេចច្រក​ប៉ារ៉ាឡែល ។ អ្នកអាចជ្រើស​ច្រក​មួយ​ក្នុងចំណោម​ច្រក​ប៉ារ៉ាឡែល​ជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ញាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយ​ដៃ ។</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>IRQ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>បង្ហាញលេខ IRQ របស​ច្រក​ប៉ារ៉ាឡែល​នេះ ។ តម្លៃ​ត្រឹមត្រូវ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​ក្នុងជួរពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូវ​បានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូ​វបានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត​នេះ​ប៉ុណ្ណោះ ។</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>ច្រក I/O ៖</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>បង្ហាញអាសយដ្ឋាន​ច្រក​ I/O មូលដ្ឋាន ។ តម្លៃដែល​ត្រឹមត្រូវ​គឺ​ធំជាង​ចំនួន​ដែល​ស្ថិត​ក្នុងជួរ​ពី &lt;tt&gt;0&lt;/tt&gt;ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation>ផ្លូវ​ច្រក ៖</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation>បង្ហាញ​ឈ្មោះ​ឧបករណ៍​ស្រប​គ្នា​​របស់​ម៉ាស៊ីន ។</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallelPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>បាន​ជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>មិន​បាន​បញ្ជាក់ផ្លូវ​ច្រក​ទេ</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSF</name>
+    <message>
+        <source>Adds a new shared folder definition.</source>
+        <translation>បន្ថែម​កា​រកំណត់​ថត​ដែលបានចែករំលែកថ្មី ។</translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation>កែសម្រួល​កា​រកំណត់​ថត​ដែល​បានចែករំលែក​ដែល​បានជ្រើស ។</translation>
+    </message>
+    <message>
+        <source>Removes the selected shared folder definition.</source>
+        <translation>យក​កា​រកំណត់​ថត​ដែលបានចែករំលែក​ដែល​បានជ្រើ​សចេញ</translation>
+    </message>
+    <message>
+        <source> Machine Folders</source>
+        <translation> ថត​ម៉ាស៊ីន</translation>
+    </message>
+    <message>
+        <source> Transient Folders</source>
+        <translation> ថត​បណ្ដោះអាសន្ន</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>ពេញលេញ</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>បាន​តែ​អាន</translation>
+    </message>
+    <message>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation>រាយ​ថត​ដែល​បានចែករំលែក​ទាំង​អស់​ដែល​អាច​ចូលដំណើរការ​បានទៅ​ម៉ាស៊ីន​នេះ ។ ប្រើ​ &apos;net ប្រើ x: \\vboxsvr\share&apos; ដើម្បី​ចូលដំណើរការ​ថត​ដែល​បានចែករំលែក​ដែលមាន​ឈ្មោះ &lt;i&gt;ចែករំលែក&lt;/i&gt; ពីប្រព័ន្ធ​ប្រតិបត្តិការ​ដូចនឹង DOS ដែរ ឬ​ &apos;mount -t vboxsf share mount_point&apos; ដើម្បីចូលដំណើរការ​វា​ពី​ប្រព័ន្ធ​ប្រតិបត្តិការ​លីនុច ។ លក្ខណៈពិសេស​នេះ​ត្រូវការ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation>ផ្លូវ</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>ចូលដំណើរការ</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="obsolete"> ថត​សកល​</translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation>បន្ថែម​ថត​ដែល​បាន​ចែករំលែក​</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation>កែសម្រួល​ថត​ដែលបានចែករំលែក​</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation>យក​ថត​ដែលបានចែករំលែក​ចេញ​</translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation>បញ្ជី​ថត​</translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">បាទ/ចាស</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSFDetails</name>
+    <message>
+        <source>Add Share</source>
+        <translation>បន្ថែម​ការ​ចែករំលែក</translation>
+    </message>
+    <message>
+        <source>Edit Share</source>
+        <translation>កែសម្រួល​ការ​ចែករំលែក</translation>
+    </message>
+    <message>
+        <source>Dialog</source>
+        <translation>ប្រអប់</translation>
+    </message>
+    <message>
+        <source>Folder Path:</source>
+        <translation>ផ្លូវ​ថត ៖</translation>
+    </message>
+    <message>
+        <source>Folder Name:</source>
+        <translation>ឈ្មោះ​ថត ៖</translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation>បង្ហាញ​ឈ្មោះ​របស់​ថត​ដែលបានចែករំលែក (ព្រោះថា​វា​នឹង​ត្រូវ​បានឃើញ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>នៅពេល​បានគូសធីក ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិនអាច​សរសេរ​ទៅកាន​ថត​ដែល​បានចែករំលែក​​ដែល​បាន​បញ្ជាក់​ទេ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>បានតែ​អាន</translation>
+    </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation>ធ្វើ​ឲ្យ​អចិន្ត្រៃយ៍</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation>ច្រក %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation>នៅពេល​គូសធីក បើក​ច្រក​ស៊េរី​ដែល​បានផ្ដល់​របស់ម៉ាស៊ីននិម្មិត ។</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation>បើក​ច្រក​ស៊េរី</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>លេខ​ច្រក ៖</translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>បង្ហាញលេខ​ច្រក​ស៊េរៀល ។ អ្នកអាច​ជ្រើ​ស​ច្រក​ស៊េរៀល​ស្តង់ដារ​មួយ​ក្នុងចំណោម​ច្រកជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ជាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយដៃ ។</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>IRQ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>បង្ហាញ​លេខ IRQ របស់​ច្រក​ស៊េរៀល​នេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​នៅ​ក្នុង​ចន្លោះ​ពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង​ &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូ​វបានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូវ​បានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>ច្រក​ I/O ៖</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>បង្ហាញ​អាសយដ្ឋាន​ច្រក I/O មូលដ្ឋាន​របស់​ច្រក​ស៊េរៀលនេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​ដែល​ស្ថិត​ក្នុង​ចន្លោះពី &lt;tt&gt;0&lt;/tt&gt; ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode:</source>
+        <translation>របៀប​ច្រក ៖</translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation>ពិនិត្យ​មើល​របៀប​ដំណើរការ​របស់​ច្រក​ស៊េរៀល ។ ប្រសិនបើ​អ្នក​ជ្រើស​ &lt;b&gt;បានផ្ដាច់&lt;/b&gt; ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​រកឃើញ​ច្រក​ស៊េរៀល​ ប៉ុន្តែ​នឹង​មិន​អាច​ប្រតិបត្តិ​វា​បានទេ ។</translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
+        <translation>ប្រសិន​បើ​បានគូស​ធីក បំពង់​បាន​បញ្ជាក់​នៅ​ក្នុងវាល &lt;b&gt;ផ្លូវ​ច្រក&lt;/b&gt; នឹង​ត្រូវ​បាន​បង្កើត​ដោយ​​ម៉ាស៊ីន​និម្មិត នៅពេល​វា​ចាប់ផ្ដើម ។ បើ​មិន​ដូច្នេះ​ទេ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រើ​បំពង់​ដែល​បានស្រាប់ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation>បង្កើត​បំពង់</translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation>បង្ហាញ​ផ្លូវ​ទៅកាន់​ច្រក​ស៊េរៀល​នៅ​លើ​ម៉ាស៊ីន នៅពេល​ច្រក​ដំណើការ​ក្នុង​របៀប &lt;b&gt;បំពង់​ម៉ាស៊ីន&lt;/b&gt; ឬ​ឈ្មោះ​ឧបករណ៍​ស៊េរៀល​នៅពេល​ច្រក​ដំណើរការ​ក្នុង​របៀប &lt;b&gt;ឧបករណ៍​ម៉ាស៊ីន&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation>ផ្លូវ​ ច្រក​​/ឯកសារ​ ៖</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerialPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>បានជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>មិនបានបញ្ជាក់​ផ្លូវ​ច្រក​ស្ទួន​ទេ</translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsStorage</name>
+    <message>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
+        <translation type="obsolete">ប្រសិនបើ​បានគូសធីគ វា​នឹង​បង្ហាញ​ថាសរឹង​ផ្សេងៗ​ដែល​បានភ្ជាប់​ទៅ​រន្ធ​ជំនួស​ឲ្យ​ថាសរឹង​មូលដ្ឋាន​​របស់​ពួកវា (បង្ហាញតែ​ក្នុងករណី​ដែល​មានការ​ភ្ជាប់​ដោយ​ប្រយោល​ប៉ុណ្ណោះ) ហើយ​នឹង​អនុញ្ញាត​ឲ្យ​ភ្ជាប់​ថាសរឹង​ផ្សេងៗ​ផងដែរ ។ គូស​ធីក​តែ​ក្នុងករណី​ដែល​អ្នក​ត្រូវការ​ការ​រៀបចំ​ថាសរឹង​ស្មុគស្មាញ​ប៉ុណ្ណោះ ។</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;​ខ្សែ​បញ្ជួន​ ៖ &amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ប្រភេទ​ ៖&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;ពង្រីក​​/​វេញ&amp;nbsp; ធាតុ​&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;បន្ថែម&amp;nbsp;ថាសរឹង&amp;nbsp;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;បន្ថែម​ឧបករណ៍&amp;nbsp;ស៊ីឌី/ឌីវឌី&amp;nbsp;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;បន្ថែម​ឧបករណ៍&amp;nbsp;ថាសទន់&amp;nbsp;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation>មិន​មាន​ថាស​រឹង​​ត្រូវ​បាន​ជ្រើស​​សម្រាប់&lt;i&gt;%1&lt;/i&gt; នោះ​ទេ ។</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation>&lt;i&gt;%1&lt;/i&gt;ប្រើខ្នាត​​មធ្យម​ដែល​ភ្ជាប់​ទៅ​កាន់&lt;i&gt;%2&lt;/i&gt;រួច​ហើយ​​​ ។</translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation>បន្ថែម​ឧបករណ៍​បញ្ជា​</translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation>បន្ថែម​វត្ថុ​បញ្ជា IDE</translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation>បន្ថែម​វត្ថុ​បញ្ជា SATA</translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation>បន្ថែម​វត្ថុ​បញ្ជា​ SCSI</translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation>បន្ថែម​ឧបករណ៍​បញ្ជា​ថាសទន់​</translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation>យក​វត្ថុ​បញ្ជា​ចេញ​</translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation>បន្ថែម​ឯកសារ​ភ្ជាប់​</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation>បន្ថែម​ថាស​រឹង​</translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation>បន្ថែម​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation>បន្ថែម​ឧបករណ៍​ថាស​ទន់​</translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation>យក​ឯកសារ​ភ្ជាប់​ចេញ​</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation>បន្ថែម​វត្ថុ​បញ្ជា​ថ្មី​ទៅ​ចុង​មែកធាង​ផ្ទុក ។</translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation>យក​ឧបករណ៍​បញ្ជា​ដែលបានបន្លិច​ចេញ​នៅ​ក្នុង​មែកធាង​ផ្ទុក ។</translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation>បន្ថែម​ឯកសារ​ភ្ជាប់ថ្មី​ទៅ​​មែក​ធាង​ផ្ទុក ដោយ​ប្រើ​​កម្មវិធីបញ្ជាដែលបានជ្រើស​ជា​មេ​ ។</translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation>យក​ឯកសារ​ភ្ជាប់​ដែល​បាន​បន្លិច​ចេញ​នៅ​ក្នុង​មែកធាង​ផ្ទុក ។</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation>ឧបករណ៍​បញ្ជា​ IDE</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation>ឧបករណ៍​បញ្ជា​ SATA</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation>ឧបករណ៍​​​បញ្ជា​ SCSI</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation>ឧបករណ៍​បញ្ជា​ថាស​ទន់​</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation>ថាស​រឹង​ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="obsolete">ឧបករណ៍​​ស៊ី​ឌី​​/ឌីវីឌី ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="obsolete">ឧបករណ៍ថាសទន់ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation>មែក​ធាង​ផ្ទុក​</translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation>មាន​ឧបករណ៍​បញ្ជា​ផ្ទុក​ទាំង​អស់​សម្រាប់​ម៉ាស៊ី​ននេះ​ និង​រូប​ភាព​និម្មិត​ និងដ្រាយ​​ម៉ាស៊ីន​ដែល​បាន​​ភ្ជាប់​​ទៅកាន់​ពួកវា ។</translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation>​ព័ត៌​មាន​</translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation>មែក​ធាង​ផ្ទុក​អាច​មាន​ឧបករណ៍​បញ្ជា​​​បី​ បួន​​​​ប្រ​ភេទ​ខុសៗ​គ្នា​ ។ ម៉ាស៊ីន​បច្ចុប្បន្ន​នេះ មិន​មាន​ឧបករណ៍​បញ្ជា​ឡើយ​ ។</translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation>គុណ​លក្ខណៈ</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>ឈ្មោះ ៖</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation>ប្តូរ​ឈ្មោះ​របស់​ឧបករណ៍​បញ្ជា​ផ្ទុក ​បច្ចុប្បន្ន​ដែល​បានជ្រើស​ក្នុ​ងមែក​ធាង​ផ្ទុក ។</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation>ប្រភេទ ៖</translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation>​ជ្រើស​ប្រ​ភេទ​រង​​របស់​ឧបករណ៍​បញ្ជា​ផ្ទុក​បច្ចុប្បន្ន​ដែល​បាន​ជ្រើស​ក្នុ​ង​មែក​ធាង​ផ្ទុក ។</translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="obsolete">រន្ធ ៖</translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation>ជ្រើស​រន្ធ​លើ​ឧបករណ៍​បញ្ជា​ផ្ទុក ​ដែល​បាន​ប្រើ​ដោយ​ឯកសារ​ភ្ជាប់​នេះ​ ។​ ​រន្ធ​ដែលអាចរកបានអាស្រ័យ​​លើ​ប្រ​ភេទ​របស់​ឧបករណ៍បញ្ជា​ និង​ឯកសារ​ភ្ជាប់​​​​លើ​វាផ្សេង​ទៀត​​ ។</translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="obsolete">ជ្រើស​រូប​ភាព​ថាស​​និម្មិត​ ឬ​ដ្រាយ​ម៉ាស៊ីន​ដែល​បាន​ប្រើ ​ដោយ​ឯក​សារ​ភ្ជាប់​នេះ​ ។</translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="obsolete">បើក​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ដើម្បី​ជ្រើស​រូបភាព​​និម្មិត​សម្រាប់​ឯកសារ​ភ្ជាប់​នេះ ។</translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="obsolete">បើក​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត​</translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="obsolete">ថាសផ្សេងៗ​គ្នា​</translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation>នៅ​ពេល​ដែល​បាន​ធីក​ អនុញ្ញាត​ម៉ាស៊ីន​ភ្ញៀវ​ផ្ញើពាក្យ​បញ្ជា​​ ATAPI ដោយ​ផ្ទាល់​​ទៅ​ដ្រាយ​ម៉ាស៊ីន ដែល​​​ធ្វើ​ឲ្យ​វា​អាច​ប្រើ​​ឧបករណ៍​​​សរសេរ​ស៊ី​ឌី​​/​ឌី​វី​ឌី​ ​ដែល​បាន​តភ្ជាប់​ទៅ​ម៉ាស៊ីន​នៅ​​ក្នុង​ VM ។ ចំណាំថា ​ការ​សរសេរស៊ីឌីអូឌីយ៉ូ​ខាង​ក្នុង​ VM មិន​ត្រូវ​បាន​គាំ​ទ្រ​នៅ​ឡើយ​ទេ​ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation>ហុចតាម​</translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation>ទំហំនិម្មិត​ ៖</translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation>ទំហំ​ពិត​ ៖</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>ទំហំ​ ៖</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>ទី​តាំង​ ៖</translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation>ប្រ​ភេទ​​ (ទ្រង់​ទ្រាយ​) ៖</translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation>បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual CD/DVD drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual floppy drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new hard disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove disk from virtual drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation>អ្នកបាន​ផ្ដល់សតិ​កុំព្យូទ័ររបស់​អ្នក​ច្រើនជាង &lt;b&gt;%1%&lt;/b&gt; (&lt;b&gt;%2&lt;/b&gt;) ដល់​ម៉ាស៊ីន​និម្មិត ។ មិនមាន​សតិ​គ្រប់គ្រាន់​នៅ​សល់​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ សូម​ជ្រើស​​ចំនួន​សតិ​តូច​ជាង​​នេះ ។</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation>អ្នក​បាន​ផ្ដល់​សតិ​កុំព្យូទ័រ​ច្រើន &lt;b&gt;%1%&lt;/b&gt; (&lt;b&gt;%2&lt;/b&gt;) ដល់​ម៉ាស៊ីន​និម្មិត ។ វា​ប្រហែលជា​មិន​គ្រប់គ្រាន់​​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ បន្ត​ដោយ​មានគ្រោះថ្នាក់ ។</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation>សម្រាប់​អនុវត្ត ចំនួន​ស៊ីភីយូ​ដែល​បាន​ភ្ជាប់​ទៅ​ម៉ាស៊ីន​មិន​អាច​លើស​ពី​​ចំនួន​ពីរ​នៃ​ស៊ីភីយូ​ហ្វីស៊ីខល​នៅ​លើ​ម៉ាស៊ីន (&lt;b&gt;%1&lt;/b&gt;) ។ សូម​កាត់​បន្ថយ​ចំនួន​ស៊ីភីយូ​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation>អ្នក​បានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើន​ដល់​ម៉ាស៊ីន​និម្មិត​ជាង​ចំនួន​ស៊ីភីយូ​ហ្វីស៊ីខល​នៅ​ក្នុង​ប្រព័ន្ធ​ម៉ាស៊ីន​របស់​អ្នក (&lt;b&gt;%1&lt;/b&gt;) ។ វា​ទំនង​ជា​បន្ថយ​ការ​អនុវត្ត​ម៉ាស៊ីននិម្មិត​របស់​អ្នក ។ សូម​ពិចារណា​លើការ​កាត់បន្ថយ​ចំនួន​ស៊ីភីយូ​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>អ្នកបានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើនជាង​ដល់ VM នេះ ។ វា​នឹង​មិន​ដំណើរការ​ទេ លុះត្រា​តែ​លក្ខណៈពិសេស​របស់ IO-APIC ត្រូវ​បានបើក ។ វា​នឹង​ត្រូវ​បាន​ធ្វើ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​អ្នក​ទទួល​យក​ការ​កំណត់ VM ដោយ​ចុច​ប៊ូតុង​យល់ព្រម ។</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>អ្នក​បានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើនជាង​មួយ​ដល់ VM ។ វា​នឹង​មិនដំណើរការ​ទេ លុះត្រា​តែ​ផ្នែក​រឹង​និម្មិត (VT-x/AMD-V) ត្រូវ​បានបើក​ដែរ ។ វា​នឹង​ត្រូវ​បានធ្វើ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​អ្នក​ទទួល​យក​ការ​កំណត់ VM ដោយ​ចុច​ប៊ូតុងយល់ព្រម ។</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>
+
+%1 is 1 for now</comment>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>
+
+%1 is host cpu count * 2 for now</comment>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ​&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation>បន្ទះ​មេ​</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation>សតិ​គោល​ ៖</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​ដែលបានផ្ដល់​ទៅ​ម៉ាស៊ីន​និម្មិត ។ ប្រសិនបើ​អ្នក​ផ្ដល់​ច្រើនពេក ម៉ាស៊ីន​មិនអាច​ចាប់ផ្ដើម​បានទេ ។</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation>លំដាប់​ចាប់ផ្ដើម ៖</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation>កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម​ឡើង ។ ប្រើ​ប្រអប់​ធីក​នៅ​ខាង​ឆ្វេង ដើម្បី​បើក ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើមឡើង ។ ផ្លាស់ទី​វា​ឡើង​លើ និង​ចុះក្រោម​ ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation>ផ្លាស់ទី​ឡើង​លើ (Ctrl-Up)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែលបាន​ជ្រើស​ឡើង​លើ ។</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation>ផ្លាស់ទី​ចុះក្រោម (Ctrl-Down)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បាន​ជ្រើស​ចុះក្រោម</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>លក្ខណៈ​ពិសេស​ដែល​បានពង្រីក ៖</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>នៅ​ពេល​បានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែលអាច​បន្ថយ​ការ​អនុវត្ត​បន្តិចបន្តួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ បន្ទាប់​ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​វីនដូ !</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation>បើក IO APIC</translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation>​នៅ​ពេល​​ដែលបាន​គូស​ធីក​ ម៉ាស៊ីន​ភ្ញៀវ​នឹង​គាំ​ទ្រ Extended Firmware Interface (EFI) ដែល​ត្រូវ​បាន​ទាម​ទារ​ដើម្បី​ចាប់ផ្ដើម​ប្រ​ព័ន្ធ​ប្រតិបត្តិ​​ការ​​ម៉ាស៊ីន​ភ្ញៀវពិត​ប្រាកដ ។​ ប្រ​ព័ន្ធ​ប្រតិបត្តិ​ការ​​ដែល​មិនមែន​ ​EFI ​​នឹង​មិនអាច​ទៅ​ចាប់ផ្តើម​​បាន​ទេ ​​ប្រ​សិន​បើ​ជម្រើស​ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម​ ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation>បើក EFI (តែ OSes ប៉ុណ្ណោះ)</translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation>ប្រ​ព័ន្ធ​ដំណើរ​ការ​</translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation>ប្រ​ព័ន្ធ​ដំណើរ​ការ​​ ៖</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="obsolete">ត្រួត​ពិនិត្យចំនួន​ស៊ីភីយូ​និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation>នៅពេល​បាន​គូស​ធីក លក្ខណៈពិសេស Physical Address Extension (PAE) របស់​ស៊ីភីយូ​​ម៉ាស៊ីន​នឹង​ត្រូវ​បានបង្ហាញ​​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation>បើក PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation>ការ​បង្កើន​ល្បឿន​</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation>ការ​ធ្វើ​ផ្នែក​រឹង​និម្មិត ៖</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation>នៅ​ពេលបាន​គូស​ធីក ម៉ាស៊ីននិម្មិត​នឹង​ព្យាយាម​ប្រាកដថា​ ការ​ប្រើ​ប្រាស់​ផ្នែកបន្ថែម​និម្មិត​ផ្នែក​រឹង​របស់​ស៊ីភីយូ ដូ​ចជា Intel VT-x និង AMD-V ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation>បើក VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation>នៅពេល​ដែលបានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រាកដ​ថា​ផ្នែក​បន្ថែម paging ខាង​ក្នុង​របស់ Intel VT-x និង AMD-V ។</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation>បើកការ​ដាក់​ទំព័រ​ក្នុង​</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ​&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Chipset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines chipset type used in this VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSB</name>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation>បន្ថែម​តម្រង​ទទេ</translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation>បន្ថែម​តម្រង​ពី​ឧបករណ៍</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Filter</source>
+        <translation>កែសម្រួល​តម្រង</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation>យក​តម្រង​ចេញ</translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation>ផ្លាស់ទី​តម្រង​ឡើង​លើ</translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation>ផ្លាស់ទី​តម្រង​ចុះក្រោម</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation>បន្ថែម​តម្រង USB ថ្មី​ដែលមាន​វាល​ទាំងអស់​ ដោយ​ដំបូង​កំណត់​ខ្សែអក្សរ​ទៅ​ទទេ ។ ចំណាំ​ថា តម្រង​បែប​នេះ​នឹង​ផ្គូផ្គង​ឧបករណ៍ USB ដែល​បាន​ភ្ជាប់ ។</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation>បន្ថែម​តម្រង USB ថ្មី​ដែល​មាន​វាល​ទាំងអស់​កំណត់​ទៅ​តម្លៃ​របស់​ឧបករណ៍​ USB ដែល​ជ្រើស​ដែលបានភ្ជាប់​ទៅ នឹង​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>Edits the selected USB filter.</source>
+        <translation>កែសម្រួល​តម្រង USB ដែល​បាន​ជ្រើស ។</translation>
+    </message>
+    <message>
+        <source>Removes the selected USB filter.</source>
+        <translation>យក​តម្រង USB ដែលបាន​ជ្រើស​ចេញ ។</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter up.</source>
+        <translation>ផ្លាស់ទី​តម្រង​ USB ដែលបាន​ជ្រើស​ឡើង​វលើ ។</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter down.</source>
+        <translation>ផ្លាស់ទី​តម្រង​ USB ដែលបាន​ជ្រើស​ចុះក្រោម ។</translation>
+    </message>
+    <message>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation>តម្រង​ថ្មី %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation>នៅពេល​បានគូសធីក បើក​ឧបករណ៍​ត្រួតពិនិត្យ​ USB និម្មិត​របស់ម៉ាស៊ីន​នេះ ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;USB Controller</source>
+        <translation>បើក​វត្ថុ​បញ្ជា USB</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>នៅពេល​បានគូស​ធីក បើក​ឧបករណ៍​ត្រួតពិនិត្យ​ USB EHCI និម្មិត​របស់​ម៉ាស៊ីន​នេះ ។ ឧបករណ៍​បញ្ជា USB EHCI ផ្ដល់​នូវ​ការ​គាំទ្រ USB 2.0 ។</translation>
+    </message>
+    <message>
+        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
+        <translation>បើក​វត្ថុ​បញ្ជា USB 2.0 (E&amp;HCI)</translation>
+    </message>
+    <message>
+        <source>USB Device &amp;Filters</source>
+        <translation>តម្រង​ឧបករណ៍ USB</translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
+        <translation>រាយ​តម្រង USB ទាំង​អស់​របស់ម៉ាស៊ីន​នេះ ។ ប្រអប់​ធីក​នៅ​ខាង​ឆ្វេ​ងកំណត់​ថាតើ​តម្រង​ជាក់លាក់​ត្រូ​វបើក​ ឬ​ក៏​អត់ ។ ប្រើម៉ឺនុយ​បរិបទ​ ឬ​ប៊ូតុង​នៅ​ខាង​ស្ដាំ​ដើម្បី​បន្ថែម ឬ​យក​តម្រង  USB ចេញ ។</translation>
+    </message>
+    <message>
+        <source>[filter]</source>
+        <translation>[តម្រង]</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;លេខ​សម្គាល់​អ្នក​លក់ ៖ %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;លេខសម្គាល់​ផលិតផល ៖ %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;កា​រពិនិត្យ​ឡើង​វិញ ៖ %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ផលិតផល ៖ %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ក្រុមហ៊ុន​ផលិត ៖ %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;លេខ​ស៊េរី ៖ %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ច្រក ៖ %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ស្ថានភាព ៖ %1&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSBFilterDetails</name>
+    <message>
+        <source>Any</source>
+        <comment>remote</comment>
+        <translation>ណាមួយ</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation>បាទ/ចាស</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation>ទេ</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>ឈ្មោះ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the filter name.</source>
+        <translation>បង្ហាញឈ្មោះ​តម្រង ។</translation>
+    </message>
+    <message>
+        <source>&amp;Vendor ID:</source>
+        <translation>លេខ​សម្គាល់​អ្នក​លក់ ៖</translation>
+    </message>
+    <message>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​លេខ​សម្គាល់​អ្នក​លក់ ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គងជាក់លាក់&lt;/i&gt; គឺ &lt;tt&gt;XXXX&lt;/tt&gt; ដែល &lt;tt&gt;X&lt;/tt&gt; ជា​គោល​ដប់ប្រាំមួយ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Product ID:</source>
+        <translation>លេខ​សម្គាល់​ផលិតផល ៖</translation>
+    </message>
+    <message>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​លេខ​សម្គាល់​ផលិតផល ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ&lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; គឺ&lt;tt&gt;XXXX&lt;/tt&gt; ដែល &lt;tt&gt;X&lt;/tt&gt; គឺជា​គោល​ដប់​ប្រាំមួយ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Revision:</source>
+        <translation>ការ​ពិនិត្យ​ឡើង​វិញ ៖</translation>
+    </message>
+    <message>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
+        <translation>កំណត់​ការ​ពិនិត្យ​តម្រង​លេខ​ឡើង​វិញ ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; គឺ​&lt;tt&gt;IIFF&lt;/tt&gt; ដែល &lt;tt&gt;I&lt;/tt&gt; ជា​ចំនួន​គោល​ដប់​របស់​ផ្នែក​ចំនួន​គត់​ ហើយ &lt;tt&gt;F&lt;/tt&gt; គឺជា​ចំនួន​គោលដប់​របស់​ផ្នែក​ប្រភាគ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Manufacturer:</source>
+        <translation>អ្នក​បង្កើត ៖</translation>
+    </message>
+    <message>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​អ្នក​ផលិត​ជាខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>Pro&amp;duct:</source>
+        <translation>ផលិតផល ៖</translation>
+    </message>
+    <message>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​ឈ្មោះផលិតផល​ជាខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គងជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Serial No.:</source>
+        <translation>លេខ​ស៊េរី ៖</translation>
+    </message>
+    <message>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​លេខ​ស៊េរី​ជា​ខ្សែអក្សរ &lt;i&gt;កា​រផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>Por&amp;t:</source>
+        <translation>ច្រក ៖</translation>
+    </message>
+    <message>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>កំណត់​តម្រង​ច្រក USB ម៉ាស៊ីណ​ជា​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ពិតប្រាកដ&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
+    </message>
+    <message>
+        <source>R&amp;emote:</source>
+        <translation>ពីចម្ងាយ ៖</translation>
+    </message>
+    <message>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
+        <translation>កំណត់​ថាតើ​តម្រង​នេះ​អនុវត្ត​ទៅកាន់​ឧបករណ៍ USB ដែលបាន​ភ្ជាប់​ទៅ​​កុំព្យូទ័រ​ដែរឬទេ (&lt;i&gt;គ្មានទេ&lt;/i&gt;) ទៅកាន់​កុំព្យូទ័រ​ភ្ញៀវ​របស់ VRDP (&lt;i&gt;បាទ/ចាស&lt;/i&gt;) ឬ​ទាំង​ពីរ (&lt;i&gt;ណាមួយ&lt;/i&gt;) ។</translation>
+    </message>
+    <message>
+        <source>&amp;Action:</source>
+        <translation>សកម្មភាព ៖</translation>
+    </message>
+    <message>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation>កំណត់​សកម្មភាព​ដែល​បាន​អនុវត្ត​ដោយ​កុំព្យូទ័រ នៅពេល​ផ្គូផ្គង​ឧបករណ៍​ដែល​ត្រូវ​បាន​ភ្ជាប់ ៖ ផ្ដល់​វា​ទៅ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន (&lt;i&gt;មិនអើពើ&lt;/i&gt;) ឬ​ចាប់យក​វា​សម្រាប់​ប្រើ​ពេលក្រោយ ដោយ​ម៉ាស៊ីន​និម្មិត &lt;i&gt;រង់ចាំ&lt;/i&gt;) ។</translation>
+    </message>
+    <message>
+        <source>USB Filter Details</source>
+        <translation>សេចក្ដី​លម្អិត​តម្រង USB</translation>
     </message>
 </context>
 <context>
@@ -1844,14 +4123,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">មេកាបៃ</translation>
+        <translation type="obsolete">មេកាបៃ</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;ជ្រើស​រូបភាព​ថាសរឹង​ត្រូវ​ប្រើ​ជា​ថាស​រឹង​ចាប់ផ្ដើម​របស់ម៉ាស៊ីន​និម្មិត ។ អ្នកអាច​បង្កើត​ថាសរឹង​ថ្មី​ដោយ​ប្រើ​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ឬ​ជ្រើស​រូបភាព​ថាសរឹង​ដែលមាន​ស្រាប់​ពី​បញ្ជី​ទម្លាក់ចុះ ឬ​ដោយ​ចុច​ប៊ូតុង &lt;b&gt;មាន​ស្រាប់&lt;/b&gt; (ដើម្បីដកហូត​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត) ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ត្រូវការ​រៀបចំ​ថាសរឹង​ដែល​ស្មុគស្មាញ អ្នក​ក៏​អាច​រំលង​ជំហាន​នេះ ហើយ​ភ្ជាប់​ថាសរឹង​ពេលក្រោយ​ដោយ​ប្រើ​ប្រអប់​កំណត់របស់ VM ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ជ្រើស​រូបភាព​ថាសរឹង​ត្រូវ​ប្រើ​ជា​ថាស​រឹង​ចាប់ផ្ដើម​របស់ម៉ាស៊ីន​និម្មិត ។ អ្នកអាច​បង្កើត​ថាសរឹង​ថ្មី​ដោយ​ប្រើ​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ឬ​ជ្រើស​រូបភាព​ថាសរឹង​ដែលមាន​ស្រាប់​ពី​បញ្ជី​ទម្លាក់ចុះ ឬ​ដោយ​ចុច​ប៊ូតុង &lt;b&gt;មាន​ស្រាប់&lt;/b&gt; (ដើម្បីដកហូត​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត) ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ត្រូវការ​រៀបចំ​ថាសរឹង​ដែល​ស្មុគស្មាញ អ្នក​ក៏​អាច​រំលង​ជំហាន​នេះ ហើយ​ភ្ជាប់​ថាសរឹង​ពេលក្រោយ​ដោយ​ប្រើ​ប្រអប់​កំណត់របស់ VM ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -1871,10 +4150,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">ទំហំ​ដែល​បានផ្ដល់​អនុសាសន៍​របស់​ថាសរឹង​ចាប់ផ្ដើម​គឺ &lt;b&gt;%1&lt;/b&gt; មេកាបៃ ។</translation>
+        <translation type="obsolete">ទំហំ​ដែល​បានផ្ដល់​អនុសាសន៍​របស់​ថាសរឹង​ចាប់ផ្ដើម​គឺ &lt;b&gt;%1&lt;/b&gt; មេកាបៃ ។</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1906,7 +4197,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">មេកាបៃ</translation>
+        <translation type="obsolete">មេកាបៃ</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -1915,6 +4206,325 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIProgressDialog</name>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation>នៅ​សល់​ពីរ​ ​បី​​វិនាទី​</translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation>កំពុង​បោះបង់...</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation>បោះបង់​</translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation>បោះ​បង់​ប្រ​តិបត្តិការ​បច្ចុប្បន្ន</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>
+
+
+
+
+You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="obsolete">នៅ​សល់​ %1, %2</translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>
+
+
+
+
+You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="obsolete">នៅ​សល់​ %1</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished">នៅ​សល់​ %1, %2</translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished">នៅ​សល់​ %1</translation>
+    </message>
+</context>
+<context>
+    <name>UISession</name>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished">នៅ​លើទំព័រ &lt;b&gt;%1&lt;/b&gt; %2</translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation type="unfinished">បានរក​ឃើញ​ការ​កំណត់​ដែល​មិន​ត្រឹមត្រូវ</translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished">បា​ន​រកឃើញ​ការ​កំណត់​ដែល​មិន​ប្រសើរ</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">កំណត់</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">បិទ​ម៉ាស៊ីន​និម្មិត</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation type="unfinished">អ្នក​ចង់ ៖</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;រក្សាទុក​ស្ថានភាព​ប្រតិបត្តិ​បច្ចុប្បន្ន​របស់​ម៉ាស៊ីន​និម្មិត ទៅ​ថាសរឹង​ហ្វីស៊ីខល​របស់​ម៉ាស៊ីន ។&lt;/p&gt;&lt;p&gt;ពេល​​ចាប់ផ្ដើម​ម៉ាស៊ីន​នេះ​លើកក្រោយ វា​នឹង​ត្រូ​វបាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​រក្សាទុក និង​បន្ត​ប្រតិបត្តិការ​ពី​កន្លែង​ដដែល​ដែល​អ្នក​បាន​រក្សាទុក​វា ដែល​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​បន្ត​ការងារ​របស់​អ្នក​បាន​ភ្លាមៗ ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា ការ​រក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​អាច​ចំណាយ​ពេល​យូ ដោយអាស្រ័យ​លើ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ និង​ទំហំសតិ​ដែល​អ្នក​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation type="unfinished">រក្សាទុក​ស្ថានភាព​ម៉ាស៊ីន</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;ផ្ញើ​ព្រឹត្តិការ​ចុច​ប៊ូតុង​ថាមពល ACPI ទៅកាន់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ជា​ធម្មតា ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​រត់​ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត នឹង​រកឃើញ​ព្រឹត្តិការ​នេះ ហើយ​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ ។ នេះ​ជា​មធ្យោបាយ​ដែល​បានផ្ដល់​អនុសាសន៍ ឲ្យ​បិទ​ម៉ាស៊ីន​និម្មិត ពីព្រោះ​កម្មវិធី​ទាំង​អស់​ដែល​កំពុង​រត់​ខាង​ក្នុង​នឹង​មាន​ឱកាស​រក្សាទុក​ស្ថានភាព និង​ទិន្នន័យ​របស់​វា ។&lt;/p&gt;&lt;p&gt;ប្រសិន​បើ​ម៉ាស៊ីន​មិន​ឆ្លើយតប​នឹង​សកម្មភាព​នេះ​ទេ ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​អាច​ត្រូវ​បាន​កំណត់​រចនាសម្ព័ន្ធ​ខុស ឬ​មិន​យល់​ព្រឹត្តិការណ៍​ប៊ូតុង​ថាមពល ACPI ទាល់តែសោះ ។ ក្នុងករណី​នេះ អ្នក​គួរ​ជ្រើស​សកម្មភាព &lt;b&gt;បិទ​ម៉ាស៊ីន&lt;/b&gt; ដើម្បី​បញ្ឈប់​ការ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished">ផ្ញើ​សញ្ញា​បិទ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;បិទ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា សកម្មភាព​នេះ​នឹង​បញ្ឈប់​កា​រប្រតិបត្តិ​របស់ម៉ាស៊ីន​ភ្លាមៗ​តែ​ម្ដង ដូច្នេះ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​កំពុង​រត់​ខាង​​ក្នុង​វា​នឹង​មិនអាច​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ​ដែល​អាច​បណ្ដាល​ឲ្យ &lt;i&gt;បាត់បង់​ទិន្នន័យ&lt;/i&gt; ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត​បានទេ ។ កា​រជ្រើស​សកម្ម​ភាព​នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​តែ​ក្នុងករណី​ដែល​ម៉ាស៊ីន​និមន្មិត​មិន​ឆ្លើយតប​នឹង​សកម្មភាព &lt;b&gt;ផ្ញើ​សញ្ញា​បិទ&lt;/b&gt; តែ​ប៉ុណ្ណោះ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation type="unfinished">បិទ​ម៉ាស៊ីន</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished">ស្តារ​​ស្ថាន​ភាព​ម៉ាស៊ីន​ដែល​បាន​រក្សា​ទុក​ក្នុង​រូប​ថត​បច្ចុប្បន្ន</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;នៅពេល​គូស​ធីក ស្ថានភាព​ម៉ាស៊ីន​នឹង​ត្រូវ​បាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​ទុក​នៅ​ក្នុង​រូបថត​បច្ចុប្បន្ន​ខាង​ស្ដាំ​បន្ទាប់​ពី​​បិទ ។ វា​មាន​ប្រយោជន៍​ប្រសិន​បើ​​អ្នក​ប្រាកដ​ថា អ្នក​ចង់​បោះបង់​លទ្ធផល​នៃ​សម័យ​ចុងក្រោយ​របស់​អ្នក ហើយ​ត្រឡប់​ទៅ​រូបថត​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished">ស្តារ​រូប​ថត​បច្ចុប្បន្ន​ &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">សេចក្ដី​លម្អិត</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="unfinished">រូបថត</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>មិនអាច​ចូលដំណើរការ​បាន</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 តាំងពី %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;សម័យ %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;មិនអាច​ចូលដំណើរការ​បានតាំងពីរ %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">បង្ហាញ</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">ប្ដូរ​ទៅ​បង្អួច​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">ចាប់ផ្ដើម</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="obsolete">បន្ត</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="obsolete">បន្ត​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="obsolete">ផ្អាក</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="obsolete">ផ្អាក​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">ទូទៅ</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">ប្រព័ន្ធ</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">បង្ហាញ​</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">អូឌីយ៉ូ</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">ច្រក</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished">%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">អ្នក​បាន​​ជ្រើស​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រ​តិបត្តិ​​ការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ ជាក់​ស្តែង​ ដូច​ម៉ាស៊ីន​ភ្ញៀវ​ទាមទារ​ថាសរឹង​ (VT-x/AMD-V) លក្ខណៈ​ពិសេស​នេះ​នឹង​ត្រូវ​បាន​បើក​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">អ្នកបាន​បើក​បង្កើនល្បឿន​​វី​ដេអូ​​ទ្វេ​​មាត្រ​ ។ បង្កើនល្បឿន​វីដេអូ​​ទ្វេ​មាត្រ​​ត្រូវ​បាន​គាំ​ទ្រ​សម្រាប់​​​ម៉ាស៊ីន​វីនដូ​តែ​ប៉ុ​ណ្ណោះ​ លក្ខណៈ​ពិសេសនេះ​​នឹង​​មិន​ត្រូវ​បាន​អនុញ្ញាត​ ។​</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2042,7 +4652,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">មេកាបៃ</translation>
+        <translation type="obsolete">មេកាបៃ</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2058,47 +4668,47 @@ p, li { white-space: pre-wrap; }
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>បិទ​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">បិទ​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>អ្នក​ចង់ ៖</translation>
+        <translation type="obsolete">អ្នក​ចង់ ៖</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>រក្សាទុក​ស្ថានភាព​ម៉ាស៊ីន</translation>
+        <translation type="obsolete">រក្សាទុក​ស្ថានភាព​ម៉ាស៊ីន</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>បិទ​ម៉ាស៊ីន</translation>
+        <translation type="obsolete">បិទ​ម៉ាស៊ីន</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>ផ្ញើ​សញ្ញា​បិទ</translation>
+        <translation type="obsolete">ផ្ញើ​សញ្ញា​បិទ</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;នៅពេល​គូស​ធីក ស្ថានភាព​ម៉ាស៊ីន​នឹង​ត្រូវ​បាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​ទុក​នៅ​ក្នុង​រូបថត​បច្ចុប្បន្ន​ខាង​ស្ដាំ​បន្ទាប់​ពី​​បិទ ។ វា​មាន​ប្រយោជន៍​ប្រសិន​បើ​​អ្នក​ប្រាកដ​ថា អ្នក​ចង់​បោះបង់​លទ្ធផល​នៃ​សម័យ​ចុងក្រោយ​របស់​អ្នក ហើយ​ត្រឡប់​ទៅ​រូបថត​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;នៅពេល​គូស​ធីក ស្ថានភាព​ម៉ាស៊ីន​នឹង​ត្រូវ​បាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​ទុក​នៅ​ក្នុង​រូបថត​បច្ចុប្បន្ន​ខាង​ស្ដាំ​បន្ទាប់​ពី​​បិទ ។ វា​មាន​ប្រយោជន៍​ប្រសិន​បើ​​អ្នក​ប្រាកដ​ថា អ្នក​ចង់​បោះបង់​លទ្ធផល​នៃ​សម័យ​ចុងក្រោយ​របស់​អ្នក ហើយ​ត្រឡប់​ទៅ​រូបថត​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;រក្សាទុក​ស្ថានភាព​ប្រតិបត្តិ​បច្ចុប្បន្ន​របស់​ម៉ាស៊ីន​និម្មិត ទៅ​ថាសរឹង​ហ្វីស៊ីខល​របស់​ម៉ាស៊ីន ។&lt;/p&gt;&lt;p&gt;ពេល​​ចាប់ផ្ដើម​ម៉ាស៊ីន​នេះ​លើកក្រោយ វា​នឹង​ត្រូ​វបាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​រក្សាទុក និង​បន្ត​ប្រតិបត្តិការ​ពី​កន្លែង​ដដែល​ដែល​អ្នក​បាន​រក្សាទុក​វា ដែល​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​បន្ត​ការងារ​របស់​អ្នក​បាន​ភ្លាមៗ ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា ការ​រក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​អាច​ចំណាយ​ពេល​យូ ដោយអាស្រ័យ​លើ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ និង​ទំហំសតិ​ដែល​អ្នក​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;រក្សាទុក​ស្ថានភាព​ប្រតិបត្តិ​បច្ចុប្បន្ន​របស់​ម៉ាស៊ីន​និម្មិត ទៅ​ថាសរឹង​ហ្វីស៊ីខល​របស់​ម៉ាស៊ីន ។&lt;/p&gt;&lt;p&gt;ពេល​​ចាប់ផ្ដើម​ម៉ាស៊ីន​នេះ​លើកក្រោយ វា​នឹង​ត្រូ​វបាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​រក្សាទុក និង​បន្ត​ប្រតិបត្តិការ​ពី​កន្លែង​ដដែល​ដែល​អ្នក​បាន​រក្សាទុក​វា ដែល​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​បន្ត​ការងារ​របស់​អ្នក​បាន​ភ្លាមៗ ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា ការ​រក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​អាច​ចំណាយ​ពេល​យូ ដោយអាស្រ័យ​លើ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ និង​ទំហំសតិ​ដែល​អ្នក​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ផ្ញើ​ព្រឹត្តិការ​ចុច​ប៊ូតុង​ថាមពល ACPI ទៅកាន់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ជា​ធម្មតា ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​រត់​ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត នឹង​រកឃើញ​ព្រឹត្តិការ​នេះ ហើយ​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ ។ នេះ​ជា​មធ្យោបាយ​ដែល​បានផ្ដល់​អនុសាសន៍ ឲ្យ​បិទ​ម៉ាស៊ីន​និម្មិត ពីព្រោះ​កម្មវិធី​ទាំង​អស់​ដែល​កំពុង​រត់​ខាង​ក្នុង​នឹង​មាន​ឱកាស​រក្សាទុក​ស្ថានភាព និង​ទិន្នន័យ​របស់​វា ។&lt;/p&gt;&lt;p&gt;ប្រសិន​បើ​ម៉ាស៊ីន​មិន​ឆ្លើយតប​នឹង​សកម្មភាព​នេះ​ទេ ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​អាច​ត្រូវ​បាន​កំណត់​រចនាសម្ព័ន្ធ​ខុស ឬ​មិន​យល់​ព្រឹត្តិការណ៍​ប៊ូតុង​ថាមពល ACPI ទាល់តែសោះ ។ ក្នុងករណី​នេះ អ្នក​គួរ​ជ្រើស​សកម្មភាព &lt;b&gt;បិទ​ម៉ាស៊ីន&lt;/b&gt; ដើម្បី​បញ្ឈប់​ការ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ផ្ញើ​ព្រឹត្តិការ​ចុច​ប៊ូតុង​ថាមពល ACPI ទៅកាន់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ជា​ធម្មតា ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​រត់​ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត នឹង​រកឃើញ​ព្រឹត្តិការ​នេះ ហើយ​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ ។ នេះ​ជា​មធ្យោបាយ​ដែល​បានផ្ដល់​អនុសាសន៍ ឲ្យ​បិទ​ម៉ាស៊ីន​និម្មិត ពីព្រោះ​កម្មវិធី​ទាំង​អស់​ដែល​កំពុង​រត់​ខាង​ក្នុង​នឹង​មាន​ឱកាស​រក្សាទុក​ស្ថានភាព និង​ទិន្នន័យ​របស់​វា ។&lt;/p&gt;&lt;p&gt;ប្រសិន​បើ​ម៉ាស៊ីន​មិន​ឆ្លើយតប​នឹង​សកម្មភាព​នេះ​ទេ ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​អាច​ត្រូវ​បាន​កំណត់​រចនាសម្ព័ន្ធ​ខុស ឬ​មិន​យល់​ព្រឹត្តិការណ៍​ប៊ូតុង​ថាមពល ACPI ទាល់តែសោះ ។ ក្នុងករណី​នេះ អ្នក​គួរ​ជ្រើស​សកម្មភាព &lt;b&gt;បិទ​ម៉ាស៊ីន&lt;/b&gt; ដើម្បី​បញ្ឈប់​ការ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បិទ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា សកម្មភាព​នេះ​នឹង​បញ្ឈប់​កា​រប្រតិបត្តិ​របស់ម៉ាស៊ីន​ភ្លាមៗ​តែ​ម្ដង ដូច្នេះ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​កំពុង​រត់​ខាង​​ក្នុង​វា​នឹង​មិនអាច​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ​ដែល​អាច​បណ្ដាល​ឲ្យ &lt;i&gt;បាត់បង់​ទិន្នន័យ&lt;/i&gt; ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត​បានទេ ។ កា​រជ្រើស​សកម្ម​ភាព​នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​តែ​ក្នុងករណី​ដែល​ម៉ាស៊ីន​និមន្មិត​មិន​ឆ្លើយតប​នឹង​សកម្មភាព &lt;b&gt;ផ្ញើ​សញ្ញា​បិទ&lt;/b&gt; តែ​ប៉ុណ្ណោះ ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បិទ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា សកម្មភាព​នេះ​នឹង​បញ្ឈប់​កា​រប្រតិបត្តិ​របស់ម៉ាស៊ីន​ភ្លាមៗ​តែ​ម្ដង ដូច្នេះ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​កំពុង​រត់​ខាង​​ក្នុង​វា​នឹង​មិនអាច​អនុវត្ត​នីតិវិធី​បិទ​ការ​ជម្រះ​ដែល​អាច​បណ្ដាល​ឲ្យ &lt;i&gt;បាត់បង់​ទិន្នន័យ&lt;/i&gt; ខាង​ក្នុង​ម៉ាស៊ីន​និម្មិត​បានទេ ។ កា​រជ្រើស​សកម្ម​ភាព​នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​តែ​ក្នុងករណី​ដែល​ម៉ាស៊ីន​និមន្មិត​មិន​ឆ្លើយតប​នឹង​សកម្មភាព &lt;b&gt;ផ្ញើ​សញ្ញា​បិទ&lt;/b&gt; តែ​ប៉ុណ្ណោះ ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>ស្តារ​​ស្ថាន​ភាព​ម៉ាស៊ីន​ដែល​បាន​រក្សា​ទុក​ក្នុង​រូប​ថត​បច្ចុប្បន្ន</translation>
+        <translation type="obsolete">ស្តារ​​ស្ថាន​ភាព​ម៉ាស៊ីន​ដែល​បាន​រក្សា​ទុក​ក្នុង​រូប​ថត​បច្ចុប្បន្ន</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>ស្តារ​រូប​ថត​បច្ចុប្បន្ន​ &apos;%1&apos;</translation>
+        <translation type="obsolete">ស្តារ​រូប​ថត​បច្ចុប្បន្ន​ &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -2609,540 +5219,50 @@ Virtualization Stuff LED</comment>
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>ទូទៅ</translation>
+        <translation type="obsolete">ទូទៅ</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>បញ្ចូល</translation>
+        <translation type="obsolete">បញ្ចូល</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>ធ្វើ​ឲ្យ​ទាន់សម័យ</translation>
+        <translation type="obsolete">ធ្វើ​ឲ្យ​ទាន់សម័យ</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>ភាសា</translation>
+        <translation type="obsolete">ភាសា</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>បណ្ដាញ</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ម៉ាស៊ីន​និម្មិត​លំនាំដើម ។ ថត​នេះ​ត្រូវ​បាន​ប្រើ ប្រសិនបើ​មិន​បានបញ្ជាក់ជាក់លាក់​ទេ នៅពេល​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
-    </message>
-    <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>បង្ហាញ​ផ្លូវ​ទៅ​បណ្ណាល័យ ដែល​ផ្ដល់​នូវ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​សម្រាប់​ម៉ាស៊ីន​ភ្ញៀវ​បង្ហាញ​ពី​ចម្ងាយ (​VRDP) ។</translation>
-    </message>
-    <message>
-        <source>Default &amp;Hard Disk Folder:</source>
-        <translation>ថត​ថាសរឹង​លំនាំដើម ៖</translation>
-    </message>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation>ថត​ម៉ាស៊ីន​លំនាំដើម ៖</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation>បណ្ណាល័យ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ៖</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ថាសរឹង​លំនាំដើម ។ ថត​នេះ​ត្រូ​វបានប្រើ ប្រសិនបើ​គ្មាន​ការ​កំណត់​ជាក់លាក់ នៅពេលបន្ថែម​ថាសរឹង​និម្មិត​ថ្មី​ ឬ​មាន​ស្រាប់ ។</translation>
-    </message>
-    <message>
-        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក កម្មវិធី​នឹង​ផ្ដល់​នូវ​រូបតំណាង​ដែល​មាន​ម៉ឺនុយ​បរិបទ​នៅ​ក្នុង​ថាស​ប្រព័ន្ធ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Show System Tray Icon</source>
-        <translation>បង្ហាញ​រូបតំណាង​ថាស​ប្រព័ន្ធ</translation>
-    </message>
-    <message>
-        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">នៅពេលបានគូស​ធីក រូប​តំណាង​ចូលផែ​នឹង​ជះឥទ្ធិពល​លើ​មាតិកា​បង្អួច​ VM នៅ​ក្នុង realtime ។</translation>
-    </message>
-    <message>
-        <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="obsolete">មើល​រូបតំណាង​ចូលផែ Realtime ជា​មុន</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>បង្ហាញ​ចត​ដោយ​ស្វ័យ​ប្រវត្តិ​ និងរបារ​ម៉ឺនុយ​​អេក្រង់​ពេញ​</translation>
+        <translation type="obsolete">បណ្ដាញ</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
+        <translation type="obsolete">គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
+        <translation type="obsolete">បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>នៅពេល​បានគូស​ធីក ក្ដារចុច​ត្រូ​វបាន​ចាប់យក​ដោយ​ស្វ័យ​ប្រវត្តិ​រាល់ពេល​ដែល​បង្អួច VM ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម ។ នៅពេល​ក្ដារចុច​ត្រូវ​បាន​ចាប់យក  keystrokes (រួម​មាន​ប្រព័ន្ធ​​មួយ ដូចជា ជំនួស(Alt)-ថេប(Tab)) ត្រូវ​បាន​បញ្ជូន​ទៅ​កាន់ VM ។</translation>
+        <translation type="obsolete">នៅពេល​បានគូស​ធីក ក្ដារចុច​ត្រូ​វបាន​ចាប់យក​ដោយ​ស្វ័យ​ប្រវត្តិ​រាល់ពេល​ដែល​បង្អួច VM ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម ។ នៅពេល​ក្ដារចុច​ត្រូវ​បាន​ចាប់យក  keystrokes (រួម​មាន​ប្រព័ន្ធ​​មួយ ដូចជា ជំនួស(Alt)-ថេប(Tab)) ត្រូវ​បាន​បញ្ជូន​ទៅ​កាន់ VM ។</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
-    </message>
-    <message>
-        <source>Reset Host Key</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation> (ជាប់)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation>&lt;មិនអាច​ប្រើបាន&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation>&lt;មិនស្គាល់&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation>លំនាំដើម</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation>ភាសា ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language:</source>
-        <translation>ភាសា​ចំណុច​ប្រទាក់ ៖</translation>
-    </message>
-    <message>
-        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>រាយ​ភាសា​ចំណុច​ប្រទាក់​អ្នក​ប្រើ​ដែល​អាច​ប្រើ​បាន ។ ភាសា​ដែល​មានប្រសិទ្ធភាព​ត្រូវ​បាន​សរសេរ​ &lt;b&gt;ដិត&lt;/b&gt; ។ ជ្រើស &lt;i&gt;លំនាំដើម&lt;/i&gt; ដើម្បី​កំណត់​ភាសា​លំនាំដើម​របស់​ប្រព័ន្ធ​ឡើង​វិញ ។</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>លេខសម្គាល់</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>ភាសា</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>អ្នកនិពន្ធ</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation>អ្នកនិពន្ធ ៖</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>%1 network</source>
-        <comment>
-
-
-&lt;adapter name&gt; network</comment>
-        <translation type="obsolete">%1 បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>អាសយដ្ឋាន IPv4 ម៉ាស៊ីន​របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
-        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>របាំង​បណ្ដាញ​ម៉ាស៊ីន IPv4 របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវទេ</translation>
-    </message>
-    <message>
-        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន IPv6 របស់ &lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
-    </message>
-    <message>
-        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ DHCP របស់&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
-    </message>
-    <message>
-        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>របាំង​បណ្ដាញ​ម៉ាស៊ីន​បម្រើ DHCP​ របស់&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវទេ</translation>
-    </message>
-    <message>
-        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>ដែន​អាសយដ្ឋាន​ទាប​របស់ DHCP នៃ&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
-    </message>
-    <message>
-        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>ដែន​អាសយដ្ឋាន​ខ្ពស់​របស់ DHCP នៃ&lt;b&gt;%1&lt;/b&gt; មិន​ត្រឹមត្រូវ​ទេ</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation>អាដាប់​ទ័រ</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>
-
-
-
-interface</comment>
-        <translation type="obsolete">បាន​កំណត់​រចនាសម្ព័ន្ធ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>
-
-
-
-interface</comment>
-        <translation type="obsolete">បាន​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ​</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation>អាសយ​ដ្ឋាន IPv4​</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>
-
-
-
-address</comment>
-        <translation type="obsolete">មិន​បាន​​កំណត់​</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation>របាំង​បណ្តាញ​ IPv4</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>
-
-
-
-mask</comment>
-        <translation type="obsolete">មិនបាន​​កំណត់​</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation>អាសយ​ដ្ឋាន​ IPv6</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask Length</source>
-        <translation>ប្រវែង​របាំង​បណ្តាញ​ IPv6</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>
-
-
-
-length</comment>
-        <translation type="obsolete">មិន​បាន​​កំណត់​</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation>ម៉ាស៊ីន​បម្រើ​ DHCP</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>
-
-
-
-server</comment>
-        <translation type="obsolete">បាន​បើក</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>
-
-
-
-server</comment>
-        <translation type="obsolete">​បាន​បើក</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>អាសយដ្ឋាន​</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation>របាំង​បណ្តាញ​</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation>ព្រំ​ដែន​ទាប​​</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>
-
-
-
-bound</comment>
-        <translation type="obsolete">មិន​បាន​កំណត់​</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation>ព្រំ​ដែន​ខ្ពស់​</translation>
-    </message>
-    <message>
-        <source>&amp;Add host-only network</source>
-        <translation>សម្រាប់​តែ​បណ្ដាញ​ម៉ាស៊ីនប៉ុណ្ណោះ</translation>
-    </message>
-    <message>
-        <source>&amp;Remove host-only network</source>
-        <translation>យក​បណ្ដាញ​ម៉ាស៊ីន​ចេញ​ប៉ុណ្ណោះ</translation>
-    </message>
-    <message>
-        <source>&amp;Edit host-only network</source>
-        <translation>កែសម្រួល​បណ្ដាញម៉ាស៊ីន​ប៉ុណ្ណោះ​</translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>
-
-
-
-creating/removing host-only network</comment>
-        <translation type="obsolete">ការ​អនុវត្ត​</translation>
-    </message>
-    <message>
-        <source>&amp;Host-only Networks:</source>
-        <translation>បណ្ដាញ​ម៉ាស៊ីន​ប៉ុណ្ណោះ ៖</translation>
-    </message>
-    <message>
-        <source>Lists all available host-only networks.</source>
-        <translation>រាយ​បណ្ដាញ​ម៉ាស៊ីន​ដែលអាច​ប្រើបាន ។</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>%1 network</source>
-        <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished">%1 បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation type="unfinished">បាន​កំណត់​រចនាសម្ព័ន្ធ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation type="unfinished">បាន​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ​</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>creating/removing host-only network</comment>
-        <translation type="unfinished">ការ​អនុវត្ត​</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetails</name>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation>សេច​ក្តី​លម្អិត​បណ្តាញ​​ម៉ាស៊ីន​</translation>
-    </message>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation>អាដាប់ទ័រ</translation>
-    </message>
-    <message>
-        <source>Manual &amp;Configuration</source>
-        <translation>ការ​កំណត់​រចនា​សម្ព័ន្ធ​ដោយ​ដៃ​</translation>
-    </message>
-    <message>
-        <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>ប្រើ​ការ​កំណត់​រចនា​សម្ព័ន្ធ​​ដោយ​ដៃ ​សម្រាប់​​​អាដាប់​ទ័រ​​បណ្តាញ​ម៉ាស៊ីន​​-តែ​​មួយ​នេះ​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation>អា​សយ​ដ្ឋាន​ IPv4 ៖</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>បង្ហាញ​អា​សយ​ដ្ឋាន​​ម៉ាស៊ីន​ IPv4 សម្រាប់​​អាដាប់​ទ័រ​​នេះ​ ។</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation>របាំង​បណ្តាញ​ IPv4 ៖</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>បង្ហាញ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv4 សម្រាប់​អាដាប់​ទ័រ​នេះ​ ។</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation>អាសយដ្ឋាន​ IPv6 ៖</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>បង្ហាញ​​អា​សយដ្ឋាន​ម៉ាស៊ីន​ IPv6 សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ ។</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>ប្រ​វែង​របាំង​បណ្តាញ​ IPv6 ៖</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>បង្ហាញ​ប្រ​វែង​​បុព្វបទ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv6​ សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation>ម៉ាស៊ីន​បម្រើ​ DHCP</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>បើក​ម៉ាស៊ីន​បម្រើ​</translation>
-    </message>
-    <message>
-        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>បង្ហាញ​​ថា​តើ​ម៉ា​ស៊ីន​បម្រើ​​ DHCP ត្រូវ​បាន​បើក​នៅពេល​ចាប់ផ្ដើម​ដែរ​ឬទេ ។</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation>អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ​ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>បង្ហាញ​អាសយដ្ឋាន​បម្រើ​ម៉ាស៊ីន​​របស់​ DHCP ដែល​ភ្ជាប់​​បណ្តាញ​ជាមួយ​កម្ម​វិធី​សម្រួល​​ម៉ាស៊ីន​​-តែ​មួយនេះ​​ ។</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation>របាំង​ម៉ា​ស៊ីនបម្រើ​ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>បង្ហាញ​របាំង​បណ្តាញ​​សេវា​​បម្រើ​ម៉ា​ស៊ីន​របស់​ DHCP ដែល​ភ្ជាប់​​​ជា​មួយ​កម្ម​វិធី​សម្រួល​ម៉ា​ស៊ីន​​-​តែ​មួយ​នេះ​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation>ព្រំ​ដែន​អា​សយ​ដ្ឋាន​ទាប​ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>បង្ហាញ​ព្រំដែន​អាសយដ្ឋានទាប​ដែល​បានផ្ដល់ដោយ​សេវា​ម៉ាស៊ីន​បម្រើ DHCP ដែល​បានភ្ជាប់​ជា​មួយនឹងកម្មវិធី​សម្រួល​ម៉ាស៊ីន​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation>ព្រំដែន​អា​សយដ្ឋានខ្ពស់​ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>បង្ហាញ​ព្រំដែន​អាសយដ្ឋាន​ខ្ពស់​ដែលបានផ្ដល់​ដោយ​ម៉ាស៊ីន​បម្រើ DHCP ដោយ​ផ្ដល់​សេវា​បណ្ដាញ​ភ្ជាប់​ជា​មួយ​នឹង​អាដាប់ទ័រ​ម៉ាស៊ីន​ ។</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>នៅពេល​បាន​គូសធីក កម្មវិធី​នឹង​តភ្ជាប់​ទៅ​កាន់តំបន់បណ្ដាញ VirtualBox តាម​កាល​កំណត់ ហើយ​ពិនិត្យ​មើល​ថាតើ​មានកំណែ VirtualBox ដែរឬទេ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Check for updates</source>
-        <translation>ពិនិត្យ​មើល​ភាព​ទាន់សម័យ</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation>ម្ដង​ក្នុង ៖</translation>
-    </message>
-    <message>
-        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>បញ្ជាក់​វិធី​ដែល​កំណែ​ថ្មី​ពិនិត្យ​មើល​គួរ​ត្រូវ​បាន​អនុវត្ត​ ។ ចំណាំថា ប្រសិនបើ​ង្នក​ចង់​បញ្ចប់ បិទ​ការ​ពិនិត្យនេះ គ្រាន់តែ​ជម្រះ​ប្រអប់​គូស​ធីក​ខាង​លើ ។</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation>ការ​ពិនិត្យ​មើល​បន្ទាប់ ៖</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation>ពិនិត្យ​មើល ៖</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិនបើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ភាព​ទាន់សម័យ​ស្ថិតស្ថេរ​ដល់ VirtualBox ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Stable release versions</source>
-        <translation>កំណែ​ចេញ​ផ្សាយ​ស្ថិតស្ថេរ​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិន​បើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ការ​ចេញផ្សាយ​ VirtualBox ថ្មី ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;All new releases</source>
-        <translation>ការ​ចេញផ្សាយ​ថ្មី​ទាំងអស់​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ជ្រើស​វាដើម្បី​ឲ្យ​ជូន​ដំណឹង​អំពី​​កំណែ​​ចេញផ្សាយ​​​របស់ VirtualBox និង​និងចេញ​ផ្សាយ​មុន​របស់ VirtualBox ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation>ការ​ចេញ​ផ្សាយ​ថ្មី និង​ចេញ​ផ្សាយ​មុន​ទាំងអស់</translation>
+        <translation type="obsolete">ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
     </message>
 </context>
 <context>
@@ -3315,12 +5435,12 @@ creating/removing host-only network</comment>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>បានបិទ</translation>
+        <translation type="obsolete">បានបិទ</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>បើក</translation>
+        <translation type="obsolete">បើក</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -3330,7 +5450,7 @@ creating/removing host-only network</comment>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>បិទ</translation>
+        <translation type="obsolete">បិទ</translation>
     </message>
     <message>
         <source>None</source>
@@ -3375,17 +5495,17 @@ creating/removing host-only network</comment>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>គ្មាន</translation>
+        <translation type="obsolete">គ្មាន</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>ខាងក្រៅ</translation>
+        <translation type="obsolete">ខាងក្រៅ</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>ម៉ាស៊ីន​ភ្ញៀវ</translation>
+        <translation type="obsolete">ម៉ាស៊ីន​ភ្ញៀវ</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4456,7 +6576,7 @@ medium</comment>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished">ច្រក​ម៉ាស៊ីនបម្រើ​បង្ហាញ​ពី​ចម្ងាយ</translation>
+        <translation type="obsolete">ច្រក​ម៉ាស៊ីនបម្រើ​បង្ហាញ​ពី​ចម្ងាយ</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -4496,12 +6616,7 @@ medium</comment>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished">ម៉ា​ស៊ីន​បម្រើ​បង្ហាញ​ពី​ចម្ងាយ​</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ម៉ា​ស៊ីន​បម្រើ​បង្ហាញ​ពី​ចម្ងាយ​</translation>
     </message>
     <message>
         <source>Display</source>
@@ -4699,11 +6814,6 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
-        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
         <translation type="unfinished"></translation>
@@ -4762,6 +6872,122 @@ medium</comment>
         <comment>New Storage UI : Slot Name</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">ឯកសារ​ទាំង​អស់ (*)</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">គ្មាន</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">ខាងក្រៅ</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">ម៉ាស៊ីន​ភ្ញៀវ</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">ICH9</translation>
+    </message>
+    <message>
+        <source>and</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished">មេកាបៃ</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4782,7 +7008,7 @@ medium</comment>
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>ជំនួយ</translation>
+        <translation type="obsolete">ជំនួយ</translation>
     </message>
 </context>
 <context>
@@ -4929,7 +7155,7 @@ medium</comment>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>រូបភាព​ថាសរឹង​ទាំងអស់ (%1)</translation>
+        <translation type="obsolete">រូបភាព​ថាសរឹង​ទាំងអស់ (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -4941,7 +7167,7 @@ medium</comment>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>រូបភាព​ស៊ីឌី/ឌីវីឌី​រ៉ូម (*.iso);; ឯកសារ​ទាំងអស់ (*)</translation>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​រ៉ូម (*.iso);; ឯកសារ​ទាំងអស់ (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -4949,7 +7175,7 @@ medium</comment>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>រូបភាព​ថាស​ទន់ (*.img);; ឯកសារ​ទាំង​អស់ (*)</translation>
+        <translation type="obsolete">រូបភាព​ថាស​ទន់ (*.img);; ឯកសារ​ទាំង​អស់ (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -5038,6 +7264,22 @@ VMM: Floppy Image</comment>
         <comment>VMM: Floppy Image</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -5052,6 +7294,10 @@ VMM: Floppy Image</comment>
     <message>
         <source>Close VM</source>
         <translation>បិទ VM</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5182,11 +7428,11 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​លុប​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ជា​អចិន្ត្រៃយ៍​ឬ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិនអាច​ត្រូវ​បាន​ធ្វើ​វិញ​ទេ ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​លុប​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ជា​អចិន្ត្រៃយ៍​ឬ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិនអាច​ត្រូវ​បាន​ធ្វើ​វិញ​ទេ ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឈ្មោះ​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt;​ដែល​មិនអាច​ចូលដំណើរការ​បាន​​ដែរឬទេ?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​មិនអាច​ចុះឈ្មោះ​វា​បានទៀតទេ​ពី GUI ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឈ្មោះ​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt;​ដែល​មិនអាច​ចូលដំណើរការ​បាន​​ដែរឬទេ?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​មិនអាច​ចុះឈ្មោះ​វា​បានទៀតទេ​ពី GUI ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -5304,19 +7550,19 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ផ្នែក​បន្ថែម​ភាសា​ភ្ញៀវ​របស់ VirtualBox បាន​ដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ចាស់​ពេក ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុកគឺ %2 ។ លក្ខណៈពិសេស​មួយ​ចំនួន​ត្រូវការ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​ការ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) នឹង​បញ្ឈប់​ដំណើរការ​យ៉ាង​ត្រឹមត្រូវ ។&lt;/p&gt;&lt;p&gt;សូម​ធ្វើ​ឲ្យ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កំណែ​បច្ចុប្បន្ន​ ដោយ​ជ្រើស &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ភាសា​ភ្ញៀវ​របស់ VirtualBox បាន​ដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ចាស់​ពេក ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុកគឺ %2 ។ លក្ខណៈពិសេស​មួយ​ចំនួន​ត្រូវការ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​ការ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) នឹង​បញ្ឈប់​ដំណើរការ​យ៉ាង​ត្រឹមត្រូវ ។&lt;/p&gt;&lt;p&gt;សូម​ធ្វើ​ឲ្យ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កំណែ​បច្ចុប្បន្ន​ ដោយ​ជ្រើស &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ VirtualBox បានដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​គឺ​ហួស​សម័យ​ហើយ ៖ កំណែ​ដែលបានដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។ លក្ខណៈ​ពិសេស​មួយ​ចំនួន​ដែល​ត្រូវការ​ផ្នែក​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​កា​រផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់ម៉ាស៊ីន​ភ្ញៀវ) មិនអាច​ដំណើរការ​ដូច​ដែល​បាន​រំពឹង​ទុក​ទេ ។&lt;/p&gt;&lt;p&gt;វា​ត្រូ​វបានផ្ដល់​អនុសាសន៍​ឲ្យ​ធ្វើ​ឲ្យ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កណែ​បច្ចុប្បន្ន ដោយ​ជ្រើស​ &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ VirtualBox បានដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​គឺ​ហួស​សម័យ​ហើយ ៖ កំណែ​ដែលបានដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។ លក្ខណៈ​ពិសេស​មួយ​ចំនួន​ដែល​ត្រូវការ​ផ្នែក​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​កា​រផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់ម៉ាស៊ីន​ភ្ញៀវ) មិនអាច​ដំណើរការ​ដូច​ដែល​បាន​រំពឹង​ទុក​ទេ ។&lt;/p&gt;&lt;p&gt;វា​ត្រូ​វបានផ្ដល់​អនុសាសន៍​ឲ្យ​ធ្វើ​ឲ្យ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កណែ​បច្ចុប្បន្ន ដោយ​ជ្រើស​ &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ថ្មីពេក​សម្រាប់​កំណែ​របស់ VirtualBox ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។&lt;/p&gt;&lt;p&gt;កា​រប្រើកំណែ​ថ្មី​របស់​បន្ថែម​ផ្នែកបន្ថែម​ជាង​កំណែ​ចាស់​របស់ VirtualBox មិន​ត្រូវ​បានគាំទ្រទេ ។ សូម​ដំឡើង​កំណែ​បច្ចុប្បន្ន​របស់​ផ្នែកបន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ ដោយ​ជ្រើស​&lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ថ្មីពេក​សម្រាប់​កំណែ​របស់ VirtualBox ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។&lt;/p&gt;&lt;p&gt;កា​រប្រើកំណែ​ថ្មី​របស់​បន្ថែម​ផ្នែកបន្ថែម​ជាង​កំណែ​ចាស់​របស់ VirtualBox មិន​ត្រូវ​បានគាំទ្រទេ ។ សូម​ដំឡើង​កំណែ​បច្ចុប្បន្ន​របស់​ផ្នែកបន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ ដោយ​ជ្រើស​&lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​ផ្លាស់ប្ដូរ​ផ្លូវ​ថត​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;b&gt; ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ផ្លាស់ប្ដូរ​ផ្លូវ​ថត​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;b&gt; ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -5364,7 +7610,7 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការ​កំណត់ VirtualBox សកល​ទៅ​កាន់ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការ​កំណត់ VirtualBox សកល​ទៅ​កាន់ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -5385,12 +7631,12 @@ VMM: Floppy Image</comment>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>លុប</translation>
+        <translation type="obsolete">លុប</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>មិន​ចុះឈ្មោះ</translation>
+        <translation type="obsolete">មិន​ចុះឈ្មោះ</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -5400,7 +7646,7 @@ VMM: Floppy Image</comment>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>បានបិទ</translation>
+        <translation type="obsolete">បានបិទ</translation>
     </message>
     <message>
         <source>Download</source>
@@ -5458,7 +7704,7 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រចម្លង​ឯកសារ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ទៅ &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) ។</translation>
+        <translation type="obsolete">បានបរាជ័យ​ក្នុងកា​រចម្លង​ឯកសារ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ទៅ &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) ។</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -5639,7 +7885,7 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ &lt;b&gt;%1&lt;/b&gt;ចេញ ។&lt;br /&gt;&lt;br /&gt;សូម​ព្យាយាម​យក​ឯកសារ​ចេញ​ដោយ​ខ្លួន​ឯង ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ &lt;b&gt;%1&lt;/b&gt;ចេញ ។&lt;br /&gt;&lt;br /&gt;សូម​ព្យាយាម​យក​ឯកសារ​ចេញ​ដោយ​ខ្លួន​ឯង ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -5707,11 +7953,11 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មានថាស​រឹង​​ដែ​ល​ភ្ជាប់​ជា​មួយច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នកបិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។&lt;/p&gt;&lt;p&gt;​តើ​​អ្នក​ប្រាកដ​​ជា​​ចង់បិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ ឬ ?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;មានថាស​រឹង​​ដែ​ល​ភ្ជាប់​ជា​មួយច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នកបិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។&lt;/p&gt;&lt;p&gt;​តើ​​អ្នក​ប្រាកដ​​ជា​​ចង់បិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ ឬ ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មាន​ថាសរឹង​ដែល​ភ្ជាប់​ជាមួយ​ច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នក​​ផ្លាស់​ប្តូរ​ឧបរណ៍​បញ្ញា​បន្ថែម​​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រវត្តិ​ ។​&lt;/p&gt;&lt;p&gt;​តើ​អ្នក​ប្រាកដជា​​ចង់​ផ្លាស់​ប្តូរ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ឬ ?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;មាន​ថាសរឹង​ដែល​ភ្ជាប់​ជាមួយ​ច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នក​​ផ្លាស់​ប្តូរ​ឧបរណ៍​បញ្ញា​បន្ថែម​​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រវត្តិ​ ។​&lt;/p&gt;&lt;p&gt;​តើ​អ្នក​ប្រាកដជា​​ចង់​ផ្លាស់​ប្តូរ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ឬ ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
@@ -5724,7 +7970,7 @@ hard disk</comment>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនមាន​មេឌៀ​ដែល​មិនបានប្រើ​​សម្រាប់​​​ឯក​សារ​ភ្ជាប់​ដែល​បង្កើតថ្មី​ ។​&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;បង្កើត​​&lt;/b&gt; ប៊ូតុង​ទៅ​ចាប់​ផ្តើម &lt;i&gt;​ថាស​និម្មិត​ថ្មី&lt;/i&gt; អ្នក​ជំនួយ​ការ​ និង​បង្កើតឧបករណ៍​ផ្ទុកថ្មី​ ឬ​ចុច​​ &lt;b&gt;ជ្រើស​​&lt;/b&gt; ប្រ​សិន​បើ​​អ្នក​មាន​បំណង​ទៅ​បើក​ &lt;i&gt;កម្ម​វិធី​គ្រប់​គ្រង​មេឌៀ​និម្មិត​​&lt;/i&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​ដែល​មិនបានប្រើ​​សម្រាប់​​​ឯក​សារ​ភ្ជាប់​ដែល​បង្កើតថ្មី​ ។​&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;បង្កើត​​&lt;/b&gt; ប៊ូតុង​ទៅ​ចាប់​ផ្តើម &lt;i&gt;​ថាស​និម្មិត​ថ្មី&lt;/i&gt; អ្នក​ជំនួយ​ការ​ និង​បង្កើតឧបករណ៍​ផ្ទុកថ្មី​ ឬ​ចុច​​ &lt;b&gt;ជ្រើស​​&lt;/b&gt; ប្រ​សិន​បើ​​អ្នក​មាន​បំណង​ទៅ​បើក​ &lt;i&gt;កម្ម​វិធី​គ្រប់​គ្រង​មេឌៀ​និម្មិត​​&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -5746,15 +7992,15 @@ medium</comment>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនមាន​មេឌៀ​មិន​បាន​ប្រើទេ សម្រាប់​ឯកសារ​ភ្ជាប់​ដែលបានបង្កើត​ថ្មី ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ជ្រើស&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​បើក &lt;i&gt;កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត&lt;/i&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​មិន​បាន​ប្រើទេ សម្រាប់​ឯកសារ​ភ្ជាប់​ដែលបានបង្កើត​ថ្មី ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ជ្រើស&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​បើក &lt;i&gt;កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត&lt;/i&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​ភ្ជាប់ %1 ទៅ​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ភ្ជាប់ %1 ទៅ​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​ការ​ផ្ដាច់​ %1 ពី​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​ផ្ដាច់​ %1 ពី​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -5778,7 +8024,7 @@ medium</comment>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>បានបរាជ័យ​​ក្នុង​កា​រច្រាន​ថាស​ចេញ​ពី​ដ្រាយ​និម្មិត ។ ដ្រាយ​អាច​ត្រូវ​បានចាក់​សោ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ។ សូម​ពិនិត្យ​មើល​វា ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
+        <translation type="obsolete">បានបរាជ័យ​​ក្នុង​កា​រច្រាន​ថាស​ចេញ​ពី​ដ្រាយ​និម្មិត ។ ដ្រាយ​អាច​ត្រូវ​បានចាក់​សោ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ។ សូម​ពិនិត្យ​មើល​វា ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -5978,17 +8224,17 @@ medium</comment>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">ផ្លាស់ប្តូរ​</translation>
+        <translation type="obsolete">ផ្លាស់ប្តូរ​</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation type="unfinished">បង្កើត</translation>
+        <translation type="obsolete">បង្កើត</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation type="unfinished">ជ្រើស</translation>
+        <translation type="obsolete">ជ្រើស</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6048,66 +8294,147 @@ medium</comment>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished">ថាសរឹង</translation>
+        <translation type="obsolete">ថាសរឹង</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
+        <translation type="obsolete">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">ឧបករណ៍​ថាសទន់​</translation>
-    </message>
-</context>
-<context>
-    <name>UIProgressDialog</name>
-    <message>
-        <source>A few seconds remaining</source>
-        <translation>នៅ​សល់​ពីរ​ ​បី​​វិនាទី​</translation>
+        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
     </message>
     <message>
-        <source>Canceling...</source>
-        <translation>កំពុង​បោះបង់...</translation>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>បោះបង់​</translation>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel the current operation</source>
-        <translation>បោះ​បង់​ប្រ​តិបត្តិការ​បច្ចុប្បន្ន</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>
-
-
-
-
-You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="obsolete">នៅ​សល់​ %1, %2</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>
-
-
-
-
-You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="obsolete">នៅ​សល់​ %1</translation>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished">នៅ​សល់​ %1, %2</translation>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished">នៅ​សល់​ %1</translation>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">យកចេញ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6223,7 +8550,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>សេចក្ដី​លម្អិត</translation>
+        <translation type="obsolete">សេចក្ដី​លម្អិត</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -6260,11 +8587,11 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>លុប</translation>
+        <translation type="obsolete">លុប</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>លុប​ម៉ាស៊ីននិម្មិត​ដែលបាន​ជ្រើស</translation>
+        <translation type="obsolete">លុប​ម៉ាស៊ីននិម្មិត​ដែលបាន​ជ្រើស</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -6288,15 +8615,15 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>រូបថត</translation>
+        <translation type="obsolete">រូបថត</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>សេចក្ដី​ពិពណ៌នា</translation>
+        <translation type="obsolete">សេចក្ដី​ពិពណ៌នា</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>សេចក្ដី​ពិពណ៌នា *</translation>
+        <translation type="obsolete">សេចក្ដី​ពិពណ៌នា *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -6393,28 +8720,104 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
         <comment>Non Mac OS X version</comment>
         <translation type="unfinished">ឯកសារ</translation>
     </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">បន្ថែម...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;ជ្រើស​ប្រភេទ​ការ​កំណត់​ពី​បញ្ជីនៅ​ខាង​ផ្នែកខាង​ឆ្វេង​ ហើយ​ផ្លាស់ទី​កណ្ដុរ​លើ​ធាតុ​កំណត់​ដើម្បី​ទទួល​យក​ព័ត៌មានបន្ថែម&lt;/i&gt; ។</translation>
+        <translation type="obsolete">&lt;i&gt;ជ្រើស​ប្រភេទ​ការ​កំណត់​ពី​បញ្ជីនៅ​ខាង​ផ្នែកខាង​ឆ្វេង​ ហើយ​ផ្លាស់ទី​កណ្ដុរ​លើ​ធាតុ​កំណត់​ដើម្បី​ទទួល​យក​ព័ត៌មានបន្ថែម&lt;/i&gt; ។</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>បានរក​ឃើញ​ការ​កំណត់​ដែល​មិន​ត្រឹមត្រូវ</translation>
+        <translation type="obsolete">បានរក​ឃើញ​ការ​កំណត់​ដែល​មិន​ត្រឹមត្រូវ</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>កំណត់</translation>
+        <translation type="obsolete">កំណត់</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>បា​ន​រកឃើញ​ការ​កំណត់​ដែល​មិន​ប្រសើរ</translation>
+        <translation type="obsolete">បា​ន​រកឃើញ​ការ​កំណត់​ដែល​មិន​ប្រសើរ</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>នៅ​លើទំព័រ &lt;b&gt;%1&lt;/b&gt; %2</translation>
+        <translation type="obsolete">នៅ​លើទំព័រ &lt;b&gt;%1&lt;/b&gt; %2</translation>
     </message>
 </context>
 <context>
@@ -6602,24 +9005,24 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>បង្ហាញ​បង្អួច​កម្មវិធី​​ជ្រើស</translation>
+        <translation type="obsolete">បង្ហាញ​បង្អួច​កម្មវិធី​​ជ្រើស</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>បង្ហាញ​បង្អួច​កម្មវិធី​ជ្រើស​ដែលបានផ្ដល់​ទៅ​ម៉ឺនុយ​នេះ</translation>
+        <translation type="obsolete">បង្ហាញ​បង្អួច​កម្មវិធី​ជ្រើស​ដែលបានផ្ដល់​ទៅ​ម៉ឺនុយ​នេះ</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>លាក់​រូបតំណាង​ថាស​ប្រព័ន្ធ</translation>
+        <translation type="obsolete">លាក់​រូបតំណាង​ថាស​ប្រព័ន្ធ</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>យក​រូបតំណាង​នេះ​ចេញ​ពី​ថាស​ប្រព័ន្ធ</translation>
+        <translation type="obsolete">យក​រូបតំណាង​នេះ​ចេញ​ពី​ថាស​ប្រព័ន្ធ</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>ម៉ាស៊ីន​ផ្សេងៗ...</translation>
+        <translation type="obsolete">ម៉ាស៊ីន​ផ្សេងៗ...</translation>
     </message>
 </context>
 <context>
@@ -6726,22 +9129,22 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>គ្មាន​សេចក្ដី​ពិពណ៌នា​ទេ ។ ចុច​ប៊ុតុង កែសម្រួល​ខា​ងក្រោម​ដើម្បី​បន្ថែម​វា ។</translation>
+        <translation type="obsolete">គ្មាន​សេចក្ដី​ពិពណ៌នា​ទេ ។ ចុច​ប៊ុតុង កែសម្រួល​ខា​ងក្រោម​ដើម្បី​បន្ថែម​វា ។</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>កែសម្រួល</translation>
+        <translation type="obsolete">កែសម្រួល</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>កែសម្រួល (បញ្ជា(Ctrl)+E)</translation>
+        <translation type="obsolete">កែសម្រួល (បញ្ជា(Ctrl)+E)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>ម៉ាស៊ីន​និម្មិត​ដែល​បាន​ជ្រើស​ &lt;i&gt;មិន​អាច​ចូលដំណើរការ​បានទេ&lt;/i&gt; ។ សូម​ពិនិត្យ​មើល​សារ​កំហុស​ដែល​បានបង្ហាញ​ខាង​ក្រោម ហើយ​ចុច​ប៊ូតុង &lt;b&gt;ធ្វើ​ឲ្យ​ស្រស់&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​ធ្វើការ​ពិនិត្យ​ការ​ចូលដំណើរការ​​ឡើង​វិញ ៖</translation>
+        <translation type="obsolete">ម៉ាស៊ីន​និម្មិត​ដែល​បាន​ជ្រើស​ &lt;i&gt;មិន​អាច​ចូលដំណើរការ​បានទេ&lt;/i&gt; ។ សូម​ពិនិត្យ​មើល​សារ​កំហុស​ដែល​បានបង្ហាញ​ខាង​ក្រោម ហើយ​ចុច​ប៊ូតុង &lt;b&gt;ធ្វើ​ឲ្យ​ស្រស់&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​ធ្វើការ​ពិនិត្យ​ការ​ចូលដំណើរការ​​ឡើង​វិញ ៖</translation>
     </message>
 </context>
 <context>
@@ -6858,56 +9261,12 @@ details report (VRDP server port)</comment>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
+        <translation type="obsolete">មិនអាច​ប្រើបាន​</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
         <translation type="unfinished">មិនអាច​ប្រើបាន​</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation>មិនអាច​ចូលដំណើរការ​បាន</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 តាំងពី %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;សម័យ %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;មិនអាច​ចូលដំណើរការ​បានតាំងពីរ %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>បង្ហាញ</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>ប្ដូរ​ទៅ​បង្អួច​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>ចាប់ផ្ដើម</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>បន្ត</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>បន្ត​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>ផ្អាក</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>ផ្អាក​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
 </context>
 <context>
@@ -6946,1222 +9305,78 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក កាត​អូឌីយ៉ូ PCI និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ​ដែល​ប្រើ​កម្មវិធី​បញ្ជា​ដែល​បានបញ្ជាក់​ទាក់ទង​ទៅ​កាត​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation>បើក​អូឌីយ៉ូ</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation>កម្មវិធី​បញ្ជា​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ៖</translation>
-    </message>
-    <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>ត្រួតពិនិត្យ​កម្មវិធី​បញ្ជា​លទ្ធផល​អូឌីយ៉ូ ។ &lt;b&gt;គ្មាន​កម្មវិធី​បញ្ជា​អូឌីយ៉ូ&lt;/b&gt; ធ្វើ​ឲ្យ​ម៉ាស៊ីន​ភ្ញៀវ​ឃើញ​កាត​អូឌីយ៉ូ ទោះ​ជា​យ៉ាង​ណា​រាល់​ពេល​ចូលដំណើរការ​វា​នឹង​ត្រូ​វបាន​មិនអើពើ ។</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation>វត្ថុ​បញ្ជា​អូឌីយ៉ូ ៖</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>ជ្រើស​ប្រភេទ​កាត​សំឡេង​និម្មិត ។ ដោយ​អាស្រ័យ​លើ​តម្លៃនេះ VirtualBox នឹ​ងផ្ដល់​នូវ​ផ្នែក​រឹង​អូឌីយ៉ូ​ផ្សេងៗ​គ្នា​ដល់​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsDisplay</name>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>អ្នកបានផ្ដល់​សតិវីដេអូតិច​ជាង &lt;b&gt;%1&lt;/b&gt; ដែល​ជា​ចំនួន​អប្បបរមាដែលបានទាមទារ​ដើម្បី​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅរបៀប​​ពេញអេក្រង់ ឬ​ពង្រីក ។</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>អ្នក​បានផ្ដល់​សតិ​វីដេអូតិច​ជាង &lt;b&gt;%1&lt;/b&gt; ដែលជា​ចំនួន​អប្បបរមា​សម្រាប់​វីដេអូ HD ដើម្បីចាក់​ឲ្យ​មាន​ប្រសិទ្ធភាព ។</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Video</source>
-        <translation>វីដេអូ​</translation>
-    </message>
-    <message>
-        <source>Video &amp;Memory:</source>
-        <translation>សតិ​វីដេអូ​ ៖</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​វីដេ​អូ​​ដែល​បានផ្ដល់​ឲ្យ​​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>លក្ខណសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​​អាច​រក​បាន​​នៅ​លើ​ម៉ាស៊ីន ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation>បើក​ការបង្កើន​ល្បឿន​ត្រីមាត្រ​</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>នៅ​ពេល​ដែល​បាន​គូស​ធីក​ ម៉ាស៊ីន​​និម្មិត​​នឹង​ចូល​ដំណើរ​ការ​សមត្ថ​ភាព​​បង្កើនល្បឿន​វីដេអូ​ដែល​អាច​ប្រើ​​បាន​​លើម៉ាស៊ីន​ ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation>បើក​ការ​បង្កើន​ល្បឿន​ទ្វេមាត្រ</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation>កា​របង្ហាញ​ពី​ចម្ងាយ​</translation>
-    </message>
-    <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក VM នឹង​ដើរតួ​ជា​ម៉ាស៊ីន​បម្រើ​ពិធីការ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ដោយ​អនុញ្ញាត​ឲ្យ​ម៉ាស៊ីនភ្ញៀវ​ពី​ចម្ងាយ​តភ្ជាប់​ និង​ប្រតិបត្តិ​ VM (នៅ​ពេល​កំពុង​រត់) ដោយ​ប្រើ​ម៉ាស៊ីន​ភ្ញៀវ RDP ស្តង់ដារ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>បើក​ម៉ាស៊ីនបម្រើ​</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation>ច្រក​ម៉ាស៊ីនបម្រើ ៖</translation>
-    </message>
-    <message>
-        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation>លេខ​​ច្រក​ម៉ាស៊ីន​​បម្រើ​ VRDP ។ អ្នក​អាច​បញ្ជាក់​​ &lt;tt&gt;0&lt;/tt&gt; (សូន្យ​) ដើម្បី​ជ្រើស​ច្រក​ ៣៣៨៩ ច្រក​ស្តង់​ដារ​សម្រាប់​ RDP ។</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation>វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
-    </message>
-    <message>
-        <source>Defines the VRDP authentication method.</source>
-        <translation>កំណត់​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ។</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation>អស់ពេល​ក្នុងការ​​​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
-    </message>
-    <message>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>បញ្ជាក់​ការ​អស់ពេល ​សម្រាប់​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ គិត​​ជា​មិល្លី​វិនាទី ។</translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>ទូទៅ</translation>
+        <translation type="obsolete">ទូទៅ</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>កា​រផ្ទុក</translation>
+        <translation type="obsolete">កា​រផ្ទុក</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>ថាសរឹង</translation>
+        <translation type="obsolete">ថាសរឹង</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>ស៊ីឌី/ឌីវីឌី​រ៉ូម</translation>
+        <translation type="obsolete">ស៊ីឌី/ឌីវីឌី​រ៉ូម</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>ថាសទន់</translation>
+        <translation type="obsolete">ថាសទន់</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>អូឌីយ៉ូ</translation>
+        <translation type="obsolete">អូឌីយ៉ូ</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>បណ្ដាញ</translation>
+        <translation type="obsolete">បណ្ដាញ</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>ច្រក</translation>
+        <translation type="obsolete">ច្រក</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>ច្រកស៊េរៀល</translation>
+        <translation type="obsolete">ច្រកស៊េរៀល</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>ច្រក​ស្រប</translation>
+        <translation type="obsolete">ច្រក​ស្រប</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>ថត​ដែល​បានចែករំលែក</translation>
+        <translation type="obsolete">ថត​ដែល​បានចែករំលែក</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>ប្រព័ន្ធ</translation>
+        <translation type="obsolete">ប្រព័ន្ធ</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>បង្ហាញ​</translation>
+        <translation type="obsolete">បង្ហាញ​</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>អ្នក​បាន​​ជ្រើស​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រ​តិបត្តិ​​ការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ ជាក់​ស្តែង​ ដូច​ម៉ាស៊ីន​ភ្ញៀវ​ទាមទារ​ថាសរឹង​ (VT-x/AMD-V) លក្ខណៈ​ពិសេស​នេះ​នឹង​ត្រូវ​បាន​បើក​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។</translation>
+        <translation type="obsolete">អ្នក​បាន​​ជ្រើស​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រ​តិបត្តិ​​ការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ ជាក់​ស្តែង​ ដូច​ម៉ាស៊ីន​ភ្ញៀវ​ទាមទារ​ថាសរឹង​ (VT-x/AMD-V) លក្ខណៈ​ពិសេស​នេះ​នឹង​ត្រូវ​បាន​បើក​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>អ្នក​​បាន​ជ្រើស​​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ បច្ចុប្បន្ន​ VirtualBox មិន​គាំ​ទ្រ​​ស៊ី​ភី​យូ​និម្មិត​ច្រើន​ជាង​មួយសម្រាប់​​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​​ដែល​បាន​ប្រតិបត្តិ​ការ​លើ​ម៉ាស៊ីន​​ ៣២​-​ប៊ីត​ ។</translation>
+        <translation type="obsolete">អ្នក​​បាន​ជ្រើស​​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ បច្ចុប្បន្ន​ VirtualBox មិន​គាំ​ទ្រ​​ស៊ី​ភី​យូ​និម្មិត​ច្រើន​ជាង​មួយសម្រាប់​​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​​ដែល​បាន​ប្រតិបត្តិ​ការ​លើ​ម៉ាស៊ីន​​ ៣២​-​ប៊ីត​ ។</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>អ្នកបាន​បើក​បង្កើនល្បឿន​​វី​ដេអូ​​ទ្វេ​​មាត្រ​ ។ បង្កើនល្បឿន​វីដេអូ​​ទ្វេ​មាត្រ​​ត្រូវ​បាន​គាំ​ទ្រ​សម្រាប់​​​ម៉ាស៊ីន​វីនដូ​តែ​ប៉ុ​ណ្ណោះ​ លក្ខណៈ​ពិសេសនេះ​​នឹង​​មិន​ត្រូវ​បាន​អនុញ្ញាត​ ។​</translation>
-    </message>
-    <message>
-        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsGeneral</name>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Basic</source>
-        <translation>មូលដ្ឋាន</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>ឈ្មោះ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the name of the virtual machine.</source>
-        <translation>បង្ហាញ​ឈ្មោះ​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation>កម្រិតខ្ពស់</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation>ក្ដារតម្បៀតខ្ទាស់​ដែល​បាន​ចែករំលែក ៖</translation>
-    </message>
-    <message>
-        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>កំណត់​របៀប​ចែករំលែក​ក្ដារតម្បៀតខ្ទាស់​រវាង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ និង​របស់ម៉ាស៊ីន ។ ចំណាំ​ថា លក្ខណៈពិសេស​នេះ​តម្រូវ​ឲ្យ​ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​ក្នុង​ប្រព័ន្ធប្រតិបត្តិការ​របស់​ម៉ាស៊ីន ។</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation>ថត​រូបថត ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation>សេចក្ដី​ពិពណ៌នា</translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>បង្ហាញ​សេចក្ដីពិពណ៌នា​របស់ម៉ាស៊ីន​និម្មិត ។ វាល​សេចក្ដី​ពិពន៌នា​មានប្រយោជន៍​សម្រាប់​ផ្ដល់​យោបល់​អំពី​សេចក្ដី​លម្អិត​កំណត់​រចនាសម្ព័ន្ធ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បាន​ដំឡើង ។</translation>
-    </message>
-    <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>ប្រសិនបើបាន​គូស​ធីក ការ​ផ្លាស់ប្ដូរ​ទៅ​មេឌៀ​ថាសទន់ ឬ​ស៊ីឌី/ឌីវីឌី​ដែល​បានម៉ោន​ បាន អនុវត្ត​កំឡុង​ពេល​​ប្រតិបត្តិការ​ម៉ាស៊ីន នឹង​ត្រូវ​បាន​រក្សាទុក​ក្នុង​ឯកសារ​កំណត់​ ដើម្បី​បម្រុង​ទុក​នូវ​ការ​កំណត់​រចនាសម្ព័ន្ធ​របស់​មេឌៀ​ដែល​បានម៉ោន​​ចន្លោះ​ពេល​រត់ ។</translation>
-    </message>
-    <message>
-        <source>Removable Media:</source>
-        <translation>មេឌៀ​ចល័ត ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Runtime Changes</source>
-        <translation>ចង់​ចាំ​ការផ្លាស់​ប្តូរ​ពេល​ដំណើរ​ការ​</translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation>របារ​ឧបករណ៍​តូច​ ៖</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
-    </message>
-    <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
-    </message>
-    <message>
-        <source>Show At &amp;Top Of Screen</source>
-        <translation>បង្ហាញ​កំពូល​​អេក្រង់​</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsStorage</name>
-    <message>
-        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>ប្រសិនបើ​បានគូសធីគ វា​នឹង​បង្ហាញ​ថាសរឹង​ផ្សេងៗ​ដែល​បានភ្ជាប់​ទៅ​រន្ធ​ជំនួស​ឲ្យ​ថាសរឹង​មូលដ្ឋាន​​របស់​ពួកវា (បង្ហាញតែ​ក្នុងករណី​ដែល​មានការ​ភ្ជាប់​ដោយ​ប្រយោល​ប៉ុណ្ណោះ) ហើយ​នឹង​អនុញ្ញាត​ឲ្យ​ភ្ជាប់​ថាសរឹង​ផ្សេងៗ​ផងដែរ ។ គូស​ធីក​តែ​ក្នុងករណី​ដែល​អ្នក​ត្រូវការ​ការ​រៀបចំ​ថាសរឹង​ស្មុគស្មាញ​ប៉ុណ្ណោះ ។</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;​ខ្សែ​បញ្ជួន​ ៖ &amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ប្រភេទ​ ៖&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;ពង្រីក​​/​វេញ&amp;nbsp; ធាតុ​&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;បន្ថែម&amp;nbsp;ថាសរឹង&amp;nbsp;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;បន្ថែម​ឧបករណ៍&amp;nbsp;ស៊ីឌី/ឌីវឌី&amp;nbsp;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;បន្ថែម​ឧបករណ៍&amp;nbsp;ថាសទន់&amp;nbsp;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>មិន​មាន​ថាស​រឹង​​ត្រូវ​បាន​ជ្រើស​​សម្រាប់&lt;i&gt;%1&lt;/i&gt; នោះ​ទេ ។</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt;ប្រើខ្នាត​​មធ្យម​ដែល​ភ្ជាប់​ទៅ​កាន់&lt;i&gt;%2&lt;/i&gt;រួច​ហើយ​​​ ។</translation>
-    </message>
-    <message>
-        <source>Add Controller</source>
-        <translation>បន្ថែម​ឧបករណ៍​បញ្ជា​</translation>
-    </message>
-    <message>
-        <source>Add IDE Controller</source>
-        <translation>បន្ថែម​វត្ថុ​បញ្ជា IDE</translation>
-    </message>
-    <message>
-        <source>Add SATA Controller</source>
-        <translation>បន្ថែម​វត្ថុ​បញ្ជា SATA</translation>
-    </message>
-    <message>
-        <source>Add SCSI Controller</source>
-        <translation>បន្ថែម​វត្ថុ​បញ្ជា​ SCSI</translation>
-    </message>
-    <message>
-        <source>Add Floppy Controller</source>
-        <translation>បន្ថែម​ឧបករណ៍​បញ្ជា​ថាសទន់​</translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation>យក​វត្ថុ​បញ្ជា​ចេញ​</translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation>បន្ថែម​ឯកសារ​ភ្ជាប់​</translation>
-    </message>
-    <message>
-        <source>Add Hard Disk</source>
-        <translation>បន្ថែម​ថាស​រឹង​</translation>
-    </message>
-    <message>
-        <source>Add CD/DVD Device</source>
-        <translation>បន្ថែម​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
-    </message>
-    <message>
-        <source>Add Floppy Device</source>
-        <translation>បន្ថែម​ឧបករណ៍​ថាស​ទន់​</translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation>យក​ឯកសារ​ភ្ជាប់​ចេញ​</translation>
-    </message>
-    <message>
-        <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>បន្ថែម​វត្ថុ​បញ្ជា​ថ្មី​ទៅ​ចុង​មែកធាង​ផ្ទុក ។</translation>
-    </message>
-    <message>
-        <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>យក​ឧបករណ៍​បញ្ជា​ដែលបានបន្លិច​ចេញ​នៅ​ក្នុង​មែកធាង​ផ្ទុក ។</translation>
-    </message>
-    <message>
-        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>បន្ថែម​ឯកសារ​ភ្ជាប់ថ្មី​ទៅ​​មែក​ធាង​ផ្ទុក ដោយ​ប្រើ​​កម្មវិធីបញ្ជាដែលបានជ្រើស​ជា​មេ​ ។</translation>
-    </message>
-    <message>
-        <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>យក​ឯកសារ​ភ្ជាប់​ដែល​បាន​បន្លិច​ចេញ​នៅ​ក្នុង​មែកធាង​ផ្ទុក ។</translation>
-    </message>
-    <message>
-        <source>IDE Controller</source>
-        <translation>ឧបករណ៍​បញ្ជា​ IDE</translation>
-    </message>
-    <message>
-        <source>SATA Controller</source>
-        <translation>ឧបករណ៍​បញ្ជា​ SATA</translation>
-    </message>
-    <message>
-        <source>SCSI Controller</source>
-        <translation>ឧបករណ៍​​​បញ្ជា​ SCSI</translation>
-    </message>
-    <message>
-        <source>Floppy Controller</source>
-        <translation>ឧបករណ៍​បញ្ជា​ថាស​ទន់​</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation>ថាស​រឹង​ ៖</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Device:</source>
-        <translation>ឧបករណ៍​​ស៊ី​ឌី​​/ឌីវីឌី ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device:</source>
-        <translation>ឧបករណ៍ថាសទន់ ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Storage Tree</source>
-        <translation>មែក​ធាង​ផ្ទុក​</translation>
-    </message>
-    <message>
-        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>មាន​ឧបករណ៍​បញ្ជា​ផ្ទុក​ទាំង​អស់​សម្រាប់​ម៉ាស៊ី​ននេះ​ និង​រូប​ភាព​និម្មិត​ និងដ្រាយ​​ម៉ាស៊ីន​ដែល​បាន​​ភ្ជាប់​​ទៅកាន់​ពួកវា ។</translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation>​ព័ត៌​មាន​</translation>
-    </message>
-    <message>
-        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>មែក​ធាង​ផ្ទុក​អាច​មាន​ឧបករណ៍​បញ្ជា​​​បី​ បួន​​​​ប្រ​ភេទ​ខុសៗ​គ្នា​ ។ ម៉ាស៊ីន​បច្ចុប្បន្ន​នេះ មិន​មាន​ឧបករណ៍​បញ្ជា​ឡើយ​ ។</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation>គុណ​លក្ខណៈ</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>ឈ្មោះ ៖</translation>
-    </message>
-    <message>
-        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>ប្តូរ​ឈ្មោះ​របស់​ឧបករណ៍​បញ្ជា​ផ្ទុក ​បច្ចុប្បន្ន​ដែល​បានជ្រើស​ក្នុ​ងមែក​ធាង​ផ្ទុក ។</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation>ប្រភេទ ៖</translation>
-    </message>
-    <message>
-        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation>​ជ្រើស​ប្រ​ភេទ​រង​​របស់​ឧបករណ៍​បញ្ជា​ផ្ទុក​បច្ចុប្បន្ន​ដែល​បាន​ជ្រើស​ក្នុ​ង​មែក​ធាង​ផ្ទុក ។</translation>
-    </message>
-    <message>
-        <source>S&amp;lot:</source>
-        <translation>រន្ធ ៖</translation>
-    </message>
-    <message>
-        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>ជ្រើស​រន្ធ​លើ​ឧបករណ៍​បញ្ជា​ផ្ទុក ​ដែល​បាន​ប្រើ​ដោយ​ឯកសារ​ភ្ជាប់​នេះ​ ។​ ​រន្ធ​ដែលអាចរកបានអាស្រ័យ​​លើ​ប្រ​ភេទ​របស់​ឧបករណ៍បញ្ជា​ និង​ឯកសារ​ភ្ជាប់​​​​លើ​វាផ្សេង​ទៀត​​ ។</translation>
-    </message>
-    <message>
-        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation>ជ្រើស​រូប​ភាព​ថាស​​និម្មិត​ ឬ​ដ្រាយ​ម៉ាស៊ីន​ដែល​បាន​ប្រើ ​ដោយ​ឯក​សារ​ភ្ជាប់​នេះ​ ។</translation>
-    </message>
-    <message>
-        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation>បើក​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ដើម្បី​ជ្រើស​រូបភាព​​និម្មិត​សម្រាប់​ឯកសារ​ភ្ជាប់​នេះ ។</translation>
-    </message>
-    <message>
-        <source>Open Virtual Media Manager</source>
-        <translation>បើក​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត​</translation>
-    </message>
-    <message>
-        <source>D&amp;ifferencing Disks</source>
-        <translation>ថាសផ្សេងៗ​គ្នា​</translation>
-    </message>
-    <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>នៅ​ពេល​ដែល​បាន​ធីក​ អនុញ្ញាត​ម៉ាស៊ីន​ភ្ញៀវ​ផ្ញើពាក្យ​បញ្ជា​​ ATAPI ដោយ​ផ្ទាល់​​ទៅ​ដ្រាយ​ម៉ាស៊ីន ដែល​​​ធ្វើ​ឲ្យ​វា​អាច​ប្រើ​​ឧបករណ៍​​​សរសេរ​ស៊ី​ឌី​​/​ឌី​វី​ឌី​ ​ដែល​បាន​តភ្ជាប់​ទៅ​ម៉ាស៊ីន​នៅ​​ក្នុង​ VM ។ ចំណាំថា ​ការ​សរសេរស៊ីឌីអូឌីយ៉ូ​ខាង​ក្នុង​ VM មិន​ត្រូវ​បាន​គាំ​ទ្រ​នៅ​ឡើយ​ទេ​ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation>ហុចតាម​</translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation>ទំហំនិម្មិត​ ៖</translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation>ទំហំ​ពិត​ ៖</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation>ទំហំ​ ៖</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>ទី​តាំង​ ៖</translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation>ប្រ​ភេទ​​ (ទ្រង់​ទ្រាយ​) ៖</translation>
-    </message>
-    <message>
-        <source>Attached To:</source>
-        <translation>បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
-    </message>
-    <message>
-        <source>Allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use host I/O cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add SAS Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>SAS Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage Controller 1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>នៅពេល​គូស​ធីក ដោត​អាដាប់ទ័រ​បណ្ដាញ​និម្មិត​ទៅ​ក្នុងម៉ាស៊ីន​នកម្មិត ។</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation>បើក​អាដាប់ទ័រ​បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>ជ្រើស​ប្រភេទ​អាដាប់ទ័រ​បណ្ដាញ​និម្មិត ។ អាស្រ័យ​លើ​តម្លៃ​នេះ VirtualBox នឹង​ផ្ដល់​នូវ​ផ្នែករឹង​​បណ្ដាញ​ផ្សេង​ទៅ​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation>បាន​ភ្ជាប់​ទៅ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>បង្ហាញ​អាសយដ្ឋាន MAC របស់​អាដាប់ទ័រ​នេះ ។ វា​មាន​តួអក្សរ​យ៉ាង​ជាក់លាក់​ចំនួន​ ១២ ដែល​បាន​ជ្រើស​ពី {0-9,A-F} ។ ចំណាំ​ថា​តួអក្សរ​ទីពីរ​ត្រូវ​តែ​ជា​​តួលេខ​គូ ។</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation>បង្កើត​អាសយដ្ឋាន MAC ចៃដន្យ​ថ្មី ។</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>បង្ហាញ​ថាតើ​ខ្សែ​បណ្ដាញ​និម្មិត​ត្រូ​វបានដោត​​នៅពេល​ម៉ាស៊ីន​ចាប់ផ្ដើម​ ឬ​ក៏អត់ ។</translation>
-    </message>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation>មិន​​​មាន​អាដាប់​ទ័រ​បណ្តាញប្រ៊ីដ្យ​ត្រូវ​បានជ្រើស​រើស​ទេ​</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation>មិនមាន​ឈ្មោះ​បណ្ដាញ​ខាង​ក្នុង​ត្រូវ​បានបញ្ជាក់ទេ</translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation>មិនមាន​អាដាប់ទំព័រ​ម៉ាស៊ីន​ត្រូវ​បាន​ជ្រើស​ទេ</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>
-
-network adapter name</comment>
-        <translation type="obsolete">មិន​​បាន​ជ្រើស​ឡើយ​</translation>
-    </message>
-    <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>ត្រួតពិនិត្យ​វិធី​ដែល​អាដាប់ទ័រ​និម្មិត​នេះ​ត្រូវ​បាន​ភ្ជាប់​ទៅ​បណ្ដាញ​ពិតប្រាកដ​​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន ។</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>ឈ្មោះ ៖</translation>
-    </message>
-    <message>
-        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>ជ្រើស​ឈ្មោះ​អាដាប់ទ័រ​បណ្ដាញ​សម្រាប់ &lt;b&gt;អាដាប់ទ័រ​ប្រ៊ីដ្យ&lt;/b&gt; ឬ &lt;b&gt;អាដាប់ទ័រម៉ាស៊ីន&lt;/b&gt; ការ​ភ្ជាប់ និង​ឈ្មោះ​​របស់​បណ្ដាញ ការ​ភ្ជាប់&lt;b&gt;បណ្ដាញ​ខាង​ក្នុង&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation>កម្រិត​ខ្ពស់​</translation>
-    </message>
-    <message>
-        <source>Shows or hides additional network adapter options.</source>
-        <translation>បង្ហាញ​ ឬ​លាក់​ជម្រើស​អាដាប់ទ័រ​បណ្ដាញ​បន្ថែម ។</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation>ប្រភេទ​អាដាប់​ទ័រ​ ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Mac Address:</source>
-        <translation>អាសយដ្ឋាន Mac ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation> បាន​តភ្ជាប់​ខ្សែ​</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation type="unfinished">មិន​​បាន​ជ្រើស​ឡើយ​</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation>ច្រក %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក បើក​ច្រក​ប៉ារ៉ាឡែល​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Parallel Port</source>
-        <translation>បើក​ច្រក​ស្រប</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>លេខ​ច្រក ៖</translation>
-    </message>
-    <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>បង្ហាញលេចច្រក​ប៉ារ៉ាឡែល ។ អ្នកអាចជ្រើស​ច្រក​មួយ​ក្នុងចំណោម​ច្រក​ប៉ារ៉ាឡែល​ជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ញាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយ​ដៃ ។</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>IRQ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>បង្ហាញលេខ IRQ របស​ច្រក​ប៉ារ៉ាឡែល​នេះ ។ តម្លៃ​ត្រឹមត្រូវ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​ក្នុងជួរពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូវ​បានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូ​វបានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត​នេះ​ប៉ុណ្ណោះ ។</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>ច្រក I/O ៖</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>បង្ហាញអាសយដ្ឋាន​ច្រក​ I/O មូលដ្ឋាន ។ តម្លៃដែល​ត្រឹមត្រូវ​គឺ​ធំជាង​ចំនួន​ដែល​ស្ថិត​ក្នុងជួរ​ពី &lt;tt&gt;0&lt;/tt&gt;ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation>ផ្លូវ​ច្រក ៖</translation>
-    </message>
-    <message>
-        <source>Displays the host parallel device name.</source>
-        <translation>បង្ហាញ​ឈ្មោះ​ឧបករណ៍​ស្រប​គ្នា​​របស់​ម៉ាស៊ីន ។</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallelPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>បាន​ជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>មិន​បាន​បញ្ជាក់ផ្លូវ​ច្រក​ទេ</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation>បន្ថែម​កា​រកំណត់​ថត​ដែលបានចែករំលែកថ្មី ។</translation>
-    </message>
-    <message>
-        <source>Edits the selected shared folder definition.</source>
-        <translation>កែសម្រួល​កា​រកំណត់​ថត​ដែល​បានចែករំលែក​ដែល​បានជ្រើស ។</translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation>យក​កា​រកំណត់​ថត​ដែលបានចែករំលែក​ដែល​បានជ្រើ​សចេញ</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation> ថត​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation> ថត​បណ្ដោះអាសន្ន</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation>ពេញលេញ</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation>បាន​តែ​អាន</translation>
-    </message>
-    <message>
-        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>រាយ​ថត​ដែល​បានចែករំលែក​ទាំង​អស់​ដែល​អាច​ចូលដំណើរការ​បានទៅ​ម៉ាស៊ីន​នេះ ។ ប្រើ​ &apos;net ប្រើ x: \\vboxsvr\share&apos; ដើម្បី​ចូលដំណើរការ​ថត​ដែល​បានចែករំលែក​ដែលមាន​ឈ្មោះ &lt;i&gt;ចែករំលែក&lt;/i&gt; ពីប្រព័ន្ធ​ប្រតិបត្តិការ​ដូចនឹង DOS ដែរ ឬ​ &apos;mount -t vboxsf share mount_point&apos; ដើម្បីចូលដំណើរការ​វា​ពី​ប្រព័ន្ធ​ប្រតិបត្តិការ​លីនុច ។ លក្ខណៈពិសេស​នេះ​ត្រូវការ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation>ផ្លូវ</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation>ចូលដំណើរការ</translation>
-    </message>
-    <message>
-        <source> Global Folders</source>
-        <translation> ថត​សកល​</translation>
-    </message>
-    <message>
-        <source>&amp;Add Shared Folder</source>
-        <translation>បន្ថែម​ថត​ដែល​បាន​ចែករំលែក​</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Shared Folder</source>
-        <translation>កែសម្រួល​ថត​ដែលបានចែករំលែក​</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Shared Folder</source>
-        <translation>យក​ថត​ដែលបានចែករំលែក​ចេញ​</translation>
-    </message>
-    <message>
-        <source>&amp;Folders List</source>
-        <translation>បញ្ជី​ថត​</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Add Share</source>
-        <translation>បន្ថែម​ការ​ចែករំលែក</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation>កែសម្រួល​ការ​ចែករំលែក</translation>
-    </message>
-    <message>
-        <source>Dialog</source>
-        <translation>ប្រអប់</translation>
-    </message>
-    <message>
-        <source>Folder Path:</source>
-        <translation>ផ្លូវ​ថត ៖</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation>ឈ្មោះ​ថត ៖</translation>
-    </message>
-    <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>បង្ហាញ​ឈ្មោះ​របស់​ថត​ដែលបានចែករំលែក (ព្រោះថា​វា​នឹង​ត្រូវ​បានឃើញ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
-    </message>
-    <message>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>នៅពេល​បានគូសធីក ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិនអាច​សរសេរ​ទៅកាន​ថត​ដែល​បានចែករំលែក​​ដែល​បាន​បញ្ជាក់​ទេ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation>បានតែ​អាន</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation>ធ្វើ​ឲ្យ​អចិន្ត្រៃយ៍</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>ច្រក %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>នៅពេល​គូសធីក បើក​ច្រក​ស៊េរី​ដែល​បានផ្ដល់​របស់ម៉ាស៊ីននិម្មិត ។</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Serial Port</source>
-        <translation>បើក​ច្រក​ស៊េរី</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>លេខ​ច្រក ៖</translation>
-    </message>
-    <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>បង្ហាញលេខ​ច្រក​ស៊េរៀល ។ អ្នកអាច​ជ្រើ​ស​ច្រក​ស៊េរៀល​ស្តង់ដារ​មួយ​ក្នុងចំណោម​ច្រកជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ជាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយដៃ ។</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>IRQ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>បង្ហាញ​លេខ IRQ របស់​ច្រក​ស៊េរៀល​នេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​នៅ​ក្នុង​ចន្លោះ​ពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង​ &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូ​វបានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូវ​បានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>ច្រក​ I/O ៖</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>បង្ហាញ​អាសយដ្ឋាន​ច្រក I/O មូលដ្ឋាន​របស់​ច្រក​ស៊េរៀលនេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​ដែល​ស្ថិត​ក្នុង​ចន្លោះពី &lt;tt&gt;0&lt;/tt&gt; ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode:</source>
-        <translation>របៀប​ច្រក ៖</translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>ពិនិត្យ​មើល​របៀប​ដំណើរការ​របស់​ច្រក​ស៊េរៀល ។ ប្រសិនបើ​អ្នក​ជ្រើស​ &lt;b&gt;បានផ្ដាច់&lt;/b&gt; ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​រកឃើញ​ច្រក​ស៊េរៀល​ ប៉ុន្តែ​នឹង​មិន​អាច​ប្រតិបត្តិ​វា​បានទេ ។</translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>ប្រសិន​បើ​បានគូស​ធីក បំពង់​បាន​បញ្ជាក់​នៅ​ក្នុងវាល &lt;b&gt;ផ្លូវ​ច្រក&lt;/b&gt; នឹង​ត្រូវ​បាន​បង្កើត​ដោយ​​ម៉ាស៊ីន​និម្មិត នៅពេល​វា​ចាប់ផ្ដើម ។ បើ​មិន​ដូច្នេះ​ទេ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រើ​បំពង់​ដែល​បានស្រាប់ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation>បង្កើត​បំពង់</translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>បង្ហាញ​ផ្លូវ​ទៅកាន់​ច្រក​ស៊េរៀល​នៅ​លើ​ម៉ាស៊ីន នៅពេល​ច្រក​ដំណើការ​ក្នុង​របៀប &lt;b&gt;បំពង់​ម៉ាស៊ីន&lt;/b&gt; ឬ​ឈ្មោះ​ឧបករណ៍​ស៊េរៀល​នៅពេល​ច្រក​ដំណើរការ​ក្នុង​របៀប &lt;b&gt;ឧបករណ៍​ម៉ាស៊ីន&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Port/File &amp;Path:</source>
-        <translation>ផ្លូវ​ ច្រក​​/ឯកសារ​ ៖</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerialPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>បានជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>មិនបានបញ្ជាក់​ផ្លូវ​ច្រក​ស្ទួន​ទេ</translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSystem</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>អ្នកបាន​ផ្ដល់សតិ​កុំព្យូទ័ររបស់​អ្នក​ច្រើនជាង &lt;b&gt;%1%&lt;/b&gt; (&lt;b&gt;%2&lt;/b&gt;) ដល់​ម៉ាស៊ីន​និម្មិត ។ មិនមាន​សតិ​គ្រប់គ្រាន់​នៅ​សល់​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ សូម​ជ្រើស​​ចំនួន​សតិ​តូច​ជាង​​នេះ ។</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>អ្នក​បាន​ផ្ដល់​សតិ​កុំព្យូទ័រ​ច្រើន &lt;b&gt;%1%&lt;/b&gt; (&lt;b&gt;%2&lt;/b&gt;) ដល់​ម៉ាស៊ីន​និម្មិត ។ វា​ប្រហែលជា​មិន​គ្រប់គ្រាន់​​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ បន្ត​ដោយ​មានគ្រោះថ្នាក់ ។</translation>
-    </message>
-    <message>
-        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>សម្រាប់​អនុវត្ត ចំនួន​ស៊ីភីយូ​ដែល​បាន​ភ្ជាប់​ទៅ​ម៉ាស៊ីន​មិន​អាច​លើស​ពី​​ចំនួន​ពីរ​នៃ​ស៊ីភីយូ​ហ្វីស៊ីខល​នៅ​លើ​ម៉ាស៊ីន (&lt;b&gt;%1&lt;/b&gt;) ។ សូម​កាត់​បន្ថយ​ចំនួន​ស៊ីភីយូ​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>អ្នក​បានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើន​ដល់​ម៉ាស៊ីន​និម្មិត​ជាង​ចំនួន​ស៊ីភីយូ​ហ្វីស៊ីខល​នៅ​ក្នុង​ប្រព័ន្ធ​ម៉ាស៊ីន​របស់​អ្នក (&lt;b&gt;%1&lt;/b&gt;) ។ វា​ទំនង​ជា​បន្ថយ​ការ​អនុវត្ត​ម៉ាស៊ីននិម្មិត​របស់​អ្នក ។ សូម​ពិចារណា​លើការ​កាត់បន្ថយ​ចំនួន​ស៊ីភីយូ​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>អ្នកបានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើនជាង​ដល់ VM នេះ ។ វា​នឹង​មិន​ដំណើរការ​ទេ លុះត្រា​តែ​លក្ខណៈពិសេស​របស់ IO-APIC ត្រូវ​បានបើក ។ វា​នឹង​ត្រូវ​បាន​ធ្វើ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​អ្នក​ទទួល​យក​ការ​កំណត់ VM ដោយ​ចុច​ប៊ូតុង​យល់ព្រម ។</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>អ្នក​បានផ្ដល់​ស៊ីភីយូ​និម្មិត​ច្រើនជាង​មួយ​ដល់ VM ។ វា​នឹង​មិនដំណើរការ​ទេ លុះត្រា​តែ​ផ្នែក​រឹង​និម្មិត (VT-x/AMD-V) ត្រូវ​បានបើក​ដែរ ។ វា​នឹង​ត្រូវ​បានធ្វើ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​អ្នក​ទទួល​យក​ការ​កំណត់ VM ដោយ​ចុច​ប៊ូតុងយល់ព្រម ។</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>
-
-%1 is 1 for now</comment>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>
-
-%1 is host cpu count * 2 for now</comment>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ​&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Motherboard</source>
-        <translation>បន្ទះ​មេ​</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory:</source>
-        <translation>សតិ​គោល​ ៖</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​ដែលបានផ្ដល់​ទៅ​ម៉ាស៊ីន​និម្មិត ។ ប្រសិនបើ​អ្នក​ផ្ដល់​ច្រើនពេក ម៉ាស៊ីន​មិនអាច​ចាប់ផ្ដើម​បានទេ ។</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation>លំដាប់​ចាប់ផ្ដើម ៖</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម​ឡើង ។ ប្រើ​ប្រអប់​ធីក​នៅ​ខាង​ឆ្វេង ដើម្បី​បើក ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើមឡើង ។ ផ្លាស់ទី​វា​ឡើង​លើ និង​ចុះក្រោម​ ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation>ផ្លាស់ទី​ឡើង​លើ (Ctrl-Up)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែលបាន​ជ្រើស​ឡើង​លើ ។</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation>ផ្លាស់ទី​ចុះក្រោម (Ctrl-Down)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បាន​ជ្រើស​ចុះក្រោម</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>លក្ខណៈ​ពិសេស​ដែល​បានពង្រីក ៖</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>នៅ​ពេល​បានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែលអាច​បន្ថយ​ការ​អនុវត្ត​បន្តិចបន្តួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ បន្ទាប់​ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​វីនដូ !</translation>
-    </message>
-    <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>បើក IO APIC</translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>​នៅ​ពេល​​ដែលបាន​គូស​ធីក​ ម៉ាស៊ីន​ភ្ញៀវ​នឹង​គាំ​ទ្រ Extended Firmware Interface (EFI) ដែល​ត្រូវ​បាន​ទាម​ទារ​ដើម្បី​ចាប់ផ្ដើម​ប្រ​ព័ន្ធ​ប្រតិបត្តិ​​ការ​​ម៉ាស៊ីន​ភ្ញៀវពិត​ប្រាកដ ។​ ប្រ​ព័ន្ធ​ប្រតិបត្តិ​ការ​​ដែល​មិនមែន​ ​EFI ​​នឹង​មិនអាច​ទៅ​ចាប់ផ្តើម​​បាន​ទេ ​​ប្រ​សិន​បើ​ជម្រើស​ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម​ ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation>បើក EFI (តែ OSes ប៉ុណ្ណោះ)</translation>
-    </message>
-    <message>
-        <source>&amp;Processor</source>
-        <translation>ប្រ​ព័ន្ធ​ដំណើរ​ការ​</translation>
-    </message>
-    <message>
-        <source>&amp;Processor(s):</source>
-        <translation>ប្រ​ព័ន្ធ​ដំណើរ​ការ​​ ៖</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="obsolete">ត្រួត​ពិនិត្យចំនួន​ស៊ីភីយូ​និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក លក្ខណៈពិសេស Physical Address Extension (PAE) របស់​ស៊ីភីយូ​​ម៉ាស៊ីន​នឹង​ត្រូវ​បានបង្ហាញ​​ម៉ាស៊ីន​និម្មិត ។</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation>បើក PAE/NX</translation>
-    </message>
-    <message>
-        <source>Acce&amp;leration</source>
-        <translation>ការ​បង្កើន​ល្បឿន​</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation>ការ​ធ្វើ​ផ្នែក​រឹង​និម្មិត ៖</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>នៅ​ពេលបាន​គូស​ធីក ម៉ាស៊ីននិម្មិត​នឹង​ព្យាយាម​ប្រាកដថា​ ការ​ប្រើ​ប្រាស់​ផ្នែកបន្ថែម​និម្មិត​ផ្នែក​រឹង​របស់​ស៊ីភីយូ ដូ​ចជា Intel VT-x និង AMD-V ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>បើក VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>នៅពេល​ដែលបានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រាកដ​ថា​ផ្នែក​បន្ថែម paging ខាង​ក្នុង​របស់ Intel VT-x និង AMD-V ។</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation>បើកការ​ដាក់​ទំព័រ​ក្នុង​</translation>
-    </message>
-    <message>
-        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware clock in &amp;UTC time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>%1 is 1 for now</comment>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp; ស៊ី​ភី​យូ​&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;absolute pointing device</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>&amp;Add Empty Filter</source>
-        <translation>បន្ថែម​តម្រង​ទទេ</translation>
-    </message>
-    <message>
-        <source>A&amp;dd Filter From Device</source>
-        <translation>បន្ថែម​តម្រង​ពី​ឧបករណ៍</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Filter</source>
-        <translation>កែសម្រួល​តម្រង</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Filter</source>
-        <translation>យក​តម្រង​ចេញ</translation>
-    </message>
-    <message>
-        <source>&amp;Move Filter Up</source>
-        <translation>ផ្លាស់ទី​តម្រង​ឡើង​លើ</translation>
-    </message>
-    <message>
-        <source>M&amp;ove Filter Down</source>
-        <translation>ផ្លាស់ទី​តម្រង​ចុះក្រោម</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>បន្ថែម​តម្រង USB ថ្មី​ដែលមាន​វាល​ទាំងអស់​ ដោយ​ដំបូង​កំណត់​ខ្សែអក្សរ​ទៅ​ទទេ ។ ចំណាំ​ថា តម្រង​បែប​នេះ​នឹង​ផ្គូផ្គង​ឧបករណ៍ USB ដែល​បាន​ភ្ជាប់ ។</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>បន្ថែម​តម្រង USB ថ្មី​ដែល​មាន​វាល​ទាំងអស់​កំណត់​ទៅ​តម្លៃ​របស់​ឧបករណ៍​ USB ដែល​ជ្រើស​ដែលបានភ្ជាប់​ទៅ នឹង​ម៉ាស៊ីន ។</translation>
-    </message>
-    <message>
-        <source>Edits the selected USB filter.</source>
-        <translation>កែសម្រួល​តម្រង USB ដែល​បាន​ជ្រើស ។</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation>យក​តម្រង USB ដែលបាន​ជ្រើស​ចេញ ។</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation>ផ្លាស់ទី​តម្រង​ USB ដែលបាន​ជ្រើស​ឡើង​វលើ ។</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation>ផ្លាស់ទី​តម្រង​ USB ដែលបាន​ជ្រើស​ចុះក្រោម ។</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation>តម្រង​ថ្មី %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>នៅពេល​បានគូសធីក បើក​ឧបករណ៍​ត្រួតពិនិត្យ​ USB និម្មិត​របស់ម៉ាស៊ីន​នេះ ។</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation>បើក​វត្ថុ​បញ្ជា USB</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>នៅពេល​បានគូស​ធីក បើក​ឧបករណ៍​ត្រួតពិនិត្យ​ USB EHCI និម្មិត​របស់​ម៉ាស៊ីន​នេះ ។ ឧបករណ៍​បញ្ជា USB EHCI ផ្ដល់​នូវ​ការ​គាំទ្រ USB 2.0 ។</translation>
-    </message>
-    <message>
-        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>បើក​វត្ថុ​បញ្ជា USB 2.0 (E&amp;HCI)</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation>តម្រង​ឧបករណ៍ USB</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>រាយ​តម្រង USB ទាំង​អស់​របស់ម៉ាស៊ីន​នេះ ។ ប្រអប់​ធីក​នៅ​ខាង​ឆ្វេ​ងកំណត់​ថាតើ​តម្រង​ជាក់លាក់​ត្រូ​វបើក​ ឬ​ក៏​អត់ ។ ប្រើម៉ឺនុយ​បរិបទ​ ឬ​ប៊ូតុង​នៅ​ខាង​ស្ដាំ​ដើម្បី​បន្ថែម ឬ​យក​តម្រង  USB ចេញ ។</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation>[តម្រង]</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation>ណាមួយ</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation>បាទ/ចាស</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation>ទេ</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>ឈ្មោះ ៖</translation>
-    </message>
-    <message>
-        <source>Displays the filter name.</source>
-        <translation>បង្ហាញឈ្មោះ​តម្រង ។</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation>លេខ​សម្គាល់​អ្នក​លក់ ៖</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​លេខ​សម្គាល់​អ្នក​លក់ ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គងជាក់លាក់&lt;/i&gt; គឺ &lt;tt&gt;XXXX&lt;/tt&gt; ដែល &lt;tt&gt;X&lt;/tt&gt; ជា​គោល​ដប់ប្រាំមួយ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation>លេខ​សម្គាល់​ផលិតផល ៖</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​លេខ​សម្គាល់​ផលិតផល ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ&lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; គឺ&lt;tt&gt;XXXX&lt;/tt&gt; ដែល &lt;tt&gt;X&lt;/tt&gt; គឺជា​គោល​ដប់​ប្រាំមួយ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation>ការ​ពិនិត្យ​ឡើង​វិញ ៖</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>កំណត់​ការ​ពិនិត្យ​តម្រង​លេខ​ឡើង​វិញ ។ ទ្រង់ទ្រាយ​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; គឺ​&lt;tt&gt;IIFF&lt;/tt&gt; ដែល &lt;tt&gt;I&lt;/tt&gt; ជា​ចំនួន​គោល​ដប់​របស់​ផ្នែក​ចំនួន​គត់​ ហើយ &lt;tt&gt;F&lt;/tt&gt; គឺជា​ចំនួន​គោលដប់​របស់​ផ្នែក​ប្រភាគ ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation>អ្នក​បង្កើត ៖</translation>
-    </message>
-    <message>
-        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​អ្នក​ផលិត​ជាខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation>ផលិតផល ៖</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​ឈ្មោះផលិតផល​ជាខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គងជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation>លេខ​ស៊េរី ៖</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​លេខ​ស៊េរី​ជា​ខ្សែអក្សរ &lt;i&gt;កា​រផ្គូផ្គង​ជាក់លាក់&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation>ច្រក ៖</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>កំណត់​តម្រង​ច្រក USB ម៉ាស៊ីណ​ជា​ខ្សែអក្សរ &lt;i&gt;ផ្គូផ្គង​ពិតប្រាកដ&lt;/i&gt; ។ ខ្សែអក្សរ​ទទេ​នឹង​ផ្គូផ្គង​តម្លៃ​ណាមួយ ។</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation>ពីចម្ងាយ ៖</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>កំណត់​ថាតើ​តម្រង​នេះ​អនុវត្ត​ទៅកាន់​ឧបករណ៍ USB ដែលបាន​ភ្ជាប់​ទៅ​​កុំព្យូទ័រ​ដែរឬទេ (&lt;i&gt;គ្មានទេ&lt;/i&gt;) ទៅកាន់​កុំព្យូទ័រ​ភ្ញៀវ​របស់ VRDP (&lt;i&gt;បាទ/ចាស&lt;/i&gt;) ឬ​ទាំង​ពីរ (&lt;i&gt;ណាមួយ&lt;/i&gt;) ។</translation>
-    </message>
-    <message>
-        <source>&amp;Action:</source>
-        <translation>សកម្មភាព ៖</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>កំណត់​សកម្មភាព​ដែល​បាន​អនុវត្ត​ដោយ​កុំព្យូទ័រ នៅពេល​ផ្គូផ្គង​ឧបករណ៍​ដែល​ត្រូវ​បាន​ភ្ជាប់ ៖ ផ្ដល់​វា​ទៅ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន (&lt;i&gt;មិនអើពើ&lt;/i&gt;) ឬ​ចាប់យក​វា​សម្រាប់​ប្រើ​ពេលក្រោយ ដោយ​ម៉ាស៊ីន​និម្មិត &lt;i&gt;រង់ចាំ&lt;/i&gt;) ។</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation>សេចក្ដី​លម្អិត​តម្រង USB</translation>
+        <translation type="obsolete">អ្នកបាន​បើក​បង្កើនល្បឿន​​វី​ដេអូ​​ទ្វេ​​មាត្រ​ ។ បង្កើនល្បឿន​វីដេអូ​​ទ្វេ​មាត្រ​​ត្រូវ​បាន​គាំ​ទ្រ​សម្រាប់​​​ម៉ាស៊ីន​វីនដូ​តែ​ប៉ុ​ណ្ណោះ​ លក្ខណៈ​ពិសេសនេះ​​នឹង​​មិន​ត្រូវ​បាន​អនុញ្ញាត​ ។​</translation>
     </message>
 </context>
 </TS>
