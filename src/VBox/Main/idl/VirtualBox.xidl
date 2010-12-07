@@ -14334,7 +14334,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackBase" extends="$unknown"
-    uuid="58304368-f78a-418c-8fec-d9e4e588d797"
+    uuid="ddc90e1d-b156-480e-b128-d3ccacbb42e0"
     wsmap="suppress"
     >
     <desc>
@@ -14364,6 +14364,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="plugIns" type="IExtPackPlugIn" safearray="yes" readonly="yes">
       <desc>Plug-ins provided by this extension pack.</desc>
     </attribute>
+    <attribute name="license" type="wstring" readonly="yes">
+      <desc>The HTML license text for the extension pack.</desc>
+    </attribute>
+    <attribute name="showLicense" type="boolean" readonly="yes">
+      <desc>Whether to show the license before installation</desc>
+    </attribute>
     <attribute name="usable" type="boolean" readonly="yes">
       <desc>
         Indicates whether the extension pack is usable or not.
@@ -14383,7 +14389,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPack" extends="IExtPackBase"
-    uuid="60f0c30f-c773-4d3e-9580-3ffa47c24e95"
+    uuid="b9c18b10-611e-46ea-abcc-bfa1e680ea80"
     wsmap="suppress"
     >
     <desc>
@@ -14407,7 +14413,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackFile" extends="IExtPackBase"
-    uuid="58509cab-f905-4acb-8087-ba0ab80d8038"
+    uuid="d9eab28b-b28f-4400-a956-403f28750225"
     wsmap="suppress"
     >
     <desc>
