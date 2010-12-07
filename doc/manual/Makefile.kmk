@@ -518,7 +518,6 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.tex): \
 				$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.tex : \
 				$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-				$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
 				$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
 				$(MAKEFILE_CURRENT)
 	$(call MSG_L1,Generating $@ from DocBook XML)
@@ -606,7 +605,6 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/VirtualBox.c
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htmlhelp.hhp): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp: \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/docbook-htmlhelp-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/titlepage-htmlhelp.xsl \
 		$(XML_CATALOG) \
@@ -669,8 +667,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
-		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG)
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
 	$(call MSG_L1,xsltproc $<)
 	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
@@ -681,8 +678,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
-		$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG)
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
 	$(call MSG_L1,xsltproc $<)
 	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
