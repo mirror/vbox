@@ -1478,7 +1478,7 @@ int handleGuestControl(HandlerArg *a)
     arg.argc = a->argc - 1;
     arg.argv = a->argv + 1;
 
-    if (a->argc == 0)
+    if (a->argc <= 0)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
