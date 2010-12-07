@@ -36,17 +36,18 @@ class VBoxLicenseViewer : public QIWithRetranslateUI<QDialog>
 
 public:
 
-    VBoxLicenseViewer (const QString &aFilePath);
+    VBoxLicenseViewer();
 
-public slots:
-
-    int exec();
+    int showLicenseFromFile(const QString &strLicenseFileName);
+    int showLicenseFromString(const QString &strLicenseText);
 
 protected:
 
     void retranslateUi();
 
 private slots:
+
+    int exec();
 
     void onScrollBarMoving (int aValue);
 
@@ -59,7 +60,6 @@ private:
     bool eventFilter (QObject *aObject, QEvent *aEvent);
 
     /* Private member vars */
-    QString       mFilePath;
     QTextBrowser *mLicenseText;
     QPushButton  *mAgreeButton;
     QPushButton  *mDisagreeButton;

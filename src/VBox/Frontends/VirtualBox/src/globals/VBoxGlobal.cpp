@@ -2136,8 +2136,8 @@ bool VBoxGlobal::showVirtualBoxLicense()
         if (strList.at(i) == latestVersion)
             return true;
 
-    VBoxLicenseViewer licenseDialog (latestFilePath);
-    bool result = licenseDialog.exec() == QDialog::Accepted;
+    VBoxLicenseViewer licenseDialog;
+    bool result = licenseDialog.showLicenseFromFile(latestFilePath) == QDialog::Accepted;
     if (result)
         virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, (strList << latestVersion).join(","));
     return result;

@@ -26,6 +26,7 @@
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxLicenseViewer.h"
 
 /* Extension package item: */
 class UIExtensionPackageItem : public QTreeWidgetItem
@@ -128,20 +129,25 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
             *pstrExtPackName = extPackFile.GetName();
         if (extPackFile.GetUsable())
         {
-            bool fAck = vboxProblem().confirmInstallingPackage(extPackFile.GetName(),
-                                                               QString("%1.%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision()),
-                                                               extPackFile.GetDescription());
-
-            if (fAck)
+            /* Ask user to confirm installation: */
+            QString strPackName = extPackFile.GetName();
+            QString strPackVersion = QString("%1.%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision());
+            QString strPackDescription = extPackFile.GetDescription();
+            if (vboxProblem().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription))
             {
-                /* TODO: Display license! */
-
-                /* Install package: */
-                extPackFile.Install();
-                if (extPackFile.isOk())
-                    fInstalled = true;
-                else
-                    vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
+                /* Display license if necessary: */
+                bool fShouldBeLicenseShown = extPackFile.GetShowLicense();
+                QString strLicense = extPackFile.GetLicense();
+                VBoxLicenseViewer licenseViewer;
+                if (!fShouldBeLicenseShown || licenseViewer.showLicenseFromString(strLicense) == QDialog::Accepted)
+                {
+                    /* Install package: */
+                    extPackFile.Install();
+                    if (extPackFile.isOk())
+                        fInstalled = true;
+                    else
+                        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
+                }
             }
         }
         else
