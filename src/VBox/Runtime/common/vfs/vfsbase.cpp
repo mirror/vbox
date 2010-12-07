@@ -2401,6 +2401,71 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile)
 }
 
 
+RTDECL(int)         RTVfsFileQueryInfo(RTVFSFILE hVfsFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsObjQueryInfo(&pThis->Stream.Base, pObjInfo, enmAddAttr);
+}
+
+
+RTDECL(int)         RTVfsFileRead(RTVFSFILE hVfsFile, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
+    if (pcbRead)
+        *pcbRead = 0;
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsIoStrmRead(&pThis->Stream, pvBuf, cbToRead, true /*fBlocking*/, pcbRead);
+}
+
+
+RTDECL(int)         RTVfsFileWrite(RTVFSFILE hVfsFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (pcbWritten)
+        *pcbWritten = 0;
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsIoStrmWrite(&pThis->Stream, pvBuf, cbToWrite, true /*fBlocking*/, pcbWritten);
+}
+
+
+/// @todo RTDECL(int) RTVfsFileWriteAt(RTVFSFILE hVfsFile, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+/// @todo RTDECL(int) RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+
+
+RTDECL(int) RTVfsFileFlush(RTVFSFILE hVfsFile)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsIoStrmFlush(&pThis->Stream);
+}
+
+
+RTDECL(RTFOFF) RTVfsFilePoll(RTVFSFILE hVfsFile, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                  uint32_t *pfRetEvents)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsIoStrmPoll(&pThis->Stream, fEvents, cMillies, fIntr, pfRetEvents);
+}
+
+
+RTDECL(RTFOFF) RTVfsFileTell(RTVFSFILE hVfsFile)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsIoStrmTell(&pThis->Stream);
+}
+
+
 RTDECL(int) RTVfsFileSeek(RTVFSFILE hVfsFile, RTFOFF offSeek, uint32_t uMethod, uint64_t *poffActual)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;
