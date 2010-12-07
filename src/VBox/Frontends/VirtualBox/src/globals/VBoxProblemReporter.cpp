@@ -2165,7 +2165,7 @@ bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWi
     return messageOkCancel (pParent ? pParent : mainWindowShown(),
                             Question,
                             tr("<p>You are about to remove the VirtualBox extension pack <b>%1</b>.</p>"
-                               "<p>Are you sure you want to do that?</p>").arg(strPackName),
+                               "<p>Are you sure you want to proceed?</p>").arg(strPackName),
                             0,
                             tr("&Remove"));
 }
