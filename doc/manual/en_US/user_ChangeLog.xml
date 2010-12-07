@@ -15,4 +15,8 @@
 
 <!--$VIRTUALBOX_CHANGELOG_IMPL-->
 
+  <para>With VirtualBox 3.2, changelog information for versions before 2.0 was removed in
+  order to save space. To access this information, please consult the User Manual of
+  VirtualBox version 3.1 or earlier.</para>
+
 </chapter>
