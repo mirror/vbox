@@ -426,7 +426,7 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Växla till helskärmsläget</translation>
+        <translation type="obsolete">Växla till helskärmsläget</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -434,11 +434,11 @@
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Växla till sömlöst läge för skrivbordsintegration</translation>
+        <translation type="obsolete">Växla till sömlöst läge för skrivbordsintegration</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">Ändra automatiskt storlek på &amp;gästskärmen</translation>
+        <translation type="unfinished">Ändra automatiskt storlek på &amp;gästskärmen</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -462,11 +462,11 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Aktivera &amp;musintegration</translation>
+        <translation type="obsolete">Aktivera &amp;musintegration</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Aktivera temporär inaktivering av värdmuspekarintegration</translation>
+        <translation type="obsolete">Aktivera temporär inaktivering av värdmuspekarintegration</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -494,7 +494,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Sessionsi&amp;nformation</translation>
+        <translation type="obsolete">Sessionsi&amp;nformation</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -510,11 +510,11 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Å&amp;teruppta</translation>
+        <translation type="obsolete">Å&amp;teruppta</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Återuppta körningen av den virtuella maskinen</translation>
+        <translation type="obsolete">Återuppta körningen av den virtuella maskinen</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -633,39 +633,39 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation>Gå in i &amp;helskärmsläge</translation>
+        <translation type="obsolete">Gå in i &amp;helskärmsläge</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation>Lämna &amp;helskärmsläge</translation>
+        <translation type="obsolete">Lämna &amp;helskärmsläge</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation>Växla till normalt läge</translation>
+        <translation type="obsolete">Växla till normalt läge</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation>Gå in i söm&amp;löst läge</translation>
+        <translation type="obsolete">Gå in i söm&amp;löst läge</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation>Lämna söm&amp;löst läge</translation>
+        <translation type="obsolete">Lämna söm&amp;löst läge</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation>Aktivera automatisk storleksändring för &amp;gästskärm</translation>
+        <translation type="obsolete">Aktivera automatisk storleksändring för &amp;gästskärm</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation>Inaktivera automatisk storleksändring för &amp;gästskärm</translation>
+        <translation type="obsolete">Inaktivera automatisk storleksändring för &amp;gästskärm</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation>Inaktivera automatisk storleksändring för gästskärmen när fönstret ändrar storlek</translation>
+        <translation type="obsolete">Inaktivera automatisk storleksändring för gästskärmen när fönstret ändrar storlek</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation>&amp;Aktivera fjärrskrivbord</translation>
+        <translation type="obsolete">&amp;Aktivera fjärrskrivbord</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
@@ -673,11 +673,11 @@
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation>&amp;Inaktivera fjärrskrivbord</translation>
+        <translation type="obsolete">&amp;Inaktivera fjärrskrivbord</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation>Inaktivera fjärrskrivningsanslutningar (RDP) till denna maskin</translation>
+        <translation type="obsolete">Inaktivera fjärrskrivningsanslutningar (RDP) till denna maskin</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
@@ -687,7 +687,330 @@
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Inaktivera &amp;loggning...</translation>
+        <translation type="obsolete">Inaktivera &amp;loggning...</translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and fullscreen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Scale Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and scale mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation type="unfinished">Ingen beskrivning angiven. Tryck på knappen Redigera för att lägga till en beskrivning.</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">Redigera</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation type="unfinished">Redigera (Ctrl+E)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Namn</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Operativsystem</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Basminne</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Uppstartsordning</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="unfinished">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Nested Paging</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Grafikminne</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Skärmar</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished">(CD/DVD)</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Värddrivrutin</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Styrkort</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Bryggat kort, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Internt nätverk, &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Endast värd-kort, &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">VDE-nätverk, &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Enhetsfilter</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 aktiv)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Delade mappar</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Ingen</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished">Ingen</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation type="unfinished">Den valda virtuella maskinen är &lt;i&gt;oåtkomlig&lt;/i&gt;. Undersök felmeddelandet som visas nedan och tryck på knappen &lt;b&gt;Uppdatera&lt;/b&gt; om du vill upprepa tillgänglighetskontrollen:</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Allmänt</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished">System</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Skärm</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Lagring</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Ljud</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Nätverk</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Serieportar</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Parallellportar</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Delade mappar</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Beskrivning</translation>
     </message>
 </context>
 <context>
@@ -913,65 +1236,145 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>Här kan du ändra ytterligare konfigurationsvärden för de valda virtuella maskinerna. Du kan ändra många av egenskaperna genom att dubbelklicka på dem.</translation>
+        <translation type="obsolete">Här kan du ändra ytterligare konfigurationsvärden för de valda virtuella maskinerna. Du kan ändra många av egenskaperna genom att dubbelklicka på dem.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>Exportinställningar för appliance</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished">&amp;Lokalt filsystem </translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished">&amp;Simple Storage System (S3)</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Ange målet för OVF-exporten. Du kan välja mellan en export till lokalt filsystem, skicka upp OVF-filen till Sun Cloud-tjänsten eller en S3-lagringsserver.</translation>
+        <translation type="obsolete">Ange målet för OVF-exporten. Du kan välja mellan en export till lokalt filsystem, skicka upp OVF-filen till Sun Cloud-tjänsten eller en S3-lagringsserver.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>&amp;Lokalt filsystem </translation>
+        <translation type="obsolete">&amp;Lokalt filsystem </translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Simple Storage System (S3)</translation>
+        <translation type="obsolete">&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>Exportinställningar för appliance</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished">&amp;Användarnamn:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished">&amp;Lösenord:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished">&amp;Värdnamn:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished">&amp;Bucket:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">&amp;Fil:</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished">Appliance</translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished">Välj en fil att exportera till</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">Färdigställ ytterligare fält såsom användarnamn, lösenord och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">Färdigställ ytterligare fält såsom användarnamn, lösenord, värdnamn och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation>&amp;Användarnamn:</translation>
+        <translation type="obsolete">&amp;Användarnamn:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Lösenord:</translation>
+        <translation type="obsolete">&amp;Lösenord:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>&amp;Värdnamn:</translation>
+        <translation type="obsolete">&amp;Värdnamn:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>&amp;Bucket:</translation>
+        <translation type="obsolete">&amp;Bucket:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>&amp;Fil:</translation>
+        <translation type="obsolete">&amp;Fil:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Skriv i det äldre formatet OVF 0.9 för kompatibilitet med andra virtualiseringsprodukter.</translation>
+        <translation type="obsolete">Skriv i det äldre formatet OVF 0.9 för kompatibilitet med andra virtualiseringsprodukter.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>&amp;Skriv i äldre OVF 0.9</translation>
+        <translation type="obsolete">&amp;Skriv i äldre OVF 0.9</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
@@ -979,27 +1382,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance</source>
-        <translation>Appliance</translation>
+        <translation type="obsolete">Appliance</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation>Välj en fil att exportera till</translation>
+        <translation type="obsolete">Välj en fil att exportera till</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation>Välj ett filnamn att exportera OVF-filen till.</translation>
+        <translation type="obsolete">Välj ett filnamn att exportera OVF-filen till.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Färdigställ ytterligare fält såsom användarnamn, lösenord och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
+        <translation type="obsolete">Färdigställ ytterligare fält såsom användarnamn, lösenord och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Färdigställ ytterligare fält såsom användarnamn, lösenord, värdnamn och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
+        <translation type="obsolete">Färdigställ ytterligare fält såsom användarnamn, lösenord, värdnamn och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -1012,6 +1415,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Exporting Appliance ...</source>
         <translation>Exporterar appliance ...</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1221,6 +1628,523 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Allmänt</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished">Inmatning</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">Uppdatering</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">Språk</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Nätverk</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished">VirtualBox - %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsExtension</name>
+    <message>
+        <source>&amp;Extension Packages:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all installed packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Namn</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished">Version</translation>
+    </message>
+    <message>
+        <source>Add package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsGeneral</name>
+    <message>
+        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Visar sökvägen till standard-VDI-mappen. Den här mappen används, om inte uttryckligen angiven, när befintliga eller nya virtuella hårddiskar läggs till eller skapas.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation>Visar sökvägen till standardmappen för virtuella maskiner. Den här mappen används, om inte uttryckligen angiven, när nya virtuella maskiner skapas.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation>Visar sökvägen till biblioteket som tillhandahåller autentisering för fjärrskrivbordsklienter (VRDP).</translation>
+    </message>
+    <message>
+        <source>Default &amp;Hard Disk Folder:</source>
+        <translation type="obsolete">Standardmapp för &amp;hårddiskar:</translation>
+    </message>
+    <message>
+        <source>Default &amp;Machine Folder:</source>
+        <translation>Standardmapp för &amp;maskiner:</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation>V&amp;RDP-autentiseringsbibliotek:</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Visar sökvägen till standardmappen för hårddiskar. Denna mapp används, om inte uttryckligen angiven någon annanstans, när befintliga eller nya virtuella hårddiskar läggs till.</translation>
+    </message>
+    <message>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation>När kryssad kommer programmet att tillhandahålla en ikon med sammanhangsmeny i aktivitetsfältet.</translation>
+    </message>
+    <message>
+        <source>&amp;Show System Tray Icon</source>
+        <translation>&amp;Visa ikon i aktivitetsfältet</translation>
+    </message>
+    <message>
+        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
+        <translation type="obsolete">När kryssad så kommer dockningsikonen att återspegla fönsterinnehållet för virtuella maskinen i realtid.</translation>
+    </message>
+    <message>
+        <source>&amp;Dock Icon Realtime Preview</source>
+        <translation type="obsolete">Realtidsvisning för &amp;dockningsikon</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <translation>V&amp;isa automatiskt docka och menyrad i helskärm</translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsInput</name>
+    <message>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished">Värd&amp;tangent:</translation>
+    </message>
+    <message>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <translation type="unfinished">Visar tangenten som används som en värdtangent i virtuella maskinfönstret. Aktivera inmatningsfältet och tryck på en ny värdtangent. Observera att alfanumeriska värden, markörflyttning och redigering av tangenter inte kan användas som en värdtangent.</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished">Nollställ värdtangent</translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished">Nollställer tangenten som används för värdtangent i fönstret för virtuella maskiner.</translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">När kryssad kommer tangentbordet att fångas automatiskt varje gång som fönstret för den virtuella maskinen aktiveras. När tangentbordet är fångat kommer att tangenttryckningar (inklusive till exempel Alt-Tab) att dirigeras till den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&amp;Auto Capture Keyboard</source>
+        <translation type="unfinished">Fånga tangentbord &amp;automatiskt</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsLanguage</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation> (inbyggd)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;otillgänglig&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;okänd&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>Standard</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Språk:</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language:</source>
+        <translation>&amp;Gränssnittsspråk:</translation>
+    </message>
+    <message>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation>Listar alla tillgängliga språk för användargränssnittet. Det språk som används har markerats med &lt;b&gt;fet&lt;/b&gt; text. Välj &lt;i&gt;Standard&lt;/i&gt; för att återställa till systemets standardspråk.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Namn</translation>
+    </message>
+    <message>
+        <source>Id</source>
+        <translation>Id</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Språk</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>Upphovsman</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>Upphovsmän:</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetwork</name>
+    <message>
+        <source>%1 network</source>
+        <comment>&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1-nätverk</translation>
+    </message>
+    <message>
+        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>värdens IPv4-adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>värdens IPv4-nätverksmask &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>värdens IPv6-adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>DHCP-serverns adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Nätverksmask för DHCP-server &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Nedre DHCP-adressgränsen &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>Övre DHCP-adressgränsen &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation>Kort</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation>Automatiskt konfigurerat</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation>Manuellt konfigurerat</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation>IPv4-adress</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation>Inte inställd</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation>Mask för IPv4-nätverk</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation>Inte inställd</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation>IPv6-adress</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation>Masklängd för IPv6-nätverk</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation>Inte inställd</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>DHCP-server</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation>Aktiverad</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation>Inaktiverad</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>Adress</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation>Nätverksmask</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation>Nedre gräns</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation>Inte inställd</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation>Övre gräns</translation>
+    </message>
+    <message>
+        <source>&amp;Add host-only network</source>
+        <translation>&amp;Lägg till endast-värd-nätverk</translation>
+    </message>
+    <message>
+        <source>&amp;Remove host-only network</source>
+        <translation>&amp;Ta bort endast-värd-nätverk</translation>
+    </message>
+    <message>
+        <source>&amp;Edit host-only network</source>
+        <translation>&amp;Redigera endast-värd-nätverk</translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>creating/removing host-only network</comment>
+        <translation type="obsolete">Genomför</translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks:</source>
+        <translation>&amp;Endast-värd-nätverk:</translation>
+    </message>
+    <message>
+        <source>Lists all available host-only networks.</source>
+        <translation>Listar alla tillgängliga endast-värd-nätverk.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Namn</translation>
+    </message>
+    <message>
+        <source>New Host-Only Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetails</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>Detaljer för endast-värd-nätverk</translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation>&amp;Kort</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation>Manuell &amp;konfiguration</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation>Använd manuell konfiguration för detta endast-värd-nätverkskort.</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation>&amp;IPv4-adress:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation>Visar värdens IPv4-adress för detta kort.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation>&amp;Mask för IPv4-nätverk:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation>Visar värdens IPv4-nätverksmask för detta kort.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation>I&amp;Pv6-adress:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation>Visar värdens IPv6-adress för detta kort om IPv6 stöds.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation>Mask&amp;längd för IPv6-nätverk:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation>Visar prefixlängd för värdens IPv6-nätverksmask för detta kort om IPv6 stöds.</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation>&amp;DHCP-server</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>&amp;Aktivera server</translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation>Indikerar huruvida DHCP-servern är aktiverad vid maskinens uppstart eller inte.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation>Serverad&amp;ress:</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Visar adressen för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation>Server&amp;mask:</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Visar nätverksmasken för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation>&amp;Nedre adressgräns:</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Visar den nedre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation>&amp;Övre adressgräns:</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Visar den övre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsUpdate</name>
+    <message>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
+        <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VIrtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
+    </message>
+    <message>
+        <source>&amp;Check for updates</source>
+        <translation>&amp;Leta efter uppdateringar</translation>
+    </message>
+    <message>
+        <source>&amp;Once per:</source>
+        <translation>&amp;En gång per:</translation>
+    </message>
+    <message>
+        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
+        <translation>Anger hur ofta kontroll av nya versioner ska genomföras. Observera att du kan tömma ovanstående kryssruta om du vill fullständigt inaktivera den här kontrollen.</translation>
+    </message>
+    <message>
+        <source>Next Check:</source>
+        <translation>Nästa kontroll:</translation>
+    </message>
+    <message>
+        <source>Check for:</source>
+        <translation>Leta efter:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Välj denna om du endast vill bli informerad om stabila uppdateringar till VirtualBox.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation>&amp;Stabila utgåvor</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation>&amp;Alla nya utgåvor</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor och förutgåvor av VirtualBox.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation>Alla nya utgåvor och &amp;förutgåvor</translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">&amp;Hjälp</translation>
+    </message>
+</context>
+<context>
     <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
@@ -1417,11 +2341,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indikerar huruvida fjärrskrivbordsservern (VRDP) är aktiverad (&lt;img src=:/vrdp_16px.png/&gt;) eller inte (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indikerar huruvida fjärrskrivbordsservern (VRDP) är aktiverad (&lt;img src=:/vrdp_16px.png/&gt;) eller inte (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP-server lyssnar på port %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP-server lyssnar på port %1</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1440,6 +2364,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>Indikerar huruvida tangentbordet är fångat av gästoperativsystemet (&lt;img src=:/hostkey_captured_16px.png/&gt;) eller inte (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1499,6 +2431,1834 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>Inga enheter som stöds är anslutna till värdmaskinen</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsAudio</name>
+    <message>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
+        <translation>När kryssad kommer det virtuella PCI-ljudkortet att anslutas i den virtuella maskinen som använder den angivna drivrutinen för att kommunicera med värdljudkortet.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Audio</source>
+        <translation>Aktivera &amp;ljud</translation>
+    </message>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation>Värdmaskinens ljud&amp;drivrutin:</translation>
+    </message>
+    <message>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation>Kontrollerar drivrutinen för ljudutmatning. &lt;b&gt;Ingen ljuddrivrutin&lt;/b&gt; gör att gästen ser ett ljudkort men varje åtkomst till det kommer att ignoreras.</translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation>Ljudst&amp;yrkort:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>Väljer typen för det virtuella ljudkortet. Beroende på detta värde kommer VirtualBox att tillhandahålla olika ljudmaskinvaror till den virtuella maskinen.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet, vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation>&amp;Grafik</translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation>Grafik&amp;minne:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation>Kontrollerar den mängd grafikminne som tilldelas den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>Utökade funktioner:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation>När kryssad kommer den virtuella maskinen att få åtkomst till 3D-grafikförmågor tillgängliga på värddatorn.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation>Aktivera &amp;3D-acceleration</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>&amp;Fjärrskrivbord</translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation>När kryssad kommer den virtuella maskinen att fungera som en Remote Desktop Protocol-server (RDP) som tillåter fjärrklienter att ansluta och använda den virtuella maskinen (när den är igång) med en standardiserad RDP-klient.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>&amp;Aktivera server</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation>Server&amp;port:</translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="obsolete">Visar VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att återställa porten till standardvärdet.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation>Autentiserings&amp;metod:</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation>Definierar metoden för VRDP-autentisering.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation>&amp;Tidsgräns för autentisering:</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation>Anger tidsgränsen för gästautentisering, i millisekunder.</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; av grafikminnet, vilket är det minsta som krävs för att spela upp HD-video.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation>När kryssad så kommer den virtuella maskinen att ges åtkomst till grafikaccelerationsförmågor som är tillgängliga på värdmaskinen.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation>Aktivera &amp;2D-grafikacceleration</translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation>VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att välja port 3389 som är standardporten för RDP.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation>S&amp;kärmantal:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation>Styr antalet virtuella skärmar som tillhandahålls den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsGeneral</name>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <translation>Visar sökvägen där ögonblicksbilder av den virtuella maskinen lagras. Observera att ögonblicksbilder kan ta upp en hel del diskutrymme.</translation>
+    </message>
+    <message>
+        <source>&amp;Basic</source>
+        <translation>&amp;Grundläggande</translation>
+    </message>
+    <message>
+        <source>Identification</source>
+        <translation type="obsolete">Identifikation</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Namn:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the virtual machine.</source>
+        <translation>Visar namnet på den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type:</source>
+        <translation type="obsolete">Operativsystems&amp;typ:</translation>
+    </message>
+    <message>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="obsolete">Visar operativsystemet som du planerar att installera i den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Bas&amp;minnesstorlek</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="obsolete">Kontrollerar den mängd minne som tilldelas den virtuella maskinen. Om du tilldelar för mycket kanske maskinen inte startar alls.</translation>
+    </message>
+    <message>
+        <source>&lt;</source>
+        <translation type="obsolete">&lt;</translation>
+    </message>
+    <message>
+        <source>&gt;</source>
+        <translation type="obsolete">&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&amp;Video Memory Size</source>
+        <translation type="obsolete">&amp;Grafikminnesstorlek</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="obsolete">Kontrollerar den mängd grafikminne som tilldelas den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&amp;Advanced</source>
+        <translation>&amp;Avancerat</translation>
+    </message>
+    <message>
+        <source>Boo&amp;t Order:</source>
+        <translation type="obsolete">Uppstar&amp;tsordning:</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="obsolete">Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
+    </message>
+    <message>
+        <source>[device]</source>
+        <translation type="obsolete">[enhet]</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="obsolete">Flytta uppåt (Ctrl-Upp)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="obsolete">Flyttar den markerade uppstartsenheten uppåt.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="obsolete">Flytta nedåt (Ctrl-Ned)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="obsolete">Flyttar den markerade uppstartsenheten nedåt.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="obsolete">Utökade funktioner:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+    </message>
+    <message>
+        <source>Enable A&amp;CPI</source>
+        <translation type="obsolete">Aktivera A&amp;CPI</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+    </message>
+    <message>
+        <source>Enable IO A&amp;PIC</source>
+        <translation type="obsolete">Aktivera IO A&amp;PIC</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att försöka använda maskinvarutillägg i värddatorns processor för virtualisering såsom Intel VT-x och AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="obsolete">Aktivera &amp;VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="obsolete">När kryssad kommer funktionen Physical Address Extension (PAE) för värddatorns processor att exponeras för den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="obsolete">Aktivera PA&amp;E/NX</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard:</source>
+        <translation>&amp;Delade urklipp:</translation>
+    </message>
+    <message>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen kräver att Gästtillägg är installerat på gästoperativsystemet.</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">Definierar typen för det virtuella IDE-styrkortet. Beroende på detta värde kommer VirtualBox att tillhandahålla olika virtuella IDE-maskinvaruenheter till gästoperativsystemet.</translation>
+    </message>
+    <message>
+        <source>&amp;IDE Controller Type:</source>
+        <translation type="obsolete">Typ av &amp;IDE-styrkort:</translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder:</source>
+        <translation>Mapp för ö&amp;gonblicksbilder:</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation>&amp;Beskrivning</translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation>Visar beskrivningen för den virtuella maskinen. Beskrivningsfältet är användbart för att kommentera konfigurationsdetaljer för det installerade gästoperativsystemet.</translation>
+    </message>
+    <message>
+        <source>&amp;Other</source>
+        <translation type="obsolete">Ö&amp;vrigt</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation>När kryssad så kommer byte till monterat CD/DVD- eller diskettmedia som genomförs under maskinkörning att sparas i inställningsfilen för att behålla konfigurationen av monterade media mellan körningar.</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Mounted Media</source>
+        <translation type="obsolete">&amp;Kom ihåg monterat media</translation>
+    </message>
+    <message>
+        <source>Runtime:</source>
+        <translation type="obsolete">Körtid:</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;75%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj ett mindre värde för minnesanvändningen.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;50%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns kanske inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="obsolete">du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att få åtkomst till 3D-grafikförmågor tillgängliga på värddatorn.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="obsolete">Aktivera &amp;3D-acceleration</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj en mindre mängd minne.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
+    </message>
+    <message>
+        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="obsolete">det finns en 64-bitars gästoperativsystemstyp som tilldelats denna virtuella maskin som även kräver att virtualiseringsfunktioner (VT-x/AMD-V) aktiveras, annars kommer din gäst att misslyckas att hitta en 64-bitars processor och kommer inte att kunna starta upp, så denna funktion kommer att vara aktiverad automatiskt när du godkänner inställningar för virtuella maskinen genom att trycka på knappen OK.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">När kryssad så kommer den virtuella maskinen att försöka använda utökningen Nested Paging för Intel VT-x och AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="obsolete">Aktivera Nested Pa&amp;ging</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation>Flyttbart media:</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation>&amp;Kom ihåg körtidsändringar</translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation>Minimal verktygsrad:</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation>Om kryssad, visa minimal verktygsrad i helskärmsläge och sömlöst läge.</translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation>Visa i &amp;helskärm/sömlöst läge</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation>Om kryssad kommer minimala verktygsraden att visas överst på skärmen istället för på dess standardposition längst ner på skärmen.</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>Visa övers&amp;t på skärmen</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetwork</name>
+    <message>
+        <source>Select TAP setup application</source>
+        <translation type="obsolete">Välj TAP-konfigurationsprogram</translation>
+    </message>
+    <message>
+        <source>Select TAP terminate application</source>
+        <translation type="obsolete">Välj TAP-avslutningsprogram</translation>
+    </message>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation>När kryssad kommer det här virtuella nätverkskortet att anslutas i den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Network Adapter</source>
+        <translation>Aktiv&amp;era nätverksadapter</translation>
+    </message>
+    <message>
+        <source>A&amp;dapter Type:</source>
+        <translation type="obsolete">A&amp;daptertyp:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>Väljer typ av virtuell nätverksadapter. Beroende på detta värde kommer VirtualBox att tillhandahålla olika nätverksmaskinvaror till den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation>&amp;Anslutet till:</translation>
+    </message>
+    <message>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation>Kontrollerar sättet på hur den här virtuella adaptern anslutits till det verkliga nätverket för värdoperativsystemet.</translation>
+    </message>
+    <message>
+        <source>&amp;Network Name:</source>
+        <translation type="obsolete">&amp;Nätverksnamn:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Visar namnet på det interna nätverket som har valts för denna adapter.</translation>
+    </message>
+    <message>
+        <source>&amp;MAC Address:</source>
+        <translation type="obsolete">Maski&amp;nvaruadress:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation>Visar maskinvaruadressen för denna adapter. Den kan innehålla exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation>Genererar en ny slumpmässig maskinvaruadress.</translation>
+    </message>
+    <message>
+        <source>&amp;Generate</source>
+        <translation type="obsolete">&amp;Generera</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation>Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
+    </message>
+    <message>
+        <source>Ca&amp;ble Connected</source>
+        <translation type="obsolete">Ka&amp;beln är ansluten</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Name:</source>
+        <translation type="obsolete">Gränssn&amp;ittsnamn:</translation>
+    </message>
+    <message>
+        <source>Displays the TAP interface name.</source>
+        <translation type="obsolete">Visar TAP-gränssnittets namn.</translation>
+    </message>
+    <message>
+        <source>&amp;Setup Application:</source>
+        <translation type="obsolete">Konfigurations&amp;program:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to set up the TAP interface.</source>
+        <translation type="obsolete">Visar kommandot som körs för att konfigurera TAP-gränssnittet.</translation>
+    </message>
+    <message>
+        <source>Selects the setup application.</source>
+        <translation type="obsolete">Väljer konfigurationsprogrammet.</translation>
+    </message>
+    <message>
+        <source>&amp;Terminate Application:</source>
+        <translation type="obsolete">A&amp;vstängningsprogram:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to terminate the TAP interface.</source>
+        <translation type="obsolete">Visar kommandot som körs för att stänga av TAP-gränssnittet.</translation>
+    </message>
+    <message>
+        <source>Selects the terminate application.</source>
+        <translation type="obsolete">Väljer avstängningsprogrammet.</translation>
+    </message>
+    <message>
+        <source>Host Interface Settings</source>
+        <translation type="obsolete">Inställningar för värdgränssnitt</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <comment>network</comment>
+        <translation type="obsolete">Adapter</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>adapter</comment>
+        <translation type="obsolete">Inte vald</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>internal</comment>
+        <translation type="obsolete">Nätverk</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network</comment>
+        <translation type="obsolete">Inte vald</translation>
+    </message>
+    <message>
+        <source>MAC Address</source>
+        <translation type="obsolete">MAC-adress</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>address</comment>
+        <translation type="obsolete">Inte vald</translation>
+    </message>
+    <message>
+        <source>Cable</source>
+        <translation type="obsolete">Kabel</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>cable</comment>
+        <translation type="obsolete">Ansluten</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>cable</comment>
+        <translation type="obsolete">Inte ansluten</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>Adapter&amp;typ:</translation>
+    </message>
+    <message>
+        <source>Open extended settings dialog for current attachment type.</source>
+        <translation type="obsolete">Öppna utökade inställningar för aktuell anslutningstyp.</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation>inget bryggat nätverkskort har valts</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation>inget internt nätverksnamn har angivits</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation>inget endast värd-nätkort har valts</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation>Inte valt</translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="obsolete">Öppna ytterligare alternativ för aktuell anslutningstyp.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Namn:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
+        <translation>Väljer namnet för nätverkskortet om anslutningstypen är den samma som &lt;b&gt;Bryggat nätkort&lt;/b&gt; eller &lt;b&gt;Endast värd-kort&lt;/b&gt; och namnet på det interna nätverket om anslutningstypen är den samma som &lt;b&gt;Internt nätverk&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation>A&amp;vancerat</translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation>Visar eller döljer ytterligare alternativ för nätverksadapter.</translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation>Mas&amp;kinvaruadress:</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation>&amp;Kabel ansluten</translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkDetails</name>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="obsolete">inget bryggat nätverkskort har valts</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="obsolete">inget internt nätverksnamn har angivits</translation>
+    </message>
+    <message>
+        <source>no host-only adapter is selected</source>
+        <translation type="obsolete">inget endast-värd-kort har valts</translation>
+    </message>
+    <message>
+        <source>Basic Details</source>
+        <translation type="obsolete">Grundläggande detaljer</translation>
+    </message>
+    <message>
+        <source>Bridged Network Details</source>
+        <translation type="obsolete">Detaljer för bryggat nätverk</translation>
+    </message>
+    <message>
+        <source>Internal Network Details</source>
+        <translation type="obsolete">Detaljer för internt nätverk</translation>
+    </message>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation type="obsolete">Detaljer för endast-värd-nätverk</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <translation type="obsolete">Inte vald</translation>
+    </message>
+    <message>
+        <source>Host Settings</source>
+        <translation type="obsolete">Värdinställningar</translation>
+    </message>
+    <message>
+        <source>&amp;Bridged Network Adapter:</source>
+        <translation type="obsolete">Kort för &amp;bryggat nätverk:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <translation type="obsolete">Visar namnet på värdens nätverkskort som valts för bryggat nätverk.</translation>
+    </message>
+    <message>
+        <source>Internal &amp;Network:</source>
+        <translation type="obsolete">Internt &amp;nätverk:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Visar namnet på det interna nätverket som har valts för detta kort.</translation>
+    </message>
+    <message>
+        <source>Host-only &amp;Network Adapter:</source>
+        <translation type="obsolete">Kort för endast-värd-&amp;nätverk:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <translation type="obsolete">Visar namnet på VirtualBox nätverkskort som valts för endast-värd-nätverk.</translation>
+    </message>
+    <message>
+        <source>Guest Settings</source>
+        <translation type="obsolete">Gästinställningar</translation>
+    </message>
+    <message>
+        <source>Guest &amp;MAC Address:</source>
+        <translation type="obsolete">&amp;MAC-adress för gäst:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="obsolete">Visar maskinvaruadressen för detta kort. Den innehåller exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="obsolete">Genererar en ny slumpmässig maskinvaruadress.</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="obsolete">&amp;Kabel ansluten</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="obsolete">Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="obsolete">Ytterligare alternativ</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Inget värdnätverksgränssnitt har valts</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Internt nätverksnamn har inte angivits</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>
+parallel ports</comment>
+        <translation type="obsolete">Port %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation>När kryssad kommer angiven parallellport på den virtuella maskinen att aktiveras.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation>&amp;Aktivera parallellport</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Port&amp;nummer:</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>Visar parallellportsnumret. Du kan välj en av standardportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och ange portparametrarna manuellt.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;IRQ:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visar IRQ-numret för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; har aktiverats för denna virtuella maskin.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>In/Ut-po&amp;rt:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">Visar basadressen för In/Ut-porten för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation>Portsökvä&amp;g:</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation>Visar värdmaskinens enhetsnamn för parallellporten.</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visar IRQ-numret för denna parallellport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>Visar I/O-basportadressen för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallelPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Dublett av portnummer har valts </translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>Portsökväg har inte angivits </translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Dublett av portsökväg har angivits </translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSF</name>
+    <message>
+        <source>&amp;Add New Shared Folder</source>
+        <translation type="obsolete">&amp;Lägg till en ny mappdelning</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Selected Shared Folder</source>
+        <translation type="obsolete">R&amp;edigera markerad mappdelning</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Selected Shared Folder</source>
+        <translation type="obsolete">&amp;Ta bort markerad mappdelning</translation>
+    </message>
+    <message>
+        <source>Adds a new shared folder definition.</source>
+        <translation>Lägger till en ny delad mappdefinition.</translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation>Redigerar den markerade delade mappdefinitionen.</translation>
+    </message>
+    <message>
+        <source>Removes the selected shared folder definition.</source>
+        <translation>Tar bort den markerade delade mappdefinitionen.</translation>
+    </message>
+    <message>
+        <source> Machine Folders</source>
+        <translation> Maskinmappar</translation>
+    </message>
+    <message>
+        <source> Transient Folders</source>
+        <translation> Temporära mappar</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>Fullständig</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>Skrivskyddad</translation>
+    </message>
+    <message>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation>Listar alla delade mappar åtkomliga för denna maskin. Använd \&quot;net use x: \\vboxsvr\utdelning\&quot; för att komma åt en delad mapp med namnet &lt;i&gt;utdelning&lt;/i&gt; från ett DOS-liknande operativsystem, eller \&quot;mount -t vboxsf utdelning monteringspunkt\&quot; för att komma åt den från ett operativsystem baserat på Linux. Denna funktion kräver Gästtillägg.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Namn</translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation>Sökväg</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>Åtkomst</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="obsolete"> Allmänna mappar</translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation>&amp;Lägg till delad mapp</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation>&amp;Redigera delad mapp</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation>&amp;Ta bort delad mapp</translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation>&amp;Mapplista</translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">Ja</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSFDetails</name>
+    <message>
+        <source>Add Share</source>
+        <translation>Lägg till utdelning</translation>
+    </message>
+    <message>
+        <source>Edit Share</source>
+        <translation>Redigera utdelning</translation>
+    </message>
+    <message>
+        <source>Dialog</source>
+        <translation>Dialog</translation>
+    </message>
+    <message>
+        <source>Folder Path:</source>
+        <translation>Mappsökväg:</translation>
+    </message>
+    <message>
+        <source>Folder Name:</source>
+        <translation>Mappnamn:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation>Visar namnet på den delade mappen (som den ser ut från gästoperativsystemet).</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>När kryssad kommer gästoperativsystemet inte att kunna skriva till angiven delad mapp.</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>S&amp;krivskyddad</translation>
+    </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation>&amp;Gör permanent</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>
+serial ports</comment>
+        <translation type="obsolete">Port %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation>När kryssad kommer angiven serieport att aktiveras på den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation>&amp;Aktivera serieport</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Port&amp;nummer:</translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>Visar serieportens nummer. Du kan välja någon av standardserieportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och manuellt ange parametrar för porten.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;IRQ:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visar IRQ-numret för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; är aktiverat för den här virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>I/O-po&amp;rt:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">Visar I/O-basportadressen för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode:</source>
+        <translation>Portl&amp;äge:</translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation>Kontrollerar arbetsläget för den här serieporten. Om du väljer &lt;b&gt;Frånkopplad&lt;/b&gt; kommer gästoperativsystemet att identifiera serieporten men kommer inte kunna arbeta med den.</translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
+        <translation>När kryssad kommer röret angivet i fältet &lt;b&gt;Portsökväg&lt;/b&gt; att skapas av den virtuella maskinen när den startas. Om inte kommer den virtuella maskinen att försöka använda det befintliga röret.</translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation>Skapa &amp;rör</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation type="obsolete">Portsö&amp;kväg:</translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation>Visar sökvägen till serieportens rör på värden när porten arbetar i läget &lt;b&gt;Värdrör&lt;/b&gt;, eller värdmaskinens serieenhetsnamn när porten arbetar i läget &lt;b&gt;Värdenhet&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation>Port/Filsökvä&amp;g:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visar IRQ-numret för denna serieport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>Visar I/O-basportadressen för denna serieport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerialPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Dublett av portnummer har valts </translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>Portsökväg har inte angivits </translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Dublett av portsökväg har angivits </translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsStorage</name>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="obsolete">Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; använder hårddisken som redan är ansluten till &lt;i&gt;%2&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Add Attachment</source>
+        <translation type="obsolete">&amp;Lägg till anslutning</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Attachment</source>
+        <translation type="obsolete">&amp;Ta bort anslutning</translation>
+    </message>
+    <message>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="obsolete">&amp;Välj hårddisk</translation>
+    </message>
+    <message>
+        <source>Adds a new hard disk attachment.</source>
+        <translation type="obsolete">Lägger till en ny hårddiskanslutning.</translation>
+    </message>
+    <message>
+        <source>Removes the highlighted hard disk attachment.</source>
+        <translation type="obsolete">Tar bort markerad hårddiskanslutning.</translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="obsolete">Anropar Virtuella diskhanteraren för att välja en hårddisk att ansluta till den för närvarande markerade platsen.</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
+        <translation type="obsolete">När kryssad kommer det virtuella SATA-styrkortet på denna maskin att aktiveras. Observera att du inte kan ansluta hårddiskar till SATA-portar när det virtuella SATA-styrkortet är inaktiverat.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="obsolete">&amp;Aktivera SATA-styrkort</translation>
+    </message>
+    <message>
+        <source>&amp;Attachments</source>
+        <translation type="obsolete">&amp;Anslutningar</translation>
+    </message>
+    <message>
+        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
+        <translation type="obsolete">Listar alla hårddiskar anslutna till denna maskin. Använd ett musklick eller tangenten &lt;tt&gt;Blanksteg&lt;/tt&gt; på det markerade objektet för att aktivera rullgardinslistan och välja det önskade värdet. Använd sammanhangsmenyn eller knapparna till höger för att lägga till eller ta bort anslutna hårddiskar.</translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="obsolete">Anropar Hanterare för virtuella media för att välja en hårddisk att ansluta till den markerade platsen.</translation>
+    </message>
+    <message>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
+        <translation type="obsolete">Om kryssad kommer den att visa skiljande hårddiskar som anslutits till platserna istället för deras bashårddiskar (visas vid indirekta anslutningar) och kommer även att tillåta uttrycklig anslutning av andra skiljande hårddiskar. Kryssa endast i denna om du behöver en komplex hårddiskkonfiguration.</translation>
+    </message>
+    <message>
+        <source>&amp;Show Differencing Hard Disks</source>
+        <translation type="obsolete">&amp;Visa skiljande hårddiskar</translation>
+    </message>
+    <message>
+        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
+        <translation type="obsolete">När kryssad så aktiveras ett ytterligare virtuellt styrkort (antingen SATA eller SCSI) på denna maskin.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Additional Controller</source>
+        <translation type="obsolete">&amp;Aktivera ytterligare styrkort</translation>
+    </message>
+    <message>
+        <source>IDE &amp;Controller Type</source>
+        <translation type="obsolete">Typ av IDE-st&amp;yrkort</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">Definierar typen för det virtuella IDE-styrkortet. Beroende på detta värde så kommer VirtualBox att tillhandahålla olika virtuella IDE-maskinvaruenheter till gästoperativsystemet.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Buss:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Fäll ut/in&amp;nbsp;objekt&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;hårddisk&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;CD/DVD-enhet&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;diskettenhet&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation>Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation>&lt;i&gt;%1&lt;/i&gt; använder ett media som redan är anslutet till &lt;i&gt;%2&lt;/i&gt;.</translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation>Lägg till styrkort</translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation>Lägg till IDE-styrkort</translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation>Lägg till SATA-styrkort</translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation>Lägg till SCSI-styrkort</translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation>Lägg till diskettstyrkort</translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation>Ta bort styrkort</translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation>Lägg till anslutning</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation>Lägg till hårddisk</translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation>Lägg till CD/DVD-enhet</translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation>Lägg till diskettenhet</translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation>Ta bort anslutning</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation>Lägger till ett nytt styrkort på slutet av lagringsträdet.</translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation>Tar bort markerat styrkort från lagringsträdet.</translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation>Lägger till en ny anslutning till lagringsträdet som använder markerat styrkort som förälder.</translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation>Tar bort anslutningen som är markerad i lagringsträdet.</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation>IDE-styrkort</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation>SATA-styrkort</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation>SCSI-styrkort</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation>Diskettstyrkort</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation>Hård&amp;disk:</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="obsolete">&amp;CD/DVD-enhet:</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="obsolete">&amp;Diskettenhet:</translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation>&amp;Lagringsträd</translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation>Innehåller alla lagringsstyrkort för denna maskin och virtuella avbildningar och värdenheter anslutna till dem.</translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation>Information</translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation>Lagringsträdet kan innehålla flera styrkort av olika typer. Denna maskin har för närvarande inga styrkort.</translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation>Attribut</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Namn:</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation>Ändrar namnet för lagringsstyrkortet som är markerat i lagringsträdet.</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation>&amp;Typ:</translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation>Väljer undertypen för lagringsstyrkortet som är markerat i lagringsträdet.</translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="obsolete">P&amp;lats:</translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation>Väljer platsen för lagringsstyrkortet som används av denna anslutning. Tillgängliga platser är beroende av typen för styrkortet och andra anslutningar på det.</translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="obsolete">Väljer virtuell diskavbildning eller värdenhet som används av denna anslutning.</translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="obsolete">Öppnar Hanterare för virtuella media för att välja en virtuell avbildning för denna anslutning.</translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="obsolete">Öppna Hanterare för virtuella media</translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="obsolete">Skil&amp;jande diskar</translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation>När kryssad så tillåts gästen att skicka ATAPI-kommandon direkt till värdenheten vilket gör det möjligt att använda CD/DVD-brännare som är anslutna till värden inifrån den virtuella maskinen. Observera att skrivning av ljudskivor inifrån den virtuella maskinen inte stöds ännu.</translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation>&amp;Genomströmning</translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation>Virtuell storlek:</translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation>Faktisk storlek:</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>Storlek:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Plats:</translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation>Typ (Format):</translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation>Ansluten till:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation>Tillåter användning av värdförmågor för in/ut-mellanlagring.</translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation>Använd in/ut-mellanlagring för värd</translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation>Lägg till SAS-styrkort</translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation>SAS-styrkort</translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="obsolete">Lagringsstyrkort</translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="obsolete">Lagringsstyrkort 1</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <translation type="unfinished">Värdenhet</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="unfinished">Avbildning</translation>
+    </message>
+    <message>
+        <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual CD/DVD drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual floppy drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new hard disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove disk from virtual drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj en mindre mängd minne.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation>av prestandaskäl så får inte antalet virtuella processorer anslutna till den virtuella maskinen vara fler än dubbelt så många som det fysiska antalet processorer på värddatorn (&lt;b&gt;%1&lt;/b&gt;). Minska därför antalet virtuella processorer.</translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation>du har tilldelat fler virtuella processorer till den virtuella maskinen än det antal fysiska processorer som finns i din värddator (&lt;b&gt;%1&lt;/b&gt;). Det kommer med säkerhet att minska prestandan för din virtuella maskin. Du bör minska antalet virtuella processorer.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att funktionen IO APIC aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att virtualiseringsfunktionen (VT-x/AMD-V) aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processor&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is 32 for now</comment>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;processorer&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation>&amp;Moderkort</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation>Bas&amp;minne:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation>Kontrollerar den mängd minne som tilldelas den virtuella maskinen. Om du tilldelar för mycket så kan det hända att maskinen inte startar alls.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation>&amp;Uppstartsordning:</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation>Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation>Flytta nedåt (Ctrl-Ned)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation>Flyttar den markerade uppstartsenheten nedåt.</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation>Flytta uppåt (Ctrl-Upp)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation>Flyttar den markerade uppstartsenheten uppåt.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>Utökade funktioner:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;ACPI</source>
+        <translation type="obsolete">Aktivera &amp;ACPI</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation>Aktivera &amp;IO APIC</translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation>&amp;Processor</translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation>&amp;Processor(er):</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="obsolete">Kontrollerar antalet virtuella processorer i den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation>När kryssad kommer funktionen Physical Address Extension (PAE) för värddatorns processor att exponeras för den virtuella maskinen.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation>Aktivera PA&amp;E/NX</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation>Acce&amp;leration</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation>Maskinvirtualisering:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation>När kryssad kommer den virtuella maskinen att försöka använda maskinutökningar i värddatorns processor för virtualisering såsom Intel VT-x och AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation>Aktivera &amp;VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation>När kryssad så kommer den virtuella maskinen att försöka använda utökningen Nested Paging för Intel VT-x och AMD-V.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation>Aktivera Nested Pa&amp;ging</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processorer&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation>När kryssad så kommer gästen att ha stöd för Extended Firmware Interface (EFI), vilket krävs för att starta upp specifika gästoperativsystem. Operativsystem som inte känner till EFI kommer inte att kunna starta upp om detta alternativ är aktiverat.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation>Aktivera &amp;EFI (endast speciella OS)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation>Om kryssad kommer RTC-enheten att rapportera tiden i UTC, om inte i lokaltid (värd). Unix förväntar sig oftast att maskinvaruklockan ställs in i UTC.</translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation>Maskinvaruklocka i &amp;UTC-tid</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation>Styr antalet virtuella processorer i den virtuella maskinen. Du behöver stöd för maskinvaruvirtualisering på ditt värdsystem för att använda fler än en virtuell processor.</translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation>Om kryssad kommer en absolut pekenhet (en USB-ritbräda) att ges stöd för. Om inte kommer en standard PS/2-mus att emuleras.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation>Aktivera &amp;absolut pekenhet</translation>
+    </message>
+    <message>
+        <source>&amp;Chipset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines chipset type used in this VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSB</name>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation>&amp;Lägg till tomt filter</translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation>Lä&amp;gg till filter från enhet</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Filter</source>
+        <translation>R&amp;edigera filter</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation>&amp;Ta bort filter</translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation>&amp;Flytta filtret uppåt</translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation>F&amp;lytta filtret nedåt</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation>Lägger till ett nytt USB-filter med alla fält initialt inställda till tomma strängar. Observera att ett sådant filter kommer att matcha alla anslutna USB-enheter.</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation>Lägger till ett nytt USB-filter med alla fält inställda till värdena för den markerade USB-enheten ansluten till värddatorn.</translation>
+    </message>
+    <message>
+        <source>Edits the selected USB filter.</source>
+        <translation>Redigerar markerat USB-filter.</translation>
+    </message>
+    <message>
+        <source>Removes the selected USB filter.</source>
+        <translation>Tar bort markerat USB-filter.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter up.</source>
+        <translation>Flyttar markerat USB-filter uppåt.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter down.</source>
+        <translation>Flyttar markerat USB-filter nedåt.</translation>
+    </message>
+    <message>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation>Nytt filter %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation>När kryssad kommer det virtuella USB-styrkortet att aktiveras på den här maskinen.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;USB Controller</source>
+        <translation>Aktivera &amp;USB-styrkort</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>När kryssad kommer det virtuella USB EHCI-styrkortet på denna maskin att aktiveras. USB ECHI-styrkortet tillhandahåller stöd för USB 2.0.</translation>
+    </message>
+    <message>
+        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
+        <translation>Aktivera USB 2.0-styrkort (E&amp;HCI)</translation>
+    </message>
+    <message>
+        <source>USB Device &amp;Filters</source>
+        <translation>USB-enhets&amp;filter</translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
+        <translation>Listar alla USB-filter för denna maskin. Kryssrutan till vänster definierar huruvida det specifika filtret är aktiverat eller inte. Använd sammanhangsmenyn eller knapparna till höger för att lägga till eller ta bort USB-filter.</translation>
+    </message>
+    <message>
+        <source>[filter]</source>
+        <translation>[filter]</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Leverantörs-ID: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Produkt-ID: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Produkt: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Tillverkare: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Serienummer: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Tillstånd: %1&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSBFilterDetails</name>
+    <message>
+        <source>Any</source>
+        <comment>remote</comment>
+        <translation>Alla</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation>Ja</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation>Nej</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Namn:</translation>
+    </message>
+    <message>
+        <source>Displays the filter name.</source>
+        <translation>Visar filternamnet.</translation>
+    </message>
+    <message>
+        <source>&amp;Vendor ID:</source>
+        <translation>Leve&amp;rantörs-ID:</translation>
+    </message>
+    <message>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Definierar filter för leverantörs-ID. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;XXXX&lt;/tt&gt; där &lt;tt&gt;X&lt;/tt&gt; är en hexadecimal siffra. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>&amp;Product ID:</source>
+        <translation>&amp;Produkt-ID:</translation>
+    </message>
+    <message>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Definierar filter för produkt-ID. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;XXXX&lt;/tt&gt; där &lt;tt&gt;X&lt;/tt&gt; är en hexadecimal siffra. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>&amp;Revision:</source>
+        <translation>&amp;Revision:</translation>
+    </message>
+    <message>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
+        <translation>Definierar filter för revisionsnummer. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;IIFF&lt;/tt&gt; där &lt;tt&gt;I&lt;/tt&gt; är en hexadecimal siffra av heltalsdelen och &lt;tt&gt;F&lt;/tt&gt; är en decimal siffra av den mindre delen. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>&amp;Manufacturer:</source>
+        <translation>&amp;Tillverkare:</translation>
+    </message>
+    <message>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Definierar filter för tillverkare som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>Pro&amp;duct:</source>
+        <translation>Pro&amp;dukt:</translation>
+    </message>
+    <message>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Definierar filter för produktnamn som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>&amp;Serial No.:</source>
+        <translation>&amp;Serienr.:</translation>
+    </message>
+    <message>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Definierar filter för serienummer som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>Por&amp;t:</source>
+        <translation>P&amp;ort:</translation>
+    </message>
+    <message>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Definierar filter för värdmaskinens USB-portar som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
+    </message>
+    <message>
+        <source>R&amp;emote:</source>
+        <translation>F&amp;järr:</translation>
+    </message>
+    <message>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
+        <translation>Definierar huruvida detta filter tillämpas på USB-enheter anslutna lokalt till värddatorn (&lt;i&gt;Nej&lt;/i&gt;), till en VRDP-klients dator (&lt;i&gt;Ja&lt;/i&gt;), eller båda (&lt;i&gt;Alla&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>&amp;Action:</source>
+        <translation>&amp;Åtgärd:</translation>
+    </message>
+    <message>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation>Definierar en åtgärd som genomförs på värddatorn när en matchande enhet ansluts: ge den till värdoperativsystemet (&lt;i&gt;Ignorera&lt;/i&gt;) eller fånga den för senare användning av virtuella maskiner (&lt;i&gt;Håll kvar&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>USB Filter Details</source>
+        <translation>Detaljer för USB-filter</translation>
     </message>
 </context>
 <context>
@@ -2018,14 +4778,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hanterare för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hanterare för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -2045,11 +4805,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation type="obsolete">Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
         <translation>Uppstartshård&amp;disk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2080,7 +4852,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -2090,6 +4862,361 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tryck på &lt;b&gt;%1&lt;/b&gt;-knappen om ovanstående är korrekt. När du trycker på den kommer en ny virtuell maskin att skapas. &lt;/p&gt;&lt;p&gt;Observera att du kan ändra dessa inställningar och alla andra inställningar för den skapade virtuella maskinen när som helst via &lt;b&gt;Inställningar&lt;/b&gt;-dialogen som du kommer åt genom menyn i huvudfönstret.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Namn</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIProgressDialog</name>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation>&amp;Avbryt</translation>
+    </message>
+    <message>
+        <source>Time remaining: %1</source>
+        <translation type="obsolete">Återstående tid: %1</translation>
+    </message>
+    <message>
+        <source>%1 days, %2 hours remaining</source>
+        <translation type="obsolete">%1 dygn, %2 timmar återstår</translation>
+    </message>
+    <message>
+        <source>%1 days, %2 minutes remaining</source>
+        <translation type="obsolete">%1 dygn, %2 minuter återstår</translation>
+    </message>
+    <message>
+        <source>%1 days remaining</source>
+        <translation type="obsolete">%1 dygn återstår</translation>
+    </message>
+    <message>
+        <source>1 day, %1 hours remaining</source>
+        <translation type="obsolete">1 dygn, %1 timmar återstår</translation>
+    </message>
+    <message>
+        <source>1 day, %1 minutes remaining</source>
+        <translation type="obsolete">1 dygn, %1 minuter återstår</translation>
+    </message>
+    <message>
+        <source>1 day remaining</source>
+        <translation type="obsolete">1 dygn återstår</translation>
+    </message>
+    <message>
+        <source>%1 hours, %2 minutes remaining</source>
+        <translation type="obsolete">%1 timmar, %2 minuter återstår</translation>
+    </message>
+    <message>
+        <source>1 hour, %1 minutes remaining</source>
+        <translation type="obsolete">1 timme, %1 minuter återstår</translation>
+    </message>
+    <message>
+        <source>1 hour remaining</source>
+        <translation type="obsolete">1 timme återstår</translation>
+    </message>
+    <message>
+        <source>%1 minutes remaining</source>
+        <translation type="obsolete">%1 minuter återstår</translation>
+    </message>
+    <message>
+        <source>1 minute, %2 seconds remaining</source>
+        <translation type="obsolete">1 minut, %2 sekunder återstår</translation>
+    </message>
+    <message>
+        <source>1 minute remaining</source>
+        <translation type="obsolete">1 minut återstår</translation>
+    </message>
+    <message>
+        <source>%1 seconds remaining</source>
+        <translation type="obsolete">%1 sekunder återstår</translation>
+    </message>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation>Ett par sekunder återstår</translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation>Avbryter...</translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation>Avbryt aktuell åtgärd</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation>%1, %2 återstår</translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation>%1 återstår</translation>
+    </message>
+</context>
+<context>
+    <name>UISession</name>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished">På &lt;b&gt;%1&lt;/b&gt;-sidan, %2</translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation type="unfinished">Ogiltigt inställningar upptäcktes</translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished">Icke-optimala inställningar hittades</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Inställningar</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">Stäng virtuell maskin</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation type="unfinished">Du vill:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Sparar det aktuella körtillståndet för den virtuella maskinen till den fysiska hårddisken för värddatorn.&lt;/p&gt;&lt;p&gt;Nästa gång som denna maskin startas kommer den att återställas från det sparade tillståndet och fortsätta körningen från samma plats som du sparade den vid, vilket låter dig fortsätta dig arbete direkt.&lt;/p&gt;&lt;p&gt;Observera att sparande av maskinens tillstånd kan ta lång tid beroende på gästoperativsystemets typ och mängden minne som du har tilldelat den virtuella maskinen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation type="unfinished">&amp;Spara maskintillståndet</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Skickar tryckhändelsen ACPI Power Button till den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Oftast kommer gästoperativsystemet som kör inne i den virtuella maskinen att upptäcka denna händelse och genomföra en ren avstängningsprocedur. Detta är det rekommenderade sättet att stänga av en virtuell maskin eftersom alla program som kör inne i den kommer att få en chans att spara sitt data och tillstånd.&lt;/p&gt;&lt;p&gt;Om maskinen inte svarar på denna åtgärd kan gästoperativsystemet vara felkonfigurerat eller inte förstår ACPI Power Button-händelser alls. I detta fall bör du välja åtgärden &lt;b&gt;Stänga av maskinen&lt;/b&gt; för att stoppa körningen av den virtuella maskinen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished">S&amp;kicka avstängningssignal</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Stänger av den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att denna åtgärd kommer att stoppa maskinkörningen omedelbart så att det gästoperativsystem som kör inne i den inte kommer att kunna genomföra en ren avstängningsprocedur, vilket kan leda till att &lt;i&gt;data förloras&lt;/i&gt; inne i den virtuella maskinen. Val av denna åtgärd rekommenderas endast om den virtuella maskinen inte svarar på åtgärden &lt;b&gt;Skicka avstängningssignal&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation type="unfinished">Stänga &amp;av maskinen</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished">Återställ maskinens tillstånd som lagrats i aktuell ögonblicksbild</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;När kryssad kommer maskinens tillstånd att återställas från det lagrade tillståndet i den aktuella ögonblicksbilden direkt efter att den stängs av. Det här är användbart om du är säker på att du vill förkasta resultatet för din senaste session och gå tillbaka till den aktuella ögonblicksbilden.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished">&amp;Återställ aktuell ögonblicksbild &quot;%1&quot;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">&amp;Detaljer</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="unfinished">Ögonblick&amp;sbilder</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>Oåtkomlig</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 sedan %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Oåtkomlig sedan %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">V&amp;isa</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">Växla till fönstret för den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">S&amp;tarta</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">Starta den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="obsolete">Å&amp;teruppta</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="obsolete">Återuppta körningen av den virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="obsolete">Gör &amp;paus</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="obsolete">Gör paus i körningen av den virtuella maskinen</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Allmänt</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">System</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">Skärm</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">Lagring</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">Ljud</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Nätverk</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">Portar</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">Serieportar</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished">Parallellportar</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">Delade mappar</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished">%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">du har 2D-grafikacceleration aktiverat. Eftersom 2D-grafikacceleration endast stöds för Windows-gäster så kommer denna funktion att inaktiveras.</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished">du har aktiverat en USB HID (Human Interface Device). Detta kommer inte att fungera såvida inte USB-emulering även aktiveras. Detta sker automatiskt när du accepterar inställningarna för virtuella maskinen genom att trycka på OK-knappen.</translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2256,7 +5383,7 @@ Version %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2272,19 +5399,19 @@ Version %1</translation>
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Stäng virtuell maskin</translation>
+        <translation type="obsolete">Stäng virtuell maskin</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Du vill:</translation>
+        <translation type="obsolete">Du vill:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>&amp;Spara maskintillståndet</translation>
+        <translation type="obsolete">&amp;Spara maskintillståndet</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>Stänga &amp;av maskinen</translation>
+        <translation type="obsolete">Stänga &amp;av maskinen</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
@@ -2296,31 +5423,31 @@ Version %1</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>S&amp;kicka avstängningssignal</translation>
+        <translation type="obsolete">S&amp;kicka avstängningssignal</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;När kryssad kommer maskinens tillstånd att återställas från det lagrade tillståndet i den aktuella ögonblicksbilden direkt efter att den stängs av. Det här är användbart om du är säker på att du vill förkasta resultatet för din senaste session och gå tillbaka till den aktuella ögonblicksbilden.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;När kryssad kommer maskinens tillstånd att återställas från det lagrade tillståndet i den aktuella ögonblicksbilden direkt efter att den stängs av. Det här är användbart om du är säker på att du vill förkasta resultatet för din senaste session och gå tillbaka till den aktuella ögonblicksbilden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sparar det aktuella körtillståndet för den virtuella maskinen till den fysiska hårddisken för värddatorn.&lt;/p&gt;&lt;p&gt;Nästa gång som denna maskin startas kommer den att återställas från det sparade tillståndet och fortsätta körningen från samma plats som du sparade den vid, vilket låter dig fortsätta dig arbete direkt.&lt;/p&gt;&lt;p&gt;Observera att sparande av maskinens tillstånd kan ta lång tid beroende på gästoperativsystemets typ och mängden minne som du har tilldelat den virtuella maskinen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sparar det aktuella körtillståndet för den virtuella maskinen till den fysiska hårddisken för värddatorn.&lt;/p&gt;&lt;p&gt;Nästa gång som denna maskin startas kommer den att återställas från det sparade tillståndet och fortsätta körningen från samma plats som du sparade den vid, vilket låter dig fortsätta dig arbete direkt.&lt;/p&gt;&lt;p&gt;Observera att sparande av maskinens tillstånd kan ta lång tid beroende på gästoperativsystemets typ och mängden minne som du har tilldelat den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Skickar tryckhändelsen ACPI Power Button till den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Oftast kommer gästoperativsystemet som kör inne i den virtuella maskinen att upptäcka denna händelse och genomföra en ren avstängningsprocedur. Detta är det rekommenderade sättet att stänga av en virtuell maskin eftersom alla program som kör inne i den kommer att få en chans att spara sitt data och tillstånd.&lt;/p&gt;&lt;p&gt;Om maskinen inte svarar på denna åtgärd kan gästoperativsystemet vara felkonfigurerat eller inte förstår ACPI Power Button-händelser alls. I detta fall bör du välja åtgärden &lt;b&gt;Stänga av maskinen&lt;/b&gt; för att stoppa körningen av den virtuella maskinen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Skickar tryckhändelsen ACPI Power Button till den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Oftast kommer gästoperativsystemet som kör inne i den virtuella maskinen att upptäcka denna händelse och genomföra en ren avstängningsprocedur. Detta är det rekommenderade sättet att stänga av en virtuell maskin eftersom alla program som kör inne i den kommer att få en chans att spara sitt data och tillstånd.&lt;/p&gt;&lt;p&gt;Om maskinen inte svarar på denna åtgärd kan gästoperativsystemet vara felkonfigurerat eller inte förstår ACPI Power Button-händelser alls. I detta fall bör du välja åtgärden &lt;b&gt;Stänga av maskinen&lt;/b&gt; för att stoppa körningen av den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stänger av den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att denna åtgärd kommer att stoppa maskinkörningen omedelbart så att det gästoperativsystem som kör inne i den inte kommer att kunna genomföra en ren avstängningsprocedur, vilket kan leda till att &lt;i&gt;data förloras&lt;/i&gt; inne i den virtuella maskinen. Val av denna åtgärd rekommenderas endast om den virtuella maskinen inte svarar på åtgärden &lt;b&gt;Skicka avstängningssignal&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Stänger av den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att denna åtgärd kommer att stoppa maskinkörningen omedelbart så att det gästoperativsystem som kör inne i den inte kommer att kunna genomföra en ren avstängningsprocedur, vilket kan leda till att &lt;i&gt;data förloras&lt;/i&gt; inne i den virtuella maskinen. Val av denna åtgärd rekommenderas endast om den virtuella maskinen inte svarar på åtgärden &lt;b&gt;Skicka avstängningssignal&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>Återställ maskinens tillstånd som lagrats i aktuell ögonblicksbild</translation>
+        <translation type="obsolete">Återställ maskinens tillstånd som lagrats i aktuell ögonblicksbild</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>&amp;Återställ aktuell ögonblicksbild &quot;%1&quot;</translation>
+        <translation type="obsolete">&amp;Återställ aktuell ögonblicksbild &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
@@ -3097,455 +6224,58 @@ Version %1</translation>
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Allmänt</translation>
+        <translation type="obsolete">Allmänt</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Inmatning</translation>
+        <translation type="obsolete">Inmatning</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Uppdatering</translation>
+        <translation type="obsolete">Uppdatering</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Språk</translation>
+        <translation type="obsolete">Språk</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Nätverk</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Visar sökvägen till standard-VDI-mappen. Den här mappen används, om inte uttryckligen angiven, när befintliga eller nya virtuella hårddiskar läggs till eller skapas.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Visar sökvägen till standardmappen för virtuella maskiner. Den här mappen används, om inte uttryckligen angiven, när nya virtuella maskiner skapas.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Visar sökvägen till biblioteket som tillhandahåller autentisering för fjärrskrivbordsklienter (VRDP).</translation>
-    </message>
-    <message>
-        <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Standardmapp för &amp;hårddiskar:</translation>
-    </message>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation>Standardmapp för &amp;maskiner:</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation>V&amp;RDP-autentiseringsbibliotek:</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Visar sökvägen till standardmappen för hårddiskar. Denna mapp används, om inte uttryckligen angiven någon annanstans, när befintliga eller nya virtuella hårddiskar läggs till.</translation>
-    </message>
-    <message>
-        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>När kryssad kommer programmet att tillhandahålla en ikon med sammanhangsmeny i aktivitetsfältet.</translation>
-    </message>
-    <message>
-        <source>&amp;Show System Tray Icon</source>
-        <translation>&amp;Visa ikon i aktivitetsfältet</translation>
-    </message>
-    <message>
-        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">När kryssad så kommer dockningsikonen att återspegla fönsterinnehållet för virtuella maskinen i realtid.</translation>
-    </message>
-    <message>
-        <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="obsolete">Realtidsvisning för &amp;dockningsikon</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>V&amp;isa automatiskt docka och menyrad i helskärm</translation>
+        <translation type="obsolete">Nätverk</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>Värd&amp;tangent:</translation>
+        <translation type="obsolete">Värd&amp;tangent:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Visar tangenten som används som en värdtangent i virtuella maskinfönstret. Aktivera inmatningsfältet och tryck på en ny värdtangent. Observera att alfanumeriska värden, markörflyttning och redigering av tangenter inte kan användas som en värdtangent.</translation>
+        <translation type="obsolete">Visar tangenten som används som en värdtangent i virtuella maskinfönstret. Aktivera inmatningsfältet och tryck på en ny värdtangent. Observera att alfanumeriska värden, markörflyttning och redigering av tangenter inte kan användas som en värdtangent.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>När kryssad kommer tangentbordet att fångas automatiskt varje gång som fönstret för den virtuella maskinen aktiveras. När tangentbordet är fångat kommer att tangenttryckningar (inklusive till exempel Alt-Tab) att dirigeras till den virtuella maskinen.</translation>
+        <translation type="obsolete">När kryssad kommer tangentbordet att fångas automatiskt varje gång som fönstret för den virtuella maskinen aktiveras. När tangentbordet är fångat kommer att tangenttryckningar (inklusive till exempel Alt-Tab) att dirigeras till den virtuella maskinen.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>Fånga tangentbord &amp;automatiskt</translation>
+        <translation type="obsolete">Fånga tangentbord &amp;automatiskt</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>Nollställ värdtangent</translation>
+        <translation type="obsolete">Nollställ värdtangent</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>Nollställer tangenten som används för värdtangent i fönstret för virtuella maskiner.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation> (inbyggd)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation>&lt;otillgänglig&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation>&lt;okänd&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation>Standard</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation>Språk:</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language:</source>
-        <translation>&amp;Gränssnittsspråk:</translation>
-    </message>
-    <message>
-        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Listar alla tillgängliga språk för användargränssnittet. Det språk som används har markerats med &lt;b&gt;fet&lt;/b&gt; text. Välj &lt;i&gt;Standard&lt;/i&gt; för att återställa till systemets standardspråk.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Namn</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Id</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Språk</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Upphovsman</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation>Upphovsmän:</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>%1 network</source>
-        <comment>&lt;adapter name&gt; network</comment>
-        <translation>%1-nätverk</translation>
-    </message>
-    <message>
-        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>värdens IPv4-adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>värdens IPv4-nätverksmask &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>värdens IPv6-adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP-serverns adress &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Nätverksmask för DHCP-server &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Nedre DHCP-adressgränsen &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>Övre DHCP-adressgränsen &lt;b&gt;%1&lt;/b&gt; är felaktig</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation>Kort</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation>Automatiskt konfigurerat</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation>Manuellt konfigurerat</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation>IPv4-adress</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation>Inte inställd</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation>Mask för IPv4-nätverk</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation>Inte inställd</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation>IPv6-adress</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask Length</source>
-        <translation>Masklängd för IPv6-nätverk</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation>Inte inställd</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation>DHCP-server</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation>Aktiverad</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation>Inaktiverad</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>Adress</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation>Nätverksmask</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation>Nedre gräns</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation>Inte inställd</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation>Övre gräns</translation>
-    </message>
-    <message>
-        <source>&amp;Add host-only network</source>
-        <translation>&amp;Lägg till endast-värd-nätverk</translation>
-    </message>
-    <message>
-        <source>&amp;Remove host-only network</source>
-        <translation>&amp;Ta bort endast-värd-nätverk</translation>
-    </message>
-    <message>
-        <source>&amp;Edit host-only network</source>
-        <translation>&amp;Redigera endast-värd-nätverk</translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>creating/removing host-only network</comment>
-        <translation>Genomför</translation>
-    </message>
-    <message>
-        <source>&amp;Host-only Networks:</source>
-        <translation>&amp;Endast-värd-nätverk:</translation>
-    </message>
-    <message>
-        <source>Lists all available host-only networks.</source>
-        <translation>Listar alla tillgängliga endast-värd-nätverk.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Namn</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetails</name>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation>Detaljer för endast-värd-nätverk</translation>
-    </message>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation>&amp;Kort</translation>
-    </message>
-    <message>
-        <source>Manual &amp;Configuration</source>
-        <translation>Manuell &amp;konfiguration</translation>
-    </message>
-    <message>
-        <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Använd manuell konfiguration för detta endast-värd-nätverkskort.</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation>&amp;IPv4-adress:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>Visar värdens IPv4-adress för detta kort.</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation>&amp;Mask för IPv4-nätverk:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>Visar värdens IPv4-nätverksmask för detta kort.</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation>I&amp;Pv6-adress:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Visar värdens IPv6-adress för detta kort om IPv6 stöds.</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>Mask&amp;längd för IPv6-nätverk:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Visar prefixlängd för värdens IPv6-nätverksmask för detta kort om IPv6 stöds.</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation>&amp;DHCP-server</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>&amp;Aktivera server</translation>
-    </message>
-    <message>
-        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>Indikerar huruvida DHCP-servern är aktiverad vid maskinens uppstart eller inte.</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation>Serverad&amp;ress:</translation>
-    </message>
-    <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Visar adressen för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation>Server&amp;mask:</translation>
-    </message>
-    <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Visar nätverksmasken för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation>&amp;Nedre adressgräns:</translation>
-    </message>
-    <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Visar den nedre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation>&amp;Övre adressgräns:</translation>
-    </message>
-    <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Visar den övre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VIrtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
-    </message>
-    <message>
-        <source>&amp;Check for updates</source>
-        <translation>&amp;Leta efter uppdateringar</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation>&amp;En gång per:</translation>
-    </message>
-    <message>
-        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Anger hur ofta kontroll av nya versioner ska genomföras. Observera att du kan tömma ovanstående kryssruta om du vill fullständigt inaktivera den här kontrollen.</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation>Nästa kontroll:</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation>Leta efter:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj denna om du endast vill bli informerad om stabila uppdateringar till VirtualBox.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Stable release versions</source>
-        <translation>&amp;Stabila utgåvor</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;All new releases</source>
-        <translation>&amp;Alla nya utgåvor</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor och förutgåvor av VirtualBox.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation>Alla nya utgåvor och &amp;förutgåvor</translation>
+        <translation type="obsolete">Nollställer tangenten som används för värdtangent i fönstret för virtuella maskiner.</translation>
     </message>
 </context>
 <context>
@@ -3812,12 +6542,12 @@ Version %1</translation>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Stängd</translation>
+        <translation type="obsolete">Stängd</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Öppen</translation>
+        <translation type="obsolete">Öppen</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -3827,7 +6557,7 @@ Version %1</translation>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Stänger</translation>
+        <translation type="obsolete">Stänger</translation>
     </message>
     <message>
         <source>None</source>
@@ -3887,17 +6617,17 @@ Version %1</translation>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>Noll</translation>
+        <translation type="obsolete">Noll</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>Extern</translation>
+        <translation type="obsolete">Extern</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>Gäst</translation>
+        <translation type="obsolete">Gäst</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4503,17 +7233,17 @@ Version %1</translation>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Port för fjärrskrivbordsserver</translation>
+        <translation type="obsolete">Port för fjärrskrivbordsserver</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Fjärrskrivbordsserver</translation>
+        <translation type="obsolete">Fjärrskrivbordsserver</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Inaktiverad</translation>
+        <translation type="obsolete">Inaktiverad</translation>
     </message>
     <message>
         <source>Display</source>
@@ -4787,7 +7517,7 @@ Version %1</translation>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
+        <translation type="obsolete">^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
     </message>
     <message>
         <source>B</source>
@@ -4848,6 +7578,122 @@ Version %1</translation>
         <comment>New Storage UI : Slot Name</comment>
         <translation>SAS-port %1</translation>
     </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">hårddisk</translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">Alla filer (*)</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Noll</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Extern</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Gäst</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">PIIX3</translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished">ICH9</translation>
+    </message>
+    <message>
+        <source>and</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished">MB</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4868,7 +7714,7 @@ Version %1</translation>
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Hjälp</translation>
+        <translation type="obsolete">&amp;Hjälp</translation>
     </message>
 </context>
 <context>
@@ -5034,7 +7880,7 @@ Version %1</translation>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>Alla hårddiskavbildningar (%1)</translation>
+        <translation type="obsolete">Alla hårddiskavbildningar (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -5046,7 +7892,7 @@ Version %1</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>CD/DVD-ROM-avbildningar (*.iso);;Alla filer (*)</translation>
+        <translation type="obsolete">CD/DVD-ROM-avbildningar (*.iso);;Alla filer (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -5054,7 +7900,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>Diskettavbildningar (*.img);;Alla filer (*)</translation>
+        <translation type="obsolete">Diskettavbildningar (*.img);;Alla filer (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -5116,6 +7962,22 @@ Version %1</translation>
         <comment>VMM: Floppy Image</comment>
         <translation>Ansluten till</translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">hårddisk</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -5130,6 +7992,10 @@ Version %1</translation>
     <message>
         <source>Close VM</source>
         <translation>Stäng virtuell maskin</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5311,11 +8177,11 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Är du säker på att du permanent vill ta bort den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Den här åtgärden går inte att ångra.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Är du säker på att du permanent vill ta bort den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Den här åtgärden går inte att ångra.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Är du säker på att du vill avregistrera den oåtkomliga virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Du kommer inte längre att kunna registrera den igen via det grafiska gränssnittet.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Är du säker på att du vill avregistrera den oåtkomliga virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Du kommer inte längre att kunna registrera den igen via det grafiska gränssnittet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -5481,19 +8347,19 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Några funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kommer antagligen att sluta att fungera korrekt.&lt;/p&gt;&lt;p&gt;Uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Några funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kommer antagligen att sluta att fungera korrekt.&lt;/p&gt;&lt;p&gt;Uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Vissa funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kanske inte fungerar som förväntat.&lt;/p&gt;&lt;p&gt;Det rekommenderas att uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Vissa funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kanske inte fungerar som förväntat.&lt;/p&gt;&lt;p&gt;Det rekommenderas att uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för nytt för den här versionen av VirtualBox: den installerade versionen är %1, förväntad version är %2.&lt;/p&gt;&lt;p&gt;Användning av en senare version av tilläggen med en äldre version av VirtualBox stöds inte. Installera den aktuella versionen av Gästtillägg genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för nytt för den här versionen av VirtualBox: den installerade versionen är %1, förväntad version är %2.&lt;/p&gt;&lt;p&gt;Användning av en senare version av tilläggen med en äldre version av VirtualBox stöds inte. Installera den aktuella versionen av Gästtillägg genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Misslyckades med att ändra mappsökväg för ögonblicksfiler för den virtuella maskinen &lt;b&gt;%1&lt;b&gt; till &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Misslyckades med att ändra mappsökväg för ögonblicksfiler för den virtuella maskinen &lt;b&gt;%1&lt;b&gt; till &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -5553,7 +8419,7 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Misslyckades med att spara de allmänna inställningarna för VirtualBox till &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Misslyckades med att spara de allmänna inställningarna för VirtualBox till &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -5574,12 +8440,12 @@ Version %1</translation>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>Ta bort</translation>
+        <translation type="obsolete">Ta bort</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>Avregistrera</translation>
+        <translation type="obsolete">Avregistrera</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -5612,7 +8478,7 @@ Version %1</translation>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>Inaktivera</translation>
+        <translation type="obsolete">Inaktivera</translation>
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
@@ -5701,7 +8567,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>Misslyckades med att kopiera filen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; till &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+        <translation type="obsolete">Misslyckades med att kopiera filen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; till &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -5961,7 +8827,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>Misslyckades med att ta bort filen &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Försök att ta bort filen själv och försök igen.</translation>
+        <translation type="obsolete">Misslyckades med att ta bort filen &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Försök att ta bort filen själv och försök igen.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -6001,16 +8867,16 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Det finns hårddiskar anslutna till portar för det ytterligare styrkortet. Om du inaktiverar det ytterligare styrkortet så kommer alla dessa hårddiskar att automatiskt kopplas från.&lt;/p&gt;&lt;p&gt;Är du säker på att du vill inaktivera det ytterligare styrkortet?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Det finns hårddiskar anslutna till portar för det ytterligare styrkortet. Om du inaktiverar det ytterligare styrkortet så kommer alla dessa hårddiskar att automatiskt kopplas från.&lt;/p&gt;&lt;p&gt;Är du säker på att du vill inaktivera det ytterligare styrkortet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Det finns hårddiskar anslutna till portar för det ytterligare styrkortet. Om du ändrar det ytterligare styrkortet så kommer alla dessa hårddiskar att automatiskt kopplas från.&lt;/p&gt;&lt;p&gt;Är du säker på att du vill ändra det ytterligare styrkortet?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Det finns hårddiskar anslutna till portar för det ytterligare styrkortet. Om du ändrar det ytterligare styrkortet så kommer alla dessa hårddiskar att automatiskt kopplas från.&lt;/p&gt;&lt;p&gt;Är du säker på att du vill ändra det ytterligare styrkortet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation>Ändra</translation>
+        <translation type="obsolete">Ändra</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -6114,29 +8980,29 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Det finns inget oanvänt media tillgängligt för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa ett nytt media, eller tryck på &lt;b&gt;Välj&lt;/b&gt; om du vill öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Det finns inget oanvänt media tillgängligt för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa ett nytt media, eller tryck på &lt;b&gt;Välj&lt;/b&gt; om du vill öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation>&amp;Skapa</translation>
+        <translation type="obsolete">&amp;Skapa</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation>&amp;Välj</translation>
+        <translation type="obsolete">&amp;Välj</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Det finns inget oanvänt media tillgängligt för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Välj&lt;/b&gt; om du vill öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Det finns inget oanvänt media tillgängligt för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Välj&lt;/b&gt; om du vill öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Misslyckades med att ansluta %1 till plats &lt;i&gt;%2&lt;/i&gt; på maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Misslyckades med att ansluta %1 till plats &lt;i&gt;%2&lt;/i&gt; på maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Misslyckades med att koppla från %1 från plats &lt;i&gt;%2&lt;/i&gt; på maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Misslyckades med att koppla från %1 från plats &lt;i&gt;%2&lt;/i&gt; på maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6160,7 +9026,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>Misslyckades med att mata ut disken från den virtuella enheten. Enheten kan vara låst av gästoperativsystemet. Kontrollera detta och försök igen.</translation>
+        <translation type="obsolete">Misslyckades med att mata ut disken från den virtuella enheten. Enheten kan vara låst av gästoperativsystemet. Kontrollera detta och försök igen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
@@ -6203,17 +9069,17 @@ Version %1</translation>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation>hårddisk</translation>
+        <translation type="obsolete">hårddisk</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation>CD/DVD-enhet</translation>
+        <translation type="obsolete">CD/DVD-enhet</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation>diskettenhet</translation>
+        <translation type="obsolete">diskettenhet</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -6272,90 +9138,136 @@ Version %1</translation>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Användarhandboken för VirtualBox har hämtats från &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; men kan inte sparas lokalt som &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Välj en annan plats för denna fil.&lt;/p&gt;</translation>
     </message>
-</context>
-<context>
-    <name>UIProgressDialog</name>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Time remaining: %1</source>
-        <translation type="obsolete">Återstående tid: %1</translation>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 days, %2 hours remaining</source>
-        <translation type="obsolete">%1 dygn, %2 timmar återstår</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 days, %2 minutes remaining</source>
-        <translation type="obsolete">%1 dygn, %2 minuter återstår</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 days remaining</source>
-        <translation type="obsolete">%1 dygn återstår</translation>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 day, %1 hours remaining</source>
-        <translation type="obsolete">1 dygn, %1 timmar återstår</translation>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 day, %1 minutes remaining</source>
-        <translation type="obsolete">1 dygn, %1 minuter återstår</translation>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 day remaining</source>
-        <translation type="obsolete">1 dygn återstår</translation>
+        <source>Remove</source>
+        <translation type="unfinished">Ta bort</translation>
     </message>
     <message>
-        <source>%1 hours, %2 minutes remaining</source>
-        <translation type="obsolete">%1 timmar, %2 minuter återstår</translation>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 hour, %1 minutes remaining</source>
-        <translation type="obsolete">1 timme, %1 minuter återstår</translation>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 hour remaining</source>
-        <translation type="obsolete">1 timme återstår</translation>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 minutes remaining</source>
-        <translation type="obsolete">%1 minuter återstår</translation>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 minute, %2 seconds remaining</source>
-        <translation type="obsolete">1 minut, %2 sekunder återstår</translation>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 minute remaining</source>
-        <translation type="obsolete">1 minut återstår</translation>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 seconds remaining</source>
-        <translation type="obsolete">%1 sekunder återstår</translation>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A few seconds remaining</source>
-        <translation>Ett par sekunder återstår</translation>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Canceling...</source>
-        <translation>Avbryter...</translation>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel the current operation</source>
-        <translation>Avbryt aktuell åtgärd</translation>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation>%1, %2 återstår</translation>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation>%1 återstår</translation>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">&amp;Ta bort</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6503,7 +9415,7 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Detaljer</translation>
+        <translation type="obsolete">&amp;Detaljer</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
@@ -6548,11 +9460,11 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Ta bort</translation>
+        <translation type="obsolete">&amp;Ta bort</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>Ta bort den markerade virtuella maskinen</translation>
+        <translation type="obsolete">Ta bort den markerade virtuella maskinen</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -6580,15 +9492,15 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>Ögonblick&amp;sbilder</translation>
+        <translation type="obsolete">Ögonblick&amp;sbilder</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>B&amp;eskrivning</translation>
+        <translation type="obsolete">B&amp;eskrivning</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>B&amp;eskrivning *</translation>
+        <translation type="obsolete">B&amp;eskrivning *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -6685,28 +9597,104 @@ Version %1</translation>
         <comment>Non Mac OS X version</comment>
         <translation>&amp;Arkiv</translation>
     </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Lägg till...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">&amp;Ta bort</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Välj en inställningskategori från listan på vänstra sidan och flytta muspekaren över ett inställningsobjekt för att få mer information om det&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Välj en inställningskategori från listan på vänstra sidan och flytta muspekaren över ett inställningsobjekt för att få mer information om det&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Ogiltigt inställningar upptäcktes</translation>
+        <translation type="obsolete">Ogiltigt inställningar upptäcktes</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Inställningar</translation>
+        <translation type="obsolete">Inställningar</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Icke-optimala inställningar hittades</translation>
+        <translation type="obsolete">Icke-optimala inställningar hittades</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>På &lt;b&gt;%1&lt;/b&gt;-sidan, %2</translation>
+        <translation type="obsolete">På &lt;b&gt;%1&lt;/b&gt;-sidan, %2</translation>
     </message>
 </context>
 <context>
@@ -6979,24 +9967,24 @@ Version %1</translation>
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>Visa väljare</translation>
+        <translation type="obsolete">Visa väljare</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>Visa väljarfönstret tilldelat till denna meny</translation>
+        <translation type="obsolete">Visa väljarfönstret tilldelat till denna meny</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>Dölj aktivitetsfältsikon</translation>
+        <translation type="obsolete">Dölj aktivitetsfältsikon</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>Ta bort denna ikon från aktivitetsfältet</translation>
+        <translation type="obsolete">Ta bort denna ikon från aktivitetsfältet</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>And&amp;ra maskiner...</translation>
+        <translation type="obsolete">And&amp;ra maskiner...</translation>
     </message>
 </context>
 <context>
@@ -7119,22 +10107,22 @@ Version %1</translation>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Ingen beskrivning angiven. Tryck på knappen Redigera för att lägga till en beskrivning.</translation>
+        <translation type="obsolete">Ingen beskrivning angiven. Tryck på knappen Redigera för att lägga till en beskrivning.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Redigera</translation>
+        <translation type="obsolete">Redigera</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Redigera (Ctrl+E)</translation>
+        <translation type="obsolete">Redigera (Ctrl+E)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>Den valda virtuella maskinen är &lt;i&gt;oåtkomlig&lt;/i&gt;. Undersök felmeddelandet som visas nedan och tryck på knappen &lt;b&gt;Uppdatera&lt;/b&gt; om du vill upprepa tillgänglighetskontrollen:</translation>
+        <translation type="obsolete">Den valda virtuella maskinen är &lt;i&gt;oåtkomlig&lt;/i&gt;. Undersök felmeddelandet som visas nedan och tryck på knappen &lt;b&gt;Uppdatera&lt;/b&gt; om du vill upprepa tillgänglighetskontrollen:</translation>
     </message>
 </context>
 <context>
@@ -7247,7 +10235,7 @@ Version %1</translation>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
-        <translation>Inte tillgänglig</translation>
+        <translation type="obsolete">Inte tillgänglig</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
@@ -7266,54 +10254,10 @@ Version %1</translation>
         <comment>details report</comment>
         <translation type="obsolete">Nested Paging</translation>
     </message>
-</context>
-<context>
-    <name>UIVMListView</name>
     <message>
-        <source>Inaccessible</source>
-        <translation>Oåtkomlig</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 sedan %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Oåtkomlig sedan %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>V&amp;isa</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Växla till fönstret för den markerade virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>S&amp;tarta</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Starta den markerade virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>Å&amp;teruppta</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>Återuppta körningen av den virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>Gör &amp;paus</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>Gör paus i körningen av den virtuella maskinen</translation>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished">Inte tillgänglig</translation>
     </message>
 </context>
 <context>
@@ -7349,33 +10293,6 @@ Version %1</translation>
     <message>
         <source>Close</source>
         <translation>Stäng</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>När kryssad kommer det virtuella PCI-ljudkortet att anslutas i den virtuella maskinen som använder den angivna drivrutinen för att kommunicera med värdljudkortet.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation>Aktivera &amp;ljud</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation>Värdmaskinens ljud&amp;drivrutin:</translation>
-    </message>
-    <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Kontrollerar drivrutinen för ljudutmatning. &lt;b&gt;Ingen ljuddrivrutin&lt;/b&gt; gör att gästen ser ett ljudkort men varje åtkomst till det kommer att ignoreras.</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation>Ljudst&amp;yrkort:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>Väljer typen för det virtuella ljudkortet. Beroende på detta värde kommer VirtualBox att tillhandahålla olika ljudmaskinvaror till den virtuella maskinen.</translation>
     </message>
 </context>
 <context>
@@ -7438,109 +10355,6 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsDisplay</name>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet, vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Video</source>
-        <translation>&amp;Grafik</translation>
-    </message>
-    <message>
-        <source>Video &amp;Memory:</source>
-        <translation>Grafik&amp;minne:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Kontrollerar den mängd grafikminne som tilldelas den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>Utökade funktioner:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation>När kryssad kommer den virtuella maskinen att få åtkomst till 3D-grafikförmågor tillgängliga på värddatorn.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation>Aktivera &amp;3D-acceleration</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation>&amp;Fjärrskrivbord</translation>
-    </message>
-    <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>När kryssad kommer den virtuella maskinen att fungera som en Remote Desktop Protocol-server (RDP) som tillåter fjärrklienter att ansluta och använda den virtuella maskinen (när den är igång) med en standardiserad RDP-klient.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>&amp;Aktivera server</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation>Server&amp;port:</translation>
-    </message>
-    <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="obsolete">Visar VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att återställa porten till standardvärdet.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation>Autentiserings&amp;metod:</translation>
-    </message>
-    <message>
-        <source>Defines the VRDP authentication method.</source>
-        <translation>Definierar metoden för VRDP-autentisering.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation>&amp;Tidsgräns för autentisering:</translation>
-    </message>
-    <message>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Anger tidsgränsen för gästautentisering, i millisekunder.</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; av grafikminnet, vilket är det minsta som krävs för att spela upp HD-video.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>När kryssad så kommer den virtuella maskinen att ges åtkomst till grafikaccelerationsförmågor som är tillgängliga på värdmaskinen.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation>Aktivera &amp;2D-grafikacceleration</translation>
-    </message>
-    <message>
-        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation>VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att välja port 3389 som är standardporten för RDP.</translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation>S&amp;kärmantal:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation>Styr antalet virtuella skärmar som tillhandahålls den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
@@ -7548,51 +10362,51 @@ Version %1</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Allmänt</translation>
+        <translation type="obsolete">Allmänt</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Lagring</translation>
+        <translation type="obsolete">Lagring</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>Hårddiskar</translation>
+        <translation type="obsolete">Hårddiskar</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Diskett</translation>
+        <translation type="obsolete">Diskett</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Ljud</translation>
+        <translation type="obsolete">Ljud</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Nätverk</translation>
+        <translation type="obsolete">Nätverk</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>Portar</translation>
+        <translation type="obsolete">Portar</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Serieportar</translation>
+        <translation type="obsolete">Serieportar</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Parallellportar</translation>
+        <translation type="obsolete">Parallellportar</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Delade mappar</translation>
+        <translation type="obsolete">Delade mappar</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -7600,7 +10414,7 @@ Version %1</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
@@ -7608,27 +10422,27 @@ Version %1</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>System</translation>
+        <translation type="obsolete">System</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>Skärm</translation>
+        <translation type="obsolete">Skärm</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
+        <translation type="obsolete">du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. VirtualBox saknar för tillfället stöd för fler än en virtuell processor för 64-bitars gästoperativsystem som körs på 32-bitars värddatorer.</translation>
+        <translation type="obsolete">du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. VirtualBox saknar för tillfället stöd för fler än en virtuell processor för 64-bitars gästoperativsystem som körs på 32-bitars värddatorer.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>du har 2D-grafikacceleration aktiverat. Eftersom 2D-grafikacceleration endast stöds för Windows-gäster så kommer denna funktion att inaktiveras.</translation>
+        <translation type="obsolete">du har 2D-grafikacceleration aktiverat. Eftersom 2D-grafikacceleration endast stöds för Windows-gäster så kommer denna funktion att inaktiveras.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>du har aktiverat en USB HID (Human Interface Device). Detta kommer inte att fungera såvida inte USB-emulering även aktiveras. Detta sker automatiskt när du accepterar inställningarna för virtuella maskinen genom att trycka på OK-knappen.</translation>
+        <translation type="obsolete">du har aktiverat en USB HID (Human Interface Device). Detta kommer inte att fungera såvida inte USB-emulering även aktiveras. Detta sker automatiskt när du accepterar inställningarna för virtuella maskinen genom att trycka på OK-knappen.</translation>
     </message>
 </context>
 <context>
@@ -7680,1517 +10494,6 @@ Version %1</translation>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Anropar Hanterare för virtuella media för att välja en diskettavbildning att montera.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsGeneral</name>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Visar sökvägen där ögonblicksbilder av den virtuella maskinen lagras. Observera att ögonblicksbilder kan ta upp en hel del diskutrymme.</translation>
-    </message>
-    <message>
-        <source>&amp;Basic</source>
-        <translation>&amp;Grundläggande</translation>
-    </message>
-    <message>
-        <source>Identification</source>
-        <translation type="obsolete">Identifikation</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Namn:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the virtual machine.</source>
-        <translation>Visar namnet på den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type:</source>
-        <translation type="obsolete">Operativsystems&amp;typ:</translation>
-    </message>
-    <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Visar operativsystemet som du planerar att installera i den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">Bas&amp;minnesstorlek</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">Kontrollerar den mängd minne som tilldelas den virtuella maskinen. Om du tilldelar för mycket kanske maskinen inte startar alls.</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">&amp;Grafikminnesstorlek</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">Kontrollerar den mängd grafikminne som tilldelas den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation>&amp;Avancerat</translation>
-    </message>
-    <message>
-        <source>Boo&amp;t Order:</source>
-        <translation type="obsolete">Uppstar&amp;tsordning:</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
-    </message>
-    <message>
-        <source>[device]</source>
-        <translation type="obsolete">[enhet]</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation type="obsolete">Flytta uppåt (Ctrl-Upp)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation type="obsolete">Flyttar den markerade uppstartsenheten uppåt.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation type="obsolete">Flytta nedåt (Ctrl-Ned)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation type="obsolete">Flyttar den markerade uppstartsenheten nedåt.</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="obsolete">Utökade funktioner:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
-    </message>
-    <message>
-        <source>Enable A&amp;CPI</source>
-        <translation type="obsolete">Aktivera A&amp;CPI</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
-    </message>
-    <message>
-        <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">Aktivera IO A&amp;PIC</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att försöka använda maskinvarutillägg i värddatorns processor för virtualisering såsom Intel VT-x och AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">Aktivera &amp;VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="obsolete">När kryssad kommer funktionen Physical Address Extension (PAE) för värddatorns processor att exponeras för den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="obsolete">Aktivera PA&amp;E/NX</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Delade urklipp:</translation>
-    </message>
-    <message>
-        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen kräver att Gästtillägg är installerat på gästoperativsystemet.</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">Definierar typen för det virtuella IDE-styrkortet. Beroende på detta värde kommer VirtualBox att tillhandahålla olika virtuella IDE-maskinvaruenheter till gästoperativsystemet.</translation>
-    </message>
-    <message>
-        <source>&amp;IDE Controller Type:</source>
-        <translation type="obsolete">Typ av &amp;IDE-styrkort:</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation>Mapp för ö&amp;gonblicksbilder:</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation>&amp;Beskrivning</translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>Visar beskrivningen för den virtuella maskinen. Beskrivningsfältet är användbart för att kommentera konfigurationsdetaljer för det installerade gästoperativsystemet.</translation>
-    </message>
-    <message>
-        <source>&amp;Other</source>
-        <translation type="obsolete">Ö&amp;vrigt</translation>
-    </message>
-    <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>När kryssad så kommer byte till monterat CD/DVD- eller diskettmedia som genomförs under maskinkörning att sparas i inställningsfilen för att behålla konfigurationen av monterade media mellan körningar.</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Mounted Media</source>
-        <translation type="obsolete">&amp;Kom ihåg monterat media</translation>
-    </message>
-    <message>
-        <source>Runtime:</source>
-        <translation type="obsolete">Körtid:</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;75%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj ett mindre värde för minnesanvändningen.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;50%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns kanske inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="obsolete">du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att få åtkomst till 3D-grafikförmågor tillgängliga på värddatorn.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="obsolete">Aktivera &amp;3D-acceleration</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj en mindre mängd minne.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
-    </message>
-    <message>
-        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="obsolete">det finns en 64-bitars gästoperativsystemstyp som tilldelats denna virtuella maskin som även kräver att virtualiseringsfunktioner (VT-x/AMD-V) aktiveras, annars kommer din gäst att misslyckas att hitta en 64-bitars processor och kommer inte att kunna starta upp, så denna funktion kommer att vara aktiverad automatiskt när du godkänner inställningar för virtuella maskinen genom att trycka på knappen OK.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">När kryssad så kommer den virtuella maskinen att försöka använda utökningen Nested Paging för Intel VT-x och AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation type="obsolete">Aktivera Nested Pa&amp;ging</translation>
-    </message>
-    <message>
-        <source>Removable Media:</source>
-        <translation>Flyttbart media:</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Runtime Changes</source>
-        <translation>&amp;Kom ihåg körtidsändringar</translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation>Minimal verktygsrad:</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>Om kryssad, visa minimal verktygsrad i helskärmsläge och sömlöst läge.</translation>
-    </message>
-    <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>Visa i &amp;helskärm/sömlöst läge</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Om kryssad kommer minimala verktygsraden att visas överst på skärmen istället för på dess standardposition längst ner på skärmen.</translation>
-    </message>
-    <message>
-        <source>Show At &amp;Top Of Screen</source>
-        <translation>Visa övers&amp;t på skärmen</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsStorage</name>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="obsolete">Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; använder hårddisken som redan är ansluten till &lt;i&gt;%2&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Add Attachment</source>
-        <translation type="obsolete">&amp;Lägg till anslutning</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Attachment</source>
-        <translation type="obsolete">&amp;Ta bort anslutning</translation>
-    </message>
-    <message>
-        <source>&amp;Select Hard Disk</source>
-        <translation type="obsolete">&amp;Välj hårddisk</translation>
-    </message>
-    <message>
-        <source>Adds a new hard disk attachment.</source>
-        <translation type="obsolete">Lägger till en ny hårddiskanslutning.</translation>
-    </message>
-    <message>
-        <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="obsolete">Tar bort markerad hårddiskanslutning.</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Anropar Virtuella diskhanteraren för att välja en hårddisk att ansluta till den för närvarande markerade platsen.</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">När kryssad kommer det virtuella SATA-styrkortet på denna maskin att aktiveras. Observera att du inte kan ansluta hårddiskar till SATA-portar när det virtuella SATA-styrkortet är inaktiverat.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">&amp;Aktivera SATA-styrkort</translation>
-    </message>
-    <message>
-        <source>&amp;Attachments</source>
-        <translation type="obsolete">&amp;Anslutningar</translation>
-    </message>
-    <message>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">Listar alla hårddiskar anslutna till denna maskin. Använd ett musklick eller tangenten &lt;tt&gt;Blanksteg&lt;/tt&gt; på det markerade objektet för att aktivera rullgardinslistan och välja det önskade värdet. Använd sammanhangsmenyn eller knapparna till höger för att lägga till eller ta bort anslutna hårddiskar.</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Anropar Hanterare för virtuella media för att välja en hårddisk att ansluta till den markerade platsen.</translation>
-    </message>
-    <message>
-        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>Om kryssad kommer den att visa skiljande hårddiskar som anslutits till platserna istället för deras bashårddiskar (visas vid indirekta anslutningar) och kommer även att tillåta uttrycklig anslutning av andra skiljande hårddiskar. Kryssa endast i denna om du behöver en komplex hårddiskkonfiguration.</translation>
-    </message>
-    <message>
-        <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="obsolete">&amp;Visa skiljande hårddiskar</translation>
-    </message>
-    <message>
-        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="obsolete">När kryssad så aktiveras ett ytterligare virtuellt styrkort (antingen SATA eller SCSI) på denna maskin.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Additional Controller</source>
-        <translation type="obsolete">&amp;Aktivera ytterligare styrkort</translation>
-    </message>
-    <message>
-        <source>IDE &amp;Controller Type</source>
-        <translation type="obsolete">Typ av IDE-st&amp;yrkort</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">Definierar typen för det virtuella IDE-styrkortet. Beroende på detta värde så kommer VirtualBox att tillhandahålla olika virtuella IDE-maskinvaruenheter till gästoperativsystemet.</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Buss:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Typ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Fäll ut/in&amp;nbsp;objekt&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;hårddisk&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;CD/DVD-enhet&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Lägg&amp;nbsp;till&amp;nbsp;diskettenhet&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; använder ett media som redan är anslutet till &lt;i&gt;%2&lt;/i&gt;.</translation>
-    </message>
-    <message>
-        <source>Add Controller</source>
-        <translation>Lägg till styrkort</translation>
-    </message>
-    <message>
-        <source>Add IDE Controller</source>
-        <translation>Lägg till IDE-styrkort</translation>
-    </message>
-    <message>
-        <source>Add SATA Controller</source>
-        <translation>Lägg till SATA-styrkort</translation>
-    </message>
-    <message>
-        <source>Add SCSI Controller</source>
-        <translation>Lägg till SCSI-styrkort</translation>
-    </message>
-    <message>
-        <source>Add Floppy Controller</source>
-        <translation>Lägg till diskettstyrkort</translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation>Ta bort styrkort</translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation>Lägg till anslutning</translation>
-    </message>
-    <message>
-        <source>Add Hard Disk</source>
-        <translation>Lägg till hårddisk</translation>
-    </message>
-    <message>
-        <source>Add CD/DVD Device</source>
-        <translation>Lägg till CD/DVD-enhet</translation>
-    </message>
-    <message>
-        <source>Add Floppy Device</source>
-        <translation>Lägg till diskettenhet</translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation>Ta bort anslutning</translation>
-    </message>
-    <message>
-        <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>Lägger till ett nytt styrkort på slutet av lagringsträdet.</translation>
-    </message>
-    <message>
-        <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>Tar bort markerat styrkort från lagringsträdet.</translation>
-    </message>
-    <message>
-        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>Lägger till en ny anslutning till lagringsträdet som använder markerat styrkort som förälder.</translation>
-    </message>
-    <message>
-        <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>Tar bort anslutningen som är markerad i lagringsträdet.</translation>
-    </message>
-    <message>
-        <source>IDE Controller</source>
-        <translation>IDE-styrkort</translation>
-    </message>
-    <message>
-        <source>SATA Controller</source>
-        <translation>SATA-styrkort</translation>
-    </message>
-    <message>
-        <source>SCSI Controller</source>
-        <translation>SCSI-styrkort</translation>
-    </message>
-    <message>
-        <source>Floppy Controller</source>
-        <translation>Diskettstyrkort</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation>Hård&amp;disk:</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Device:</source>
-        <translation>&amp;CD/DVD-enhet:</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device:</source>
-        <translation>&amp;Diskettenhet:</translation>
-    </message>
-    <message>
-        <source>&amp;Storage Tree</source>
-        <translation>&amp;Lagringsträd</translation>
-    </message>
-    <message>
-        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>Innehåller alla lagringsstyrkort för denna maskin och virtuella avbildningar och värdenheter anslutna till dem.</translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation>Information</translation>
-    </message>
-    <message>
-        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>Lagringsträdet kan innehålla flera styrkort av olika typer. Denna maskin har för närvarande inga styrkort.</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation>Attribut</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Namn:</translation>
-    </message>
-    <message>
-        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>Ändrar namnet för lagringsstyrkortet som är markerat i lagringsträdet.</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation>&amp;Typ:</translation>
-    </message>
-    <message>
-        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation>Väljer undertypen för lagringsstyrkortet som är markerat i lagringsträdet.</translation>
-    </message>
-    <message>
-        <source>S&amp;lot:</source>
-        <translation>P&amp;lats:</translation>
-    </message>
-    <message>
-        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>Väljer platsen för lagringsstyrkortet som används av denna anslutning. Tillgängliga platser är beroende av typen för styrkortet och andra anslutningar på det.</translation>
-    </message>
-    <message>
-        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation>Väljer virtuell diskavbildning eller värdenhet som används av denna anslutning.</translation>
-    </message>
-    <message>
-        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation>Öppnar Hanterare för virtuella media för att välja en virtuell avbildning för denna anslutning.</translation>
-    </message>
-    <message>
-        <source>Open Virtual Media Manager</source>
-        <translation>Öppna Hanterare för virtuella media</translation>
-    </message>
-    <message>
-        <source>D&amp;ifferencing Disks</source>
-        <translation>Skil&amp;jande diskar</translation>
-    </message>
-    <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>När kryssad så tillåts gästen att skicka ATAPI-kommandon direkt till värdenheten vilket gör det möjligt att använda CD/DVD-brännare som är anslutna till värden inifrån den virtuella maskinen. Observera att skrivning av ljudskivor inifrån den virtuella maskinen inte stöds ännu.</translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation>&amp;Genomströmning</translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation>Virtuell storlek:</translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation>Faktisk storlek:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation>Storlek:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Plats:</translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation>Typ (Format):</translation>
-    </message>
-    <message>
-        <source>Attached To:</source>
-        <translation>Ansluten till:</translation>
-    </message>
-    <message>
-        <source>Allows to use host I/O caching capabilities.</source>
-        <translation>Tillåter användning av värdförmågor för in/ut-mellanlagring.</translation>
-    </message>
-    <message>
-        <source>Use host I/O cache</source>
-        <translation>Använd in/ut-mellanlagring för värd</translation>
-    </message>
-    <message>
-        <source>Add SAS Controller</source>
-        <translation>Lägg till SAS-styrkort</translation>
-    </message>
-    <message>
-        <source>SAS Controller</source>
-        <translation>SAS-styrkort</translation>
-    </message>
-    <message>
-        <source>Storage Controller</source>
-        <translation>Lagringsstyrkort</translation>
-    </message>
-    <message>
-        <source>Storage Controller 1</source>
-        <translation>Lagringsstyrkort 1</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>Select TAP setup application</source>
-        <translation type="obsolete">Välj TAP-konfigurationsprogram</translation>
-    </message>
-    <message>
-        <source>Select TAP terminate application</source>
-        <translation type="obsolete">Välj TAP-avslutningsprogram</translation>
-    </message>
-    <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>När kryssad kommer det här virtuella nätverkskortet att anslutas i den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation>Aktiv&amp;era nätverksadapter</translation>
-    </message>
-    <message>
-        <source>A&amp;dapter Type:</source>
-        <translation type="obsolete">A&amp;daptertyp:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>Väljer typ av virtuell nätverksadapter. Beroende på detta värde kommer VirtualBox att tillhandahålla olika nätverksmaskinvaror till den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation>&amp;Anslutet till:</translation>
-    </message>
-    <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Kontrollerar sättet på hur den här virtuella adaptern anslutits till det verkliga nätverket för värdoperativsystemet.</translation>
-    </message>
-    <message>
-        <source>&amp;Network Name:</source>
-        <translation type="obsolete">&amp;Nätverksnamn:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Visar namnet på det interna nätverket som har valts för denna adapter.</translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address:</source>
-        <translation type="obsolete">Maski&amp;nvaruadress:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Visar maskinvaruadressen för denna adapter. Den kan innehålla exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation>Genererar en ny slumpmässig maskinvaruadress.</translation>
-    </message>
-    <message>
-        <source>&amp;Generate</source>
-        <translation type="obsolete">&amp;Generera</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
-    </message>
-    <message>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="obsolete">Ka&amp;beln är ansluten</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Name:</source>
-        <translation type="obsolete">Gränssn&amp;ittsnamn:</translation>
-    </message>
-    <message>
-        <source>Displays the TAP interface name.</source>
-        <translation type="obsolete">Visar TAP-gränssnittets namn.</translation>
-    </message>
-    <message>
-        <source>&amp;Setup Application:</source>
-        <translation type="obsolete">Konfigurations&amp;program:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="obsolete">Visar kommandot som körs för att konfigurera TAP-gränssnittet.</translation>
-    </message>
-    <message>
-        <source>Selects the setup application.</source>
-        <translation type="obsolete">Väljer konfigurationsprogrammet.</translation>
-    </message>
-    <message>
-        <source>&amp;Terminate Application:</source>
-        <translation type="obsolete">A&amp;vstängningsprogram:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="obsolete">Visar kommandot som körs för att stänga av TAP-gränssnittet.</translation>
-    </message>
-    <message>
-        <source>Selects the terminate application.</source>
-        <translation type="obsolete">Väljer avstängningsprogrammet.</translation>
-    </message>
-    <message>
-        <source>Host Interface Settings</source>
-        <translation type="obsolete">Inställningar för värdgränssnitt</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <comment>network</comment>
-        <translation type="obsolete">Adapter</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>adapter</comment>
-        <translation type="obsolete">Inte vald</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <comment>internal</comment>
-        <translation type="obsolete">Nätverk</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network</comment>
-        <translation type="obsolete">Inte vald</translation>
-    </message>
-    <message>
-        <source>MAC Address</source>
-        <translation type="obsolete">MAC-adress</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>address</comment>
-        <translation type="obsolete">Inte vald</translation>
-    </message>
-    <message>
-        <source>Cable</source>
-        <translation type="obsolete">Kabel</translation>
-    </message>
-    <message>
-        <source>Connected</source>
-        <comment>cable</comment>
-        <translation type="obsolete">Ansluten</translation>
-    </message>
-    <message>
-        <source>Not connected</source>
-        <comment>cable</comment>
-        <translation type="obsolete">Inte ansluten</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation>Adapter&amp;typ:</translation>
-    </message>
-    <message>
-        <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="obsolete">Öppna utökade inställningar för aktuell anslutningstyp.</translation>
-    </message>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation>inget bryggat nätverkskort har valts</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation>inget internt nätverksnamn har angivits</translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation>inget endast värd-nätkort har valts</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation>Inte valt</translation>
-    </message>
-    <message>
-        <source>Open additional options dialog for current attachment type.</source>
-        <translation type="obsolete">Öppna ytterligare alternativ för aktuell anslutningstyp.</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Namn:</translation>
-    </message>
-    <message>
-        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>Väljer namnet för nätverkskortet om anslutningstypen är den samma som &lt;b&gt;Bryggat nätkort&lt;/b&gt; eller &lt;b&gt;Endast värd-kort&lt;/b&gt; och namnet på det interna nätverket om anslutningstypen är den samma som &lt;b&gt;Internt nätverk&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation>A&amp;vancerat</translation>
-    </message>
-    <message>
-        <source>Shows or hides additional network adapter options.</source>
-        <translation>Visar eller döljer ytterligare alternativ för nätverksadapter.</translation>
-    </message>
-    <message>
-        <source>&amp;Mac Address:</source>
-        <translation>Mas&amp;kinvaruadress:</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation>&amp;Kabel ansluten</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkDetails</name>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation type="obsolete">inget bryggat nätverkskort har valts</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation type="obsolete">inget internt nätverksnamn har angivits</translation>
-    </message>
-    <message>
-        <source>no host-only adapter is selected</source>
-        <translation type="obsolete">inget endast-värd-kort har valts</translation>
-    </message>
-    <message>
-        <source>Basic Details</source>
-        <translation type="obsolete">Grundläggande detaljer</translation>
-    </message>
-    <message>
-        <source>Bridged Network Details</source>
-        <translation type="obsolete">Detaljer för bryggat nätverk</translation>
-    </message>
-    <message>
-        <source>Internal Network Details</source>
-        <translation type="obsolete">Detaljer för internt nätverk</translation>
-    </message>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation type="obsolete">Detaljer för endast-värd-nätverk</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <translation type="obsolete">Inte vald</translation>
-    </message>
-    <message>
-        <source>Host Settings</source>
-        <translation type="obsolete">Värdinställningar</translation>
-    </message>
-    <message>
-        <source>&amp;Bridged Network Adapter:</source>
-        <translation type="obsolete">Kort för &amp;bryggat nätverk:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="obsolete">Visar namnet på värdens nätverkskort som valts för bryggat nätverk.</translation>
-    </message>
-    <message>
-        <source>Internal &amp;Network:</source>
-        <translation type="obsolete">Internt &amp;nätverk:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Visar namnet på det interna nätverket som har valts för detta kort.</translation>
-    </message>
-    <message>
-        <source>Host-only &amp;Network Adapter:</source>
-        <translation type="obsolete">Kort för endast-värd-&amp;nätverk:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="obsolete">Visar namnet på VirtualBox nätverkskort som valts för endast-värd-nätverk.</translation>
-    </message>
-    <message>
-        <source>Guest Settings</source>
-        <translation type="obsolete">Gästinställningar</translation>
-    </message>
-    <message>
-        <source>Guest &amp;MAC Address:</source>
-        <translation type="obsolete">&amp;MAC-adress för gäst:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">Visar maskinvaruadressen för detta kort. Den innehåller exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">Genererar en ny slumpmässig maskinvaruadress.</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation type="obsolete">&amp;Kabel ansluten</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
-    </message>
-    <message>
-        <source>Additional Options</source>
-        <translation type="obsolete">Ytterligare alternativ</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkPage</name>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Inget värdnätverksgränssnitt har valts</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Internt nätverksnamn har inte angivits</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>
-parallel ports</comment>
-        <translation type="obsolete">Port %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>När kryssad kommer angiven parallellport på den virtuella maskinen att aktiveras.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Parallel Port</source>
-        <translation>&amp;Aktivera parallellport</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Port&amp;nummer:</translation>
-    </message>
-    <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Visar parallellportsnumret. Du kan välj en av standardportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och ange portparametrarna manuellt.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visar IRQ-numret för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; har aktiverats för denna virtuella maskin.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>In/Ut-po&amp;rt:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Visar basadressen för In/Ut-porten för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation>Portsökvä&amp;g:</translation>
-    </message>
-    <message>
-        <source>Displays the host parallel device name.</source>
-        <translation>Visar värdmaskinens enhetsnamn för parallellporten.</translation>
-    </message>
-    <message>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation>Port %1</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visar IRQ-numret för denna parallellport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Visar I/O-basportadressen för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallelPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Dublett av portnummer har valts </translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>Portsökväg har inte angivits </translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Dublett av portsökväg har angivits </translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>&amp;Add New Shared Folder</source>
-        <translation type="obsolete">&amp;Lägg till en ny mappdelning</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="obsolete">R&amp;edigera markerad mappdelning</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="obsolete">&amp;Ta bort markerad mappdelning</translation>
-    </message>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation>Lägger till en ny delad mappdefinition.</translation>
-    </message>
-    <message>
-        <source>Edits the selected shared folder definition.</source>
-        <translation>Redigerar den markerade delade mappdefinitionen.</translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation>Tar bort den markerade delade mappdefinitionen.</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation> Maskinmappar</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation> Temporära mappar</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation>Fullständig</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation>Skrivskyddad</translation>
-    </message>
-    <message>
-        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Listar alla delade mappar åtkomliga för denna maskin. Använd \&quot;net use x: \\vboxsvr\utdelning\&quot; för att komma åt en delad mapp med namnet &lt;i&gt;utdelning&lt;/i&gt; från ett DOS-liknande operativsystem, eller \&quot;mount -t vboxsf utdelning monteringspunkt\&quot; för att komma åt den från ett operativsystem baserat på Linux. Denna funktion kräver Gästtillägg.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Namn</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation>Sökväg</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation>Åtkomst</translation>
-    </message>
-    <message>
-        <source> Global Folders</source>
-        <translation> Allmänna mappar</translation>
-    </message>
-    <message>
-        <source>&amp;Add Shared Folder</source>
-        <translation>&amp;Lägg till delad mapp</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Shared Folder</source>
-        <translation>&amp;Redigera delad mapp</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Shared Folder</source>
-        <translation>&amp;Ta bort delad mapp</translation>
-    </message>
-    <message>
-        <source>&amp;Folders List</source>
-        <translation>&amp;Mapplista</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Add Share</source>
-        <translation>Lägg till utdelning</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation>Redigera utdelning</translation>
-    </message>
-    <message>
-        <source>Dialog</source>
-        <translation>Dialog</translation>
-    </message>
-    <message>
-        <source>Folder Path:</source>
-        <translation>Mappsökväg:</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation>Mappnamn:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Visar namnet på den delade mappen (som den ser ut från gästoperativsystemet).</translation>
-    </message>
-    <message>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>När kryssad kommer gästoperativsystemet inte att kunna skriva till angiven delad mapp.</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation>S&amp;krivskyddad</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation>&amp;Gör permanent</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>
-serial ports</comment>
-        <translation type="obsolete">Port %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>När kryssad kommer angiven serieport att aktiveras på den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Serial Port</source>
-        <translation>&amp;Aktivera serieport</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Port&amp;nummer:</translation>
-    </message>
-    <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Visar serieportens nummer. Du kan välja någon av standardserieportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och manuellt ange parametrar för porten.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visar IRQ-numret för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; är aktiverat för den här virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>I/O-po&amp;rt:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Visar I/O-basportadressen för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode:</source>
-        <translation>Portl&amp;äge:</translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Kontrollerar arbetsläget för den här serieporten. Om du väljer &lt;b&gt;Frånkopplad&lt;/b&gt; kommer gästoperativsystemet att identifiera serieporten men kommer inte kunna arbeta med den.</translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>När kryssad kommer röret angivet i fältet &lt;b&gt;Portsökväg&lt;/b&gt; att skapas av den virtuella maskinen när den startas. Om inte kommer den virtuella maskinen att försöka använda det befintliga röret.</translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation>Skapa &amp;rör</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation type="obsolete">Portsö&amp;kväg:</translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Visar sökvägen till serieportens rör på värden när porten arbetar i läget &lt;b&gt;Värdrör&lt;/b&gt;, eller värdmaskinens serieenhetsnamn när porten arbetar i läget &lt;b&gt;Värdenhet&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>Port %1</translation>
-    </message>
-    <message>
-        <source>Port/File &amp;Path:</source>
-        <translation>Port/Filsökvä&amp;g:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visar IRQ-numret för denna serieport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Visar I/O-basportadressen för denna serieport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerialPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Dublett av portnummer har valts </translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>Portsökväg har inte angivits </translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Dublett av portsökväg har angivits </translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSystem</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj en mindre mängd minne.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
-    </message>
-    <message>
-        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>av prestandaskäl så får inte antalet virtuella processorer anslutna till den virtuella maskinen vara fler än dubbelt så många som det fysiska antalet processorer på värddatorn (&lt;b&gt;%1&lt;/b&gt;). Minska därför antalet virtuella processorer.</translation>
-    </message>
-    <message>
-        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>du har tilldelat fler virtuella processorer till den virtuella maskinen än det antal fysiska processorer som finns i din värddator (&lt;b&gt;%1&lt;/b&gt;). Det kommer med säkerhet att minska prestandan för din virtuella maskin. Du bör minska antalet virtuella processorer.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att funktionen IO APIC aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att virtualiseringsfunktionen (VT-x/AMD-V) aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>%1 is 1 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;processor&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is 32 for now</comment>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;processorer&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Motherboard</source>
-        <translation>&amp;Moderkort</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory:</source>
-        <translation>Bas&amp;minne:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Kontrollerar den mängd minne som tilldelas den virtuella maskinen. Om du tilldelar för mycket så kan det hända att maskinen inte startar alls.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation>&amp;Uppstartsordning:</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation>Flytta nedåt (Ctrl-Ned)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation>Flyttar den markerade uppstartsenheten nedåt.</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation>Flytta uppåt (Ctrl-Upp)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation>Flyttar den markerade uppstartsenheten uppåt.</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>Utökade funktioner:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;ACPI</source>
-        <translation type="obsolete">Aktivera &amp;ACPI</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>Aktivera &amp;IO APIC</translation>
-    </message>
-    <message>
-        <source>&amp;Processor</source>
-        <translation>&amp;Processor</translation>
-    </message>
-    <message>
-        <source>&amp;Processor(s):</source>
-        <translation>&amp;Processor(er):</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="obsolete">Kontrollerar antalet virtuella processorer i den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>När kryssad kommer funktionen Physical Address Extension (PAE) för värddatorns processor att exponeras för den virtuella maskinen.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation>Aktivera PA&amp;E/NX</translation>
-    </message>
-    <message>
-        <source>Acce&amp;leration</source>
-        <translation>Acce&amp;leration</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation>Maskinvirtualisering:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>När kryssad kommer den virtuella maskinen att försöka använda maskinutökningar i värddatorns processor för virtualisering såsom Intel VT-x och AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Aktivera &amp;VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>När kryssad så kommer den virtuella maskinen att försöka använda utökningen Nested Paging för Intel VT-x och AMD-V.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation>Aktivera Nested Pa&amp;ging</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;processorer&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>När kryssad så kommer gästen att ha stöd för Extended Firmware Interface (EFI), vilket krävs för att starta upp specifika gästoperativsystem. Operativsystem som inte känner till EFI kommer inte att kunna starta upp om detta alternativ är aktiverat.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation>Aktivera &amp;EFI (endast speciella OS)</translation>
-    </message>
-    <message>
-        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>Om kryssad kommer RTC-enheten att rapportera tiden i UTC, om inte i lokaltid (värd). Unix förväntar sig oftast att maskinvaruklockan ställs in i UTC.</translation>
-    </message>
-    <message>
-        <source>Hardware clock in &amp;UTC time</source>
-        <translation>Maskinvaruklocka i &amp;UTC-tid</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation>Styr antalet virtuella processorer i den virtuella maskinen. Du behöver stöd för maskinvaruvirtualisering på ditt värdsystem för att använda fler än en virtuell processor.</translation>
-    </message>
-    <message>
-        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation>Om kryssad kommer en absolut pekenhet (en USB-ritbräda) att ges stöd för. Om inte kommer en standard PS/2-mus att emuleras.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;absolute pointing device</source>
-        <translation>Aktivera &amp;absolut pekenhet</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>&amp;Add Empty Filter</source>
-        <translation>&amp;Lägg till tomt filter</translation>
-    </message>
-    <message>
-        <source>A&amp;dd Filter From Device</source>
-        <translation>Lä&amp;gg till filter från enhet</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Filter</source>
-        <translation>R&amp;edigera filter</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Filter</source>
-        <translation>&amp;Ta bort filter</translation>
-    </message>
-    <message>
-        <source>&amp;Move Filter Up</source>
-        <translation>&amp;Flytta filtret uppåt</translation>
-    </message>
-    <message>
-        <source>M&amp;ove Filter Down</source>
-        <translation>F&amp;lytta filtret nedåt</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Lägger till ett nytt USB-filter med alla fält initialt inställda till tomma strängar. Observera att ett sådant filter kommer att matcha alla anslutna USB-enheter.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Lägger till ett nytt USB-filter med alla fält inställda till värdena för den markerade USB-enheten ansluten till värddatorn.</translation>
-    </message>
-    <message>
-        <source>Edits the selected USB filter.</source>
-        <translation>Redigerar markerat USB-filter.</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation>Tar bort markerat USB-filter.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation>Flyttar markerat USB-filter uppåt.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation>Flyttar markerat USB-filter nedåt.</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation>Nytt filter %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>När kryssad kommer det virtuella USB-styrkortet att aktiveras på den här maskinen.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation>Aktivera &amp;USB-styrkort</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>När kryssad kommer det virtuella USB EHCI-styrkortet på denna maskin att aktiveras. USB ECHI-styrkortet tillhandahåller stöd för USB 2.0.</translation>
-    </message>
-    <message>
-        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>Aktivera USB 2.0-styrkort (E&amp;HCI)</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation>USB-enhets&amp;filter</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Listar alla USB-filter för denna maskin. Kryssrutan till vänster definierar huruvida det specifika filtret är aktiverat eller inte. Använd sammanhangsmenyn eller knapparna till höger för att lägga till eller ta bort USB-filter.</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation>[filter]</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation>Alla</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation>Ja</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation>Nej</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Namn:</translation>
-    </message>
-    <message>
-        <source>Displays the filter name.</source>
-        <translation>Visar filternamnet.</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation>Leve&amp;rantörs-ID:</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Definierar filter för leverantörs-ID. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;XXXX&lt;/tt&gt; där &lt;tt&gt;X&lt;/tt&gt; är en hexadecimal siffra. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation>&amp;Produkt-ID:</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Definierar filter för produkt-ID. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;XXXX&lt;/tt&gt; där &lt;tt&gt;X&lt;/tt&gt; är en hexadecimal siffra. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation>&amp;Revision:</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Definierar filter för revisionsnummer. Strängformatet för &lt;i&gt;exakt matchning&lt;/i&gt; är &lt;tt&gt;IIFF&lt;/tt&gt; där &lt;tt&gt;I&lt;/tt&gt; är en hexadecimal siffra av heltalsdelen och &lt;tt&gt;F&lt;/tt&gt; är en decimal siffra av den mindre delen. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation>&amp;Tillverkare:</translation>
-    </message>
-    <message>
-        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Definierar filter för tillverkare som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation>Pro&amp;dukt:</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Definierar filter för produktnamn som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation>&amp;Serienr.:</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Definierar filter för serienummer som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation>P&amp;ort:</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Definierar filter för värdmaskinens USB-portar som en &lt;i&gt;exakt matchande&lt;/i&gt; sträng. En tom sträng kommer att matcha alla värden.</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation>F&amp;järr:</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Definierar huruvida detta filter tillämpas på USB-enheter anslutna lokalt till värddatorn (&lt;i&gt;Nej&lt;/i&gt;), till en VRDP-klients dator (&lt;i&gt;Ja&lt;/i&gt;), eller båda (&lt;i&gt;Alla&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>&amp;Action:</source>
-        <translation>&amp;Åtgärd:</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Definierar en åtgärd som genomförs på värddatorn när en matchande enhet ansluts: ge den till värdoperativsystemet (&lt;i&gt;Ignorera&lt;/i&gt;) eller fånga den för senare användning av virtuella maskiner (&lt;i&gt;Håll kvar&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation>Detaljer för USB-filter</translation>
     </message>
 </context>
 <context>

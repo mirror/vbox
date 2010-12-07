@@ -4,7 +4,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="201"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="208"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n year</numerusform>
@@ -12,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="206"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="213"/>
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n month</numerusform>
@@ -20,7 +20,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="211"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="218"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -28,7 +28,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="216"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="223"/>
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
@@ -36,7 +36,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="226"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="233"/>
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
@@ -44,7 +44,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="221"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="228"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
@@ -55,7 +55,7 @@
 <context>
     <name>VBoxProblemReporter</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxProblemReporter.cpp" line="2340"/>
+        <location filename="../src/globals/VBoxProblemReporter.cpp" line="2047"/>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
             <numerusform>&lt;p&gt;The virtual machine &lt;b&gt;%1&lt;/b&gt; is currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine will be discarded. Note that the existing machine is not changed.&lt;/p&gt;</numerusform>

@@ -460,7 +460,7 @@
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Váltás teljes képernyős módra</translation>
+        <translation type="obsolete">Váltás teljes képernyős módra</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -468,11 +468,11 @@
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Átkapcsolás asztal-integrációs módra</translation>
+        <translation type="obsolete">Átkapcsolás asztal-integrációs módra</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">Vendé&amp;g képernyőjének automata átméretezése</translation>
+        <translation type="unfinished">Vendé&amp;g képernyőjének automata átméretezése</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -496,11 +496,11 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Egér-integráció e&amp;ngedése</translation>
+        <translation type="obsolete">Egér-integráció e&amp;ngedése</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Engedélyezed a gazdagép egerének átvételét</translation>
+        <translation type="obsolete">Engedélyezed a gazdagép egerének átvételét</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -528,7 +528,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Munkamenet i&amp;nformációk</translation>
+        <translation type="obsolete">Munkamenet i&amp;nformációk</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -544,11 +544,11 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>&amp;Folytat</translation>
+        <translation type="obsolete">&amp;Folytat</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>A megállított gép működésének folytatása</translation>
+        <translation type="obsolete">A megállított gép működésének folytatása</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -667,39 +667,39 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation>&amp;Teljes képernyőre váltás</translation>
+        <translation type="obsolete">&amp;Teljes képernyőre váltás</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation>Kilépés a &amp;teljes képernyős módból</translation>
+        <translation type="obsolete">Kilépés a &amp;teljes képernyős módból</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation>Normál módra váltás</translation>
+        <translation type="obsolete">Normál módra váltás</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation>Váltás aszta&amp;l-integrációs módra</translation>
+        <translation type="obsolete">Váltás aszta&amp;l-integrációs módra</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation>Kilépés az aszta&amp;l-integrációs módból</translation>
+        <translation type="obsolete">Kilépés az aszta&amp;l-integrációs módból</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation>Vendé&amp;g képernyőjének automata átméretezése</translation>
+        <translation type="obsolete">Vendé&amp;g képernyőjének automata átméretezése</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation>Vendé&amp;g képernyőjének automata átméretezésének tiltása</translation>
+        <translation type="obsolete">Vendé&amp;g képernyőjének automata átméretezésének tiltása</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation>Letiltja a vendég gép képernyőjének automatikus méretezesét az ablakának méretezésekor</translation>
+        <translation type="obsolete">Letiltja a vendég gép képernyőjének automatikus méretezesét az ablakának méretezésekor</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation>Távoli képernyő &amp;engedélyezése</translation>
+        <translation type="obsolete">Távoli képernyő &amp;engedélyezése</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
@@ -707,11 +707,11 @@
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation>Távoli képernyő &amp;tiltása</translation>
+        <translation type="obsolete">Távoli képernyő &amp;tiltása</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation>RDP kapcsolatok tiltása ehhez a géphez</translation>
+        <translation type="obsolete">RDP kapcsolatok tiltása ehhez a géphez</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
@@ -721,7 +721,330 @@
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Nap&amp;lózás tiltása...</translation>
+        <translation type="obsolete">Nap&amp;lózás tiltása...</translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and fullscreen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &amp;Scale Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and scale mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation type="unfinished">Nincs leírás. Nyomd meg a szerkesztés gombot, és írj egyet.</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished">Szerkesztés</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation type="unfinished">Szerkesztés (Ctrl+E)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Név</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished">OS típusa</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Alapmemória</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Boot sorrend</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="unfinished">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Memóriavirtualizáció</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Videó-memória</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Képernyők</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="unfinished">3D</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished">(CD/DVD)</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Gazda eszköz</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Vezérlő</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Bridge-elt kártya, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Belső hálózat, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Host-only kártya, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">VDE hálózat, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Eszköz szűrő</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 aktív)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Megosztott mappák</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Semmi</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished">Semmi</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation type="unfinished">A kiválasztott virtuális gép &lt;i&gt;nem elérhető&lt;/i&gt;. Nézze meg a lenti hibaüzenetet, és kattintson a &lt;b&gt;Frissítés&lt;/b&gt; gombra az elérhetőség újrateszteléséhez:</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Általános</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Rendszer</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Képernyő</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Tároló</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Audió</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Hálózat</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Soros portok</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Párhuzamos portok</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Megosztott mappák</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Leírás</translation>
     </message>
 </context>
 <context>
@@ -949,65 +1272,145 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>Itt lehet módosítani a kiválasztott virtuális gépek beállításait. A legtöbb beállítás dupla kattintás után módosítható.</translation>
+        <translation type="obsolete">Itt lehet módosítani a kiválasztott virtuális gépek beállításait. A legtöbb beállítás dupla kattintás után módosítható.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>Exportálás beállításai</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished">Add meg az OVF exportálás helyét. Exportálhatsz a helyi fájlrendszerbe, vagy feltöltheted az OVF fájlt egy Sun Cloud szolgáltatásra vagy egy S3 szerverre.</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished">He&amp;lyi fájlrendszer</translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished">&amp;Simple Storage System (S3)</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Add meg az OVF exportálás helyét. Exportálhatsz a helyi fájlrendszerbe, vagy feltöltheted az OVF fájlt egy Sun Cloud szolgáltatásra vagy egy S3 szerverre.</translation>
+        <translation type="obsolete">Add meg az OVF exportálás helyét. Exportálhatsz a helyi fájlrendszerbe, vagy feltöltheted az OVF fájlt egy Sun Cloud szolgáltatásra vagy egy S3 szerverre.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>He&amp;lyi fájlrendszer</translation>
+        <translation type="obsolete">He&amp;lyi fájlrendszer</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Simple Storage System (S3)</translation>
+        <translation type="obsolete">&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
         <translation>Exportálás beállításai</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished">F&amp;elhasználónév:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished">&amp;Jelszó:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished">&amp;Gépnév:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished">&amp;Bucket neve:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">&amp;Fájl:</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished">A régebbi, 0.9-es formátum használata a többi virtualizációs termékkel való kompatibilitás miatt.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished">OVF 0.9 &amp;használata</translation>
+    </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished">Gép</translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished">Válaszd ki a fájlt, amibe az exportálás történik</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format Archive (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished">Nyílt virtualizációs formátum (%1)</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">Töltsd ki a többi mezőt is (felhasználónév, jelszó, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished">Töltsd ki a többi mezőt is (felhasználónév, jelszó, gépnév, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation>F&amp;elhasználónév:</translation>
+        <translation type="obsolete">F&amp;elhasználónév:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Jelszó:</translation>
+        <translation type="obsolete">&amp;Jelszó:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>&amp;Gépnév:</translation>
+        <translation type="obsolete">&amp;Gépnév:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>&amp;Bucket neve:</translation>
+        <translation type="obsolete">&amp;Bucket neve:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>&amp;Fájl:</translation>
+        <translation type="obsolete">&amp;Fájl:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>A régebbi, 0.9-es formátum használata a többi virtualizációs termékkel való kompatibilitás miatt.</translation>
+        <translation type="obsolete">A régebbi, 0.9-es formátum használata a többi virtualizációs termékkel való kompatibilitás miatt.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>OVF 0.9 &amp;használata</translation>
+        <translation type="obsolete">OVF 0.9 &amp;használata</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
@@ -1015,27 +1418,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance</source>
-        <translation>Gép</translation>
+        <translation type="obsolete">Gép</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation>Válaszd ki a fájlt, amibe az exportálás történik</translation>
+        <translation type="obsolete">Válaszd ki a fájlt, amibe az exportálás történik</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Nyílt virtualizációs formátum (%1)</translation>
+        <translation type="obsolete">Nyílt virtualizációs formátum (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation>Add meg az OVF fájl nevét, amibe exportálsz.</translation>
+        <translation type="obsolete">Add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Töltsd ki a többi mezőt is (felhasználónév, jelszó, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
+        <translation type="obsolete">Töltsd ki a többi mezőt is (felhasználónév, jelszó, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Töltsd ki a többi mezőt is (felhasználónév, jelszó, gépnév, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
+        <translation type="obsolete">Töltsd ki a többi mezőt is (felhasználónév, jelszó, gépnév, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -1048,6 +1451,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Exporting Appliance ...</source>
         <translation>Virtuális gép exportálása...</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished">Itt lehet módosítani a kiválasztott virtuális gépek beállításait. A legtöbb beállítás dupla kattintás után módosítható.</translation>
     </message>
 </context>
 <context>
@@ -1269,6 +1676,527 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Általános</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished"> Bevitel</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">Frissítés</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">Nyelv</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Hálózat</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished">VirtualBox - %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsExtension</name>
+    <message>
+        <source>&amp;Extension Packages:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all installed packages.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Név</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished">Verzió</translation>
+    </message>
+    <message>
+        <source>Add package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select an extension package file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension package files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsGeneral</name>
+    <message>
+        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Megmutatja az aktuális alapértelmezett VDI mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <translation>Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation>Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket autentikálja. </translation>
+    </message>
+    <message>
+        <source>Default &amp;Hard Disk Folder:</source>
+        <translation type="obsolete">Alapértelmezett &amp;lemez mappa:</translation>
+    </message>
+    <message>
+        <source>Default &amp;Machine Folder:</source>
+        <translation>Alapértelmezett &amp;gép mappa:</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library:</source>
+        <translation>V&amp;RDP azonosítási könyvtár:</translation>
+    </message>
+    <message>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="obsolete">Megmutatja az aktuális alapértelmezett merevlemez mappát. Ez a mappa az alapértelmezés, ha nem adsz meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
+    </message>
+    <message>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation>Ha engedélyezed, a program egy ikont fog kirakni menüvel a rendszertálcára.</translation>
+    </message>
+    <message>
+        <source>&amp;Show System Tray Icon</source>
+        <translation>Tálcaikon megjeleníté&amp;se</translation>
+    </message>
+    <message>
+        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
+        <translation type="obsolete">Ha engedélyezed, a Dock ikon valós időben fogja mutatni a VM ablak tartalmát.</translation>
+    </message>
+    <message>
+        <source>&amp;Dock Icon Realtime Preview</source>
+        <translation type="obsolete">Valós idejű &amp;dock ikon</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="obsolete">A dock és a menüsor &amp;automatikus megjelenítése teljes képernyőn</translation>
+    </message>
+    <message>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <translation>&amp;Automatikus Dock és menüsor megjelenítés teljes képernyőnél</translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsInput</name>
+    <message>
+        <source>Host &amp;Key:</source>
+        <translation type="unfinished">&amp;Gazda-billentyű:</translation>
+    </message>
+    <message>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished">Gazda-billentyű visszaállítása</translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished">A VM ablakban Gazda-billentyűként használt gomb visszaállítása.</translation>
+    </message>
+    <message>
+        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
+        <translation type="unfinished">Ha engedélyezed, a billentyűzet mindig elfogásra kerül ha a gép ablaka aktív lesz. Ha a billentyűzet el van fogva, akkor minden billentyűzet-eseményt a virtuális gép kap meg (pl. az Alt-Tab kombinációt is).</translation>
+    </message>
+    <message>
+        <source>&amp;Auto Capture Keyboard</source>
+        <translation type="unfinished">&amp;Automata billentyűzet-elkapás</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsLanguage</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation> (beépített)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation>&lt;elérhetetlen&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation>&lt;ismeretlen&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation>Alapértelmezett</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Nyelv:</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Language:</source>
+        <translation>Felüle&amp;t nyelve:</translation>
+    </message>
+    <message>
+        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
+        <translation>Megmutatja az elérhető nyelveket. A jelenleg kiválasztott nyelv &lt;b&gt;vastag betűvel&lt;/b&gt; van jelölve. Válaszd az &lt;i&gt;Alapértelmezett&lt;/i&gt; opciót a rendszer nyelve alapján történő nyelvválasztáshoz.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Id</source>
+        <translation>Azonosító</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Nyelv</translation>
+    </message>
+    <message>
+        <source>Author</source>
+        <translation>Szerző</translation>
+    </message>
+    <message>
+        <source>Author(s):</source>
+        <translation>Szerző(k):</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetwork</name>
+    <message>
+        <source>%1 network</source>
+        <comment>&lt;adapter name&gt; network</comment>
+        <translation type="obsolete">%1 hálózat</translation>
+    </message>
+    <message>
+        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>a következő IPv4 cím helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>a következő IPv4 hálózati maszk helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>a következő IPv6 cím helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>A DHCP szerver címe (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
+    </message>
+    <message>
+        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>A DHCP szerver hálózati maszkja (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
+    </message>
+    <message>
+        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>A legkisebb kiosztható cím (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
+    </message>
+    <message>
+        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
+        <translation>A legnagyobb kiosztható cím (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation>Eszköz</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation>Automatikusan konfigurált</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation>Kézzel konfigurált</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation>IPv4 cím</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation>Nincs</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation>IPv4 hálózati maszk</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation>Nincs</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation>IPv6 cím</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask Length</source>
+        <translation>IPv6 hálózati maszk hossza</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation>Nincs</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation>DHCP szerver</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation>Engedélyezve</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation>Letiltva</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>Cím</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation>Hálózati maszk</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation>Alsó határ</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation>Nincs</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation>Felső határ</translation>
+    </message>
+    <message>
+        <source>&amp;Add host-only network</source>
+        <translation>Host-only hálózat hozzá&amp;adása</translation>
+    </message>
+    <message>
+        <source>&amp;Remove host-only network</source>
+        <translation>Host-only hálózat tö&amp;rlése</translation>
+    </message>
+    <message>
+        <source>&amp;Edit host-only network</source>
+        <translation>Host-only hálózat sz&amp;erkesztése</translation>
+    </message>
+    <message>
+        <source>Performing</source>
+        <comment>creating/removing host-only network</comment>
+        <translation type="obsolete">Folyamatban</translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks:</source>
+        <translation>&amp;Host-only hálózatok:</translation>
+    </message>
+    <message>
+        <source>Lists all available host-only networks.</source>
+        <translation>Minden elérhető host-only hálózat listázása.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>New Host-Only Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetails</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>Host-only hálózat részletei</translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation>Kárty&amp;a</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation>&amp;Kézi beállítás</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation>Kézi beállítás használata ehhez a host-only hálózati kártyához.</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation>&amp;IPv4 cím:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation>A gazda IPv4 címe ehhez a kártyához.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation>IPv4 hálózati &amp;maszk:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation>A gazda IPv4 hálózati maszkja ehhez a kártyához.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation>I&amp;Pv6 cím:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation>A gazda IPv6 címe ehhez a kártyához, ha az IPv6 támogatott.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation>IPv6 há&amp;lózati maszk hossza:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation>A gazda IPv6 hálózati maszkjának hossza ehhez a kártyához, ha IPv6 támogatott.</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation>&amp;DHCP szerver</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>Sz&amp;erver bekapcsolása</translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation>Megmutatja, hogy a DHCP szerver be van-e kapcsolva a gépen.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation>Sze&amp;rver címe:</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Ehhez a host-only kártyához tartozó  DHCP szerver címe.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation>Szerver &amp;maszkja:</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>Ehhez a host-only kártyához tartozó  DHCP szerver hálózati maszkja.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation>A&amp;lsó címhatár:</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>A DHCP szerver által, ehhez a host-only kártyával kiosztható alsó címhatár.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation>Felső &amp;címhatár:</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation>A DHCP szerver által, ehhez a host-only kártyával kiosztható felső címhatár.</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsUpdate</name>
+    <message>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
+        <translation>Ha engedélyezed, a VirtualBox időnként ellenőrizni fogja a weben, hogy elérhető-e újabb verzió a jelenleginél.</translation>
+    </message>
+    <message>
+        <source>&amp;Check for updates</source>
+        <translation>Frissítések elle&amp;nőrzése</translation>
+    </message>
+    <message>
+        <source>&amp;Once per:</source>
+        <translation>Sűrűsé&amp;g:</translation>
+    </message>
+    <message>
+        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
+        <translation>Megadhatod, hogy a VirtualBox milyen sűrűn nézzen frissítések után. Ha azt szeretnéd, hogy egyáltalán ne keressen frissítést, tiltsd le a pipadobozban.</translation>
+    </message>
+    <message>
+        <source>Next Check:</source>
+        <translation>Következő ellenőrzés:</translation>
+    </message>
+    <message>
+        <source>Check for:</source>
+        <translation>Ellenőrizze:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Válaszd ezt, ha csak a stabil VirtualBox frissítésekről szeretnél értesülni&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation>a &amp;stabil kiadásokat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról szeretnél értesülni&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation>minden új ki&amp;adást</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról és előzetes kiadásról szeretnél értesülni&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation>az elő&amp;zetes és a végeges kiadásokat</translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">Sú&amp;gó</translation>
+    </message>
+</context>
+<context>
     <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
@@ -1465,11 +2393,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;A VRDP szerver az alábbi porton figyel: %1</translation>
+        <translation type="obsolete">&lt;hr&gt;A VRDP szerver az alábbi porton figyel: %1</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1488,6 +2416,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>Jelzi, hogy a billentyűzetet elkapta-e a vendég OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) vagy nem (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1547,6 +2483,1697 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>Nincs támogatott eszköz a gazda PC-hez csatlakoztatva</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsAudio</name>
+    <message>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
+        <translation>Ha engedélyezed, a virtuális PCI hangkártya be lesz helyezve a virtuális gépbe, így az képes lesz kommunikálni a gazda hangkártyájával.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Audio</source>
+        <translation>Audió &amp;engedélyezése</translation>
+    </message>
+    <message>
+        <source>Host Audio &amp;Driver:</source>
+        <translation>Gazda au&amp;dió vezérlő:</translation>
+    </message>
+    <message>
+        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
+        <translation>Az audio kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller:</source>
+        <translation>Audió &amp;vezérlő:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>A virtuális hangkártya kiválasztása. A választott hangkártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez szükséges minimális értéket. </translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation>&amp;Videó</translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation>Videó&amp;memória:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation>Megadhatod a virtuális gép videó-memóriájának méretét.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation>Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation>&amp;3D gyorsítás engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>Távoli képe&amp;rnyő</translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation>Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation>Sz&amp;erver bekapcsolása</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation>Szerver &amp;port:</translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="obsolete">A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation>Autentikációs &amp;metódus:</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation>A VRDP autentikációs metódus.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation>Autentikációs &amp;időkorlát:</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation>Időkorlát a vendég autentikálásához, ezredmásodpercben.</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát rendeltél a géphez, pedig ez a minimum, ami a nagyfelbontású videók lejátszásához kell.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation>Ha engedélyezed, a virtuális gép hozzáférést kap a gazdagép videógyorsítási képességeihez.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation>&amp;2D gyorsítás engedélyezése</translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>A VRDP szerver portja. Adj meg &lt;tt&gt;0&lt;/tt&gt;-t (nulla) a szabványos RDP port (3389) kiválasztásához.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation>Mo&amp;nitorok száma:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation>Megadhatod a virtuális gép által használt monitorok számát.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsGeneral</name>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
+    </message>
+    <message>
+        <source>&amp;Basic</source>
+        <translation>&amp;Alap</translation>
+    </message>
+    <message>
+        <source>Identification</source>
+        <translation type="obsolete">Azonosítás</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Név:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the virtual machine.</source>
+        <translation>A virtuális gép neve.</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type:</source>
+        <translation type="obsolete">OS &amp;típusa: </translation>
+    </message>
+    <message>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="obsolete">A tervezett vendég operációs rendszer típusa.</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Alap&amp;memória mérete</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="obsolete">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
+    </message>
+    <message>
+        <source>&amp;Video Memory Size</source>
+        <translation type="obsolete">&amp;Videó-memória mérete</translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="obsolete">Megadhatod a virtuális gép videó-memóriájának méretét.</translation>
+    </message>
+    <message>
+        <source>&amp;Advanced</source>
+        <translation>H&amp;aladó</translation>
+    </message>
+    <message>
+        <source>Boo&amp;t Order:</source>
+        <translation type="obsolete">Boo&amp;t sorrend: </translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="obsolete">Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="obsolete">Fel (Ctrl+Fel)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="obsolete">A kiválasztott eszközt feljebb teszi.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="obsolete">Le (Ctrl+Le)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="obsolete">A kiválasztott eszközt lejjebb teszi.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="obsolete">Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable A&amp;CPI</source>
+        <translation type="obsolete">A&amp;CPI engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable IO A&amp;PIC</source>
+        <translation type="obsolete">IO A&amp;PIC engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="obsolete">&amp;VT-x/AMD-V engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="obsolete">Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="obsolete">PA&amp;E/NX engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Clipboard:</source>
+        <translation>O&amp;sztott vágólap:</translation>
+    </message>
+    <message>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen az integrációs szolgáltatások telepítését igénlyi.</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
+    </message>
+    <message>
+        <source>&amp;IDE Controller Type:</source>
+        <translation type="obsolete">&amp;IDE vezérlő típusa:</translation>
+    </message>
+    <message>
+        <source>S&amp;napshot Folder:</source>
+        <translation>Pilla&amp;natkép mappa:</translation>
+    </message>
+    <message>
+        <source>&amp;Description</source>
+        <translation>L&amp;eírás</translation>
+    </message>
+    <message>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <translation>A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
+    </message>
+    <message>
+        <source>&amp;Other</source>
+        <translation type="obsolete">T&amp;ovábbi</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation>Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Mounted Media</source>
+        <translation type="obsolete">Emlékezzen a csatolt médiák&amp;ra</translation>
+    </message>
+    <message>
+        <source>Runtime:</source>
+        <translation type="obsolete">Futtatókörnyezet:</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="obsolete">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez szükséges minimális értéket. </translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
+        <translation type="obsolete">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="obsolete">&amp;3D gyorsítás engedélyezése</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
+    </message>
+    <message>
+        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translatorcomment>TODO: Too looooooooong...</translatorcomment>
+        <translation type="obsolete">ez egy 64 bites vendég rendszerrel rendelkező gép, melynek futtatásához szükség van a processzor virtualizációs tulajdonságának (VT-x/AMD-V) engedélyezéséhez, különben a vendég rendszer nem lesz képes detektálni a 64 bites CPU-t, emiatt képtelen lesz bootolni, így ez az opció automatikusan engedélyezve lesz, ha megnyomod az OK gombot.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="obsolete">Memóriavirtualizáció en&amp;gedélyezése</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation>Eltávolítható média:</translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation>Emlékezzen a változtatások&amp;ra</translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation>Mini eszköztár:</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation>Ha engedélyezed, a Mini eszköztár meg fog jelenni teljes képernyős és asztal-integrációs módban.</translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation>Jelenjen meg &amp;teljes képernyőn</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation>Ha engedélyezed, a Mini ToolBar a képernyő tetején fog megjelenni, és nem az alján, ahol alapértelmezetten megjelenik.</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>Legyen a képernyő &amp;tetején</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetwork</name>
+    <message>
+        <source>Select TAP setup application</source>
+        <translation type="obsolete">Válaszd ki a TAP beállító alkalmazást</translation>
+    </message>
+    <message>
+        <source>Select TAP terminate application</source>
+        <translation type="obsolete">Válaszd ki a TAP leállító alkalmazást</translation>
+    </message>
+    <message>
+        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
+        <translation>Ha engedélyezed, a kábel be lesz dugva a virtuális gép hálókártyájába.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Network Adapter</source>
+        <translation>Hálózati adapter &amp;engedélyezése</translation>
+    </message>
+    <message>
+        <source>A&amp;dapter Type:</source>
+        <translation type="obsolete">Kárt&amp;ya típusa:</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>A virtuális hálókártya kiválasztása. A választott hálókártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
+    </message>
+    <message>
+        <source>&amp;Attached to:</source>
+        <translation>Cs&amp;atlakoztatva ide:</translation>
+    </message>
+    <message>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <translation>Megadhatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
+    </message>
+    <message>
+        <source>&amp;Network Name:</source>
+        <translation type="obsolete">Hálózat &amp;neve:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Az ehhez az adapterhez kiválasztott belső hálózat neve.</translation>
+    </message>
+    <message>
+        <source>&amp;MAC Address:</source>
+        <translation type="obsolete">&amp;MAC cím:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation>Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csak a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation>Véletlen MAC cím generálása.</translation>
+    </message>
+    <message>
+        <source>&amp;Generate</source>
+        <translation type="obsolete">&amp;Generál</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation>Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
+    </message>
+    <message>
+        <source>Ca&amp;ble Connected</source>
+        <translation type="obsolete">Kábel &amp;bedugva</translation>
+    </message>
+    <message>
+        <source>&amp;Interface Name:</source>
+        <translation type="obsolete">&amp;Interfész neve:</translation>
+    </message>
+    <message>
+        <source>Displays the TAP interface name.</source>
+        <translation type="obsolete">A TAP interfész neve.</translation>
+    </message>
+    <message>
+        <source>&amp;Setup Application:</source>
+        <translation type="obsolete">Beállító alkalmazá&amp;s:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to set up the TAP interface.</source>
+        <translation type="obsolete">A TAP interfész beállításához használt parancs.</translation>
+    </message>
+    <message>
+        <source>Selects the setup application.</source>
+        <translation type="obsolete">A beállító alkalmazás kiválasztása.</translation>
+    </message>
+    <message>
+        <source>&amp;Terminate Application:</source>
+        <translation type="obsolete">Leállí&amp;tó alkalmazás:</translation>
+    </message>
+    <message>
+        <source>Displays the command executed to terminate the TAP interface.</source>
+        <translation type="obsolete">A TAP interfész leállításához használt parancs.</translation>
+    </message>
+    <message>
+        <source>Selects the terminate application.</source>
+        <translation type="obsolete">A leállító alkalmazás kiválasztása.</translation>
+    </message>
+    <message>
+        <source>Host Interface Settings</source>
+        <translation type="obsolete">Gazda interfész beállítása</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <comment>network</comment>
+        <translation type="obsolete">Eszköz</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>internal</comment>
+        <translation type="obsolete">Hálózat</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>Kárt&amp;ya típusa:</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation>nincs bridge-elt hálózati kártya kiválasztva</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation>a belső hálózat neve nincs megadva</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation>nincs host-only hálózati kártya kiválasztva</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation>Nincs kiválasztva</translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="obsolete">Egy további beállítóablak megnyitása a kiválasztott csatolási típushoz.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Név:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
+        <translation>A hálózati kártya nevét lehet itt beállítani, ha a csatolás típusa &lt;b&gt;Bridge-elt kártya&lt;/b&gt; vagy &lt;b&gt;Host-only kártya&lt;/b&gt;, és a belső hálózat nevét, ha a csatolás típusa &lt;b&gt;Belső hálózat&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation>H&amp;aladó</translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation>Megjeleníti vagy elrejti a további hálókártya opciókat.</translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation>&amp;MAC cím:</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation>&amp;Kábel bedugva</translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkDetails</name>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="obsolete">Az ehhez az adapterhez kiválasztott belső hálózat neve.</translation>
+    </message>
+    <message>
+        <source>Guest &amp;MAC Address:</source>
+        <translation type="obsolete">A vendég &amp;MAC címe:</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="obsolete">Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csak a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="obsolete">Véletlen MAC cím generálása.</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="obsolete">&amp;Kábel bedugva</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="obsolete">Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="obsolete">További opciók</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Nincs hálózati kártya kiválasztva</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Nincs kiválasztva belső hálózat</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallel</name>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation>Párhuzamos port &amp;engedélyezése</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Port szá&amp;m:</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>A párhuzamos port száma. Választhatsz szabványos soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;IRQ:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>I/O Po&amp;rt:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation>&amp;Port útvonal:</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation>A párhuzamos port neve.</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsParallelPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Kettős portszám van kiválasztva </translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>A port útvonala nincs megadva </translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSF</name>
+    <message>
+        <source>&amp;Add New Shared Folder</source>
+        <translation type="obsolete">Megosztott mappa hozzá&amp;adása</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Selected Shared Folder</source>
+        <translation type="obsolete">A kiválasztott megosztott mappa sz&amp;erkesztése</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Selected Shared Folder</source>
+        <translation type="obsolete">A kiválasztott megosztott mappa tö&amp;rlése</translation>
+    </message>
+    <message>
+        <source>Adds a new shared folder definition.</source>
+        <translation>Új megosztott mappa hozzáadása.</translation>
+    </message>
+    <message>
+        <source>Edits the selected shared folder definition.</source>
+        <translation>A kiválasztott megosztott mappa szerkesztése.</translation>
+    </message>
+    <message>
+        <source>Removes the selected shared folder definition.</source>
+        <translation>Megosztott mappa törlése.</translation>
+    </message>
+    <message>
+        <source> Machine Folders</source>
+        <translation> A géphez tartozó megosztások</translation>
+    </message>
+    <message>
+        <source> Transient Folders</source>
+        <translation> Átmeneti mappák</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>Teljes hozzáférés</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>Csak olvasható</translation>
+    </message>
+    <message>
+        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
+        <translation>Minden a gép számára elérhető megosztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation>Útvonal</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>Hozzáférés</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="obsolete">Globális mappák</translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation>Megosztott mappa hozzá&amp;adása</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation>Megosztott mappa sz&amp;erkesztése</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation>Megosztott mappa tö&amp;rlése</translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation>&amp;Mappalista</translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">Igen</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSFDetails</name>
+    <message>
+        <source>Add Share</source>
+        <translation>Megosztás hozzáadása</translation>
+    </message>
+    <message>
+        <source>Edit Share</source>
+        <translation>Megosztás szerkesztése</translation>
+    </message>
+    <message>
+        <source>Dialog</source>
+        <translation>Dialog</translation>
+    </message>
+    <message>
+        <source>Folder Path:</source>
+        <translation>Mappa útvonala:</translation>
+    </message>
+    <message>
+        <source>Folder Name:</source>
+        <translation>Mappa neve:</translation>
+    </message>
+    <message>
+        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <translation>A mappa virtuális gépben megjelenő neve.</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>Ha engedélyezed, a vendég rendszer nem lesz képes írni a megosztott mappába.</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>Csak &amp;olvasható</translation>
+    </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation>Legyen tartó&amp;s</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerial</name>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation>Soros port &amp;engedélyezése</translation>
+    </message>
+    <message>
+        <source>Port &amp;Number:</source>
+        <translation>Port szá&amp;m:</translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation>A soros port száma. Választhatsz szabványos soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
+    </message>
+    <message>
+        <source>&amp;IRQ:</source>
+        <translation>&amp;IRQ:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt:</source>
+        <translation>I/O Po&amp;rt:</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="obsolete">A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode:</source>
+        <translation>Port &amp;mód:</translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation>A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni (nem lesz benne kábel).</translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
+        <translation>Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation>&amp;Cső készítése</translation>
+    </message>
+    <message>
+        <source>Port &amp;Path:</source>
+        <translation type="obsolete">&amp;Port útvonal:</translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation>A port útvonala, ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation>&amp;Port/fájl útvonala:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation>A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSerialPage</name>
+    <message>
+        <source>Duplicate port number selected </source>
+        <translation>Kettős portszám van kiválasztva </translation>
+    </message>
+    <message>
+        <source>Port path not specified </source>
+        <translation>A port útvonala nincs megadva </translation>
+    </message>
+    <message>
+        <source>Duplicate port path entered </source>
+        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsStorage</name>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
+        <translation type="obsolete">Nincs számára merevlemez kiválasztva: &lt;i&gt;%1&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; olyan merevlemezt használ, mely már ide van csatolva: &lt;i&gt;%2&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Add Attachment</source>
+        <translation type="obsolete">Új cs&amp;atolás</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Attachment</source>
+        <translation type="obsolete">Csatolás tö&amp;rlése</translation>
+    </message>
+    <message>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="obsolete">Merevlemez választá&amp;sa</translation>
+    </message>
+    <message>
+        <source>Adds a new hard disk attachment.</source>
+        <translation type="obsolete">Új merevlemezt csatol hozzá.</translation>
+    </message>
+    <message>
+        <source>Removes the highlighted hard disk attachment.</source>
+        <translation type="obsolete">Eltávolítja a kiemelt merevlemezt.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="obsolete">SATA vezérlő &amp;engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Attachments</source>
+        <translation type="obsolete">Cs&amp;atolt eszközök</translation>
+    </message>
+    <message>
+        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
+        <translation type="obsolete">Ehhez a géphez csatolt merevlemezek listája. Az egérrel vagy a &lt;tt&gt;Space&lt;/tt&gt; gombbal a kiemelt elemnél bekapcsolja a legördülő menüt, melyből választhatsz egy értéket. A környezeti menüvel vagy a jobb oldali gombokkal merevlemezt csatolhatsz fel vagy távolíthatsz el.</translation>
+    </message>
+    <message>
+        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="obsolete">A Virtuális médiakezelő használatával válassz egy merevlemezt, ami a jelenleg kiemelt foglalatba kerül.</translation>
+    </message>
+    <message>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
+        <translation type="obsolete">Ha engedélyezed, megmutatja a foglalathoz jelenleg csatolt különbözeti merevlemezeket az alap merevlemezek helyett (megjelennek a közvetett csatolások is) és másik különbözeti merevlemezek is csatolhatók. Ezt csak akkor válaszd, ha összetett merevlemez beállításra van szükséged.</translation>
+    </message>
+    <message>
+        <source>&amp;Show Differencing Hard Disks</source>
+        <translation type="obsolete">&amp;Különbözeti merevlemezek mutatása</translation>
+    </message>
+    <message>
+        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
+        <translation type="obsolete">Ha negedélyezed, bekapcsolja a gép kiegészítő virtuális vezérlőjét (SATA vagy SCSI).</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Additional Controller</source>
+        <translation type="obsolete">Ki&amp;egészítő vezérlő bekapcsolása</translation>
+    </message>
+    <message>
+        <source>IDE &amp;Controller Type</source>
+        <translation type="obsolete">IDE vezérlő &amp;típusa</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="obsolete">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Busz:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Típus:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Elem&amp;nbsp;összecsukása/kibontása&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Merevlemez&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation>&lt;nobr&gt;Floppy&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation>Nincs merevlemez kiválasztva a(z) &lt;i&gt;%1&lt;/i&gt; géphez.</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation>&lt;i&gt;%1&lt;/i&gt; ugyanazt a médiumot használja, mint a(z) &lt;i&gt;%2&lt;/i&gt;.</translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation>Vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation>IDE vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation>SATA vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation>SCSI vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation>Floppy vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation>Vezérlő eltávolítása</translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation>Új csatolás</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation>Merevlemez hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation>CD/DVD hozzáadása</translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation>Floppy hozzáadása</translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation>Csatolás törlése</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation>Az új vezérlőt a tároló-fa végéhez adja hozzá.</translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation>Eltávolítja a kijelölt vezérlőt a tároló-fából.</translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation>Új eszköz hozzáadása a tárolófához és csatlakoztatása a jelenleg kiválasztott vezérlőhöz.</translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation>Eltávolítja a kijelölt eszközt a tárolófából.</translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation>IDE vezérlő</translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation>SATA vezérlő</translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation>SCSI vezérlő</translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation>Floppy vezérlő</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation>&amp;Merevlemez:</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="obsolete">&amp;CD/DVD eszköz:</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="obsolete">&amp;Floppy eszköz:</translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation>&amp;Tárolófa</translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation>A virtuális gép minden tárolási vezérlőjét, illetve a géphez csatolt összes lemezképét, és gazdaeszközét tartalmazza.</translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation>Információ</translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation>A Tárolófa különböző típusú vezérlőket tartalmazhat. Ennek a gépnek jelenleg nincs vezérlője.</translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation>Paraméterek</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Név:</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation>Átnevezi a tárolófában kijelölt vezérlőt.</translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation>&amp;Típus:</translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>A kijelölt vezérlő altípusát választhatod ki.</translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="obsolete">Csat&amp;lakozó:</translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Az eszköz csatlakozóját adhatod meg. Az elérhető csatlakozók száma függ a vezérlő típusától, és a többi eszköztől.</translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="obsolete">Válaszd ki a használandó virtális lemezképet vagy gazda meghajtót.</translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="obsolete">Megjeleníti a Virtuális média-kezelőt a csatolandó lemezkép kiválasztásához.</translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="obsolete">Virtuális média-kezelő megnyitása</translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="obsolete">&amp;Különbözeti lemezek</translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation>Ha ez kiválasztod, a vendég ATAPI parancsokat küldhet közvetlenül a gazda meghanjtónak, mely által a gazda géphez csatlakozó CD/DVD írókat a virtuális gépen belül is lehet használni. Megjegyzendő, hogy a virtuális gépen belül nem támogatott még az audió CD írása.</translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation>&amp;Átengedés</translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation>Virtuális méret:</translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation>Jelenlegi méret:</translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>Méret:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Hely:</translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation>Típus (formátum):</translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation>Csatlakoztatva:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation>Lehetővé teszi a gazda I/O cache képességeinek haszbnálatát.</translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation>Gazda I/O cache használata</translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation>SAS vezérlő hozzáadása</translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation>SAS vezérlő</translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="obsolete">Tárolási vezérlő</translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="obsolete">Tárolási vezérlő 1</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <translation type="unfinished">Gazda eszköz</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="unfinished">Képfájl</translation>
+    </message>
+    <message>
+        <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual CD/DVD drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set up the virtual floppy drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new hard disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove disk from virtual drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
+        <translation>több, mint &lt;b&gt;%1%&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation>teljesítménybeli problémák miatt,a virtuális géphez társított virtuális processzorok száma nem lehet nagyobb, mint a  fizikai processzorok számának duplája a gazda számítógépen (&lt;b&gt;%1&lt;/b&gt;). Csökkentsd le a virtuális processzorok számát.</translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation>több virtuális processzort társítottál a virtuális géphez, mint a gazda rendszer fizikai processzora (&lt;b&gt;%1&lt;/b&gt;). Ez valószínűleg csökkenteni fogja a virtuális gép teljesítményét. Fontold meg a virtuális processzorok számának csökkentését.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>egynél több virtuális processzort társítottál a virtuális géphez. Az IO-APIC szolgáltatás bekapcsolása nélkül nem fog működni. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>&gt;egynél több virtuális processzort társítottál a virtuális géphez. A hardveres virtualizáció (VT-x/AMD-V) bekapcsolása nélkül nem fog működni. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is 32 for now</comment>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation>&amp;Alaplap</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation>Alap &amp;memória:</translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation>A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation>&amp;Boot sorrend:</translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation>Meghatározza a bootsorrendet. Használd ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgasd fel vagy le az elemeket a pontos sorrendhez.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation>Le (Ctrl+Le)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation>A kiválasztott eszközt lentebb teszi.</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation>Fel (Ctrl+Fel)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation>A kiválasztott eszközt feljebb teszi.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation>Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;ACPI</source>
+        <translation type="obsolete">&amp;ACPI engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation> &amp;IO APIC engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation>&amp;Processzor</translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation>&amp;Processzor(ok):</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="obsolete">A virtuális gép virtuális processzorainak számának vezérlései.</translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation>Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation>PA&amp;E/NX engedélyezése</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation>Gyor&amp;sítás</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation>Hardver virtualizáció:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation>Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation>&amp;VT-x/AMD-V engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation>Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation>Memóriavirtualizáció en&amp;gedélyezése</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation>Ha engedélyezed, a gép támogatni fogja az Extended Firmware Interface-t (EFI), ami szükséges néhány operációs rendszer elindításához. A nem EFI-képes rendszerek nem lesznek képesek elindulni, ha ez az opció aktív.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation>&amp;EFI engedélyezése (különleges OS-eknek)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation>Ha engedélyezed, az RTC eszköz az UTC időt közli, egyéb esetben a helyi (gazda) idő lesz érvényben. Az Unix rendszer általában elvárja a hardveres idő UTC-re állítását.</translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation>Hardveres óra  &amp;UTC időre állítása</translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation>A virtuális gép processzorainak számát állítja be. Hardveres virtualizációra van szükség a gazda rendszeren az egynél több virtuális processzor használatához.</translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation>Ha engedélyezed, egy abszolút mutató eszköz (USB tábla) lesz támogatva. Egyéb esetben csak a szabványos PS/2 egér lesz emulálva.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation>&amp;Abszolút mutató eszköz engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Chipset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines chipset type used in this VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSB</name>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation>Üres szűrő hozzá&amp;adása</translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation>Szűrő hozzáa&amp;dása eszköz alapján</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Filter</source>
+        <translation>Szűrő sz&amp;erkesztése</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation>Szűrő tö&amp;rlése</translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation>&amp;Feljebb</translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation>&amp;Lejjebb</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
+        <translation>Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
+        <translation>Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
+    </message>
+    <message>
+        <source>Edits the selected USB filter.</source>
+        <translation>A kijelölt szűrő szerkesztése.</translation>
+    </message>
+    <message>
+        <source>Removes the selected USB filter.</source>
+        <translation>Törli a kiválasztott USB szűrőt.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter up.</source>
+        <translation>A kijelölt USB szűrőt feljebb tolja.</translation>
+    </message>
+    <message>
+        <source>Moves the selected USB filter down.</source>
+        <translation>A kijelölt USB szűrőt lejjebb tolja.</translation>
+    </message>
+    <message>
+        <source>New Filter %1</source>
+        <comment>usb</comment>
+        <translation>Új szűrő %1</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB controller of this machine.</source>
+        <translation>Ha engedélyezed, lesz USB vezérlő a virtuális gépben.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;USB Controller</source>
+        <translation>&amp;USB vezérlő engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation>Ha engedélyezed, a virtuális USB EHCI vezérlő használható lesz ebben a virtuális gépben. Az USB EHCI vezérlő USB 2.0 támogatással is rendelkezik.</translation>
+    </message>
+    <message>
+        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
+        <translation>USB 2.0 (E&amp;HCI) vezérlő engedélyezése</translation>
+    </message>
+    <message>
+        <source>USB Device &amp;Filters</source>
+        <translation>USB eszközök és &amp;szűrők</translation>
+    </message>
+    <message>
+        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
+        <translation>Az ehhez a géphez rendelt USB szűrők mutatása. Engedélyezd, ha látni szeretnéd, hogy egy adott szűrő engedélyezett vagy sem. A felbukkanó menü vagy a gombok használatával lehet szűrőt készíteni és törölni.</translation>
+    </message>
+    <message>
+        <source>[filter]</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Gyártó ID: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Termék ID: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Revízió: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Termék: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Gyártó: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Állapot: %1&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsUSBFilterDetails</name>
+    <message>
+        <source>Any</source>
+        <comment>remote</comment>
+        <translation>Bárhol</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <comment>remote</comment>
+        <translation>Igen</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <comment>remote</comment>
+        <translation>Nem</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Név:</translation>
+    </message>
+    <message>
+        <source>Displays the filter name.</source>
+        <translation>Szűrő neve.</translation>
+    </message>
+    <message>
+        <source>&amp;Vendor ID:</source>
+        <translation>Gyártó &amp;ID:</translation>
+    </message>
+    <message>
+        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Gyártó ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>&amp;Product ID:</source>
+        <translation>Termé&amp;k ID:</translation>
+    </message>
+    <message>
+        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
+        <translation>Termék ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>&amp;Revision:</source>
+        <translation>&amp;Revizió:</translation>
+    </message>
+    <message>
+        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
+        <translation>Revízió szám alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;IIFF&lt;/tt&gt;, ahol &lt;tt&gt;I&lt;/tt&gt; az egész rész egy számjegye, &lt;tt&gt;F&lt;/tt&gt; pedig a törtrész számjegye. Ha a mező üres, a szűrő minden revízióra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>&amp;Manufacturer:</source>
+        <translation>&amp;Gyártó:</translation>
+    </message>
+    <message>
+        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Gyártó alapú szűrőt készít a gyártó &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden gyártóra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>Pro&amp;duct:</source>
+        <translation>Te&amp;rmék:</translation>
+    </message>
+    <message>
+        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Termék alapú szűrőt készít a termék &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden termékre illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>&amp;Serial No.:</source>
+        <translation>&amp;Sorozatszám:</translation>
+    </message>
+    <message>
+        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Sorozatszám alapú szűrőt készít a sorozatszám alapján. Ha a mező üres, a szűrő minden sorozatszámra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>Por&amp;t:</source>
+        <translation>Por&amp;t:</translation>
+    </message>
+    <message>
+        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
+        <translation>Gazda port alapú szűrőt készít a port &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden portra illeszkedni fog.</translation>
+    </message>
+    <message>
+        <source>R&amp;emote:</source>
+        <translation>&amp;Távoli:</translation>
+    </message>
+    <message>
+        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
+        <translation>A csatlakoztatás módjára épülő szűrőt határoz meg, azaz hogy az USB eszköz helyileg (&lt;i&gt;Nem&lt;/i&gt;), a VRDP kliens gépen  (&lt;i&gt;Igen&lt;/i&gt;) van csatlakoztatva, vagy mindegy  (&lt;i&gt;Bárhol&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>&amp;Action:</source>
+        <translation>&amp;Akció:</translation>
+    </message>
+    <message>
+        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
+        <translation>Azt határozza meg, hogy milyen műveletet kell végrehajtani a szabálynak megfelelő eszköz csatlakoztatása esetén: adja át a gazdagépnek (&lt;i&gt;Kihagyás&lt;/i&gt;) vagy csatlakoztassa a virtuális géphez (&lt;i&gt;Elfogás&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>USB Filter Details</source>
+        <translation>USB szűrő adatai</translation>
     </message>
 </context>
 <context>
@@ -2224,14 +4851,14 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben. Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből, esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt; &lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod a gép beállításainak ablakában.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben. Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből, esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt; &lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod a gép beállításainak ablakában.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -2251,11 +4878,23 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>A merevlemez ajánlott mérete &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation type="obsolete">A merevlemez ajánlott mérete &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
         <translation>Boot &amp;merevlemez</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2286,7 +4925,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -2296,6 +4935,309 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ha a fenti adatok helyesek, nyomd meg a &lt;b&gt;%1&lt;/b&gt; gombot. Amint megnyomod, a virtuális gép létrejön. &lt;/p&gt;&lt;p&gt;Azonban ezeket - és más beállításokat is - bármikor  megváltoztathatsz a létrehozás után a &lt;b&gt;Konfigurálás&lt;/b&gt; ablakban, mely a főablak  menüjén keresztül érhetsz el.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Név</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIProgressDialog</name>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation>&amp;Mégsem</translation>
+    </message>
+    <message>
+        <source>Time remaining: %1</source>
+        <translation type="obsolete">Hátralevő idő: %1</translation>
+    </message>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation>Még néhány másodperc</translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation>Megszakítás...</translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation>A futó művelet megszakítása</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation>%2 van hátra a(z) %1 -ből</translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation>%1 van hátra</translation>
+    </message>
+</context>
+<context>
+    <name>UISession</name>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation type="unfinished">Hibás beállításokat találtam</translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished">Optimizálandó beállításokat találtam</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Beállítások</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">Virtuális gép bezárása</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation type="unfinished">Szeretné:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBox-ot addig&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation type="unfinished">&amp;Elmentetni a gép állapotát</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;A Power gomb megnyomásának megfelelő ACPI jelet küld a gépnek.&lt;/p&gt;&lt;p&gt;Alapértelmezetten a vendég rendszer észleli ezt az eseményt, és elindítja a rendes rendszer-leállítási folyamatot. Ez az ajánlott mód a virtuális gép kikapcsolására, mert annak így lehetősége van az adatok és beállítások elmentésére.&lt;/p&gt;&lt;p&gt;Ha a gép nem reagál semmit erre, akkor valószínűleg nem ismeri ezt az ACPI eseményt, vagy az ACPI-nek konfigurációs problémái vannak. Ebben az esetben válaszd a &lt;b&gt;Kikapcsolni a gépet&lt;/b&gt; gombot a gép leállításához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished">Gép l&amp;eállítása</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Kikapcsolja a virtuális gépet.&lt;/p&gt;&lt;p&gt;Ez a művelet azonnal kikapcsolja a virtuális gépet. Így a vendég rendszer képtelen lesz rendesen leállítani a gépet. Ennek &lt;i&gt;adat vesztés&lt;/i&gt; lehet az eredménye a virtuális gépen belül. Ez a művelet csak akkor ajánlott, ha a virtuális gép nem válaszol a &lt;b&gt;Gép leállítása&lt;/b&gt; gomb megnyomására.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation type="unfinished">Kika&amp;pcsolni a gépet</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished">A gép állapotának visszaállítása az aktuális pillanatképből</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Ha engedélyezed, a gép visszaáll a legutolsó pillanatkép állapotába, miután kikapcsolod. Ez akkor hasznos, ha el szeretnéd dobni a virtuális gép legutóbbi módosításait.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished">Ezen &amp;pillanatkép visszatöltése: &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">&amp;Részletek</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation type="unfinished">&amp;Pillanatkép</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>Elérhetetlen</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3 óta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Munkamenet %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Elérhetetlen %2 óta&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="obsolete">M&amp;utat</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="obsolete">A kiválasztott virtuális gép ablakára ugrás</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation type="obsolete">S&amp;tart</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation type="obsolete">A kiválasztott virtuális gép elindítása</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="obsolete">&amp;Folytat</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="obsolete">A megállított gép működésének folytatása</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="obsolete">Megá&amp;llít</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="obsolete">Átmenetileg felfüggeszti a virtuális gép működését</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Általános</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">Rendszer</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">Képernyő</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">Tároló</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">Audió</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Hálózat</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">Portok</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">Soros portok</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished">Párhuzamos portok</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">Megosztott mappák</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished">%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">egy 64 bites vendégrendszert választottál ehhez a géphez. Ezek a rendszerek igényik a hardvervirtualizációt (VT-x/AMD-V), így ez a tulajdonság automatikusan engedélyezve lesz.</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">engedélyezted a 2D gyorsítást. Mivel ez a lehetőség jelenleg csak Windows-os vendéggépeken érhető el, ezért most letiltásra kerül.</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished">engedélyezted a USB HID-et (Human Interface Device). Addig nem fog működni, amíg az USB emuláció be van kapcsolva. Ez automatikusan meg fog történni, ha elfogadod a virtuális gép beállításait az OK gomb megnyomásával.</translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2519,7 +5461,7 @@ Verzió %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2535,15 +5477,15 @@ Verzió %1</translation>
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Virtuális gép bezárása</translation>
+        <translation type="obsolete">Virtuális gép bezárása</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Szeretné:</translation>
+        <translation type="obsolete">Szeretné:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>&amp;Elmentetni a gép állapotát</translation>
+        <translation type="obsolete">&amp;Elmentetni a gép állapotát</translation>
     </message>
     <message>
         <source>Alt+S</source>
@@ -2551,7 +5493,7 @@ Verzió %1</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>Kika&amp;pcsolni a gépet</translation>
+        <translation type="obsolete">Kika&amp;pcsolni a gépet</translation>
     </message>
     <message>
         <source>Alt+P</source>
@@ -2595,7 +5537,7 @@ Verzió %1</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>Gép l&amp;eállítása</translation>
+        <translation type="obsolete">Gép l&amp;eállítása</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
@@ -2613,27 +5555,27 @@ Verzió %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ha engedélyezed, a gép visszaáll a legutolsó pillanatkép állapotába, miután kikapcsolod. Ez akkor hasznos, ha el szeretnéd dobni a virtuális gép legutóbbi módosításait.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ha engedélyezed, a gép visszaáll a legutolsó pillanatkép állapotába, miután kikapcsolod. Ez akkor hasznos, ha el szeretnéd dobni a virtuális gép legutóbbi módosításait.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBox-ot addig&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Elmenti a virtuális gép aktuális állapotát a merevlemezre.&lt;/p&gt;&lt;p&gt;Amikor a virtuális gép legközelebb el lesz indítva, a mentett állapot lesz visszatöltve, és a futás a mentés előtti állapottól fog indulni.&lt;/p&gt;&lt;p&gt;A virtuális gép mentése a virtuális gép memóriájának méretétől és a vendégrendszer típusától függően hosszú ideig is eltarthat. Légy türelemmel, és ne állítsd le a VirtualBox-ot addig&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A Power gomb megnyomásának megfelelő ACPI jelet küld a gépnek.&lt;/p&gt;&lt;p&gt;Alapértelmezetten a vendég rendszer észleli ezt az eseményt, és elindítja a rendes rendszer-leállítási folyamatot. Ez az ajánlott mód a virtuális gép kikapcsolására, mert annak így lehetősége van az adatok és beállítások elmentésére.&lt;/p&gt;&lt;p&gt;Ha a gép nem reagál semmit erre, akkor valószínűleg nem ismeri ezt az ACPI eseményt, vagy az ACPI-nek konfigurációs problémái vannak. Ebben az esetben válaszd a &lt;b&gt;Kikapcsolni a gépet&lt;/b&gt; gombot a gép leállításához.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A Power gomb megnyomásának megfelelő ACPI jelet küld a gépnek.&lt;/p&gt;&lt;p&gt;Alapértelmezetten a vendég rendszer észleli ezt az eseményt, és elindítja a rendes rendszer-leállítási folyamatot. Ez az ajánlott mód a virtuális gép kikapcsolására, mert annak így lehetősége van az adatok és beállítások elmentésére.&lt;/p&gt;&lt;p&gt;Ha a gép nem reagál semmit erre, akkor valószínűleg nem ismeri ezt az ACPI eseményt, vagy az ACPI-nek konfigurációs problémái vannak. Ebben az esetben válaszd a &lt;b&gt;Kikapcsolni a gépet&lt;/b&gt; gombot a gép leállításához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kikapcsolja a virtuális gépet.&lt;/p&gt;&lt;p&gt;Ez a művelet azonnal kikapcsolja a virtuális gépet. Így a vendég rendszer képtelen lesz rendesen leállítani a gépet. Ennek &lt;i&gt;adat vesztés&lt;/i&gt; lehet az eredménye a virtuális gépen belül. Ez a művelet csak akkor ajánlott, ha a virtuális gép nem válaszol a &lt;b&gt;Gép leállítása&lt;/b&gt; gomb megnyomására.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kikapcsolja a virtuális gépet.&lt;/p&gt;&lt;p&gt;Ez a művelet azonnal kikapcsolja a virtuális gépet. Így a vendég rendszer képtelen lesz rendesen leállítani a gépet. Ennek &lt;i&gt;adat vesztés&lt;/i&gt; lehet az eredménye a virtuális gépen belül. Ez a művelet csak akkor ajánlott, ha a virtuális gép nem válaszol a &lt;b&gt;Gép leállítása&lt;/b&gt; gomb megnyomására.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>A gép állapotának visszaállítása az aktuális pillanatképből</translation>
+        <translation type="obsolete">A gép állapotának visszaállítása az aktuális pillanatképből</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>Ezen &amp;pillanatkép visszatöltése: &apos;%1&apos;</translation>
+        <translation type="obsolete">Ezen &amp;pillanatkép visszatöltése: &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -3671,459 +6613,58 @@ Verzió %1</translation>
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Általános</translation>
+        <translation type="obsolete">Általános</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation> Bevitel</translation>
+        <translation type="obsolete"> Bevitel</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Frissítés</translation>
+        <translation type="obsolete">Frissítés</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Nyelv</translation>
+        <translation type="obsolete">Nyelv</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Hálózat</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsGeneral</name>
-    <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Megmutatja az aktuális alapértelmezett VDI mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
-    </message>
-    <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket autentikálja. </translation>
-    </message>
-    <message>
-        <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Alapértelmezett &amp;lemez mappa:</translation>
-    </message>
-    <message>
-        <source>Default &amp;Machine Folder:</source>
-        <translation>Alapértelmezett &amp;gép mappa:</translation>
-    </message>
-    <message>
-        <source>V&amp;RDP Authentication Library:</source>
-        <translation>V&amp;RDP azonosítási könyvtár:</translation>
-    </message>
-    <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Megmutatja az aktuális alapértelmezett merevlemez mappát. Ez a mappa az alapértelmezés, ha nem adsz meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
-    </message>
-    <message>
-        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Ha engedélyezed, a program egy ikont fog kirakni menüvel a rendszertálcára.</translation>
-    </message>
-    <message>
-        <source>&amp;Show System Tray Icon</source>
-        <translation>Tálcaikon megjeleníté&amp;se</translation>
-    </message>
-    <message>
-        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">Ha engedélyezed, a Dock ikon valós időben fogja mutatni a VM ablak tartalmát.</translation>
-    </message>
-    <message>
-        <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="obsolete">Valós idejű &amp;dock ikon</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="obsolete">A dock és a menüsor &amp;automatikus megjelenítése teljes képernyőn</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>&amp;Automatikus Dock és menüsor megjelenítés teljes képernyőnél</translation>
+        <translation type="obsolete">Hálózat</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>&amp;Gazda-billentyű:</translation>
+        <translation type="obsolete">&amp;Gazda-billentyű:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Megmutatja az aktuális gazda-billentyűt. Kattints a beviteli mezőre, és üsd le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
+        <translation type="obsolete">Megmutatja az aktuális gazda-billentyűt. Kattints a beviteli mezőre, és üsd le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Ha engedélyezed, a billentyűzet mindig elfogásra kerül ha a gép ablaka aktív lesz. Ha a billentyűzet el van fogva, akkor minden billentyűzet-eseményt a virtuális gép kap meg (pl. az Alt-Tab kombinációt is).</translation>
+        <translation type="obsolete">Ha engedélyezed, a billentyűzet mindig elfogásra kerül ha a gép ablaka aktív lesz. Ha a billentyűzet el van fogva, akkor minden billentyűzet-eseményt a virtuális gép kap meg (pl. az Alt-Tab kombinációt is).</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>&amp;Automata billentyűzet-elkapás</translation>
+        <translation type="obsolete">&amp;Automata billentyűzet-elkapás</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>Gazda-billentyű visszaállítása</translation>
+        <translation type="obsolete">Gazda-billentyű visszaállítása</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>A VM ablakban Gazda-billentyűként használt gomb visszaállítása.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsLanguage</name>
-    <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation> (beépített)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation>&lt;elérhetetlen&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation>&lt;ismeretlen&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation>Alapértelmezett</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation>Nyelv:</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Language:</source>
-        <translation>Felüle&amp;t nyelve:</translation>
-    </message>
-    <message>
-        <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Megmutatja az elérhető nyelveket. A jelenleg kiválasztott nyelv &lt;b&gt;vastag betűvel&lt;/b&gt; van jelölve. Válaszd az &lt;i&gt;Alapértelmezett&lt;/i&gt; opciót a rendszer nyelve alapján történő nyelvválasztáshoz.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Név</translation>
-    </message>
-    <message>
-        <source>Id</source>
-        <translation>Azonosító</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Nyelv</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Szerző</translation>
-    </message>
-    <message>
-        <source>Author(s):</source>
-        <translation>Szerző(k):</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetwork</name>
-    <message>
-        <source>%1 network</source>
-        <comment>&lt;adapter name&gt; network</comment>
-        <translation>%1 hálózat</translation>
-    </message>
-    <message>
-        <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>a következő IPv4 cím helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>a következő IPv4 hálózati maszk helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>a következő IPv6 cím helytelen: &lt;b&gt;%1&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>A DHCP szerver címe (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
-    </message>
-    <message>
-        <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>A DHCP szerver hálózati maszkja (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
-    </message>
-    <message>
-        <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>A legkisebb kiosztható cím (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
-    </message>
-    <message>
-        <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>A legnagyobb kiosztható cím (&lt;b&gt;%1&lt;/b&gt;) helytelen</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation>Eszköz</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation>Automatikusan konfigurált</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation>Kézzel konfigurált</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation>IPv4 cím</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation>Nincs</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation>IPv4 hálózati maszk</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation>Nincs</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation>IPv6 cím</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask Length</source>
-        <translation>IPv6 hálózati maszk hossza</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation>Nincs</translation>
-    </message>
-    <message>
-        <source>DHCP Server</source>
-        <translation>DHCP szerver</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation>Engedélyezve</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation>Letiltva</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation>Cím</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation>Hálózati maszk</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation>Alsó határ</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation>Nincs</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation>Felső határ</translation>
-    </message>
-    <message>
-        <source>&amp;Add host-only network</source>
-        <translation>Host-only hálózat hozzá&amp;adása</translation>
-    </message>
-    <message>
-        <source>&amp;Remove host-only network</source>
-        <translation>Host-only hálózat tö&amp;rlése</translation>
-    </message>
-    <message>
-        <source>&amp;Edit host-only network</source>
-        <translation>Host-only hálózat sz&amp;erkesztése</translation>
-    </message>
-    <message>
-        <source>Performing</source>
-        <comment>creating/removing host-only network</comment>
-        <translation>Folyamatban</translation>
-    </message>
-    <message>
-        <source>&amp;Host-only Networks:</source>
-        <translation>&amp;Host-only hálózatok:</translation>
-    </message>
-    <message>
-        <source>Lists all available host-only networks.</source>
-        <translation>Minden elérhető host-only hálózat listázása.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Név</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsNetworkDetails</name>
-    <message>
-        <source>Host-only Network Details</source>
-        <translation>Host-only hálózat részletei</translation>
-    </message>
-    <message>
-        <source>&amp;Adapter</source>
-        <translation>Kárty&amp;a</translation>
-    </message>
-    <message>
-        <source>Manual &amp;Configuration</source>
-        <translation>&amp;Kézi beállítás</translation>
-    </message>
-    <message>
-        <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Kézi beállítás használata ehhez a host-only hálózati kártyához.</translation>
-    </message>
-    <message>
-        <source>&amp;IPv4 Address:</source>
-        <translation>&amp;IPv4 cím:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>A gazda IPv4 címe ehhez a kártyához.</translation>
-    </message>
-    <message>
-        <source>IPv4 Network &amp;Mask:</source>
-        <translation>IPv4 hálózati &amp;maszk:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>A gazda IPv4 hálózati maszkja ehhez a kártyához.</translation>
-    </message>
-    <message>
-        <source>I&amp;Pv6 Address:</source>
-        <translation>I&amp;Pv6 cím:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>A gazda IPv6 címe ehhez a kártyához, ha az IPv6 támogatott.</translation>
-    </message>
-    <message>
-        <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>IPv6 há&amp;lózati maszk hossza:</translation>
-    </message>
-    <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>A gazda IPv6 hálózati maszkjának hossza ehhez a kártyához, ha IPv6 támogatott.</translation>
-    </message>
-    <message>
-        <source>&amp;DHCP Server</source>
-        <translation>&amp;DHCP szerver</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>Sz&amp;erver bekapcsolása</translation>
-    </message>
-    <message>
-        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>Megmutatja, hogy a DHCP szerver be van-e kapcsolva a gépen.</translation>
-    </message>
-    <message>
-        <source>Server Add&amp;ress:</source>
-        <translation>Sze&amp;rver címe:</translation>
-    </message>
-    <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Ehhez a host-only kártyához tartozó  DHCP szerver címe.</translation>
-    </message>
-    <message>
-        <source>Server &amp;Mask:</source>
-        <translation>Szerver &amp;maszkja:</translation>
-    </message>
-    <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Ehhez a host-only kártyához tartozó  DHCP szerver hálózati maszkja.</translation>
-    </message>
-    <message>
-        <source>&amp;Lower Address Bound:</source>
-        <translation>A&amp;lsó címhatár:</translation>
-    </message>
-    <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>A DHCP szerver által, ehhez a host-only kártyával kiosztható alsó címhatár.</translation>
-    </message>
-    <message>
-        <source>&amp;Upper Address Bound:</source>
-        <translation>Felső &amp;címhatár:</translation>
-    </message>
-    <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>A DHCP szerver által, ehhez a host-only kártyával kiosztható felső címhatár.</translation>
-    </message>
-</context>
-<context>
-    <name>UIGlobalSettingsUpdate</name>
-    <message>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Ha engedélyezed, a VirtualBox időnként ellenőrizni fogja a weben, hogy elérhető-e újabb verzió a jelenleginél.</translation>
-    </message>
-    <message>
-        <source>&amp;Check for updates</source>
-        <translation>Frissítések elle&amp;nőrzése</translation>
-    </message>
-    <message>
-        <source>&amp;Once per:</source>
-        <translation>Sűrűsé&amp;g:</translation>
-    </message>
-    <message>
-        <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Megadhatod, hogy a VirtualBox milyen sűrűn nézzen frissítések után. Ha azt szeretnéd, hogy egyáltalán ne keressen frissítést, tiltsd le a pipadobozban.</translation>
-    </message>
-    <message>
-        <source>Next Check:</source>
-        <translation>Következő ellenőrzés:</translation>
-    </message>
-    <message>
-        <source>Check for:</source>
-        <translation>Ellenőrizze:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válaszd ezt, ha csak a stabil VirtualBox frissítésekről szeretnél értesülni&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Stable release versions</source>
-        <translation>a &amp;stabil kiadásokat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról szeretnél értesülni&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;All new releases</source>
-        <translation>minden új ki&amp;adást</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról és előzetes kiadásról szeretnél értesülni&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation>az elő&amp;zetes és a végeges kiadásokat</translation>
+        <translation type="obsolete">A VM ablakban Gazda-billentyűként használt gomb visszaállítása.</translation>
     </message>
 </context>
 <context>
@@ -4400,12 +6941,12 @@ Verzió %1</translation>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Bezárva</translation>
+        <translation type="obsolete">Bezárva</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Megnyitás</translation>
+        <translation type="obsolete">Megnyitás</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -4415,7 +6956,7 @@ Verzió %1</translation>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Bezárás</translation>
+        <translation type="obsolete">Bezárás</translation>
     </message>
     <message>
         <source>None</source>
@@ -4485,17 +7026,17 @@ Verzió %1</translation>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>Null</translation>
+        <translation type="obsolete">Null</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>Külső</translation>
+        <translation type="obsolete">Külső</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>Vendég</translation>
+        <translation type="obsolete">Vendég</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -5096,17 +7637,17 @@ Verzió %1</translation>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>RDP szerver port</translation>
+        <translation type="obsolete">RDP szerver port</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>RDP szerver</translation>
+        <translation type="obsolete">RDP szerver</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
     <message>
         <source>Display</source>
@@ -5381,7 +7922,7 @@ Verzió %1</translation>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
+        <translation type="obsolete">^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
     </message>
     <message>
         <source>B</source>
@@ -5441,6 +7982,122 @@ Verzió %1</translation>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
         <translation>SAS port %1</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">merevlemez</translation>
+    </message>
+    <message>
+        <source>Choose a virtual CD/DVD disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual floppy disk file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="unfinished">Minden fájl (*)</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Null</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Null</translation>
+    </message>
+    <message>
+        <source>External</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Külső</translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <comment>AuthType</comment>
+        <translation type="unfinished">Vendég</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ICH9</source>
+        <comment>ChipsetType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>and</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
@@ -5795,7 +8452,7 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>Sú&amp;gó</translation>
+        <translation type="obsolete">Sú&amp;gó</translation>
     </message>
 </context>
 <context>
@@ -5966,7 +8623,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>Minden merevlemez képfájl (%1)</translation>
+        <translation type="obsolete">Minden merevlemez képfájl (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -5978,7 +8635,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>CD/DVD-ROM képfájl (*.iso);;Minden fájl (*)</translation>
+        <translation type="obsolete">CD/DVD-ROM képfájl (*.iso);;Minden fájl (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -5986,7 +8643,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>Floppy képfájl (*.img);;Minden  fájl (*)</translation>
+        <translation type="obsolete">Floppy képfájl (*.img);;Minden  fájl (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -6048,6 +8705,22 @@ to the system default language.&lt;/qt&gt;
         <comment>VMM: Floppy Image</comment>
         <translation>Ide csatlakoztatva</translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="unfinished">merevlemez</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -6062,6 +8735,10 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Close VM</source>
         <translation>Virtuális gép bezárása</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6243,11 +8920,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos véglegesen törölni akarod ezt a virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet később nem vonható vissza!&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Biztos véglegesen törölni akarod ezt a virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet később nem vonható vissza!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos eltávolítod ezt az elérhetetlen virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Többé nem lehet majd visszaregisztrálni ezt a gépet a grafikus felületről!&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Biztos eltávolítod ezt az elérhetetlen virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Többé nem lehet majd visszaregisztrálni ezt a gépet a grafikus felületről!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -6364,15 +9041,15 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások elavultak: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások elavultak: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl újak a VirtualBox ezen verziójához: telepített verzió: %1, ajánlott verzió: %2.&lt;/p&gt;&lt;p&gt;Régi VirtualBoxon nem támogatott egy újabb Additions használata. &lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával telepítsd fel az Integrációs szolgáltatások aktuális verzióját.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl újak a VirtualBox ezen verziójához: telepített verzió: %1, ajánlott verzió: %2.&lt;/p&gt;&lt;p&gt;Régi VirtualBoxon nem támogatott egy újabb Additions használata. &lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával telepítsd fel az Integrációs szolgáltatások aktuális verzióját.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
@@ -6389,7 +9066,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillantkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
+        <translation type="obsolete">A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillantkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -6441,7 +9118,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox globális beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox globális beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -6462,12 +9139,12 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>Törlés</translation>
+        <translation type="obsolete">Törlés</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>Eltávolítás</translation>
+        <translation type="obsolete">Eltávolítás</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -6492,7 +9169,7 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>Letiltás</translation>
+        <translation type="obsolete">Letiltás</translation>
     </message>
     <message>
         <source>Download</source>
@@ -6565,7 +9242,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>A fájl másolása sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ide: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+        <translation type="obsolete">A fájl másolása sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ide: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -6817,7 +9494,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt; fájl eltávolítása sikertelen.&lt;br /&gt;&lt;br /&gt;Próbáld meg magad eltávolítani a fájl és próbáld meg újra.</translation>
+        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; fájl eltávolítása sikertelen.&lt;br /&gt;&lt;br /&gt;Próbáld meg magad eltávolítani a fájl és próbáld meg újra.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -6857,16 +9534,16 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha kikapcsolod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos kikapcsolod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha kikapcsolod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos kikapcsolod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha módosítod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos módosítod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha módosítod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos módosítod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation>Változtat</translation>
+        <translation type="obsolete">Változtat</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -6970,29 +9647,29 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation>Ú&amp;j</translation>
+        <translation type="obsolete">Ú&amp;j</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation>Kiválasztá&amp;s</translation>
+        <translation type="obsolete">Kiválasztá&amp;s</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>A(z) %1 csatlakoztatása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójába nem sikerült.</translation>
+        <translation type="obsolete">A(z) %1 csatlakoztatása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójába nem sikerült.</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>A(z) %1 leválasztása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójáról nem sikerült.</translation>
+        <translation type="obsolete">A(z) %1 leválasztása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójáról nem sikerült.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -7016,7 +9693,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
+        <translation type="obsolete">Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
@@ -7059,17 +9736,17 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation>merevlemez</translation>
+        <translation type="obsolete">merevlemez</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation>CD/DVD eszköz</translation>
+        <translation type="obsolete">CD/DVD eszköz</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation>floppy</translation>
+        <translation type="obsolete">floppy</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -7128,38 +9805,135 @@ to the system default language.&lt;/qt&gt;
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; de nem lett helyikeg elmentve, mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Válassz a fájl számára másik helyet.&lt;/p&gt;</translation>
     </message>
-</context>
-<context>
-    <name>UIProgressDialog</name>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Mégsem</translation>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Time remaining: %1</source>
-        <translation type="obsolete">Hátralevő idő: %1</translation>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A few seconds remaining</source>
-        <translation>Még néhány másodperc</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Canceling...</source>
-        <translation>Megszakítás...</translation>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel the current operation</source>
-        <translation>A futó művelet megszakítása</translation>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation>%2 van hátra a(z) %1 -ből</translation>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation>%1 van hátra</translation>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">Tö&amp;röl</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7339,7 +10113,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Részletek</translation>
+        <translation type="obsolete">&amp;Részletek</translation>
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
@@ -7412,7 +10186,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Törlés</translation>
+        <translation type="obsolete">&amp;Törlés</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -7420,7 +10194,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép törlése</translation>
+        <translation type="obsolete">A kiválasztott virtuális gép törlése</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
@@ -7496,15 +10270,15 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>&amp;Pillanatkép</translation>
+        <translation type="obsolete">&amp;Pillanatkép</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>L&amp;eírás</translation>
+        <translation type="obsolete">L&amp;eírás</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>L&amp;eírás *</translation>
+        <translation type="obsolete">L&amp;eírás *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -7625,28 +10399,104 @@ to the system default language.&lt;/qt&gt;
         <comment>Non Mac OS X version</comment>
         <translation>&amp;Fájl</translation>
     </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">Hozzá&amp;ad...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">Tö&amp;röl</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Válassz egy kategóriát a bal oldali listából és vidd az egeret a beállítás fölé bővebb információért&lt;i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Válassz egy kategóriát a bal oldali listából és vidd az egeret a beállítás fölé bővebb információért&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Hibás beállításokat találtam</translation>
+        <translation type="obsolete">Hibás beállításokat találtam</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Beállítások</translation>
+        <translation type="obsolete">Beállítások</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Optimizálandó beállításokat találtam</translation>
+        <translation type="obsolete">Optimizálandó beállításokat találtam</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; lapon %2</translation>
+        <translation type="obsolete">A(z) &lt;b&gt;%1&lt;/b&gt; lapon %2</translation>
     </message>
 </context>
 <context>
@@ -8112,24 +10962,24 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>Választóablak megjelenítése</translation>
+        <translation type="obsolete">Választóablak megjelenítése</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>A választó ablak megjelenítése a menüből</translation>
+        <translation type="obsolete">A választó ablak megjelenítése a menüből</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>Tálca ikon elrejtése</translation>
+        <translation type="obsolete">Tálca ikon elrejtése</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>Törli az ikont a rendszertálcáról</translation>
+        <translation type="obsolete">Törli az ikont a rendszertálcáról</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>Más &amp;gépek...</translation>
+        <translation type="obsolete">Más &amp;gépek...</translation>
     </message>
 </context>
 <context>
@@ -8338,15 +11188,15 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Nincs leírás. Nyomd meg a szerkesztés gombot, és írj egyet.</translation>
+        <translation type="obsolete">Nincs leírás. Nyomd meg a szerkesztés gombot, és írj egyet.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Szerkesztés</translation>
+        <translation type="obsolete">Szerkesztés</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Szerkesztés (Ctrl+E)</translation>
+        <translation type="obsolete">Szerkesztés (Ctrl+E)</translation>
     </message>
     <message>
         <source>Ctrl+E</source>
@@ -8357,7 +11207,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>A kiválasztott virtuális gép &lt;i&gt;nem elérhető&lt;/i&gt;. Nézze meg a lenti hibaüzenetet, és kattintson a &lt;b&gt;Frissítés&lt;/b&gt; gombra az elérhetőség újrateszteléséhez:</translation>
+        <translation type="obsolete">A kiválasztott virtuális gép &lt;i&gt;nem elérhető&lt;/i&gt;. Nézze meg a lenti hibaüzenetet, és kattintson a &lt;b&gt;Frissítés&lt;/b&gt; gombra az elérhetőség újrateszteléséhez:</translation>
     </message>
 </context>
 <context>
@@ -8482,7 +11332,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
-        <translation>Nem érhető el</translation>
+        <translation type="obsolete">Nem érhető el</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
@@ -8501,6 +11351,11 @@ value.&lt;/qt&gt;</source>
         <comment>details report</comment>
         <translation type="obsolete">Memóriavirtualizáció</translation>
     </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished">Nem érhető el</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
@@ -8517,55 +11372,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Inaccessible</source>
         <translation type="obsolete">Elérhetetlen</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation>Elérhetetlen</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3 óta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Munkamenet %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Elérhetetlen %2 óta&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>M&amp;utat</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép ablakára ugrás</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>S&amp;tart</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép elindítása</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>&amp;Folytat</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>A megállított gép működésének folytatása</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>Megá&amp;llít</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>Átmenetileg felfüggeszti a virtuális gép működését</translation>
     </message>
 </context>
 <context>
@@ -8841,33 +11647,6 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsAudio</name>
-    <message>
-        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>Ha engedélyezed, a virtuális PCI hangkártya be lesz helyezve a virtuális gépbe, így az képes lesz kommunikálni a gazda hangkártyájával.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Audio</source>
-        <translation>Audió &amp;engedélyezése</translation>
-    </message>
-    <message>
-        <source>Host Audio &amp;Driver:</source>
-        <translation>Gazda au&amp;dió vezérlő:</translation>
-    </message>
-    <message>
-        <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Az audio kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
-    </message>
-    <message>
-        <source>Audio &amp;Controller:</source>
-        <translation>Audió &amp;vezérlő:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>A virtuális hangkártya kiválasztása. A választott hangkártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMSettingsCD</name>
     <message>
         <source>Host CD/DVD drive is not selected</source>
@@ -8924,110 +11703,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy CD/DVD képfájlt csatolásra.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsDisplay</name>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez szükséges minimális értéket. </translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Video</source>
-        <translation>&amp;Videó</translation>
-    </message>
-    <message>
-        <source>Video &amp;Memory:</source>
-        <translation>Videó&amp;memória:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Megadhatod a virtuális gép videó-memóriájának méretét.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>Bővített képességek:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation>Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation>&amp;3D gyorsítás engedélyezése</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation>Távoli képe&amp;rnyő</translation>
-    </message>
-    <message>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Server</source>
-        <translation>Sz&amp;erver bekapcsolása</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation>Szerver &amp;port:</translation>
-    </message>
-    <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="obsolete">A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation>Autentikációs &amp;metódus:</translation>
-    </message>
-    <message>
-        <source>Defines the VRDP authentication method.</source>
-        <translation>A VRDP autentikációs metódus.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation>Autentikációs &amp;időkorlát:</translation>
-    </message>
-    <message>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Időkorlát a vendég autentikálásához, ezredmásodpercben.</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videómemóriát rendeltél a géphez, pedig ez a minimum, ami a nagyfelbontású videók lejátszásához kell.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>Ha engedélyezed, a virtuális gép hozzáférést kap a gazdagép videógyorsítási képességeihez.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;2D Video Acceleration</source>
-        <translation>&amp;2D gyorsítás engedélyezése</translation>
-    </message>
-    <message>
-        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translatorcomment>CHECK</translatorcomment>
-        <translation>A VRDP szerver portja. Adj meg &lt;tt&gt;0&lt;/tt&gt;-t (nulla) a szabványos RDP port (3389) kiválasztásához.</translation>
-    </message>
-    <message>
-        <source>Mo&amp;nitor Count:</source>
-        <translation>Mo&amp;nitorok száma:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation>Megadhatod a virtuális gép által használt monitorok számát.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -9781,51 +12456,51 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>General</source>
-        <translation>Általános</translation>
+        <translation type="obsolete">Általános</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Tároló</translation>
+        <translation type="obsolete">Tároló</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>Merevlemezek</translation>
+        <translation type="obsolete">Merevlemezek</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Floppy</translation>
+        <translation type="obsolete">Floppy</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Audió</translation>
+        <translation type="obsolete">Audió</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Hálózat</translation>
+        <translation type="obsolete">Hálózat</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>Portok</translation>
+        <translation type="obsolete">Portok</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Soros portok</translation>
+        <translation type="obsolete">Soros portok</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Párhuzamos portok</translation>
+        <translation type="obsolete">Párhuzamos portok</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Megosztott mappák</translation>
+        <translation type="obsolete">Megosztott mappák</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -9833,7 +12508,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
@@ -9841,27 +12516,27 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>System</source>
-        <translation>Rendszer</translation>
+        <translation type="obsolete">Rendszer</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>Képernyő</translation>
+        <translation type="obsolete">Képernyő</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>egy 64 bites vendégrendszert választottál ehhez a géphez. Ezek a rendszerek igényik a hardvervirtualizációt (VT-x/AMD-V), így ez a tulajdonság automatikusan engedélyezve lesz.</translation>
+        <translation type="obsolete">egy 64 bites vendégrendszert választottál ehhez a géphez. Ezek a rendszerek igényik a hardvervirtualizációt (VT-x/AMD-V), így ez a tulajdonság automatikusan engedélyezve lesz.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>egy 64 bites vendégrendszert választottál ehhez a géphez. A VirtualBox jelenleg csak egy virtuális processzort támogat a 32 bites gazdagépen futtatott 64 bites virtuális gépeken.</translation>
+        <translation type="obsolete">egy 64 bites vendégrendszert választottál ehhez a géphez. A VirtualBox jelenleg csak egy virtuális processzort támogat a 32 bites gazdagépen futtatott 64 bites virtuális gépeken.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>engedélyezted a 2D gyorsítást. Mivel ez a lehetőség jelenleg csak Windows-os vendéggépeken érhető el, ezért most letiltásra kerül.</translation>
+        <translation type="obsolete">engedélyezted a 2D gyorsítást. Mivel ez a lehetőség jelenleg csak Windows-os vendéggépeken érhető el, ezért most letiltásra kerül.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>engedélyezted a USB HID-et (Human Interface Device). Addig nem fog működni, amíg az USB emuláció be van kapcsolva. Ez automatikusan meg fog történni, ha elfogadod a virtuális gép beállításait az OK gomb megnyomásával.</translation>
+        <translation type="obsolete">engedélyezted a USB HID-et (Human Interface Device). Addig nem fog működni, amíg az USB emuláció be van kapcsolva. Ez automatikusan meg fog történni, ha elfogadod a virtuális gép beállításait az OK gomb megnyomásával.</translation>
     </message>
 </context>
 <context>
@@ -9913,1379 +12588,6 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy floppy képfájlt csatolásra.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsGeneral</name>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
-    </message>
-    <message>
-        <source>&amp;Basic</source>
-        <translation>&amp;Alap</translation>
-    </message>
-    <message>
-        <source>Identification</source>
-        <translation type="obsolete">Azonosítás</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Név:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the virtual machine.</source>
-        <translation>A virtuális gép neve.</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type:</source>
-        <translation type="obsolete">OS &amp;típusa: </translation>
-    </message>
-    <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">A tervezett vendég operációs rendszer típusa.</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">Alap&amp;memória mérete</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
-    </message>
-    <message>
-        <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">&amp;Videó-memória mérete</translation>
-    </message>
-    <message>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">Megadhatod a virtuális gép videó-memóriájának méretét.</translation>
-    </message>
-    <message>
-        <source>&amp;Advanced</source>
-        <translation>H&amp;aladó</translation>
-    </message>
-    <message>
-        <source>Boo&amp;t Order:</source>
-        <translation type="obsolete">Boo&amp;t sorrend: </translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation type="obsolete">Fel (Ctrl+Fel)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation type="obsolete">A kiválasztott eszközt feljebb teszi.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation type="obsolete">Le (Ctrl+Le)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation type="obsolete">A kiválasztott eszközt lejjebb teszi.</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="obsolete">Bővített képességek:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
-    </message>
-    <message>
-        <source>Enable A&amp;CPI</source>
-        <translation type="obsolete">A&amp;CPI engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
-    </message>
-    <message>
-        <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">IO A&amp;PIC engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">&amp;VT-x/AMD-V engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="obsolete">Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="obsolete">PA&amp;E/NX engedélyezése</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Clipboard:</source>
-        <translation>O&amp;sztott vágólap:</translation>
-    </message>
-    <message>
-        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen az integrációs szolgáltatások telepítését igénlyi.</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
-    </message>
-    <message>
-        <source>&amp;IDE Controller Type:</source>
-        <translation type="obsolete">&amp;IDE vezérlő típusa:</translation>
-    </message>
-    <message>
-        <source>S&amp;napshot Folder:</source>
-        <translation>Pilla&amp;natkép mappa:</translation>
-    </message>
-    <message>
-        <source>&amp;Description</source>
-        <translation>L&amp;eírás</translation>
-    </message>
-    <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
-    </message>
-    <message>
-        <source>&amp;Other</source>
-        <translation type="obsolete">T&amp;ovábbi</translation>
-    </message>
-    <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Mounted Media</source>
-        <translation type="obsolete">Emlékezzen a csatolt médiák&amp;ra</translation>
-    </message>
-    <message>
-        <source>Runtime:</source>
-        <translation type="obsolete">Futtatókörnyezet:</translation>
-    </message>
-    <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="obsolete">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez szükséges minimális értéket. </translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="obsolete">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="obsolete">&amp;3D gyorsítás engedélyezése</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
-    </message>
-    <message>
-        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translatorcomment>TODO: Too looooooooong...</translatorcomment>
-        <translation type="obsolete">ez egy 64 bites vendég rendszerrel rendelkező gép, melynek futtatásához szükség van a processzor virtualizációs tulajdonságának (VT-x/AMD-V) engedélyezéséhez, különben a vendég rendszer nem lesz képes detektálni a 64 bites CPU-t, emiatt képtelen lesz bootolni, így ez az opció automatikusan engedélyezve lesz, ha megnyomod az OK gombot.</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation type="obsolete">Memóriavirtualizáció en&amp;gedélyezése</translation>
-    </message>
-    <message>
-        <source>Removable Media:</source>
-        <translation>Eltávolítható média:</translation>
-    </message>
-    <message>
-        <source>&amp;Remember Runtime Changes</source>
-        <translation>Emlékezzen a változtatások&amp;ra</translation>
-    </message>
-    <message>
-        <source>Mini ToolBar:</source>
-        <translation>Mini eszköztár:</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>Ha engedélyezed, a Mini eszköztár meg fog jelenni teljes képernyős és asztal-integrációs módban.</translation>
-    </message>
-    <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>Jelenjen meg &amp;teljes képernyőn</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Ha engedélyezed, a Mini ToolBar a képernyő tetején fog megjelenni, és nem az alján, ahol alapértelmezetten megjelenik.</translation>
-    </message>
-    <message>
-        <source>Show At &amp;Top Of Screen</source>
-        <translation>Legyen a képernyő &amp;tetején</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsStorage</name>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="obsolete">Nincs számára merevlemez kiválasztva: &lt;i&gt;%1&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; olyan merevlemezt használ, mely már ide van csatolva: &lt;i&gt;%2&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Add Attachment</source>
-        <translation type="obsolete">Új cs&amp;atolás</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Attachment</source>
-        <translation type="obsolete">Csatolás tö&amp;rlése</translation>
-    </message>
-    <message>
-        <source>&amp;Select Hard Disk</source>
-        <translation type="obsolete">Merevlemez választá&amp;sa</translation>
-    </message>
-    <message>
-        <source>Adds a new hard disk attachment.</source>
-        <translation type="obsolete">Új merevlemezt csatol hozzá.</translation>
-    </message>
-    <message>
-        <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="obsolete">Eltávolítja a kiemelt merevlemezt.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATA vezérlő &amp;engedélyezése</translation>
-    </message>
-    <message>
-        <source>&amp;Attachments</source>
-        <translation type="obsolete">Cs&amp;atolt eszközök</translation>
-    </message>
-    <message>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">Ehhez a géphez csatolt merevlemezek listája. Az egérrel vagy a &lt;tt&gt;Space&lt;/tt&gt; gombbal a kiemelt elemnél bekapcsolja a legördülő menüt, melyből választhatsz egy értéket. A környezeti menüvel vagy a jobb oldali gombokkal merevlemezt csatolhatsz fel vagy távolíthatsz el.</translation>
-    </message>
-    <message>
-        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">A Virtuális médiakezelő használatával válassz egy merevlemezt, ami a jelenleg kiemelt foglalatba kerül.</translation>
-    </message>
-    <message>
-        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>Ha engedélyezed, megmutatja a foglalathoz jelenleg csatolt különbözeti merevlemezeket az alap merevlemezek helyett (megjelennek a közvetett csatolások is) és másik különbözeti merevlemezek is csatolhatók. Ezt csak akkor válaszd, ha összetett merevlemez beállításra van szükséged.</translation>
-    </message>
-    <message>
-        <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="obsolete">&amp;Különbözeti merevlemezek mutatása</translation>
-    </message>
-    <message>
-        <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="obsolete">Ha negedélyezed, bekapcsolja a gép kiegészítő virtuális vezérlőjét (SATA vagy SCSI).</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Additional Controller</source>
-        <translation type="obsolete">Ki&amp;egészítő vezérlő bekapcsolása</translation>
-    </message>
-    <message>
-        <source>IDE &amp;Controller Type</source>
-        <translation type="obsolete">IDE vezérlő &amp;típusa</translation>
-    </message>
-    <message>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Busz:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Típus:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Elem&amp;nbsp;összecsukása/kibontása&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Merevlemez&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Floppy&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>Nincs merevlemez kiválasztva a(z) &lt;i&gt;%1&lt;/i&gt; géphez.</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; ugyanazt a médiumot használja, mint a(z) &lt;i&gt;%2&lt;/i&gt;.</translation>
-    </message>
-    <message>
-        <source>Add Controller</source>
-        <translation>Vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add IDE Controller</source>
-        <translation>IDE vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add SATA Controller</source>
-        <translation>SATA vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add SCSI Controller</source>
-        <translation>SCSI vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add Floppy Controller</source>
-        <translation>Floppy vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>Remove Controller</source>
-        <translation>Vezérlő eltávolítása</translation>
-    </message>
-    <message>
-        <source>Add Attachment</source>
-        <translation>Új csatolás</translation>
-    </message>
-    <message>
-        <source>Add Hard Disk</source>
-        <translation>Merevlemez hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add CD/DVD Device</source>
-        <translation>CD/DVD hozzáadása</translation>
-    </message>
-    <message>
-        <source>Add Floppy Device</source>
-        <translation>Floppy hozzáadása</translation>
-    </message>
-    <message>
-        <source>Remove Attachment</source>
-        <translation>Csatolás törlése</translation>
-    </message>
-    <message>
-        <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>Az új vezérlőt a tároló-fa végéhez adja hozzá.</translation>
-    </message>
-    <message>
-        <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>Eltávolítja a kijelölt vezérlőt a tároló-fából.</translation>
-    </message>
-    <message>
-        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>Új eszköz hozzáadása a tárolófához és csatlakoztatása a jelenleg kiválasztott vezérlőhöz.</translation>
-    </message>
-    <message>
-        <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>Eltávolítja a kijelölt eszközt a tárolófából.</translation>
-    </message>
-    <message>
-        <source>IDE Controller</source>
-        <translation>IDE vezérlő</translation>
-    </message>
-    <message>
-        <source>SATA Controller</source>
-        <translation>SATA vezérlő</translation>
-    </message>
-    <message>
-        <source>SCSI Controller</source>
-        <translation>SCSI vezérlő</translation>
-    </message>
-    <message>
-        <source>Floppy Controller</source>
-        <translation>Floppy vezérlő</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disk:</source>
-        <translation>&amp;Merevlemez:</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Device:</source>
-        <translation>&amp;CD/DVD eszköz:</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device:</source>
-        <translation>&amp;Floppy eszköz:</translation>
-    </message>
-    <message>
-        <source>&amp;Storage Tree</source>
-        <translation>&amp;Tárolófa</translation>
-    </message>
-    <message>
-        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>A virtuális gép minden tárolási vezérlőjét, illetve a géphez csatolt összes lemezképét, és gazdaeszközét tartalmazza.</translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation>Információ</translation>
-    </message>
-    <message>
-        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>A Tárolófa különböző típusú vezérlőket tartalmazhat. Ennek a gépnek jelenleg nincs vezérlője.</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation>Paraméterek</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Név:</translation>
-    </message>
-    <message>
-        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>Átnevezi a tárolófában kijelölt vezérlőt.</translation>
-    </message>
-    <message>
-        <source>&amp;Type:</source>
-        <translation>&amp;Típus:</translation>
-    </message>
-    <message>
-        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translatorcomment>CHECK</translatorcomment>
-        <translation>A kijelölt vezérlő altípusát választhatod ki.</translation>
-    </message>
-    <message>
-        <source>S&amp;lot:</source>
-        <translation>Csat&amp;lakozó:</translation>
-    </message>
-    <message>
-        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translatorcomment>CHECK</translatorcomment>
-        <translation>Az eszköz csatlakozóját adhatod meg. Az elérhető csatlakozók száma függ a vezérlő típusától, és a többi eszköztől.</translation>
-    </message>
-    <message>
-        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation>Válaszd ki a használandó virtális lemezképet vagy gazda meghajtót.</translation>
-    </message>
-    <message>
-        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation>Megjeleníti a Virtuális média-kezelőt a csatolandó lemezkép kiválasztásához.</translation>
-    </message>
-    <message>
-        <source>Open Virtual Media Manager</source>
-        <translation>Virtuális média-kezelő megnyitása</translation>
-    </message>
-    <message>
-        <source>D&amp;ifferencing Disks</source>
-        <translation>&amp;Különbözeti lemezek</translation>
-    </message>
-    <message>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Ha ez kiválasztod, a vendég ATAPI parancsokat küldhet közvetlenül a gazda meghanjtónak, mely által a gazda géphez csatlakozó CD/DVD írókat a virtuális gépen belül is lehet használni. Megjegyzendő, hogy a virtuális gépen belül nem támogatott még az audió CD írása.</translation>
-    </message>
-    <message>
-        <source>&amp;Passthrough</source>
-        <translation>&amp;Átengedés</translation>
-    </message>
-    <message>
-        <source>Virtual Size:</source>
-        <translation>Virtuális méret:</translation>
-    </message>
-    <message>
-        <source>Actual Size:</source>
-        <translation>Jelenlegi méret:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation>Méret:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Hely:</translation>
-    </message>
-    <message>
-        <source>Type (Format):</source>
-        <translation>Típus (formátum):</translation>
-    </message>
-    <message>
-        <source>Attached To:</source>
-        <translation>Csatlakoztatva:</translation>
-    </message>
-    <message>
-        <source>Allows to use host I/O caching capabilities.</source>
-        <translation>Lehetővé teszi a gazda I/O cache képességeinek haszbnálatát.</translation>
-    </message>
-    <message>
-        <source>Use host I/O cache</source>
-        <translation>Gazda I/O cache használata</translation>
-    </message>
-    <message>
-        <source>Add SAS Controller</source>
-        <translation>SAS vezérlő hozzáadása</translation>
-    </message>
-    <message>
-        <source>SAS Controller</source>
-        <translation>SAS vezérlő</translation>
-    </message>
-    <message>
-        <source>Storage Controller</source>
-        <translation>Tárolási vezérlő</translation>
-    </message>
-    <message>
-        <source>Storage Controller 1</source>
-        <translation>Tárolási vezérlő 1</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetwork</name>
-    <message>
-        <source>Select TAP setup application</source>
-        <translation type="obsolete">Válaszd ki a TAP beállító alkalmazást</translation>
-    </message>
-    <message>
-        <source>Select TAP terminate application</source>
-        <translation type="obsolete">Válaszd ki a TAP leállító alkalmazást</translation>
-    </message>
-    <message>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Ha engedélyezed, a kábel be lesz dugva a virtuális gép hálókártyájába.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Network Adapter</source>
-        <translation>Hálózati adapter &amp;engedélyezése</translation>
-    </message>
-    <message>
-        <source>A&amp;dapter Type:</source>
-        <translation type="obsolete">Kárt&amp;ya típusa:</translation>
-    </message>
-    <message>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>A virtuális hálókártya kiválasztása. A választott hálókártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
-    </message>
-    <message>
-        <source>&amp;Attached to:</source>
-        <translation>Cs&amp;atlakoztatva ide:</translation>
-    </message>
-    <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Megadhatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
-    </message>
-    <message>
-        <source>&amp;Network Name:</source>
-        <translation type="obsolete">Hálózat &amp;neve:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Az ehhez az adapterhez kiválasztott belső hálózat neve.</translation>
-    </message>
-    <message>
-        <source>&amp;MAC Address:</source>
-        <translation type="obsolete">&amp;MAC cím:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csak a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation>Véletlen MAC cím generálása.</translation>
-    </message>
-    <message>
-        <source>&amp;Generate</source>
-        <translation type="obsolete">&amp;Generál</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
-    </message>
-    <message>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="obsolete">Kábel &amp;bedugva</translation>
-    </message>
-    <message>
-        <source>&amp;Interface Name:</source>
-        <translation type="obsolete">&amp;Interfész neve:</translation>
-    </message>
-    <message>
-        <source>Displays the TAP interface name.</source>
-        <translation type="obsolete">A TAP interfész neve.</translation>
-    </message>
-    <message>
-        <source>&amp;Setup Application:</source>
-        <translation type="obsolete">Beállító alkalmazá&amp;s:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="obsolete">A TAP interfész beállításához használt parancs.</translation>
-    </message>
-    <message>
-        <source>Selects the setup application.</source>
-        <translation type="obsolete">A beállító alkalmazás kiválasztása.</translation>
-    </message>
-    <message>
-        <source>&amp;Terminate Application:</source>
-        <translation type="obsolete">Leállí&amp;tó alkalmazás:</translation>
-    </message>
-    <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="obsolete">A TAP interfész leállításához használt parancs.</translation>
-    </message>
-    <message>
-        <source>Selects the terminate application.</source>
-        <translation type="obsolete">A leállító alkalmazás kiválasztása.</translation>
-    </message>
-    <message>
-        <source>Host Interface Settings</source>
-        <translation type="obsolete">Gazda interfész beállítása</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <comment>network</comment>
-        <translation type="obsolete">Eszköz</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <comment>internal</comment>
-        <translation type="obsolete">Hálózat</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation>Kárt&amp;ya típusa:</translation>
-    </message>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation>nincs bridge-elt hálózati kártya kiválasztva</translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation>a belső hálózat neve nincs megadva</translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation>nincs host-only hálózati kártya kiválasztva</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation>Nincs kiválasztva</translation>
-    </message>
-    <message>
-        <source>Open additional options dialog for current attachment type.</source>
-        <translation type="obsolete">Egy további beállítóablak megnyitása a kiválasztott csatolási típushoz.</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Név:</translation>
-    </message>
-    <message>
-        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>A hálózati kártya nevét lehet itt beállítani, ha a csatolás típusa &lt;b&gt;Bridge-elt kártya&lt;/b&gt; vagy &lt;b&gt;Host-only kártya&lt;/b&gt;, és a belső hálózat nevét, ha a csatolás típusa &lt;b&gt;Belső hálózat&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation>H&amp;aladó</translation>
-    </message>
-    <message>
-        <source>Shows or hides additional network adapter options.</source>
-        <translation>Megjeleníti vagy elrejti a további hálókártya opciókat.</translation>
-    </message>
-    <message>
-        <source>&amp;Mac Address:</source>
-        <translation>&amp;MAC cím:</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation>&amp;Kábel bedugva</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkDetails</name>
-    <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Az ehhez az adapterhez kiválasztott belső hálózat neve.</translation>
-    </message>
-    <message>
-        <source>Guest &amp;MAC Address:</source>
-        <translation type="obsolete">A vendég &amp;MAC címe:</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csak a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
-    </message>
-    <message>
-        <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">Véletlen MAC cím generálása.</translation>
-    </message>
-    <message>
-        <source>&amp;Cable connected</source>
-        <translation type="obsolete">&amp;Kábel bedugva</translation>
-    </message>
-    <message>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
-    </message>
-    <message>
-        <source>Additional Options</source>
-        <translation type="obsolete">További opciók</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsNetworkPage</name>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Nincs hálózati kártya kiválasztva</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Nincs kiválasztva belső hálózat</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation>Port %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Parallel Port</source>
-        <translation>Párhuzamos port &amp;engedélyezése</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Port szá&amp;m:</translation>
-    </message>
-    <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>A párhuzamos port száma. Választhatsz szabványos soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>I/O Po&amp;rt:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation>&amp;Port útvonal:</translation>
-    </message>
-    <message>
-        <source>Displays the host parallel device name.</source>
-        <translation>A párhuzamos port neve.</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsParallelPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Kettős portszám van kiválasztva </translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>A port útvonala nincs megadva </translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSF</name>
-    <message>
-        <source>&amp;Add New Shared Folder</source>
-        <translation type="obsolete">Megosztott mappa hozzá&amp;adása</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="obsolete">A kiválasztott megosztott mappa sz&amp;erkesztése</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="obsolete">A kiválasztott megosztott mappa tö&amp;rlése</translation>
-    </message>
-    <message>
-        <source>Adds a new shared folder definition.</source>
-        <translation>Új megosztott mappa hozzáadása.</translation>
-    </message>
-    <message>
-        <source>Edits the selected shared folder definition.</source>
-        <translation>A kiválasztott megosztott mappa szerkesztése.</translation>
-    </message>
-    <message>
-        <source>Removes the selected shared folder definition.</source>
-        <translation>Megosztott mappa törlése.</translation>
-    </message>
-    <message>
-        <source> Machine Folders</source>
-        <translation> A géphez tartozó megosztások</translation>
-    </message>
-    <message>
-        <source> Transient Folders</source>
-        <translation> Átmeneti mappák</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation>Teljes hozzáférés</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation>Csak olvasható</translation>
-    </message>
-    <message>
-        <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Minden a gép számára elérhető megosztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Név</translation>
-    </message>
-    <message>
-        <source>Path</source>
-        <translation>Útvonal</translation>
-    </message>
-    <message>
-        <source>Access</source>
-        <translation>Hozzáférés</translation>
-    </message>
-    <message>
-        <source> Global Folders</source>
-        <translation>Globális mappák</translation>
-    </message>
-    <message>
-        <source>&amp;Add Shared Folder</source>
-        <translation>Megosztott mappa hozzá&amp;adása</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Shared Folder</source>
-        <translation>Megosztott mappa sz&amp;erkesztése</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Shared Folder</source>
-        <translation>Megosztott mappa tö&amp;rlése</translation>
-    </message>
-    <message>
-        <source>&amp;Folders List</source>
-        <translation>&amp;Mappalista</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSFDetails</name>
-    <message>
-        <source>Add Share</source>
-        <translation>Megosztás hozzáadása</translation>
-    </message>
-    <message>
-        <source>Edit Share</source>
-        <translation>Megosztás szerkesztése</translation>
-    </message>
-    <message>
-        <source>Dialog</source>
-        <translation>Dialog</translation>
-    </message>
-    <message>
-        <source>Folder Path:</source>
-        <translation>Mappa útvonala:</translation>
-    </message>
-    <message>
-        <source>Folder Name:</source>
-        <translation>Mappa neve:</translation>
-    </message>
-    <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>A mappa virtuális gépben megjelenő neve.</translation>
-    </message>
-    <message>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Ha engedélyezed, a vendég rendszer nem lesz képes írni a megosztott mappába.</translation>
-    </message>
-    <message>
-        <source>&amp;Read-only</source>
-        <translation>Csak &amp;olvasható</translation>
-    </message>
-    <message>
-        <source>&amp;Make Permanent</source>
-        <translation>Legyen tartó&amp;s</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation>Port %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Serial Port</source>
-        <translation>Soros port &amp;engedélyezése</translation>
-    </message>
-    <message>
-        <source>Port &amp;Number:</source>
-        <translation>Port szá&amp;m:</translation>
-    </message>
-    <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>A soros port száma. Választhatsz szabványos soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
-    </message>
-    <message>
-        <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
-    </message>
-    <message>
-        <source>I/O Po&amp;rt:</source>
-        <translation>I/O Po&amp;rt:</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
-    </message>
-    <message>
-        <source>Port &amp;Mode:</source>
-        <translation>Port &amp;mód:</translation>
-    </message>
-    <message>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni (nem lesz benne kábel).</translation>
-    </message>
-    <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
-    </message>
-    <message>
-        <source>&amp;Create Pipe</source>
-        <translation>&amp;Cső készítése</translation>
-    </message>
-    <message>
-        <source>Port &amp;Path:</source>
-        <translation type="obsolete">&amp;Port útvonal:</translation>
-    </message>
-    <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>A port útvonala, ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
-    </message>
-    <message>
-        <source>Port/File &amp;Path:</source>
-        <translation>&amp;Port/fájl útvonala:</translation>
-    </message>
-    <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
-    </message>
-    <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSerialPage</name>
-    <message>
-        <source>Duplicate port number selected </source>
-        <translation>Kettős portszám van kiválasztva </translation>
-    </message>
-    <message>
-        <source>Port path not specified </source>
-        <translation>A port útvonala nincs megadva </translation>
-    </message>
-    <message>
-        <source>Duplicate port path entered </source>
-        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsSystem</name>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>több, mint &lt;b&gt;%1%&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
-    </message>
-    <message>
-        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>teljesítménybeli problémák miatt,a virtuális géphez társított virtuális processzorok száma nem lehet nagyobb, mint a  fizikai processzorok számának duplája a gazda számítógépen (&lt;b&gt;%1&lt;/b&gt;). Csökkentsd le a virtuális processzorok számát.</translation>
-    </message>
-    <message>
-        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>több virtuális processzort társítottál a virtuális géphez, mint a gazda rendszer fizikai processzora (&lt;b&gt;%1&lt;/b&gt;). Ez valószínűleg csökkenteni fogja a virtuális gép teljesítményét. Fontold meg a virtuális processzorok számának csökkentését.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>egynél több virtuális processzort társítottál a virtuális géphez. Az IO-APIC szolgáltatás bekapcsolása nélkül nem fog működni. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
-    </message>
-    <message>
-        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>&gt;egynél több virtuális processzort társítottál a virtuális géphez. A hardveres virtualizáció (VT-x/AMD-V) bekapcsolása nélkül nem fog működni. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
-        <comment>%1 is 1 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is 32 for now</comment>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Motherboard</source>
-        <translation>&amp;Alaplap</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory:</source>
-        <translation>Alap &amp;memória:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>&amp;Boot Order:</source>
-        <translation>&amp;Boot sorrend:</translation>
-    </message>
-    <message>
-        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Meghatározza a bootsorrendet. Használd ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgasd fel vagy le az elemeket a pontos sorrendhez.</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation>Le (Ctrl+Le)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device down.</source>
-        <translation>A kiválasztott eszközt lentebb teszi.</translation>
-    </message>
-    <message>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation>Fel (Ctrl+Fel)</translation>
-    </message>
-    <message>
-        <source>Moves the selected boot device up.</source>
-        <translation>A kiválasztott eszközt feljebb teszi.</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation>Bővített képességek:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;ACPI</source>
-        <translation type="obsolete">&amp;ACPI engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
-    </message>
-    <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation> &amp;IO APIC engedélyezése</translation>
-    </message>
-    <message>
-        <source>&amp;Processor</source>
-        <translation>&amp;Processzor</translation>
-    </message>
-    <message>
-        <source>&amp;Processor(s):</source>
-        <translation>&amp;Processzor(ok):</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="obsolete">A virtuális gép virtuális processzorainak számának vezérlései.</translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
-    </message>
-    <message>
-        <source>Enable PA&amp;E/NX</source>
-        <translation>PA&amp;E/NX engedélyezése</translation>
-    </message>
-    <message>
-        <source>Acce&amp;leration</source>
-        <translation>Gyor&amp;sítás</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization:</source>
-        <translation>Hardver virtualizáció:</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>&amp;VT-x/AMD-V engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
-        <translation>Memóriavirtualizáció en&amp;gedélyezése</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is host cpu count * 2 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;processzor&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>Ha engedélyezed, a gép támogatni fogja az Extended Firmware Interface-t (EFI), ami szükséges néhány operációs rendszer elindításához. A nem EFI-képes rendszerek nem lesznek képesek elindulni, ha ez az opció aktív.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;EFI (special OSes only)</source>
-        <translation>&amp;EFI engedélyezése (különleges OS-eknek)</translation>
-    </message>
-    <message>
-        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>Ha engedélyezed, az RTC eszköz az UTC időt közli, egyéb esetben a helyi (gazda) idő lesz érvényben. Az Unix rendszer általában elvárja a hardveres idő UTC-re állítását.</translation>
-    </message>
-    <message>
-        <source>Hardware clock in &amp;UTC time</source>
-        <translation>Hardveres óra  &amp;UTC időre állítása</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation>A virtuális gép processzorainak számát állítja be. Hardveres virtualizációra van szükség a gazda rendszeren az egynél több virtuális processzor használatához.</translation>
-    </message>
-    <message>
-        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation>Ha engedélyezed, egy abszolút mutató eszköz (USB tábla) lesz támogatva. Egyéb esetben csak a szabványos PS/2 egér lesz emulálva.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;absolute pointing device</source>
-        <translation>&amp;Abszolút mutató eszköz engedélyezése</translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSB</name>
-    <message>
-        <source>&amp;Add Empty Filter</source>
-        <translation>Üres szűrő hozzá&amp;adása</translation>
-    </message>
-    <message>
-        <source>A&amp;dd Filter From Device</source>
-        <translation>Szűrő hozzáa&amp;dása eszköz alapján</translation>
-    </message>
-    <message>
-        <source>&amp;Edit Filter</source>
-        <translation>Szűrő sz&amp;erkesztése</translation>
-    </message>
-    <message>
-        <source>&amp;Remove Filter</source>
-        <translation>Szűrő tö&amp;rlése</translation>
-    </message>
-    <message>
-        <source>&amp;Move Filter Up</source>
-        <translation>&amp;Feljebb</translation>
-    </message>
-    <message>
-        <source>M&amp;ove Filter Down</source>
-        <translation>&amp;Lejjebb</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
-    </message>
-    <message>
-        <source>Edits the selected USB filter.</source>
-        <translation>A kijelölt szűrő szerkesztése.</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation>Törli a kiválasztott USB szűrőt.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation>A kijelölt USB szűrőt feljebb tolja.</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation>A kijelölt USB szűrőt lejjebb tolja.</translation>
-    </message>
-    <message>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation>Új szűrő %1</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Ha engedélyezed, lesz USB vezérlő a virtuális gépben.</translation>
-    </message>
-    <message>
-        <source>Enable &amp;USB Controller</source>
-        <translation>&amp;USB vezérlő engedélyezése</translation>
-    </message>
-    <message>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Ha engedélyezed, a virtuális USB EHCI vezérlő használható lesz ebben a virtuális gépben. Az USB EHCI vezérlő USB 2.0 támogatással is rendelkezik.</translation>
-    </message>
-    <message>
-        <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>USB 2.0 (E&amp;HCI) vezérlő engedélyezése</translation>
-    </message>
-    <message>
-        <source>USB Device &amp;Filters</source>
-        <translation>USB eszközök és &amp;szűrők</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Az ehhez a géphez rendelt USB szűrők mutatása. Engedélyezd, ha látni szeretnéd, hogy egy adott szűrő engedélyezett vagy sem. A felbukkanó menü vagy a gombok használatával lehet szűrőt készíteni és törölni.</translation>
-    </message>
-    <message>
-        <source>[filter]</source>
-        <translation></translation>
-    </message>
-</context>
-<context>
-    <name>UIMachineSettingsUSBFilterDetails</name>
-    <message>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation>Bárhol</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation>Igen</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation>Nem</translation>
-    </message>
-    <message>
-        <source>&amp;Name:</source>
-        <translation>&amp;Név:</translation>
-    </message>
-    <message>
-        <source>Displays the filter name.</source>
-        <translation>Szűrő neve.</translation>
-    </message>
-    <message>
-        <source>&amp;Vendor ID:</source>
-        <translation>Gyártó &amp;ID:</translation>
-    </message>
-    <message>
-        <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Gyártó ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>&amp;Product ID:</source>
-        <translation>Termé&amp;k ID:</translation>
-    </message>
-    <message>
-        <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Termék ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>&amp;Revision:</source>
-        <translation>&amp;Revizió:</translation>
-    </message>
-    <message>
-        <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Revízió szám alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;IIFF&lt;/tt&gt;, ahol &lt;tt&gt;I&lt;/tt&gt; az egész rész egy számjegye, &lt;tt&gt;F&lt;/tt&gt; pedig a törtrész számjegye. Ha a mező üres, a szűrő minden revízióra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>&amp;Manufacturer:</source>
-        <translation>&amp;Gyártó:</translation>
-    </message>
-    <message>
-        <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Gyártó alapú szűrőt készít a gyártó &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden gyártóra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>Pro&amp;duct:</source>
-        <translation>Te&amp;rmék:</translation>
-    </message>
-    <message>
-        <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Termék alapú szűrőt készít a termék &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden termékre illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>&amp;Serial No.:</source>
-        <translation>&amp;Sorozatszám:</translation>
-    </message>
-    <message>
-        <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Sorozatszám alapú szűrőt készít a sorozatszám alapján. Ha a mező üres, a szűrő minden sorozatszámra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>Por&amp;t:</source>
-        <translation>Por&amp;t:</translation>
-    </message>
-    <message>
-        <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Gazda port alapú szűrőt készít a port &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden portra illeszkedni fog.</translation>
-    </message>
-    <message>
-        <source>R&amp;emote:</source>
-        <translation>&amp;Távoli:</translation>
-    </message>
-    <message>
-        <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>A csatlakoztatás módjára épülő szűrőt határoz meg, azaz hogy az USB eszköz helyileg (&lt;i&gt;Nem&lt;/i&gt;), a VRDP kliens gépen  (&lt;i&gt;Igen&lt;/i&gt;) van csatlakoztatva, vagy mindegy  (&lt;i&gt;Bárhol&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>&amp;Action:</source>
-        <translation>&amp;Akció:</translation>
-    </message>
-    <message>
-        <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Azt határozza meg, hogy milyen műveletet kell végrehajtani a szabálynak megfelelő eszköz csatlakoztatása esetén: adja át a gazdagépnek (&lt;i&gt;Kihagyás&lt;/i&gt;) vagy csatlakoztassa a virtuális géphez (&lt;i&gt;Elfogás&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>USB Filter Details</source>
-        <translation>USB szűrő adatai</translation>
     </message>
 </context>
 <context>
