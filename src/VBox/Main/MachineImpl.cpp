@@ -11106,7 +11106,7 @@ HRESULT SessionMachine::onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemov
      * instead acting like callback we ask IVirtualBox deliver corresponding event
      */
 
-    mParent->onNatRedirectChange(getId(), ulSlot, aNatRuleRemove, aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
+    mParent->onNatRedirectChange(getId(), ulSlot, aNatRuleRemove ? true : false, aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
     return S_OK;
 }
 
