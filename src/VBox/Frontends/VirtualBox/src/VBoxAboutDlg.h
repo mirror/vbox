@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,32 +19,42 @@
 #ifndef __VBoxAboutDlg_h__
 #define __VBoxAboutDlg_h__
 
+/* Global includes */
+#include <QPixmap>
+
+/* Local includes */
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 
-/* Qt includes */
-#include <QPixmap>
-
+/* Forward declarations */
 class QEvent;
 
+/* VBox about dialog */
 class VBoxAboutDlg: public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
 public:
-    VBoxAboutDlg (QWidget* aParent, const QString &aVersion);
+
+    /* Constructor: */
+    VBoxAboutDlg(QWidget* pParent, const QString &strVersion);
 
 protected:
-    bool event (QEvent *aEvent);
-    void paintEvent (QPaintEvent *aEvent);
-    void mouseReleaseEvent (QMouseEvent *aEvent);
 
+    /* Event handlers: */
+    bool event(QEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent);
+    void mouseReleaseEvent(QMouseEvent *pEvent);
+
+    /* Language stuff: */
     void retranslateUi();
 
 private:
-    QString mAboutText;
-    QString mVersion;
-    QPixmap mBgImage;
+
+    /* Variables: */
+    QString m_strAboutText;
+    QString m_strVersion;
+    QPixmap m_bgImage;
 };
 
 #endif /* __VBoxAboutDlg_h__ */
