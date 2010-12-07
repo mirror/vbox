@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-  <para>
+<chapter xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Change log</title>
+
+  <para>This section summarizes the changes between VirtualBox versions. Note
+    that this change log is not exhaustive; not all changes are listed.</para>
+
+  <para>VirtualBox version numbers consist of three numbers separated by dots
+    where the first and second number represent the major version and the 3rd number
+    the minor version. Minor version numbers of official releases are always even.
+    An odd minor version number represents an internal development or test build.
+    In addition, each build contains a revision number.</para>
+
   <sect1>
     <title>Version 4.0.0 Beta 1 (2010-12-06)</title>
 
@@ -26,7 +37,7 @@
         <para>Language bindings: uniform Java bindings for both local
           (COM/XPCOM) and remote (SOAP) invocation APIs</para>
       </listitem>
-      
+
       <listitem>
         <para>Chipset: added support for the Intel ICH9 chipset with 3 PCI buses, PCI express
         and Message Signaled Interrupts (MSI)</para>
@@ -36,7 +47,7 @@
         <para>Audio: Intel HD Audio is now available as guest hardware, for better support
           with modern guest operating systems (e.g. 64-bit Windows; bug #2785).</para>
       </listitem>
-      
+
       <listitem>
         <para>GUI: redesigned user interface with guest window preview</para>
       </listitem>
@@ -44,12 +55,12 @@
       <listitem>
         <para>GUI: new display mode with downscaled guest display</para>
       </listitem>
-      
+
       <listitem>
         <para>Resource control: added support for limiting a VM's CPU time and IO
         bandwidth.</para>
       </listitem>
-      
+
       <listitem>
         <para>Storage: support asynchronous I/O for iSCSI, VMDK, VHD and
         Parallels images</para>
@@ -177,7 +188,7 @@
         <para>BIOS: reduce the stack usage of the VESA BIOS function
           <emphasis>#4F01</emphasis> (Quake fix)</para>
       </listitem>
-      
+
       <listitem>
         <para>OVF/OVA: significant performance improvements during export and import
         </para>
@@ -5802,7 +5813,7 @@
 
   </sect1>
 
-  <para>In VirtualBox 3.2, changelog information for versions before 2.0 were removed in order to save space.
-  To access this information, please consult the user manual of VirtualBox 3.1 or earlier.</para>
+  <para>With VirtualBox 3.2, changelog information for versions before 2.0 were removed in order to save space.
+    To access this information, please consult the user manual of VirtualBox 3.1 or earlier.</para>
 
-  </para>
+</chapter>
