@@ -1325,6 +1325,9 @@ endif
 if defined(VBOX_WITH_STRICT_LOCKS) && ($(KBUILD_TYPE) == "debug" || $(KBUILD_TYPE) == "strict")
  DEFS += RT_LOCK_STRICT RT_LOCK_STRICT_ORDER
 endif
+ifdef VBOX_WITH_EF_WRAPS
+ DEFS += RTMEM_WRAP_TO_EF_APIS RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
+endif
 
 #
 # Compiler optimization flags.
