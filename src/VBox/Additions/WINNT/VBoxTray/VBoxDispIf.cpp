@@ -460,6 +460,7 @@ static BOOL vboxDispIfValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMODE *
     return cMatched == cDevModes;
 }
 
+#ifdef VBOX_WITH_WDDM
 DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
     UINT cbVidPnInfo = VBOXWDDM_RECOMMENDVIDPN_SIZE(cDevModes);
@@ -585,6 +586,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
 
     return winEr;
 }
+#endif /* VBOX_WITH_WDDM */
 
 DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
