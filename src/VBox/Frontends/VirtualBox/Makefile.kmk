@@ -261,6 +261,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxUpdateDlg.h \
 	src/VBoxVMInformationDlg.h \
 	src/VBoxVMLogViewer.h \
+	src/VBoxLicenseViewer.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxProblemReporter.h \
 	src/globals/VBoxUtils.h \
@@ -423,6 +424,7 @@ VirtualBox_SOURCES = \
 	src/VBoxUpdateDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxVMLogViewer.cpp \
+	src/VBoxLicenseViewer.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
@@ -553,24 +555,10 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UICocoaDockIconPreview.mm
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
- ifndef VBOX_OSE
-  VirtualBox_QT_MOCHDRS += \
- 	src/VBoxLicenseViewer.h
-  VirtualBox_SOURCES += \
- 	src/VBoxLicenseViewer.cpp
- else
-  VirtualBox_VBOX_EXTRA_NLS_SOURCES += \
- 	src/VBoxLicenseViewer.h \
- 	src/VBoxLicenseViewer.cpp
- endif
  VirtualBox_SOURCES += \
  	src/platform/x11/XKeyboard-new.cpp \
  	src/platform/x11/VBoxX11Helper.cpp \
  	src/platform/x11/UIDesktopServices_x11.cpp
-else
- VirtualBox_VBOX_EXTRA_NLS_SOURCES += \
- 	src/VBoxLicenseViewer.h \
- 	src/VBoxLicenseViewer.cpp
 endif
 
 ifdef VBOX_WITH_REGISTRATION
