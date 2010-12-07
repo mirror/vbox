@@ -44,6 +44,7 @@ ifndef VBOX_ONLY_TESTSUITE
   	VBoxGuestR3LibXFree86
  endif
 endif
+LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86
 
 
 #
@@ -133,6 +134,13 @@ VBoxGuestR3LibShared_TEMPLATE = VBOXGUESTR3DLL
 VBoxGuestR3LibShared_DEFS    := $(VBoxGuestR3Lib_DEFS)
 VBoxGuestR3LibShared_SOURCES := $(VBoxGuestR3Lib_SOURCES)
 VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)
+
+
+#
+# VBoxGuestR3Lib-x86 - an x86 (32-bit) variant of VBoxGuestR3Lib for 64-bit Windows.
+#
+VBoxGuestR3Lib-x86_EXTENDS      := VBoxGuestR3Lib
+VBoxGuestR3Lib-x86_BLD_TRG_ARCH := x86
 
 
 #
