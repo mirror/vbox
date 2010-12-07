@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,92 +20,99 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxAboutDlg.h"
-#include "VBoxGlobal.h"
+/* Global includes */
+# include <QDir>
+# include <QEvent>
+# include <QPainter>
+# include <iprt/path.h>
+# include <VBox/version.h> /* VBOX_VENDOR */
 
-#include <iprt/path.h>
-#include <VBox/version.h> /* VBOX_VENDOR */
-
-/* Qt includes */
-#include <QDir>
-#include <QEvent>
-#include <QPainter>
+/* Local includes */
+# include "VBoxAboutDlg.h"
+# include "VBoxGlobal.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
-    : QIWithRetranslateUI2 <QIDialog> (aParent, Qt::CustomizeWindowHint |
-                                       Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
-    mVersion (aVersion)
+VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
+    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
+    , m_strVersion(strVersion)
 {
-    retranslateUi();
+    /* Delete dialog on close: */
+    setAttribute(Qt::WA_DeleteOnClose);
 
-    QString sPath (":/about.png");
-    /* Branding: Use a custom about splash picture if set */
-    QString sSplash = vboxGlobal().brandingGetKey ("UI/AboutSplash");
-    if (vboxGlobal().brandingIsActive() && !sSplash.isEmpty())
+    /* Choose default image: */
+    QString strPath(":/about.png");
+
+    /* Branding: Use a custom about splash picture if set: */
+    QString strSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
+    if (vboxGlobal().brandingIsActive() && !strSplash.isEmpty())
     {
         char szExecPath[1024];
-        RTPathExecDir (szExecPath, 1024);
-        QString tmpPath = QString ("%1/%2").arg (szExecPath).arg (sSplash);
-        if (QFile::exists (tmpPath))
-            sPath = tmpPath;
+        RTPathExecDir(szExecPath, 1024);
+        QString strTmpPath = QString("%1/%2").arg(szExecPath).arg(strSplash);
+        if (QFile::exists(strTmpPath))
+            strPath = strTmpPath;
     }
 
-    mBgImage.load (sPath);
+    /* Assign image: */
+    m_bgImage.load(strPath);
+
+    /* Translate: */
+    retranslateUi();
 }
 
-bool VBoxAboutDlg::event (QEvent *aEvent)
+bool VBoxAboutDlg::event(QEvent *pEvent)
 {
-    if (aEvent->type() == QEvent::Polish)
-        setFixedSize (mBgImage.size());
-    return QIDialog::event (aEvent);
+    if (pEvent->type() == QEvent::Polish)
+        setFixedSize(m_bgImage.size());
+    if (pEvent->type() == QEvent::WindowDeactivate)
+        close();
+    return QIDialog::event(pEvent);
+}
+
+void VBoxAboutDlg::paintEvent(QPaintEvent* /* pEvent */)
+{
+    QPainter painter(this);
+    painter.drawPixmap(0, 0, m_bgImage);
+    painter.setFont(font());
+
+    /* Branding: Set a different text color (because splash also could be white),
+                 otherwise use white as default color: */
+    QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+    if (!strColor.isEmpty())
+        painter.setPen(QColor(strColor).name());
+    else
+        painter.setPen(Qt::black);
+#if VBOX_OSE
+    painter.drawText(QRect(0, 400, 600, 32),
+                     Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
+                     m_strAboutText);
+#else /* VBOX_OSE */
+    painter.drawText(QRect(271, 370, 360, 72),
+                     Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
+                     m_strAboutText);
+#endif /* VBOX_OSE */
+}
+
+void VBoxAboutDlg::mouseReleaseEvent(QMouseEvent* /* pEvent */)
+{
+    /* Close the dialog on mouse button release: */
+    close();
 }
 
 void VBoxAboutDlg::retranslateUi()
 {
-    setWindowTitle (tr ("VirtualBox - About"));
-    QString aboutText =  tr ("VirtualBox Graphical User Interface");
+    setWindowTitle(tr("VirtualBox - About"));
+    QString strAboutText =  tr("VirtualBox Graphical User Interface");
 #ifdef VBOX_BLEEDING_EDGE
-    QString versionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
+    QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
 #else
-    QString versionText = tr ("Version %1");
+    QString strVersionText = tr("Version %1");
 #endif
 #if VBOX_OSE
-    mAboutText = aboutText + " " + versionText.arg (mVersion) + "\n" +
-                 QString ("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg (QChar (0xa9));
+    m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n" +
+                     QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
 #else /* VBOX_OSE */
-    mAboutText = aboutText + "\n" +
-                 versionText.arg (mVersion);
+    m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
 #endif /* VBOX_OSE */
-}
-
-void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
-{
-    QPainter painter (this);
-    painter.drawPixmap (0, 0, mBgImage);
-    painter.setFont (font());
-
-    /* Branding: Set a different text color (because splash also could be white),
-                 otherwise use white as default color */
-    QString sColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
-    if (!sColor.isEmpty())
-        painter.setPen (QColor(sColor).name());
-    else
-        painter.setPen (Qt::black);
-#if VBOX_OSE
-    painter.drawText (QRect (0, 400, 600, 32),
-                      Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
-                      mAboutText);
-#else /* VBOX_OSE */
-    painter.drawText (QRect (271, 370, 360, 72),
-                      Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
-                      mAboutText);
-#endif /* VBOX_OSE */
-}
-
-void VBoxAboutDlg::mouseReleaseEvent (QMouseEvent * /* aEvent */)
-{
-    /* close the dialog on mouse button release */
-    accept();
 }
 
