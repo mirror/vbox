@@ -148,7 +148,8 @@ RTDECL(uint32_t)        RTVfsObjRelease(RTVFSOBJ hVfsObj);
  * @param   hVfsObj         The VFS object handle.
  * @param   pObjInfo        Where to return the info.
  * @param   enmAddAttr      Which additional attributes should be retrieved.
- * @sa      RTFileQueryInfo, RTPathQueryInfo
+ * @sa      RTVfsIoStrmQueryInfo, RTVfsFileQueryInfo, RTFileQueryInfo,
+ *          RTPathQueryInfo
  */
 RTDECL(int)             RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
 
@@ -515,7 +516,8 @@ RTDECL(int) RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, R
  *                          not, the @a pcbRead parameter must not be NULL.
  * @param   pcbRead         Where to always store the number of bytes actually
  *                          read.  This can be NULL if @a fBlocking is true.
- * @sa      RTFileRead, RTPipeRead, RTPipeReadBlocking, RTSocketRead
+ * @sa      RTVfsFileRead, RTFileRead, RTPipeRead, RTPipeReadBlocking,
+ *          RTSocketRead
  */
 RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead);
 
@@ -532,7 +534,8 @@ RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead,
  *                          not, the @a pcbWritten parameter must not be NULL.
  * @param   pcbRead         Where to always store the number of bytes actually
  *                          written.  This can be NULL if @a fBlocking is true.
- * @sa      RTFileWrite, RTPipeWrite, RTPipeWriteBlocking, RTSocketWrite
+ * @sa      RTVfsFileWrite, RTFileWrite, RTPipeWrite, RTPipeWriteBlocking,
+ *          RTSocketWrite
  */
 RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, bool fBlocking, size_t *pcbWritten);
 
@@ -589,7 +592,7 @@ RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, 
  *
  * @returns IPRT status code.
  * @param   hVfsIos         The VFS I/O stream handle.
- * @sa      RTFileFlush, RTPipeFlush
+ * @sa      RTVfsFileFlush, RTFileFlush, RTPipeFlush
  */
 RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos);
 
@@ -604,7 +607,7 @@ RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos);
  *                          VERR_INTERRUPTED (@c true) or if this condition
  *                          should be hidden from the caller (@c false).
  * @param   pfRetEvents     Where to return the event mask.
- * @sa      RTPollSetAdd, RTPoll, RTPollNoResume.
+ * @sa      RTVfsFilePoll, RTPollSetAdd, RTPoll, RTPollNoResume.
  */
 RTDECL(int)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
                                  uint32_t *pfRetEvents);
@@ -691,14 +694,105 @@ RTDECL(uint32_t)    RTVfsFileRetain(RTVFSFILE hVfsFile);
  */
 RTDECL(uint32_t)    RTVfsFileRelease(RTVFSFILE hVfsFile);
 
+/**
+ * Query information about the object.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the @a enmAddAttr value is not handled by the
+ *          implementation.
+ *
+ * @param   hVfsObj         The VFS object handle.
+ * @param   pObjInfo        Where to return the info.
+ * @param   enmAddAttr      Which additional attributes should be retrieved.
+ * @sa      RTVfsObjQueryInfo, RTVfsFsStrmQueryInfo, RTVfsDirQueryInfo,
+ *          RTVfsIoStrmQueryInfo, RTVfsFileQueryInfo, RTFileQueryInfo,
+ *          RTPathQueryInfo.
+ */
 RTDECL(int)         RTVfsFileQueryInfo(RTVFSFILE hVfsFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+/**
+ * Read bytes from the file at the current position.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and the number of bytes read written to @a pcbRead.
+ * @retval  VINF_TRY_AGAIN if @a fBlocking is @c false, @a pcbRead is not NULL,
+ *          and no data was available. @a *pcbRead will be set to 0.
+ * @retval  VINF_EOF when trying to read __beyond__ the end of the file and
+ *          @a pcbRead is not NULL (it will be set to the number of bytes read,
+ *          or 0 if the end of the file was reached before this call).
+ *          When the last byte of the read request is the last byte in the
+ *          file, this status code will not be used.  However, VINF_EOF is
+ *          returned when attempting to read 0 bytes while standing at the end
+ *          of the file.
+ * @retval  VERR_EOF when trying to read __beyond__ the end of the file and
+ *          @a pcbRead is NULL.
+ * @retval  VERR_ACCESS_DENIED if the file is not readable.
+ *
+ * @param   hVfsFile        The VFS file handle.
+ * @param   pvBuf           Where to store the read bytes.
+ * @param   cbToRead        The number of bytes to read.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbRead parameter must not be NULL.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          read.  This can be NULL if @a fBlocking is true.
+ * @sa      RTVfsIoStrmRead, RTFileRead, RTPipeRead, RTPipeReadBlocking,
+ *          RTSocketRead
+ */
 RTDECL(int)         RTVfsFileRead(RTVFSFILE hVfsFile, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+
+/**
+ * Write bytes to the file at the current position.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ACCESS_DENIED if the file is not writable.
+ *
+ * @param   hVfsFile        The VFS file handle.
+ * @param   pvBuf           The bytes to write.
+ * @param   cbToWrite       The number of bytes to write.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbWritten parameter must not be NULL.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          written.  This can be NULL if @a fBlocking is true.
+ * @sa      RTVfsIoStrmRead, RTFileWrite, RTPipeWrite, RTPipeWriteBlocking,
+ *          RTSocketWrite
+ */
 RTDECL(int)         RTVfsFileWrite(RTVFSFILE hVfsFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 RTDECL(int)         RTVfsFileWriteAt(RTVFSFILE hVfsFile, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+
+/**
+ * Flush any buffered data to the file.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile        The VFS file handle.
+ * @sa      RTVfsIoStrmFlush, RTFileFlush, RTPipeFlush
+ */
 RTDECL(int)         RTVfsFileFlush(RTVFSFILE hVfsFile);
+
+/**
+ * Poll for events.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile        The VFS file handle.
+ * @param   fEvents         The events to poll for (RTPOLL_EVT_XXX).
+ * @param   cMillies        How long to wait for event to eventuate.
+ * @param   fIntr           Whether the wait is interruptible and can return
+ *                          VERR_INTERRUPTED (@c true) or if this condition
+ *                          should be hidden from the caller (@c false).
+ * @param   pfRetEvents     Where to return the event mask.
+ * @sa      RTVfsIoStrmPoll, RTPollSetAdd, RTPoll, RTPollNoResume.
+ */
 RTDECL(RTFOFF)      RTVfsFilePoll(RTVFSFILE hVfsFile, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
                                   uint32_t *pfRetEvents);
+
+/**
+ * Tells the current file position.
+ *
+ * @returns Zero or higher - where to return the file offset.  Values
+ *          below zero are IPRT status codes (VERR_XXX).
+ * @param   hVfsFile        The VFS file handle.
+ * @sa      RTFileTell, RTVfsIoStrmTell.
+ */
 RTDECL(RTFOFF)      RTVfsFileTell(RTVFSFILE hVfsFile);
 
 /**

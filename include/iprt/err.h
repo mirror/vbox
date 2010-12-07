@@ -659,8 +659,11 @@ RT_C_DECLS_END
 #define VERR_UNSUPPORTED_ALIGNMENT          (-97)
 /** The alignment is not really supported, however we got lucky with this
  * allocation. */
-#define VINF_UNSUPPORTED_ALIGNMENT          (97)
-
+#define VINF_UNSUPPORTED_ALIGNMENT          97
+/** Duplicate something. */
+#define VERR_DUPLICATE                      (-98)
+/** Something is missing. */
+#define VERR_MISSING                        (-99)
 /** @} */
 
 
@@ -750,6 +753,18 @@ RT_C_DECLS_END
 #define VERR_FILE_AIO_INSUFFICIENT_RESSOURCES (-137)
 /** Device or resource is busy. */
 #define VERR_RESOURCE_BUSY                  (-138)
+/** A file operation was attempted on a non-file object. */
+#define VERR_NOT_A_FILE                     (-139)
+/** A non-file operation was attempted on a file object. */
+#define VERR_IS_A_FILE                      (-140)
+/** Unexpected filesystem object type. */
+#define VERR_UNEXPECTED_FS_OBJ_TYPE         (-141)
+/** A path does not start with a root specification. */
+#define VERR_PATH_DOES_NOT_START_WITH_ROOT  (-142)
+/** A path is relative, expected an absolute path. */
+#define VERR_PATH_IS_RELATIVE               (-143)
+/** A path is not relative (start with root), expected an relative path. */
+#define VERR_PATH_IS_NOT_RELATIVE           (-144)
 /** @} */
 
 
@@ -1376,11 +1391,11 @@ RT_C_DECLS_END
 /** @name RTVfs status codes
  * @{ */
 /** The VFS chain specification does not have a valid prefix. */
-#define VERR_VFS_CHAIN_NO_PREFIX                (-22100)
+#define VERR_VFS_CHAIN_NO_PREFIX                    (-22100)
 /** The VFS chain specification is empty. */
 #define VERR_VFS_CHAIN_EMPTY                        (-22101)
 /** Expected an element. */
-#define VERR_VFS_CHAIN_EXPECTED_ELEMENT              (-22102)
+#define VERR_VFS_CHAIN_EXPECTED_ELEMENT             (-22102)
 /** The VFS object type is not known. */
 #define VERR_VFS_CHAIN_UNKNOWN_TYPE                 (-22103)
 /** Expected a left paranthese. */
