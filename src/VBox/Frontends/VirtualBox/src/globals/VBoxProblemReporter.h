@@ -341,6 +341,7 @@ public:
     void badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0);
     void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0);
     void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent = 0);
+    bool confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0);
     bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent = 0);
 
     void warnAboutIncorrectPort(QWidget *pParent) const;

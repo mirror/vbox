@@ -49,7 +49,7 @@ public:
         setText(1, m_data.m_strName);
 
         /* Version: */
-        setText(2, m_data.m_strVersion);
+        setText(2, QString("%1.%2").arg(m_data.m_strVersion).arg(m_data.m_strRevision));
 
         /* Tool-tip: */
         QString strTip = m_data.m_strDescription;
@@ -119,9 +119,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 {
     bool fInstalled = false;
 
-    /*
-     * Open the extpack tarball via IExtPackManager.
-     */
+    /* Open the extpack tarball via IExtPackManager: */
     CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
     CExtPackFile extPackFile = manager.OpenExtPackFile(strFilePath);
     if (manager.isOk())
@@ -130,19 +128,15 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
             *pstrExtPackName = extPackFile.GetName();
         if (extPackFile.GetUsable())
         {
-            bool fAck = true;
-            /** @todo display big fat warning message. */
+            bool fAck = vboxProblem().confirmInstallingPackage(extPackFile.GetName(),
+                                                               QString("%1.%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision()),
+                                                               extPackFile.GetDescription());
 
             if (fAck)
             {
-                /** @todo display licenses.  */
-            }
+                /* TODO: Display license! */
 
-            /*
-             * Install it if everything was ACKed by the user.
-             */
-            if (fAck)
-            {
+                /* Install package: */
                 extPackFile.Install();
                 if (extPackFile.isOk())
                     fInstalled = true;
@@ -277,10 +271,8 @@ void UIGlobalSettingsExtension::sltInstallPackage()
         QString strExtPackName;
         if (doInstallation(strFilePath, this, &strExtPackName))
         {
-            /*
-             * Insert the fresly installed extension pack, mark it as
-             * current in the tree and sort by name (col 1).
-             */
+            /* Insert the fresly installed extension pack, mark it as
+             * current in the tree and sort by name (col 1): */
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             const CExtPack &package = manager.Find(strExtPackName);
             m_cache.m_items << fetchData(package);

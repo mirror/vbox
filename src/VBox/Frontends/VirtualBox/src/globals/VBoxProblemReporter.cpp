@@ -2141,11 +2141,31 @@ void VBoxProblemReporter::cannotUninstallExtPack(const QString &strPackName, con
              formatErrorInfo(extPackManager));
 }
 
+bool VBoxProblemReporter::confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion,
+                                                   const QString &strPackDescription, QWidget *pParent /* = 0 */)
+{
+    return messageOkCancel (pParent ? pParent : mainWindowShown(),
+                            Question,
+                            tr("<p>You are about to install a VirtualBox extension pack. "
+                               "Extension packs complement the functionality of VirtualBox and can contain system level software "
+                               "that could be potentially harmful to your system. Please review the description below and only proceed "
+                               "if you have obtained the extension pack from a trusted source.</p>"
+                               "<p><table cellpadding=0 cellspacing=0>"
+                               "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%1</td></tr>"
+                               "<tr><td><b>Version:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
+                               "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
+                               "</table></p>")
+                               .arg(strPackName).arg(strPackVersion).arg(strPackDescription),
+                            0,
+                            tr("&Install"));
+}
+
 bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWidget *pParent /* = 0 */)
 {
     return messageOkCancel (pParent ? pParent : mainWindowShown(),
                             Question,
-                            tr("You are about to remove the Extension Pack <b>%1</b>. Are you sure you want to do that?").arg(strPackName),
+                            tr("<p>You are about to remove the VirtualBox extension pack <b>%1</b>.</p>"
+                               "<p>Are you sure you want to do that?</p>").arg(strPackName),
                             0,
                             tr("&Remove"));
 }
