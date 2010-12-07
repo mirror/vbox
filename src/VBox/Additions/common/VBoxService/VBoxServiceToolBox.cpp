@@ -64,9 +64,11 @@ typedef struct VBOXSERVICETOOLBOXPATHENTRY
 static void VBoxServiceToolboxShowUsage(void)
 {
     RTPrintf("Toolbox Usage:\n"
-             "cat [FILE] - Concatenate FILE(s), or standard input, to standard output\n"
+             "cat [FILE] - Concatenate FILE(s), or standard input, to standard output.\n"
              "\n"
-             "mkdir - Make directories\n"
+             /** @todo Document options! */
+             "mkdir [OPTION] DIRECTORY... - Create the DIRECTORY(ies), if they do not already exist.\n"
+             /** @todo Document options! */
              "\n");
 }
 
