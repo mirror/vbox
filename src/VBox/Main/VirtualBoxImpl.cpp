@@ -504,8 +504,7 @@ HRESULT VirtualBox::init()
         rc = unconst(m->ptrExtPackManager).createObject();
         if (SUCCEEDED(rc))
             /** @todo Define drop zone location. */
-            rc = m->ptrExtPackManager->init(this, NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/,
-                                            VBOXEXTPACKCTX_PER_USER_DAEMON);
+            rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
         if (FAILED(rc))
             throw rc;
 #endif
