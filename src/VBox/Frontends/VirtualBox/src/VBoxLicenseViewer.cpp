@@ -33,12 +33,11 @@
 #include <QFile>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-VBoxLicenseViewer::VBoxLicenseViewer (const QString &aFilePath)
-    : QIWithRetranslateUI<QDialog> ()
-      , mFilePath (aFilePath)
-      , mLicenseText (0)
-      , mAgreeButton (0)
-      , mDisagreeButton (0)
+VBoxLicenseViewer::VBoxLicenseViewer()
+    : QIWithRetranslateUI<QDialog>()
+    , mLicenseText (0)
+    , mAgreeButton (0)
+    , mDisagreeButton (0)
 {
 #ifndef Q_WS_WIN
     /* Application icon. On Win32, it's built-in to the executable. */
@@ -70,20 +69,26 @@ VBoxLicenseViewer::VBoxLicenseViewer (const QString &aFilePath)
     retranslateUi();
 }
 
-int VBoxLicenseViewer::exec()
+int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
 {
-    /* read & show the license file */
-    QFile file (mFilePath);
-    if (file.open (QIODevice::ReadOnly))
+    /* Read license file: */
+    QFile file(strLicenseFileName);
+    if (file.open(QIODevice::ReadOnly))
     {
-        mLicenseText->setText (file.readAll());
-        return QDialog::exec();
+        return showLicenseFromString(file.readAll());
     }
     else
     {
-        vboxProblem().cannotOpenLicenseFile (this, mFilePath);
+        vboxProblem().cannotOpenLicenseFile(this, strLicenseFileName);
         return QDialog::Rejected;
     }
+}
+
+int VBoxLicenseViewer::showLicenseFromString(const QString &strLicenseText)
+{
+    /* Set license text: */
+    mLicenseText->setText(strLicenseText);
+    return exec();
 }
 
 void VBoxLicenseViewer::retranslateUi()
@@ -92,6 +97,11 @@ void VBoxLicenseViewer::retranslateUi()
 
     mAgreeButton->setText (tr ("I &Agree"));
     mDisagreeButton->setText (tr ("I &Disagree"));
+}
+
+int VBoxLicenseViewer::exec()
+{
+    return QDialog::exec();
 }
 
 void VBoxLicenseViewer::onScrollBarMoving (int aValue)
