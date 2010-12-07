@@ -124,7 +124,6 @@ ifdef VBOX_WITH_DOCS
  	UserManual.xml \
  	user_AdvancedTopics.xml \
  	user_BasicConcepts.xml \
- 	user_ChangeLog.xml \
  	user_Glossary.xml \
  	user_Frontends.xml \
  	user_Installation.xml \
