@@ -115,11 +115,13 @@ VBoxDispD3D_LIBS     = \
 VBoxDispD3D_SDKS     = WINDDKWLH
 # VBoxDispD3D_INCS    += ../Wine/include
 
- ifdef VBOXDISP_BUILD_32WITH64
+ ifeq ($(KBUILD_TARGET_ARCH), amd64)
 DLLS += VBoxDispD3D64
 VBoxDispD3D64_EXTENDS  = VBoxDispD3D
 VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D_SOURCES))
+  ifdef VBOXDISP_BUILD_32WITH64
 VBoxDispD3D64_BLD_TRG_ARCH = amd64
+  endif
  endif
 
  ifdef VBOX_WITH_CRHGSMI
