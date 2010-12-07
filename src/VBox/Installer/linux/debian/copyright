@@ -3,11 +3,9 @@ It was downloaded from <http://www.virtualbox.org>
 
 Author: Oracle Corporation
 
-License:
-        By installing this package you already accepted the
+License: GPLv2
 
-        VirtualBox Personal Use and Evaluation License (PUEL). The
-        license text can be found in
+        The license text can be found in
         
         /usr/share/doc/virtualbox/LICENSE
 
