@@ -32,6 +32,7 @@ ifdef VBOX_ONLY_ADDITIONS
  # Only build the additions, sort out the legacy names first.
  #
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+ LIBRARIES.win.amd64 += RuntimeGuestR3-x86
  ifdef VBOX_WITH_ADDITION_DRIVERS
   LIBRARIES += RuntimeGuestR0
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
@@ -84,6 +85,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  endif
  ifdef VBOX_WITH_ADDITIONS
   LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+  LIBRARIES.win.amd64 += RuntimeGuestR3-x86
   ifdef VBOX_WITH_ADDITION_DRIVERS
    LIBRARIES += RuntimeGuestR0
   endif
@@ -975,8 +977,19 @@ RuntimeGuestR3_SOURCES              += \
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET)      := $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST)        := $(RuntimeR3_SOURCES.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.x86                   := $(RuntimeR3_SOURCES.x86)
+RuntimeGuestR3_SOURCES.amd64                 := $(RuntimeR3_SOURCES.amd64)
 RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).x86  := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
+RuntimeGuestR3_SOURCES.$(KBUILD_TARGET).amd64:= $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 RuntimeGuestR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(KBUILD_HOST).$(KBUILD_TARGET_ARCH))
+
+
+#
+# RuntimeGuestR3-x86 - Same as RuntimeGuestR3, except that it's targeting x86.
+#
+RuntimeGuestR3-x86_EXTENDS           	:= RuntimeGuestR3
+RuntimeGuestR3-x86_BLD_TRG_ARCH         := x86
 
 
 #

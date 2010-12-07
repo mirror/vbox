@@ -64,20 +64,14 @@ VBoxDisp_LIBS = \
 
 ifdef VBOX_WITH_WDDM
 
- ifeq ($(KBUILD_TARGET_ARCH), amd64)
- # VBOXDISP_BUILD_32WITH64=1
-  ifndef VBOXDISP_BUILD_32WITH64
-   $(warning VBoxVideoD3D: make it 32bit for 64bit builds)
-  endif
- endif
-
+#
+# Please add description.
+#
 DLLS += VBoxDispD3D
  if defined(VBOX_SIGNING_MODE)
 VBoxDispD3D_NOINST = true
  endif
- ifdef VBOXDISP_BUILD_32WITH64
-VBoxDispD3D_BLD_TRG_ARCH = x86
- endif
+VBoxDispD3D_NAME.amd64 = VBoxDispD3D64
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
 VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP
 # VBoxDispD3D_DEFS    += VBOXDISPMP_TEST
@@ -94,14 +88,17 @@ endif
 ifdef VBOXWDDM_TEST_UHGSMI
  VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
 endif
+VBoxDispD3D_SOURCES.x86  = \
+	wddm/VBoxDispD3D.def
+VBoxDispD3D_SOURCES.amd64  = \
+	wddm/VBoxDispD3D64.def
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
-    wddm/VBoxDispD3DIf.cpp \
-    wddm/VBoxDispCm.cpp \
-    wddm/VBoxDispMp.cpp \
-    wddm/VBoxScreen.cpp \
-    wddm/VBoxDispMpTst.cpp \
-	wddm/VBoxDispD3D.def \
+	wddm/VBoxDispD3DIf.cpp \
+	wddm/VBoxDispCm.cpp \
+	wddm/VBoxDispMp.cpp \
+	wddm/VBoxScreen.cpp \
+	wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispD3D.rc
 #ifdef VBOX_WITH_CRHGSMI
 #VBoxDispD3D_SOURCES += \
@@ -115,14 +112,17 @@ VBoxDispD3D_LIBS     = \
 VBoxDispD3D_SDKS     = WINDDKWLH
 # VBoxDispD3D_INCS    += ../Wine/include
 
- ifeq ($(KBUILD_TARGET_ARCH), amd64)
-DLLS += VBoxDispD3D64
-VBoxDispD3D64_EXTENDS  = VBoxDispD3D
-VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D_SOURCES))
-  ifdef VBOXDISP_BUILD_32WITH64
-VBoxDispD3D64_BLD_TRG_ARCH = amd64
-  endif
- endif
+
+#
+# 64-bit systems needs a 32-bit version of VBoxDispD3D.
+#
+DLLS.amd64 += VBoxDispD3D-x86
+VBoxDispD3D-x86_EXTENDS = VBoxDispD3D
+VBoxDispD3D-x86_NAME = VBoxDispD3D
+VBoxDispD3D-x86_BLD_TRG_ARCH = x86
+VBoxDispD3D-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86)
 
  ifdef VBOX_WITH_CRHGSMI
 #
