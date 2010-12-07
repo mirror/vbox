@@ -44,7 +44,7 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/assert.h"
 
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/cpp/ministring.h>
 
 namespace com
@@ -157,6 +157,8 @@ public:
         cleanup();
         return *this;
     }
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 
     /** Case sensitivity selector. */
     enum CaseSensitivity
@@ -478,6 +480,8 @@ public:
         return *this;
     }
 
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
 #if defined(VBOX_WITH_XPCOM)
     /**
      * Intended to assign instances to |char *| out parameters from within the
@@ -575,6 +579,8 @@ public:
         va_end(va);
     }
 
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
 protected:
     Utf8StrFmt()
     { }
@@ -603,6 +609,8 @@ public:
         copyFrom(Utf8Str(aFormat, args).c_str());
         va_end(args);
     }
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -623,6 +631,8 @@ public:
     {
         copyFrom(Utf8Str(aFormat, aArgs).c_str());
     }
+
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 } /* namespace com */

@@ -245,6 +245,8 @@ public:
         cleanup();
     }
 
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
     /**
      * Assigns a copy of pcsz to "this".
      *
