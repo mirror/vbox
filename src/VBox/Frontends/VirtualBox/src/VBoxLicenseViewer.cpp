@@ -119,7 +119,7 @@ void VBoxLicenseViewer::unlockButtons()
 void VBoxLicenseViewer::showEvent (QShowEvent *aEvent)
 {
     QDialog::showEvent (aEvent);
-    bool isScrollBarHidden = mLicenseText->verticalScrollBar()->isHidden()
+    bool isScrollBarHidden = !mLicenseText->verticalScrollBar()->isVisible()
         && !(windowState() & Qt::WindowMinimized);
     mAgreeButton->setEnabled (isScrollBarHidden);
     mDisagreeButton->setEnabled (isScrollBarHidden);
