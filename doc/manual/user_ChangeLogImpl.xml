@@ -9,7 +9,36 @@
     <itemizedlist>
 
       <listitem>
+        <para>Reorganization of VirtualBox into a base package and Extension Packs; see <xref linkend="intro-installing" />.</para>
+      </listitem>
+
+      <listitem>
         <para>New settings/disk file layout for VM portability; see <xref linkend="vboxconfigdata" />.</para>
+      </listitem>
+
+      <listitem>
+        <para>Major rework of the GUI (now called "VirtualBox Manager"):
+          <itemizedlist>
+            <listitem>
+              <para>Redesigned user interface with guest window preview (also for screenshots)</para>
+            </listitem>
+            <listitem>
+              <para>New display mode with downscaled guest display</para>
+            </listitem>
+            <listitem>
+              <para>Support for creating and starting .vbox desktop shortcuts</para>
+            </listitem>
+            <listitem>
+              <para>The VM list is now sortable</para>
+            </listitem>
+            <listitem>
+              <para>Machines can now be deleted easily without a trace including snapshots and saved
+                states, and optionally including attached
+                disk images (bug #5511; also, <computeroutput>VBoxManage unregistervm --delete</computeroutput>
+                can do the same now)</para>
+            </listitem>
+          </itemizedlist>
+        </para>
       </listitem>
 
       <listitem>
@@ -21,26 +50,17 @@
       </listitem>
 
       <listitem>
-        <para>Language bindings: uniform Java bindings for both local
-          (COM/XPCOM) and remote (SOAP) invocation APIs</para>
-      </listitem>
-
-      <listitem>
-        <para>Chipset: added support for the Intel ICH9 chipset with 3 PCI buses, PCI express
-        and Message Signaled Interrupts (MSI)</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: Intel HD Audio is now available as guest hardware, for better support
-          with modern guest operating systems (e.g. 64-bit Windows; bug #2785).</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: redesigned user interface with guest window preview</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: new display mode with downscaled guest display</para>
+        <para>New virtual hardware:
+          <itemizedlist>
+            <listitem>
+              <para>Intel ICH9 chipset with three PCI buses, PCI Express and Message Signaled Interrupts (MSI)</para>
+            </listitem>
+            <listitem>
+              <para>Intel HD Audio, for better support of modern guest operating systems
+                (e.g. 64-bit Windows; bug #2785).</para>
+            </listitem>
+          </itemizedlist>
+        </para>
       </listitem>
 
       <listitem>
@@ -58,12 +78,14 @@
       </listitem>
 
       <listitem>
-        <para>Windows Additions: support for automatically updating the Guest Additions
-        (requires installed Windows Guest Additions 4.0 or later)</para>
+        <para>Guest Additions: support for copying files into the guest file system;
+          the Windows Additions can now automatically update themselves  (requires
+          installed Windows Guest Additions 4.0 or later)</para>
       </listitem>
 
       <listitem>
-        <para>Guest Additions: support for copying files into the guest file system</para>
+        <para>Language bindings: uniform Java bindings for both local
+          (COM/XPCOM) and remote (SOAP) invocation APIs</para>
       </listitem>
 
     </itemizedlist>
@@ -82,15 +104,6 @@
       </listitem>
 
       <listitem>
-        <para>GUI: the guest VM list is now sortable</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: add the possibility to delete all harddisk attached to an
-          VM, when this VM is deleted (bug #5511)</para>
-      </listitem>
-
-      <listitem>
         <para>GUI: built-in creation of desktop file shortcuts to start VMs on
           double click (bug #2322)</para>
       </listitem>
@@ -106,17 +119,6 @@
 
       <listitem>
         <para>GUI: certain GUI warnings don't stop the VM output anymore</para>
-      </listitem>
-
-      <listitem>
-        <para>Settings: deleting a machine now automatically deletes all
-        snapshots and saved states as well, it is no longer necessary
-        to manually delete snapshots first; VBoxManage unregistervm --delete
-        can do the same now</para>
-      </listitem>
-
-      <listitem>
-        <para>Snapshots: added screenshots</para>
       </listitem>
 
       <listitem>
