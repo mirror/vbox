@@ -432,6 +432,7 @@ typedef struct INTELHDLinkState
     bool        fInReset;
     CODECState  Codec;
     uint8_t     u8Counter;
+    uint64_t    u64BaseTS;
 } INTELHDLinkState, *PINTELHDLinkState;
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
@@ -460,6 +461,7 @@ DECLCALLBACK(int)hdaRegReadSTATESTS(INTELHDLinkState* pState, uint32_t offset, u
 DECLCALLBACK(int)hdaRegWriteSTATESTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegReadGCAP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int)hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegWriteINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteCORBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
@@ -529,8 +531,7 @@ const static struct stIchIntelHDRegMap
     { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "GSTS"      , "Global Status" },
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32          , "INTCTL"    , "Interrupt Control" },
     { 0x00024, 0x00004, 0xC00000FF, 0x00000000, hdaRegReadINTSTS       , hdaRegWriteUnimplemented, "INTSTS"    , "Interrupt Status" },
-    //** @todo r=michaln: Are guests really not reading the WALCLK register at all?
-    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "WALCLK"    , "Wall Clock Counter" },
+    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadWALCLK, hdaRegWriteUnimplemented, "WALCLK"    , "Wall Clock Counter" },
     //** @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
     { 0x00034, 0x00004, 0x000000FF, 0x000000FF, hdaRegReadU32          , hdaRegWriteU32          , "SSYNC"     , "Stream Synchronization" },
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "CORBLBASE" , "CORB Lower Base Address" },
@@ -995,6 +996,12 @@ DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uin
     MARK_STREAM(pState, 7, v);
     v |= v ? RT_BIT(31) : 0;
     *pu32Value = v;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int)hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
+{
+    *pu32Value = (uint32_t)((RTTimeNanoTS() - pState->u64BaseTS) * 24) / 100;
     return VINF_SUCCESS;
 }
 
@@ -1938,6 +1945,8 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
         memset(pThis->hda.pu64RirbBuf, 0, pThis->hda.cbRirbBuf);
     else
         pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
+
+    pThis->hda.u64BaseTS = RTTimeNanoTS();
 
 #if 0
     /* According to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
