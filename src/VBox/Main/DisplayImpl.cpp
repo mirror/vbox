@@ -934,12 +934,20 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
 void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                        int32_t *px2, int32_t *py2)
 {
+    int32_t x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertPtrReturnVoid(px1);
     AssertPtrReturnVoid(py1);
     AssertPtrReturnVoid(px2);
     AssertPtrReturnVoid(py2);
-    int32_t x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-    for (unsigned i = 0; i < mcMonitors; ++i)
+    LogFlowFunc(("\n"));
+
+    if (!mpDrv)
+        return;
+    x2 = mpDrv->IConnector.cx;
+    y2 = mpDrv->IConnector.cy;
+    for (unsigned i = 1; i < mcMonitors; ++i)
     {
         x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
         y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
