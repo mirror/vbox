@@ -2948,34 +2948,24 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerRegister();
 #endif
-            RTR3Init();
-
-            HRESULT hr = vboxDispCmInit();
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            int rc = RTR3Init();
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
             {
-#ifdef VBOXDISPMP_TEST
-                hr = vboxDispMpTstStart();
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-#endif
+                rc = VbglR3Init();
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
                 {
-//                    hr = VBoxScreenMRunnerStart(&g_VBoxScreenMonRunner);
-//                    Assert(hr == S_OK);
-                    /* succeed in any way */
-                    hr = S_OK;
+                    HRESULT hr = vboxDispCmInit();
+                    Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
                         vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
                         return TRUE;
                     }
-#ifdef VBOXDISPMP_TEST
-                    vboxDispMpTstStop();
-#endif
+                    VbglR3Term();
                 }
-                vboxDispCmTerm();
             }
-//                VbglR3Init();
             break;
         }
 
@@ -2984,28 +2974,15 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerUnregister();
 #endif
-            HRESULT hr = S_OK;
-//            hr = VBoxScreenMRunnerStop(&g_VBoxScreenMonRunner);
-//            Assert(hr == S_OK);
-//            if (hr == S_OK)
+            HRESULT hr = vboxDispCmTerm();
+            Assert(hr == S_OK);
+            if (hr == S_OK)
             {
-#ifdef VBOXDISPMP_TEST
-                hr = vboxDispMpTstStop();
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-#endif
-                {
-                    hr = vboxDispCmTerm();
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
-                        return TRUE;
-                    }
-                }
+                VbglR3Term();
+                /// @todo RTR3Term();
+                return TRUE;
             }
-//                VbglR3Term();
-            /// @todo RTR3Term();
+
             break;
         }
 
@@ -3435,11 +3412,13 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
         {
             pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
 #ifdef DEBUG_misha
-            bool bDo = false;
+            /* this proved to be the easiest way of detecting blit issues with WinDbg
+             * this is why I'd keep this test here to be able to switch it on at runtime any time needed */
+            static bool bDo = false;
 
             if (bDo)
             {
-            vboxVDbgDumpSurfData((pDevice, "SetTexture:\n", pRc, 0 /* alloc index*/, NULL, NULL, "\n"));
+                vboxVDbgDoDumpSurfData("SetTexture:\n", pRc, 0 /* alloc index*/, NULL, NULL, "\n");
             }
 #endif
         }
@@ -4085,50 +4064,24 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     HRESULT hr = S_OK;
 
 #ifdef DEBUG_misha
-                bool bDo = false;
-                IDirect3DSurface9 *pTstSrcSurfIf = NULL;
-                IDirect3DSurface9 *pTstDstSurfIf = NULL;
+    /* this proved to be the easiest way of detecting blit issues with WinDbg
+     * this is why I'd keep this test here to be able to switch it on at runtime any time needed */
+    static bool bDo = false;
+    IDirect3DSurface9 *pTstSrcSurfIf = NULL;
+    IDirect3DSurface9 *pTstDstSurfIf = NULL;
 
-                if (g_VDbgTstDumpEnable)
-                {
-                    hr = vboxWddmSurfGet(pSrcRc, 0, &pTstSrcSurfIf);
-                    Assert(hr == S_OK);
-                    hr = vboxWddmSurfGet(pDstRc, 0, &pTstDstSurfIf);
-                    Assert(hr == S_OK);
+    if (bDo)
+    {
+        RECT DstRect;
+        hr = vboxWddmSurfGet(pSrcRc, 0, &pTstSrcSurfIf);
+        Assert(hr == S_OK);
+        hr = vboxWddmSurfGet(pDstRc, 0, &pTstDstSurfIf);
+        Assert(hr == S_OK);
 
-                    if (g_VDbgTstDumpOnSys2VidSameSizeEnable)
-                    {
-                        if (pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM
-                                && pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-                        {
-                            D3DSURFACE_DESC SrcDesc;
-                            HRESULT hr = pTstSrcSurfIf->GetDesc(&SrcDesc);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
-                            {
-                                D3DSURFACE_DESC DstDesc;
-                                hr = pTstDstSurfIf->GetDesc(&DstDesc);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
-                                {
-                                    if (SrcDesc.Width == DstDesc.Width
-                                            && SrcDesc.Height == DstDesc.Height)
-                                    {
-                                        bDo = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (bDo)
-                {
-                    RECT DstRect;
-                    vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
-                    vboxVDbgDumpSurfData((pDevice, "TexBlt-pre Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n"));
-                    vboxVDbgDumpSurfData((pDevice, "TexBlt-pre Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n"));
-                }
+        vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
+        vboxVDbgDoDumpSurfData("TexBlt-pre Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n");
+        vboxVDbgDoDumpSurfData("TexBlt-pre Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n");
+    }
 #endif
 
     if (pSrcRc->aAllocations[0].D3DWidth == pDstRc->aAllocations[0].D3DWidth
@@ -4177,12 +4130,15 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     }
 
 #ifdef DEBUG_misha
+    /* this proved to be the easiest way of detecting blit issues with WinDbg
+     * this is why I'd keep this test here to be able to switch it on at runtime any time needed */
+
     if (bDo)
     {
         RECT DstRect;
         vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
-        vboxVDbgDumpSurfData((pDevice, "TexBlt-post Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n"));
-        vboxVDbgDumpSurfData((pDevice, "TexBlt-post Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n"));
+        vboxVDbgDoDumpSurfData("TexBlt-post Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n");
+        vboxVDbgDoDumpSurfData("TexBlt-post Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n");
     }
 
     if (pTstDstSurfIf)
@@ -6570,40 +6526,14 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
             {
                 Assert(pSrcSurfIf);
 #ifdef DEBUG_misha
-                bool bDo = false;
-
-                if (g_VDbgTstDumpEnable)
-                {
-                    if (g_VDbgTstDumpOnSys2VidSameSizeEnable)
-                    {
-                        if (pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM
-                                && pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-                        {
-                            D3DSURFACE_DESC SrcDesc;
-                            HRESULT hr = pSrcSurfIf->GetDesc(&SrcDesc);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
-                            {
-                                D3DSURFACE_DESC DstDesc;
-                                hr = pDstSurfIf->GetDesc(&DstDesc);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
-                                {
-                                    if (SrcDesc.Width == DstDesc.Width
-                                            && SrcDesc.Height == DstDesc.Height)
-                                    {
-                                        bDo = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                /* this proved to be the easiest way of detecting blit issues with WinDbg
+                 * this is why I'd keep this test here to be able to switch it on at runtime any time needed */
+                static bool bDo = false;
 
                 if (bDo)
                 {
-                    vboxVDbgDumpSurfData((pDevice, "Blt-pre Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n"));
-                    vboxVDbgDumpSurfData((pDevice, "Blt-pre Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n"));
+                    vboxVDbgDoDumpSurfData("Blt-pre Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n");
+                    vboxVDbgDoDumpSurfData("Blt-pre Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n");
                 }
 #endif
                 /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
@@ -6616,10 +6546,12 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                 Assert(hr == S_OK);
 
 #ifdef DEBUG_misha
+                /* this proved to be the easiest way of detecting blit issues with WinDbg
+                 * this is why I'd keep this test here to be able to switch it on at runtime any time needed */
                 if (bDo)
                 {
-                    vboxVDbgDumpSurfData((pDevice, "Blt-post Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n"));
-                    vboxVDbgDumpSurfData((pDevice, "Blt-post Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n"));
+                    vboxVDbgDoDumpSurfData("Blt-post Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n");
+                    vboxVDbgDoDumpSurfData("Blt-post Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n");
                 }
 #endif
                 pSrcSurfIf->Release();
@@ -7908,8 +7840,6 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
     VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-//    Assert(0);
-
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
     if (VBOXDISPMODE_IS_3D(pAdapter))
     {
@@ -8135,14 +8065,11 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...)
 
 #ifdef VBOXWDDMDISP_DEBUG
 
-bool g_VDbgTstDumpEnable = false;
-bool g_VDbgTstDumpOnSys2VidSameSizeEnable = false;
-
 VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, IDirect3DSurface9 *pSurf, const RECT *pRect, const char* pSuffix)
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
+        vboxVDbgPrint(("%s", pPrefix));
     }
 
     D3DLOCKED_RECT Lr;
@@ -8150,7 +8077,7 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
     {
         Assert(pRect->right > pRect->left);
         Assert(pRect->bottom > pRect->top);
-        vboxVDbgMpPrintRect((pDevice, "rect: ", pRect, "\n"));
+        vboxVDbgDoPrintRect("rect: ", pRect, "\n");
     }
 
     HRESULT srcHr = pSurf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
@@ -8160,11 +8087,11 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 Lr.pBits, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
         if (pRect)
         {
-            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
         }
@@ -8175,22 +8102,22 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
+        vboxVDbgPrint(("%s\n", pSuffix));
     }
 }
 
-VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix)
+VOID vboxVDbgDoDumpAllocData(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix)
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
+        vboxVDbgPrint(("%s", pPrefix));
     }
 
     if (pRect)
     {
         Assert(pRect->right > pRect->left);
         Assert(pRect->bottom > pRect->top);
-        vboxVDbgMpPrintRect((pDevice, "rect: ", pRect, "\n"));
+        vboxVDbgDoPrintRect("rect: ", pRect, "\n");
     }
 
     Assert(pAlloc->hAllocation);
@@ -8205,6 +8132,8 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
     LockData.Flags.LockEntire =1;
     LockData.Flags.ReadOnly = 1;
 
+    PVBOXWDDMDISP_DEVICE pDevice = pAlloc->pRc->pDevice;
+
     HRESULT hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &LockData);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -8212,11 +8141,11 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch));
         if (pRect)
         {
-            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, pAlloc->SurfDesc.pitch));
         }
@@ -8232,29 +8161,29 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
+        vboxVDbgPrint(("%s\n", pSuffix));
     }
 }
 
 
-VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix)
+VOID vboxVDbgDoDumpSurfData(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix)
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
+        vboxVDbgPrint(("%s", pPrefix));
     }
 
     Assert(pRc->cAllocations > iAlloc);
     PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
 
-    vboxVDbgMpPrintAlloc((pDevice, "allocation info:\n", pRc, iAlloc, "\n"));
+    vboxVDbgDoPrintAlloc("allocation info:\n", pRc, iAlloc, "\n");
 
     D3DLOCKED_RECT Lr;
     if (pRect)
     {
         Assert(pRect->right > pRect->left);
         Assert(pRect->bottom > pRect->top);
-        vboxVDbgMpPrintRect((pDevice, "rect: ", pRect, "\n"));
+        vboxVDbgDoPrintRect("rect: ", pRect, "\n");
     }
 
     BOOL bReleaseSurf = false;
@@ -8271,11 +8200,11 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 Lr.pBits, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
         if (pRect)
         {
-            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
         }
@@ -8286,14 +8215,14 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
+        vboxVDbgPrint(("%s\n", pSuffix));
     }
 
     if (bReleaseSurf)
         pSurf->Release();
 }
 
-VOID vboxVDbgDoDumpSurfDataBySurf(const PVBOXWDDMDISP_DEVICE pDevice, IDirect3DSurface9 *pSurf)
+VOID vboxVDbgDoDumpSurfDataBySurf(IDirect3DSurface9 *pSurf)
 {
     D3DSURFACE_DESC Desc;
     HRESULT hr = pSurf->GetDesc(&Desc);
@@ -8306,7 +8235,7 @@ VOID vboxVDbgDoDumpSurfDataBySurf(const PVBOXWDDMDISP_DEVICE pDevice, IDirect3DS
         if (hr == S_OK)
         {
             UINT bpp = vboxWddmCalcBitsPerPixel((D3DDDIFORMAT)Desc.Format);
-            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                     Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch));
 
             Assert(0);
@@ -8317,7 +8246,7 @@ VOID vboxVDbgDoDumpSurfDataBySurf(const PVBOXWDDMDISP_DEVICE pDevice, IDirect3DS
     }
 }
 
-void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
+void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
 {
     Assert(pRc->cAllocations > iAlloc);
     PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
@@ -8329,17 +8258,17 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
         Assert(pSwapchain);
         bFrontBuf = (vboxWddmSwapchainGetFb(pSwapchain)->pAlloc == pAlloc);
     }
-    vboxVDbgDoMpPrintF(pDevice, "%s D3DWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
+    vboxVDbgPrint(("%s D3DWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
             pAlloc->D3DWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
             bPrimary ?
                     (bFrontBuf ? "Front Buffer" : "Back Buffer")
                     : "?Everage? Alloc",
-            pSuffix);
+            pSuffix));
 }
 
-void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix)
+void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * pSuffix)
 {
-    vboxVDbgDoMpPrintF(pDevice, "%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix);
+    vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 #endif
 

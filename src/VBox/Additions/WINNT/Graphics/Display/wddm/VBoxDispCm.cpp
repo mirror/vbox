@@ -271,7 +271,7 @@ void vboxDispCmLog(LPCSTR pszMsg)
     {
         PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
         Assert(pDevice);
-        vboxVDbgMpPrint((pDevice, pszMsg));
+        vboxVDbgPrint(("%s", pszMsg));
     }
     LeaveCriticalSection(&pSession->CritSect);
 }
