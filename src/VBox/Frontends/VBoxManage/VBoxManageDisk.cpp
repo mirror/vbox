@@ -1052,6 +1052,30 @@ int handleShowHardDiskInfo(HandlerArg *a)
         Bstr format;
         hardDisk->COMGETTER(Format)(format.asOutParam());
         RTPrintf("Storage format:       %lS\n", format.raw());
+        MediumVariant_T variant;
+        hardDisk->COMGETTER(Variant)(&variant);
+        const char *variantStr = "unknown";
+        switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
+        {
+            case MediumVariant_VmdkSplit2G:
+                variantStr = "split2G";
+                break;
+            case MediumVariant_VmdkStreamOptimized:
+                variantStr = "streamOptimized";
+                break;
+            case MediumVariant_VmdkESX:
+                variantStr = "ESX";
+                break;
+            case MediumVariant_Standard:
+                variantStr = "default";
+                break;
+        }
+        const char *variantTypeStr = "dynamic";
+        if (variant & MediumVariant_Fixed)
+            variantTypeStr = "fixed";
+        else if (variant & MediumVariant_Diff)
+            variantTypeStr = "differencing";
+        RTPrintf("Format variant:       %s %s\n", variantTypeStr, variantStr);
 
         /// @todo also dump config parameters (iSCSI)
 
