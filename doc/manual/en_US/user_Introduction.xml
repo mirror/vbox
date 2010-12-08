@@ -442,7 +442,7 @@
               <para>Ubuntu 6.06 ("Dapper Drake"), 6.10 ("Edgy Eft"), 7.04
               ("Feisty Fawn"), 7.10 ("Gutsy Gibbon"), 8.04 ("Hardy Heron"),
               8.10 ("Intrepid Ibex"), 9.04 ("Jaunty Jackalope"), 9.10 ("Karmic
-              Koala"), 10.04 ("Lucid Lynx").</para>
+              Koala"), 10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat).</para>
             </listitem>
 
             <listitem>
@@ -455,7 +455,7 @@
             </listitem>
 
             <listitem>
-              <para>Redhat Enterprise Linux 4 and 5</para>
+              <para>Redhat Enterprise Linux 4, 5 and 6</para>
             </listitem>
 
             <listitem>
@@ -468,7 +468,7 @@
 
             <listitem>
               <para>SUSE Linux 9 and 10, openSUSE 10.3, 11.0, 11.1,
-              11.2</para>
+              11.2, 11.3</para>
             </listitem>
 
             <listitem>
