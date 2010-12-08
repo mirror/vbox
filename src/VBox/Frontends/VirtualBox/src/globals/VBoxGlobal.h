@@ -589,7 +589,8 @@ public:
         return medium;
     }
 
-    QString openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent = 0, const QString &strDefaultFolder = QString()) const;
+    QString openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent = 0,
+                                         const QString &strDefaultFolder = QString(), bool fUseLastFolder = false) const;
 
     /* Returns the number of current running Fe/Qt4 main windows. */
     int mainWindowCount();
@@ -849,6 +850,8 @@ private:
     QULongStringHash mChipsetTypes;
 
     QString mUserDefinedPortName;
+
+    mutable QString m_strLastFolder;
 
     QPixmap mWarningIcon, mErrorIcon;
 
