@@ -2495,7 +2495,7 @@ Value: 2006.01.01</screen>
           runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
-          <screen>VBoxManage guestcontrol execute &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol exec[ute] &lt;vmname&gt;|&lt;uuid&gt;
             &lt;path to program&gt;
             --username &lt;name&gt; --password &lt;password&gt;
             [--arguments "&lt;arguments&gt;"]
@@ -2604,8 +2604,7 @@ Value: 2006.01.01</screen>
                 <glossterm>--verbose</glossterm>
 
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose during the
-                  execution.</para>
+                  <para>Tells VBoxManage to be more verbose.</para>
                 </glossdef>
               </glossentry>
 
@@ -2656,7 +2655,7 @@ Value: 2006.01.01</screen>
           files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
-          <screen>VBoxManage copyto &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage copyto|cp &lt;vmname&gt;|&lt;uuid&gt;
             &lt;source on host&gt; &lt;destination on guest&gt;
             [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
             [--dryrun] [--recursive] [--verbose] [--flags &lt;flags&gt;]</screen>
@@ -2731,8 +2730,7 @@ Value: 2006.01.01</screen>
                 <glossterm>--verbose</glossterm>
 
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose during the copy
-                  operation.</para>
+                  <para>Tells VBoxManage to be more verbose.</para>
                 </glossdef>
               </glossentry>
 
@@ -2744,6 +2742,89 @@ Value: 2006.01.01</screen>
                   moment.</para>
                 </glossdef>
               </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>createdir</computeroutput>, which allows copying
+          files from the host to the guest (only with installed Guest
+          Additions 4.0 and later).</para>
+
+          <screen>VBoxManage createdir[ectory]|mkdir|md &lt;vmname&gt;|&lt;uuid&gt;
+            &lt;directory to create on guest&gt;
+            [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
+            [--parents] [--mode &lt;mode&gt;] [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+              <glossentry>
+                <glossterm>uuid|vmname</glossterm>
+
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>directory to create on guest</glossterm>
+
+                <glossdef>
+                  <para>Absolute path of directory/directories to create on guest, e.g.
+                  <computeroutput>D:\Foo\Bar</computeroutput>. Parent directories
+                  need to exist (e.g. in this example <computeroutput>D:\Foo</computeroutput>)
+                  when switch <computeroutput>--parents</computeroutput> is omitted. The
+                  specified user must have appropriate rights to create the specified
+                  directory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--username &lt;name&gt;</glossterm>
+
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--password &lt;password&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--parents</glossterm>
+
+                <glossdef>
+                  <para>Also creates not yet existing parent directories of the
+                  specified directory, e.g. if the directory <computeroutput>D:\Foo</computeroutput>
+                  of <computeroutput>D:\Foo\Bar</computeroutput> does not exist yet it will
+                  be created. Without specifying <computeroutput>--parent</computeroutput> the
+                  action would have failed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--mode &lt;mode&gt;</glossterm>
+
+                <glossdef>
+                  <para>Sets the permission mode of the specified directory. Only octal
+                  modes (e.g. <computeroutput>0755</computeroutput>) are supported right now.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--verbose</glossterm>
+
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+
             </glosslist></para>
         </listitem>
 
@@ -2778,8 +2859,7 @@ Value: 2006.01.01</screen>
                 <glossterm>--verbose</glossterm>
 
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose during the
-                  update.</para>
+                  <para>Tells VBoxManage to be more verbose.</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
