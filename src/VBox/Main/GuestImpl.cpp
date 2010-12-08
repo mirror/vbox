@@ -2620,8 +2620,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
         AssertPtr(pTask);
         std::auto_ptr<TaskGuest> task(pTask);
 
-        /* Assign data - in that case aSource is the full path
-         * to the Guest Additions .ISO we want to mount. */
+        /* Assign data - aSource is the source file on the host,
+         * aDest reflects the full path on the guest. */
         task->strSource   = (Utf8Str(aSource));
         task->strDest     = (Utf8Str(aDest));
         task->strUserName = (Utf8Str(aUserName));
