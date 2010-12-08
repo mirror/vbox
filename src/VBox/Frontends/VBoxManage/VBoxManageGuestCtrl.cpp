@@ -200,8 +200,19 @@ static int ctrlPrintError(IUnknown *pObj, const GUID &aIID)
 
 static int ctrlPrintProgressError(ComPtr<IProgress> progress)
 {
-    com::ProgressErrorInfo ErrInfo(progress);
-    return ctrlPrintError(ErrInfo);
+    int rc;
+    BOOL fCanceled;
+    if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+        && fCanceled)
+    {
+        rc = VERR_CANCELLED;
+    }
+    else
+    {
+        com::ProgressErrorInfo ErrInfo(progress);
+        rc = ctrlPrintError(ErrInfo);
+    }
+    return rc;
 }
 
 /**
@@ -953,13 +964,14 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFl
  *
  * @return  IPRT status code.
  * @param   pGuest          IGuest interface pointer.
+ * @param   fVerbose        Verbose flag.
  * @param   pszSource       Source path of existing host file to copy.
  * @param   pszDest         Destination path on guest to copy the file to.
  * @param   pszUserName     User name on guest to use for the copy operation.
  * @param   pszPassword     Password of user account.
  * @param   uFlags          Copy flags.
  */
-static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDest,
+static int ctrlCopyFileToGuest(IGuest *pGuest, bool fVerbose, const char *pszSource, const char *pszDest,
                                const char *pszUserName, const char *pszPassword,
                                uint32_t uFlags)
 {
@@ -977,54 +989,9 @@ static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char
         vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
     else
     {
-        /* Setup signal handling if cancelable. */
-        ASSERT(progress);
-        bool fCanceledAlready = false;
-        BOOL fCancelable = FALSE;
-        HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-        if (fCancelable)
-            ctrlSignalHandlerInstall();
-
-        /* Wait for process to exit ... */
-        BOOL fCompleted = FALSE;
-        BOOL fCanceled = FALSE;
-        while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
-               && !fCompleted)
-        {
-            /* Process async cancelation */
-            if (g_fGuestCtrlCanceled && !fCanceledAlready)
-            {
-                hrc = progress->Cancel();
-                if (SUCCEEDED(hrc))
-                    fCanceledAlready = TRUE;
-                else
-                    g_fGuestCtrlCanceled = false;
-            }
-
-            /* Progress canceled by Main API? */
-            if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                && fCanceled)
-            {
-                break;
-            }
-        }
-
-        /* Undo signal handling. */
-        if (fCancelable)
-            ctrlSignalHandlerUninstall();
-
-        if (fCanceled)
-        {
-            /* Nothing to do here right now. */
-        }
-        else if (   fCompleted
-                 && SUCCEEDED(rc))
-        {
-            LONG iRc;
-            CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-            if (FAILED(iRc))
-                vrc = ctrlPrintProgressError(progress);
-        }
+        rc = showProgress(progress);
+        if (FAILED(rc))
+            vrc = ctrlPrintProgressError(progress);
     }
     return vrc;
 }
@@ -1207,7 +1174,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                                      pNode->pszSourcePath, pNode->pszDestPath, uCurObject, cObjects);
                         /* Finally copy the desired file (if no dry run selected). */
                         if (!fDryRun)
-                            vrc = ctrlCopyFileToGuest(guest, pNode->pszSourcePath, pNode->pszDestPath,
+                            vrc = ctrlCopyFileToGuest(guest, fVerbose, pNode->pszSourcePath, pNode->pszDestPath,
                                                       Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
                     }
                     if (RT_FAILURE(vrc))

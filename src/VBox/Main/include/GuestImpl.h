@@ -135,6 +135,7 @@ private:
     // Internal tasks
     struct TaskGuest; /* Worker thread helper. */
 #ifdef VBOX_WITH_GUEST_CONTROL
+    HRESULT taskCopyFile(TaskGuest *aTask);
     HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
 
     struct CallbackContext
