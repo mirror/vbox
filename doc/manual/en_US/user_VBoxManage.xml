@@ -223,9 +223,9 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
 
         <listitem>
           <para><computeroutput>hddbackends</computeroutput> lists all known
-          hdd backends of VirtualBox. Beside the name of the backend itself,
-          descriptions about the capabilities, configuration and other useful
-          informations are displayed.</para>
+          virtual disk back-ends of VirtualBox. For each such format (such as
+          VDI, VMDK or RAW), this lists the back-end's capabilities and
+          configuration.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
@@ -481,9 +481,10 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--cpuexecutioncap &lt;1-100&gt;</computeroutput>: This
-            setting controls how much cpu time a virtual CPU can use. A value of
-            50 implies a single virtual CPU can use up to 50% of a single host CPU.</para>
+            <para><computeroutput>--cpuexecutioncap
+            &lt;1-100&gt;</computeroutput>: This setting controls how much cpu
+            time a virtual CPU can use. A value of 50 implies a single virtual
+            CPU can use up to 50% of a single host CPU.</para>
           </listitem>
 
           <listitem>
@@ -1353,11 +1354,11 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para>The <computeroutput>cpuexecutioncap &lt;1-100&gt;</computeroutput>: This
-        operation controls how much cpu time a virtual CPU can use. A value of
-        50 implies a single virtual CPU can use up to 50% of a single host CPU.</para>
+        <para>The <computeroutput>cpuexecutioncap
+        &lt;1-100&gt;</computeroutput>: This operation controls how much cpu
+        time a virtual CPU can use. A value of 50 implies a single virtual CPU
+        can use up to 50% of a single host CPU.</para>
       </listitem>
-
     </itemizedlist>
   </sect1>
 
@@ -1568,8 +1569,8 @@ Virtual system 0:
           <glossterm>port</glossterm>
 
           <glossdef>
-            <para>The number of the the storage controller's port which is to
-            be modified. Mandatory.</para>
+            <para>The number of the storage controller's port which is to be
+            modified. Mandatory.</para>
           </glossdef>
         </glossentry>
 
@@ -1577,7 +1578,7 @@ Virtual system 0:
           <glossterm>device</glossterm>
 
           <glossdef>
-            <para>The number of the the port's device which is to be modified.
+            <para>The number of the port's device which is to be modified.
             Mandatory.</para>
           </glossdef>
         </glossentry>
@@ -2544,9 +2545,9 @@ Value: 2006.01.01</screen>
                   unset.</para>
 
                   <para>By default, the new process in the guest will be
-                  created with the the standard environment of the guest OS.
-                  This option allows for modifying that environment. To
-                  set/modify a variable, a pair of
+                  created with the standard environment of the guest OS. This
+                  option allows for modifying that environment. To set/modify
+                  a variable, a pair of
                   <computeroutput>NAME=VALUE</computeroutput> must be
                   specified; to unset a certain variable, the name with no
                   value must set, e.g.

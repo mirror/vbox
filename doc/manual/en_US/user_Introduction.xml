@@ -849,7 +849,7 @@
 
           <para>If your medium is not in the list (especially if you are using
           VirtualBox for the first time), select the small folder icon next to
-          the the drop-down list to bring up a standard file dialog, with with
+          the drop-down list to bring up a standard file dialog, with which
           you can pick the image file on your host disks.</para>
         </listitem>
       </itemizedlist>
@@ -1379,7 +1379,7 @@
         <para>The OVF standard is complex, and support in VirtualBox is an
         ongoing process. In particular, no guarantee is made that VirtualBox
         supports all appliances created by other virtualization software. For
-        a list of know limitations, please see <xref
+        a list of known limitations, please see <xref
         linkend="KnownIssues" />.</para>
       </note></para>
 

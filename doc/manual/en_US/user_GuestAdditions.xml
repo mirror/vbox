@@ -101,7 +101,7 @@
             execution in ways other than those mentioned above. The so-called
             "guest properties" provide a generic string-based mechanism to
             exchange data bits between a guest and a host, some of which have
-            special meanings for contolling and monitoring the guest; see
+            special meanings for controlling and monitoring the guest; see
             <xref linkend="guestadd-guestprops" /> for details.</para>
 
             <para>Additionally, applications can be started in a guest from
@@ -659,7 +659,7 @@
 
               <listitem>
                 <para>Install DKMS using <screen>urpmi dkms</screen> and make
-                sure the choose the correct kernel-devel package when asked by
+                sure to choose the correct kernel-devel package when asked by
                 the installer (use <computeroutput>uname -a</computeroutput>
                 to compare).</para>
               </listitem>

@@ -137,14 +137,15 @@
           been enabled by default (either because it was created by an earlier
           version of VirtualBox, or because SATA is not supported by default
           by the selected guest operating system), go to the "Storage" page of
-          of the machine's settings dialog, click on the "Add Controller"
-          button under the "Storage Tree" box and then select "Add SATA
-          Controller". After this, the additional controller will appear as a
-          separate PCI device in the virtual machine, and you can add virtual
-          disks to it.</para>
+          the machine's settings dialog, click on the "Add Controller" button
+          under the "Storage Tree" box and then select "Add SATA Controller".
+          After this, the additional controller will appear as a separate PCI
+          device in the virtual machine, and you can add virtual disks to
+          it.</para>
 
           <para>To change the IDE compatibility mode settings for the SATA
-          controller, please see <xref linkend="vboxmanage-storagectl" />.</para>
+          controller, please see <xref
+          linkend="vboxmanage-storagectl" />.</para>
         </listitem>
 
         <listitem>
@@ -717,7 +718,7 @@
     caching, large parts of the virtual disk may be in system memory, and the
     VM can access the data much faster.</para>
 
-    <para>Note that this applies only to image files; buffering never occured
+    <para>Note that this applies only to image files; buffering never occurred
     virtual disks residing on remote iSCSI storage, which is the more common
     scenario in enterprise-class setups (see <xref
     linkend="storage-iscsi" />).</para>
@@ -781,7 +782,7 @@
     <para>Starting with version 4.0, VirtualBox allows for limiting the
     maximum bandwidth used for asynchronous I/O. Additionally it supports
     sharing limits through bandwidth groups for several images. It is possible
-    to have more than one such limit. </para>
+    to have more than one such limit.</para>
 
     <para>Limits are configured through
     <computeroutput>VBoxManage</computeroutput>. The example below creates a
