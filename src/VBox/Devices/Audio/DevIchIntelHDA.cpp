@@ -25,6 +25,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
 
 #include "../Builtins.h"
 
@@ -1001,7 +1002,7 @@ DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uin
 
 DECLCALLBACK(int)hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    *pu32Value = (uint32_t)((RTTimeNanoTS() - pState->u64BaseTS) * 24) / 100;
+    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pState) - pState->u64BaseTS), 24, 1000);
     return VINF_SUCCESS;
 }
 
@@ -1946,7 +1947,7 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
     else
         pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
 
-    pThis->hda.u64BaseTS = RTTimeNanoTS();
+    pThis->hda.u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
 #if 0
     /* According to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
