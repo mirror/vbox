@@ -124,6 +124,11 @@ public:
         copyFrom(that);
     }
 
+    Bstr(const char *a_pThat, size_t a_cchMax)
+    {
+        copyFromN(a_pThat, a_cchMax);
+    }
+
     ~Bstr()
     {
         setNull();
@@ -387,6 +392,17 @@ protected:
         else
             m_bstr = NULL;
     }
+
+    /**
+     * Variant of copyFrom for sub-string constructors.
+     *
+     * @param   a_pszSrc            The source string.
+     * @param   a_cchMax            The maximum number of chars (not
+     *                              codepoints) to copy.  If you pass RTSTR_MAX
+     *                              it'll be exactly like copyFrom().
+     * @throws  std::bad_alloc
+     */
+    void copyFromN(const char *a_pszSrc, size_t a_cchSrc);
 
     BSTR m_bstr;
 

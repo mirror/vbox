@@ -35,10 +35,46 @@ const BSTR g_bstrEmpty = (BSTR)(&g_achEmptyBstr[2]);
 /* static */
 const Bstr Bstr::Empty; /* default ctor is OK */
 
+void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
+{
+    /*
+     * Initialie m_bstr first in case of throws further down in the code, then
+     * check for empty input (m_bstr == NULL means empty, there are no NULL
+     * strings).
+     */
+    m_bstr = NULL;
+    if (!a_cchMax || !a_pszSrc || !*a_pszSrc)
+        return;
+
+    /*
+     * Calculate the length and allocate a BSTR string buffer of the right
+     * size, i.e. optimize heap usage.
+     */
+    size_t cwc;
+    int vrc = ::RTStrCalcUtf16LenEx(a_pszSrc, a_cchMax, &cwc);
+    AssertRCReturnVoid(vrc); /* throw instead? */
+
+    m_bstr = ::SysAllocStringByteLen(NULL, cwc * sizeof(OLECHAR));
+    if (m_bstr)
+    {
+        PRTUTF16 pwsz = (PRTUTF16)m_bstr;
+        vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
+        if (RT_FAILURE(vrc))
+        {
+            /* This should not happen! */
+            AssertRC(vrc);
+            cleanup();
+        }
+    }
+    else
+        throw std::bad_alloc();
+}
+
+
 /* static */
 const Utf8Str Utf8Str::Empty; /* default ctor is OK */
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
 void Utf8Str::cloneTo(char **pstr) const
 {
     size_t cb = length() + 1;
