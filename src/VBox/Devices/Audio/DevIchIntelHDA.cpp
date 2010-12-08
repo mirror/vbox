@@ -663,7 +663,7 @@ static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, PHDASTREAMTRANSFER
     }
 #endif
     return 0;
-} 
+}
 
 static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
@@ -847,9 +847,9 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
 static void hdaStreamReset(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc, uint8_t u8Strm)
 {
     Log(("hda: reset of stream (%d) started\n", u8Strm));
-    Assert((   pState 
-            && pBdle 
-            && pStreamDesc 
+    Assert((   pState
+            && pBdle
+            && pStreamDesc
             && u8Strm <= 7));
     memset(pBdle, 0, sizeof(HDABDLEDESC));
     *pStreamDesc->pu32Lpib = 0;
@@ -1062,17 +1062,17 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     bool fRun = RT_BOOL((u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)));
     bool fInRun = RT_BOOL((HDA_REG_IND(pState, index) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)));
     bool fReset = RT_BOOL((u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST)));
-    bool fInReset = RT_BOOL((HDA_REG_IND(pState, index) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))); 
+    bool fInReset = RT_BOOL((HDA_REG_IND(pState, index) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST)));
     int rc = VINF_SUCCESS;
     if (fInReset)
     {
-        /* Assert!!! Guest is resetting HDA's stream, we're expecting guest will mark stream as exit 
-         * from reset 
+        /* Assert!!! Guest is resetting HDA's stream, we're expecting guest will mark stream as exit
+         * from reset
          */
         Assert((!fReset));
         Log(("hda: guest initiate exit of stream reset.\n"));
         goto done;
-    } 
+    }
     else if (fReset)
     {
         /*
@@ -1186,16 +1186,16 @@ DECLCALLBACK(int)hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, u
                 case HDA_SDONFIFO_128B:
                 case HDA_SDONFIFO_192B:
                     return hdaRegWriteU16(pState, offset, index, u32Value);
-                    
+
                 case HDA_SDONFIFO_256B:
                     Log(("hda: 256 bit is unsupported, HDA is switched into 192B mode\n"));
                 default:
                     return hdaRegWriteU16(pState, offset, index, HDA_SDONFIFO_192B);
-            } 
+            }
             return VINF_SUCCESS;
         default:
             AssertMsgFailed(("Something wierd happens with register lookup routine"));
-    } 
+    }
     return VINF_SUCCESS;
 }
 
@@ -1363,8 +1363,8 @@ static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64Ba
 static void hdaFetchBdle(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     uint8_t  bdle[16];
-    Assert((   pStreamDesc->u64BaseDMA 
-            && pBdle 
+    Assert((   pStreamDesc->u64BaseDMA
+            && pBdle
             && pBdle->u32BdleMaxCvi));
     PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pStreamDesc->u64BaseDMA + pBdle->u32BdleCvi*16, bdle, 16);
     pBdle->u64BdleCviAddr = *(uint64_t *)bdle;
@@ -1393,14 +1393,14 @@ static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDA
      */
     Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
     cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
-    /* 
-     * we may increase the counter in range of [0, FIFOS + 1] 
+    /*
+     * we may increase the counter in range of [0, FIFOS + 1]
      */
-    cb2Copy = RT_MIN(cb2Copy, pStreamDesc->u32Fifos + 1); 
+    cb2Copy = RT_MIN(cb2Copy, pStreamDesc->u32Fifos + 1);
     Assert((u32SoundBackendBufferBytesAvail > 0));
 
     /* sanity check to avoid overriding sound backend buffer */
-    cb2Copy = RT_MIN(cb2Copy, u32SoundBackendBufferBytesAvail); 
+    cb2Copy = RT_MIN(cb2Copy, u32SoundBackendBufferBytesAvail);
     cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
 
     if (cb2Copy <= pBdle->cbUnderFifoW)
@@ -1411,11 +1411,11 @@ static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDA
 
 static inline void hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cbArranged2Copy, uint32_t cbCopied, uint32_t *pu32DMACursor, uint32_t *pu32BackendBufferCapacity)
 {
-    Log(("hda:hdaBackendWriteTransferReported: cbArranged2Copy: %d, cbCopied: %d, pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n", 
+    Log(("hda:hdaBackendWriteTransferReported: cbArranged2Copy: %d, cbCopied: %d, pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n",
         cbArranged2Copy, cbCopied, pu32DMACursor ? *pu32DMACursor : 0, pu32BackendBufferCapacity ? *pu32BackendBufferCapacity : 0));
     Assert((cbCopied));
     Assert((pu32BackendBufferCapacity && *pu32BackendBufferCapacity));
-    /* Assertion!!! It was copied less than cbUnderFifoW 
+    /* Assertion!!! It was copied less than cbUnderFifoW
      * Probably we need to move the buffer, but it rather hard to imagine situation
      * why it may happen.
      */
@@ -1423,8 +1423,8 @@ static inline void hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t 
     if (   pBdle->cbUnderFifoW
         && pBdle->cbUnderFifoW <= cbCopied)
         Log(("hda:hdaBackendWriteTransferReported: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-    
-    pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbCopied); 
+
+    pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbCopied);
     Assert((!pBdle->cbUnderFifoW)); /* Assert!!! Assumption failed */
 
     /* We always increment position on DMA buffer counter because we're always reading to intermediate buffer */
@@ -1432,10 +1432,10 @@ static inline void hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t 
 
     Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos && *pu32BackendBufferCapacity >= cbCopied)); /* sanity */
     /* We reports all bytes (including unreported previously) */
-    *pu32DMACursor += cbCopied; 
+    *pu32DMACursor += cbCopied;
     /* reducing backend counter on amount of bytes we copied to backend */
     *pu32BackendBufferCapacity -= cbCopied;
-    Log(("hda:hdaBackendWriteTransferReported: CVI(pos:%d, len:%d), pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n", 
+    Log(("hda:hdaBackendWriteTransferReported: CVI(pos:%d, len:%d), pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n",
         pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, *pu32DMACursor, *pu32BackendBufferCapacity));
 }
 
@@ -1447,7 +1447,7 @@ static inline void hdaBackendReadTransferReported(PHDABDLEDESC pBdle, uint32_t c
     Log(("hda:hdaBackendReadTransferReported: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
     *pu32DMACursor += cbCopied + pBdle->cbUnderFifoW;
     pBdle->cbUnderFifoW = 0;
-    Log(("hda:hdaBackendReadTransferReported: CVI(pos:%d, len:%d), pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n", 
+    Log(("hda:hdaBackendReadTransferReported: CVI(pos:%d, len:%d), pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n",
         pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, pu32DMACursor ? *pu32DMACursor : 0, pu32BackendBufferCapacity ? *pu32BackendBufferCapacity : 0));
 }
 
@@ -1470,7 +1470,7 @@ static inline bool hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHD
     if (*pStreamDesc->pu32Lpib == pStreamDesc->u32Cbl)
         *pStreamDesc->pu32Lpib -= pStreamDesc->u32Cbl;
     hdaUpdatePosBuf(pState, pStreamDesc);
-    
+
     if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
     {
         pBdle->u32BdleCviPos = 0;
@@ -1490,14 +1490,14 @@ static inline void hdaStreamCounterUpdate(PINTELHDLinkState pState, PHDABDLEDESC
     if (!pBdle->cbUnderFifoW)
     {
         *pStreamDesc->pu32Lpib += cbInc;
-    
+
         /*
          * Assert. Overlapping of buffer counter shouldn't happen.
          */
         Assert((*pStreamDesc->pu32Lpib <= pStreamDesc->u32Cbl));
-    
+
         hdaUpdatePosBuf(pState, pStreamDesc);
-    
+
     }
 }
 
@@ -1522,14 +1522,14 @@ static inline bool hdaDoNextTransferCycle(PINTELHDLinkState pState, PHDABDLEDESC
             if (pStreamDesc->u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE))
                 hdaProcessInterrupt(pState);
         }
-        fDoNextTransferLoop = false; 
+        fDoNextTransferLoop = false;
     }
     return fDoNextTransferLoop;
 }
 
 /*
  * hdaReadAudio - copies samples from Qemu Sound back-end to DMA.
- * Note: this function writes immediately to DMA buffer, but "reports bytes" when all conditions meet (FIFOW)  
+ * Note: this function writes immediately to DMA buffer, but "reports bytes" when all conditions meet (FIFOW)
  */
 static uint32_t hdaReadAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
@@ -1547,8 +1547,8 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pS
         *fStop = true;
         goto done;
     }
-        
-    
+
+
     /*
      * read from backend input line to last ureported position or at the begining.
      */
@@ -1584,7 +1584,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC p
     Log(("hda:wa: CVI(cvi:%d, pos:%d, len:%d)\n", pBdle->u32BdleCvi, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
 
     cb2Copy = hdaCalculateTransferBufferLength(pBdle, pStreamDesc, *pu32Avail, u32CblLimit);
-    
+
     /*
      * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
      */
@@ -1593,7 +1593,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC p
         *fStop = true;
         goto done;
     }
-        
+
     PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
     /*
      * Write to audio backend. we should be sure whether we have enought bytes to copy to Audio backend.
@@ -1627,10 +1627,10 @@ DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 
 static inline void hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
-    Assert((   pState 
-            && pBdle 
+    Assert((   pState
+            && pBdle
             && pStreamDesc
-            && u8Strm <= 7));                
+            && u8Strm <= 7));
     memset(pStreamDesc, 0, sizeof(HDASTREAMTRANSFERDESC));
     pStreamDesc->u8Strm = u8Strm;
     pStreamDesc->u32Ctl = HDA_STREAM_REG2(pState, CTL, u8Strm);
@@ -1650,7 +1650,7 @@ static inline void hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLED
         dump_bd(pState, pBdle, pStreamDesc->u64BaseDMA);
     }
 #endif
-} 
+}
 
 DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
@@ -1708,7 +1708,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         }
         Assert(nBytes <= (stStreamDesc.u32Fifos + 1));
         *stStreamDesc.pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
-        
+
         /* Process end of buffer condition. */
         hdaStreamCounterUpdate(pState, pBdle, &stStreamDesc, nBytes);
         fStop = !fStop ? !hdaDoNextTransferCycle(pState, pBdle, &stStreamDesc) : fStop;
@@ -1992,7 +1992,7 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
         }
         hdaInitTransferDescriptor(&pThis->hda, pBdle, u8Strm, &stStreamDesc);
         /* hdaStreamReset prevents changing SRST bit, so we zerro it here forcely. */
-        HDA_STREAM_REG2(&pThis->hda, CTL, u8Strm) = 0; 
+        HDA_STREAM_REG2(&pThis->hda, CTL, u8Strm) = 0;
         hdaStreamReset(&pThis->hda, pBdle, &stStreamDesc, u8Strm);
     }
 
