@@ -386,7 +386,9 @@ struct USBController
              fDnsUseHostResolver(false),
              fAliasLog(false),
              fAliasProxyOnly(false),
-             fAliasUseSamePorts(false) {}
+             fAliasUseSamePorts(false)
+    {}
+
      com::Utf8Str            strNetwork;
      com::Utf8Str            strBindIP;
      uint32_t                u32Mtu;

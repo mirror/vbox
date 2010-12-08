@@ -535,6 +535,11 @@ public:
     Utf8Str& stripExt();
 
     /**
+     * Converts all '\' characters into '/'.
+     */
+    Utf8Str& useForwardSlashes();
+
+    /**
      *  Static immutable empty-string object. May be used for comparison purposes.
      */
     static const Utf8Str Empty;

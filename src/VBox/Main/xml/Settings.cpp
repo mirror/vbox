@@ -645,8 +645,14 @@ void ConfigFileBase::readMedium(MediaType t,
                 throw ConfigFileError(this, &elmMedium, N_("Required %s/VirtualDiskImage element is missing"), elmMedium.getName());
 
             if (fNeedsFilePath)
+            {
                 if (!(pelmImage->getAttributeValue("filePath", med.strLocation)))
                     throw ConfigFileError(this, &elmMedium, N_("Required %s/@filePath attribute is missing"), elmMedium.getName());
+                else
+                    // IPRT can handle forward slashes in file paths everywhere, but there might be
+                    // backslashes in the settings file, so convert them into forward slashes.
+                    med.strLocation.useForwardSlashes();
+            }
         }
 
         if (med.strFormat.isEmpty())        // not set with 1.4 format above, or 1.4 Custom format?
@@ -1001,7 +1007,12 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
         pelmMedium = elmMedium.createChild("Image");
 
     pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-    pelmMedium->setAttribute("location", mdm.strLocation);
+
+    // always use forward slashes when writing out settings, never '\'
+    Utf8Str strLocation(mdm.strLocation);
+    strLocation.useForwardSlashes();
+    pelmMedium->setAttribute("location", strLocation);
+
     pelmMedium->setAttribute("format", mdm.strFormat);
     if (mdm.fAutoReset)
         pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
@@ -3167,7 +3178,12 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         elmMachine.getAttributeValue("stateFile", strStateFile);
         if (elmMachine.getAttributeValue("currentSnapshot", str))
             parseUUID(uuidCurrentSnapshot, str);
+
         elmMachine.getAttributeValue("snapshotFolder", machineUserData.strSnapshotFolder);
+        // IPRT can handle forward slashes in file paths everywhere, but there might be
+        // backslashes in the settings file, so convert them into forward slashes.
+        machineUserData.strSnapshotFolder.useForwardSlashes();
+
         if (!elmMachine.getAttributeValue("currentStateModified", fCurrentStateModified))
             fCurrentStateModified = true;
         if (elmMachine.getAttributeValue("lastStateChange", str))
@@ -4189,8 +4205,14 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && !uuidCurrentSnapshot.isEmpty())
         elmMachine.setAttribute("currentSnapshot", uuidCurrentSnapshot.toStringCurly());
+
     if (machineUserData.strSnapshotFolder.length())
-        elmMachine.setAttribute("snapshotFolder", machineUserData.strSnapshotFolder);
+    {
+        // always use forward slashes when writing out settings, never '\'
+        Utf8Str strSnapshotFolder(machineUserData.strSnapshotFolder);
+        strSnapshotFolder.useForwardSlashes();
+        elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
+    }
     if (!fCurrentStateModified)
         elmMachine.setAttribute("currentStateModified", fCurrentStateModified);
     elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));
