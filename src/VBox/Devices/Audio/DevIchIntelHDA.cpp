@@ -34,13 +34,23 @@ extern "C" {
 }
 #include "DevCodec.h"
 
-#undef LOG_VOICES
-#ifndef VBOX
-//#define USE_MIXER
-#else
-#define USE_MIXER
-#endif
 #define VBOX_WITH_INTEL_HDA
+
+#if defined(VBOX_WITH_HP_HDA)
+/* HP Pavilion dv4t-1300 */
+# define HDA_PCI_VENDOR_ID 0x103c
+# define HDA_PCI_DEICE_ID 0x30f7
+#elif defined(VBOX_WITH_INTEL_HDA)
+/* Intel HDA controller */
+# define HDA_PCI_VENDOR_ID 0x8086
+# define HDA_PCI_DEICE_ID 0x2668
+#elif defined(VBOX_WITH_NVIDIA_HDA)
+/* nVidia HDA controller */
+# define HDA_PCI_VENDOR_ID 0x10de
+# define HDA_PCI_DEICE_ID 0x0ac0
+#else
+# error "Please specify your HDA device vendor/device IDs"
+#endif
 
 #define HDA_SSM_VERSION 1
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
@@ -61,7 +71,19 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define ICH6_HDA_REG_GCAP 0 /* range 0x00-0x01*/
 #define GCAP(pState) (HDA_REG((pState), GCAP))
-
+/* GCAP HDASpec 3.3.2 This macro compact following information about HDA
+ * oss (15:12) - number of output streams supported
+ * iss (11:8) - number of input streams supported
+ * bss (7:3) - number of bidirection streams suppoted
+ * bds (2:1) - number of serial data out signals supported
+ * b64sup (0) - 64 bit addressing supported.
+ */
+#define HDA_MAKE_GCAP(oss, iss, bss, bds, b64sup) \
+    (  (((oss) & 0xF) << 12)    \
+     | (((iss) & 0xF) << 8)     \
+     | (((bss) & 0x1F) << 3)    \
+     | (((bds) & 0x3) << 2)     \
+     | ((b64sup) & 1))
 #define ICH6_HDA_REG_VMIN 1 /* range 0x02 */
 #define VMIN(pState) (HDA_REG((pState), VMIN))
 
@@ -1378,16 +1400,6 @@ static void hdaFetchBdle(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREA
 static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t u32SoundBackendBufferBytesAvail, uint32_t u32CblLimit)
 {
     uint32_t cb2Copy;
-#if 0
-    if (u32SoundBackendBufferBytesAvail <= u32Fifos + 1)
-    {
-        /* Some platform offers buffer not multiplied on SDnFIFOS+1 value
-         * so to avoid situation when the rest of the backend buffer is less
-         * of SDnFIFOW value, we'll wait for next iteration with fresh buffer.
-         */
-        return 0;
-    }
-#endif
     /*
      * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
      */
@@ -1466,7 +1478,9 @@ static inline bool hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHD
 {
     bool fOnBufferEdge = (   *pStreamDesc->pu32Lpib == pStreamDesc->u32Cbl
                           || pBdle->u32BdleCviPos == pBdle->u32BdleCviLen);
+
     Assert((*pStreamDesc->pu32Lpib <= pStreamDesc->u32Cbl));
+
     if (*pStreamDesc->pu32Lpib == pStreamDesc->u32Cbl)
         *pStreamDesc->pu32Lpib -= pStreamDesc->u32Cbl;
     hdaUpdatePosBuf(pState, pStreamDesc);
@@ -1516,6 +1530,7 @@ static inline bool hdaDoNextTransferCycle(PINTELHDLinkState pState, PHDABDLEDESC
              * but in general sound quality becomes lesser.
              */
             *pStreamDesc->pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
+
             /*
              * we should generate the interrupt if ICE bit of SDCTL register is set.
              */
@@ -1660,26 +1675,26 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
     HDASTREAMTRANSFERDESC stStreamDesc;
     uint32_t nBytes;
+    switch (src)
+    {
+        case PO_INDEX:
+        {
+            u8Strm = 4;
+            pBdle = &pState->stOutBdle;
+            break;
+        }
+        case PI_INDEX:
+        {
+            u8Strm = 0;
+            pBdle = &pState->stInBdle;
+            break;
+        }
+        default:
+            return;
+    }
+    hdaInitTransferDescriptor(pState, pBdle, u8Strm, &stStreamDesc);
     while( avail && !fStop)
     {
-        switch (src)
-        {
-            case PO_INDEX:
-            {
-                u8Strm = 4;
-                pBdle = &pState->stOutBdle;
-                break;
-            }
-            case PI_INDEX:
-            {
-                u8Strm = 0;
-                pBdle = &pState->stInBdle;
-                break;
-            }
-            default:
-                return;
-        }
-        hdaInitTransferDescriptor(pState, pBdle, u8Strm, &stStreamDesc);
         Assert (   (stStreamDesc.u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
                 && avail
                 && stStreamDesc.u64BaseDMA);
@@ -1738,14 +1753,12 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
     int index = hdaLookup(&pThis->hda, u32Offset);
     if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
-    {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
-    }
+
     if (   index == -1
            || cb > 4)
-    {
         LogRel(("hda: Invalid read access @0x%x(of bytes:%d)\n", u32Offset, cb));
-    }
+
     if (index != -1)
     {
         uint32_t mask = 0;
@@ -1788,15 +1801,14 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
     int index = hdaLookup(&pThis->hda, u32Offset);
+
     if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
-    {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
-    }
+
     if (   index == -1
            || cb > 4)
-    {
         LogRel(("hda: Invalid write access @0x%x(of bytes:%d)\n", u32Offset, cb));
-    }
+
     if (index != -1)
     {
         uint32_t v = pThis->hda.au32Regs[index];
@@ -1923,7 +1935,7 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
 static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    GCAP(&pThis->hda) = 0x4401; /* see 6.2.1 */
+    GCAP(&pThis->hda) = HDA_MAKE_GCAP(4,4,0,0,1); /* see 6.2.1 */
     VMIN(&pThis->hda) = 0x00;       /* see 6.2.2 */
     VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
     VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
@@ -1950,32 +1962,6 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
 
     pThis->hda.u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
-#if 0
-    /* According to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
-     * bits are reserved for stream number 18.2.33 */
-    SDCTL(&pThis->hda, 0) = 0x40000;
-    SDCTL(&pThis->hda, 1) = 0x40000;
-    SDCTL(&pThis->hda, 2) = 0x40000;
-    SDCTL(&pThis->hda, 3) = 0x40000;
-    SDCTL(&pThis->hda, 4) = 0x40000;
-    SDCTL(&pThis->hda, 5) = 0x40000;
-    SDCTL(&pThis->hda, 6) = 0x40000;
-    SDCTL(&pThis->hda, 7) = 0x40000;
-
-    /* ICH6 defines default values (0x77 for input and 0xBF for output descriptors) of FIFO size. 18.2.39 */
-    SDFIFOS(&pThis->hda, 0) = HDA_SDINFIFO_120B;
-    SDFIFOS(&pThis->hda, 1) = HDA_SDINFIFO_120B;
-    SDFIFOS(&pThis->hda, 2) = HDA_SDINFIFO_120B;
-    SDFIFOS(&pThis->hda, 3) = HDA_SDINFIFO_120B;
-
-    SDFIFOS(&pThis->hda, 4) = HDA_SDONFIFO_192B;
-    SDFIFOS(&pThis->hda, 5) = HDA_SDONFIFO_192B;
-    SDFIFOS(&pThis->hda, 6) = HDA_SDONFIFO_192B;
-    SDFIFOS(&pThis->hda, 7) = HDA_SDONFIFO_192B;
-
-    SDFIFOW(&pThis->hda, 0) = HDA_SDFIFOW_8B;
-    SDFIFOW(&pThis->hda, 4) = HDA_SDFIFOW_32B;
-#endif
     HDABDLEDESC stEmptyBdle;
     for(uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
     {
@@ -2048,19 +2034,9 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = hdaQueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
-#if defined(VBOX_WITH_HP_HDA)
-    /* Linux kernel has whitelist for MSI-enabled HDA, this card seems to be there. */
-    PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
-    PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
-#elif defined(VBOX_WITH_INTEL_HDA)
-    PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
-    PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
-#elif defined(VBOX_WITH_NVIDIA_HDA)
-    PCIDevSetVendorId           (&pThis->dev, 0x10de); /* nVidia */
-    PCIDevSetDeviceId           (&pThis->dev, 0x0ac0); /* HDA */
-#else
-# error "Please specify your HDA device vendor/device IDs"
-#endif
+    PCIDevSetVendorId           (&pThis->dev, HDA_PCI_VENDOR_ID); /* nVidia */
+    PCIDevSetDeviceId           (&pThis->dev, HDA_PCI_DEICE_ID); /* HDA */
+
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
     PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
     PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */
