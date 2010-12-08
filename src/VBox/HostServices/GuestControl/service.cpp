@@ -132,11 +132,14 @@ struct HostCmd
     /** The context ID this command belongs to. Will be extracted
       * from the HGCM parameters. */
     uint32_t mContextID;
+    /** How many times the host service has tried to deliver this
+     *  command to the guest. */
+    uint32_t mTries;
     /** Dynamic structure for holding the HGCM parms */
     VBOXGUESTCTRPARAMBUFFER mParmBuf;
 
     /** The standard constructor. */
-    HostCmd() : mContextID(0) {}
+    HostCmd() : mContextID(0), mTries(0) {}
 };
 /** The host cmd list + iterator type */
 typedef std::list< HostCmd > HostCmdList;
@@ -625,6 +628,17 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
              /* Only if the guest really got and understood the message remove it from the list. */
              paramBufferFree(&curCmd.mParmBuf);
              mHostCmds.pop_front();
+         }
+         else if (rc == VERR_BUFFER_OVERFLOW)
+         {
+             /* If the client understood the message but supplied too little buffer space
+              * don't send this message again and drop it after 3 unsuccessful attempts.
+              * The host then should take care of next actions (maybe retry it with a smaller buffer). */
+             if (++curCmd.mTries >= 3)
+             {
+                 paramBufferFree(&curCmd.mParmBuf);
+                 mHostCmds.pop_front();
+             }
          }
     }
     return rc;
