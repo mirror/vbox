@@ -268,6 +268,15 @@ RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos);
 RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, const char *pszEntry, uint32_t fAttrs);
 
 /**
+ * Checks if there is a manifest entry by the given name.
+ *
+ * @returns true if there is, false if not or if the handle is invalid.
+ * @param   hManifest           The manifest handle.
+ * @param   pszEntry            The entry name.
+ */
+RTDECL(bool) RTManifestEntryExists(RTMANIFEST hManifest, const char *pszEntry);
+
+/**
  * Reads in a "standard" manifest.
  *
  * This reads the format used by OVF, the distinfo in FreeBSD ports, and
