@@ -2562,11 +2562,14 @@ VBoxMedium VBoxGlobal::findMedium (const QString &aMediumId) const
 
 /* Open some external medium using file open dialog
  * and temporary cache (enumerate) it in GUI inner mediums cache: */
-QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent, const QString &strDefaultFolder) const
+QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent,
+                                                 const QString &strDefaultFolder /* = QString() */,
+                                                 bool fUseLastFolder /* = false */) const
 {
     /* Initialize variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strHomeFolder = strDefaultFolder.isEmpty() ? vbox.GetHomeFolder() : strDefaultFolder;
+    QString strHomeFolder = fUseLastFolder && !m_strLastFolder.isEmpty() ? m_strLastFolder :
+                            strDefaultFolder.isEmpty() ? vbox.GetHomeFolder() : strDefaultFolder;
     QList < QPair <QString, QString> > filters;
     QStringList backends;
     QStringList prefixes;
@@ -2625,6 +2628,9 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
     {
         /* Get location: */
         QString strLocation = files[0];
+
+        /* Remember absolute path: */
+        m_strLastFolder = QFileInfo(strLocation).absolutePath();
 
         /* Open corresponding medium: */
         CMedium comMedium = vbox.OpenMedium(strLocation, type, KAccessMode_ReadWrite);

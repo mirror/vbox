@@ -1291,8 +1291,9 @@ void UIMachineLogic::sltMountStorageMedium()
             if (attachment != currentAttachment && !medium.isNull() && !medium.GetHostDrive())
                 usedImages << medium.GetId();
         }
-        /* Open VMM Dialog: */
-        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow()->machineWindow());
+        /* Call for file-open window: */
+        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow()->machineWindow(),
+                                                                        QString(), true);
         defaultMachineWindow()->machineView()->setFocus();
         if (!strMediumId.isNull())
             newId = strMediumId;
