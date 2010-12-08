@@ -1278,7 +1278,7 @@
           </listitem>
 
           <listitem>
-            <para>The comlete state of all the virtual disks attached to the
+            <para>The complete state of all the virtual disks attached to the
             machine is preserved. Going back to a snapshot means that all
             changes that had been made to the machine's disks -- file by file,
             bit by bit -- will be undone as well. Files that were since
