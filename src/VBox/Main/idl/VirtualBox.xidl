@@ -15104,10 +15104,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="handleEvent">
       <desc>
-        Handle event callback. It never called for passive listeners, and only make sense
-        to implement in active listener. Once handleEvent() on all active listeners is called,
-        and all passive listeners acknowledged event processing with IEventSource::eventProcessed()
-        event is marked as processed, so that IEvent::waitProcessed() returns immediately.
+        Handle event callback for active listeners. It is not called for passive listeners. After
+        calling handleEvent() on all active listeners and having received acknowledgement from all
+        passive listeners via IEventSource::eventProcessed(), the event is marked as processed and
+        IEvent::waitProcessed() will return immediately.
       </desc>
       <param name="event" type="IEvent" dir="in">
         <desc>Event available.</desc>
