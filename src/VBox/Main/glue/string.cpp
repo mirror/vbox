@@ -96,6 +96,18 @@ Utf8Str& Utf8Str::stripExt()
     return *this;
 }
 
+Utf8Str& Utf8Str::useForwardSlashes()
+{
+    for (size_t i = 0; i < length(); ++i)
+    {
+        char *p = &m_psz[i];
+        if (*p == '\\')
+            *p = '/';
+    }
+
+    return *this;
+}
+
 /**
  * Internal function used in Utf8Str copy constructors and assignment when
  * copying from a UTF-16 string.
