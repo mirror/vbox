@@ -2341,13 +2341,23 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
      *
      *   A2        SLA9M    NH82801IB
      */
+    /* Host bridge device */
+    /* @todo: move to separate driver? */
     PCIDevSetVendorId(  &pBus->aPciDev, 0x8086); /* Intel */
     PCIDevSetDeviceId(  &pBus->aPciDev, 0x244e); /* Desktop */
     PCIDevSetRevisionId(&pBus->aPciDev,   0x92); /* rev. A2 */
-    PCIDevSetClassSub(  &pBus->aPciDev,   0x00); /* Host/PCI bridge */
     PCIDevSetClassBase( &pBus->aPciDev,   0x06); /* bridge */
-    PCIDevSetHeaderType(&pBus->aPciDev,   0x00); /* normal device */
-
+    PCIDevSetClassSub(  &pBus->aPciDev,   0x04); /* Host/PCI bridge */
+    PCIDevSetClassProg( &pBus->aPciDev,   0x01); /* Supports subtractive decoding. */
+    PCIDevSetHeaderType(&pBus->aPciDev,   0x01); /* bridge */
+    PCIDevSetWord(&pBus->aPciDev,  VBOX_PCI_SEC_STATUS, 0x0280);  /* secondary status */
+    PCIDevSetDWord(&pBus->aPciDev, 0x4c, 0x00001200); /* Bridge policy configuration */
+    PCIDevSetStatus    (&pBus->aPciDev, VBOX_PCI_STATUS_CAP_LIST);
+    PCIDevSetCapabilityList(&pBus->aPciDev, 0x50);
+    /* capability */
+    PCIDevSetWord(&pBus->aPciDev,  0x50, VBOX_PCI_CAP_ID_SSVID);
+    PCIDevSetDWord(&pBus->aPciDev, 0x54, 0x00000000); /* Subsystem vendor ids */
+    
     pBus->aPciDev.pDevIns               = pDevIns;
     /* We register Host<->PCI controller on the bus */
     ich9pciRegisterInternal(pBus, -1, &pBus->aPciDev, "i82801");
