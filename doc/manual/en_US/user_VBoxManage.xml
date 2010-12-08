@@ -2746,7 +2746,7 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><computeroutput>createdir</computeroutput>, which allows copying
+          <para><computeroutput>createdirectory</computeroutput>, which allows copying
           files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
