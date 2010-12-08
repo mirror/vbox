@@ -75,7 +75,6 @@ using namespace com;
 ////////////////////////////////////////////////////////////////////////////////
 
 /* global weak references (for event handlers) */
-static ISession *gSession = NULL;
 static IConsole *gConsole = NULL;
 static EventQueue *gEventQ = NULL;
 
@@ -87,6 +86,47 @@ static VNCFB *g_pFramebufferVNC;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Handler for VirtualBoxClient events.
+ */
+class VirtualBoxClientEventListener
+{
+public:
+    VirtualBoxClientEventListener()
+    {
+    }
+
+    virtual ~VirtualBoxClientEventListener()
+    {
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnVBoxSVCUnavailable:
+            {
+                ComPtr<IVBoxSVCUnavailableEvent> pVSUEv = aEvent;
+                Assert(pVSUEv);
+
+                LogRel(("VBoxHeadless: VBoxSVC became unavailable, exiting.\n"));
+                RTPrintf("VBoxSVC became unavailable, exiting.\n");
+                /* Terminate the VM as cleanly as possible given that VBoxSVC
+                 * is no longer present. */
+                g_fTerminateFE = true;
+                gEventQ->interruptEventQueueProcessing();
+                break;
+            }
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+
+private:
+};
 
 /**
  *  Handler for global events.
@@ -200,9 +240,10 @@ private:
 class ConsoleEventListener
 {
 public:
-    ConsoleEventListener()
+    ConsoleEventListener() :
+        mLastVRDEPort(-1),
+        m_fIgnorePowerOffEvents(false)
     {
-        mLastVRDEPort = -1;
     }
 
     virtual ~ConsoleEventListener()
@@ -248,7 +289,7 @@ public:
 
                 /* Terminate any event wait operation if the machine has been
                  * PoweredDown/Saved/Aborted. */
-                if (machineState < MachineState_Running)
+                if (machineState < MachineState_Running && !m_fIgnorePowerOffEvents)
                 {
                     g_fTerminateFE = true;
                     gEventQ->interruptEventQueueProcessing();
@@ -304,14 +345,22 @@ public:
         return S_OK;
     }
 
+    void ignorePowerOffEvents(bool fIgnore)
+    {
+        m_fIgnorePowerOffEvents = fIgnore;
+    }
+
 private:
 
     long mLastVRDEPort;
+    bool m_fIgnorePowerOffEvents;
 };
 
+typedef ListenerImpl<VirtualBoxClientEventListener> VirtualBoxClientEventListenerImpl;
 typedef ListenerImpl<VirtualBoxEventListener> VirtualBoxEventListenerImpl;
 typedef ListenerImpl<ConsoleEventListener> ConsoleEventListenerImpl;
 
+VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
 VBOX_LISTENER_DECLARE(VirtualBoxEventListenerImpl)
 VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
@@ -704,25 +753,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
+    ComPtr<IVirtualBoxClient> pVirtualBoxClient;
     ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;
+    ComPtr<IMachine> machine;
     bool fSessionOpened = false;
-    IEventListener *vboxListener = NULL, *consoleListener = NULL;
+    IEventListener *vboxClientListener = NULL;
+    IEventListener *vboxListener = NULL;
+    ConsoleEventListenerImpl *consoleListener = NULL;
 
     do
     {
-        rc = virtualBox.createLocalObject(CLSID_VirtualBox);
-        if (FAILED(rc))
-            RTPrintf("VBoxHeadless: ERROR: failed to create the VirtualBox object!\n");
-        else
-        {
-            rc = session.createInprocObject(CLSID_Session);
-            if (FAILED(rc))
-                RTPrintf("VBoxHeadless: ERROR: failed to create a session object!\n");
-        }
-
+        rc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
         if (FAILED(rc))
         {
+            RTPrintf("VBoxHeadless: ERROR: failed to create the VirtualBoxClient object!\n");
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
             {
@@ -731,6 +776,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             else
                 GluePrintErrorInfo(info);
+            break;
+        }
+
+        rc = pVirtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+        if (FAILED(rc))
+        {
+            RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", rc);
+            break;
+        }
+        rc = pVirtualBoxClient->COMGETTER(Session)(session.asOutParam());
+        if (FAILED(rc))
+        {
+            RTPrintf("Failed to get session object (rc=%Rhrc)!\n", rc);
             break;
         }
 
@@ -760,7 +818,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
 
         /* get the mutable machine */
-        ComPtr<IMachine> machine;
         CHECK_ERROR_BREAK(console, COMGETTER(Machine)(machine.asOutParam()));
 
         ComPtr<IDisplay> display;
@@ -929,9 +986,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 
         /* initialize global references */
-        gSession = session;
         gConsole = console;
         gEventQ = com::EventQueue::getMainEventQueue();
+
+        /* VirtualBoxClient events registration. */
+        {
+            ComPtr<IEventSource> pES;
+            CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
+            vboxClientListener = new VirtualBoxClientEventListenerImpl();
+            com::SafeArray <VBoxEventType_T> eventTypes;
+            eventTypes.push_back(VBoxEventType_OnVBoxSVCUnavailable);
+            CHECK_ERROR(pES, RegisterListener(vboxClientListener, ComSafeArrayAsInParam(eventTypes), true));
+        }
 
         /* Console events registration. */
         {
@@ -1124,12 +1190,53 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
     while (0);
 
+    /*
+     * Get the machine state.
+     */
+    MachineState_T machineState = MachineState_Aborted;
+    if (!machine.isNull())
+        machine->COMGETTER(State)(&machineState);
+
+    /*
+     * Turn off the VM if it's running
+     */
+    if (   gConsole
+        && (   machineState == MachineState_Running
+            || machineState == MachineState_Teleporting
+            || machineState == MachineState_LiveSnapshotting
+            /** @todo power off paused VMs too? */
+           )
+       )
+    do
+    {
+        consoleListener->getWrapped()->ignorePowerOffEvents(true);
+        ComPtr<IProgress> pProgress;
+        CHECK_ERROR_BREAK(gConsole, PowerDown(pProgress.asOutParam()));
+        CHECK_ERROR_BREAK(pProgress, WaitForCompletion(-1));
+        BOOL completed;
+        CHECK_ERROR_BREAK(pProgress, COMGETTER(Completed)(&completed));
+        ASSERT(completed);
+        LONG hrc;
+        CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&hrc));
+        if (FAILED(hrc))
+        {
+            RTPrintf("VBoxHeadless: ERROR: Failed to power down VM!");
+            com::ErrorInfo info;
+            if (!info.isFullAvailable() && !info.isBasicAvailable())
+                com::GluePrintRCMessage(hrc);
+            else
+                GluePrintErrorInfo(info);
+            break;
+        }
+    } while (0);
+
     /* VirtualBox callback unregistration. */
     if (vboxListener)
     {
         ComPtr<IEventSource> es;
         CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-        CHECK_ERROR(es, UnregisterListener(vboxListener));
+        if (!es.isNull())
+            CHECK_ERROR(es, UnregisterListener(vboxListener));
         vboxListener->Release();
     }
 
@@ -1138,8 +1245,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         ComPtr<IEventSource> es;
         CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
-        CHECK_ERROR(es, UnregisterListener(consoleListener));
+        if (!es.isNull())
+            CHECK_ERROR(es, UnregisterListener(consoleListener));
         consoleListener->Release();
+    }
+
+    /* VirtualBoxClient callback unregistration. */
+    if (consoleListener)
+    {
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
+        if (!pES.isNull())
+            CHECK_ERROR(pES, UnregisterListener(vboxClientListener));
+        vboxClientListener->Release();
     }
 
     /* No more access to the 'console' object, which will be uninitialized by the next session->Close call. */
@@ -1158,6 +1276,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /* Must be before com::Shutdown */
     session.setNull();
     virtualBox.setNull();
+    pVirtualBoxClient.setNull();
 
     com::Shutdown();
 
