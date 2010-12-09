@@ -693,18 +693,16 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
         (   INTCTL_SX((pState), num)                                        \
          && (SDSTS(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)))
     bool fIrq = false;
-    if(   INTCTL_CIE(pState)
+    if (   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
            || RIRBSTS_RIRBOIS(pState)
            || (STATESTS(pState) & WAKEEN(pState))))
-    {
         fIrq = true;
-    }
+
     if (   IS_INTERRUPT_OCCURED_AND_ENABLED(pState, 0)
         || IS_INTERRUPT_OCCURED_AND_ENABLED(pState, 4))
-    {
         fIrq = true;
-    }
+
     if (INTCTL_GIE(pState))
     {
         Log(("hda: irq %s\n", fIrq ? "asserted" : "deasserted"));
