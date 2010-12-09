@@ -14335,7 +14335,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackBase" extends="$unknown"
-    uuid="ddc90e1d-b156-480e-b128-d3ccacbb42e0"
+    uuid="5ffb0b64-0ad6-467d-af62-1157e7dc3c99"
     wsmap="suppress"
     >
     <desc>
@@ -14424,7 +14424,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPack" extends="IExtPackBase"
-    uuid="b9c18b10-611e-46ea-abcc-bfa1e680ea80"
+    uuid="431685da-3618-4ebc-b038-833ba829b4b2"
     wsmap="suppress"
     >
     <desc>
@@ -14448,7 +14448,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackFile" extends="IExtPackBase"
-    uuid="d9eab28b-b28f-4400-a956-403f28750225"
+    uuid="e57e5ab7-e0e8-4a55-9241-afa7ad219911"
     wsmap="suppress"
     >
     <desc>
