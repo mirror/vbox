@@ -288,7 +288,8 @@ static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
     { "--compact",      'c', RTGETOPT_REQ_NOTHING },
     { "-compact",       'c', RTGETOPT_REQ_NOTHING },    // deprecated
     { "compact",        'c', RTGETOPT_REQ_NOTHING },    // deprecated
-    { "--resize",       'r', RTGETOPT_REQ_UINT64 }
+    { "--resize",       'r', RTGETOPT_REQ_UINT64 },
+    { "--resizebyte",   'R', RTGETOPT_REQ_UINT64 }
 };
 
 int handleModifyHardDisk(HandlerArg *a)
@@ -300,8 +301,9 @@ int handleModifyHardDisk(HandlerArg *a)
     bool AutoReset = false;
     bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;
     bool fModifyResize = false;
-    uint64_t resizeMB = 0;
+    uint64_t cbResize = 0;
     const char *FilenameOrUuid = NULL;
+    bool unknown = false;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -332,7 +334,12 @@ int handleModifyHardDisk(HandlerArg *a)
                 break;
 
             case 'r':   // --resize
-                resizeMB = ValueUnion.u64;
+                cbResize = ValueUnion.u64 * _1M;
+                fModifyResize = true;
+                break;
+
+            case 'R':   // --resizebyte
+                cbResize = ValueUnion.u64;
                 fModifyResize = true;
                 break;
 
@@ -366,26 +373,58 @@ int handleModifyHardDisk(HandlerArg *a)
     if (!fModifyDiskType && !fModifyAutoReset && !fModifyCompact && !fModifyResize)
         return errorSyntax(USAGE_MODIFYHD, "No operation specified");
 
-    /* first guess is that it's a UUID */
-    CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
-                                          DeviceType_HardDisk,
-                                          hardDisk.asOutParam()));
+    /* Depending on the operation the medium must be in the registry or
+     * may be opened on demand. */
+    if (fModifyDiskType || fModifyAutoReset)
+    {
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
+                                              DeviceType_HardDisk,
+                                              hardDisk.asOutParam()));
+    }
+    else
+    {
+        rc = a->virtualBox->FindMedium(Bstr(FilenameOrUuid).raw(),
+                                       DeviceType_HardDisk,
+                                       hardDisk.asOutParam());
+        /* the hard disk image might not be registered */
+        if (!hardDisk)
+        {
+            unknown = true;
+            rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),
+                                           DeviceType_HardDisk,
+                                           AccessMode_ReadWrite,
+                                           hardDisk.asOutParam());
+            if (rc == VBOX_E_FILE_ERROR)
+            {
+                char szFilenameAbs[RTPATH_MAX] = "";
+                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+                if (RT_FAILURE(irc))
+                {
+                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
+                    return 1;
+                }
+                CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
+                                                      DeviceType_HardDisk,
+                                                      AccessMode_ReadWrite,
+                                                      hardDisk.asOutParam()));
+            }
+        }
+    }
     if (FAILED(rc))
         return 1;
+    if (hardDisk.isNull())
+    {
+        RTMsgError("Invalid hard disk reference, avoiding crash");
+        return 1;
+    }
 
     if (fModifyDiskType)
     {
-        /* hard disk must be registered */
-        if (SUCCEEDED(rc) && hardDisk)
-        {
-            MediumType_T hddType;
-            CHECK_ERROR(hardDisk, COMGETTER(Type)(&hddType));
+        MediumType_T hddType;
+        CHECK_ERROR(hardDisk, COMGETTER(Type)(&hddType));
 
-            if (hddType != DiskType)
-                CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
-        }
-        else
-            return errorArgument("Hard disk image not registered");
+        if (hddType != DiskType)
+            CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
     }
 
     if (fModifyAutoReset)
@@ -395,95 +434,40 @@ int handleModifyHardDisk(HandlerArg *a)
 
     if (fModifyCompact)
     {
-        bool unknown = false;
-        /* the hard disk image might not be registered */
-        if (!hardDisk)
+        ComPtr<IProgress> progress;
+        CHECK_ERROR(hardDisk, Compact(progress.asOutParam()));
+        if (SUCCEEDED(rc))
+            rc = showProgress(progress);
+        if (FAILED(rc))
         {
-            unknown = true;
-            rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),
-                                           DeviceType_HardDisk,
-                                           AccessMode_ReadWrite,
-                                           hardDisk.asOutParam());
-            if (rc == VBOX_E_FILE_ERROR)
-            {
-                char szFilenameAbs[RTPATH_MAX] = "";
-                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-                if (RT_FAILURE(irc))
-                {
-                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
-                    return 1;
-                }
-                CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                      DeviceType_HardDisk,
-                                                      AccessMode_ReadWrite,
-                                                      hardDisk.asOutParam()));
-            }
-        }
-        if (SUCCEEDED(rc) && hardDisk)
-        {
-            ComPtr<IProgress> progress;
-            CHECK_ERROR(hardDisk, Compact(progress.asOutParam()));
-            if (SUCCEEDED(rc))
-                rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                if (rc == E_NOTIMPL)
-                    RTMsgError("Compact hard disk operation is not implemented!");
-                else if (rc == VBOX_E_NOT_SUPPORTED)
-                    RTMsgError("Compact hard disk operation for this format is not implemented yet!");
-                else
-                    com::GluePrintRCMessage(rc);
-            }
-            if (unknown)
-                hardDisk->Close();
+            if (rc == E_NOTIMPL)
+                RTMsgError("Compact hard disk operation is not implemented!");
+            else if (rc == VBOX_E_NOT_SUPPORTED)
+                RTMsgError("Compact hard disk operation for this format is not implemented yet!");
+            else
+                com::GluePrintRCMessage(rc);
         }
     }
 
     if (fModifyResize)
     {
-        bool unknown = false;
-        /* the hard disk image might not be registered */
-        if (!hardDisk)
+        ComPtr<IProgress> progress;
+        CHECK_ERROR(hardDisk, Resize(cbResize, progress.asOutParam()));
+        if (SUCCEEDED(rc))
+            rc = showProgress(progress);
+        if (FAILED(rc))
         {
-            unknown = true;
-            rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),
-                                           DeviceType_HardDisk,
-                                           AccessMode_ReadWrite,
-                                           hardDisk.asOutParam());
-            if (rc == VBOX_E_FILE_ERROR)
-            {
-                char szFilenameAbs[RTPATH_MAX] = "";
-                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-                if (RT_FAILURE(irc))
-                {
-                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
-                    return 1;
-                }
-                CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                      DeviceType_HardDisk,
-                                                      AccessMode_ReadWrite,
-                                                      hardDisk.asOutParam()));
-            }
-        }
-        if (SUCCEEDED(rc) && hardDisk)
-        {
-            ComPtr<IProgress> progress;
-            CHECK_ERROR(hardDisk, Resize(resizeMB, progress.asOutParam()));
-            if (SUCCEEDED(rc))
-                rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                if (rc == E_NOTIMPL)
-                    RTMsgError("Resize hard disk operation is not implemented!");
-                else if (rc == VBOX_E_NOT_SUPPORTED)
-                    RTMsgError("Resize hard disk operation for this format is not implemented yet!");
-                else
-                    com::GluePrintRCMessage(rc);
-            }
-            if (unknown)
-                hardDisk->Close();
+            if (rc == E_NOTIMPL)
+                RTMsgError("Resize hard disk operation is not implemented!");
+            else if (rc == VBOX_E_NOT_SUPPORTED)
+                RTMsgError("Resize hard disk operation for this format is not implemented yet!");
+            else
+                com::GluePrintRCMessage(rc);
         }
     }
+
+    if (unknown)
+        hardDisk->Close();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
