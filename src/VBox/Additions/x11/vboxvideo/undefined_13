@@ -13,7 +13,7 @@ GlxSetVisualConfigs
 LoaderRefSymLists
 MakeAtom
 PixmapWidthPaddingInfo
-RRConfigureOutputProperty
+RRChangeOutputProperty
 ShadowFBInit2
 VBEExtendedInit
 VBEGetVBEMode
