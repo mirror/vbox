@@ -88,6 +88,11 @@
           (COM/XPCOM) and remote (SOAP) invocation APIs</para>
       </listitem>
 
+     <listitem>
+        <para>Guest Additions: support for multiple virtual screens in Linux
+           and Solaris guests using X.Org server 1.3 and later.</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
