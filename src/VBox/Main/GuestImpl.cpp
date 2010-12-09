@@ -1843,7 +1843,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
-    if (aFlags)
+    if (aFlags !=  ExecuteProcessFlag_None)
     {
         if (   !(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
             && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly)
@@ -2598,8 +2598,15 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
-    if (aFlags != 0) /* Flags are not supported at the moment. */
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+    if (aFlags != CopyFileFlag_None)
+    {
+        if (   !(aFlags & CopyFileFlag_Recursive)
+            && !(aFlags & CopyFileFlag_Update)
+            && !(aFlags & CopyFileFlag_FollowLinks))
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
+    }
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
