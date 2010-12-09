@@ -92,7 +92,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            copyto|cp <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
-                 "                            [--dryrun] [--follow] [--recursive] [--update] [--verbose]\n"
+                 "                            [--dryrun] [--follow] [--recursive] [--verbose]\n"
                  "\n"
                  "                            createdir[ectory]|mkdir|md <vmname>|<uuid>\n"
                  "                            <directory to create on guest>\n"
@@ -1011,7 +1011,6 @@ static int handleCtrlCopyTo(HandlerArg *a)
         { "--follow",              'F',         RTGETOPT_REQ_NOTHING },
         { "--password",            'p',         RTGETOPT_REQ_STRING  },
         { "--recursive",           'R',         RTGETOPT_REQ_NOTHING },
-        { "--update",              'U',         RTGETOPT_REQ_NOTHING },
         { "--username",            'u',         RTGETOPT_REQ_STRING  },
         { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
     };
@@ -1053,10 +1052,6 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
             case 'R': /* Recursive processing */
                 uFlags |= CopyFileFlag_Recursive;
-                break;
-
-            case 'U': /* Only update newer files */
-                uFlags |= CopyFileFlag_Update;
                 break;
 
             case 'u': /* User name */
