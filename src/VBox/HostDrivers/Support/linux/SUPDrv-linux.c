@@ -326,13 +326,7 @@ static int __init VBoxDrvLinuxInit(void)
                     if (rc == 0)
 #endif
                     {
-                        printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
-#ifdef IPRT_LINUX_HAS_HRTIMER
-                               "'high-res'"
-#else
-                               "'normal'"
-#endif
-                               ".\n",
+                        printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is 'normal'.\n",
                                g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
                         printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
