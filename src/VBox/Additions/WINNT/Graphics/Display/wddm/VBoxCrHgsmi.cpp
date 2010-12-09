@@ -140,7 +140,7 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
 static int vboxCrHgsmiInitPerform(VBOXDISPKMT_CALLBACKS *pCallbacks)
 {
     HRESULT hr = vboxDispKmtCallbacksInit(pCallbacks);
-    Assert(hr == S_OK);
+    /*Assert(hr == S_OK);*/
     if (hr == S_OK)
     {
         /* check if we can create the hgsmi */
