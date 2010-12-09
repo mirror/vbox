@@ -14365,15 +14365,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="plugIns" type="IExtPackPlugIn" safearray="yes" readonly="yes">
       <desc>Plug-ins provided by this extension pack.</desc>
     </attribute>
-    <attribute name="license" type="wstring" readonly="yes">
-      <desc>
-        The default HTML license text for the extension pack.  Same as
-        calling queryLicense("", "", "html").
-      </desc>
-    </attribute>
-    <attribute name="showLicense" type="boolean" readonly="yes">
-      <desc>Whether to show the license before installation</desc>
-    </attribute>
     <attribute name="usable" type="boolean" readonly="yes">
       <desc>
         Indicates whether the extension pack is usable or not.
@@ -14387,6 +14378,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         String indicating why the extension pack is not usable.  This is an
         empty string if usable and always a non-empty string if not usable.
+      </desc>
+    </attribute>
+    <attribute name="showLicense" type="boolean" readonly="yes">
+      <desc>Whether to show the license before installation</desc>
+    </attribute>
+    <attribute name="license" type="wstring" readonly="yes">
+      <desc>
+        The default HTML license text for the extension pack.  Same as
+        calling <link to="#queryLicense">queryLicense</link> with
+        preferredLocale and preferredLanguage as empty strings and format set
+        to html.
       </desc>
     </attribute>
 
