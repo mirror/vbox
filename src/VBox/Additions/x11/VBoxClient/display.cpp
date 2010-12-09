@@ -28,6 +28,8 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <VBox/log.h>
 #include <VBox/VMMDev.h>
@@ -154,6 +156,12 @@ static int runDisplay(Display *pDisplay)
     LogRelFlowFunc(("\n"));
     Cursor hClockCursor = XCreateFontCursor(pDisplay, XC_watch);
     Cursor hArrowCursor = XCreateFontCursor(pDisplay, XC_left_ptr);
+    int RRMaj, RRMin;
+    if (!XRRQueryVersion(pDisplay, &RRMaj, &RRMin))
+        RRMin = 0;
+    const char *pcszXrandr = "xrandr";
+    if (RTFileExists("/usr/X11/bin/xrandr"))
+        pcszXrandr = "/usr/X11/bin/xrandr";
     int rc = RTThreadCreate(NULL, x11ConnectionMonitor, NULL, 0,
                    RTTHREADTYPE_INFREQUENT_POLLER, 0, "X11 monitor");
     if (RT_FAILURE(rc))
@@ -186,7 +194,20 @@ static int runDisplay(Display *pDisplay)
             if (RT_FAILURE(rc2))
                 RTThreadYield();
             else
-                setSize(pDisplay, cx, cy);
+                if (RRMin < 2)
+                    setSize(pDisplay, cx, cy);
+                else
+                {
+                    char szCommand[256];
+                    RTStrPrintf(szCommand, sizeof(szCommand),
+                                "%s --output VBOX%u --set VBOX_MODE %dx%d",
+                                pcszXrandr, iDisplay, cx, cy);
+                    system(szCommand);
+                    RTStrPrintf(szCommand, sizeof(szCommand),
+                                "%s --output VBOX%u --preferred",
+                                pcszXrandr, iDisplay);
+                    system(szCommand);
+                }
         }
     }
     LogRelFlowFunc(("returning VINF_SUCCESS\n"));
