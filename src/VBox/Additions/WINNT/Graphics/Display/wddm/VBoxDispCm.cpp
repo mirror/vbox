@@ -197,6 +197,7 @@ static HRESULT vboxDispCmSessionCmdQueryData(PVBOXDISPCM_SESSION pSession, PVBOX
         }
         else
         {
+            vboxVDbgPrint(("DispD3D: vboxDispCmSessionCmdQueryData, pfnEscapeCb failed hr (0x%x)\n", hr));
             exit(1);
         }
     }
