@@ -11,7 +11,9 @@ ErrorF
 FatalError
 GlxSetVisualConfigs
 LoaderRefSymLists
+MakeAtom
 PixmapWidthPaddingInfo
+RRConfigureOutputProperty
 ShadowFBInit2
 VBEExtendedInit
 VBEGetVBEMode
@@ -119,6 +121,7 @@ stderr
 strchr
 strcmp
 strcpy
+strncpy
 strlen
 strncmp
 strpbrk

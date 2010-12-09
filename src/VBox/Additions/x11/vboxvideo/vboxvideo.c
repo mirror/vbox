@@ -80,6 +80,7 @@
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 # include "xf86Crtc.h"
 # include "xf86Modes.h"
+# include <X11/Xatom.h>
 #endif
 
 /* Mandatory functions */
@@ -426,7 +427,6 @@ vbox_output_add_mode (VBOXPtr pVBox, DisplayModePtr *pModes,
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    bool rc;
     unsigned i;
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
@@ -435,9 +435,18 @@ vbox_output_get_modes (xf86OutputPtr output)
     TRACE_ENTRY();
     if (vbox_device_available(pVBox))
     {
+        Bool rc = FALSE;
         uint32_t x, y, bpp, iScreen;
-        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &iScreen);
-        /* @todo - check the display number once we support multiple displays. */
+        iScreen = (uintptr_t)output->driver_private;
+        if (   pVBox->aPreferredSize[iScreen].cx
+            && pVBox->aPreferredSize[iScreen].cy)
+        {
+            x = pVBox->aPreferredSize[iScreen].cx;
+            y = pVBox->aPreferredSize[iScreen].cy;
+            rc = TRUE;
+        }
+        else
+            rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &iScreen);
         /* If we don't find a display request, see if we have a saved hint
          * from a previous session. */
         if (!rc || (0 == x) || (0 == y))
@@ -459,11 +468,44 @@ vbox_output_get_modes (xf86OutputPtr output)
 }
 
 #ifdef RANDR_12_INTERFACE
-/* We don't yet have mutable properties, whatever they are. */
+static Atom
+vboxAtomVBoxMode(void)
+{
+    static Atom rc = 0;
+    if (!rc)
+        rc = MakeAtom("VBOX_MODE", sizeof("VBOX_MODE") - 1, TRUE);
+    return rc;
+}
+
+/** We use this for receiving information from clients for the purpose of
+ * dynamic resizing, and later possibly other things too.
+ */
 static Bool
 vbox_output_set_property(xf86OutputPtr output, Atom property,
                          RRPropertyValuePtr value)
-{ (void) output; (void) property; (void) value; return FALSE; }
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    TRACE_LOG("property=%d, value->type=%d, value->format=%d, value->size=%ld\n",
+              (int)property, (int)value->type, value->format, value->size);
+    if (property == vboxAtomVBoxMode())
+    {
+        uint32_t cDisplay = (uintptr_t)output->driver_private;
+        char sz[256] = { 0 };
+        int w, h;
+
+        if (   value->type != XA_STRING
+            || (unsigned) value->size > (sizeof(sz) - 1))
+            return FALSE;
+        strncpy(sz, value->data, value->size);
+        if (sscanf(sz, "%dx%d", &w, &h) != 2)
+            return FALSE;
+        pVBox->aPreferredSize[cDisplay].cx = w;
+        pVBox->aPreferredSize[cDisplay].cy = h;
+        return TRUE;
+    }
+    return FALSE;
+}
 #endif
 
 static const xf86OutputFuncsRec VBOXOutputFuncs = {
@@ -1033,6 +1075,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86OutputUseScreenMonitor(pVBox->paOutputs[i], FALSE);
             pVBox->paOutputs[i]->possible_crtcs = 1 << i;
             pVBox->paOutputs[i]->possible_clones = 0;
+            pVBox->paOutputs[i]->driver_private = (void *)(uintptr_t)i;
             TRACE_LOG("Created crtc (%p) and output %s (%p)\n",
                       (void *)pVBox->paCrtcs[i], szOutput,
                       (void *)pVBox->paOutputs[i]);
@@ -1053,6 +1096,21 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * framebuffer to something reasonable. */
     if (!xf86CrtcScreenInit(pScreen)) {
         return FALSE;
+    }
+
+    /* Create our VBOX_MODE display properties. */
+    {
+        uint32_t i;
+
+        for (i = 0; i < pVBox->cScreens; ++i)
+        {
+            char csz[] = "0x0";
+            RRChangeOutputProperty(pVBox->paOutputs[i]->randr_output,
+                                   vboxAtomVBoxMode(), XA_STRING, 8,
+                                   PropModeReplace, sizeof(csz), csz, TRUE,
+                                   FALSE);
+            
+        }
     }
 
     if (!xf86SetDesiredModes(pScrn)) {
@@ -1233,10 +1291,10 @@ vboxGetPrimaryIndex(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     unsigned i;
     for (i = 0; i < pVBox->cScreens; ++i)
-        if (     pVBox->aScreenLocation[i].x + pVBox->aScreenLocation[i].cx
-               < pScrn->virtualX
-            &&   pVBox->aScreenLocation[i].y + pVBox->aScreenLocation[i].cy
-               < pScrn->virtualY)
+        if (      pVBox->aScreenLocation[i].x + pVBox->aScreenLocation[i].cx
+               <= pScrn->virtualX
+            &&    pVBox->aScreenLocation[i].y + pVBox->aScreenLocation[i].cy
+               <= pScrn->virtualY)
             return i;
     return 0;  /* This will probably look bad if it can happen. */
 }

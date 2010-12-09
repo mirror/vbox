@@ -222,9 +222,12 @@ typedef struct VBOXRec
     uint32_t aoffVBVABuffer[VBOX_VIDEO_MAX_SCREENS];
     /** Context information about the VBVA buffers for each screen */
     struct VBVABUFFERCONTEXT aVbvaCtx[VBOX_VIDEO_MAX_SCREENS];
+    /** The current preferred resolution for the screen */
+    RTRECTSIZE aPreferredSize[VBOX_VIDEO_MAX_SCREENS];
     /** HGSMI guest heap context */
     HGSMIGUESTCOMMANDCONTEXT guestCtx;
-    Bool fAnyX;   /* Unrestricted horizontal resolution flag. */
+    /** Unrestricted horizontal resolution flag. */
+    Bool fAnyX;
 #ifdef VBOX_DRI
     Bool useDRI;
     int cVisualConfigs;
