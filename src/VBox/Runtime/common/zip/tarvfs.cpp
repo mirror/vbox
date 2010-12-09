@@ -179,16 +179,17 @@ typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
  */
 static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOctalOnly, int64_t *pi64)
 {
-    size_t const cchFieldOrg = cchField;
+    unsigned char const *puchField   = (unsigned char const *)pszField;
+    size_t const         cchFieldOrg = cchField;
     if (   fOctalOnly
-        || !(*(unsigned char *)pszField & 0x80))
+        || !(*puchField & 0x80))
     {
         /*
          * Skip leading spaces. Include zeros to save a few slower loops below.
          */
-        char ch;
-        while (cchField > 0 && ((ch = *pszField) == ' '|| ch == '0'))
-            cchField--, pszField++;
+        unsigned char ch;
+        while (cchField > 0 && ((ch = *puchField) == ' '|| ch == '0'))
+            cchField--, puchField++;
 
         /*
          * Convert octal digits.
@@ -196,13 +197,13 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
         int64_t i64 = 0;
         while (cchField > 0)
         {
-            unsigned char uDigit = *pszField - '0';
+            unsigned char uDigit = *puchField - '0';
             if (uDigit >= 8)
                 break;
             i64 <<= 3;
             i64 |= uDigit;
 
-            pszField++;
+            puchField++;
             cchField--;
         }
         *pi64 = i64;
@@ -212,7 +213,7 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
          */
         while (cchField > 0)
         {
-            ch = *pszField++;
+            ch = *puchField++;
             if (ch != 0 && ch != ' ')
                 return cchField < cchFieldOrg
                      ? VERR_TAR_BAD_NUM_FIELD_TERM
@@ -222,8 +223,27 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
     }
     else
     {
-        /** @todo implement base-256 encoded fields. */
-        return VERR_TAR_BASE_256_NOT_SUPPORTED;
+        /*
+         * The first byte has the bit 7 set to indicate base-256, while bit 6
+         * is the signed bit. Bits 5:0 are the most significant value bits.
+         */
+        int64_t i64 = !(0x40 & *puchField) ? 0 : -1;
+        i64 = (i64 << 6) | (*puchField & 0x3f);
+        cchField--;
+        puchField++;
+
+        /*
+         * The remaining bytes are used in full.
+         */
+        while (cchField-- > 0)
+        {
+            if (RT_UNLIKELY(i64 > INT64_MAX / 256))
+                return VERR_TAR_NUM_VALUE_TOO_LARGE;
+            if (RT_UNLIKELY(i64 < INT64_MIN / 256))
+                return VERR_TAR_NUM_VALUE_TOO_LARGE;
+            i64 = (i64 << 8) | *puchField++;
+        }
+        *pi64 = i64;
     }
 
     return VINF_SUCCESS;
