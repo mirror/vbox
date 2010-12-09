@@ -386,14 +386,57 @@ static void stubSPUSafeTearDown(void)
 # if defined(WINDOWS)
     if (RTThreadGetState(stub.hSyncThread)!=RTTHREADSTATE_TERMINATED)
     {
+        HANDLE hNative;
+        DWORD ec=0;
+
+        hNative = OpenThread(SYNCHRONIZE|THREAD_QUERY_INFORMATION|THREAD_TERMINATE,
+                             false, RTThreadGetNative(stub.hSyncThread));
+        if (!hNative)
+        {
+            crWarning("Failed to get handle for sync thread(%#x)", GetLastError());
+        }
+        else
+        {
+            crDebug("Got handle %p for thread %#x", hNative, RTThreadGetNative(stub.hSyncThread));
+        }
+
         ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
+
         if (PostThreadMessage(RTThreadGetNative(stub.hSyncThread), WM_QUIT, 0, 0))
         {
             RTThreadWait(stub.hSyncThread, 1000, NULL);
+
+            /*Same issue as on linux, RTThreadWait exits before system thread is terminated, which leads
+             * to issues as our dll goes to be unloaded.
+             *@todo 
+             *We usually call this function from DllMain which seems to be holding some lock and thus we have to
+             * kill thread via TerminateThread.
+             */
+            if (WaitForSingleObject(hNative, 100)==WAIT_TIMEOUT)
+            {
+                crDebug("Wait failed, terminating");
+                if (!TerminateThread(hNative, 1))
+                {
+                    crDebug("TerminateThread failed");
+                }
+            }
+            if (GetExitCodeThread(hNative, &ec))
+            {
+                crDebug("Thread %p exited with ec=%i", hNative, ec);
+            }
+            else
+            {
+                crDebug("GetExitCodeThread failed(%#x)", GetLastError());
+            }
         }
         else
         {
             crDebug("Sync thread killed before DLL_PROCESS_DETACH");
+        }
+
+        if (hNative)
+        {
+            CloseHandle(hNative);
         }
     }
 #else
