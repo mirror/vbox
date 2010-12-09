@@ -14366,7 +14366,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Plug-ins provided by this extension pack.</desc>
     </attribute>
     <attribute name="license" type="wstring" readonly="yes">
-      <desc>The HTML license text for the extension pack.</desc>
+      <desc>
+        The default HTML license text for the extension pack.  Same as
+        calling queryLicense("", "", "html").
+      </desc>
     </attribute>
     <attribute name="showLicense" type="boolean" readonly="yes">
       <desc>Whether to show the license before installation</desc>
@@ -14386,6 +14389,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         empty string if usable and always a non-empty string if not usable.
       </desc>
     </attribute>
+
+    <method name="queryLicense">
+      <desc>
+        Full feature version of the license attribute.
+      </desc>
+      <param name="preferredLocale" type="wstring" dir="in">
+        <desc>
+          The preferred license locale. Pass an empty string to get the default
+          license.
+        </desc>
+      </param>
+      <param name="preferredLanguage" type="wstring" dir="in">
+        <desc>
+          The preferred license language. Pass an empty string to get the
+          default language for the locale.
+        </desc>
+      </param>
+      <param name="format" type="wstring" dir="in">
+        <desc>
+          The license format: html, rtf or txt. If a license is present there
+          will always be an HTML of it, the rich text format (RTF) and plain
+          text (txt) versions are optional. If
+        </desc>
+      </param>
+      <param name="licenseText" type="wstring" dir="return">
+        <desc>The license text.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <interface
@@ -14406,7 +14438,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="objUuid" type="wstring" dir="in">
         <desc>The object ID.  What exactly this is </desc>
       </param>
-      <param name="returnInterface" type="$unknown" dir="out">
+      <param name="returnInterface" type="$unknown" dir="return">
         <desc>The queried interface.</desc>
       </param>
     </method>

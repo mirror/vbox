@@ -32,6 +32,12 @@
 /** @name VBOX_EXTPACK_SIGNATURE_NAME
  * The name of the signature file in an extension pack.  */
 #define VBOX_EXTPACK_SIGNATURE_NAME     "ExtPack.signature"
+/** @name VBOX_EXTPACK_LICENSE_NAME_PREFIX
+ * The name prefix of a license file in an extension pack. There can be
+ * several license files in a pack, the variations being on locale, language
+ * and format (HTML, RTF, plain text). All extension packages shall include
+ * a  */
+#define VBOX_EXTPACK_LICENSE_NAME_PREFIX "ExtPack.license"
 /** @name VBOX_EXTPACK_SUFFIX
  * The suffix of a extension pack tarball. */
 #define VBOX_EXTPACK_SUFFIX             ".vbox-extpack"
@@ -93,6 +99,8 @@ typedef struct VBOXEXTPACKDESC
     uint32_t                cPlugIns;
     /** Pointer to an array of plug-in descriptors. */
     PVBOXEXTPACKPLUGINDESC  paPlugIns;
+    /** Whether to show the license prior to installation. */
+    bool                    fShowLicense;
 } VBOXEXTPACKDESC;
 
 /** Pointer to a extension pack descriptor. */
