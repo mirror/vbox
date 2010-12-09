@@ -985,6 +985,100 @@ DECLINLINE(bool) PCIIsMsixCapable(PPCIDEVICE pDev)
 }
 #endif
 
+#ifdef __cplusplus
+struct PciBusAddress
+{
+    int  iBus;
+    int  iDevice;
+    int  iFn;
+
+    PciBusAddress()
+    {
+        clear();
+    }
+
+    PciBusAddress(int bus, int device, int fn)
+    {
+        init(bus, device, fn);
+    }
+
+    PciBusAddress& clear()
+    {
+        iBus = iDevice = iFn = -1;
+        return *this;
+    }
+
+    void init(int bus, int device, int fn)
+    {
+        iBus = bus;
+        iDevice = device;
+        iFn = fn;
+    }
+
+    void init(const PciBusAddress &a)
+    {
+        iBus = a.iBus;
+        iDevice = a.iDevice;
+        iFn = a.iFn;
+    }
+
+    bool operator<(const PciBusAddress &a) const
+    {
+        if (iBus < a.iBus)
+            return true;
+
+        if (iBus > a.iBus)
+            return false;
+
+        if (iDevice < a.iDevice)
+            return true;
+
+        if (iDevice > a.iDevice)
+            return false;
+
+        if (iFn < a.iFn)
+            return true;
+
+        if (iFn > a.iFn)
+            return false;
+
+        return false;
+    }
+
+    bool operator==(const PciBusAddress &a) const
+    {
+        return     (iBus == a.iBus)
+                && (iDevice == a.iDevice)
+                && (iFn == a.iFn);
+    }
+
+    bool operator!=(const PciBusAddress &a) const
+    {
+        return     (iBus != a.iBus)
+                || (iDevice != a.iDevice)
+                || (iFn  != a.iFn);
+    }
+
+    bool valid() const
+    {
+        return (iBus != -1) && (iDevice != -1) && (iFn != -1);
+    }
+
+    int32_t asLong() const
+    {
+        Assert(valid());
+        return (iBus << 8) | (iDevice << 3) | iFn;
+    }
+
+    void fromLong(int32_t value)
+    {
+        iBus = (value >> 8) & 0xff;
+        iDevice = (value & 0xff) >> 3;
+        iFn = (value & 7);
+    }
+};
+#endif /* __cplusplus */
+
 /** @} */
 
 #endif
