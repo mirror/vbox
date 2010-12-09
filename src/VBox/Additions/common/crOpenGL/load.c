@@ -797,44 +797,51 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
     }
 
-    if (pRegions->pRegions->fFlags.bSetVisibleRects && pRegions->pRegions->fFlags.bSetViewRect)
+    if (pRegions->pRegions->fFlags.bSetVisibleRects || pRegions->pRegions->fFlags.bSetViewRect)
     {
-        int winX, winY;
-        unsigned int winW, winH;
+        /* ensure data integrity */
+        Assert(!pRegions->pRegions->fFlags.bAddHiddenRects);
 
-        winX = pRegions->pRegions->RectsInfo.aRects[0].left;
-        winY = pRegions->pRegions->RectsInfo.aRects[0].top;
-        winW = pRegions->pRegions->RectsInfo.aRects[0].right - winX;
-        winH = pRegions->pRegions->RectsInfo.aRects[0].bottom - winY;
-
-        if (stub.trackWindowPos && (winX!=pWindow->x || winY!=pWindow->y))
+        if (pRegions->pRegions->fFlags.bSetViewRect)
         {
-            crDebug("Dispatched WindowPosition (%i)", pWindow->spuWindow);
-            stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
-            pWindow->x = winX;
-            pWindow->y = winY;
-            bChanged = true;
-        }
+            int winX, winY;
+            unsigned int winW, winH;
+            BOOL bRc;
 
-        if (stub.trackWindowSize && (winW!=pWindow->width || winH!=pWindow->height))
-        {
-            crDebug("Dispatched WindowSize (%i)", pWindow->spuWindow);
-            stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
-            pWindow->width = winW;
-            pWindow->height = winH;
-            bChanged = true;
-        }
+            winX = pRegions->pRegions->RectsInfo.aRects[0].left;
+            winY = pRegions->pRegions->RectsInfo.aRects[0].top;
+            winW = pRegions->pRegions->RectsInfo.aRects[0].right - winX;
+            winH = pRegions->pRegions->RectsInfo.aRects[0].bottom - winY;
 
-        hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 1);
+            if (stub.trackWindowPos && (winX!=pWindow->x || winY!=pWindow->y))
+            {
+                crDebug("Dispatched WindowPosition (%i)", pWindow->spuWindow);
+                stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
+                pWindow->x = winX;
+                pWindow->y = winY;
+                bChanged = true;
+            }
 
-        /* ensure the window is in sync to avoid possible incorrect host notifications  */
-        {
-            BOOL bRc = MoveWindow(pRegions->hWnd, winX, winY, winW, winH, FALSE /*BOOL bRepaint*/);
+            if (stub.trackWindowSize && (winW!=pWindow->width || winH!=pWindow->height))
+            {
+                crDebug("Dispatched WindowSize (%i)", pWindow->spuWindow);
+                stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
+                pWindow->width = winW;
+                pWindow->height = winH;
+                bChanged = true;
+            }
+
+            bRc = MoveWindow(pRegions->hWnd, winX, winY, winW, winH, FALSE /*BOOL bRepaint*/);
             if (!bRc)
             {
                 DWORD winEr = GetLastError();
                 crWarning("stubSyncTrUpdateWindowCB: MoveWindow failed winEr(%d)", winEr);
             }
+        }
+
+        if (pRegions->pRegions->fFlags.bSetVisibleRects)
+        {
+            hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, pRegions->pRegions->fFlags.bSetViewRect ? 1 : 0);
         }
     }
     else if (!pRegions->pRegions->fFlags.bHide)
