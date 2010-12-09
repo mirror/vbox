@@ -5528,6 +5528,8 @@ static int vmdkAllocGrainAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     else if (RT_FAILURE(rc))
         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
 
+    pExtent->uAppendPosition += cbWrite;
+
     rc = vmdkAllocGrainAsyncGTUpdate(pImage, pExtent, pIoCtx, pGrainAlloc);
 
     if (!pGrainAlloc->cIoXfersPending)
