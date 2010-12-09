@@ -170,11 +170,11 @@ HRESULT Guest::TaskGuest::setProgressErrorInfo(HRESULT hr, ComObjPtr<Progress> p
     {
         va_list va;
         va_start(va, pszText);
-        HRESULT hr2 = pProgress->notifyComplete(hr,
-                                                COM_IIDOF(IGuest),
-                                                Guest::getStaticComponentName(),
-                                                pszText,
-                                                va);
+        HRESULT hr2 = pProgress->notifyCompleteV(hr,
+                                                 COM_IIDOF(IGuest),
+                                                 Guest::getStaticComponentName(),
+                                                 pszText,
+                                                 va);
         va_end(va);
         if (hr2 == S_OK) /* If unable to retrieve error, return input error. */
             hr2 = hr;
@@ -421,32 +421,34 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
         aTask->progress->SetCurrentOperationProgress(10);
 
-        bool fIsWindows = false;
-        Utf8Str osType = pGuest->mData.mOSTypeId;
-        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
-            || osType.contains("Windows", Utf8Str::CaseInsensitive))
-        {
-            fIsWindows = true; /* We have a Windows guest. */
-        }
-        else /* Everything else is not supported (yet). */
-            throw TaskGuest::setProgressErrorInfo(VBOX_E_NOT_SUPPORTED, aTask->progress,
-                                                  Guest::tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
-                                                  osType.c_str());
-
         /*
-         * Determine guest type to know which installer stuff
-         * we need. At the moment only Windows guests are supported.
+         * Determine guest OS type and the required installer image.
+         * At the moment only Windows guests are supported.
          */
         Utf8Str installerImage;
-        if (fIsWindows)
+        Bstr osTypeId;
+        if (   SUCCEEDED(pGuest-COMGETTER(OSTypeId(osTypeId.asOutParam())))
+            && !osTypeId.isEmpty())
         {
-            if (osType.contains("64", Utf8Str::CaseInsensitive))
-                installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
-            else
-                installerImage = "VBOXWINDOWSADDITIONS_X86.EXE";
-            /* Since the installers are located in the root directory,
-             * no further path processing needs to be done (yet). */
+            Utf8Str osTypeIdUtf8(osTypeId); /* Needed for .contains(). */
+            if (   osTypeIdUtf8.contains("Microsoft", Utf8Str::CaseInsensitive)
+                || osTypeIdUtf8.contains("Windows", Utf8Str::CaseInsensitive))
+            {
+                if (osTypeIdUtf8.contains("64", Utf8Str::CaseInsensitive))
+                    installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
+                else
+                    installerImage = "VBOXWINDOWSADDITIONS_X86.EXE";
+                /* Since the installers are located in the root directory,
+                 * no further path processing needs to be done (yet). */
+            }
+            else /* Everything else is not supported (yet). */
+                throw TaskGuest::setProgressErrorInfo(VBOX_E_NOT_SUPPORTED, aTask->progress,
+                                                      Guest::tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
+                                                      osTypeIdUtf8.c_str());
         }
+        else
+            throw TaskGuest::setProgressErrorInfo(VBOX_E_NOT_SUPPORTED, aTask->progress,
+                                                  Guest::tr("Could not detected guest OS type/version, please update manually"));
         Assert(!installerImage.isEmpty());
 
         /*
