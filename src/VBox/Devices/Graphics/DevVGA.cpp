@@ -67,9 +67,6 @@
  * Only works when VBE_NEW_DYN_LIST is defined! */
 #define VRAM_SIZE_FIX
 
-/** Some fixes to ensure that logical scan-line lengths are not overwritten. */
-#define KEEP_SCAN_LINE_LENGTH
-
 /** Check buffer if an VRAM offset is within the right range or not. */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
@@ -947,6 +944,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
     uint32_t max_bank;
 
     if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
+        bool fRecalculate = false;
         Log(("VBE: write index=0x%x val=0x%x\n", s->vbe_index, val));
         switch(s->vbe_index) {
         case VBE_DISPI_INDEX_ID:
@@ -969,28 +967,15 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 #endif /* VBOX_WITH_HGSMI */
             break;
         case VBE_DISPI_INDEX_XRES:
-            if (val <= VBE_DISPI_MAX_XRES) {
+            if (val <= VBE_DISPI_MAX_XRES)
+            {
                 s->vbe_regs[s->vbe_index] = val;
-#ifdef KEEP_SCAN_LINE_LENGTH
-                s->vbe_line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP], val);
-                /* XXX: support weird bochs semantics ? */
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = calc_line_width(s->vbe_regs[VBE_DISPI_INDEX_BPP], s->vbe_line_offset);
-                s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
-                s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
-                s->vbe_start_addr = 0;
-#endif  /* KEEP_SCAN_LINE_LENGTH defined */
+                fRecalculate = true;
             }
             break;
         case VBE_DISPI_INDEX_YRES:
-            if (val <= VBE_DISPI_MAX_YRES) {
+            if (val <= VBE_DISPI_MAX_YRES)
                 s->vbe_regs[s->vbe_index] = val;
-#ifdef KEEP_SCAN_LINE_LENGTH
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = val;
-                s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
-                s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
-                s->vbe_start_addr = 0;
-#endif  /* KEEP_SCAN_LINE_LENGTH defined */
-            }
             break;
         case VBE_DISPI_INDEX_BPP:
             if (val == 0)
@@ -998,14 +983,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             if (val == 4 || val == 8 || val == 15 ||
                 val == 16 || val == 24 || val == 32) {
                 s->vbe_regs[s->vbe_index] = val;
-#ifdef KEEP_SCAN_LINE_LENGTH
-                s->vbe_line_offset = calc_line_pitch(val, s->vbe_regs[VBE_DISPI_INDEX_XRES]);
-                /* XXX: support weird bochs semantics ? */
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = calc_line_width(val, s->vbe_line_offset);
-                s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
-                s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
-                s->vbe_start_addr = 0;
-#endif  /* KEEP_SCAN_LINE_LENGTH defined */
+                fRecalculate = true;
             }
             break;
         case VBE_DISPI_INDEX_BANK:
@@ -1047,17 +1025,10 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 else
                     cb = s->vbe_regs[VBE_DISPI_INDEX_XRES] * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
                 cb *= s->vbe_regs[VBE_DISPI_INDEX_YRES];
-#ifndef KEEP_SCAN_LINE_LENGTH
-                if (    !s->vbe_regs[VBE_DISPI_INDEX_XRES]
-                    ||  !s->vbe_regs[VBE_DISPI_INDEX_YRES]
-                    ||  cb > s->vram_size)
-                {
-                    AssertMsgFailed(("XRES=%d YRES=%d cb=%d vram_size=%d\n",
-                                     s->vbe_regs[VBE_DISPI_INDEX_XRES], s->vbe_regs[VBE_DISPI_INDEX_YRES], cb, s->vram_size));
-                    return VINF_SUCCESS; /* Note: silent failure like before */
-                }
-#else  /* KEEP_SCAN_LINE_LENGTH defined */
-                if (    !s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH]
+                uint16_t cVirtWidth = s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
+                if (!cVirtWidth)
+                    cVirtWidth = s->vbe_regs[VBE_DISPI_INDEX_XRES];
+                if (    !cVirtWidth
                     ||  !s->vbe_regs[VBE_DISPI_INDEX_YRES]
                     ||  cb > s->vram_size)
                 {
@@ -1065,25 +1036,14 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                                      s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], s->vbe_regs[VBE_DISPI_INDEX_YRES], cb, s->vram_size));
                     return VINF_SUCCESS; /* Note: silent failure like before */
                 }
-#endif  /* KEEP_SCAN_LINE_LENGTH defined */
-
-#ifndef KEEP_SCAN_LINE_LENGTH
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] =
-                    s->vbe_regs[VBE_DISPI_INDEX_XRES];
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] =
-                    s->vbe_regs[VBE_DISPI_INDEX_YRES];
-                s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
-                s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
-
-                s->vbe_line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP],
-                                                      s->vbe_regs[VBE_DISPI_INDEX_XRES]);
-                s->vbe_start_addr = 0;
-#endif  /* KEEP_SCAN_LINE_LENGTH not defined */
 
                 /* clear the screen (should be done in BIOS) */
                 if (!(val & VBE_DISPI_NOCLEARMEM)) {
+                    uint16_t cY = RT_MIN(s->vbe_regs[VBE_DISPI_INDEX_YRES],
+                                         s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT]);
+                    uint16_t cbLinePitch = s->vbe_line_offset;
                     memset(s->CTX_SUFF(vram_ptr), 0,
-                           s->vbe_regs[VBE_DISPI_INDEX_YRES] * s->vbe_line_offset);
+                           cY * cbLinePitch);
                 }
 
                 /* we initialize the VGA graphic mode (should be done
@@ -1092,7 +1052,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->cr[0x17] |= 3; /* no CGA modes */
                 s->cr[0x13] = s->vbe_line_offset >> 3;
                 /* width */
-                s->cr[0x01] = (s->vbe_regs[VBE_DISPI_INDEX_XRES] >> 3) - 1;
+                s->cr[0x01] = (cVirtWidth >> 3) - 1;
                 /* height (only meaningful if < 1024) */
                 h = s->vbe_regs[VBE_DISPI_INDEX_YRES] - 1;
                 s->cr[0x12] = h;
@@ -1149,34 +1109,11 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             break;
 #endif /* IN_RING3 */
         case VBE_DISPI_INDEX_VIRT_WIDTH:
-            {
-                int w, h, line_offset;
-
-                if (val < s->vbe_regs[VBE_DISPI_INDEX_XRES])
-                    return VINF_SUCCESS;
-                w = val;
-                line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP], w);
-                h = s->vram_size / line_offset;
-                /* XXX: support weird bochs semantics ? */
-                if (h < s->vbe_regs[VBE_DISPI_INDEX_YRES])
-                    return VINF_SUCCESS;
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = w;
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = h;
-                s->vbe_line_offset = line_offset;
-            }
-            break;
         case VBE_DISPI_INDEX_X_OFFSET:
         case VBE_DISPI_INDEX_Y_OFFSET:
             {
-                int x;
                 s->vbe_regs[s->vbe_index] = val;
-                s->vbe_start_addr = s->vbe_line_offset * s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
-                x = s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
-                if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
-                    s->vbe_start_addr += x >> 1;
-                else
-                    s->vbe_start_addr += x * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
-                s->vbe_start_addr >>= 2;
+                fRecalculate = true;
             }
             break;
         case VBE_DISPI_INDEX_VBOX_VIDEO:
@@ -1200,6 +1137,30 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             break;
         default:
             break;
+        }
+        if (fRecalculate)
+        {
+            uint16_t cBPP        = s->vbe_regs[VBE_DISPI_INDEX_BPP];
+            uint16_t cVirtWidth  = s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
+            uint16_t cX          = s->vbe_regs[VBE_DISPI_INDEX_XRES];
+            uint16_t offX        = s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
+            uint16_t offY        = s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
+            if (!cBPP || !cX)
+                return VINF_SUCCESS;  /* Not enough data has been set yet. */
+            uint32_t cbLinePitch = calc_line_pitch(cBPP, cVirtWidth);
+            if (!cbLinePitch)
+                cbLinePitch      = calc_line_pitch(cBPP, cX);
+            Assert(cbLinePitch != 0);
+            uint16_t cVirtHeight = s->vram_size / cbLinePitch;
+            uint32_t offStart    = cbLinePitch * offY;
+            if (cBPP == 4)
+                offStart += offX >> 1;
+            else
+                offStart += offX * ((cBPP + 7) >> 3);
+            offStart >>= 2;
+            s->vbe_line_offset = RT_MIN(cbLinePitch, s->vram_size);
+            s->vbe_start_addr  = RT_MIN(offStart, s->vram_size);
+            s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight;
         }
     }
     return VINF_SUCCESS;
@@ -2046,6 +2007,10 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     const unsigned cBits = s->get_bpp(s);
 
     int rc;
+    AssertReturn(cx, VERR_INVALID_PARAMETER);
+    AssertReturn(cy, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(s, VERR_INVALID_POINTER);
+    AssertReturn(s->line_offset, VERR_INTERNAL_ERROR);
 #if 0 //def VBOX_WITH_VDMA
     /* @todo: we get a second resize here when VBVA is on, while we actually should not */
     /* do not do pfnResize in case VBVA is on since all mode changes are performed over VBVA
@@ -2060,8 +2025,20 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     else
 #endif
     {
+        /* Silently skip the resize and if the values are not valid, and
+         * forceably disable VBE and blank the screen. */
+        if (s->start_addr * 4 + s->line_offset * cy < s->vram_size)
         /* Take into account the programmed start address (in DWORDs) of the visible screen. */
-        rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTX_SUFF(vram_ptr) + s->start_addr * 4, s->line_offset, cx, cy);
+            rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTX_SUFF(vram_ptr) + s->start_addr * 4, s->line_offset, cx, cy);
+        else
+        {
+            s->vbe_regs[VBE_DISPI_INDEX_ENABLE] &= ~VBE_DISPI_ENABLED;
+            s->ar_index &= ~0x20;
+            s->pDrv->pfnLFBModeChange(s->pDrv, false);
+            /* Try again with the changes we have just made, but still set
+             * s->last_* to avoid a loop. */
+            rc = VERR_TRY_AGAIN;
+        }
     }
 
     /* last stuff */
@@ -2071,7 +2048,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     s->last_width = cx;
     s->last_height = cy;
 
-    if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
+    if (rc == VINF_VGA_RESIZE_IN_PROGRESS || rc == VERR_TRY_AGAIN)
         return rc;
     AssertRC(rc);
 
