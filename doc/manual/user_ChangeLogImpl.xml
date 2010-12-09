@@ -149,6 +149,10 @@
       </listitem>
 
       <listitem>
+        <para>VRDP: support for audio upstream</para>
+      </listitem>
+
+      <listitem>
         <para>Display: fixed occasional guest resize crash</para>
       </listitem>
 
