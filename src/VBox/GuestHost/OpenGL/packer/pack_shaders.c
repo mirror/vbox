@@ -78,7 +78,15 @@ void PACK_APIENTRY crPackShaderSource(GLuint shader, GLsizei count, const char *
 
     for (i=0; i<count; ++i)
     {
-        crMemcpy(data_ptr, string[i], pLocalLength[i]);
+        if (string[i])
+        {
+            crMemcpy(data_ptr, string[i], pLocalLength[i]);
+        }
+        else
+        {
+            CRASSERT(pLocalLength[i]==1);
+            *data_ptr = 0;
+        }
         data_ptr += pLocalLength[i];
     }
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
