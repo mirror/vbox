@@ -543,7 +543,7 @@ HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
         Log((__FUNCTION__": pfnD3DKMTUnlock = %p\n", pCallbacks->pfnD3DKMTUnlock));
         bSupported &= !!(pCallbacks->pfnD3DKMTUnlock);
 
-        Assert(bSupported);
+        /*Assert(bSupported);*/
         if (bSupported)
         {
             return S_OK;
