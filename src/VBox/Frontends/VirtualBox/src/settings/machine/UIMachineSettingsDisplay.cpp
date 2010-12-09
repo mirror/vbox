@@ -296,7 +296,7 @@ bool UIMachineSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitl
     }
 #endif
 #ifdef VBOX_WITH_CRHGSMI
-    else if (m_bWddmMode && mCb3D->isChecked())
+    else if (false) // m_bWddmMode && mCb3D->isChecked())
     {
         int cVal = mSlMonitors->value();
         needBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&m_machine, cVal);
@@ -390,10 +390,10 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
         needMBytes += VBoxGlobal::required2DOffscreenVideoMemory() / _1M;
     }
 #endif
-#ifdef VBOX_WITH_CRHGSMI
+#if 0 // def VBOX_WITH_CRHGSMI
     if (m_bWddmMode && mCb3D->isChecked())
     {
-        needMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&m_machine, cVal) / _1M;
+        needMBytes += VBoxGlobal::required3dwddmoffscreenvideomemory(&m_machine, cVal) / _1M;
         needMBytes = RT_MAX(needMBytes, 128);
         needMBytes = RT_MIN(needMBytes, 256);
         m_maxVRAMVisible = 256;
