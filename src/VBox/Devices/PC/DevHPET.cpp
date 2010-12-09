@@ -705,7 +705,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
     int         rc     = VINF_SUCCESS;
     uint32_t    iIndex = (uint32_t)(GCPhysAddr - HPET_BASE);
 
-    LogFlow(("hpetMMIORead: %llx (%x)\n", (uint64_t)GCPhysAddr, iIndex));
+    LogFlow(("hpetMMIORead (%d): %llx (%x)\n", cb, (uint64_t)GCPhysAddr, iIndex));
 
     rc = hpetLock(pThis, VINF_IOM_HC_MMIO_READ);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -737,7 +737,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
             if (iIndex % 8 != 0)
             {
                 AssertMsgFailed(("Unaligned HPET read access\n"));
-                rc = VERR_INTERNAL_ERROR;
+                rc = VINF_SUCCESS;
                 break;
             }
             // for 8-byte accesses we just split them, happens under lock anyway
@@ -783,8 +783,8 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
     int rc = VINF_SUCCESS;
     uint32_t iIndex = (uint32_t)(GCPhysAddr - HPET_BASE);
 
-    LogFlow(("hpetMMIOWrite: %llx (%x) <- %x\n",
-             (uint64_t)GCPhysAddr, iIndex, *(uint32_t*)pv));
+    LogFlow(("hpetMMIOWrite (%d): %llx (%x) <- %x\n",
+             cb, (uint64_t)GCPhysAddr, iIndex, cb >= 4 ? *(uint32_t*)pv : 0xdeadbeef));
 
     rc = hpetLock(pThis, VINF_IOM_HC_MMIO_WRITE);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -795,7 +795,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
         case 1:
         case 2:
             Log(("Narrow write: %d\n", cb));
-            rc = VERR_INTERNAL_ERROR;
+            rc = VINF_SUCCESS;
             break;
         case 4:
         {
@@ -819,7 +819,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
             if (iIndex % 8 != 0)
             {
                 AssertMsgFailed(("Unaligned HPET write access\n"));
-                rc = VERR_INTERNAL_ERROR;
+                rc = VINF_SUCCESS;
                 break;
             }
             value.u64 = *(uint64_t*)pv;
@@ -1212,7 +1212,6 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* Query configuration. */
-#if 1
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fRCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -1222,7 +1221,6 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
-#endif
     /* Initialize the device state */
     rc = hpetInit(pDevIns);
     if (RT_FAILURE(rc))
