@@ -355,11 +355,7 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
     uint64_t d, next_time, base;
     uint32_t period2;
 
-    /* Add one to current_time; if we don't, integer truncation will cause
-     * the algorithm to think that at the end of each period, it's still
-     * within the first one instead of at the beginning of the next one.
-     */
-    d = ASMMultU64ByU32DivByU32(current_time + 1 - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
+    d = ASMMultU64ByU32DivByU32(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
     default:
     case 0:
@@ -370,24 +366,23 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
             return -1;
         break;
     /*
-     * Mode 2: The period is count + 1 PIT ticks.
+     * Mode 2: The period is 'count' PIT ticks.
      * When the counter reaches 1 we set the output low (for channel 0 that
      * means lowering IRQ0). On the next tick, where we should be decrementing
      * from 1 to 0, the count is loaded and the output goes high (channel 0
      * means raising IRQ0 again and triggering timer interrupt).
      *
-     * In VBox we simplify the tick cycle between 1 and 0 and immediately trigger
-     * the interrupt. We also don't set it until we reach 0, which is a tick late
-     *  - will try to fix that later some day.
+     * In VirtualBox we compress the pulse and flip-flop the IRQ line at the
+     * end of the period, which signals an interrupt at the exact same time.
      */
     case 2:
         base = (d / s->count) * s->count;
 #ifndef VBOX /* see above */
         if ((d - base) == 0 && d != 0)
-            next_time = base + s->count;
+            next_time = base + s->count - 1;
         else
 #endif
-            next_time = base + s->count + 1;
+            next_time = base + s->count;
         break;
     case 3:
         base = (d / s->count) * s->count;
@@ -412,10 +407,13 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
              ASMMultU64ByU32DivByU32(next_time, TMTimerGetFreq(pTimer), PIT_FREQ), s->mode, s->count));
     next_time = s->count_load_time + ASMMultU64ByU32DivByU32(next_time, TMTimerGetFreq(pTimer), PIT_FREQ);
     /* fix potential rounding problems */
-    /* XXX: better solution: use a clock at PIT_FREQ Hz */
     if (next_time <= current_time)
-        next_time = current_time + 1;
-    return next_time;
+        next_time = current_time;
+    /* Add one to next_time; if we don't, integer truncation will cause
+     * the algorithm to think that at the end of each period, it's still
+     * within the first one instead of at the beginning of the next one.
+     */
+    return next_time + 1;
 }
 
 static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now)
