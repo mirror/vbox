@@ -494,7 +494,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--type normal|writethrough|immutable|shareable]\n"
                      "                            [--autoreset on|off]\n"
                      "                            [--compact]\n"
-                     "                            [--resize <megabytes>]\n"
+                     "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
                      "\n");
 
     if (u64Cmd & USAGE_CLONEHD)
