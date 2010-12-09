@@ -72,6 +72,7 @@ public:
     STDMETHOD(COMSETTER(VirtualTimeRate)) (ULONG aPct);
     STDMETHOD(COMGETTER(VM)) (LONG64 *aVm);
     STDMETHOD(InjectNMI)();
+    STDMETHOD(DumpGuestCore)(IN_BSTR a_bstrFilename);
 
     // IMachineDebugger methods
     STDMETHOD(ResetStats (IN_BSTR aPattern));

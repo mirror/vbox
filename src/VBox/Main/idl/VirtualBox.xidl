@@ -11874,7 +11874,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="b0b2a2dd-0627-4502-91c2-ddc5e77609e0"
+    uuid="373a5f51-67c1-4a31-be43-1e29ebe8ef85"
     wsmap="suppress"
     >
     <method name="resetStats">
@@ -11914,6 +11914,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Inject an NMI into a running VT-x/AMD-V VM.
       </desc>
+    </method>
+
+    <method name="dumpGuestCore">
+      <desc>
+        Takes a core dump of the guest.
+
+        See include/VBox/dbgfcorefmt.h for details on the file format.
+      </desc>
+      <param name="filename" type="wstring" dir="in">
+        <desc>
+          The name of the output file.  The file must not exist.
+        </desc>
+      </param>
     </method>
 
     <attribute name="singlestep" type="boolean">
