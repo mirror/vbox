@@ -400,7 +400,7 @@ int handleStorageAttach(HandlerArg *a)
                             if (    (deviceType == DeviceType_DVD)
                                  || (deviceType == DeviceType_HardDisk)
                                )
-                                devTypeRequested == deviceType;
+                                devTypeRequested = deviceType;
                         }
                     }
                 }
