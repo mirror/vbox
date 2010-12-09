@@ -103,7 +103,7 @@ static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLEXECPIPEBUF pStd
     if (RT_SUCCESS(rc))
     {
         size_t cbToWrite = pStdInBuf->cbSize - pStdInBuf->cbOffset;
-        cbToWrite = RT_MIN(cbToWrite, _64K);
+        cbToWrite = RT_MIN(cbToWrite, _1M);
         *pfClose = false;
         if (cbToWrite && pStdInBuf->fAlive)
         {
@@ -1596,29 +1596,29 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
  * @param   uNumParms       cParms      The number of parameters the host is
  *                                      offering.
  */
-int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms)
+int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize)
 {
     uint32_t uContextID;
     uint32_t uPID;
     uint32_t uFlags;
-    uint8_t  abBuffer[_64K];
     uint32_t cbSize;
 
-    if (uNumParms != 5)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(RT_IS_POWER_OF_TWO(cbMaxBufSize), VERR_INVALID_PARAMETER);
+    uint8_t *pabBuffer = (uint8_t*)RTMemAlloc(cbMaxBufSize);
+    AssertPtrReturn(pabBuffer, VERR_NO_MEMORY);
 
     /*
      * Ask the host for the input data.
      */
     int rc = VbglR3GuestCtrlExecGetHostCmdInput(u32ClientId, uNumParms,
                                                 &uContextID, &uPID, &uFlags,
-                                                abBuffer, sizeof(abBuffer), &cbSize);
+                                                pabBuffer, cbMaxBufSize, &cbSize);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("ControlExec: Failed to retrieve exec input command! Error: %Rrc\n", rc);
     }
     else if (   cbSize <= 0
-             || cbSize > sizeof(abBuffer))
+             || cbSize >  cbMaxBufSize)
     {
         VBoxServiceError("ControlExec: Input size is invalid! cbSize=%u\n", cbSize);
         rc = VERR_INVALID_PARAMETER;
@@ -1651,7 +1651,7 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
              * Feed the data to the pipe.
              */
             uint32_t cbWritten;
-            rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdIn, abBuffer, cbSize, fPendingClose, &cbWritten);
+            rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdIn, pabBuffer, cbSize, fPendingClose, &cbWritten);
 #ifdef DEBUG
             VBoxServiceVerbose(4, "ControlExec: Written to StdIn buffer (PID %u): rc=%Rrc, uFlags=0x%x, cbAlloc=%u, cbSize=%u, cbOffset=%u\n",
                                uPID, rc, uFlags,
@@ -1691,6 +1691,7 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
     }
+    RTMemFree(pabBuffer);
     VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdSetInput returned with %Rrc\n", rc);
     return rc;
 }
@@ -1712,11 +1713,7 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
 
     int rc = VbglR3GuestCtrlExecGetHostCmdOutput(u32ClientId, uNumParms,
                                                  &uContextID, &uPID, &uHandleID, &uFlags);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("ControlExec: Failed to retrieve exec output command! Error: %Rrc\n", rc);
-    }
-    else
+    if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLTHREAD pNode = VBoxServiceControlExecFindProcess(uPID);
         if (pNode)
@@ -1724,7 +1721,7 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
             PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
             AssertPtr(pData);
 
-            const uint32_t cbSize = _4K;
+            const uint32_t cbSize = _1M;
             uint32_t cbRead = cbSize;
             uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbSize);
             if (pBuf)
@@ -1748,6 +1745,8 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
     }
+    else
+        VBoxServiceError("ControlExec: Failed to retrieve exec output command! Error: %Rrc\n", rc);
     VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdGetOutput returned with %Rrc\n", rc);
     return rc;
 }
