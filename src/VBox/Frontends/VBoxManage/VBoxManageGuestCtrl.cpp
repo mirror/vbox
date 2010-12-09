@@ -92,12 +92,12 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            copyto|cp <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
-                 "                            [--dryrun] [--recursive] [--verbose] [--flags <flags>]\n"
+                 "                            [--dryrun] [--follow] [--recursive] [--update] [--verbose]\n"
                  "\n"
                  "                            createdir[ectory]|mkdir|md <vmname>|<uuid>\n"
                  "                            <directory to create on guest>\n"
                  "                            --username <name> --password <password>\n"
-                 "                            [--parents] [--mode <mode>]\n"
+                 "                            [--parents] [--mode <mode>] [--verbose]\n"
                  "\n"
                  "                            updateadditions <vmname>|<uuid>\n"
                  "                            [--source <guest additions .ISO file to use>] [--verbose]\n"
@@ -1008,7 +1008,6 @@ static int handleCtrlCopyTo(HandlerArg *a)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING },
-        //{ "--flags",               'f',         RTGETOPT_REQ_STRING  },
         { "--follow",              'F',         RTGETOPT_REQ_NOTHING },
         { "--password",            'p',         RTGETOPT_REQ_STRING  },
         { "--recursive",           'R',         RTGETOPT_REQ_NOTHING },
@@ -1042,10 +1041,6 @@ static int handleCtrlCopyTo(HandlerArg *a)
         {
             case 'd': /* Dry run */
                 fDryRun = true;
-                break;
-
-            case 'f': /* Flags */
-                /* Nothing to do here yet. */
                 break;
 
             case 'F': /* Follow symlinks */
@@ -1205,7 +1200,6 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        //{ "--flags",               'f',         RTGETOPT_REQ_STRING  },
         { "--mode",                'm',         RTGETOPT_REQ_UINT32  },
         { "--parents",             'P',         RTGETOPT_REQ_NOTHING },
         { "--password",            'p',         RTGETOPT_REQ_STRING  },
@@ -1236,10 +1230,6 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case 'f': /* Flags */
-                /* Nothing to do here yet. */
-                break;
-
             case 'm': /* Mode */
                 uMode = ValueUnion.u32;
                 break;
