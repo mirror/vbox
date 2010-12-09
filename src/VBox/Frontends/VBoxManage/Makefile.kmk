@@ -35,6 +35,7 @@ else # !VBOX_ONLY_DOCS
  	VBoxManage.cpp \
  	VBoxInternalManage.cpp \
  	VBoxManageControlVM.cpp \
+ 	VBoxManageDebugVM.cpp \
  	VBoxManageDHCPServer.cpp \
  	VBoxManageDisk.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \

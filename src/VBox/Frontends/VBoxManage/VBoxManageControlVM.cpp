@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - Implementation of controlvm command.
+ * VBoxManage - Implementation of the controlvm command.
  */
 
 /*
@@ -1014,7 +1014,7 @@ int handleControlVM(HandlerArg *a)
         }
         else
         {
-            errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
+            errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", a->argv[1]);
             rc = E_FAIL;
         }
     } while (0);
