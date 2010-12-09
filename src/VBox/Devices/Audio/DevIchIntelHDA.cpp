@@ -1483,7 +1483,9 @@ static inline bool hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHD
         *pStreamDesc->pu32Lpib -= pStreamDesc->u32Cbl;
     hdaUpdatePosBuf(pState, pStreamDesc);
 
-    if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
+    /* don't touch BdleCvi counter on uninitialized descriptor */
+    if (   pBdle->u32BdleCviPos
+        && pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
     {
         pBdle->u32BdleCviPos = 0;
         pBdle->u32BdleCvi++;
