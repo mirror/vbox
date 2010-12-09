@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ca_ES">
+<TS version="2.0" language="ca_VA">
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation>Servei</translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaga %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaga els altres</translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra&apos;ls tots</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Preferències...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ix %1</translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Quant a %1</translation>
     </message>
 </context>
 <context>
@@ -2082,7 +2082,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
-        <translation>No es poden vincular els valors d&apos;eixida</translation>
+        <translation>No es poden vincular els valors d'eixida</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
@@ -3024,7 +3024,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>Paràmetres d&apos;eixida</translation>
+        <translation>Paràmetres d'eixida</translation>
     </message>
     <message>
         <source>Copies:</source>
@@ -3103,7 +3103,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation>&amp;Fitxer d&apos;eixida:</translation>
+        <translation>&amp;Fitxer d'eixida:</translation>
     </message>
     <message>
         <source>...</source>
@@ -5169,11 +5169,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>El nomespai %1 nomé pot vincular-s&apos;a %2 (i està, en qualsevol cas, predeclarat).</translation>
+        <translation>El nomespai %1 nomé pot vincular-s'a %2 (i està, en qualsevol cas, predeclarat).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>El prefix %1 nomé pot vincular-s&apos;a %2 (i està, en qualsevol cas, predeclarat).</translation>
+        <translation>El prefix %1 nomé pot vincular-s'a %2 (i està, en qualsevol cas, predeclarat).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
