@@ -1342,20 +1342,20 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     Bool fPrimaryMoved = FALSE;
     uint32_t cPrimary, cIndex;
     uint32_t cwReal, chReal;
-    int32_t cxRel, cyRel, cxReal, cyReal;
+    int32_t cxRel, cyRel, cxReal, cyReal, cxOld, cyOld;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
-    cPrimary = vboxGetPrimaryIndex(pScrn);
-    cIndex = vboxGetRealLocationIndex(pScrn, cDisplay);
-    if (   cDisplay == cPrimary
-        && (   x != pVBox->aScreenLocation[cDisplay].x
-            || y != pVBox->aScreenLocation[cDisplay].y))
-        fPrimaryMoved = TRUE;
+    cxOld = pVBox->aScreenLocation[cDisplay].cx;
+    cyOld = pVBox->aScreenLocation[cDisplay].cy;
     pVBox->aScreenLocation[cDisplay].cx = cWidth;
     pVBox->aScreenLocation[cDisplay].cy = cHeight;
     pVBox->aScreenLocation[cDisplay].x = x;
     pVBox->aScreenLocation[cDisplay].y = y;
+    cPrimary = vboxGetPrimaryIndex(pScrn);
+    cIndex = vboxGetRealLocationIndex(pScrn, cDisplay);
+    if (cDisplay == cPrimary && (x != cxOld || y != cyOld))
+        fPrimaryMoved = TRUE;
     cwReal = pVBox->aScreenLocation[cIndex].cx;
     chReal = pVBox->aScreenLocation[cIndex].cy;
     cxReal = pVBox->aScreenLocation[cIndex].x;
