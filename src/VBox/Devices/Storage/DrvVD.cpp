@@ -363,7 +363,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
             if (RT_SUCCESS(rc))
             {
                 uint32_t fFlags =    (fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ
-                                   ? PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING
+                                   ? PDMACEP_FILE_FLAGS_READ_ONLY
                                    : 0;
                 if (pThis->fShareable)
                 {
@@ -371,10 +371,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
 
                     fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
                 }
-#if 0
-                else
-                    fFlags |= PDMACEP_FILE_FLAGS_CACHING;
-#endif
+
                 rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
                                                          pszLocation, fFlags,
                                                          pStorageBackend->pTemplate);
