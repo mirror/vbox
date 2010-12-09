@@ -63,7 +63,7 @@
 #define AHCI_NR_OF_ALLOWED_BIGGER_LISTS 100
 
 /** The current saved state version. */
-#define AHCI_SAVED_STATE_VERSION                4
+#define AHCI_SAVED_STATE_VERSION                5
 /** Saved state version before ATAPI support was added. */
 #define AHCI_SAVED_STATE_VERSION_PRE_ATAPI      3
 /** The saved state version use in VirtualBox 3.0 and earlier.
@@ -439,6 +439,15 @@ typedef struct AHCIPort
     /** Bitmap for new queued tasks (Guest -> R3). */
     volatile uint32_t               u32TasksNew;
 
+    /** Current command slot processed.
+     * Accessed by the guest by reading the CMD register.
+     * Holds the command slot of the command processed at the moment. */
+    volatile uint32_t               u32CurrentCommandSlot;
+
+#if HC_ARCH_BITS == 64
+    uint32_t                        u32Alignment2;
+#endif
+
     /** Device specific settings (R3 only stuff). */
     /** Pointer to the attached driver's base interface. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
@@ -479,6 +488,10 @@ typedef struct AHCIPort
     /** First task throwing an error. */
     R3PTRTYPE(volatile PAHCIPORTTASKSTATE) pTaskErr;
 
+#if HC_ARCH_BITS == 32
+    uint32_t                        u32Alignment4;
+#endif
+
     /** Release statistics: number of DMA commands. */
     STAMCOUNTER                     StatDMA;
     /** Release statistics: number of bytes written. */
@@ -513,7 +526,7 @@ typedef struct AHCIPort
     /** Error counter */
     uint32_t                        cErrors;
 
-    uint32_t                        u32Alignment4;
+    uint32_t                        u32Alignment5;
 } AHCIPort;
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
@@ -1231,11 +1244,11 @@ static int PortCmd_r(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *p
              (pAhciPort->regCMD & AHCI_PORT_CMD_ISP) >> 19, (pAhciPort->regCMD & AHCI_PORT_CMD_HPCP) >> 18,
              (pAhciPort->regCMD & AHCI_PORT_CMD_PMA) >> 17, (pAhciPort->regCMD & AHCI_PORT_CMD_CPS) >> 16,
              (pAhciPort->regCMD & AHCI_PORT_CMD_CR) >> 15, (pAhciPort->regCMD & AHCI_PORT_CMD_FR) >> 14,
-             (pAhciPort->regCMD & AHCI_PORT_CMD_ISS) >> 13, (pAhciPort->regCMD & AHCI_PORT_CMD_CCS) >> 8,
+             (pAhciPort->regCMD & AHCI_PORT_CMD_ISS) >> 13, pAhciPort->u32CurrentCommandSlot,
              (pAhciPort->regCMD & AHCI_PORT_CMD_FRE) >> 4, (pAhciPort->regCMD & AHCI_PORT_CMD_CLO) >> 3,
              (pAhciPort->regCMD & AHCI_PORT_CMD_POD) >> 2, (pAhciPort->regCMD & AHCI_PORT_CMD_SUD) >> 1,
              (pAhciPort->regCMD & AHCI_PORT_CMD_ST)));
-    *pu32Value = pAhciPort->regCMD;
+    *pu32Value = pAhciPort->regCMD | AHCI_PORT_CMD_CCS_SHIFT(pAhciPort->u32CurrentCommandSlot);
     return VINF_SUCCESS;
 }
 
@@ -1281,7 +1294,7 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
             /* Clear command issue register. */
             pAhciPort->regCI = 0;
             /** Clear current command slot. */
-            u32Value &= ~(AHCI_PORT_CMD_CCS_SHIFT(0xff));
+            pAhciPort->u32CurrentCommandSlot = 0;
             u32Value &= ~AHCI_PORT_CMD_CR;
         }
     }
@@ -1873,6 +1886,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->u32TasksNew = 0;
     pAhciPort->u32TasksFinished = 0;
     pAhciPort->u32QueuedTasksFinished = 0;
+    pAhciPort->u32CurrentCommandSlot = 0;
 
     pAhciPort->cTasksActive = 0;
 
@@ -4560,17 +4574,21 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTask
             ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_TFES);
             if (pAhciPort->regIE & AHCI_PORT_IE_TFEE)
                 fAssertIntr = true;
+            /*
+             * Don't mark the command slot as completed because the guest
+             * needs it to identify the failed command.
+             */
         }
-
-        if (fInterrupt)
+        else if (fInterrupt)
         {
             ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
             /* Check if we should assert an interrupt */
             if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
                 fAssertIntr = true;
-        }
 
-        ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciPortTaskState->uTag));
+            /* Mark command as completed. */
+            ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciPortTaskState->uTag));
+        }
 
         if (fAssertIntr)
         {
@@ -5794,7 +5812,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                 else
                 {
                     pAhciPortTaskState->uATARegError = ABRT_ERR;
-                    pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+                    pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK  | ATA_STAT_ERR;
                 }
                 break;
             }
@@ -6176,7 +6194,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
 
             /* Set current command slot */
             pAhciPortTaskState->uTag = idx;
-            pAhciPort->regCMD |= (AHCI_PORT_CMD_CCS_SHIFT(pAhciPortTaskState->uTag));
+            ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciPortTaskState->uTag);
 
             ahciPortTaskGetCommandFis(pAhciPort, pAhciPortTaskState);
 
@@ -6358,7 +6376,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             AssertMsg(pAhciPortTaskState->uTag < AHCI_NR_COMMAND_SLOTS, ("%s: Invalid Tag number %u!!\n", __FUNCTION__, pAhciPortTaskState->uTag));
 
             /* Set current command slot */
-            pAhciPort->regCMD |= (AHCI_PORT_CMD_CCS_SHIFT(pAhciPortTaskState->uTag));
+            ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciPortTaskState->uTag);
 
             /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
             if (pAhciPort->regSACT & (1 << idx))
@@ -6853,15 +6871,11 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutU32(pSSM, pThis->ahciPort[i].cMultSectors);
         SSMR3PutU8(pSSM, pThis->ahciPort[i].uATATransferMode);
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fResetDevice);
-
-        /* No need to save but to avoid changing the SSM format they are still written. */
-        SSMR3PutU8(pSSM, 0); /* Prev: Write position in the FIFO. */
-        SSMR3PutU8(pSSM, 0); /* Prev: Read position in the FIFO. */
-
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fPoweredOn);
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fSpunUp);
         SSMR3PutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
         SSMR3PutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32CurrentCommandSlot);
 
         /* ATAPI saved state. */
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fATAPI);
@@ -6990,7 +7004,6 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         /* Now every port. */
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
-            uint8_t u8;
             PAHCIPort pAhciPort = &pThis->ahciPort[i];
 
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLB);
@@ -7020,12 +7033,16 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
                 SSMR3Skip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
 
-            SSMR3GetU8(pSSM, &u8);
-            SSMR3GetU8(pSSM, &u8);
+            if (uVersion <= AHCI_SAVED_STATE_VERSION)
+            {
+                /* The old positions in the FIFO, not required. */
+                SSMR3Skip(pSSM, 2*sizeof(uint8_t));
+            }
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
             {
