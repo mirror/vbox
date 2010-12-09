@@ -26,7 +26,7 @@
               <para>New display mode with downscaled guest display</para>
             </listitem>
             <listitem>
-              <para>Support for creating and starting .vbox desktop shortcuts</para>
+              <para>Support for creating and starting .vbox desktop shortcuts (bug #1889)</para>
             </listitem>
             <listitem>
               <para>The VM list is now sortable</para>
