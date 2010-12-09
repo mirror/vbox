@@ -137,6 +137,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed XPDM Windows Explorer crashes on Windows Vista/Win7 guests</para>
+      </listitem>
+
+      <listitem>
         <para>2D Video acceleration: multimonitor support</para>
       </listitem>
 

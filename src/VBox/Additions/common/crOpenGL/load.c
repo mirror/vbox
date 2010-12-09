@@ -341,7 +341,9 @@ static void stubSPUTearDown(void)
     crUnloadOpenGL();
 #endif
 
+#ifndef WINDOWS
     crNetTearDown();
+#endif
 
 #ifdef GLX
     if (stub.xshmSI.shmid>=0)
@@ -411,7 +413,10 @@ static void stubSPUSafeTearDown(void)
     crLockMutex(mutex);
 #endif
 
+#ifndef WINDOWS
     crNetTearDown();
+#endif
+
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(mutex);
     crFreeMutex(mutex);
