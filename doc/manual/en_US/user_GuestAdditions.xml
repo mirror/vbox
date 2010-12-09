@@ -1509,11 +1509,14 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
     <para>Starting with version 4.0, the Guest Additions for Windows allow for
     automatic updating (only already installed Guest Additions 4.0 or
-    later).</para>
+    later). Also, copying files from host to the guest as well as remotely
+    creating guest directories is available.</para>
 
     <para>To use these feature, use the VirtualBox command line or the GUI.
-    See <xref linkend="mountingadditionsiso" /> or <xref
-    linkend="vboxmanage-guestcontrol" /> for details.</para>
+    See <xref linkend="mountingadditionsiso" /> for automatically updating
+    the Guest Additions or <xref linkend="vboxmanage-guestcontrol" /> for
+    executing guest programs, copying files from the host or creating guest
+    directories.</para>
   </sect1>
 
   <sect1>

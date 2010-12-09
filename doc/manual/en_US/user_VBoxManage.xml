@@ -2657,8 +2657,8 @@ Value: 2006.01.01</screen>
 
           <screen>VBoxManage copyto|cp &lt;vmname&gt;|&lt;uuid&gt;
             &lt;source on host&gt; &lt;destination on guest&gt;
-            [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
-            [--dryrun] [--recursive] [--verbose] [--flags &lt;flags&gt;]</screen>
+            --username &lt;name&gt; --password &lt;password&gt;
+            [--dryrun] [--follow] [--recursive] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
               <glossentry>
@@ -2719,10 +2719,18 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
+                <glossterm>--follow</glossterm>
+
+                <glossdef>
+                  <para>Enables following symlinks on the host's source.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
                 <glossterm>--recursive</glossterm>
 
                 <glossdef>
-                  <para>Recursively copies files/directories.</para>
+                  <para>Recursively copies files/directories of the specified source.</para>
                 </glossdef>
               </glossentry>
 
