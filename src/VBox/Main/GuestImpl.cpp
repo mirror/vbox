@@ -441,15 +441,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
         if (fIsWindows)
         {
             if (osType.contains("64", Utf8Str::CaseInsensitive))
-            {
-                LogRel(("Automatic update of Windows guest (64-bit) selected\n"));
                 installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
-            }
             else
-            {
-                LogRel(("Automatic update of Windows guest (32-bit) selected\n"));
                 installerImage = "VBOXWINDOWSADDITIONS_X86.EXE";
-            }
             /* Since the installers are located in the root directory,
              * no further path processing needs to be done (yet). */
         }
@@ -693,16 +687,21 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         aTask->progress->SetCurrentOperationProgress(70);
 
                     LogRel(("Guest Additions update is running ...\n"));
-                    while (SUCCEEDED(progressInstaller->COMGETTER(Completed(&fCompleted))))
+                    while (   SUCCEEDED(progressInstaller->COMGETTER(Completed(&fCompleted)))
+                           && !fCompleted)
                     {
+                        if (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+                            && fCanceled)
+                        {
+                            progressInstaller->Cancel();
+                            break;
+                        }
                         /* Progress canceled by Main API? */
                         if (   SUCCEEDED(progressInstaller->COMGETTER(Canceled(&fCanceled)))
                             && fCanceled)
                         {
                             break;
                         }
-                        if (fCompleted)
-                            break;
                         RTThreadSleep(1);
                     }
 
@@ -726,15 +725,20 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                                      uRetExitCode, uRetStatus, uRetFlags);
                             }
                         }
-                        else if (fCanceled)
+                        else if (   SUCCEEDED(progressInstaller->COMGETTER(Canceled(&fCanceled)))
+                                 && fCanceled)
                         {
                             rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                  Guest::tr("Guest Additions update was canceled by the guest with exit code=%u (status=%u, flags=%u)"),
                                                                  uRetExitCode, uRetStatus, uRetFlags);
                         }
                         else
-                            AssertMsgFailed(("Unknown Guest Additions update status!\n"));
+                        {
+                            /* Guest Additions update was canceled by the user. */
+                        }
                     }
+                    else
+                        rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
                 }
                 else
                     rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
