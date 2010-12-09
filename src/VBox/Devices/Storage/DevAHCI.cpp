@@ -6910,9 +6910,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     uint32_t u32;
     int rc;
 
-    if (    uVersion != AHCI_SAVED_STATE_VERSION
-        &&  uVersion != AHCI_SAVED_STATE_VERSION_PRE_ATAPI
-        &&  uVersion != AHCI_SAVED_STATE_VERSION_VBOX_30)
+    if (   uVersion > AHCI_SAVED_STATE_VERSION
+        || uVersion < AHCI_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* Verify config. */
@@ -7033,7 +7032,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
                 SSMR3Skip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
 
-            if (uVersion <= AHCI_SAVED_STATE_VERSION)
+            if (uVersion < AHCI_SAVED_STATE_VERSION)
             {
                 /* The old positions in the FIFO, not required. */
                 SSMR3Skip(pSSM, 2*sizeof(uint8_t));
@@ -7042,7 +7041,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32CurrentCommandSlot);
+            if (uVersion >= AHCI_SAVED_STATE_VERSION)
+                SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
             {
