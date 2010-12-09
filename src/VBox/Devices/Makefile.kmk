@@ -793,6 +793,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Audio/audiosniffer.c \
  	Audio/mixeng.c \
  	Audio/noaudio.c \
+ 	Audio/filteraudio.c \
  	Input/DrvKeyboardQueue.cpp \
  	Input/DrvMouseQueue.cpp \
  	Network/DrvIntNet.cpp \

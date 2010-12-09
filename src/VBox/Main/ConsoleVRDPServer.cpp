@@ -20,6 +20,7 @@
 #include "DisplayImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
+#include "AudioSnifferInterface.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -509,11 +510,12 @@ RTLDRMOD ConsoleVRDPServer::mVRDPLibrary = NIL_RTLDRMOD;
 
 PFNVRDECREATESERVER ConsoleVRDPServer::mpfnVRDECreateServer = NULL;
 
-VRDEENTRYPOINTS_1 *ConsoleVRDPServer::mpEntryPoints = NULL;
+VRDEENTRYPOINTS_3 ConsoleVRDPServer::mEntryPoints; /* A copy of the server entry points. */
+VRDEENTRYPOINTS_3 *ConsoleVRDPServer::mpEntryPoints = NULL;
 
-VRDECALLBACKS_1 ConsoleVRDPServer::mCallbacks =
+VRDECALLBACKS_3 ConsoleVRDPServer::mCallbacks =
 {
-    { VRDE_INTERFACE_VERSION_1, sizeof(VRDECALLBACKS_1) },
+    { VRDE_INTERFACE_VERSION_3, sizeof(VRDECALLBACKS_3) },
     ConsoleVRDPServer::VRDPCallbackQueryProperty,
     ConsoleVRDPServer::VRDPCallbackClientLogon,
     ConsoleVRDPServer::VRDPCallbackClientConnect,
@@ -525,7 +527,8 @@ VRDECALLBACKS_1 ConsoleVRDPServer::mCallbacks =
     ConsoleVRDPServer::VRDPCallbackFramebufferLock,
     ConsoleVRDPServer::VRDPCallbackFramebufferUnlock,
     ConsoleVRDPServer::VRDPCallbackInput,
-    ConsoleVRDPServer::VRDPCallbackVideoModeHint
+    ConsoleVRDPServer::VRDPCallbackVideoModeHint,
+    ConsoleVRDPServer::VRDECallbackAudioIn
 };
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
@@ -850,6 +853,22 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
     server->mConsole->VRDPClientDisconnect(u32ClientId, fu32Intercepted);
+
+    if (ASMAtomicReadU32(&server->mu32AudioInputClientId) == u32ClientId)
+    {
+        Log(("AUDIOIN: disconnected client %u\n", u32ClientId));
+        ASMAtomicWriteU32(&server->mu32AudioInputClientId, 0);
+
+        PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+        if (pPort)
+        {
+             // @todo dynamic filter attach does not yet work pPort->pfnAudioInputIntercept(pPort, false);
+        }
+        else
+        {
+            AssertFailed();
+        }
+    }
 }
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept)
@@ -886,6 +905,38 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, ui
                 *ppvIntercept = server;
             }
             rc = VINF_SUCCESS;
+        } break;
+
+        case VRDE_CLIENT_INTERCEPT_AUDIO_INPUT:
+        {
+            /* This request is processed internally by the ConsoleVRDPServer.
+             * Only one client is allowed to intercept audio input.
+             */
+            if (ASMAtomicCmpXchgU32(&server->mu32AudioInputClientId, u32ClientId, 0) == true)
+            {
+                Log(("AUDIOIN: connected client %u\n", u32ClientId));
+
+                PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+                if (pPort)
+                {
+                     // @todo dynamic filter attach does not yet work pPort->pfnAudioInputIntercept(pPort, true);
+                     if (ppvIntercept)
+                     {
+                         *ppvIntercept = server;
+                     }
+                }
+                else
+                {
+                    AssertFailed();
+                    ASMAtomicWriteU32(&server->mu32AudioInputClientId, 0);
+                    rc = VERR_NOT_SUPPORTED;
+                }
+            }
+            else
+            {
+                Log(("AUDIOIN: ignored client %u, active client %u\n", u32ClientId, server->mu32AudioInputClientId));
+                rc = VERR_NOT_SUPPORTED;
+            }
         } break;
 
         default:
@@ -1138,6 +1189,47 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback
     server->mConsole->getDisplay()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
 }
 
+DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
+                                                          void *pvCtx,
+                                                          uint32_t u32ClientId,
+                                                          uint32_t u32Event,
+                                                          const void *pvData,
+                                                          uint32_t cbData)
+{
+    ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
+
+    PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
+
+    switch (u32Event)
+    {
+        case VRDE_AUDIOIN_BEGIN:
+        {
+            const VRDEAUDIOINBEGIN *pParms = (const VRDEAUDIOINBEGIN *)pvData;
+
+            pPort->pfnAudioInputEventBegin (pPort, pvCtx,
+                                            VRDE_AUDIO_FMT_SAMPLE_FREQ(pParms->fmt),
+                                            VRDE_AUDIO_FMT_CHANNELS(pParms->fmt),
+                                            VRDE_AUDIO_FMT_BITS_PER_SAMPLE(pParms->fmt),
+                                            VRDE_AUDIO_FMT_SIGNED(pParms->fmt)
+                                           );
+        } break;
+
+        case VRDE_AUDIOIN_DATA:
+        {
+            pPort->pfnAudioInputEventData (pPort, pvCtx, pvData, cbData);
+        } break;
+
+        case VRDE_AUDIOIN_END:
+        {
+            pPort->pfnAudioInputEventEnd (pPort, pvCtx);
+        } break;
+
+        default:
+            return;
+    }
+}
+
+
 ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 {
     mConsole = console;
@@ -1158,6 +1250,7 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 #endif
 
     mhServer = 0;
+    mServerInterfaceVersion = 0;
 
     m_fGuestWantsAbsolute = false;
     m_mousex = 0;
@@ -1190,6 +1283,8 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     mVRDPBindPort = -1;
 
     mAuthLibrary = 0;
+
+    mu32AudioInputClientId = 0;
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1271,7 +1366,63 @@ int ConsoleVRDPServer::Launch(void)
         vrc = loadVRDPLibrary(strVrdeLibrary.c_str());
         if (RT_SUCCESS(vrc))
         {
-            vrc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&mpEntryPoints, &mhServer);
+            VRDEENTRYPOINTS_3 *pEntryPoints3;
+            vrc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&pEntryPoints3, &mhServer);
+
+            if (RT_SUCCESS(vrc))
+            {
+                mServerInterfaceVersion = 3;
+                mEntryPoints = *pEntryPoints3;
+                mpEntryPoints = &mEntryPoints;
+            }
+            else if (vrc == VERR_VERSION_MISMATCH)
+            {
+                /* An older version of VRDE is installed, try version 1. */
+                VRDEENTRYPOINTS_1 *pEntryPoints1;
+
+                VRDECALLBACKS_1 callbacks =
+                {
+                    { VRDE_INTERFACE_VERSION_1, sizeof(VRDECALLBACKS_1) },
+                    ConsoleVRDPServer::VRDPCallbackQueryProperty,
+                    ConsoleVRDPServer::VRDPCallbackClientLogon,
+                    ConsoleVRDPServer::VRDPCallbackClientConnect,
+                    ConsoleVRDPServer::VRDPCallbackClientDisconnect,
+                    ConsoleVRDPServer::VRDPCallbackIntercept,
+                    ConsoleVRDPServer::VRDPCallbackUSB,
+                    ConsoleVRDPServer::VRDPCallbackClipboard,
+                    ConsoleVRDPServer::VRDPCallbackFramebufferQuery,
+                    ConsoleVRDPServer::VRDPCallbackFramebufferLock,
+                    ConsoleVRDPServer::VRDPCallbackFramebufferUnlock,
+                    ConsoleVRDPServer::VRDPCallbackInput,
+                    ConsoleVRDPServer::VRDPCallbackVideoModeHint
+                };
+
+                vrc = mpfnVRDECreateServer(&callbacks.header, this, (VRDEINTERFACEHDR **)&pEntryPoints1, &mhServer);
+                if (RT_SUCCESS(vrc))
+                {
+                    LogRel(("VRDE: loaded an older version of the server.\n"));
+
+                    mServerInterfaceVersion = 3;
+                    mEntryPoints.header = pEntryPoints1->header;
+                    mEntryPoints.VRDEDestroy = pEntryPoints1->VRDEDestroy;
+                    mEntryPoints.VRDEEnableConnections = pEntryPoints1->VRDEEnableConnections;
+                    mEntryPoints.VRDEDisconnect = pEntryPoints1->VRDEDisconnect;
+                    mEntryPoints.VRDEResize = pEntryPoints1->VRDEResize;
+                    mEntryPoints.VRDEUpdate = pEntryPoints1->VRDEUpdate;
+                    mEntryPoints.VRDEColorPointer = pEntryPoints1->VRDEColorPointer;
+                    mEntryPoints.VRDEHidePointer = pEntryPoints1->VRDEHidePointer;
+                    mEntryPoints.VRDEAudioSamples = pEntryPoints1->VRDEAudioSamples;
+                    mEntryPoints.VRDEAudioVolume = pEntryPoints1->VRDEAudioVolume;
+                    mEntryPoints.VRDEUSBRequest = pEntryPoints1->VRDEUSBRequest;
+                    mEntryPoints.VRDEClipboard = pEntryPoints1->VRDEClipboard;
+                    mEntryPoints.VRDEQueryInfo = pEntryPoints1->VRDEQueryInfo;
+                    mEntryPoints.VRDERedirect = NULL;
+                    mEntryPoints.VRDEAudioInOpen = NULL;
+                    mEntryPoints.VRDEAudioInClose = NULL;
+                    mpEntryPoints = &mEntryPoints;
+                }
+            }
+
             if (RT_SUCCESS(vrc))
             {
 #ifdef VBOX_WITH_USB
@@ -1281,7 +1432,7 @@ int ConsoleVRDPServer::Launch(void)
             else
             {
                 if (vrc != VERR_NET_ADDRESS_IN_USE)
-                    LogRel(("VRDE: Could not start VRDP server rc = %Rrc\n", vrc));
+                    LogRel(("VRDE: Could not start the server rc = %Rrc\n", vrc));
                 /* Don't unload the lib, because it prevents us trying again or
                    because there may be other users? */
             }
@@ -2097,6 +2248,50 @@ void ConsoleVRDPServer::SendUSBRequest(uint32_t u32ClientId, void *pvParms, uint
         mpEntryPoints->VRDEUSBRequest(mhServer, u32ClientId, pvParms, cbParms);
     }
 }
+
+/* @todo rc not needed? */
+int ConsoleVRDPServer::SendAudioInputBegin(void **ppvUserCtx,
+                                           void *pvContext,
+                                           uint32_t cSamples,
+                                           uint32_t iSampleHz,
+                                           uint32_t cChannels,
+                                           uint32_t cBits)
+{
+    if (mpEntryPoints && mhServer && mpEntryPoints->VRDEAudioInOpen)
+    {
+        uint32_t u32ClientId = ASMAtomicReadU32(&mu32AudioInputClientId);
+        if (u32ClientId != 0) /* 0 would mean broadcast to all clients. */
+        {
+            VRDEAUDIOFORMAT audioFormat = VRDE_AUDIO_FMT_MAKE(iSampleHz, cChannels, cBits, 0);
+            mpEntryPoints->VRDEAudioInOpen (mhServer,
+                                            pvContext,
+                                            u32ClientId,
+                                            audioFormat,
+                                            cSamples);
+            *ppvUserCtx = NULL; /* This is the ConsoleVRDP server context.
+                                 * Currently not used because only one client is allowed to
+                                 * do audio input and the client id is saved by the ConsoleVRDPServer.
+                                 */
+
+            return VINF_SUCCESS;
+        }
+    }
+    return VERR_NOT_SUPPORTED;
+}
+
+void ConsoleVRDPServer::SendAudioInputEnd(void *pvUserCtx)
+{
+    if (mpEntryPoints && mhServer && mpEntryPoints->VRDEAudioInClose)
+    {
+        uint32_t u32ClientId = ASMAtomicReadU32(&mu32AudioInputClientId);
+        if (u32ClientId != 0) /* 0 would mean broadcast to all clients. */
+        {
+            mpEntryPoints->VRDEAudioInClose(mhServer, u32ClientId);
+        }
+    }
+}
+
+
 
 void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
