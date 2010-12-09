@@ -87,6 +87,11 @@ typedef uint32_t VRDEAUDIOFORMAT;
 #define VRDE_AUDIOIN_DATA      2
 #define VRDE_AUDIOIN_END       3
 
+typedef struct VRDEAUDIOINBEGIN
+{
+    VRDEAUDIOFORMAT fmt; /* Actual format of data, which will be sent in VRDE_AUDIOIN_DATA events. */
+} VRDEAUDIOINBEGIN;
+
 
 /*
  * Remote USB protocol.
@@ -1023,9 +1028,9 @@ typedef struct _VRDEENTRYPOINTS_3
      *
      * @param hServer      Handle of VRDE server instance.
      * @param pvCtx        To be used in VRDECallbackAudioIn.
-     * @param u32SamplesPerBlock Preferred number of samples in one block of audio input data.
      * @param u32ClientId  An identifier that allows the server to find the corresponding client.
-     * @param audioFormat  Requested format of audio data.
+     * @param audioFormat  Preferred format of audio data.
+     * @param u32SamplesPerBlock Preferred number of samples in one block of audio input data.
      *
      * @note Initialized to NULL when the VRDECallbackAudioIn callback is NULL.
      */
