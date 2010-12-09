@@ -536,6 +536,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         case DLL_PROCESS_DETACH:
         {
             crFreeMutex(&_PackMutex);
+            crNetTearDown();
             break;
         }
 

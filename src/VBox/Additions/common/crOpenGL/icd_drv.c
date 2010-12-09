@@ -85,7 +85,6 @@ BOOL APIENTRY DrvValidateVersion(DWORD version)
         return TRUE;
     }
 
-    crNetTearDown();
     crDebug("DrvValidateVersion %x -> FALSE, going to use system default opengl32.dll\n", version); 
     return FALSE;
 }

@@ -1491,6 +1491,12 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
     int i;
 #endif
 
+    if (!g_crvboxhgcm.initialized) return;
+
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     if (conn->pHostBuffer)
@@ -1504,7 +1510,6 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
     conn->pBuffer = NULL;
     conn->cbBuffer = 0;
 
-    //@todo hold lock here?
     if (conn->type == CR_VBOXHGCM)
     {
         --g_crvboxhgcm.num_conns;
@@ -1574,6 +1579,10 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
 #endif /* IN_GUEST */
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
 }
 
 static void crVBoxHGCMInstantReclaim(CRConnection *conn, CRMessage *mess)
@@ -2318,6 +2327,10 @@ void crVBoxHGCMTearDown(void)
 
     if (!g_crvboxhgcm.initialized) return;
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     /* Connection count would be changed in calls to crNetDisconnect, so we have to store original value.
      * Walking array backwards is not a good idea as it could cause some issues if we'd disconnect clients not in the
      * order of their connection.
@@ -2330,7 +2343,10 @@ void crVBoxHGCMTearDown(void)
     }
     CRASSERT(0==g_crvboxhgcm.num_conns);
 
+    g_crvboxhgcm.initialized = 0;
+
 #ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
     crFreeMutex(&g_crvboxhgcm.mutex);
     crFreeMutex(&g_crvboxhgcm.recvmutex);
 #endif
@@ -2338,8 +2354,6 @@ void crVBoxHGCMTearDown(void)
     if (g_crvboxhgcm.bufpool)
         crBufferPoolCallbackFree(g_crvboxhgcm.bufpool, crVBoxHGCMBufferFree);
     g_crvboxhgcm.bufpool = NULL;
-
-    g_crvboxhgcm.initialized = 0;
 
     crFree(g_crvboxhgcm.conns);
     g_crvboxhgcm.conns = NULL;
@@ -2400,7 +2414,6 @@ void crVBoxHGCMConnection(CRConnection *conn)
         conn->InstantReclaim = crVBoxHGCMInstantReclaim;
         conn->HandleNewMessage = crVBoxHGCMHandleNewMessage;
     }
-    conn->index = g_crvboxhgcm.num_conns;
     conn->sizeof_buffer_header = sizeof(CRVBOXHGCMBUFFER);
     conn->actual_network = 1;
 
@@ -2416,6 +2429,9 @@ void crVBoxHGCMConnection(CRConnection *conn)
     CRASSERT(conn->pHostBuffer);
     conn->cbHostBuffer = 0;
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     /* Find a free slot */
     for (i = 0; i < g_crvboxhgcm.num_conns; i++) {
         if (g_crvboxhgcm.conns[i] == NULL) {
@@ -2430,8 +2446,12 @@ void crVBoxHGCMConnection(CRConnection *conn)
     if (found == 0) {
         n_bytes = ( g_crvboxhgcm.num_conns + 1 ) * sizeof(*g_crvboxhgcm.conns);
         crRealloc( (void **) &g_crvboxhgcm.conns, n_bytes );
+        conn->index = g_crvboxhgcm.num_conns;
         g_crvboxhgcm.conns[g_crvboxhgcm.num_conns++] = conn;
     }
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
 }
 
 int crVBoxHGCMRecv(void)
@@ -2439,6 +2459,10 @@ int crVBoxHGCMRecv(void)
     int32_t i;
 
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
 
 #ifdef IN_GUEST
     /* we're on guest side, poll host if it got something for us */
@@ -2478,6 +2502,10 @@ int crVBoxHGCMRecv(void)
             _crVBoxHGCMReceiveMessage(conn);
         }
     }
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 
