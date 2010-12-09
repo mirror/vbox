@@ -6442,7 +6442,6 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     PVBOXWDDMDISP_ALLOCATION pDstAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
     PVBOXWDDMDISP_SWAPCHAIN pSrcSwapchain = vboxWddmSwapchainForAlloc(pSrcAlloc);
     PVBOXWDDMDISP_SWAPCHAIN pDstSwapchain = vboxWddmSwapchainForAlloc(pDstAlloc);
-    Assert(!pDstSwapchain || vboxWddmSwapchainGetFb(pDstSwapchain)->pAlloc != pDstAlloc);
     /* try StretchRect */
     IDirect3DSurface9 *pSrcSurfIf = NULL;
     IDirect3DSurface9 *pDstSurfIf = NULL;
