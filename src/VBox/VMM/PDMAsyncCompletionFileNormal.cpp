@@ -1481,8 +1481,9 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                     rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File, offStart,
                                                   pbBuf, cbToTransfer, pTask);
                 }
-
                 AssertRC(rc);
+
+                pTask->hReq = hReq;
                 rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
                 AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
                           ("Unexpected return code rc=%Rrc\n", rc));
@@ -1511,6 +1512,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
                                               offStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
                 AssertRC(rc);
+                pTask->hReq = hReq;
                 rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
                 AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
                           ("Unexpected return code rc=%Rrc\n", rc));
