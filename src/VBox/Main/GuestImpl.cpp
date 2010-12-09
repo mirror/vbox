@@ -353,8 +353,8 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             }
 
                             Assert(cbRead <= cbToRead);
+                            Assert(cbToRead >= cbRead);
                             cbToRead -= cbRead;
-                            Assert(cbToRead >= 0);
 
                             cbTransfered += uBytesWritten;
                             Assert(cbTransfered <= cbSize);
