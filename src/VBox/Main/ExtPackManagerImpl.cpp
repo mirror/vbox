@@ -2007,6 +2007,14 @@ STDMETHODIMP ExtPackManager::QueryAllPlugInsForFrontend(IN_BSTR a_bstrFrontend, 
     return hrc;
 }
 
+STDMETHODIMP ExtPackManager::IsExtPackUsable(IN_BSTR a_bstrExtPack, BOOL *aUsable)
+{
+    CheckComArgNotNull(a_bstrExtPack);
+    Utf8Str strExtPack(a_bstrExtPack);
+    *aUsable = isExtPackUsable(strExtPack.c_str());
+    return S_OK;
+}
+
 
 /**
  * Runs the helper application that does the privileged operations.

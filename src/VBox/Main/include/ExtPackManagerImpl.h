@@ -213,6 +213,7 @@ class ATL_NO_VTABLE ExtPackManager :
     STDMETHOD(Uninstall)(IN_BSTR a_bstrName, BOOL a_fForcedRemoval);
     STDMETHOD(Cleanup)(void);
     STDMETHOD(QueryAllPlugInsForFrontend)(IN_BSTR a_bstrFrontend, ComSafeArrayOut(BSTR, a_pabstrPlugInModules));
+    STDMETHOD(IsExtPackUsable(IN_BSTR a_bstrExtPack, BOOL *aUsable));
     /** @}  */
 
     /** @name Internal interfaces used by other Main classes.
