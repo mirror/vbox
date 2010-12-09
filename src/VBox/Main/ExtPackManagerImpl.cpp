@@ -28,6 +28,7 @@
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>
+#include <iprt/manifest.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/pipe.h>
@@ -87,6 +88,8 @@ public:
     Utf8Str             strExtPackFile;
     /** The file handle of the extension pack file. */
     RTFILE              hExtPackFile;
+    /** Our manifest for the tarball. */
+    RTMANIFEST          hOurManifest;
     /** Pointer to the extension pack manager. */
     ComObjPtr<ExtPackManager> ptrExtPackMgr;
 
@@ -187,6 +190,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
     m->strWhyUnusable               = tr("ExtPack::init failed");
     m->strExtPackFile               = a_pszFile;
     m->hExtPackFile                 = NIL_RTFILE;
+    m->hOurManifest                 = NIL_RTMANIFEST;
     m->ptrExtPackMgr                = a_pExtPackMgr;
 
     iprt::MiniString *pstrTarName = VBoxExtPackExtractNameFromTarballPath(a_pszFile);
@@ -224,7 +228,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
     char        szError[8192];
     RTVFSFILE   hXmlFile;
     vrc = VBoxExtPackValidateTarball(m->hExtPackFile, NULL /*pszExtPackName*/, a_pszFile,
-                                     szError, sizeof(szError), NULL /*phValidManifest*/, &hXmlFile);
+                                     szError, sizeof(szError), &m->hOurManifest, &hXmlFile);
     if (RT_FAILURE(vrc))
         return initFailed(tr("%s"), szError);
 
@@ -292,6 +296,8 @@ void ExtPackFile::uninit()
         VBoxExtPackFreeDesc(&m->Desc);
         RTFileClose(m->hExtPackFile);
         m->hExtPackFile = NIL_RTFILE;
+        RTManifestRelease(m->hOurManifest);
+        m->hOurManifest = NIL_RTMANIFEST;
 
         delete m;
         m = NULL;
@@ -375,31 +381,6 @@ STDMETHODIMP ExtPackFile::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP ExtPackFile::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
-{
-    CheckComArgOutPointerValid(a_pbstrHtmlLicense);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Utf8Str Dummy;
-        Dummy.cloneTo(a_pbstrHtmlLicense);
-    }
-    return hrc;
-}
-
-STDMETHODIMP ExtPackFile::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
-{
-    CheckComArgOutPointerValid(a_pfShowIt);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfShowIt = FALSE;
-    return hrc;
-}
-
 STDMETHODIMP ExtPackFile::COMGETTER(Usable)(BOOL *a_pfUsable)
 {
     CheckComArgOutPointerValid(a_pfUsable);
@@ -419,6 +400,161 @@ STDMETHODIMP ExtPackFile::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
         m->strWhyUnusable.cloneTo(a_pbstrWhy);
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
+{
+    CheckComArgOutPointerValid(a_pfShowIt);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        *a_pfShowIt = m->Desc.fShowLicense;
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
+{
+    Bstr bstrHtml("html");
+    return QueryLicense(Bstr::Empty.raw(), Bstr::Empty.raw(), bstrHtml.raw(), a_pbstrHtmlLicense);
+}
+
+/* Same as ExtPack::QueryLicense, should really explore the subject of base classes here... */
+STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstrPreferredLanguage, IN_BSTR a_bstrFormat,
+                                       BSTR *a_pbstrLicense)
+{
+    /*
+     * Validate input.
+     */
+    CheckComArgOutPointerValid(a_pbstrLicense);
+    CheckComArgNotNull(a_bstrPreferredLocale);
+    CheckComArgNotNull(a_bstrPreferredLanguage);
+    CheckComArgNotNull(a_bstrFormat);
+
+    Utf8Str strPreferredLocale(a_bstrPreferredLocale);
+    if (strPreferredLocale.length() != 2 && strPreferredLocale.length() != 0)
+        return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
+
+    Utf8Str strPreferredLanguage(a_bstrPreferredLanguage);
+    if (strPreferredLanguage.length() != 2 && strPreferredLanguage.length() != 0)
+        return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
+
+    Utf8Str strFormat(a_bstrFormat);
+    if (   !strFormat.equals("html")
+        && !strFormat.equals("rtf")
+        && !strFormat.equals("txt"))
+        return setError(E_FAIL, tr("The license format can only have the values 'html', 'rtf' and 'txt'."));
+
+    /*
+     * Combine the options to form a file name before locking down anything.
+     */
+    char szName[sizeof("ExtPack-license-de_DE.html") + 2];
+    if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s_%s.%s",
+                    strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
+    else if (strPreferredLocale.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+    else if (strPreferredLanguage.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+    else
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license.%s",     strFormat.c_str());
+
+    /*
+     * Effectuate the query.
+     */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        /*
+         * Look it up in the manifest before scanning the tarball for it
+         */
+        if (RTManifestEntryExists(m->hOurManifest, szName))
+        {
+            RTVFSFSSTREAM   hTarFss;
+            char            szError[8192];
+            int vrc = VBoxExtPackOpenTarFss(m->hExtPackFile, szError, sizeof(szError), &hTarFss);
+            if (RT_SUCCESS(vrc))
+            {
+                for (;;)
+                {
+                    /* Get the first/next. */
+                    char           *pszName;
+                    RTVFSOBJ        hVfsObj;
+                    RTVFSOBJTYPE    enmType;
+                    vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+                    if (RT_FAILURE(vrc))
+                    {
+                        if (vrc != VERR_EOF)
+                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
+                        else
+                            hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
+                        break;
+                    }
+
+                    /* Is this it? */
+                    const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
+                    if (   !strcmp(pszAdjName, szName)
+                        && (   enmType == RTVFSOBJTYPE_IO_STREAM
+                            || enmType == RTVFSOBJTYPE_FILE))
+                    {
+                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                        RTVfsObjRelease(hVfsObj);
+                        RTStrFree(pszName);
+
+                        /* Load the file into memory. */
+                        RTFSOBJINFO ObjInfo;
+                        vrc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            size_t cbFile = (size_t)ObjInfo.cbObject;
+                            void  *pvFile = RTMemAllocZ(cbFile + 1);
+                            if (pvFile)
+                            {
+                                vrc = RTVfsIoStrmRead(hVfsIos, pvFile, cbFile, true /*fBlocking*/, NULL);
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    /* try translate it into a string we can return. */
+                                    Bstr bstrLicense((const char *)pvFile, cbFile);
+                                    if (bstrLicense.isNotEmpty())
+                                    {
+                                        bstrLicense.detachTo(a_pbstrLicense);
+                                        hrc = S_OK;
+                                    }
+                                    else
+                                        hrc = setError(VBOX_E_IPRT_ERROR,
+                                                       tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                                       szName);
+                                }
+                                else
+                                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
+                                RTMemFree(pvFile);
+                            }
+                            else
+                                hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
+                        }
+                        else
+                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
+                        RTVfsIoStrmRelease(hVfsIos);
+                        break;
+                    }
+
+                    /* Release current. */
+                    RTVfsObjRelease(hVfsObj);
+                    RTStrFree(pszName);
+                }
+                RTVfsFsStrmRelease(hTarFss);
+            }
+            else
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
+        }
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
+                           szName, m->strExtPackFile.c_str());
+    }
     return hrc;
 }
 
@@ -1403,31 +1539,6 @@ STDMETHODIMP ExtPack::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a_paP
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP ExtPack::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
-{
-    CheckComArgOutPointerValid(a_pbstrHtmlLicense);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        Utf8Str Dummy;
-        Dummy.cloneTo(a_pbstrHtmlLicense);
-    }
-    return hrc;
-}
-
-STDMETHODIMP ExtPack::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
-{
-    CheckComArgOutPointerValid(a_pfShowIt);
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-        *a_pfShowIt = FALSE;
-    return hrc;
-}
-
 STDMETHODIMP ExtPack::COMGETTER(Usable)(BOOL *a_pfUsable)
 {
     CheckComArgOutPointerValid(a_pfUsable);
@@ -1449,6 +1560,104 @@ STDMETHODIMP ExtPack::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
         m->strWhyUnusable.cloneTo(a_pbstrWhy);
     return hrc;
 }
+
+STDMETHODIMP ExtPack::COMGETTER(ShowLicense)(BOOL *a_pfShowIt)
+{
+    CheckComArgOutPointerValid(a_pfShowIt);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        *a_pfShowIt = m->Desc.fShowLicense;
+    return hrc;
+}
+
+STDMETHODIMP ExtPack::COMGETTER(License)(BSTR *a_pbstrHtmlLicense)
+{
+    Bstr bstrHtml("html");
+    return QueryLicense(Bstr::Empty.raw(), Bstr::Empty.raw(), bstrHtml.raw(), a_pbstrHtmlLicense);
+}
+
+STDMETHODIMP ExtPack::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstrPreferredLanguage, IN_BSTR a_bstrFormat,
+                                   BSTR *a_pbstrLicense)
+{
+    /*
+     * Validate input.
+     */
+    CheckComArgOutPointerValid(a_pbstrLicense);
+    CheckComArgNotNull(a_bstrPreferredLocale);
+    CheckComArgNotNull(a_bstrPreferredLanguage);
+    CheckComArgNotNull(a_bstrFormat);
+
+    Utf8Str strPreferredLocale(a_bstrPreferredLocale);
+    if (strPreferredLocale.length() != 2 && strPreferredLocale.length() != 0)
+        return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
+
+    Utf8Str strPreferredLanguage(a_bstrPreferredLanguage);
+    if (strPreferredLanguage.length() != 2 && strPreferredLanguage.length() != 0)
+        return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
+
+    Utf8Str strFormat(a_bstrFormat);
+    if (   !strFormat.equals("html")
+        && !strFormat.equals("rtf")
+        && !strFormat.equals("txt"))
+        return setError(E_FAIL, tr("The license format can only have the values 'html', 'rtf' and 'txt'."));
+
+    /*
+     * Combine the options to form a file name before locking down anything.
+     */
+    char szName[sizeof("ExtPack-license-de_DE.html") + 2];
+    if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s_%s.%s",
+                    strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
+    else if (strPreferredLocale.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+    else if (strPreferredLanguage.isNotEmpty())
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+    else
+        RTStrPrintf(szName, sizeof(szName), "ExtPack-license.%s",     strFormat.c_str());
+
+    /*
+     * Effectuate the query.
+     */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* paranoia */
+
+        char szPath[RTPATH_MAX];
+        int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szName);
+        if (RT_SUCCESS(vrc))
+        {
+            void   *pvFile;
+            size_t  cbFile;
+            vrc = RTFileReadAllEx(szPath, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_READ, &pvFile, &cbFile);
+            if (RT_SUCCESS(vrc))
+            {
+                Bstr bstrLicense((const char *)pvFile, cbFile);
+                if (bstrLicense.isNotEmpty())
+                {
+                    bstrLicense.detachTo(a_pbstrLicense);
+                    hrc = S_OK;
+                }
+                else
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                   szPath);
+                RTFileReadAllFree(pvFile, cbFile);
+            }
+            else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
+                               szName, m->Desc.strName.c_str());
+            else
+                hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
+    }
+    return hrc;
+}
+
 
 STDMETHODIMP ExtPack::QueryObject(IN_BSTR a_bstrObjectId, IUnknown **a_ppUnknown)
 {
