@@ -704,7 +704,7 @@ static int pdmacAsyncCompletionBwMgrCreate(PPDMASYNCCOMPLETIONEPCLASS pEpClass, 
     else
         rc = VERR_ALREADY_EXISTS;
 
-    LogFlowFunc(("returns rc=%Rc\n", rc));
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
