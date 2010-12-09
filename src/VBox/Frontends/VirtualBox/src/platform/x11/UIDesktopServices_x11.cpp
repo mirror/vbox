@@ -53,6 +53,7 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
             << "Type=Link" << endl
             << "Icon=virtualbox-vbox.png" << endl
         */
+        link.setPermissions(link.permissions() | QFile::ExeOwner);
         return true;
     }
     return false;
