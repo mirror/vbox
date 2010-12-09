@@ -901,8 +901,8 @@ int handleExtPack(HandlerArg *a)
 
     if (!strcmp(a->argv[0], "install"))
     {
-        if (a->argc > 2)
-            return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack install\"");
+        if (a->argc != 2)
+            return errorSyntax(USAGE_EXTPACK, "Incorrect parameters count for \"extpack install\"");
 
         char szPath[RTPATH_MAX];
         int vrc = RTPathAbs(a->argv[1], szPath, sizeof(szPath));
