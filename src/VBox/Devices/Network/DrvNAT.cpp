@@ -1019,7 +1019,8 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
          * Validate the port forwarding config.
          */
         if (!CFGMR3AreValuesValid(pNode, "Protocol\0UDP\0HostPort\0GuestPort\0GuestIP\0BindIP\0"))
-            return PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown configuration in port forwarding"));
+            return PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                    N_("Unknown configuration in port forwarding"));
 
         /* protocol type */
         bool fUDP;
@@ -1042,6 +1043,10 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
                     N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""),
                     iInstance, szProtocol);
         }
+        else
+            return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS, 
+                                       N_("NAT#%d: configuration query for \"Protocol\" failed"),
+                                       iInstance);
         /* host port */
         int32_t iHostPort;
         GET_S32_STRICT(rc, pThis, pNode, "HostPort", iHostPort);
