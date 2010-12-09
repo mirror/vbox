@@ -427,7 +427,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
          */
         Utf8Str installerImage;
         Bstr osTypeId;
-        if (   SUCCEEDED(pGuest-COMGETTER(OSTypeId(osTypeId.asOutParam())))
+        if (   SUCCEEDED(pGuest->COMGETTER(OSTypeId(osTypeId.asOutParam())))
             && !osTypeId.isEmpty())
         {
             Utf8Str osTypeIdUtf8(osTypeId); /* Needed for .contains(). */
