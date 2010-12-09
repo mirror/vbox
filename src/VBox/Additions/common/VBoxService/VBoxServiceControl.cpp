@@ -152,7 +152,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 case HOST_EXEC_SET_INPUT:
-                    rc = VBoxServiceControlExecHandleCmdSetInput(g_GuestControlSvcClientID, uNumParms);
+                    /** @todo Make buffer size configurable via guest properties/argv! */
+                    rc = VBoxServiceControlExecHandleCmdSetInput(g_GuestControlSvcClientID, uNumParms, _1M /* Buffer size */);
                     break;
 
                 case HOST_EXEC_GET_OUTPUT:
