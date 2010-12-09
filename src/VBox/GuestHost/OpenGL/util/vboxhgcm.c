@@ -1611,14 +1611,15 @@ bool _crVBoxHGSMIInit()
         Callbacks.pfnClientDestroy = _crVBoxHGSMIClientDestroy;
         rc = VBoxCrHgsmiInit(&Callbacks);
 #endif
-        AssertRC(rc);
         if (RT_SUCCESS(rc))
             bHasHGSMI = 1;
         else
             bHasHGSMI = 0;
+
+        crDebug("CrHgsmi is %s", bHasHGSMI ? "ENABLED" : "DISABLED");
     }
 
-    Assert(bHasHGSMI);
+    Assert(bHasHGSMI >= 0);
 
     return bHasHGSMI;
 }

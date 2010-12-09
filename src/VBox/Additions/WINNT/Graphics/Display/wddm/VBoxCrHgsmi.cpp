@@ -137,26 +137,36 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
     return NULL;
 }
 #else
+static int vboxCrHgsmiInitPerform(VBOXDISPKMT_CALLBACKS *pCallbacks)
+{
+    HRESULT hr = vboxDispKmtCallbacksInit(pCallbacks);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        /* check if we can create the hgsmi */
+        PVBOXUHGSMI pHgsmi = VBoxCrHgsmiCreate();
+        if (pHgsmi)
+        {
+            /* yes, we can, so this is wddm mode */
+            VBoxCrHgsmiDestroy(pHgsmi);
+            Log(("CrHgsmi: WDDM mode supported\n"));
+            return 1;
+        }
+        vboxDispKmtCallbacksTerm(pCallbacks);
+    }
+    Log(("CrHgsmi: unsupported\n"));
+    return -1;
+}
+
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit()
 {
     if (!g_bVBoxKmtCallbacksInited)
     {
-        HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxCrHgsmiKmtCallbacks);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
-            g_bVBoxKmtCallbacksInited = 1;
-        else
-            g_bVBoxKmtCallbacksInited = -1;
+        g_bVBoxKmtCallbacksInited = vboxCrHgsmiInitPerform(&g_VBoxCrHgsmiKmtCallbacks);
+        Assert(g_bVBoxKmtCallbacksInited);
     }
 
-    Assert(g_bVBoxKmtCallbacksInited);
-    if (g_bVBoxKmtCallbacksInited < 0)
-    {
-        Assert(0);
-        return VERR_NOT_SUPPORTED;
-    }
-
-    return VINF_SUCCESS;
+    return g_bVBoxKmtCallbacksInited > 0 ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
 }
 
 VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate()
@@ -169,7 +179,7 @@ VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate()
 #else
         HRESULT hr = vboxUhgsmiKmtEscCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
 #endif
-        Assert(hr == S_OK);
+        Log(("CrHgsmi: faled to create KmtEsc UHGSMI instance, hr (0x%x)\n", hr));
         if (hr == S_OK)
         {
             return &pHgsmiGL->BasePrivate.Base;
