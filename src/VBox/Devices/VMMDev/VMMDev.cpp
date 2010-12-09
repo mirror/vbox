@@ -580,7 +580,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                      * Write the core file.
                      */
                     PVM pVM = PDMDevHlpGetVM(pDevIns);
-                    pRequestHeader->rc = DBGFR3CoreWrite(pVM, szCorePath);
+                    pRequestHeader->rc = DBGFR3CoreWrite(pVM, szCorePath, true /*fReplaceFile*/);
                 }
                 else
                     pRequestHeader->rc = VERR_ACCESS_DENIED;

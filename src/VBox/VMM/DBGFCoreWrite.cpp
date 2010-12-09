@@ -66,6 +66,7 @@
 
 #include "../Runtime/include/internal/ldrELF64.h"
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -75,6 +76,10 @@
 #endif
 #define DBGFLOG_NAME           "DBGFCoreWrite"
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 static const int s_NoteAlign  = 8;
 static const int s_cbNoteName = 16;
 
@@ -83,13 +88,25 @@ static const char *s_pcszCoreVBoxCore = "VBCORE";
 static const char *s_pcszCoreVBoxCpu  = "VBCPU";
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
- * DBGFCOREDATA: Core data.
+ * Guest core writer data.
+ *
+ * Used to pass parameters from DBGFR3CoreWrite to dbgfR3CoreWriteRendezvous.
  */
-typedef struct
+typedef struct DBGFCOREDATA
 {
-    const char *pszDumpPath;    /* File path to dump the core into. */
-} DBGFCOREDATA, *PDBGFCOREDATA;
+    /** The name of the file to write the file to. */
+    const char *pszFilename;
+    /** Whether to replace (/overwrite) any existing file. */
+    bool        fReplaceFile;
+} DBGFCOREDATA;
+/** Pointer to the guest core writer data.  */
+typedef DBGFCOREDATA *PDBGFCOREDATA;
+
+
 
 /**
  * ELF function to write 64-bit ELF header.
@@ -298,10 +315,9 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
  *
  * @returns VBox status code
  * @param   pVM                 The VM handle.
- * @param   pDbgfData           The core dump parameters.
  * @param   hFile               The file to write to.  Caller closes this.
  */
-static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
+static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
 {
     /*
      * Collect core information.
@@ -486,7 +502,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
  *
  * @return VBox status code.
  */
-static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *pvData)
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWriteRendezvous(PVM pVM, PVMCPU pVCpu, void *pvData)
 {
     /*
      * Validate input.
@@ -500,15 +516,19 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     /*
      * Create the core file.
      */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+    uint32_t fFlags = (pDbgfData->fReplaceFile ? RTFILE_O_CREATE_REPLACE : RTFILE_O_CREATE)
+                    | RTFILE_O_WRITE
+                    | RTFILE_O_DENY_ALL
+                    | (0600 << RTFILE_O_CREATE_MODE_SHIFT);
+    RTFILE   hFile;
+    int rc = RTFileOpen(&hFile, pDbgfData->pszFilename, fFlags);
     if (RT_SUCCESS(rc))
     {
-        rc = dbgfR3CoreWriteWorker(pVM, pDbgfData, hFile);
+        rc = dbgfR3CoreWriteWorker(pVM, hFile);
         RTFileClose(hFile);
     }
     else
-        LogRel((DBGFLOG_NAME ": RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszDumpPath, rc));
+        LogRel((DBGFLOG_NAME ": RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszFilename, rc));
     return rc;
 }
 
@@ -516,17 +536,19 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
 /**
  * Write core dump of the guest.
  *
- * @return VBox status code.
+ * @returns VBox status code.
  * @param   pVM                 The VM handle.
- * @param   pszDumpPath         The path of the file to dump into, cannot be
- *                              NULL.
+ * @param   pszFilename         The name of the file to which the guest core
+ *                              dump should be written.
+ * @param   fReplaceFile        Whether to replace the file or not.
  *
- * @remarks The VM must be suspended before calling this function.
+ * @remarks The VM should be suspended before calling this function or DMA may
+ *          interfer with the state.
  */
-VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath)
+VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszFilename, bool fReplaceFile)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(pszDumpPath, VERR_INVALID_HANDLE);
+    AssertReturn(pszFilename, VERR_INVALID_HANDLE);
 
     /*
      * Pass the core write request down to EMT rendezvous which makes sure
@@ -535,13 +557,14 @@ VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath)
      */
     DBGFCOREDATA CoreData;
     RT_ZERO(CoreData);
-    CoreData.pszDumpPath = pszDumpPath;
+    CoreData.pszFilename  = pszFilename;
+    CoreData.fReplaceFile = fReplaceFile;
 
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWrite, &CoreData);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWriteRendezvous, &CoreData);
     if (RT_SUCCESS(rc))
-        LogRel((DBGFLOG_NAME ": Successfully wrote guest core dump %s\n", pszDumpPath));
+        LogRel((DBGFLOG_NAME ": Successfully wrote guest core dump '%s'\n", pszFilename));
     else
-        LogRel((DBGFLOG_NAME ": Failed to write guest core dump %s. rc=%Rrc\n", pszDumpPath, rc));
+        LogRel((DBGFLOG_NAME ": Failed to write guest core dump '%s'. rc=%Rrc\n", pszFilename, rc));
     return rc;
 }
 
