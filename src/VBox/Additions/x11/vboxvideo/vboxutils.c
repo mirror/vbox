@@ -217,13 +217,15 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
             cmdHdr.x =   (int16_t)aRects[i].x1
                        - pVBox->aScreenLocation[0].x;
             cmdHdr.y =   (int16_t)aRects[i].y1
-                       - pVBox->aScreenLocation[0].y - 1;
+                       - pVBox->aScreenLocation[0].y;
             cmdHdr.w = (uint16_t)(aRects[i].x2 - aRects[i].x1);
             cmdHdr.h = (uint16_t)(aRects[i].y2 - aRects[i].y1);
 
+#if 0
             TRACE_LOG("display=%u, x=%d, y=%d, w=%d, h=%d\n",
                       j, cmdHdr.x, cmdHdr.y, cmdHdr.w, cmdHdr.h);
-            
+#endif
+
             VBoxVBVABufferBeginUpdate(&pVBox->aVbvaCtx[j], &pVBox->guestCtx);
             VBoxVBVAWrite(&pVBox->aVbvaCtx[j], &pVBox->guestCtx, &cmdHdr,
                           sizeof(cmdHdr));
