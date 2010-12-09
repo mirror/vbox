@@ -141,6 +141,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed Direct3D 8/9 support on WindowsXP guests</para>
+      </listitem>
+
+      <listitem>
         <para>2D Video acceleration: multimonitor support</para>
       </listitem>
 
