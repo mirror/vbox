@@ -2041,8 +2041,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
 
                 /*
-                * Attach the status driver.
-                */
+                 * Attach the status driver.
+                 */
                 InsertConfigNode(pInst,    "LUN#999", &pLunL0);
                 InsertConfigString(pLunL0, "Driver",               "MainStatus");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -2055,12 +2055,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 hrc = USBCtlPtr->COMGETTER(EnabledEhci)(&fEhciEnabled);                     H();
                 if (fEhciEnabled)
                 {
-                    /* USB 2.0 is only available if the proper ExtPack is installed. */
-                    Bstr USBExtPackName("Oracle VM VirtualBox Extension Pack");
-                    ComPtr<IExtPack> ExtPack;
-                    hrc = pConsole->mptrExtPackManager->Find(USBExtPackName.raw(),
-                                                             ExtPack.asOutParam());
-                    if (SUCCEEDED(hrc))
+                    /*
+                     * USB 2.0 is only available if the proper ExtPack is installed.
+                     *
+                     * Note. Configuring EHCI here and providing messages about
+                     * the missing extpack isn't exactly clean, but it is a
+                     * necessary evil to patch over legacy compatability issues
+                     * introduced by the new distribution model.
+                     */
+                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
+                    if (pConsole->mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
                     {
                         InsertConfigNode(pDevices, "usb-ehci", &pDev);
                         InsertConfigNode(pDev,     "0", &pInst);
@@ -2084,29 +2088,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     else
                     {
+                        /* Fatal if a saved state is being restored, otherwise ignorable. */
                         if (pConsole->mMachineState == MachineState_Restoring)
-                        {
-                            /* fatal */ 
                             return VMSetError(pVM, VERR_NOT_FOUND, RT_SRC_POS,
                                     N_("Implementation of the USB 2.0 controller not found!\n"
                                        "Because the USB 2.0 controller state is part of the saved "
                                        "VM state, the VM cannot be started. To fix "
-                                       "this problem, either install the '%lS' or disable USB 2.0 "
+                                       "this problem, either install the '%s' or disable USB 2.0 "
                                        "support in the VM settings"),
-                                       USBExtPackName.raw());
-                        }
-                        else
-                        {
-                            /* not fatal */
-                            setVMRuntimeErrorCallbackF(pVM, pConsole, 0,
-                                    "ExtPackNoEhci",
-                                    N_("Implementation of the USB 2.0 controller not found!\n"
-                                       "The device will be disabled. You can ignore this warning "
-                                       "but there will be no USB 2.0 support in your VM. To fix "
-                                       "this issue, either install the '%lS' or disable USB 2.0 "
-                                       "support in the VM settings"),
-                                       USBExtPackName.raw());
-                        }
+                                    s_pszUsbExtPackName);
+                        setVMRuntimeErrorCallbackF(pVM, pConsole, 0, "ExtPackNoEhci",
+                                N_("Implementation of the USB 2.0 controller not found!\n"
+                                   "The device will be disabled. You can ignore this warning "
+                                   "but there will be no USB 2.0 support in your VM. To fix "
+                                   "this issue, either install the '%s' or disable USB 2.0 "
+                                   "support in the VM settings"),
+                                s_pszUsbExtPackName);
                     }
                 }
 #endif

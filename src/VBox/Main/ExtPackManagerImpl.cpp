@@ -2691,4 +2691,23 @@ HRESULT ExtPackManager::getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
     return hrc;
 }
 
+/**
+ * Checks if an extension pack is (present and) usable.
+ *
+ * @returns @c true if it is, otherwise @c false.
+ * @param   a_pszExtPack    The name of the extension pack.
+ */
+bool ExtPackManager::isExtPackUsable(const char *a_pszExtPack)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return false;
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    ExtPack *pExtPack = findExtPack(a_pszExtPack);
+    return pExtPack != NULL
+        && pExtPack->m->fUsable;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
