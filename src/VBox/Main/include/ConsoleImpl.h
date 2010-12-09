@@ -167,6 +167,7 @@ public:
     Mouse *getMouse() const { return mMouse; }
     Display *getDisplay() const { return mDisplay; }
     MachineDebugger *getMachineDebugger() const { return mDebugger; }
+    AudioSniffer *getAudioSniffer() const { return mAudioSniffer; }
 
     const ComPtr<IMachine> &machine() const { return mMachine; }
 

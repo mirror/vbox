@@ -127,6 +127,15 @@ public:
 
     void QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const;
 
+    int SendAudioInputBegin(void **ppvUserCtx,
+                            void *pvContext,
+                            uint32_t cSamples,
+                            uint32_t iSampleHz,
+                            uint32_t cChannels,
+                            uint32_t cBits);
+
+    void SendAudioInputEnd(void *pvUserCtx);
+
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object
      * is actually just a part of the Console.
@@ -134,6 +143,7 @@ private:
     Console *mConsole;
 
     HVRDESERVER mhServer;
+    int mServerInterfaceVersion;
 
     static int loadVRDPLibrary (const char *pszLibraryName);
 
@@ -142,8 +152,9 @@ private:
 
     static PFNVRDECREATESERVER mpfnVRDECreateServer;
 
-    static VRDEENTRYPOINTS_1 *mpEntryPoints;
-    static VRDECALLBACKS_1 mCallbacks;
+    static VRDEENTRYPOINTS_3 mEntryPoints;
+    static VRDEENTRYPOINTS_3 *mpEntryPoints;
+    static VRDECALLBACKS_3 mCallbacks;
 
     static DECLCALLBACK(int)  VRDPCallbackQueryProperty     (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static DECLCALLBACK(int)  VRDPCallbackClientLogon       (void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
@@ -157,6 +168,7 @@ private:
     static DECLCALLBACK(void) VRDPCallbackFramebufferUnlock (void *pvCallback, unsigned uScreenId);
     static DECLCALLBACK(void) VRDPCallbackInput             (void *pvCallback, int type, const void *pvInput, unsigned cbInput);
     static DECLCALLBACK(void) VRDPCallbackVideoModeHint     (void *pvCallback, unsigned cWidth, unsigned cHeight,  unsigned cBitsPerPixel, unsigned uScreenId);
+    static DECLCALLBACK(void) VRDECallbackAudioIn           (void *pvCallback, void *pvCtx, uint32_t u32ClientId, uint32_t u32Event, const void *pvData, uint32_t cbData);
 
     bool m_fGuestWantsAbsolute;
     int m_mousex;
@@ -211,6 +223,8 @@ private:
     PAUTHENTRY mpfnAuthEntry;
     PAUTHENTRY2 mpfnAuthEntry2;
     PAUTHENTRY3 mpfnAuthEntry3;
+
+    uint32_t volatile mu32AudioInputClientId;
 };
 
 

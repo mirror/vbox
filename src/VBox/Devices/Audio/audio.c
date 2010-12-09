@@ -1550,6 +1550,8 @@ static int audio_driver_init (AudioState *s, struct audio_driver *drv)
     s->drv_opaque = drv->init ();
 
     if (s->drv_opaque) {
+        /* Filter must be installed before initializing voices. */
+        drv = filteraudio_install(drv, s->drv_opaque);
         audio_init_nb_voices_out (s, drv);
         audio_init_nb_voices_in (s, drv);
         s->drv = drv;

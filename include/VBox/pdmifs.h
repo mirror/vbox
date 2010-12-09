@@ -2405,9 +2405,59 @@ typedef struct PDMIAUDIOSNIFFERPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnSetup,(PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio));
 
+    /**
+     * Enables or disables audio input.
+     *
+     * @returns VBox status code
+     * @param pInterface      Pointer to this interface.
+     * @param fIntercept      'true' for interception of audio input,
+     *                        'false' to let the host audio backend do audio input.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAudioInputIntercept,(PPDMIAUDIOSNIFFERPORT pInterface, bool fIntercept));
+
+    /**
+     * Audio input is about to start.
+     *
+     * @returns VBox status code.
+     * @param   pvContext       The callback context, supplied in the
+     *                          PDMIAUDIOSNIFFERCONNECTOR::pfnAudioInputBegin as pvContext.
+     * @param   iSampleHz       The sample frequency in Hz.
+     * @param   cChannels       Number of channels. 1 for mono, 2 for stereo.
+     * @param   cBits           How many bits a sample for a single channel has. Normally 8 or 16.
+     * @param   fUnsigned       Whether samples are unsigned values.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAudioInputEventBegin,(PPDMIAUDIOSNIFFERPORT pInterface,
+                                                       void *pvContext,
+                                                       int iSampleHz,
+                                                       int cChannels,
+                                                       int cBits,
+                                                       bool fUnsigned));
+
+    /**
+     * Callback which delivers audio data to the audio device.
+     *
+     * @returns VBox status code.
+     * @param   pvContext       The callback context, supplied in the
+     *                          PDMIAUDIOSNIFFERCONNECTOR::pfnAudioInputBegin as pvContext.
+     * @param   pvData          Event specific data.
+     * @param   cbData          Size of the buffer pointed by pvData.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAudioInputEventData,(PPDMIAUDIOSNIFFERPORT pInterface,
+                                                      void *pvContext,
+                                                      const void *pvData,
+                                                      uint32_t cbData));
+
+    /**
+     * Audio input ends.
+     *
+     * @param   pvContext       The callback context, supplied in the
+     *                          PDMIAUDIOSNIFFERCONNECTOR::pfnAudioInputBegin as pvContext.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAudioInputEventEnd,(PPDMIAUDIOSNIFFERPORT pInterface,
+                                                      void *pvContext));
 } PDMIAUDIOSNIFFERPORT;
 /** PDMIAUDIOSNIFFERPORT interface ID. */
-#define PDMIAUDIOSNIFFERPORT_IID                "83b95e02-68cb-470d-9dfc-25a0f8efe197"
+#define PDMIAUDIOSNIFFERPORT_IID                "8ad25d78-46e9-479b-a363-bb0bc0fe022f"
 
 
 /** Pointer to a Audio Sniffer connector interface. */
@@ -2445,9 +2495,41 @@ typedef struct PDMIAUDIOSNIFFERCONNECTOR
      */
     DECLR3CALLBACKMEMBER(void, pfnAudioVolumeOut,(PPDMIAUDIOSNIFFERCONNECTOR pInterface, uint16_t u16LeftVolume, uint16_t u16RightVolume));
 
+    /**
+     * Audio input has been requested by the virtual audio device.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   ppvUserCtx          The interface context for this audio input stream,
+     *                              it will be used in the pfnAudioInputEnd call.
+     * @param   pvContext           The context pointer to be used in PDMIAUDIOSNIFFERPORT::pfnAudioInputEvent.
+     * @param   cSamples            How many samples in a block is preferred in
+     *                              PDMIAUDIOSNIFFERPORT::pfnAudioInputEvent.
+     * @param   iSampleHz           The sample frequency in Hz.
+     * @param   cChannels           Number of channels. 1 for mono, 2 for stereo.
+     * @param   cBits               How many bits a sample for a single channel has. Normally 8 or 16.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAudioInputBegin,(PPDMIAUDIOSNIFFERCONNECTOR pInterface,
+                                                  void **ppvUserCtx,
+                                                  void *pvContext,
+                                                  uint32_t cSamples,
+                                                  uint32_t iSampleHz,
+                                                  uint32_t cChannels,
+                                                  uint32_t cBits));
+
+    /**
+     * Audio input has been requested by the virtual audio device.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pvUserCtx           The interface context for this audio input stream,
+     *                              which was returned by pfnAudioInputBegin call.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAudioInputEnd,(PPDMIAUDIOSNIFFERCONNECTOR pInterface,
+                                                 void *pvUserCtx));
 } PDMIAUDIOSNIFFERCONNECTOR;
 /** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
-#define PDMIAUDIOSNIFFERCONNECTOR_IID           "433b64ab-e603-4933-bc97-8fe79b2bd0e0"
+#define PDMIAUDIOSNIFFERCONNECTOR_IID           "9d37f543-27af-45f8-8002-8ef7abac71e4"
 
 
 /**
