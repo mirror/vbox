@@ -21,6 +21,7 @@
 *******************************************************************************/
 #include <VBox/version.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
@@ -675,6 +676,14 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage extpack          cleanup\n"
                      "\n");
     }
+    if (u64Cmd & USAGE_DEBUGVM)
+    {
+        RTStrmPrintf(pStrm,
+                     "VBoxManage debugvm          <uuid>|<name>\n"
+                     "                            injectnmi |\n"
+                     "                            dumpguestcore --filename <name>\n"
+                     "\n");
+    }
 }
 
 /**
@@ -708,6 +717,30 @@ RTEXITCODE errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
  */
 RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
 {
+    /*
+     * Check if it is an unhandled standard option.
+     */
+    if (rc == 'V')
+    {
+        RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
+        return RTEXITCODE_SUCCESS;
+    }
+
+    if (rc == 'h')
+    {
+        showLogo(g_pStdErr);
+#ifndef VBOX_ONLY_DOCS
+        if (g_fInternalMode)
+            printUsageInternal(fUsageCategory, g_pStdOut);
+        else
+            printUsage(fUsageCategory, g_pStdOut);
+#endif
+        return RTEXITCODE_SUCCESS;
+    }
+
+    /*
+     * General failure.
+     */
     showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)

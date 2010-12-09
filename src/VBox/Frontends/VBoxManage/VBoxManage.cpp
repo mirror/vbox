@@ -431,6 +431,7 @@ int main(int argc, char *argv[])
             { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
             { "extpack",          USAGE_EXTPACK,           handleExtPack},
             { "bandwidthctl",     USAGE_BANDWIDTHCONTROL,  handleBandwidthControl},
+            { "debugvm",          USAGE_DEBUGVM,           handleDebugVM},
             { NULL,               0,                       NULL }
         };
 
