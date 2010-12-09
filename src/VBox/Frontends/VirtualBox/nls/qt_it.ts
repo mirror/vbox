@@ -5,31 +5,31 @@
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation>Servizi</translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nascondi %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation type="unfinished"></translation>
+        <translation>Nascondi gli altri</translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra tutto</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Preferenze...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi %1</translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Informzioni su %1</translation>
     </message>
 </context>
 <context>
@@ -99,7 +99,6 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -181,7 +180,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation>Scrittua: %1</translation>
+        <translation>Scrittura: %1</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -2164,7 +2163,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2508,7 +2507,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>Impossibile recuperare il prossimo</translation>
+        <translation>Impossibile recuperare il successivo</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -2520,7 +2519,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile recuperare l&apos;ultimo</translation>
     </message>
     <message>
         <source>Unable to fetch</source>
@@ -2528,11 +2527,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation type="unfinished">Impossibile recuperare il primo</translation>
+        <translation>Impossibile recuperare il primo</translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile recuperare il precedente</translation>
     </message>
 </context>
 <context>
@@ -2570,11 +2569,11 @@ Vuoi eliminarlo comunque?</translation>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="unfinished">Valore</translation>
+        <translation>Valore</translation>
     </message>
 </context>
 <context>
@@ -2619,19 +2618,19 @@ Vuoi eliminarlo comunque?</translation>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Centimetri (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Millimetri (mm)</translation>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pollici (in)</translation>
     </message>
     <message>
         <source>Points (pt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Punti (pt)</translation>
     </message>
     <message>
         <source>Form</source>
@@ -2643,7 +2642,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Page size:</source>
-        <translation type="unfinished">Dimensioni pagina:</translation>
+        <translation>Dimensioni pagina:</translation>
     </message>
     <message>
         <source>Width:</source>
@@ -2655,19 +2654,19 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Paper source:</source>
-        <translation type="unfinished">Origine carta:</translation>
+        <translation>Alimentazione carta:</translation>
     </message>
     <message>
         <source>Orientation</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientamento</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Verticale</translation>
+        <translation>Verticale</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Orizzontale</translation>
+        <translation>Orizzontale</translation>
     </message>
     <message>
         <source>Reverse landscape</source>
@@ -2679,7 +2678,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Margins</source>
-        <translation type="unfinished"></translation>
+        <translation>Margini</translation>
     </message>
     <message>
         <source>top margin</source>
@@ -3052,7 +3051,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Duplex Printing</source>
-        <translation type="unfinished">Stampa fronte/retro</translation>
+        <translation>Stampa fronte/retro</translation>
     </message>
     <message>
         <source>None</source>
@@ -3243,7 +3242,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No query</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna query</translation>
     </message>
 </context>
 <context>
@@ -4189,7 +4188,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cerca nel dizionario</translation>
     </message>
     <message>
         <source>Open Link</source>
@@ -4284,7 +4283,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna ricerca recente</translation>
     </message>
     <message>
         <source>Recent searches</source>
@@ -4294,7 +4293,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cancella le ricerche recenti</translation>
     </message>
     <message>
         <source>Unknown</source>
@@ -4681,7 +4680,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout di rete.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
@@ -4907,13 +4906,11 @@ Scegli un nome diverso.</translation>
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -4999,7 +4996,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non può essere recuperato</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
@@ -5035,7 +5032,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Non esiste alcuna variabile con il nome %1</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
@@ -5147,7 +5144,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è disponibile alcuna variabile con il nome %1.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
@@ -5269,55 +5266,55 @@ Scegli un nome diverso.</translation>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="unfinished">Scorri qui</translation>
+        <translation>Scorri qui</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="unfinished">Bordo sinistro</translation>
+        <translation>Bordo sinistro</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="unfinished">In alto</translation>
+        <translation>In alto</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="unfinished">Bordo destro</translation>
+        <translation>Bordo destro</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="unfinished">In basso</translation>
+        <translation>In basso</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="unfinished">Pagina sinistra</translation>
+        <translation>Pagina sinistra</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="unfinished">Pagina su</translation>
+        <translation>Pagina su</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="unfinished">Pagina destra</translation>
+        <translation>Pagina destra</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="unfinished">Pagina giù</translation>
+        <translation>Pagina giù</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="unfinished">Scorrimento a sinistra</translation>
+        <translation>Scorri a sinistra</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="unfinished">Scorrimento in alto</translation>
+        <translation>Scorri in alto</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="unfinished">Scorrimento a destra</translation>
+        <translation>Scorri a destra</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="unfinished">Scorrimento in basso</translation>
+        <translation>Scorri in basso</translation>
     </message>
 </context>
 </TS>

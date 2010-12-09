@@ -5,31 +5,31 @@
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation>Servei</translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaga %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaga els altres</translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra&apos;ls tots</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Preferències...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Surt %1</translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Quant a %1</translation>
     </message>
 </context>
 <context>
