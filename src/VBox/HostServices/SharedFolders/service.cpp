@@ -87,7 +87,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
     NOREF(u32ClientID);
     NOREF(pvClient);
 
-    LogRel(("SharedFolders host service: connected, u32ClientID = %d\n", u32ClientID));
+    Log(("SharedFolders host service: connected, u32ClientID = %u\n", u32ClientID));
 
     return rc;
 }
@@ -97,7 +97,7 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
     int rc = VINF_SUCCESS;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    LogRel(("SharedFolders host service: disconnected, u32ClientID = %d\n", u32ClientID));
+    Log(("SharedFolders host service: disconnected, u32ClientID = %u\n", u32ClientID));
 
     vbsfDisconnect(pClient);
     return rc;
@@ -113,7 +113,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 {
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    LogRel(("SharedFolders host service: saving state, u32ClientID = %d\n", u32ClientID));
+    Log(("SharedFolders host service: saving state, u32ClientID = %u\n", u32ClientID));
 
     int rc = SSMR3PutU32(pSSM, SHFL_SSM_VERSION);
     AssertRCReturn(rc, rc);
@@ -175,7 +175,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
     uint32_t        len, version;
 
-    LogRel(("SharedFolders host service: loading state, u32ClientID = %d\n", u32ClientID));
+    Log(("SharedFolders host service: loading state, u32ClientID = %u\n", u32ClientID));
 
     int rc = SSMR3GetU32(pSSM, &version);
     AssertRCReturn(rc, rc);
@@ -258,7 +258,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
         }
     }
-    LogRel(("SharedFolders host service: success\n"));
+    Log(("SharedFolders host service: successfully loaded state\n"));
     return VINF_SUCCESS;
 }
 
@@ -266,7 +266,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 {
     int rc = VINF_SUCCESS;
 
-    Log(("svcCall: u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n", u32ClientID, u32Function, cParms, paParms));
+    Log(("SharedFolders host service: svcCall: u32ClientID = %u, fn = %u, cParms = %u, pparms = %p\n", u32ClientID, u32Function, cParms, paParms));
 
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
@@ -278,7 +278,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     for (i = 0; i < cParms; i++)
     {
         /** @todo parameters other than 32 bit */
-        Log(("    pparms[%d]: type %d value %d\n", i, paParms[i].type, paParms[i].u.uint32));
+        Log(("    pparms[%d]: type %u, value %u\n", i, paParms[i].type, paParms[i].u.uint32));
     }
 #endif
 
@@ -286,7 +286,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     {
         case SHFL_FN_QUERY_MAPPINGS:
         {
-            Log(("svcCall: SHFL_FN_QUERY_MAPPINGS\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_QUERY_MAPPINGS\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_QUERY_MAPPINGS)
@@ -342,7 +342,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_QUERY_MAP_NAME:
         {
-            Log(("svcCall: SHFL_FN_QUERY_MAP_NAME\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_QUERY_MAP_NAME\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_QUERY_MAP_NAME)
@@ -383,7 +383,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_CREATE:
         {
-            Log(("svcCall: SHFL_FN_CREATE\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_CREATE\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_CREATE)
@@ -395,7 +395,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                      || paParms[2].type != VBOX_HGCM_SVC_PARM_PTR   /* parms */
                     )
             {
-                Log(("Invalid parameters types\n"));
+                Log(("SharedFolders host service: Invalid parameters types\n"));
                 rc = VERR_INVALID_PARAMETER;
             }
             else
@@ -434,7 +434,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_CLOSE:
         {
-            Log(("svcCall: SHFL_FN_CLOSE\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_CLOSE\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_CLOSE)
@@ -461,7 +461,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
-                    AssertMsgFailed(("Invalid handle!!!!\n"));
+                    AssertMsgFailed(("Invalid handle!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else
@@ -483,7 +483,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Read object content. */
         case SHFL_FN_READ:
-            Log(("svcCall: SHFL_FN_READ\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_READ\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_READ)
@@ -519,7 +519,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
-                    AssertMsgFailed(("Invalid handle!!!!\n"));
+                    AssertMsgFailed(("Invalid handle!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else
@@ -550,7 +550,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Write new object content. */
         case SHFL_FN_WRITE:
-            Log(("svcCall: SHFL_FN_WRITE\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_WRITE\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_WRITE)
@@ -586,7 +586,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
-                    AssertMsgFailed(("Invalid handle!!!!\n"));
+                    AssertMsgFailed(("Invalid handle!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else
@@ -617,7 +617,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Lock/unlock a range in the object. */
         case SHFL_FN_LOCK:
-            Log(("svcCall: SHFL_FN_LOCK\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_LOCK\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_LOCK)
@@ -651,7 +651,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
-                    AssertMsgFailed(("Invalid handle!!!!\n"));
+                    AssertMsgFailed(("Invalid handle!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else if (flags & SHFL_LOCK_WAIT)
@@ -704,7 +704,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /** List object content. */
         case SHFL_FN_LIST:
         {
-            Log(("svcCall: SHFL_FN_LIST\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_LIST\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_LIST)
@@ -782,7 +782,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /* Read symlink destination */
         case SHFL_FN_READLINK:
         {
-            Log(("svcCall: SHFL_FN_READLINK\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_READLINK\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_READLINK)
@@ -830,7 +830,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /* Legacy interface */
         case SHFL_FN_MAP_FOLDER_OLD:
         {
-            Log(("svcCall: SHFL_FN_MAP_FOLDER_OLD\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER_OLD\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_MAP_FOLDER_OLD)
@@ -873,13 +873,13 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_MAP_FOLDER:
         {
-            Log(("svcCall: SHFL_FN_MAP_FOLDER\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER\n"));
             if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-                LogRel(("SharedFolders host service: request to map folder '%S'\n",
-                        ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
+                Log(("SharedFolders host service: request to map folder '%S'\n",
+                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
             else
-                LogRel(("SharedFolders host service: request to map folder '%lS'\n",
-                        ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
+                Log(("SharedFolders host service: request to map folder '%lS'\n",
+                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_MAP_FOLDER)
@@ -920,17 +920,17 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     }
                 }
             }
-            LogRel(("SharedFolders host service: map operation result %Rrc.\n", rc));
+            Log(("SharedFolders host service: map operation result %Rrc\n", rc));
             if (RT_SUCCESS(rc))
-                LogRel(("    Mapped to handle %d.\n", paParms[1].u.uint32));
+                Log(("SharedFolders host service: mapped to handle %d\n", paParms[1].u.uint32));
             break;
         }
 
         case SHFL_FN_UNMAP_FOLDER:
         {
-            Log(("svcCall: SHFL_FN_UNMAP_FOLDER\n"));
-            LogRel(("SharedFolders host service: request to unmap folder handle %d\n",
-                    paParms[0].u.uint32));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_UNMAP_FOLDER\n"));
+            Log(("SharedFolders host service: request to unmap folder handle %u\n",
+                 paParms[0].u.uint32));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_UNMAP_FOLDER)
@@ -956,14 +956,14 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     /* nothing */
                 }
             }
-            LogRel(("SharedFolders host service: unmap operation result %Rrc.\n", rc));
+            Log(("SharedFolders host service: unmap operation result %Rrc\n", rc));
             break;
         }
 
         /** Query/set object information. */
         case SHFL_FN_INFORMATION:
         {
-            Log(("svcCall: SHFL_FN_INFORMATION\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_INFORMATION\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_INFORMATION)
@@ -1019,7 +1019,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /** Remove or rename object */
         case SHFL_FN_REMOVE:
         {
-            Log(("svcCall: SHFL_FN_REMOVE\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_REMOVE)
@@ -1062,7 +1062,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_RENAME:
         {
-            Log(("svcCall: SHFL_FN_RENAME\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_RENAME\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_RENAME)
@@ -1108,7 +1108,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_FLUSH:
         {
-            Log(("svcCall: SHFL_FN_FLUSH\n"));
+            Log(("SharedFolders host service: svcCall: SHFL_FN_FLUSH\n"));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_FLUSH)
@@ -1136,7 +1136,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
-                    AssertMsgFailed(("Invalid handle!!!!\n"));
+                    AssertMsgFailed(("Invalid handle!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else
@@ -1162,7 +1162,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_SYMLINK:
         {
-            Log(("svnCall: SHFL_FN_SYMLINK\n"));
+            Log(("SharedFolders host service: svnCall: SHFL_FN_SYMLINK\n"));
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_SYMLINK)
             {
@@ -1222,7 +1222,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         }
     }
 
-    LogFlow(("svcCall: rc = %Rrc\n", rc));
+    LogFlow(("SharedFolders host service: svcCall: rc=%Rrc\n", rc));
 
     if (   !fAsynchronousProcessing
         || RT_FAILURE (rc))
@@ -1259,8 +1259,8 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     {
     case SHFL_FN_ADD_MAPPING:
     {
-        Log(("svcCall: SHFL_FN_ADD_MAPPING\n"));
-        LogRel(("SharedFolders host service: adding host mapping.\n"));
+        Log(("SharedFolders host service: svcCall: SHFL_FN_ADD_MAPPING\n"));
+        LogRel(("SharedFolders host service: adding host mapping\n"));
         LogRel(("    Host path '%lS', map name '%lS', %s\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
                 ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
@@ -1312,13 +1312,14 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
             }
         }
-        LogRel(("SharedFolders host service: add mapping result %Rrc\n", rc));
+        if (RT_FAILURE(rc))
+            LogRel(("SharedFolders host service: adding host mapping failed with rc=%Rrc\n", rc));
         break;
     }
 
     case SHFL_FN_REMOVE_MAPPING:
     {
-        Log(("svcCall: SHFL_FN_REMOVE_MAPPING\n"));
+        Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE_MAPPING\n"));
         LogRel(("SharedFolders host service: removing host mapping '%lS'\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
 
@@ -1354,13 +1355,14 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
             }
         }
-        LogRel(("SharedFolders host service: remove mapping result %Rrc\n", rc));
+        if (RT_FAILURE(rc))
+            LogRel(("SharedFolders host service: removing host mapping failed with rc=%Rrc\n", rc));
         break;
     }
 
     case SHFL_FN_SET_STATUS_LED:
     {
-        Log(("svcCall: SHFL_FN_SET_STATUS_LED\n"));
+        Log(("SharedFolders host service: svcCall: SHFL_FN_SET_STATUS_LED\n"));
 
         /* Verify parameter count and types. */
         if (cParms != SHFL_CPARMS_SET_STATUS_LED)
@@ -1399,7 +1401,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         break;
     }
 
-    LogFlow(("svcHostCall: rc = %Rrc\n", rc));
+    LogFlow(("SharedFolders host service: svcHostCall ended with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1407,21 +1409,23 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 {
     int rc = VINF_SUCCESS;
 
-    Log(("VBoxHGCMSvcLoad: ptable = %p\n", ptable));
+    Log(("SharedFolders host service: VBoxHGCMSvcLoad: ptable = %p\n", ptable));
 
     if (!VALID_PTR(ptable))
     {
-        LogRelFunc(("Bad value of ptable (%p) in shared folders service\n", ptable));
+        LogRelFunc(("SharedFolders host service: bad value of ptable (%p)\n", ptable));
         rc = VERR_INVALID_PARAMETER;
     }
     else
     {
-        Log(("VBoxHGCMSvcLoad: ptable->cbSize = %d, ptable->u32Version = 0x%08X\n", ptable->cbSize, ptable->u32Version));
+        Log(("SharedFolders host service: VBoxHGCMSvcLoad: ptable->cbSize = %u, ptable->u32Version = 0x%08X\n",
+             ptable->cbSize, ptable->u32Version));
 
         if (    ptable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
             ||  ptable->u32Version != VBOX_HGCM_SVC_VERSION)
         {
-            LogRelFunc(("version mismatch loading shared folders service: ptable->cbSize = %d, should be %d, ptable->u32Version = 0x%08X, should be 0x%08X\n", ptable->cbSize, sizeof (VBOXHGCMSVCFNTABLE), ptable->u32Version, VBOX_HGCM_SVC_VERSION));
+            LogRelFunc(("SharedFolders host service: version mismatch while loading: ptable->cbSize = %u (should be %u), ptable->u32Version = 0x%08X (should be 0x%08X)\n",
+                        ptable->cbSize, sizeof (VBOXHGCMSVCFNTABLE), ptable->u32Version, VBOX_HGCM_SVC_VERSION));
             rc = VERR_VERSION_MISMATCH;
         }
         else
@@ -1449,3 +1453,4 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
     return rc;
 }
+
