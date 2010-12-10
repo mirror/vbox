@@ -342,6 +342,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pSession(pSession)
     , m_pActionsPool(pActionsPool)
     , m_visualStateType(visualStateType)
+    , m_pKeyboardHandler(0)
     , m_pMouseHandler(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
