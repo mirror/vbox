@@ -672,6 +672,9 @@ static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *
     PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_FLUSH, 0, NULL, 0, 0, pvUser);
     AssertPtr(pIoReq);
 
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
     return pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, pIoReq);
 }
 
