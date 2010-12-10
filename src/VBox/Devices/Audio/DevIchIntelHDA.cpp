@@ -1023,7 +1023,7 @@ DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uin
 DECLCALLBACK(int)hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
-    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pState) - pState->u64BaseTS), 24, 1000);
+    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pState)) - pState->u64BaseTS, 24, 1000);
     return VINF_SUCCESS;
 }
 
