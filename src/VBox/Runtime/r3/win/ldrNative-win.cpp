@@ -35,6 +35,7 @@
 #include <iprt/path.h>
 #include <iprt/err.h>
 #include <iprt/alloca.h>
+#include <iprt/string.h>
 #include "internal/ldr.h"
 
 
