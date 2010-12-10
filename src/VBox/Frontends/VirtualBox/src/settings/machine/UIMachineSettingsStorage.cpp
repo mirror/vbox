@@ -2403,6 +2403,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 connect(pCreateNewHardDisk, SIGNAL(triggered(bool)), this, SLOT(sltCreateNewHardDisk()));
                 /* Add "Choose a virtual hard disk file" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual hard disk file..."));
+                /* Add recent mediums list: */
+                addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;
             }
             case VBoxDefs::MediumType_DVD:
@@ -2411,6 +2413,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual CD/DVD disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
+                /* Add recent mediums list: */
+                addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
                 pOpenMediumMenu->addSeparator();
                 QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove disk from virtual drive"));
@@ -2426,6 +2430,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual floppy disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
+                /* Add recent mediums list: */
+                addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
                 pOpenMediumMenu->addSeparator();
                 QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove disk from virtual drive"));
@@ -2468,6 +2474,23 @@ void UIMachineSettingsStorage::sltChooseHostDrive()
     AssertMsg(pChooseHostDriveAction, ("Can't access choose-host-drive action!\n"));
     if (pChooseHostDriveAction)
         m_pMediumIdHolder->setId(pChooseHostDriveAction->data().toString());
+}
+
+void UIMachineSettingsStorage::sltChooseRecentMedium()
+{
+    /* This slot should be called ONLY by choose-recent-medium action: */
+    QAction *pChooseRecentMediumAction = qobject_cast<QAction*>(sender());
+    AssertMsg(pChooseRecentMediumAction, ("Can't access choose-recent-medium action!\n"));
+    if (pChooseRecentMediumAction)
+    {
+        /* Get recent medium type & name: */
+        QStringList mediumInfoList = pChooseRecentMediumAction->data().toString().split(',');
+        VBoxDefs::MediumType mediumType = (VBoxDefs::MediumType)mediumInfoList[0].toUInt();
+        QString strMediumLocation = mediumInfoList[1];
+        QString strMediumId = vboxGlobal().openMedium(mediumType, strMediumLocation);
+        if (!strMediumId.isNull())
+            m_pMediumIdHolder->setId(strMediumId);
+    }
 }
 
 void UIMachineSettingsStorage::updateActionsState()
@@ -2922,6 +2945,40 @@ void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());
             pHostDriveAction->setData(medium.id());
             connect(pHostDriveAction, SIGNAL(triggered(bool)), this, SLOT(sltChooseHostDrive()));
+        }
+    }
+}
+
+void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType)
+{
+    /* Compose recent-medium list address: */
+    QString strRecentMediumAddress;
+    switch (recentMediumType)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+            strRecentMediumAddress = VBoxDefs::GUI_RecentListHD;
+            break;
+        case VBoxDefs::MediumType_DVD:
+            strRecentMediumAddress = VBoxDefs::GUI_RecentListCD;
+            break;
+        case VBoxDefs::MediumType_Floppy:
+            strRecentMediumAddress = VBoxDefs::GUI_RecentListFD;
+            break;
+        default:
+            break;
+    }
+    /* Get recent-medium list: */
+    QStringList recentMediumList = vboxGlobal().virtualBox().GetExtraData(strRecentMediumAddress).split(';');
+    /* For every list-item: */
+    for (int index = 0; index < recentMediumList.size(); ++index)
+    {
+        /* Prepare corresponding action: */
+        QString strRecentMediumLocation = recentMediumList[index];
+        if (QFile::exists(strRecentMediumLocation))
+        {
+            QAction *pChooseRecentMediumAction = pOpenMediumMenu->addAction(QFileInfo(strRecentMediumLocation).fileName(),
+                                                                            this, SLOT(sltChooseRecentMedium()));
+            pChooseRecentMediumAction->setData(QString("%1,%2").arg(recentMediumType).arg(strRecentMediumLocation));
         }
     }
 }

@@ -636,6 +636,7 @@ private slots:
     void sltUnmountDevice();
     void sltChooseExistingMedium();
     void sltChooseHostDrive();
+    void sltChooseRecentMedium();
 
     void updateActionsState();
 
@@ -666,6 +667,7 @@ private:
 
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
+    void addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType);
 
     QIWidgetValidator *mValidator;
 

@@ -170,6 +170,7 @@ private slots:
     /* "Device" menu functionality */
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
+    void sltMountRecentStorageMedium();
     void sltPrepareUSBMenu();
     void sltAttachUSBDevice();
     void sltOpenNetworkAdaptersDialog();
