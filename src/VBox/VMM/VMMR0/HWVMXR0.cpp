@@ -2618,7 +2618,8 @@ ResumeExecution:
     }
 
     /* Load the guest state */
-    if (!pVCpu->hwaccm.s.fContextUseFlags)
+    if (    !pVCpu->hwaccm.s.fContextUseFlags
+        &&  pVCpu->hwaccm.s.idLastCpu == pCpu->idCpu)
     {
         VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatLoadMinimal);
