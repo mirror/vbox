@@ -2479,7 +2479,7 @@ void UIMachineSettingsStorage::sltUnmountDevice()
 void UIMachineSettingsStorage::sltChooseExistingMedium()
 {
 	QString strMachineFolder(QFileInfo(m_machine.GetSettingsFilePath()).absolutePath());
-    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder, true);
     if (!strMediumId.isNull())
         m_pMediumIdHolder->setId(strMediumId);
 }
