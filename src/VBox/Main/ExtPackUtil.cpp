@@ -802,7 +802,9 @@ static int VBoxExtPackValidateStandardFile(const char *pszAdjName, RTVFSOBJTYPE 
                 rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, &hVfsFile);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTVfsIoStrmValidateUtf8Encoding(hVfsIos);
+                    rc = RTVfsIoStrmValidateUtf8Encoding(hVfsIos,
+                                                         RTVFS_VALIDATE_UTF8_BY_RTC_3629 | RTVFS_VALIDATE_UTF8_NO_NULL,
+                                                         NULL);
                     if (RT_SUCCESS(rc))
                     {
                         /*
