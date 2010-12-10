@@ -268,7 +268,8 @@ VBoxSVC_LIBS.solaris = \
 	adm \
 	nsl \
 	devinfo \
-	socket
+	socket \
+        $(LIB_VMM)
 
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
