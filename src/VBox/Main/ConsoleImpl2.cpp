@@ -3143,7 +3143,13 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 if (!fUseHostIOCache)
                 {
                     InsertConfigInteger(pCfg, "UseNewIo", 1);
-                    if (fBuiltinIoCache)
+                    /*
+                     * Activate the builtin I/O cache for harddisks only.
+                     * It caches writes only which doesn't make sense for DVD drives
+                     * and just increases the overhead.
+                     */
+                    if (   fBuiltinIoCache
+                        && (enmType == DeviceType_HardDisk))
                         InsertConfigInteger(pCfg, "BlockCache", 1);
                 }
 
