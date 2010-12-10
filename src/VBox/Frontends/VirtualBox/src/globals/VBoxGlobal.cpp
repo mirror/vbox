@@ -5093,12 +5093,14 @@ void VBoxGlobal::init()
         mDbgEnabled = mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
     if (mDbgEnabled)
     {
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg);
+        char szErr[8192];
+        szErr[0] = '\0';
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg, szErr, sizeof(szErr));
         if (RT_FAILURE(vrc))
         {
             mhVBoxDbg = NIL_RTLDRMOD;
             mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
-            LogRel(("Failed to load VBoxDbg, rc=%Rrc\n", vrc));
+            LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, szErr));
         }
     }
 #endif

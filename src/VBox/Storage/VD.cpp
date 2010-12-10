@@ -2128,7 +2128,7 @@ static int vdLoadDynamicBackends()
             break;
         }
 
-        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
+        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin, NULL, 0);
         if (RT_SUCCESS(rc))
         {
             rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
@@ -2252,7 +2252,7 @@ static int vdLoadDynamicCacheBackends()
             break;
         }
 
-        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
+        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin, NULL, 0);
         if (RT_SUCCESS(rc))
         {
             rc = RTLdrGetSymbol(hPlugin, VD_CACHEFORMAT_LOAD_NAME, (void**)&pfnVDCacheLoad);

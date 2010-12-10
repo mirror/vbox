@@ -261,7 +261,9 @@ int HGCMService::loadServiceDLL (void)
         return VERR_INVALID_PARAMETER;
     }
 
-    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod);
+    char szErr[8192];
+    szErr[0] = '\0';
+    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod, szErr, sizeof(szErr));
 
     if (RT_SUCCESS(rc))
     {
@@ -316,7 +318,8 @@ int HGCMService::loadServiceDLL (void)
     }
     else
     {
-        LogRel(("HGCM: Failed to load the service library: [%s], rc = %Rrc. The service will be not available.\n", m_pszSvcLibrary, rc));
+        LogRel(("HGCM: Failed to load the service library: [%s], rc = %Rrc - %s. The service will be not available.\n",
+                m_pszSvcLibrary, rc, szErr));
         m_hLdrMod = NIL_RTLDRMOD;
     }
 

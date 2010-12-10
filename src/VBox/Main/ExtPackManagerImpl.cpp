@@ -1162,12 +1162,13 @@ void ExtPack::probeAndLoad(void)
 
     if (fIsNative)
     {
-        vrc = RTLdrLoad(m->strMainModPath.c_str(), &m->hMainMod);
+        char szError[8192];
+        vrc = RTLdrLoadEx(m->strMainModPath.c_str(), &m->hMainMod, szError, sizeof(szError));
         if (RT_FAILURE(vrc))
         {
             m->hMainMod = NIL_RTLDRMOD;
-            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%s'): %Rrc"),
-                                           m->strMainModPath.c_str(), vrc);
+            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%s'): %Rrc - %s"),
+                                           m->strMainModPath.c_str(), vrc, szError);
             return;
         }
     }
