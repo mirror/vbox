@@ -37,7 +37,7 @@
  * several license files in a pack, the variations being on locale, language
  * and format (HTML, RTF, plain text). All extension packages shall include
  * a  */
-#define VBOX_EXTPACK_LICENSE_NAME_PREFIX "ExtPack.license"
+#define VBOX_EXTPACK_LICENSE_NAME_PREFIX "ExtPack-license"
 /** @name VBOX_EXTPACK_SUFFIX
  * The suffix of a extension pack tarball. */
 #define VBOX_EXTPACK_SUFFIX             ".vbox-extpack"

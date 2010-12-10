@@ -449,16 +449,16 @@ STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_
     /*
      * Combine the options to form a file name before locking down anything.
      */
-    char szName[sizeof("ExtPack-license-de_DE.html") + 2];
+    char szName[sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX "-de_DE.html") + 2];
     if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s_%s.%s",
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
                     strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
     else if (strPreferredLocale.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
     else if (strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
     else
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license.%s",     strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",     strFormat.c_str());
 
     /*
      * Effectuate the query.
@@ -1606,16 +1606,16 @@ STDMETHODIMP ExtPack::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstr
     /*
      * Combine the options to form a file name before locking down anything.
      */
-    char szName[sizeof("ExtPack-license-de_DE.html") + 2];
+    char szName[sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX "-de_DE.html") + 2];
     if (strPreferredLocale.isNotEmpty() && strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s_%s.%s",
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s_%s.%s",
                     strPreferredLocale.c_str(), strPreferredLanguage.c_str(), strFormat.c_str());
     else if (strPreferredLocale.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-%s.%s",  strPreferredLocale.c_str(), strFormat.c_str());
     else if (strPreferredLanguage.isNotEmpty())
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX "-_%s.%s", strPreferredLocale.c_str(), strFormat.c_str());
     else
-        RTStrPrintf(szName, sizeof(szName), "ExtPack-license.%s",     strFormat.c_str());
+        RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",     strFormat.c_str());
 
     /*
      * Effectuate the query.
