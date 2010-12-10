@@ -70,7 +70,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError
     /*
      * Try figure why it failed to load.
      */
-    DWORD dwErr = GetLastError(dwErr);
+    DWORD dwErr = GetLastError();
     int   rc    = RTErrConvertFromWin32(dwErr);
     if (cbError)
         RTStrPrintf(pszError, cbError, "GetLastError=%u", dwErr);
