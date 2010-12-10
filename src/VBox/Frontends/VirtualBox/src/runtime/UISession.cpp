@@ -449,28 +449,22 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
         if (!strCntName.isNull())
         {
-            bool fIsMounted = false;
+            /* Create a new VBoxMedium: */
+            VBoxMedium vboxMedium(image, VBoxDefs::MediumType_DVD, KMediumState_Created);
+            /* Register it in GUI internal list: */
+            vboxGlobal().addMedium(vboxMedium);
 
-            VBoxMedium vmedium = vboxGlobal().findMedium(strUuid);
-            CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
-
-            /* Mount medium to the predefined port/device */
-            machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, false /* force */);
-            if (machine.isOk())
-                fIsMounted = true;
-            else
+            /* Mount medium to the predefined port/device: */
+            machine.MountMedium(strCntName, iCntPort, iCntDevice, vboxMedium.medium(), false /* force */);
+            if (!machine.isOk())
             {
-                /* Ask for force mounting */
-                if (vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                      true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
+                /* Ask for force mounting: */
+                if (vboxProblem().cannotRemountMedium(0, machine, vboxMedium, true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
                 {
-                    /* Force mount medium to the predefined port/device */
-                    machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, true /* force */);
-                    if (machine.isOk())
-                        fIsMounted = true;
-                    else
-                        vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                          true /* mount? */, false /* retry? */);
+                    /* Force mount medium to the predefined port/device: */
+                    machine.MountMedium(strCntName, iCntPort, iCntDevice, vboxMedium.medium(), true /* force */);
+                    if (!machine.isOk())
+                        vboxProblem().cannotRemountMedium(0, machine, vboxMedium, true /* mount? */, false /* retry? */);
                 }
             }
         }
