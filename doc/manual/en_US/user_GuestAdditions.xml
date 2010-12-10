@@ -69,11 +69,12 @@
             Additions provide you with extra high and non-standard video modes
             as well as accelerated video performance.</para>
 
-            <para>In addition, with Windows and recent Linux and Solaris
-            guests you can resize the virtual machine's window if the Guest
-            Additions are installed. The video resolution in the guest will be
-            automatically adjusted (as if you had manually entered an
-            arbitrary resolution in the guest's display settings).</para>
+            <para>In addition, with Windows, Linux and Solaris guests, you can
+            resize the virtual machine's window if the Guest Additions are
+            installed. The video resolution in the guest will be automatically
+            adjusted (as if you had manually entered an arbitrary resolution
+            in the guest's display settings). Please see <xref
+            linkend="intro-resize-window" /> also.</para>
 
             <para>Finally, if the Guest Additions are installed, 3D graphics
             and 2D video for guest applications can be accelerated; see <xref
@@ -1508,13 +1509,13 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     the guest.</para>
 
     <para>Starting with version 4.0, the Guest Additions for Windows allow for
-    automatic updating (only already installed Guest Additions 4.0 or
-    later). Also, copying files from host to the guest as well as remotely
-    creating guest directories is available.</para>
+    automatic updating (only already installed Guest Additions 4.0 or later).
+    Also, copying files from host to the guest as well as remotely creating
+    guest directories is available.</para>
 
     <para>To use these feature, use the VirtualBox command line or the GUI.
-    See <xref linkend="mountingadditionsiso" /> for automatically updating
-    the Guest Additions or <xref linkend="vboxmanage-guestcontrol" /> for
+    See <xref linkend="mountingadditionsiso" /> for automatically updating the
+    Guest Additions or <xref linkend="vboxmanage-guestcontrol" /> for
     executing guest programs, copying files from the host or creating guest
     directories.</para>
   </sect1>
