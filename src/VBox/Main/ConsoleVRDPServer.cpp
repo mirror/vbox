@@ -862,7 +862,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
         if (pPort)
         {
-             // @todo dynamic filter attach does not yet work pPort->pfnAudioInputIntercept(pPort, false);
+             pPort->pfnAudioInputIntercept(pPort, false);
         }
         else
         {
@@ -919,7 +919,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, ui
                 PPDMIAUDIOSNIFFERPORT pPort = server->mConsole->getAudioSniffer()->getAudioSnifferPort();
                 if (pPort)
                 {
-                     // @todo dynamic filter attach does not yet work pPort->pfnAudioInputIntercept(pPort, true);
+                     pPort->pfnAudioInputIntercept(pPort, true);
                      if (ppvIntercept)
                      {
                          *ppvIntercept = server;
@@ -2268,7 +2268,7 @@ int ConsoleVRDPServer::SendAudioInputBegin(void **ppvUserCtx,
                                             u32ClientId,
                                             audioFormat,
                                             cSamples);
-            *ppvUserCtx = NULL; /* This is the ConsoleVRDP server context.
+            *ppvUserCtx = NULL; /* This is the ConsoleVRDPServer context.
                                  * Currently not used because only one client is allowed to
                                  * do audio input and the client id is saved by the ConsoleVRDPServer.
                                  */

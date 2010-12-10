@@ -257,6 +257,9 @@ typedef struct filterVoiceIn
      * or the device itself is changed during the runtime. */
     volatile uint32_t status;
 
+    /* the stream has been successfully initialized by host. */
+    bool fHostOK;
+
     /* Whether the input stream is used by the filter. */
     bool fIntercepted;
 
@@ -507,16 +510,9 @@ static int filteraudio_init_out(HWVoiceOut *phw, audsettings_t *as)
  *
  ******************************************************************************/
 
-/* We need some forward declarations */
-static int filteraudio_run_in(HWVoiceIn *hw);
-static int filteraudio_read(SWVoiceIn *sw, void *buf, int size);
-static int filteraudio_ctl_in(HWVoiceIn *hw, int cmd, ...);
-static void filteraudio_fini_in(HWVoiceIn *hw);
-static int filteraudio_init_in(HWVoiceIn *hw, audsettings_t *as);
-
 /*
  * Callback to feed audio input buffer. Samples format is be the same as
- * in the voice. The caller prepares stsample_t.
+ * in the voice. The caller prepares st_sample_t.
  *
  * @param cbSamples Size of pvSamples array in bytes.
  * @param pvSamples Points to an array of samples.
@@ -594,8 +590,15 @@ static int filteraudio_run_in(HWVoiceIn *phw)
     uint32_t csReads = 0;
     char *pcSrc;
     st_sample_t *psDst;
+    filterVoiceIn *pVoice;
 
-    filterVoiceIn *pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
+    if (!filter_conf.pDrv)
+    {
+        AssertFailed();
+        return -1;
+    }
+
+    pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
 
     if (!pVoice->fIntercepted)
     {
@@ -661,81 +664,129 @@ static int filteraudio_read(SWVoiceIn *sw, void *buf, int size)
 static int filteraudio_ctl_in(HWVoiceIn *phw, int cmd, ...)
 {
     int rc = VINF_SUCCESS;
+    filterVoiceIn *pVoice;
 
-    filterVoiceIn *pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
-
-    if (!pVoice->fIntercepted)
+    if (!filter_conf.pDrv)
     {
-        /* Note: audio.c does not use variable parameters '...', so ok to forward only 'phw' and 'cmd'. */
-        Log(("FilterAudio: [Input]: forwarding ctl_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
-        return filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
+        AssertFailed();
+        return -1;
     }
 
-    Log(("FilterAudio: [Input]: ctl_in for voice %p (hw %p), cmd %d\n", pVoice, pVoice->phw, cmd));
+    pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
 
-    if (ASMAtomicReadU32(&pVoice->status) != CA_STATUS_INIT)
-        return 0;
-
-    switch (cmd)
+    if (cmd == VOICE_ENABLE)
     {
-        case VOICE_ENABLE:
+        /* Decide who will provide input audio: filter or host driver. */
+        if (!filter_input_intercepted())
         {
-            /* Only start the device if it is actually stopped */
-            if (!pVoice->fIsRunning)
+            if (!pVoice->fHostOK)
             {
-                IORingBufferReset(pVoice->pBuf);
-
-                /* Sniffer will inform us on a second thread for new incoming audio data.
-                 * Therefore register an callback function, which will process the new data.
-                 * */
-                rc = filter_input_begin(&pVoice->pvInputCtx, fltRecordingCallback, pVoice, pVoice->phw, pVoice->phw->samples);
-                if (RT_SUCCESS(rc))
-                {
-                    pVoice->fIsRunning = true;
-                }
-            }
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("FilterAudio: [Input] Failed to start recording (%Rrc)\n", rc));
+                /* Host did not initialize the voice. */
+                Log(("FilterAudio: [Input]: ctl_in ENABLE voice %p (hw %p) not available on host\n", pVoice, pVoice->phw));
                 return -1;
             }
-            break;
+
+            /* Note: audio.c does not use variable parameters '...', so ok to forward only 'phw' and 'cmd'. */
+            Log(("FilterAudio: [Input]: forwarding ctl_in ENABLE for voice %p (hw %p)\n", pVoice, pVoice->phw));
+            return filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
         }
-        case VOICE_DISABLE:
+
+        /* The filter will use this voice. */
+        Log(("FilterAudio: [Input]: ctl_in ENABLE for voice %p (hw %p), cmd %d\n", pVoice, pVoice->phw, cmd));
+
+        if (ASMAtomicReadU32(&pVoice->status) != CA_STATUS_INIT)
+            return -1;
+
+        /* Only start the device if it is actually stopped */
+        if (!pVoice->fIsRunning)
         {
-            /* Only stop the device if it is actually running */
-            if (pVoice->fIsRunning)
+            IORingBufferReset(pVoice->pBuf);
+
+            /* Sniffer will inform us on a second thread for new incoming audio data.
+             * Therefore register an callback function, which will process the new data.
+             * */
+            rc = filter_input_begin(&pVoice->pvInputCtx, fltRecordingCallback, pVoice, pVoice->phw, pVoice->phw->samples);
+            if (RT_SUCCESS(rc))
             {
-                pVoice->fIsRunning = false;
-                /* Tell the sniffer to not to use this context anymore. */
-                filter_input_end(pVoice->pvInputCtx);
+                pVoice->fIsRunning = true;
+
+                /* Remember that this voice is used by the filter. */
+                pVoice->fIntercepted = true;
             }
-            break;
+        }
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("FilterAudio: [Input] Failed to start recording (%Rrc)\n", rc));
+            return -1;
         }
     }
+    else if (cmd == VOICE_DISABLE)
+    {
+        if (ASMAtomicReadU32(&pVoice->status) != CA_STATUS_INIT)
+            return -1;
+
+        /* Check if the voice has been intercepted. */
+        if (!pVoice->fIntercepted)
+        {
+            /* Note: audio.c does not use variable parameters '...', so ok to forward only 'phw' and 'cmd'. */
+            Log(("FilterAudio: [Input]: forwarding ctl_in DISABLE for voice %p (hw %p)\n", pVoice, pVoice->phw));
+            return filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
+        }
+
+        /* The filter used this voice. */
+        Log(("FilterAudio: [Input]: ctl_in DISABLE for voice %p (hw %p), cmd %d\n", pVoice, pVoice->phw, cmd));
+
+        /* Only stop the device if it is actually running */
+        if (pVoice->fIsRunning)
+        {
+            pVoice->fIsRunning = false;
+            /* Tell the sniffer to not to use this context anymore. */
+            filter_input_end(pVoice->pvInputCtx);
+        }
+
+        /* This voice is no longer used by the filter. */
+        pVoice->fIntercepted = false;
+    }
+    else
+    {
+        return -1; /* Unknown command. */
+    }
+
     return 0;
 }
 
 static void filteraudio_fini_in(HWVoiceIn *phw)
 {
     int ret = -1;
+    filterVoiceIn *pVoice;
 
-    filterVoiceIn *pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
-
-    /* Only pass voices, which are not intercepted. */
-    if (!pVoice->fIntercepted)
+    if (!filter_conf.pDrv)
     {
-        Log(("FilterAudio: [Input]: forwarding fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
-        filter_conf.pDrv->pcm_ops->fini_in(phw);
+        AssertFailed();
         return;
     }
+
+    pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
+
+    /* Uninitialize both host and filter parts of the voice. */
+    Log(("FilterAudio: [Input]: forwarding fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
+    filter_conf.pDrv->pcm_ops->fini_in(phw);
 
     Log(("FilterAudio: [Input]: fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
 
     if (ASMAtomicReadU32(&pVoice->status) != CA_STATUS_INIT)
         return;
 
-    ret = filteraudio_ctl_in(phw, VOICE_DISABLE);
+    /* If this voice is intercepted by filter, try to stop it. */
+    if (pVoice->fIntercepted)
+    {
+        ret = filteraudio_ctl_in(phw, VOICE_DISABLE);
+    }
+    else
+    {
+        ret = 0;
+    }
+
     if (RT_LIKELY(ret == 0))
     {
         ASMAtomicWriteU32(&pVoice->status, CA_STATUS_IN_UNINIT);
@@ -750,34 +801,41 @@ static void filteraudio_fini_in(HWVoiceIn *phw)
 
 static int filteraudio_init_in(HWVoiceIn *phw, audsettings_t *as)
 {
-    filterVoiceIn *pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
+    int hostret = -1;
+    filterVoiceIn *pVoice;
 
-    if (!filter_input_intercepted())
+    if (!filter_conf.pDrv)
     {
-        Log(("FilterAudio: [Input]: forwarding init_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
-        pVoice->fIntercepted = false;
-        return filter_conf.pDrv->pcm_ops->init_in(phw, as);
+        AssertFailed();
+        return -1;
     }
 
-    Log(("FilterAudio: [Input]: init_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
+    pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
+
+    /* Initialize both host and filter parts of the voice. */
+    Log(("FilterAudio: [Input]: forwarding init_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
+    hostret = filter_conf.pDrv->pcm_ops->init_in(phw, as);
+
+    Log(("FilterAudio: [Input]: init_in for voice %p (hw %p), hostret = %d\n", pVoice, pVoice->phw, hostret));
 
     ASMAtomicWriteU32(&pVoice->status, CA_STATUS_UNINIT);
 
     pVoice->phw = phw;
     pVoice->rpos = 0;
     pVoice->pBuf = NULL;
-    /* Remember that this voice belongs to the filter. */
-    pVoice->fIntercepted = true;
+    pVoice->fHostOK = (hostret == 0);
+    pVoice->fIntercepted = false;
     pVoice->fIsRunning = false;
     pVoice->pvInputCtx = NULL;
 
-    /* The ring buffer must be big enough to hold specified number of samples.
-     * A sample includes all channels.
-     */
-    pVoice->phw->samples = 2048;
+    if (!pVoice->fHostOK)
+    {
+        /* Initialize required fields of the common part of the voice. */
+        pVoice->phw->samples = 2048;
 
-    /* Initialize the hardware info section with the audio settings */
-    audio_pcm_init_info(&pVoice->phw->info, as);
+        /* Initialize the hardware info section with the audio settings */
+        audio_pcm_init_info(&pVoice->phw->info, as);
+    }
 
     ASMAtomicWriteU32(&pVoice->status, CA_STATUS_IN_INIT);
 
@@ -793,7 +851,6 @@ static int filteraudio_init_in(HWVoiceIn *phw, audsettings_t *as)
     ASMAtomicWriteU32(&pVoice->status, CA_STATUS_INIT);
 
     Log(("FilterAudio: [Input] HW samples: %d\n", pVoice->phw->samples));
-
     return 0;
 }
 
@@ -805,12 +862,22 @@ static int filteraudio_init_in(HWVoiceIn *phw, audsettings_t *as)
 
 static void *filteraudio_audio_init(void)
 {
-    return &filter_conf;
+    /* This is not supposed to be called. */
+    Log(("FilterAudio: Init\n"));
+    AssertFailed();
+    return NULL;
 }
 
 static void filteraudio_audio_fini(void *opaque)
 {
-    NOREF(opaque);
+    Log(("FilterAudio: Init fini %p\n", opaque));
+    /* Forward to the host driver. */
+    Assert(opaque == filter_conf.pDrvOpaque);
+    if (filter_conf.pDrv)
+    {
+        filter_conf.pDrv->fini(opaque);
+        filter_conf.pDrv = NULL;
+    }
 }
 
 static struct audio_pcm_ops filteraudio_pcm_ops =
