@@ -194,8 +194,13 @@ typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
 
 DECLINLINE(void) rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
 {
-    /* Small enough for the standard octal string encoding? */
-    if (cbSize <= 2 * _4G)
+    /*
+     * Small enough for the standard octal string encoding?
+     *
+     * Note! We could actually use the terminator character as well if we liked,
+     *       but let not do that as it's easier to test this way.
+     */
+    if (cbSize < _4G * 2U)
         RTStrPrintf(pRecord->h.size, sizeof(pRecord->h.size), "%0.11llo", cbSize);
     else
     {
@@ -203,14 +208,19 @@ DECLINLINE(void) rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
          * Base 256 extension. Set the highest bit of the left most character.
          * We don't deal with negatives here, cause the size have to be greater
          * than zero.
+         *
+         * Note! The base-256 extension are never used by gtar or libarchive
+         *       with the "ustar  \0" format version, only the later
+         *       "ustar\000" version.  However, this shouldn't cause much
+         *       trouble as they are not picky about what they read.
          */
         size_t cchField = sizeof(pRecord->h.size) - 1;
         unsigned char *puchField = (unsigned char*)pRecord->h.size;
         puchField[0] = 0x80;
         do
         {
-            puchField[cchField--] = cbSize & ((1 << 8) - 1);
-            cbSize = (cbSize >> 8);
+            puchField[cchField--] = cbSize & 0xff;
+            cbSize >>= 8;
         } while (cchField);
     }
 }
@@ -238,7 +248,7 @@ DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
             if (RT_UNLIKELY(   cbSize > INT64_MAX / 256
                             || cbSize < INT64_MIN / 256))
             {
-                cbSize = 0;
+                cbSize = cbSize < 0 ? INT64_MIN : INT64_MAX;
                 break;
             }
             cbSize = (cbSize << 8) | *puchField++;
@@ -318,7 +328,7 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
 {
     /** @todo check for field overflows. */
     /* Fill the header record */
-//    RT_ZERO(pRecord);
+//    RT_ZERO(pRecord); - done by the caller.
     RTStrPrintf(pRecord->h.name,  sizeof(pRecord->h.name),  "%s",       pszSrcName);
     RTStrPrintf(pRecord->h.mode,  sizeof(pRecord->h.mode),  "%0.7o",    fmode);
     RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o",    uid);
