@@ -653,8 +653,21 @@ RTDECL(bool)        RTVfsIoStrmIsAtEnd(RTVFSIOSTREAM hVfsIos);
  * @returns VBox status cod.e
  *
  * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   fFlags          Flags governing the validation, see
+ *                          RTVFS_VALIDATE_UTF8_XXX.
+ * @param   poffError       Where to return the error offset. Optional.
  */
-RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos);
+RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, PRTFOFF poffError);
+
+/** @defgroup RTVFS_VALIDATE_UTF8_XXX   RTVfsIoStrmValidateUtf8Encoding flags.
+ * @{ */
+/** The text must not contain any null terminator codepoints. */
+#define RTVFS_VALIDATE_UTF8_NO_NULL         RT_BIT_32(0)
+/** The codepoints must be in the range covered by RTC-3629.  */
+#define RTVFS_VALIDATE_UTF8_BY_RTC_3629     RT_BIT_32(1)
+/** Mask of valid flags. */
+#define RTVFS_VALIDATE_UTF8_VALID_MASK      UINT32_C(0x00000003)
+/** @}  */
 
 /** @} */
 
