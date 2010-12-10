@@ -750,6 +750,92 @@ static int vboxExtPackVerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSF
 
 
 /**
+ * Validates a standard file.
+ *
+ * Generally all files are
+ *
+ * @returns VBox status code, failure message in @a pszError.
+ * @param   pszAdjName          The adjusted member name.
+ * @param   enmType             The VFS object type.
+ * @param   phVfsObj            The pointer to the VFS object handle variable.
+ *                              This is both input and output.
+ * @param   phVfsFile           Where to store the handle to the memorized
+ *                              file.  This is NULL for license files.
+ * @param   pszError            Where to write an error message on failure.
+ * @param   cbError             The size of the @a pszError buffer.
+ */
+static int VBoxExtPackValidateStandardFile(const char *pszAdjName, RTVFSOBJTYPE enmType,
+                                           PRTVFSOBJ phVfsObj, PRTVFSFILE phVfsFile, char *pszError, size_t cbError)
+{
+    int rc;
+
+    /*
+     * Make sure it's a file and that it isn't too large.
+     */
+    if (phVfsFile && *phVfsFile != NIL_RTVFSFILE)
+        rc = vboxExtPackReturnError(VERR_DUPLICATE, pszError, cbError,
+                                    "There can only be one '%s'", pszAdjName);
+    else if (enmType != RTVFSOBJTYPE_IO_STREAM && enmType != RTVFSOBJTYPE_FILE)
+        rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,
+                                    "Standard member '%s' is not a file", pszAdjName);
+    else
+    {
+        RTFSOBJINFO ObjInfo;
+        rc = RTVfsObjQueryInfo(*phVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
+                rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,
+                                            "Standard member '%s' is not a file", pszAdjName);
+            else if (ObjInfo.cbObject >= _1M)
+                rc = vboxExtPackReturnError(VERR_OUT_OF_RANGE, pszError, cbError,
+                                            "Standard member '%s' is too large: %'RU64 bytes (max 1 MB)",
+                                            pszAdjName, (uint64_t)ObjInfo.cbObject);
+            else
+            {
+                /*
+                 * Make an in memory copy of the stream and check that the file
+                 * is UTF-8 clean.
+                 */
+                RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(*phVfsObj);
+                RTVFSFILE     hVfsFile;
+                rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, &hVfsFile);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTVfsIoStrmValidateUtf8Encoding(hVfsIos);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Replace *phVfsObj with the memorized file.
+                         */
+                        rc = RTVfsFileSeek(hVfsFile, 0, RTFILE_SEEK_BEGIN, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTVfsObjRelease(*phVfsObj);
+                            *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                        }
+                        else
+                            vboxExtPackSetError(pszError, cbError, "RTVfsFileSeek failed on '%s': %Rrc", pszAdjName, rc);
+                    }
+
+                    if (phVfsFile && RT_SUCCESS(rc))
+                        *phVfsFile = hVfsFile;
+                    else
+                        RTVfsFileRelease(hVfsFile);
+                }
+                else
+                    vboxExtPackSetError(pszError, cbError, "RTVfsMemorizeIoStreamAsFile failed on '%s': %Rrc", pszAdjName, rc);
+                RTVfsIoStrmRelease(hVfsIos);
+            }
+        }
+        else
+            vboxExtPackSetError(pszError, cbError, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszAdjName, rc);
+    }
+    return rc;
+}
+
+
+/**
  * Validates a name in an extension pack.
  *
  * We restrict the charset to try make sure the extension pack can be unpacked
@@ -1039,7 +1125,8 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
             const char     *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
 
             /*
-             * Check the type & name validity.
+             * Check the type & name validity, performing special tests on
+             * standard extension pack member files.
              *
              * N.B. We will always reach the end of the loop before breaking on
              *      failure - cleanup reasons.
@@ -1047,9 +1134,6 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
             rc = VBoxExtPackValidateMember(pszName, enmType, hVfsObj, pszError, cbError);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Check if this is one of the standard files.
-                 */
                 PRTVFSFILE phVfsFile;
                 if (!strcmp(pszAdjName, VBOX_EXTPACK_DESCRIPTION_NAME))
                     phVfsFile = &hXmlFile;
@@ -1057,57 +1141,12 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
                     phVfsFile = &hManifestFile;
                 else if (!strcmp(pszAdjName, VBOX_EXTPACK_SIGNATURE_NAME))
                     phVfsFile = &hSignatureFile;
+                else if (!strncmp(pszAdjName, VBOX_EXTPACK_LICENSE_NAME_PREFIX, sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX) - 1))
+                    rc = VBoxExtPackValidateStandardFile(pszAdjName, enmType, &hVfsObj, NULL, pszError, cbError);
                 else
                     phVfsFile = NULL;
                 if (phVfsFile)
-                {
-                    /*
-                     * Make sure it's a file and that it isn't too large.
-                     */
-                    if (*phVfsFile != NIL_RTVFSFILE)
-                        rc = vboxExtPackReturnError(VERR_DUPLICATE, pszError, cbError,
-                                                    "There can only be one '%s'", pszAdjName);
-                    else if (enmType != RTVFSOBJTYPE_IO_STREAM && enmType != RTVFSOBJTYPE_FILE)
-                        rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,
-                                                    "Standard member '%s' is not a file", pszAdjName);
-                    else
-                    {
-                        RTFSOBJINFO ObjInfo;
-                        rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-                        if (RT_SUCCESS(rc))
-                        {
-                            if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
-                                rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,
-                                                            "Standard member '%s' is not a file", pszAdjName);
-                            else if (ObjInfo.cbObject >= _1M)
-                                rc = vboxExtPackReturnError(VERR_OUT_OF_RANGE, pszError, cbError,
-                                                            "Standard member '%s' is too large: %'RU64 bytes (max 1 MB)",
-                                                            pszAdjName, (uint64_t)ObjInfo.cbObject);
-                            else
-                            {
-                                /*
-                                 * Make an in memory copy of the stream.
-                                 */
-                                RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                                rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsFile);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * To simplify the code below, replace
-                                     * hVfsObj with the memorized file.
-                                     */
-                                    RTVfsObjRelease(hVfsObj);
-                                    hVfsObj = RTVfsObjFromFile(*phVfsFile);
-                                }
-                                else
-                                    vboxExtPackSetError(pszError, cbError, "RTVfsMemorizeIoStreamAsFile failed on '%s': %Rrc", pszName, rc);
-                                RTVfsIoStrmRelease(hVfsIos);
-                            }
-                        }
-                        else
-                            vboxExtPackSetError(pszError, cbError, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszName, rc);
-                    }
-                }
+                    rc = VBoxExtPackValidateStandardFile(pszAdjName, enmType, &hVfsObj, phVfsFile, pszError, cbError);
             }
 
             /*
