@@ -830,10 +830,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         if (fFFMPEG)
         {
-            int rrc = VINF_SUCCESS, rcc = S_OK;
+            HRESULT rcc = S_OK;
+            int     rrc = VINF_SUCCESS;
+            char    szErr[8192];
 
             Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB);
+            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, szErr, sizeof(szErr));
 
             if (RT_SUCCESS(rrc))
             {
@@ -844,7 +846,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     LogError("Failed to load the video capture extension, possibly due to a damaged file\n", rrc);
             }
             else
-                LogError("Failed to load the video capture extension\n", rrc);
+                LogError("Failed to load the video capture extension\n", rrc); /** @todo stupid function, no formatting options. */
             if (RT_SUCCESS(rrc))
             {
                 Log2(("VBoxHeadless: calling pfnRegisterFFmpegFB\n"));

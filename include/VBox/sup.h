@@ -1035,10 +1035,12 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, 
  * Will add dll suffix if missing and try load the file.
  *
  * @returns iprt status code.
- * @param   pszFilename Image filename. This must have a path.
- * @param   phLdrMod    Where to store the handle to the loaded module.
+ * @param   pszFilename     Image filename. This must have a path.
+ * @param   phLdrMod        Where to store the handle to the loaded module.
+ * @param   pszError        Where to return error message on failure.
+ * @param   cbError         The size of the error buffer.
  */
-SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError);
 
 /**
  * Same as RTLdrLoadAppPriv() but it will verify the files it loads (hardened
@@ -1050,8 +1052,10 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
  * @returns iprt status code.
  * @param   pszFilename Image filename.
  * @param   phLdrMod    Where to store the handle to the loaded module.
+ * @param   pszError        Where to return error message on failure.
+ * @param   cbError         The size of the error buffer.
  */
-SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError);
 
 /**
  * Same as RTLdrLoad() but will verify the files it loads (hardened builds).

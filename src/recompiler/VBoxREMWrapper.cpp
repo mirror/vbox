@@ -1982,7 +1982,7 @@ static int remLoadLinuxObj(void)
      */
     if (g_ModVMM != NIL_RTLDRMOD)
     {
-        rc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &g_ModVMM);
+        rc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &g_ModVMM, NULL, 0);
         AssertRCReturn(rc, rc);
         for (size_t i = 0; i < RT_ELEMENTS(g_aVMMImports); i++)
         {
@@ -2096,7 +2096,7 @@ static bool remIs64bitEnabled(PVM pVM)
 #  ifdef VBOX_WITHOUT_REM_LDR_CYCLE
     if (g_ModVMM == NIL_RTLDRMOD)
     {
-        rc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &g_ModVMM);
+        rc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &g_ModVMM, NULL, 0);
         AssertRCReturn(rc, false);
     }
 
@@ -2132,7 +2132,7 @@ static int remLoadProperObj(PVM pVM)
      * Load the VBoxREM32/64 object/DLL.
      */
     const char *pszModule = remIs64bitEnabled(pVM) ? "VBoxREM64" : "VBoxREM32";
-    int rc = SUPR3HardenedLdrLoadAppPriv(pszModule, &g_ModREM2);
+    int rc = SUPR3HardenedLdrLoadAppPriv(pszModule, &g_ModREM2, NULL, 0);
     if (RT_SUCCESS(rc))
     {
         LogRel(("REM: %s\n", pszModule));

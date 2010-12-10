@@ -364,8 +364,10 @@ DECLCALLBACK(int) rtldrNativeClose(PRTLDRMODINTERNAL pMod);
  * @returns iprt status code.
  * @param   pszFilename     The image filename.
  * @param   phHandle        Where to store the module handle on success.
+ * @param   pszError        Where to store the error message. Optional.
+ * @param   cbError         The size of the error message buffer.
  */
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle);
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError, size_t cbError);
 
 int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod);
 int rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);

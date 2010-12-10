@@ -40,7 +40,7 @@
 #include "internal/ldr.h"
 
 
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle)
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError, size_t cbError)
 {
     /*
      * Do we need to add an extension?
@@ -68,14 +68,17 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle)
     /*
      * Attempt load.
      */
-
     void *pvMod = dlopen(pszFilename, RTLD_NOW | RTLD_LOCAL);
     if (pvMod)
     {
         *phHandle = (uintptr_t)pvMod;
         return VINF_SUCCESS;
     }
-    LogRel(("rtldrNativeLoad: dlopen('%s', RTLD_NOW | RTLD_LOCAL) failed: %s\n", pszFilename, dlerror()));
+
+    const char *pszDlError = dlerror();
+    if (pszError)
+        RTStrCopy(pszError, cbError, pszDlError);
+    LogRel(("rtldrNativeLoad: dlopen('%s', RTLD_NOW | RTLD_LOCAL) failed: %s\n", pszFilename, pszDlError));
     return VERR_FILE_NOT_FOUND;
 }
 

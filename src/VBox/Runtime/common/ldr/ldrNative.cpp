@@ -95,13 +95,30 @@ static const RTLDROPS s_rtldrNativeOps =
  */
 RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrLoad: pszFilename=%p:{%s} phLdrMod=%p\n", pszFilename, pszFilename, phLdrMod));
+    return RTLdrLoadEx(pszFilename, phLdrMod, NULL, 0);
+}
+RT_EXPORT_SYMBOL(RTLdrLoad);
+
+
+RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError)
+{
+    LogFlow(("RTLdrLoadEx: pszFilename=%p:{%s} phLdrMod=%p pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, pszError, cbError));
 
     /*
-     * validate input.
+     * Validate and massage the input.
      */
-    AssertMsgReturn(VALID_PTR(pszFilename), ("pszFilename=%p\n", pszFilename), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(phLdrMod), ("phLdrMod=%p\n", phLdrMod), VERR_INVALID_PARAMETER);
+    if (!pszError)
+        AssertReturn(!cbError, VERR_INVALID_PARAMETER);
+    else
+    {
+        AssertPtrReturn(pszError, VERR_INVALID_POINTER);
+        if (cbError)
+            *pszError = '\0';
+        else
+            pszError = NULL;
+    }
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(phLdrMod, VERR_INVALID_POINTER);
 
     /*
      * Allocate and initialize module structure.
@@ -118,20 +135,23 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
         /*
          * Attempt to open the module.
          */
-        rc = rtldrNativeLoad(pszFilename, &pMod->hNative);
+        rc = rtldrNativeLoad(pszFilename, &pMod->hNative, pszError, cbError);
         if (RT_SUCCESS(rc))
         {
             *phLdrMod = &pMod->Core;
             LogFlow(("RTLdrLoad: returns %Rrc *phLdrMod=%RTldrm\n", rc, *phLdrMod));
             return rc;
         }
+
         RTMemFree(pMod);
     }
+    else if (cbError)
+        RTStrPrintf(pszError, cbError, "Failed to allocate %zu bytes for the module handle", sizeof(*pMod));
     *phLdrMod = NIL_RTLDRMOD;
     LogFlow(("RTLdrLoad: returns %Rrc\n", rc));
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLdrLoad);
+RT_EXPORT_SYMBOL(RTLdrLoadEx);
 
 
 /**
