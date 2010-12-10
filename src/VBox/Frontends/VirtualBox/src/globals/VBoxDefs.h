@@ -152,6 +152,10 @@ struct VBoxDefs
     static const char* GUI_Export_Bucket;
     static const char* GUI_PreventBetaWarning;
 
+    static const char* GUI_RecentListHD;
+    static const char* GUI_RecentListCD;
+    static const char* GUI_RecentListFD;
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     static const char* GUI_Accelerate2D_StretchLinear;
     static const char* GUI_Accelerate2D_PixformatYV12;
