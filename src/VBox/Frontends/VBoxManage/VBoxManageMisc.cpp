@@ -828,7 +828,7 @@ int handleVMStatistics(HandlerArg *a)
             || !strcmp(a->argv[i], "-pattern"))
         {
             if (pszPattern)
-                return errorSyntax(USAGE_VM_STATISTICS, "Multiple --patterns options is not permitted");
+                return errorSyntax(USAGE_VM_STATISTICS, "Multiple --pattern options is not permitted");
             if (i + 1 >= a->argc)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             pszPattern = a->argv[++i];
@@ -902,7 +902,7 @@ int handleExtPack(HandlerArg *a)
     if (!strcmp(a->argv[0], "install"))
     {
         if (a->argc != 2)
-            return errorSyntax(USAGE_EXTPACK, "Incorrect parameters count for \"extpack install\"");
+            return errorSyntax(USAGE_EXTPACK, "Incorrect number of parameters for \"extpack install\"");
 
         char szPath[RTPATH_MAX];
         int vrc = RTPathAbs(a->argv[1], szPath, sizeof(szPath));
@@ -948,7 +948,7 @@ int handleExtPack(HandlerArg *a)
             }
         }
         if (!pszName)
-            return errorSyntax(USAGE_EXTPACK, "Not extension pack name was given to \"extpack uninstall\"");
+            return errorSyntax(USAGE_EXTPACK, "No extension pack name was given to \"extpack uninstall\"");
 
         Bstr bstrName(pszName);
         CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced), RTEXITCODE_FAILURE);
