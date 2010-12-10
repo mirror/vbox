@@ -195,7 +195,7 @@ typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
 DECLINLINE(void) rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
 {
     /* Small enough for the standard octal string encoding? */
-    if (cbSize <= 0x200000000)
+    if (cbSize <= 2 * _4G)
         RTStrPrintf(pRecord->h.size, sizeof(pRecord->h.size), "%0.11llo", cbSize);
     else
     {
