@@ -127,6 +127,12 @@
       </listitem>
 
       <listitem>
+        <para>Bridged networking: improved throughput by preventing outgoing
+          packets destined for the host from reaching the wire
+          (Linux hosts only; bug #7792)</para>
+      </listitem>
+
+      <listitem>
         <para>3D support: allow use of <emphasis>CR_SYSTEM_GL_PATH</emphasis>
           again (bug #6864)</para>
       </listitem>
