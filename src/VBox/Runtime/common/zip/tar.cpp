@@ -192,6 +192,66 @@ typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
  *   Internal Functions                                                       *
  ******************************************************************************/
 
+DECLINLINE(void) rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
+{
+    /* Small enough for the standard octal string encoding? */
+    if (cbSize <= 0x200000000)
+        RTStrPrintf(pRecord->h.size, sizeof(pRecord->h.size), "%0.11llo", cbSize);
+    else
+    {
+        /*
+         * Base 256 extension. Set the highest bit of the left most character.
+         * We don't deal with negatives here, cause the size have to be greater
+         * than zero.
+         */
+        size_t cchField = sizeof(pRecord->h.size) - 1;
+        unsigned char *puchField = (unsigned char*)pRecord->h.size;
+        puchField[0] = 0x80;
+        do
+        {
+            puchField[cchField--] = cbSize & ((1 << 8) - 1);
+            cbSize = (cbSize >> 8);
+        } while (cchField);
+    }
+}
+
+DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
+{
+    int64_t cbSize = 0;
+ 	if (pRecord->h.size[0] & 0x80)
+    {
+        size_t cchField = sizeof(pRecord->h.size);
+        unsigned char const *puchField = (unsigned char const *)pRecord->h.size;
+        /*
+         * The first byte has the bit 7 set to indicate base-256, while bit 6
+         * is the signed bit. Bits 5:0 are the most significant value bits.
+         */
+        cbSize = !(0x40 & *puchField) ? 0 : -1;
+        cbSize = (cbSize << 6) | (*puchField & 0x3f);
+        cchField--;
+        puchField++;
+        /*
+         * The remaining bytes are used in full.
+         */
+        while (cchField-- > 0)
+        {
+            if (RT_UNLIKELY(   cbSize > INT64_MAX / 256
+                            || cbSize < INT64_MIN / 256))
+            {
+                cbSize = 0;
+                break;
+            }
+            cbSize = (cbSize << 8) | *puchField++;
+        }
+    }else
+        cbSize = rtTarRecToSize(pRecord);
+
+    if (cbSize < 0)
+        cbSize = 0;
+
+    return (uint64_t)cbSize;
+}
+
 DECLINLINE(int) rtTarCalcChkSum(PRTTARRECORD pRecord, uint32_t *pChkSum)
 {
     uint32_t check = 0;
@@ -263,7 +323,7 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
     RTStrPrintf(pRecord->h.mode,  sizeof(pRecord->h.mode),  "%0.7o",    fmode);
     RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o",    uid);
     RTStrPrintf(pRecord->h.gid,   sizeof(pRecord->h.gid),   "%0.7o",    gid);
-    RTStrPrintf(pRecord->h.size,  sizeof(pRecord->h.size),  "%0.11llo", cbSize);
+    rtTarSizeToRec(pRecord, cbSize);
     RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11o",   mtime);
     RTStrPrintf(pRecord->h.magic, sizeof(pRecord->h.magic), "ustar  ");
     RTStrPrintf(pRecord->h.uname, sizeof(pRecord->h.uname), "someone");
@@ -567,7 +627,7 @@ static int rtTarSkipData(RTFILE hFile, PRTTARRECORD pRecord)
 {
     int rc = VINF_SUCCESS;
     /* Seek over the data parts (512 bytes aligned) */
-    int64_t offSeek = RT_ALIGN(RTStrToInt64(pRecord->h.size), sizeof(RTTARRECORD));
+    int64_t offSeek = RT_ALIGN(rtTarRecToSize(pRecord), sizeof(RTTARRECORD));
     if (offSeek > 0)
         rc = RTFileSeek(hFile, offSeek, RTFILE_SEEK_CURRENT, NULL);
     return rc;
@@ -594,10 +654,7 @@ static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *poff, uint
             if (!RTStrCmp(record.h.name, pszFile))
             {
                 /* Get the file size */
-                rc = RTStrToUInt64Full(record.h.size, 8, pcbSize);
-                if (RT_FAILURE(rc))
-                    break;
-
+                *pcbSize = rtTarRecToSize(&record);
                 /* Seek back, to position the file pointer at the start of the header. */
                 rc = RTFileSeek(hFile, -(int64_t)sizeof(RTTARRECORD), RTFILE_SEEK_CURRENT, poff);
                 fFound = true;
@@ -641,12 +698,8 @@ static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles
             {
                 if (!RTStrCmp(record.h.name, papszFiles[i]))
                 {
-                    /* Get the file size */
-                    uint64_t cbSize = 0;
-                    rc = RTStrToUInt64Full(record.h.size, 8, &cbSize);
-
                     /* Sum up the overall size */
-                    *pcbOverallSize += cbSize;
+                    *pcbOverallSize += rtTarRecToSize(&record);
                     ++cFound;
                     break;
                 }
@@ -1619,10 +1672,7 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
             }
 
             /* Get the file size */
-            rc = RTStrToUInt64Full(record.h.size, 8, &pFileInt->cbSize);
-            if (RT_FAILURE(rc))
-                break;
-
+            pFileInt->cbSize = rtTarRecToSize(&record);
             /* The start is -512 from here. */
             pFileInt->offStart = RTFileTell(pInt->hTarFile) - sizeof(RTTARRECORD);
 
