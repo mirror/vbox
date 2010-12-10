@@ -2136,17 +2136,12 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
                     }
                     if (pvSwapchain != pSwapchain->pSwapChainIf)
                     {
+#ifdef DEBUG_misha
+                        /* @todo: we can not generally update the render target directly, implement */
                         Assert(iBb != (~0));
-//                        Assert(0);
-#if 0 //def DEBUG_misha
-                        vboxVDbgDumpAllocSurfData((pDevice, "Synch Src:\n", pAlloc, pD3D9OldSurf, NULL, "\n"));
-                        vboxVDbgDumpAllocData((pDevice, "Synch ALLOC:\n", pAlloc, NULL, "\n"));
 #endif
                         hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
                         Assert(hr == S_OK);
-#if 0 //def DEBUG_misha
-                        vboxVDbgDumpAllocSurfData((pDevice, "Synch Dst:\n", pAlloc, pD3D9Surf, NULL, "\n"));
-#endif
                         if (pSwapchain->cRTs == 1)
                         {
                             /* synch bb and fb */
@@ -2209,7 +2204,10 @@ static HRESULT vboxWddmSwapchainSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDIS
 static VOID vboxWddmSwapchainFillParams(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, D3DPRESENT_PARAMETERS *pParams)
 {
     Assert(pSwapchain->cRTs);
+#ifdef DEBUG_misha
+    /* not supported by wine properly, need to use offscreen render targets and blit their data to swapchain RTs*/
     Assert(pSwapchain->cRTs <= 2);
+#endif
     memset(pParams, 0, sizeof (D3DPRESENT_PARAMETERS));
     PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainGetBb(pSwapchain);
     PVBOXWDDMDISP_RESOURCE pRc = pRt->pAlloc->pRc;
@@ -2311,7 +2309,6 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                 pDevice9If = pDevice->pDevice9If;
                 if (pOldIf)
                 {
-                    Assert(0);
                     /* copy current rt data to offscreen render targets */
                     IDirect3DSurface9* pD3D9OldFb = NULL;
                     HRESULT tmpHr = pOldIf->GetBackBuffer(~0, D3DBACKBUFFER_TYPE_MONO, &pD3D9OldFb);
@@ -3364,9 +3361,13 @@ static HRESULT APIENTRY vboxWddmDDevValidateDevice(HANDLE hDevice, D3DDDIARG_VAL
 //    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
 //    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+#ifdef DEBUG_misha
+    /* @todo: check if it's ok to always return success */
+    vboxVDbgPrint((__FUNCTION__": @todo: check if it's ok to always return success\n"));
     Assert(0);
+#endif
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    return S_OK;
 }
 
 static HRESULT APIENTRY vboxWddmDDevSetTextureStageState(HANDLE hDevice, CONST D3DDDIARG_TEXTURESTAGESTATE* pData)
@@ -4405,13 +4406,15 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 //        Assert(pRc != pScreen->pRenderTargetRc || pScreen->iRenderTargetFrontBuf != pData->SubResourceIndex);
 
         if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE)
+            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE
+            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE)
         {
             PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
             Assert(pData->SubResourceIndex < pRc->cAllocations);
             PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
             IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
             IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pTexAlloc->pD3DIf;
+            IDirect3DSurface9 *pD3DIfSurface = (IDirect3DSurface9*)pTexAlloc->pD3DIf;
             Assert(pTexAlloc->pD3DIf);
             RECT *pRect = NULL;
             bool bNeedResynch = false;
@@ -4424,40 +4427,44 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
             /* else - we lock the entire texture, pRect == NULL */
 
-//            Assert(!pLockAlloc->LockInfo.cLocks);
             if (!pLockAlloc->LockInfo.cLocks)
             {
-                if (pTexAlloc->enmD3DIfType==VBOXDISP_D3DIFTYPE_TEXTURE)
+                switch (pTexAlloc->enmD3DIfType)
                 {
-                    hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
-                            &pLockAlloc->LockInfo.LockedRect,
-                            pRect,
-                            vboxDDI2D3DLockFlags(pData->Flags));
-                }
-                else /*VBOXDISP_D3DIFTYPE_CUBE_TEXTURE*/
-                {
-                    hr = pD3DIfCubeTex->LockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                            VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex),
-                            &pLockAlloc->LockInfo.LockedRect,
-                            pRect,
-                            vboxDDI2D3DLockFlags(pData->Flags));
+                    case VBOXDISP_D3DIFTYPE_TEXTURE:
+                        hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
+                                &pLockAlloc->LockInfo.LockedRect,
+                                pRect,
+                                vboxDDI2D3DLockFlags(pData->Flags));
+                        break;
+                    case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+                        hr = pD3DIfCubeTex->LockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
+                                VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex),
+                                &pLockAlloc->LockInfo.LockedRect,
+                                pRect,
+                                vboxDDI2D3DLockFlags(pData->Flags));
+                        break;
+                    case VBOXDISP_D3DIFTYPE_SURFACE:
+                        hr = pD3DIfSurface->LockRect(&pLockAlloc->LockInfo.LockedRect,
+                                pRect,
+                                vboxDDI2D3DLockFlags(pData->Flags));
+                        break;
+                    default:
+                        Assert(0);
+                        break;
                 }
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-
-//                    Assert(pLockAlloc->LockInfo.fFlags.Value == 0);
                     pLockAlloc->LockInfo.fFlags = pData->Flags;
                     if (pRect)
                     {
                         pLockAlloc->LockInfo.Area = *pRect;
                         Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 1);
-//                        pLockAlloc->LockInfo.fFlags.AreaValid = 1;
                     }
                     else
                     {
                         Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 0);
-//                        pLockAlloc->LockInfo.fFlags.AreaValid = 0;
                     }
 
                     bNeedResynch = !pData->Flags.Discard;
@@ -4465,10 +4472,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             }
             else
             {
-//                Assert(pLockAlloc->LockInfo.fFlags.Value == pData->Flags.Value);
-//                if (pLockAlloc->LockInfo.fFlags.Value != pData->Flags.Value)
-//                {
-//                }
                 Assert(pLockAlloc->LockInfo.fFlags.AreaValid == pData->Flags.AreaValid);
                 if (pLockAlloc->LockInfo.fFlags.AreaValid && pData->Flags.AreaValid)
                 {
@@ -4483,36 +4486,50 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
                 Assert(!bNeedResynch);
 
-                if (/*(pLockAlloc->LockInfo.fFlags.Discard && !pData->Flags.Discard)
-                        || */
-                        (pLockAlloc->LockInfo.fFlags.ReadOnly && !pData->Flags.ReadOnly))
+                if (pLockAlloc->LockInfo.fFlags.ReadOnly && !pData->Flags.ReadOnly)
                 {
-                    if (pTexAlloc->enmD3DIfType==VBOXDISP_D3DIFTYPE_TEXTURE)
+                    switch (pTexAlloc->enmD3DIfType)
                     {
-                        hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
-                    }
-                    else /*VBOXDISP_D3DIFTYPE_CUBE_TEXTURE*/
-                    {
-                        hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                                VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
+                        case VBOXDISP_D3DIFTYPE_TEXTURE:
+                            hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
+                            break;
+                        case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+                            hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
+                                    VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
+                            break;
+                        case VBOXDISP_D3DIFTYPE_SURFACE:
+                            hr = pD3DIfSurface->UnlockRect();
+                            break;
+                        default:
+                            Assert(0);
+                            break;
                     }
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
-                        if (pTexAlloc->enmD3DIfType==VBOXDISP_D3DIFTYPE_TEXTURE)
+                        switch (pTexAlloc->enmD3DIfType)
                         {
-                            hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
-                                    &pLockAlloc->LockInfo.LockedRect,
-                                    pRect,
-                                    vboxDDI2D3DLockFlags(pData->Flags));
-                        }
-                        else /*VBOXDISP_D3DIFTYPE_CUBE_TEXTURE*/
-                        {
-                            hr = pD3DIfCubeTex->LockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                                    VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex),
-                                    &pLockAlloc->LockInfo.LockedRect,
-                                    pRect,
-                                    vboxDDI2D3DLockFlags(pData->Flags));
+                            case VBOXDISP_D3DIFTYPE_TEXTURE:
+                                hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
+                                        &pLockAlloc->LockInfo.LockedRect,
+                                        pRect,
+                                        vboxDDI2D3DLockFlags(pData->Flags));
+                                break;
+                            case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+                                hr = pD3DIfCubeTex->LockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
+                                        VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex),
+                                        &pLockAlloc->LockInfo.LockedRect,
+                                        pRect,
+                                        vboxDDI2D3DLockFlags(pData->Flags));
+                                break;
+                            case VBOXDISP_D3DIFTYPE_SURFACE:
+                                hr = pD3DIfSurface->LockRect(&pLockAlloc->LockInfo.LockedRect,
+                                        pRect,
+                                        vboxDDI2D3DLockFlags(pData->Flags));
+                                break;
+                            default:
+                                Assert(0);
+                                break;
                         }
                         Assert(hr == S_OK);
                         pLockAlloc->LockInfo.fFlags.ReadOnly = 0;
@@ -4536,10 +4553,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                 {
                     Assert(pLockAlloc->pvMem);
                     Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
-#if 0
-                    if (bNeedResynch)
-                        vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect, pRect, false /*bool bToLockInfo*/);
-#endif
                 }
             }
         }
@@ -4560,7 +4573,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
             /* else - we lock the entire vertex buffer, pRect == NULL */
 
-            Assert(!pAlloc->LockInfo.cLocks);
             if (!pAlloc->LockInfo.cLocks)
             {
                 if (!pData->Flags.MightDrawFromLocked || (!pData->Flags.Discard && !pData->Flags.NoOverwrite))
@@ -4593,10 +4605,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             }
             else
             {
-//                Assert(pAlloc->LockInfo.fFlags.Value == pData->Flags.Value);
-//                if (pAlloc->LockInfo.fFlags.Value != pData->Flags.Value)
-//                {
-//                }
                 Assert(pAlloc->LockInfo.fFlags.RangeValid == pData->Flags.RangeValid);
                 if (pAlloc->LockInfo.fFlags.RangeValid && pData->Flags.RangeValid)
                 {
@@ -4657,7 +4665,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
             /* else - we lock the entire vertex buffer, pRect == NULL */
 
-            Assert(!pAlloc->LockInfo.cLocks);
             if (!pAlloc->LockInfo.cLocks)
             {
                 if (!pData->Flags.MightDrawFromLocked || (!pData->Flags.Discard && !pData->Flags.NoOverwrite))
@@ -4690,10 +4697,6 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             }
             else
             {
-//                Assert(pAlloc->LockInfo.fFlags.Value == pData->Flags.Value);
-//                if (pAlloc->LockInfo.fFlags.Value != pData->Flags.Value)
-//                {
-//                }
                 Assert(pAlloc->LockInfo.fFlags.RangeValid == pData->Flags.RangeValid);
                 if (pAlloc->LockInfo.fFlags.RangeValid && pData->Flags.RangeValid)
                 {
@@ -4830,38 +4833,42 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
         if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE)
+            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE
+            || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE)
         {
             Assert(pData->SubResourceIndex < pRc->cAllocations);
             PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
 
             --pLockAlloc->LockInfo.cLocks;
             Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
-//            pLockAlloc->LockInfo.cLocks = 0;
             if (!pLockAlloc->LockInfo.cLocks)
             {
                 PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
-//                Assert(!pLockAlloc->LockInfo.cLocks);
                 Assert(pTexAlloc->pD3DIf);
-                /* this is a sysmem texture, update  */
-#if 0
-                if (pLockAlloc->pvMem && !pLockAlloc->LockInfo.fFlags.ReadOnly)
+                switch (pRc->aAllocations[0].enmD3DIfType)
                 {
-                    vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect,
-                            pLockAlloc->LockInfo.fFlags.AreaValid ? &pLockAlloc->LockInfo.Area : NULL,
-                            true /*bool bToLockInfo*/);
-                }
-#endif
-                if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE)
-                {
-                    IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
-                    hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
-                }
-                else
-                {
-                    IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pTexAlloc->pD3DIf;
-                    hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                            VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
+                    case VBOXDISP_D3DIFTYPE_TEXTURE:
+                    {
+                        IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
+                        hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
+                        break;
+                    }
+                    case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+                    {
+                        IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pTexAlloc->pD3DIf;
+                        hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
+                                VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
+                        break;
+                    }
+                    case VBOXDISP_D3DIFTYPE_SURFACE:
+                    {
+                        IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pTexAlloc->pD3DIf;
+                        hr = pD3DIfSurf->UnlockRect();
+                        break;
+                    }
+                    default:
+                        Assert(0);
+                        break;
                 }
                 Assert(hr == S_OK);
             }
@@ -7347,11 +7354,9 @@ static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST
     VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-//    Assert(pDevice);
-//    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
-    Assert(0);
     HRESULT hr = S_OK;
+    /* @todo check residency for the "real" allocations */
 #if 0
     for (UINT i = 0; i < pData->NumResources; ++i)
     {
