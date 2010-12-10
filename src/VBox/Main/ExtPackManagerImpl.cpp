@@ -461,7 +461,8 @@ STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_
         RTStrPrintf(szName, sizeof(szName), VBOX_EXTPACK_LICENSE_NAME_PREFIX ".%s",     strFormat.c_str());
 
     /*
-     * Effectuate the query.
+     * Lock the extension pack. We need a write lock here as there must not be
+     * concurrent accesses to the tar file handle.
      */
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -470,90 +471,99 @@ STDMETHODIMP ExtPackFile::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_
         AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
         /*
-         * Look it up in the manifest before scanning the tarball for it
+         * Do not permit this query on a pack that isn't considered usable (could
+         * be marked so because of bad license files).
          */
-        if (RTManifestEntryExists(m->hOurManifest, szName))
+        if (!m->fUsable)
+            hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+        else
         {
-            RTVFSFSSTREAM   hTarFss;
-            char            szError[8192];
-            int vrc = VBoxExtPackOpenTarFss(m->hExtPackFile, szError, sizeof(szError), &hTarFss);
-            if (RT_SUCCESS(vrc))
+            /*
+             * Look it up in the manifest before scanning the tarball for it
+             */
+            if (RTManifestEntryExists(m->hOurManifest, szName))
             {
-                for (;;)
+                RTVFSFSSTREAM   hTarFss;
+                char            szError[8192];
+                int vrc = VBoxExtPackOpenTarFss(m->hExtPackFile, szError, sizeof(szError), &hTarFss);
+                if (RT_SUCCESS(vrc))
                 {
-                    /* Get the first/next. */
-                    char           *pszName;
-                    RTVFSOBJ        hVfsObj;
-                    RTVFSOBJTYPE    enmType;
-                    vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
-                    if (RT_FAILURE(vrc))
+                    for (;;)
                     {
-                        if (vrc != VERR_EOF)
-                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
-                        else
-                            hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
-                        break;
-                    }
-
-                    /* Is this it? */
-                    const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
-                    if (   !strcmp(pszAdjName, szName)
-                        && (   enmType == RTVFSOBJTYPE_IO_STREAM
-                            || enmType == RTVFSOBJTYPE_FILE))
-                    {
-                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                        RTVfsObjRelease(hVfsObj);
-                        RTStrFree(pszName);
-
-                        /* Load the file into memory. */
-                        RTFSOBJINFO ObjInfo;
-                        vrc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
-                        if (RT_SUCCESS(vrc))
+                        /* Get the first/next. */
+                        char           *pszName;
+                        RTVFSOBJ        hVfsObj;
+                        RTVFSOBJTYPE    enmType;
+                        vrc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+                        if (RT_FAILURE(vrc))
                         {
-                            size_t cbFile = (size_t)ObjInfo.cbObject;
-                            void  *pvFile = RTMemAllocZ(cbFile + 1);
-                            if (pvFile)
+                            if (vrc != VERR_EOF)
+                                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
+                            else
+                                hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
+                            break;
+                        }
+
+                        /* Is this it? */
+                        const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
+                        if (   !strcmp(pszAdjName, szName)
+                            && (   enmType == RTVFSOBJTYPE_IO_STREAM
+                                || enmType == RTVFSOBJTYPE_FILE))
+                        {
+                            RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                            RTVfsObjRelease(hVfsObj);
+                            RTStrFree(pszName);
+
+                            /* Load the file into memory. */
+                            RTFSOBJINFO ObjInfo;
+                            vrc = RTVfsIoStrmQueryInfo(hVfsIos, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+                            if (RT_SUCCESS(vrc))
                             {
-                                vrc = RTVfsIoStrmRead(hVfsIos, pvFile, cbFile, true /*fBlocking*/, NULL);
-                                if (RT_SUCCESS(vrc))
+                                size_t cbFile = (size_t)ObjInfo.cbObject;
+                                void  *pvFile = RTMemAllocZ(cbFile + 1);
+                                if (pvFile)
                                 {
-                                    /* try translate it into a string we can return. */
-                                    Bstr bstrLicense((const char *)pvFile, cbFile);
-                                    if (bstrLicense.isNotEmpty())
+                                    vrc = RTVfsIoStrmRead(hVfsIos, pvFile, cbFile, true /*fBlocking*/, NULL);
+                                    if (RT_SUCCESS(vrc))
                                     {
-                                        bstrLicense.detachTo(a_pbstrLicense);
-                                        hrc = S_OK;
+                                        /* try translate it into a string we can return. */
+                                        Bstr bstrLicense((const char *)pvFile, cbFile);
+                                        if (bstrLicense.isNotEmpty())
+                                        {
+                                            bstrLicense.detachTo(a_pbstrLicense);
+                                            hrc = S_OK;
+                                        }
+                                        else
+                                            hrc = setError(VBOX_E_IPRT_ERROR,
+                                                           tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                                           szName);
                                     }
                                     else
-                                        hrc = setError(VBOX_E_IPRT_ERROR,
-                                                       tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
-                                                       szName);
+                                        hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
+                                    RTMemFree(pvFile);
                                 }
                                 else
-                                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
-                                RTMemFree(pvFile);
+                                    hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
                             }
                             else
-                                hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
+                                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
+                            RTVfsIoStrmRelease(hVfsIos);
+                            break;
                         }
-                        else
-                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
-                        RTVfsIoStrmRelease(hVfsIos);
-                        break;
-                    }
 
-                    /* Release current. */
-                    RTVfsObjRelease(hVfsObj);
-                    RTStrFree(pszName);
+                        /* Release current. */
+                        RTVfsObjRelease(hVfsObj);
+                        RTStrFree(pszName);
+                    }
+                    RTVfsFsStrmRelease(hTarFss);
                 }
-                RTVfsFsStrmRelease(hTarFss);
+                else
+                    hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
             }
             else
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
+                               szName, m->strExtPackFile.c_str());
         }
-        else
-            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
-                           szName, m->strExtPackFile.c_str());
     }
     return hrc;
 }
@@ -1626,34 +1636,39 @@ STDMETHODIMP ExtPack::QueryLicense(IN_BSTR a_bstrPreferredLocale, IN_BSTR a_bstr
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* paranoia */
 
-        char szPath[RTPATH_MAX];
-        int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szName);
-        if (RT_SUCCESS(vrc))
+        if (!m->fUsable)
+            hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+        else
         {
-            void   *pvFile;
-            size_t  cbFile;
-            vrc = RTFileReadAllEx(szPath, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_READ, &pvFile, &cbFile);
+            char szPath[RTPATH_MAX];
+            int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szName);
             if (RT_SUCCESS(vrc))
             {
-                Bstr bstrLicense((const char *)pvFile, cbFile);
-                if (bstrLicense.isNotEmpty())
+                void   *pvFile;
+                size_t  cbFile;
+                vrc = RTFileReadAllEx(szPath, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_READ, &pvFile, &cbFile);
+                if (RT_SUCCESS(vrc))
                 {
-                    bstrLicense.detachTo(a_pbstrLicense);
-                    hrc = S_OK;
+                    Bstr bstrLicense((const char *)pvFile, cbFile);
+                    if (bstrLicense.isNotEmpty())
+                    {
+                        bstrLicense.detachTo(a_pbstrLicense);
+                        hrc = S_OK;
+                    }
+                    else
+                        hrc = setError(VBOX_E_IPRT_ERROR, tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                       szPath);
+                    RTFileReadAllFree(pvFile, cbFile);
                 }
+                else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                    hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
+                                   szName, m->Desc.strName.c_str());
                 else
-                    hrc = setError(VBOX_E_IPRT_ERROR, tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
-                                   szPath);
-                RTFileReadAllFree(pvFile, cbFile);
+                    hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
             }
-            else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
-                               szName, m->Desc.strName.c_str());
             else
-                hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
         }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
     }
     return hrc;
 }
