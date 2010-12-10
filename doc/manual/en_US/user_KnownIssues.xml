@@ -106,9 +106,9 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Seamless mode</emphasis> does not work
-      correctly with Linux guests that have 3D effects enabled (such as with
-      compiz-enabled window managers).</para>
+      <para>Neither <emphasis role="bold">scale mode</emphasis> nor <emphasis
+      role="bold">seamless mode</emphasis> work correctly with guests using
+      OpenGL 3D features (such as with compiz-enabled window managers).</para>
     </listitem>
 
     <listitem>

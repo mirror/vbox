@@ -467,8 +467,8 @@
             </listitem>
 
             <listitem>
-              <para>SUSE Linux 9 and 10, openSUSE 10.3, 11.0, 11.1,
-              11.2, 11.3</para>
+              <para>SUSE Linux 9 and 10, openSUSE 10.3, 11.0, 11.1, 11.2,
+              11.3</para>
             </listitem>
 
             <listitem>
@@ -1056,6 +1056,50 @@
       host drive to the guest or select a floppy or DVD image using the Disk
       Image Manager, all as described in <xref
       linkend="configbasics" />.</para>
+    </sect2>
+
+    <sect2 id="intro-resize-window">
+      <title>Resizing the machine's window</title>
+
+      <para>You can resize the virtual machine's window when it is running. In
+      that case, one of three things will happen:<orderedlist>
+          <listitem>
+            <para>If you have <emphasis role="bold">"scale mode"</emphasis>
+            enabled, then the virtual machine's screen will be scaled to the
+            size of the window. This can be useful if you have many machines
+            running and want to have a look at one of them while it is running
+            in the background. Alternatively, it might be useful to enlarge a
+            window if the VM's output screen is very small, for example
+            because you are running an old operating system in it.</para>
+
+            <para>To enable scale mode, press the <emphasis role="bold">host
+            key + C</emphasis>, or select "Scale mode" from the "Machine" menu
+            in the VM window. To leave scale mode, press the host key + C
+            again.</para>
+
+            <para>Please see <xref linkend="KnownIssues" /> for additional
+            remarks.</para>
+          </listitem>
+
+          <listitem>
+            <para>If you have the Guest Additions installed and they support
+            automatic <emphasis role="bold">resizing</emphasis>, the Guest
+            Additions will automatically adjust the screen resolution of the
+            guest operating system. For example, if you are running a Windows
+            guest with a resolution of 1024x768 pixels and you then resize the
+            VM window to make it 100 pixels wider, the Guest Additions will
+            change the Windows display resolution to 1124x768.</para>
+
+            <para>Please see <xref linkend="guestadditions" /> for more
+            information about the Guest Additions.</para>
+          </listitem>
+
+          <listitem>
+            <para>Otherwise, if the window is bigger than the VM's screen, the
+            screen will be centered. If it is smaller, then scroll bars will
+            be added to the machine window.</para>
+          </listitem>
+        </orderedlist></para>
     </sect2>
 
     <sect2>
