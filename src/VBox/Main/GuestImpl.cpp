@@ -459,7 +459,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
         if (RT_FAILURE(vrc))
         {
             rc = TaskGuest::setProgressErrorInfo(VBOX_E_FILE_ERROR, aTask->progress,
-                                                 Guest::tr("Invalid installation medium (%s) detected"),
+                                                 Guest::tr("Invalid installation medium detected: \"%s\""),
                                                  aTask->strSource.c_str());
         }
         else
@@ -474,7 +474,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 vrc = RTFileSeek(iso.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
                 if (RT_FAILURE(vrc))
                     rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                         Guest::tr("Could not seek to setup file on installation medium (%Rrc)"), vrc);
+                                                         Guest::tr("Could not seek to setup file on installation medium \"%s\" (%Rrc)"),
+                                                         aTask->strSource.c_str(), vrc);
             }
             else
             {
@@ -482,12 +483,14 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 {
                     case VERR_FILE_NOT_FOUND:
                         rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                             Guest::tr("Setup file was not found on installation medium"));
+                                                             Guest::tr("Setup file was not found on installation medium \"%s\""),
+                                                             aTask->strSource.c_str());
                         break;
 
                     default:
                         rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                             Guest::tr("An unknown error occured while retrieving information of setup file (%Rrc)"), vrc);
+                                                             Guest::tr("An unknown error (%Rrc) occured while retrieving information of setup file on installation medium \"%s\""),
+                                                             vrc, aTask->strSource.c_str());
                         break;
                 }
             }
@@ -498,7 +501,6 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             if (RT_SUCCESS(vrc))
             {
                 /* Okay, we're ready to start our copy routine on the guest! */
-                LogRel(("Automatic update of Guest Additions started\n"));
                 aTask->progress->SetCurrentOperationProgress(15);
 
                 /* Prepare command line args. */
@@ -541,6 +543,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                              * is not running (yet) or that the Guest Additions are too old (because VBoxService does not
                              * support the guest execution feature in this version). */
                             case VERR_NOT_FOUND:
+                                LogRel(("Guest Additions seem not to be installed yet\n"));
                                 rc = TaskGuest::setProgressErrorInfo(VBOX_E_NOT_SUPPORTED, aTask->progress,
                                                                      Guest::tr("Guest Additions seem not to be installed or are not ready to update yet"));
                                 break;
@@ -548,6 +551,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                             /* Getting back a VERR_INVALID_PARAMETER indicates that the installed Guest Additions are supporting the guest
                              * execution but not the built-in "vbox_cat" tool of VBoxService (< 4.0). */
                             case VERR_INVALID_PARAMETER:
+                                LogRel(("Guest Additions are installed but don't supported automatic updating\n"));
                                 rc = TaskGuest::setProgressErrorInfo(VBOX_E_NOT_SUPPORTED, aTask->progress,
                                                                      Guest::tr("Installed Guest Additions do not support automatic updating"));
                                 break;
@@ -561,6 +565,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                     }
                     else
                     {
+                        LogRel(("Automatic update of Guest Additions started\n"));
                         LogRel(("Copying Guest Additions installer to guest ...\n"));
                         aTask->progress->SetCurrentOperationProgress(20);
 
