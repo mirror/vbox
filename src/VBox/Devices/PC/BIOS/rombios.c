@@ -2260,6 +2260,8 @@ debugger_off()
 #define ATA_CMD_READ_SECTORS                 0x20
 #ifdef VBOX
 #define ATA_CMD_READ_SECTORS_EXT             0x24
+#define ATA_CMD_READ_MULTIPLE_EXT            0x29
+#define ATA_CMD_WRITE_MULTIPLE_EXT           0x39
 #endif /* VBOX */
 #define ATA_CMD_READ_VERIFY_SECTORS          0x40
 #define ATA_CMD_RECALIBRATE                  0x10
@@ -2337,7 +2339,7 @@ void ata_init( )
     write_byte(ebda_seg,&EbdaData->ata.devices[device].removable,0);
     write_byte(ebda_seg,&EbdaData->ata.devices[device].lock,0);
     write_byte(ebda_seg,&EbdaData->ata.devices[device].mode,ATA_MODE_NONE);
-    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0);
+    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);
     write_byte(ebda_seg,&EbdaData->ata.devices[device].translation,ATA_TRANSLATION_NONE);
     write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.heads,0);
     write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.cylinders,0);
@@ -2863,7 +2865,7 @@ Bit32u lba;
   iobase1 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase1);
   iobase2 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase2);
   mode    = read_byte(ebda_seg, &EbdaData->ata.devices[device].mode);
-  blksize = 0x200; // was = read_word(ebda_seg, &EbdaData->ata.devices[device].blksize);
+  blksize = read_word(ebda_seg, &EbdaData->ata.devices[device].blksize);
   if (mode == ATA_MODE_PIO32) blksize>>=2;
   else blksize>>=1;
 
@@ -2918,6 +2920,9 @@ Bit32u lba;
   outb(iobase1 + ATA_CB_CH, cylinder >> 8);
   outb(iobase1 + ATA_CB_DH, (slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0) | (Bit8u) head );
   outb(iobase1 + ATA_CB_CMD, command);
+
+  if (command == ATA_CMD_READ_MULTIPLE)
+    count = 1;
 
   while (1) {
     status = inb(iobase1 + ATA_CB_STAT);
@@ -5575,7 +5580,9 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
           status=scsi_read_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, segment, offset);
         else
 #endif
-          status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, cylinder, head, sector, lba, segment, offset);
+          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);  
+          status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, segment, offset);
+          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);  
       }
       else
       {
@@ -5752,8 +5759,11 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
         {
           if (count >= 256 || lba + count >= 268435456)
             status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
-          else
-            status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, 0, 0, 0, lba, segment, offset);
+          else {
+            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);  
+            status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, segment, offset);
+            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);  
+          }
         }
       }
 #else /* !VBOX */
