@@ -2296,7 +2296,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint8_t     u8LastTPR = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
-    PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
 #ifdef VBOX_STRICT
     RTCPUID     idCpuCheck;
     bool        fWasInLongMode = false;
@@ -2306,7 +2305,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || (pVCpu->hwaccm.s.vmx.pVAPIC && pVM->hwaccm.s.vmx.pAPIC));
-    AssertReturn(pCpu, VERR_INTERNAL_ERROR);
 
     /* Check if we need to use TPR shadowing. */
     if (    CPUMIsGuestInLongModeEx(pCtx)
@@ -2576,6 +2574,9 @@ ResumeExecution:
 # endif /* HWACCM_VTX_WITH_VPID */
         )
     {
+        PHWACCM_CPUINFO pCpu;
+
+        pCpu = HWACCMR0GetCurrentCpu();
         if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
             ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
         {
@@ -2617,8 +2618,7 @@ ResumeExecution:
     }
 
     /* Load the guest state */
-    if (    !pVCpu->hwaccm.s.fContextUseFlags
-        &&  pVCpu->hwaccm.s.idLastCpu == pCpu->idCpu)
+    if (!pVCpu->hwaccm.s.fContextUseFlags)
     {
         VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatLoadMinimal);
