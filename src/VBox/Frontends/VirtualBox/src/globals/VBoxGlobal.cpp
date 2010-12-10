@@ -2393,6 +2393,38 @@ void VBoxGlobal::startEnumeratingMedia()
     mMediaEnumThread->start();
 }
 
+VBoxDefs::MediumType VBoxGlobal::mediumTypeToLocal(KDeviceType globalType)
+{
+    switch (globalType)
+    {
+        case KDeviceType_HardDisk:
+            return VBoxDefs::MediumType_HardDisk;
+        case KDeviceType_DVD:
+            return VBoxDefs::MediumType_DVD;
+        case KDeviceType_Floppy:
+            return VBoxDefs::MediumType_Floppy;
+        default:
+            break;
+    }
+    return VBoxDefs::MediumType_Invalid;
+}
+
+KDeviceType VBoxGlobal::mediumTypeToGlobal(VBoxDefs::MediumType localType)
+{
+    switch (localType)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+            return KDeviceType_HardDisk;
+        case VBoxDefs::MediumType_DVD:
+            return KDeviceType_DVD;
+        case VBoxDefs::MediumType_Floppy:
+            return KDeviceType_Floppy;
+        default:
+            break;
+    }
+    return KDeviceType_Null;
+}
+
 /**
  * Adds a new medium to the current media list and emits the #mediumAdded()
  * signal.

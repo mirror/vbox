@@ -1087,17 +1087,13 @@ void UIMachineLogic::sltPrepareStorageMenu()
     QMenu *pOpticalDevicesMenu = actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu();
     QMenu *pFloppyDevicesMenu = actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu();
 
-    /* Determine device type: */
-    KDeviceType deviceType = pMenu == pOpticalDevicesMenu ? KDeviceType_DVD :
-                             pMenu == pFloppyDevicesMenu  ? KDeviceType_Floppy :
-                                                            KDeviceType_Null;
-    AssertMsg(deviceType != KDeviceType_Null, ("Incorrect storage device type!\n"));
-
-    /* Determine medium type: */
+    /* Determine medium & device types: */
     VBoxDefs::MediumType mediumType = pMenu == pOpticalDevicesMenu ? VBoxDefs::MediumType_DVD :
                                       pMenu == pFloppyDevicesMenu  ? VBoxDefs::MediumType_Floppy :
                                                                      VBoxDefs::MediumType_Invalid;
+    KDeviceType deviceType = vboxGlobal().mediumTypeToGlobal(mediumType);
     AssertMsg(mediumType != VBoxDefs::MediumType_Invalid, ("Incorrect storage medium type!\n"));
+    AssertMsg(deviceType != KDeviceType_Null, ("Incorrect storage device type!\n"));
 
     /* Fill attachments menu: */
     CMachine machine = session().GetMachine();

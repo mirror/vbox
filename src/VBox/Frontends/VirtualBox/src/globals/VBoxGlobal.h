@@ -573,6 +573,9 @@ public:
     /** Returns true if the media enumeration is in progress. */
     bool isMediaEnumerationStarted() const { return mMediaEnumThread != NULL; }
 
+    VBoxDefs::MediumType mediumTypeToLocal(KDeviceType globalType);
+    KDeviceType mediumTypeToGlobal(VBoxDefs::MediumType localType);
+
     void addMedium (const VBoxMedium &);
     void updateMedium (const VBoxMedium &);
     void removeMedium (VBoxDefs::MediumType, const QString &);
