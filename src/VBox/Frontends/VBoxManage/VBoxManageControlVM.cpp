@@ -190,13 +190,6 @@ int handleControlVM(HandlerArg *a)
         {
             CHECK_ERROR_BREAK(console, SleepButton());
         }
-        else if (!strcmp(a->argv[1], "injectnmi"))
-        {
-            /* get the machine debugger. */
-            ComPtr <IMachineDebugger> debugger;
-            CHECK_ERROR_BREAK(console, COMGETTER(Debugger)(debugger.asOutParam()));
-            CHECK_ERROR_BREAK(debugger, InjectNMI());
-        }
         else if (!strcmp(a->argv[1], "keyboardputscancode"))
         {
             ComPtr<IKeyboard> keyboard;

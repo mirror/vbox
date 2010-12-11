@@ -603,18 +603,14 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         usageGuestControl(pStrm);
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
-    /** @todo merge into debugvm */
-    if (u64Cmd & USAGE_VM_STATISTICS)
-        RTStrmPrintf(pStrm,
-                     "VBoxManage vmstatistics     <vmname>|<uuid> [--reset]\n"
-                     "                            [--pattern <pattern>] [--descriptions]\n"
-                     "\n");
     if (u64Cmd & USAGE_DEBUGVM)
     {
         RTStrmPrintf(pStrm,
                      "VBoxManage debugvm          <uuid>|<name>\n"
+                     "                            dumpguestcore --filename <name> |\n"
                      "                            injectnmi |\n"
-                     "                            dumpguestcore --filename <name>\n"
+                     "                            statistics [--reset] [--pattern <pattern>] "
+                     "                                [--descriptions]\n"
                      "\n");
     }
     if (u64Cmd & USAGE_METRICS)

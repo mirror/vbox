@@ -71,7 +71,7 @@
 #define USAGE_CONVERTFROMRAW        RT_BIT_64(32)
 #define USAGE_LISTPARTITIONS        RT_BIT_64(33)
 #define USAGE_CREATERAWVMDK         RT_BIT_64(34)
-#define USAGE_VM_STATISTICS         RT_BIT_64(35)
+#define USAGE_DEBUGVM               RT_BIT_64(35)
 #define USAGE_ADOPTSTATE            RT_BIT_64(36)
 #define USAGE_MODINSTALL            RT_BIT_64(37)
 #define USAGE_MODUNINSTALL          RT_BIT_64(38)
@@ -97,7 +97,6 @@
 #define USAGE_PASSWORDHASH          RT_BIT_64(54)
 #define USAGE_EXTPACK               RT_BIT_64(55)
 #define USAGE_BANDWIDTHCONTROL      RT_BIT_64(56)
-#define USAGE_DEBUGVM               RT_BIT_64(57)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -212,7 +211,6 @@ int handleGetExtraData(HandlerArg *a);
 int handleSetExtraData(HandlerArg *a);
 int handleSetProperty(HandlerArg *a);
 int handleSharedFolder(HandlerArg *a);
-int handleVMStatistics(HandlerArg *a);
 int handleExtPack(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
