@@ -365,7 +365,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            pause|resume|reset|poweroff|savestate|\n"
                      "                            acpipowerbutton|acpisleepbutton|\n"
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
-                     "                            injectnmi|\n"
                      "                            setlinkstate<1-N> on|off |\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                            nic<1-N> null|nat|bridged|intnet|hostonly\n"
@@ -594,12 +593,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            --name <name> [--transient]\n"
                      "\n");
 
-    if (u64Cmd & USAGE_VM_STATISTICS)
-        RTStrmPrintf(pStrm,
-                     "VBoxManage vmstatistics     <vmname>|<uuid> [--reset]\n"
-                     "                            [--pattern <pattern>] [--descriptions]\n"
-                     "\n");
-
 #ifdef VBOX_WITH_GUEST_PROPS
     if (u64Cmd & USAGE_GUESTPROPERTY)
         usageGuestProperty(pStrm);
@@ -610,6 +603,20 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         usageGuestControl(pStrm);
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
+    /** @todo merge into debugvm */
+    if (u64Cmd & USAGE_VM_STATISTICS)
+        RTStrmPrintf(pStrm,
+                     "VBoxManage vmstatistics     <vmname>|<uuid> [--reset]\n"
+                     "                            [--pattern <pattern>] [--descriptions]\n"
+                     "\n");
+    if (u64Cmd & USAGE_DEBUGVM)
+    {
+        RTStrmPrintf(pStrm,
+                     "VBoxManage debugvm          <uuid>|<name>\n"
+                     "                            injectnmi |\n"
+                     "                            dumpguestcore --filename <name>\n"
+                     "\n");
+    }
     if (u64Cmd & USAGE_METRICS)
         RTStrmPrintf(pStrm,
                      "VBoxManage metrics          list [*|host|<vmname> [<metric_list>]]\n"
@@ -674,14 +681,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage extpack          install <tarball>\n"
                      "VBoxManage extpack          uninstall [--force] <name>\n"
                      "VBoxManage extpack          cleanup\n"
-                     "\n");
-    }
-    if (u64Cmd & USAGE_DEBUGVM)
-    {
-        RTStrmPrintf(pStrm,
-                     "VBoxManage debugvm          <uuid>|<name>\n"
-                     "                            injectnmi |\n"
-                     "                            dumpguestcore --filename <name>\n"
                      "\n");
     }
 }
