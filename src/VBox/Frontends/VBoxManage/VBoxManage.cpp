@@ -415,7 +415,6 @@ int main(int argc, char *argv[])
             { "setproperty",      USAGE_SETPROPERTY,       handleSetProperty },
             { "usbfilter",        USAGE_USBFILTER,         handleUSBFilter },
             { "sharedfolder",     USAGE_SHAREDFOLDER,      handleSharedFolder },
-            { "vmstatistics",     USAGE_VM_STATISTICS,     handleVMStatistics },
 #ifdef VBOX_WITH_GUEST_PROPS
             { "guestproperty",    USAGE_GUESTPROPERTY,     handleGuestProperty },
 #endif

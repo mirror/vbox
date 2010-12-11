@@ -44,6 +44,7 @@
 
 /**
  * Handles the inject sub-command.
+ *
  * @returns Suitable exit code.
  * @param   a                   The handler arguments.
  * @param   pDebugger           Pointer to the debugger interface.
@@ -58,6 +59,7 @@ static RTEXITCODE handleDebugVM_InjectNMI(HandlerArg *a, IMachineDebugger *pDebu
 
 /**
  * Handles the inject sub-command.
+ *
  * @returns Suitable exit code.
  * @param   pArgs               The handler arguments.
  * @param   pDebugger           Pointer to the debugger interface.
@@ -108,6 +110,80 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * Handles the statistics sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    /*
+     * Parse arguments.
+     */
+    bool                        fWithDescriptions   = false;
+    const char                 *pszPattern          = NULL; /* all */
+    bool                        fReset              = false;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--descriptions", 'd', RTGETOPT_REQ_NOTHING },
+        { "--pattern",      'p', RTGETOPT_REQ_STRING  },
+        { "--reset",        'r', RTGETOPT_REQ_NOTHING  },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'd':
+                fWithDescriptions = true;
+                break;
+
+            case 'p':
+                if (pszPattern)
+                    return errorSyntax(USAGE_DEBUGVM, "Multiple --pattern options are not permitted");
+                pszPattern = ValueUnion.psz;
+                break;
+
+            case 'r':
+                fReset = true;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+        }
+    }
+
+    if (fReset && fWithDescriptions)
+        return errorSyntax(USAGE_DEBUGVM, "The --reset and --descriptions options does not mix");
+
+    /*
+     * Execute the order.
+     */
+    com::Bstr bstrPattern(pszPattern);
+    if (fReset)
+        CHECK_ERROR2_RET(pDebugger, ResetStats(bstrPattern.raw()), RTEXITCODE_FAILURE);
+    else
+    {
+        com::Bstr bstrStats;
+        CHECK_ERROR2_RET(pDebugger, GetStats(bstrPattern.raw(), fWithDescriptions, bstrStats.asOutParam()),
+                         RTEXITCODE_FAILURE);
+        /* if (fFormatted)
+         { big mess }
+         else
+         */
+        RTPrintf("%ls\n", bstrStats.raw());
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
 int handleDebugVM(HandlerArg *pArgs)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
@@ -137,10 +213,12 @@ int handleDebugVM(HandlerArg *pArgs)
              * String switch on the sub-command.
              */
             const char *pszSubCmd = pArgs->argv[1];
-            if (!strcmp(pszSubCmd, "injectnmi"))
-                rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "dumpguestcore"))
+            if (!strcmp(pszSubCmd, "dumpguestcore"))
                 rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "injectnmi"))
+                rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "statistics"))
+                rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
             else
                 errorSyntax(USAGE_DEBUGVM, "Invalid parameter '%s'", pArgs->argv[1]);
         }
