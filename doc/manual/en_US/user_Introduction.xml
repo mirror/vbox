@@ -68,7 +68,7 @@
         configurations. For example, installing a complete mail server
         solution on a real machine can be a tedious task. With VirtualBox,
         such a complex setup (then often called an "appliance") can be packed
-        into in a virtual machine. Installing and running a mail server
+        into a virtual machine. Installing and running a mail server
         becomes as easy as importing such an appliance into VirtualBox.</para>
       </listitem>
 
@@ -977,7 +977,7 @@
           Windows and Linux intercept this), and pressing this key combination
           will therefore reboot your <emphasis>host</emphasis>.</para>
 
-          <para>Also, on Linux and Solairs hosts, which use the X Window
+          <para>Also, on Linux and Solaris hosts, which use the X Window
           System, the key combination <emphasis
           role="bold">Ctrl+Alt+Backspace</emphasis> normally resets the X
           server (to restart the entire graphical user interface in case it
@@ -1256,7 +1256,7 @@
             by right-clicking on any snapshot you have taken in the list of
             snapshots. By restoring a snapshot, you go back (or forward) in
             time: the current state of the machine is lost, and the machine is
-            restored to exactly the same state as it was when then snapshot
+            restored to exactly the same state as it was when the snapshot
             was taken.<footnote>
                 <para>Both the terminology and the functionality of restoring
                 snapshots has changed with VirtualBox 3.1. Before that
@@ -1451,7 +1451,7 @@
         </listitem>
       </orderedlist></para>
 
-    <para>To <emphasis role="bold">import</emphasis> an appliance one of the
+    <para>To <emphasis role="bold">import</emphasis> an appliance in one of the
     above formats, simply double-click on the OVF/OVA file.<footnote>
         <para>Starting with version 4.0, VirtualBox creates file type
         associations for OVF and OVA files on your host operating
