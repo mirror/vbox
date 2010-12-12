@@ -564,6 +564,29 @@
       </para>
 
     </sect2>
+
+    <sect2 id="gui2D_grayedout">
+      <title>GUI: 2D Video Acceleration option is grayed out</title>
+
+      <para>To use 2D Video Acceleration within VirtualBox, your host's video
+          card should support certain OpenGL extensions.
+          On startup, VirtualBox checks for those extensions, and, if the test
+	  fails, this option is silently grayed out.
+      </para>
+        
+      <para>To find out why it has failed, you can manually execute the
+          following command:
+      </para>
+
+      <screen>VBoxTestOGL --log "log_file_name" --test 2D</screen>      
+
+      <para>It will list the required OpenGL extensions one by one and will
+          show you which one failed the test. This usually means that you 
+          are running an outdated or misconfigured OpenGL driver on your host.
+          It can also mean that your video chip is lacking require functionality.
+      </para>
+
+    </sect2>
   </sect1>
 
   <sect1>
