@@ -522,8 +522,9 @@
         <listitem>
           <para>Additional extension packs can be downloaded which extend the
           functionality of the VirtualBox base package. Currently, Oracle
-          provides the following extension packs, which can be found at <ulink
-          url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>:<orderedlist>
+          provides the one extension pack, which can be found at <ulink
+          url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>
+          and provides the following added functionality:<orderedlist>
               <listitem>
                 <para>The virtual USB 2.0 (EHCI) device; see <xref
                 linkend="settings-usb" />.</para>
@@ -533,10 +534,15 @@
                 <para>VirtualBox Remote Desktop Protocol (VRDP) support; see
                 <xref linkend="vrdp" />.</para>
               </listitem>
+
+              <listitem>
+                <para>Intel PXE boot ROM with support for the E1000 network
+                card.</para>
+              </listitem>
             </orderedlist></para>
 
           <para>VirtualBox extension packages have a
-          <computeroutput>.vbox-ext</computeroutput> file name extension. To
+          <computeroutput>.vbox-extpack</computeroutput> file name extension. To
           install an extension, simply double-click on package file, and the
           VirtualBox Manager will guide you through the required steps.</para>
         </listitem>
