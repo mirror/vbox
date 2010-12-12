@@ -190,9 +190,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Remove SUPSEMOP and SUPSEMCREATE.
+ *          - None.
  */
-#define SUPDRV_IOC_VERSION                              0x00150004
+#define SUPDRV_IOC_VERSION                              0x00160000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -294,7 +294,7 @@ typedef struct SUPLDROPEN
             char            szName[32];
             /** Image file name.
              * This can be used to load the image using a native loader. */
-            char            szFilename[196];
+            char            szFilename[260];
         } In;
         struct
         {
@@ -1016,83 +1016,12 @@ typedef struct SUPLOGGERSETTINGS
 /** @} */
 
 
-/** @name SUP_IOCTL_SEM_CREATE
- * Create a semaphore
- * @todo remove this interface with the next major version change.
- * @{
- */
-#define SUP_IOCTL_SEM_CREATE                            SUP_CTL_CODE_SIZE(24, SUP_IOCTL_SEM_CREATE_SIZE)
-#define SUP_IOCTL_SEM_CREATE_SIZE                       sizeof(SUPSEMCREATE)
-#define SUP_IOCTL_SEM_CREATE_SIZE_IN                    sizeof(SUPSEMCREATE)
-#define SUP_IOCTL_SEM_CREATE_SIZE_OUT                   sizeof(SUPSEMCREATE)
-typedef struct SUPSEMCREATE
-{
-    /** The header. */
-    SUPREQHDR               Hdr;
-    union
-    {
-        struct
-        {
-            /** The semaphore type. */
-            uint32_t        uType;
-        } In;
-        struct
-        {
-            /** The handle of the created semaphore. */
-            uint32_t        hSem;
-        } Out;
-    } u;
-} SUPSEMCREATE, *PSUPSEMCREATE;
-
-/** @} */
-
-
-/** @name SUP_IOCTL_SEM_OP
- * Semaphore operations.
- * @todo remove this interface with the next major version change.
- * @{
- */
-#define SUP_IOCTL_SEM_OP                                SUP_CTL_CODE_SIZE(25, SUP_IOCTL_SEM_OP_SIZE)
-#define SUP_IOCTL_SEM_OP_SIZE                           sizeof(SUPSEMOP)
-#define SUP_IOCTL_SEM_OP_SIZE_IN                        sizeof(SUPSEMOP)
-#define SUP_IOCTL_SEM_OP_SIZE_OUT                       sizeof(SUPREQHDR)
-typedef struct SUPSEMOP
-{
-    /** The header. */
-    SUPREQHDR               Hdr;
-    union
-    {
-        struct
-        {
-            /** The semaphore type. */
-            uint32_t        uType;
-            /** The semaphore handle. */
-            uint32_t        hSem;
-            /** The operation. */
-            uint32_t        uOp;
-            /** The number of milliseconds to wait if it's a wait operation. */
-            uint32_t        cMillies;
-        } In;
-    } u;
-} SUPSEMOP, *PSUPSEMOP;
-
-/** Wait for a number of milliseconds. */
-#define SUPSEMOP_WAIT       0
-/** Signal the semaphore. */
-#define SUPSEMOP_SIGNAL     1
-/** Reset the semaphore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
-#define SUPSEMOP_RESET      2
-/** Close the semaphore handle. */
-#define SUPSEMOP_CLOSE      3
-
-/** @} */
-
 /** @name SUP_IOCTL_SEM_OP2
  * Semaphore operations.
  * @remarks This replaces the old SUP_IOCTL_SEM_OP interface.
  * @{
  */
-#define SUP_IOCTL_SEM_OP2                               SUP_CTL_CODE_SIZE(27, SUP_IOCTL_SEM_OP2_SIZE)
+#define SUP_IOCTL_SEM_OP2                               SUP_CTL_CODE_SIZE(24, SUP_IOCTL_SEM_OP2_SIZE)
 #define SUP_IOCTL_SEM_OP2_SIZE                          sizeof(SUPSEMOP2)
 #define SUP_IOCTL_SEM_OP2_SIZE_IN                       sizeof(SUPSEMOP2)
 #define SUP_IOCTL_SEM_OP2_SIZE_OUT                      sizeof(SUPREQHDR)
@@ -1150,7 +1079,7 @@ typedef struct SUPSEMOP2
  * Semaphore operations.
  * @{
  */
-#define SUP_IOCTL_SEM_OP3                               SUP_CTL_CODE_SIZE(28, SUP_IOCTL_SEM_OP3_SIZE)
+#define SUP_IOCTL_SEM_OP3                               SUP_CTL_CODE_SIZE(25, SUP_IOCTL_SEM_OP3_SIZE)
 #define SUP_IOCTL_SEM_OP3_SIZE                          sizeof(SUPSEMOP3)
 #define SUP_IOCTL_SEM_OP3_SIZE_IN                       sizeof(SUPSEMOP3)
 #define SUP_IOCTL_SEM_OP3_SIZE_OUT                      sizeof(SUPSEMOP3)
