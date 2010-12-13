@@ -1467,7 +1467,7 @@ void VBoxProblemReporter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent
                 "the virtual machine, please install the Guest Additions "
                 "if they are not installed, or re-install them if they are "
                 "not working correctly, by selecting <b>Install Guest Additions</b> "
-                "from the <b>Machine</b> menu. "
+                "from the <b>Devices</b> menu. "
                 "If they are installed but the machine is not yet fully started "
                 "then shared folders will be available once it is.</p>"),
              "remindAboutGuestAdditionsAreNotActive");
