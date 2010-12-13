@@ -95,7 +95,7 @@ typedef struct _FAKEDRI_PatchNode
 static FAKEDRI_PatchNode *g_pFreeList=NULL, *g_pRepatchList=NULL;
 #endif
 
-static struct _glapi_table vbox_glapi_table;
+static struct _glapi_table* vbox_glapi_table = NULL;
 fakedri_glxapi_table glxim;
 
 static const __DRIextension **gppSwDriExternsion = NULL;
@@ -104,30 +104,43 @@ static const __DRIswrastExtension *gpSwDriSwrastExtension = NULL;
 
 extern const __DRIextension * __driDriverExtensions[];
 
-#define GLAPI_ENTRY(Func) pGLTable->Func = cr_gl##Func;
+#define GLAPI_ENTRY(Func) SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("gl"#Func), cr_gl##Func);
+
 static void
-vboxFillMesaGLAPITable(struct _glapi_table *pGLTable)
+vboxPatchMesaGLAPITable()
 {
+    void *pGLTable;
+
+    pGLTable = (void *)_glapi_get_dispatch();
+    vbox_glapi_table = crAlloc(_glapi_get_dispatch_table_size() * sizeof (void *));
+    if (!vbox_glapi_table)
+    {
+        crError("Not enough memory to allocate dispatch table");
+    }
+    crMemcpy(vbox_glapi_table, pGLTable, _glapi_get_dispatch_table_size() * sizeof (void *));
+
     #include "fakedri_glfuncsList.h"
 
-    pGLTable->SampleMaskSGIS = cr_glSampleMaskEXT;
-    pGLTable->SamplePatternSGIS = cr_glSamplePatternEXT;
-    pGLTable->WindowPos2dMESA = cr_glWindowPos2d;
-    pGLTable->WindowPos2dvMESA = cr_glWindowPos2dv;
-    pGLTable->WindowPos2fMESA = cr_glWindowPos2f;
-    pGLTable->WindowPos2fvMESA = cr_glWindowPos2fv;
-    pGLTable->WindowPos2iMESA = cr_glWindowPos2i;
-    pGLTable->WindowPos2ivMESA = cr_glWindowPos2iv;
-    pGLTable->WindowPos2sMESA = cr_glWindowPos2s;
-    pGLTable->WindowPos2svMESA = cr_glWindowPos2sv;
-    pGLTable->WindowPos3dMESA = cr_glWindowPos3d;
-    pGLTable->WindowPos3dvMESA = cr_glWindowPos3dv;
-    pGLTable->WindowPos3fMESA = cr_glWindowPos3f;
-    pGLTable->WindowPos3fvMESA = cr_glWindowPos3fv;
-    pGLTable->WindowPos3iMESA = cr_glWindowPos3i;
-    pGLTable->WindowPos3ivMESA = cr_glWindowPos3iv;
-    pGLTable->WindowPos3sMESA = cr_glWindowPos3s;
-    pGLTable->WindowPos3svMESA = cr_glWindowPos3sv;
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSampleMaskSGIS"), cr_glSampleMaskEXT);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSamplePatternSGIS"), cr_glSamplePatternEXT);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2dMESA"), cr_glWindowPos2d);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2dvMESA"), cr_glWindowPos2dv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2fMESA"), cr_glWindowPos2f);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2fvMESA"), cr_glWindowPos2fv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2iMESA"), cr_glWindowPos2i);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2ivMESA"), cr_glWindowPos2iv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2sMESA"), cr_glWindowPos2s);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2svMESA"), cr_glWindowPos2sv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3dMESA"), cr_glWindowPos3d);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3dvMESA"), cr_glWindowPos3dv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3fMESA"), cr_glWindowPos3f);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3fvMESA"), cr_glWindowPos3fv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3iMESA"), cr_glWindowPos3i);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3ivMESA"), cr_glWindowPos3iv);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3sMESA"), cr_glWindowPos3s);
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3svMESA"), cr_glWindowPos3sv);
+
+    _glapi_set_dispatch(vbox_glapi_table);
 };
 #undef GLAPI_ENTRY
 
@@ -552,13 +565,9 @@ void __attribute__ ((constructor)) vbox_install_into_mesa(void)
      * In the end application call would look like this:
      * app call glFoo->(mesa asm dispatch stub)->cr_glFoo(vbox asm dispatch stub)->SPU Foo function(packspuFoo or alike)
      * Note, we don't need to install extension functions via _glapi_add_dispatch, because we'd override glXGetProcAddress.
-     */    
-    /* We don't support all mesa's functions. Initialize our table to mesa dispatch first*/
-    crMemcpy(&vbox_glapi_table, _glapi_get_dispatch(), sizeof(struct _glapi_table));
-    /* Now install our assembly dispatch entries into table */
-    vboxFillMesaGLAPITable(&vbox_glapi_table);
-    /* Install our dispatch table into mesa */
-    _glapi_set_dispatch(&vbox_glapi_table);
+     */
+    /* Mesa's dispatch table is different across library versions, have to modify mesa's table using offset info functions*/
+    vboxPatchMesaGLAPITable();
 
     /* Handle glx api.
      * In the end application call would look like this:
