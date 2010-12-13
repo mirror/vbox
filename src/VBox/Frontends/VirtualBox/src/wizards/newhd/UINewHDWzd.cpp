@@ -521,7 +521,7 @@ bool UINewHDWzdPage4::createHardDisk()
         return false;
     }
 
-    vboxProblem().showModalProgressDialog(progress, windowTitle(), "", parentWidget());
+    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this, true);
 
     if (progress.GetCanceled())
         return false;

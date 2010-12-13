@@ -1080,7 +1080,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
-                    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_delete_90px.png", this, true);
+                    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this, true);
                     if (!(progress.isOk() && progress.GetResultCode() == S_OK))
                     {
                         vboxProblem().cannotDeleteHardDiskStorage(this, hardDisk, progress);
