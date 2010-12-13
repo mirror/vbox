@@ -1014,6 +1014,9 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
         case GLX_TRANSPARENT_ALPHA_VALUE:
             *value = 0;
             break;
+        case GLX_DRAWABLE_TYPE:
+            *value = GLX_WINDOW_BIT;
+            break;
         default:
             crWarning( "Unsupported GLX Call: glXGetConfig with attrib 0x%x, ignoring...", attrib );
             //return GLX_BAD_ATTRIBUTE;
