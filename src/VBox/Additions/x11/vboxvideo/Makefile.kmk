@@ -23,22 +23,23 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxvideo_drv
- vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
- vboxvideo_drv_DEFS.linux = linux
- vboxvideo_drv_DEFS.x86 = __i386__
- # This one has to be defined when building server code on systems where
- # unsigned long is 64bits
- vboxvideo_drv_DEFS.amd64 += _XSERVER64
- vboxvideo_drv_DEFS = \
- 	_POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
- 	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
- 	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
- 	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
- 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
- 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
- 	IN_MODULE XFree86Module
- vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
- vboxvideo_drv_INCS = \
+endif   # target linux
+vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+vboxvideo_drv_DEFS.linux = linux
+vboxvideo_drv_DEFS.x86 = __i386__
+# This one has to be defined when building server code on systems where
+# unsigned long is 64bits
+vboxvideo_drv_DEFS.amd64 += _XSERVER64
+vboxvideo_drv_DEFS = \
+	_POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
+	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
+	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
+	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
+	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
+	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
+	IN_MODULE XFree86Module
+vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
+vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11/extensions \
@@ -68,8 +69,8 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
- vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
- vboxvideo_drv_SOURCES = \
+vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
+vboxvideo_drv_SOURCES = \
 	vboxvideo.c \
 	vboxutils.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
@@ -78,7 +79,6 @@ if1of ($(KBUILD_TARGET), linux)
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
-endif   # target linux
 
 
 #
@@ -99,7 +99,7 @@ vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_drv_70_DEFS += __EXTENSIONS__
- vboxvideo_drv_70_CFLAGSS += -D_XPG6 # Until we have moved the C++ bits into a library
+ vboxvideo_drv_70_CFLAGS += -D_XPG6 # Until we have moved the C++ bits into a library
 endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
