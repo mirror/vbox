@@ -1839,10 +1839,7 @@ Virtual system 0:
     <screen>VBoxManage createhd         --filename &lt;filename&gt;
                             --size &lt;megabytes&gt;
                             [--format VDI|VMDK|VHD] (default: VDI)
-                            [--variant Standard,Fixed,Split2G,Stream,ESX]
-                            [--type normal|writethrough] (default: normal)
-                            [--comment &lt;comment&gt;]
-                            [--remember]</screen>
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]</screen>
 
     <para>where the parameters mean:<glosslist>
         <glossentry>
@@ -1879,32 +1876,6 @@ Virtual system 0:
             It is a comma-separated list of variant flags. Not all
             combinations are supported, and specifying inconsistent flags will
             result in an error message.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>type</glossterm>
-
-          <glossdef>
-            <para>Only honored if --remember is also specified. Defines what
-            kind of hard disk type this image should be.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>comment</glossterm>
-
-          <glossdef>
-            <para>Allows to attach a comment to the image.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>remember</glossterm>
-
-          <glossdef>
-            <para>Keep the destination image registered after it was
-            successfully written.</para>
           </glossdef>
         </glossentry>
       </glosslist> <note>
@@ -1954,8 +1925,7 @@ Virtual system 0:
     <screen>VBoxManage clonehd         &lt;uuid&gt;|&lt;filename&gt; &lt;outputfile&gt;
                            [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
                            [--variant Standard,Fixed,Split2G,Stream,ESX]
-                           [--type normal|writethrough|immutable|shareable]
-                           [--remember] [--existing]</screen>
+                           [--existing]</screen>
 
     <para>where the parameters mean:<glosslist>
         <glossentry>
@@ -1975,24 +1945,6 @@ Virtual system 0:
             It is a comma-separated list of variant flags. Not all
             combinations are supported, and specifying inconsistent flags will
             result in an error message.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>type</glossterm>
-
-          <glossdef>
-            <para>Only honored if --remember is also specified. Defines what
-            kind of hard disk type this image should be.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>remember</glossterm>
-
-          <glossdef>
-            <para>Keep the destination image registered after it was
-            successfully written.</para>
           </glossdef>
         </glossentry>
 
