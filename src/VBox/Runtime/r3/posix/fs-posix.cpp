@@ -246,7 +246,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
                             else if (!strcmp("proc", mntEnt.mnt_type))
                                 *penmType = RTFSTYPE_PROC;
                             else if (   !strcmp("fuse", mntEnt.mnt_type)
-                                     || !strncmp("fuse.", mntEnt.mnt_type, 5))
+                                     || !strncmp("fuse.", mntEnt.mnt_type, 5)
+                                     || !strcmp("fuseblk", mntEnt.mnt_type))
                                 *penmType = RTFSTYPE_FUSE;
                             else
                             {
