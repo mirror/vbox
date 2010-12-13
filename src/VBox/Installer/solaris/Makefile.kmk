@@ -170,7 +170,7 @@ solaris-icons_INST = bin/icons
 solaris-icons_MODE = a+r,u+w
 solaris-icons_SOURCES = $(VBOX_MIME_ICONS)
 
-BLDDIRS +=
+BLDDIRS += \
 	$(SOLARIS_USR_DIR)/share \
 	$(SOLARIS_USR_DIR)/share/icons \
 	$(SOLARIS_USRSHR_ICONS_DIR) \
