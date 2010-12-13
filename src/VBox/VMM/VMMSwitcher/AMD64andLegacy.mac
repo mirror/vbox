@@ -97,6 +97,29 @@ BEGINPROC vmmR0HostToGuest
     push    rax
     call    NAME(vmmR0HostToGuestAsm)
 
+ %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    ; Unblock Local APIC NMI vectors
+    ; Do this here to ensure the host CS is already restored
+    mov     ecx, [rdx + CPUM.fApicDisVectors]
+    mov     r8, [rdx + CPUM.pvApicBase]
+    shr     ecx, 1
+    jnc     gth64_nolint0
+    and     dword [r8 + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
+gth64_nolint0:
+    shr     ecx, 1
+    jnc     gth64_nolint1
+    and     dword [r8 + APIC_REG_LVT_LINT1], ~APIC_REG_LVT_MASKED
+gth64_nolint1:
+    shr     ecx, 1
+    jnc     gth64_nopc
+    and     dword [r8 + APIC_REG_LVT_PC], ~APIC_REG_LVT_MASKED
+gth64_nopc:
+    shr     ecx, 1
+    jnc     gth64_notherm
+    and     dword [r8 + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
+gth64_notherm:
+ %endif
+
  %ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
@@ -118,10 +141,10 @@ BITS 32
 ; The C interface.
 ;
 BEGINPROC vmmR0HostToGuest
-%ifdef DEBUG_STUFF
+ %ifdef DEBUG_STUFF
     COM32_S_NEWLINE
     COM32_S_CHAR '^'
-%endif
+ %endif
 
  %ifdef VBOX_WITH_STATISTICS
     ;
@@ -160,6 +183,11 @@ BEGINPROC vmmR0HostToGuest
     mov     es, ecx
     mov     edx, ss
     mov     ss, edx
+
+ %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+ Missing implementation!
+ %endif
+
 
  %ifdef VBOX_WITH_STATISTICS
     ;
@@ -1102,28 +1130,6 @@ gth_debug_regs_no:
     mov     edx, [rbx + r8 + CPUMCPU.Host.efer + 4]
     wrmsr
     mov     rdx, rbx
-
-%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    ;Unblock Local APIC NMI vectors
-    mov     ecx, [rdx + CPUM.fApicDisVectors]
-    mov     rbx, [rdx + CPUM.pvApicBase]
-    shr     ecx, 1
-    jnc     gth_nolint0
-    and     dword [rbx + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
-gth_nolint0:
-    shr     ecx, 1
-    jnc     gth_nolint1
-    and     dword [rbx + APIC_REG_LVT_LINT1], ~APIC_REG_LVT_MASKED
-gth_nolint1:
-    shr     ecx, 1
-    jnc     gth_nopc
-    and     dword [rbx + APIC_REG_LVT_PC], ~APIC_REG_LVT_MASKED
-gth_nopc:
-    shr     ecx, 1
-    jnc     gth_notherm
-    and     dword [rbx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
-gth_notherm:
-%endif
 
     ; restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
