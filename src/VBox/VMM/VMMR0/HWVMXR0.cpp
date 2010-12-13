@@ -20,6 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_HWACCM
+#include <iprt/asm-amd64-x86.h>
 #include <VBox/hwaccm.h>
 #include <VBox/pgm.h>
 #include <VBox/dbgf.h>
@@ -33,7 +34,6 @@
 #include <VBox/pdmapi.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
@@ -1900,6 +1900,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVM->hwaccm.s.vmx.fUsePreemptTimer)
     {
         uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &pVCpu->hwaccm.s.vmx.u64TSCOffset);
+
+        /* Make sure the returned values have sane upper and lower boundaries. */
+        uint64_t u64CpuHz = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+
+        cTicksToDeadline = RT_MIN(cTicksToDeadline, u64CpuHz / 64);   /* 1/64 of a second */
+        cTicksToDeadline = RT_MAX(cTicksToDeadline, u64CpuHz / 2048); /* 1/2048th of a second */
+
         cTicksToDeadline >>= pVM->hwaccm.s.vmx.cPreemptTimerShift;
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
         rc = VMXWriteVMCS(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, cPreemptionTickCount);
