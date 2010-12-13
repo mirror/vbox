@@ -4295,7 +4295,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     // 1) media from machine attachments (these have the "leaf" attachments with snapshots
     //    and must be closed first, or closing the parents will fail because they will
     //    children);
-    // 2) media from the youngest snapshots followed those from the parent snapshots until
+    // 2) media from the youngest snapshots followed by those from the parent snapshots until
     //    the root ("first") snapshot of the machine
     // This order allows for closing the media on this list from the beginning to the end
     // without getting "media in use" errors.
@@ -4401,11 +4401,14 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
         if (FAILED(mediumAutoCaller.rc())) return mediumAutoCaller.rc();
 
         Utf8Str bstrLocation = pMedium->getLocationFull();
+
+        bool fDoesMediumNeedFileDeletion = pMedium->isMediumFormatFile();
+
         // close the medium now; if that succeeds, then that means the medium is no longer
         // in use and we can add it to the list of files to delete
         rc = pMedium->close(&pTask->llRegistriesThatNeedSaving,
                             mediumAutoCaller);
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(rc) && fDoesMediumNeedFileDeletion)
             pTask->llFilesToDelete.push_back(bstrLocation);
     }
     if (mData->pMachineConfigFile->fileExists())
