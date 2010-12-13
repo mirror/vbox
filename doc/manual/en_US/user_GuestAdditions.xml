@@ -1180,6 +1180,12 @@ $</screen>
                 shared folder in question has been defined as
                 read/write.</para>
               </note></para>
+
+              <para>The guest property
+              <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>
+              determines the absolute mount directory that is used for all auto-mounted
+              Shared Folders. When no value is specified the standard media or mount
+              directory is used according to the guest OS.</para>
           </listitem>
 
           <listitem>
