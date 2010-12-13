@@ -74,17 +74,21 @@ linux-misc_INST = bin/
 linux-misc_MODE = a+r,u+w
 linux-misc_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
-	$(PATH_ROOT)/src/VBox/Installer/linux/virtualbox.xml \
+	$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(if $(VBOX_WITH_QTGUI),$(PATH_linux-misc)/virtualbox.desktop,)
 linux-misc_CLEAN = $(PATH_linux-misc)/virtualbox.desktop
 
-$$(PATH_linux-misc)/virtualbox.desktop: $(PATH_SUB_CURRENT)/virtualbox.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
+$$(PATH_linux-misc)/virtualbox.desktop: $(PATH_ROOT)/src/VBox/Installer/common/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 ifdef VBOX_PATH_PACKAGE_DOCS
-	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+$(VBOX_PATH_PACKAGE_DOCS)+" --output $@ $<
+	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_PATH_PACKAGE_DOCS)+" \
+		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $@ $<
 else
-	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+/opt/VirtualBox+" --output $@ $<
+	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+/opt/VirtualBox+" \
+		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $@ $<
 endif
 
 INSTALLS += linux-icons
