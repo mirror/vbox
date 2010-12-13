@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -146,6 +146,7 @@ enum CIMOSType_T
     CIMOSType_CIMOS_OracleEnterpriseLinux = 108,
     CIMOSType_CIMOS_OracleEnterpriseLinux_64 = 109,
     CIMOSType_CIMOS_eComStation = 110
+    // no new types added with CIM 2.26.0
 };
 
 
