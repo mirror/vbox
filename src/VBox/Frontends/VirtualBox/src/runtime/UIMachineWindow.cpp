@@ -370,7 +370,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                                 else
                                 {
                                     /* Show the progress dialog: */
-                                    vboxProblem().showModalProgressDialog(progress, machine.GetName());
+                                    vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png", 0, true);
                                     if (progress.GetResultCode() != 0)
                                         vboxProblem().cannotRestoreSnapshot(progress, snapshot.GetName());
                                 }
