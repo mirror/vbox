@@ -121,6 +121,7 @@ vboxPatchMesaGLAPITable()
 
     #include "fakedri_glfuncsList.h"
 
+    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glBlendEquationSeparateEXT"), cr_glBlendEquationSeparate);
     SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSampleMaskSGIS"), cr_glSampleMaskEXT);
     SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSamplePatternSGIS"), cr_glSamplePatternEXT);
     SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2dMESA"), cr_glWindowPos2d);
