@@ -1284,6 +1284,9 @@
               linkend="hdimagewrites" os="" /> for details.</para>
             </note>
 
+            <para>To avoid losing the current state when restoring a snapshot,
+            you can create a new snapshot before the restore.</para>
+
             <para>By restoring an earlier snapshot and taking more snapshots
             from there, it is even possible to create a kind of alternate
             reality and to switch between these different histories of the
