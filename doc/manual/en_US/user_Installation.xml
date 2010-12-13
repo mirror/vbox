@@ -268,15 +268,19 @@
     <sect2 id="externalkernelmodules">
       <title>The VirtualBox kernel module</title>
 
-      <para>VirtualBox uses a special kernel module to perform physical memory
+      <para>VirtualBox uses a special kernel module called
+      <computeroutput>vboxdrv</computeroutput> to perform physical memory
       allocation and to gain control of the processor for guest system
       execution. Without this kernel module, you can still use the VirtualBox
-      manager to configure virtual machines, but they will not start.</para>
+      manager to configure virtual machines, but they will not start. In addition,
+      there are the network kernel modules <computeroutput>vboxnetflt</computeroutput>
+      and <computeroutput>vboxnetadp</computeroutput> which are required for
+      the move advanced networking features of VirtualBox.</para>
 
       <para>The VirtualBox kernel module is automatically installed on your
       system when you install VirtualBox. To maintain it with future kernel
-      updates, for recent Linux distributions -- for example Fedora Core 5 and
-      later, Ubuntu 7.10 (Gutsy) and later and Mandriva 2007.1 and later --,
+      updates, for most Linux distributions -- for example Fedora Core 11 and
+      later, Ubuntu 8.04 (Hardy) and later and Mandriva 2009.1 and later --,
       generally we recommend installing Dynamic Kernel Module Support
       (DKMS)<footnote>
           <para>See <ulink
@@ -430,8 +434,10 @@
           </listitem>
 
           <listitem>
-            <para>It builds the VirtualBox kernel module
-            (<computeroutput>vboxdrv</computeroutput>) and installs it.</para>
+            <para>It builds the VirtualBox kernel modules
+            (<computeroutput>vboxdrv</computeroutput>,
+            <computeroutput>vboxnetflt</computeroutput> and
+            <computeroutput>vboxnetadp</computeroutput>) and installs them.</para>
           </listitem>
 
           <listitem>
@@ -446,21 +452,22 @@
           </listitem>
 
           <listitem>
-            <para>It creates symbolic links to
+            <para>It creates symbolic links in
+            <computeroutput>/usr/bin</computeroutput> to
+            the executables
             <computeroutput>VirtualBox</computeroutput>,
             <computeroutput>VBoxSDL</computeroutput>,
             <computeroutput>VBoxVRDP</computeroutput>,
             <computeroutput>VBoxHeadless</computeroutput> and
-            <computeroutput>VBoxManage</computeroutput> in
-            <computeroutput>/usr/bin</computeroutput>.</para>
+            <computeroutput>VBoxManage</computeroutput></para>
           </listitem>
 
           <listitem>
             <para>It creates
-            <computeroutput>/etc/udev/60-vboxdrv.rules</computeroutput>, a
+            <computeroutput>/etc/udev/10-vboxdrv.rules</computeroutput>, a
             description file for udev, if that is present, which makes the
-            module accessible to anyone in the group
-            <computeroutput>vboxusers</computeroutput>.</para>
+            USB devices accessible to all users in the
+            <computeroutput>vboxusers</computeroutput> group.</para>
           </listitem>
 
           <listitem>
@@ -640,15 +647,15 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
         <title id="linux_install_opts">Automatic installation options</title>
 
         <para>To configure the installation process of our .deb and .rpm
-        packages, a file
-        <computeroutput>/etc/default/virtualbox</computeroutput> is
-        interpreted. The automatic generation of the udev rule can be
+        packages, you can create a response file named
+        <computeroutput>/etc/default/virtualbox</computeroutput>.
+        The automatic generation of the udev rule can be
         prevented by the following setting: <screen>INSTALL_NO_UDEV=1</screen>
         The creation of the group vboxusers can be prevented by <screen>INSTALL_NO_GROUP=1</screen>
         If the line <screen>INSTALL_NO_VBOXDRV=1</screen> is specified, the
         package installer will not try to build the
         <computeroutput>vboxdrv</computeroutput> kernel module if no module
-        according to the current kernel was found.</para>
+        fitting the current kernel was found.</para>
       </sect3>
     </sect2>
 
