@@ -2025,19 +2025,14 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     else
 #endif
     {
-        /* Silently skip the resize and if the values are not valid, and
-         * forceably disable VBE and blank the screen. */
+        /* Skip the resize if the values are not valid. */
         if (s->start_addr * 4 + s->line_offset * cy < s->vram_size)
-        /* Take into account the programmed start address (in DWORDs) of the visible screen. */
+            /* Take into account the programmed start address (in DWORDs) of the visible screen. */
             rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTX_SUFF(vram_ptr) + s->start_addr * 4, s->line_offset, cx, cy);
         else
         {
-            s->vbe_regs[VBE_DISPI_INDEX_ENABLE] &= ~VBE_DISPI_ENABLED;
-            s->ar_index &= ~0x20;
-            s->pDrv->pfnLFBModeChange(s->pDrv, false);
-            /* Try again with the changes we have just made, but still set
-             * s->last_* to avoid a loop. */
-            rc = VERR_TRY_AGAIN;
+            /* Change nothing in the VGA state. Lets hope the guest will eventually programm correct values. */
+            return VERR_TRY_AGAIN;
         }
     }
 
@@ -2048,7 +2043,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     s->last_width = cx;
     s->last_height = cy;
 
-    if (rc == VINF_VGA_RESIZE_IN_PROGRESS || rc == VERR_TRY_AGAIN)
+    if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
         return rc;
     AssertRC(rc);
 
