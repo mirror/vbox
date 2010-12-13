@@ -1871,13 +1871,11 @@ int VBoxProblemReporter::warnAboutSettingsAutoConversion (const QString &aFileLi
 bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
 {
     return messageOkCancel (mainMachineWindowShown(), Info,
-        tr ("<p>The virtual machine window will be now switched to "
-            "<b>fullscreen</b> mode. "
-            "You can go back to windowed mode at any time by pressing "
-            "<b>%1</b>. Note that the <i>Host</i> key is currently "
-            "defined as <b>%2</b>.</p>"
-            "<p>Note that the main menu bar is hidden in fullscreen mode. You "
-            "can access it by pressing <b>Host+Home</b>.</p>")
+        tr ("<p>The virtual machine window will be now switched to <b>fullscreen</b> mode. "
+            "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+            "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+            "<p>Note that the main menu bar is hidden in fullscreen mode. "
+            "You can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
             .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
         "confirmGoingFullscreen",
@@ -1893,17 +1891,35 @@ bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
 bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
 {
     return messageOkCancel (mainMachineWindowShown(), Info,
-        tr ("<p>The virtual machine window will be now switched to "
-            "<b>Seamless</b> mode. "
-            "You can go back to windowed mode at any time by pressing "
-            "<b>%1</b>. Note that the <i>Host</i> key is currently "
-            "defined as <b>%2</b>.</p>"
-            "<p>Note that the main menu bar is hidden in seamless mode. You "
-            "can access it by pressing <b>Host+Home</b>.</p>")
+        tr ("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
+            "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+            "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+            "<p>Note that the main menu bar is hidden in seamless mode. "
+            "You can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
             .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
         "confirmGoingSeamless",
         tr ("Switch", "seamless"));
+}
+
+/**
+ *  @param aHotKey Scale hot key as defined in the menu.
+ *
+ *  @return @c true if the user has chosen to go scale (this is always
+ *  the case if the dialog was autoconfirmed).
+ */
+bool VBoxProblemReporter::confirmGoingScale (const QString &aHotKey)
+{
+    return messageOkCancel (mainMachineWindowShown(), Info,
+        tr ("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
+            "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+            "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+            "<p>Note that the main menu bar is hidden in scale mode. "
+            "You can access it by pressing <b>Host+Home</b>.</p>")
+            .arg (aHotKey)
+            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+        "confirmGoingScale",
+        tr ("Switch", "scale"));
 }
 
 /**

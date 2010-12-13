@@ -314,6 +314,7 @@ public:
 
     bool confirmGoingFullscreen (const QString &aHotKey);
     bool confirmGoingSeamless (const QString &aHotKey);
+    bool confirmGoingScale (const QString &aHotKey);
 
     bool remindAboutGuruMeditation (const CConsole &aConsole,
                                     const QString &aLogFolder);

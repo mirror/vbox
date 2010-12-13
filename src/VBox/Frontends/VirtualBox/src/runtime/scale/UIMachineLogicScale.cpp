@@ -54,6 +54,26 @@ UIMachineLogicScale::~UIMachineLogicScale()
     cleanupActionGroups();
 }
 
+bool UIMachineLogicScale::checkAvailability()
+{
+    /* Base class availability: */
+    if (!UIMachineLogic::checkAvailability())
+        return false;
+
+    /* Take the toggle hot key from the menu item. Since
+     * VBoxGlobal::extractKeyFromActionText gets exactly the
+     * linked key without the 'Host+' part we are adding it here. */
+    QString strHotKey = QString("Host+%1")
+        .arg(VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Scale)->text()));
+    Assert(!strHotKey.isEmpty());
+
+    /* Show the info message. */
+    if (!vboxProblem().confirmGoingScale(strHotKey))
+        return false;
+
+    return true;
+}
+
 void UIMachineLogicScale::initialize()
 {
     /* Prepare required features: */

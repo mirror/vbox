@@ -37,6 +37,7 @@ protected:
                         UIActionsPool *pActionsPool);
     virtual ~UIMachineLogicScale();
 
+    bool checkAvailability();
     void initialize();
 
 private:
