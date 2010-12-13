@@ -170,7 +170,7 @@ private:
     /** Client contexts list. */
     ClientContextsList mClientContextsList;
     /** Number of connected clients. */
-    uint32_t mNumClients;
+    int32_t mNumClients;
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
