@@ -862,7 +862,8 @@
           performance.</para>
 
           <para>On AMD processors, nested paging has been available starting
-          with the Barcelona (K10) architecture; Intel added support for
+          with the Barcelona (K10) architecture -- they call it now "rapid
+          virtualization indexing" (RVI). Intel added support for
           nested paging, which they call "extended page tables" (EPT), with
           their Core i7 (Nehalem) processors.</para>
 
