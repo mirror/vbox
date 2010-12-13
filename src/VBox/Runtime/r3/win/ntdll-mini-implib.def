@@ -25,4 +25,11 @@
 ;
 
 LIBRARY ntdll.dll
+EXPORTS
+    RtlNtStatusToDosError
+    NtQueryTimerResolution
+    NtQueryInformationFile
+    NtSetInformationFile
+    NtSetTimerResolution
+    NtQueryVolumeInformationFile
 
