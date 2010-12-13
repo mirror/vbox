@@ -91,6 +91,7 @@ static const VDFILEEXTENSION s_aRawFileExtensions[] =
     {"img", VDTYPE_FLOPPY},
     {"ima", VDTYPE_FLOPPY},
     {"dsk", VDTYPE_FLOPPY},
+    {"vfd", VDTYPE_FLOPPY},
     {NULL, VDTYPE_INVALID}
 };
 
@@ -543,7 +544,8 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         }
         else if (   !RTStrICmp(pszExtension, ".img")
                  || !RTStrICmp(pszExtension, ".ima")
-                 || !RTStrICmp(pszExtension, ".dsk")) /* Floppy images */
+                 || !RTStrICmp(pszExtension, ".dsk")
+                 || !RTStrICmp(pszExtension, ".vfd")) /* Floppy images */
         {
             if (!(cbFile % 512) && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
