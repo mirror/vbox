@@ -261,7 +261,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
 }
 
 /**
- * Protected helper that formats the strExtPackFile value.
+ * Protected helper that formats the strWhyUnusable value.
  *
  * @returns S_OK
  * @param   a_pszWhyFmt         Why it failed, format string.
@@ -271,7 +271,7 @@ HRESULT ExtPackFile::initFailed(const char *a_pszWhyFmt, ...)
 {
     va_list va;
     va_start(va, a_pszWhyFmt);
-    m->strExtPackFile.printfV(a_pszWhyFmt, va);
+    m->strWhyUnusable.printfV(a_pszWhyFmt, va);
     va_end(va);
     return S_OK;
 }
