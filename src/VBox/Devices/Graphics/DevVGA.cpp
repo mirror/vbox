@@ -970,6 +970,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             if (val <= VBE_DISPI_MAX_XRES)
             {
                 s->vbe_regs[s->vbe_index] = val;
+                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = val;
                 fRecalculate = true;
             }
             break;
