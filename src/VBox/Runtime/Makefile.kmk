@@ -1965,14 +1965,16 @@ RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 #           later WINDDK ntdll.lib have and thus we may easily end up with
 #           images that does not load on older windows versions.
 #
-RuntimeR3NtDll-amd64_TEMPLATE = VBoxR3Dll
-RuntimeR3NtDll-amd64_ARFLAGS  = /NODEFAULTLIB /MACHINE:amd64
-RuntimeR3NtDll-amd64_SOURCES  = \
+RuntimeR3NtDll-amd64_TEMPLATE     = VBoxR3Dll
+RuntimeR3NtDll-amd64_BLD_TRG_ARCH = amd64
+RuntimeR3NtDll-amd64_ARFLAGS      = /NODEFAULTLIB /MACHINE:amd64
+RuntimeR3NtDll-amd64_SOURCES      = \
 	r3/win/ntdll-mini-implib.c \
 	r3/win/ntdll-mini-implib.def
 
-RuntimeR3NtDll-x86_EXTENDS    = RuntimeR3NtDll-amd64
-RuntimeR3NtDll-x86_ARFLAGS    = /NODEFAULTLIB /MACHINE:x86
+RuntimeR3NtDll-x86_EXTENDS        = RuntimeR3NtDll-amd64
+RuntimeR3NtDll-x86_BLD_TRG_ARCH   = x86
+RuntimeR3NtDll-x86_ARFLAGS        = /NODEFAULTLIB /MACHINE:x86
 
 
 #
