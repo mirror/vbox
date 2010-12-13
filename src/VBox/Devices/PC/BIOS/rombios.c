@@ -2855,7 +2855,7 @@ Bit16u device, command, count, cylinder, head, sector, segment, offset;
 Bit32u lba;
 {
   Bit16u ebda_seg=read_word(0x0040,0x000E);
-  Bit16u iobase1, iobase2, blksize;
+  Bit16u iobase1, iobase2, blksize, mult_blk_cnt;
   Bit8u  channel, slave;
   Bit8u  status, current, mode;
 
@@ -2873,6 +2873,7 @@ Bit32u lba;
   status = inb(iobase1 + ATA_CB_STAT);
   if (status & ATA_CB_STAT_BSY)
   {
+    BX_DEBUG_ATA("ata_cmd_data_in : disk busy\n");
     // Enable interrupts
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
     return 1;
@@ -2921,8 +2922,12 @@ Bit32u lba;
   outb(iobase1 + ATA_CB_DH, (slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0) | (Bit8u) head );
   outb(iobase1 + ATA_CB_CMD, command);
 
-  if (command == ATA_CMD_READ_MULTIPLE)
+  if (command == ATA_CMD_READ_MULTIPLE || command == ATA_CMD_READ_MULTIPLE_EXT) {
+    mult_blk_cnt = count;
     count = 1;
+  } else {
+    mult_blk_cnt = 1;
+  }
 
   while (1) {
     status = inb(iobase1 + ATA_CB_STAT);
@@ -2992,7 +2997,7 @@ ata_in_done:
         pop  bp
 ASM_END
 
-    current++;
+    current += mult_blk_cnt;
     write_word(ebda_seg, &EbdaData->ata.trsfsectors,current);
     count--;
 #ifdef VBOX
