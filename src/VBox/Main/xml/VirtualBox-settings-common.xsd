@@ -307,6 +307,9 @@
             <xsd:enumeration value="Normal"/>
             <xsd:enumeration value="Immutable"/>
             <xsd:enumeration value="Writethrough"/>
+            <xsd:enumeration value="Shareable"/>
+            <xsd:enumeration value="Readonly"/>
+            <xsd:enumeration value="MultiAttach"/>
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>

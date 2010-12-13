@@ -8792,7 +8792,7 @@
 
   <enum
     name="MediumType"
-    uuid="19388a99-8e70-4bd4-9a95-90cbc513ef6d"
+    uuid="fe663fb5-c244-4e1b-9d81-c628b417dd04"
     >
     <desc>
       Virtual medium type.
@@ -8826,6 +8826,15 @@
     <const name="Readonly"          value="4">
       <desc>
         A readonly medium, which can of course be used by several machines.
+        <note>Present and accepted since VirtualBox 4.0.</note>
+      </desc>
+    </const>
+    <const name="MultiAttach"       value="5">
+      <desc>
+        A medium which is is indirectly attached, so that one base medium can
+        be used for several VMs which have their own differencing medium to
+        store their modifications. In some sense a variant of Immutable
+        with unset AutoReset flag in each differencing medium.
         <note>Present and accepted since VirtualBox 4.0.</note>
       </desc>
     </const>
