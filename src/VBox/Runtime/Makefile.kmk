@@ -96,6 +96,11 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  DLLS += VBoxRT
 endif
 
+
+# Always build the ntdll import libraries on windows.
+LIBRARIES.win += RuntimeR3NtDll-amd64 RuntimeR3NtDll-x86
+
+
 # Where the generated stuff goes.
 IPRT_OUT_DIR := $(PATH_TARGET)/Runtime
 BLDDIRS += $(IPRT_OUT_DIR)
@@ -1947,6 +1952,27 @@ RuntimeEFCPP_INCS       = $(RuntimeR3_INCS)
 RuntimeEFCPP_INCS.$(KBUILD_TARGET) = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 
+
+
+#
+# The NTDLL mini import library.
+#
+# Note! The reason for doing this is to avoid importing CRT symbols from the
+#       NTDLL.  We do not wish to do this because:
+#         - Our compiler is usually a different one and we should use the
+#           matching CRT,
+#         - Older versions of NTDLL may not sport all the exports our w2k3 or
+#           later WINDDK ntdll.lib have and thus we may easily end up with
+#           images that does not load on older windows versions.
+#
+RuntimeR3NtDll-amd64_TEMPLATE = VBoxR3Dll
+RuntimeR3NtDll-amd64_ARFLAGS  = /NODEFAULTLIB /MACHINE:amd64
+RuntimeR3NtDll-amd64_SOURCES  = \
+	r3/win/ntdll-mini-implib.c \
+	r3/win/ntdll-mini-implib.def
+
+RuntimeR3NtDll-x86_EXTENDS    = RuntimeR3NtDll-amd64
+RuntimeR3NtDll-x86_ARFLAGS    = /NODEFAULTLIB /MACHINE:x86
 
 
 #
