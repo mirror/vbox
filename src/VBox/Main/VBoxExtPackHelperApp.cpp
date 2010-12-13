@@ -1383,12 +1383,11 @@ static RTEXITCODE ElevationCheck(bool *pfElevated)
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "AllocateAndInitializeSid failed: %u (%#x)", GetLastError(), GetLastError());
     if (fIsAdmin)
     {
-# if 1
         /*
          * Check the integrity level (Vista / UAC).
          */
-#  define MY_SECURITY_MANDATORY_HIGH_RID 0x00003000L
-#  define MY_TokenIntegrityLevel         ((TOKEN_INFORMATION_CLASS)25)
+# define MY_SECURITY_MANDATORY_HIGH_RID 0x00003000L
+# define MY_TokenIntegrityLevel         ((TOKEN_INFORMATION_CLASS)25)
         if (   !GetTokenInformation(hToken, MY_TokenIntegrityLevel, NULL, 0, &cb)
             && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
         {
@@ -1409,36 +1408,6 @@ static RTEXITCODE ElevationCheck(bool *pfElevated)
             *pfElevated = true; /* Older Windows version. */
         else
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
-
-# else
-        /*
-         * Check elevation (Vista / UAC).
-         */
-        DWORD TokenIsElevated = 0;
-        if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevation*/ 20, &TokenIsElevated, sizeof(TokenIsElevated), &cb))
-        {
-            fElevated = TokenIsElevated != 0;
-            if (fElevated)
-            {
-                enum
-                {
-                    MY_TokenElevationTypeDefault = 1,
-                    MY_TokenElevationTypeFull,
-                    MY_TokenElevationTypeLimited
-                } enmType;
-                if (GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS)/*TokenElevationType*/ 18, &enmType, sizeof(enmType), &cb))
-                     *pfElevated = enmType == MY_TokenElevationTypeFull;
-                else
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
-            }
-        }
-        else if (   GetLastError() == ERROR_INVALID_PARAMETER
-                 && GetLastError() == ERROR_NOT_SUPPORTED)
-            *pfElevated = true; /* Older Windows version. */
-        else if (   GetLastError() != ERROR_INVALID_PARAMETER
-                 && GetLastError() != ERROR_NOT_SUPPORTED)
-            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "GetTokenInformation failed: %u (%#x)", GetLastError(), GetLastError());
-# endif
     }
     else
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Membership in the Administrators group is required to perform this action");
