@@ -502,8 +502,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                     "                            [--type normal|writethrough|immutable|shareable]\n"
-                     "                            [--remember] [--existing]\n"
+                     "                            [--existing]\n"
                      "\n");
 
     if (u64Cmd & USAGE_CONVERTFROMRAW)

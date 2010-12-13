@@ -481,12 +481,6 @@ static const RTGETOPTDEF g_aCloneHardDiskOptions[] =
     { "--existing",     'E', RTGETOPT_REQ_NOTHING },
     { "--variant",      'm', RTGETOPT_REQ_STRING },
     { "-variant",       'm', RTGETOPT_REQ_STRING },
-    { "--type",         't', RTGETOPT_REQ_STRING },
-    { "-type",          't', RTGETOPT_REQ_STRING },
-    { "--remember",     'r', RTGETOPT_REQ_NOTHING },
-    { "-remember",      'r', RTGETOPT_REQ_NOTHING },
-    { "--register",     'r', RTGETOPT_REQ_NOTHING },
-    { "-register",      'r', RTGETOPT_REQ_NOTHING },
 };
 
 int handleCloneHardDisk(HandlerArg *a)
@@ -497,9 +491,6 @@ int handleCloneHardDisk(HandlerArg *a)
     Bstr format;
     MediumVariant_T DiskVariant = MediumVariant_Standard;
     bool fExisting = false;
-    bool fRemember = false;
-    bool fSetDiskType = false;
-    MediumType_T DiskType = MediumType_Normal;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -531,17 +522,6 @@ int handleCloneHardDisk(HandlerArg *a)
                 vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
                 if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
-                break;
-
-            case 'r':   // --remember
-                fRemember = true;
-                break;
-
-            case 't':   // --type
-                vrc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
-                fSetDiskType = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -640,16 +620,16 @@ int handleCloneHardDisk(HandlerArg *a)
                                                                 AccessMode_ReadWrite,
                                                                 dstDisk.asOutParam()));
                 }
-                else if (SUCCEEDED(rc))
-                    fDstUnknown = true;
-                else
+                else if (FAILED(rc))
                 {
                     com::GluePrintRCMessage(rc);
                     break;
                 }
+
+                /* If the image wasn't opened before, close it at the end. */
+                if (SUCCEEDED(rc))
+                    fDstUnknown = true;
             }
-            else
-                fRemember = true;
             if (SUCCEEDED(rc))
             {
                 /* Perform accessibility check now. */
@@ -690,16 +670,11 @@ int handleCloneHardDisk(HandlerArg *a)
     }
     while (0);
 
-    if (!fRemember && !dstDisk.isNull())
+    if (fDstUnknown && !dstDisk.isNull())
     {
         /* forget the created clone */
         dstDisk->Close();
     }
-    else if (fSetDiskType)
-    {
-        CHECK_ERROR(dstDisk, COMSETTER(Type)(DiskType));
-    }
-
     if (fSrcUnknown)
     {
         /* close the unknown hard disk to forget it again */
