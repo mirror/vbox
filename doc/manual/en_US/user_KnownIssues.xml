@@ -67,11 +67,6 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Guest multi-monitor support</emphasis> is
-      currently only supported with Windows guests.</para>
-    </listitem>
-
-    <listitem>
       <para><emphasis role="bold">Compacting virtual disk images is limited to
       VDI files.</emphasis> The <code>VBoxManage modifyhd --compact</code>
       command is currently only implemented for VDI files. At the moment the
