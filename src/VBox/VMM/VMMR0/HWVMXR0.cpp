@@ -3483,6 +3483,23 @@ ResumeExecution:
         AssertRC(rc2);
         Log(("VMX_EXIT_EPT_MISCONFIG for %RGp\n", GCPhys));
 
+        /* Shortcut for APIC TPR reads and writes. */
+        if (    (GCPhys & 0xfff) == 0x080
+            &&  GCPhys > 0x1000000   /* to skip VGA frame buffer accesses */
+            &&  fSetupTPRCaching
+            &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
+        {
+            RTGCPHYS GCPhysApicBase;
+            PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+            GCPhysApicBase &= PAGE_BASE_GC_MASK;
+            if (GCPhys == GCPhysApicBase + 0x80)
+            {
+                Log(("Enable VT-x virtual APIC access filtering\n"));
+                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hwaccm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
+                AssertRC(rc2);
+            }
+        }
+
         rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
         if (rc == VINF_SUCCESS)
         {
