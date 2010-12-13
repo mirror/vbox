@@ -1921,16 +1921,19 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  * @param   pu      Pointer to the variable to update.
  * @param   puRes   Where to store the result.
  */
-#define ASMAtomicReadSize(pu, puRes) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicReadSize(pu, puRes) \
     do { \
-        switch (sizeof(*(pu))) { \
-            case 1: *(uint8_t  *)(puRes) = ASMAtomicReadU8( (volatile uint8_t  *)(void *)(pu)); break; \
-            case 2: *(uint16_t *)(puRes) = ASMAtomicReadU16((volatile uint16_t *)(void *)(pu)); break; \
-            case 4: *(uint32_t *)(puRes) = ASMAtomicReadU32((volatile uint32_t *)(void *)(pu)); break; \
-            case 8: *(uint64_t *)(puRes) = ASMAtomicReadU64((volatile uint64_t *)(void *)(pu)); break; \
-            default: AssertMsgFailed(("ASMAtomicReadSize: size %d is not supported\n", sizeof(*(pu)))); \
-        } \
+        *(uint32_t *)(puRes) = ASMAtomicReadU32((volatile uint32_t *)(void *)(pu)); \
     } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicReadSize(pu, puRes) \
+    do { \
+        *(uint64_t *)(puRes) = ASMAtomicReadU64((volatile uint64_t *)(void *)(pu)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
@@ -1940,17 +1943,19 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  * @param   pu      Pointer to the variable to read.
  * @param   puRes   Where to store the result.
  */
-#define ASMAtomicUoReadSize(pu, puRes) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicUoReadSize(pu, puRes) \
     do { \
-        switch (sizeof(*(pu))) { \
-            case 1: *(uint8_t  *)(puRes) = ASMAtomicUoReadU8( (volatile uint8_t  *)(void *)(pu)); break; \
-            case 2: *(uint16_t *)(puRes) = ASMAtomicUoReadU16((volatile uint16_t *)(void *)(pu)); break; \
-            case 4: *(uint32_t *)(puRes) = ASMAtomicUoReadU32((volatile uint32_t *)(void *)(pu)); break; \
-            case 8: *(uint64_t *)(puRes) = ASMAtomicUoReadU64((volatile uint64_t *)(void *)(pu)); break; \
-            default: AssertMsgFailed(("ASMAtomicReadSize: size %d is not supported\n", sizeof(*(pu)))); \
-        } \
+        *(uint32_t *)(puRes) = ASMAtomicUoReadU32((volatile uint32_t *)(void *)(pu)); \
     } while (0)
-
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicUoReadSize(pu, puRes) \
+    do { \
+        *(uint64_t *)(puRes) = ASMAtomicUoReadU64((volatile uint64_t *)(void *)(pu)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 /**
  * Atomically writes an unsigned 8-bit value, ordered.
