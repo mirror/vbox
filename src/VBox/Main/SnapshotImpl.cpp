@@ -2614,13 +2614,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (FAILED(rc))
                 {
                     AutoReadLock mlock(it->mpSource COMMA_LOCKVAL_SRC_POS);
-                    const ComObjPtr<MediumFormat> &sourceFormat = it->mpSource->getMediumFormat();
-                    // No medium format description? get out of here.
-                    if (sourceFormat.isNull())
-                        throw rc;
-                    // Diff medium not backed by a file - cannot get status so
-                    // be pessimistic.
-                    if (!(sourceFormat->getCapabilities() & MediumFormatCapabilities_File))
+                    if (!it->mpSource->isMediumFormatFile())
+                        // Diff medium not backed by a file - cannot get status so
+                        // be pessimistic.
                         throw rc;
                     const Utf8Str &loc = it->mpSource->getLocationFull();
                     // Source medium is still there, so merge failed early.
