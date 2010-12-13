@@ -47,6 +47,7 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
     g_VBoxCrHgsmiCallbacks = *pCallbacks;
     if (!g_hVBoxCrHgsmiProvider)
     {
+        /** @todo GetModuleHandleEx() only is available for WinXP and up ... */
         BOOL bRc = GetModuleHandleEx(0, L"VBoxDispD3D", &g_hVBoxCrHgsmiProvider);
 //        g_hVBoxCrHgsmiProvider = GetModuleHandle(L"VBoxDispD3D");
         if (bRc)
