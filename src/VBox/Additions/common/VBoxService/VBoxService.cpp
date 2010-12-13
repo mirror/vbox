@@ -362,6 +362,10 @@ int VBoxServiceStartServices(void)
         }
     }
 
+    if (RT_SUCCESS(rc))
+        VBoxServiceVerbose(1, "All services started.\n");
+    else
+        VBoxServiceError("An error occcurred while the services!\n");
     return rc;
 }
 
