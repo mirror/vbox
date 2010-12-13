@@ -148,6 +148,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed OpenGL support for libMesa 7.9</para>
+      </listitem>
+
+      <listitem>
         <para>2D Video acceleration: multimonitor support</para>
       </listitem>
 
