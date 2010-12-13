@@ -1469,7 +1469,7 @@ Bit16u *AX; Bit16u CX; Bit16u DX; Bit16u ES; Bit16u *BX;
 #endif
         if (CX & 8)
             val += vbe_biosfn_read_video_state_size();
-        write_word(ss, BX, val);
+        write_word(ss, BX, (val + 63) / 64);
         break;
     case 0x01:
         val = read_word(ss, BX);
