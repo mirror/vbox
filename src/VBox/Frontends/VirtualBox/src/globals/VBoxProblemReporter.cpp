@@ -2138,7 +2138,7 @@ void VBoxProblemReporter::badExtPackFile(const QString &strFilename, const CExtP
     message (pParent ? pParent : mainWindowShown(),
              Error,
              tr("Failed to open the Extension Pack <b>%1</b>.").arg(strFilename),
-             extPackFile.GetWhyUnusable());
+             "<!--EOM-->" + extPackFile.GetWhyUnusable());
 }
 
 void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent /* = 0 */)
