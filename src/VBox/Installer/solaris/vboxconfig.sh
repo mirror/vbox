@@ -795,6 +795,16 @@ postinstall()
             fi
         fi
 
+        if test -d $PKG_INSTALL_ROOT/usr/share/icons; then
+            infoprint "Installing MIME types and icons"
+            if test "$REMOTEINST" -eq 0; then
+                update-mime-database -q 2>/dev/null
+                update-desktop-database -q 2>/dev/null
+            else
+                subprint "Skipped for targetted installs."
+            fi
+        fi
+
         # Enable Zone access service for non-remote installs, other services (Webservice) are delivered disabled by the manifest class action
         if test "$REMOTEINST" -eq 0; then
             servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" | grep "disabled" 2>/dev/null`
