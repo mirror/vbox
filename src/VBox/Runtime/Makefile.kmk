@@ -98,7 +98,10 @@ endif
 
 
 # Always build the ntdll import libraries on windows.
-LIBRARIES.win += RuntimeR3NtDll-amd64 RuntimeR3NtDll-x86
+LIBRARIES.win += RuntimeR3NtDll-x86
+if1of (amd64, $(KBUILD_TARGET_ARCH) $(KBUILD_HOST_ARCH))
+ LIBRARIES.win += RuntimeR3NtDll-amd64
+endif
 
 
 # Where the generated stuff goes.
