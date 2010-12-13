@@ -144,7 +144,10 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
                     /* Install package: */
                     extPackFile.Install();
                     if (extPackFile.isOk())
+                    {
+                        vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
                         fInstalled = true;
+                    }
                     else
                         vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
                 }

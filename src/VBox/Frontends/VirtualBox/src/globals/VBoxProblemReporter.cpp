@@ -2170,6 +2170,13 @@ bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWi
                             tr("&Remove"));
 }
 
+void VBoxProblemReporter::notifyAboutExtPackInstalled(const QString &strPackName, QWidget *pParent)
+{
+    message (pParent ? pParent : mainWindowShown(),
+             Info,
+             tr("The extension pack <br><nobr><b>%1</b><nobr><br> was installed successfully.").arg(strPackName));
+}
+
 void VBoxProblemReporter::warnAboutIncorrectPort (QWidget *pParent) const
 {
     message(pParent, Error,

@@ -343,6 +343,7 @@ public:
     void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent = 0);
     bool confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0);
     bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent = 0);
+    void notifyAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0);
 
     void warnAboutIncorrectPort(QWidget *pParent) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent) const;
