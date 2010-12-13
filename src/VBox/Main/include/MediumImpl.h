@@ -170,6 +170,7 @@ public:
     const Utf8Str& getLocationFull() const;
     const Utf8Str& getFormat() const;
     const ComObjPtr<MediumFormat> & getMediumFormat() const;
+    bool isMediumFormatFile() const;
     uint64_t getSize() const;
     DeviceType_T getDeviceType() const;
     MediumType_T getType() const;

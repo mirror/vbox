@@ -2955,6 +2955,20 @@ const ComObjPtr<MediumFormat>& Medium::getMediumFormat() const
 }
 
 /**
+ * Internal method that returns true if the medium is represented by a file on the host disk
+ * (and not iSCSI or something).
+ * @return
+ */
+bool Medium::isMediumFormatFile() const
+{
+    if (    m->formatObj
+         && (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+       )
+        return true;
+    return false;
+}
+
+/**
  * Internal method to return the medium's size. Must have caller + locking!
  * @return
  */
