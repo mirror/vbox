@@ -170,7 +170,7 @@ private:
     /** Client contexts list. */
     ClientContextsList mClientContextsList;
     /** Number of connected clients. */
-    int32_t mNumClients;
+    uint32_t mNumClients;
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
@@ -461,7 +461,10 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
 int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 {
     LogFlowFunc(("New client (%ld) connected\n", u32ClientID));
-    mNumClients++;
+    if (mNumClients < UINT32_MAX)
+        mNumClients++;
+    else
+        AssertMsgFailed(("Max. number of clients reached\n"));
     return VINF_SUCCESS;
 }
 
@@ -477,8 +480,8 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
     LogFlowFunc(("Client (%ld) disconnected\n", u32ClientID));
+    Assert(mNumClients > 0);
     mNumClients--;
-    Assert(mNumClients >= 0);
 
     /*
      * Throw out all stale clients.
@@ -759,7 +762,7 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
      * waiting for a response from the guest side in case VBoxService on
      * the guest is not running/system is messed up somehow.
      */
-    if (mNumClients <= 0)
+    if (mNumClients == 0)
         return VERR_NOT_FOUND;
 
     HostCmd newCmd;
