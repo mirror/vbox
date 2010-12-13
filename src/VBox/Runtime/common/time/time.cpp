@@ -33,6 +33,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/string.h>
+#include <iprt/asm-math.h>
 #include <iprt/assert.h>
 #include "internal/time.h"
 
@@ -271,8 +272,8 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
      */
     pTime->fFlags = RTTIME_FLAGS_TYPE_UTC;
     i64Div = pTimeSpec->i64NanosecondsRelativeToUnixEpoch;
-    i32Rem = (int32_t)(i64Div % 1000000000);
-    i64Div /= 1000000000;
+    i32Rem = ASMDivS64ByS32RetS32(i64Div, 1000000000);
+    i64Div = (int64_t)ASMDivS64ByS32RetS32(i64Div, 1000000000);
     if (i32Rem < 0)
     {
         i32Rem += 1000000000;
@@ -281,7 +282,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
     pTime->u32Nanosecond = i32Rem;
 
     /* second */
-    i32Rem = (int32_t)(i64Div % 60);
+    i32Rem = ASMDivS64ByS32RetS32(i64Div, 60);
     i64Div /= 60;
     if (i32Rem < 0)
     {
