@@ -56,19 +56,19 @@ BITS 32
 ; @param    [esp + 08h]  Param 2 - VMCPU offset
 ;
 BEGINPROC vmmR0HostToGuest
- %ifdef DEBUG_STUFF
+%ifdef DEBUG_STUFF
     COM32_S_NEWLINE
     COM32_S_CHAR '^'
- %endif
+%endif
 
- %ifdef VBOX_WITH_STATISTICS
+%ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
     ;
     FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToGC
     mov     edx, 0ffffffffh
     STAM_PROFILE_ADV_START edx
- %endif
+%endif
 
     push    ebp
     mov     ebp, [esp + 12]             ; VMCPU offset
@@ -84,6 +84,29 @@ BEGINPROC vmmR0HostToGuest
     mov     edx, 0ffffffffh
     push    cs                          ; allow for far return and restore cs correctly.
     call    NAME(vmmR0HostToGuestAsm)
+
+%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    CPUM_FROM_CPUMCPU(edx)
+    ; Restore blocked Local APIC NMI vectors
+    mov     ecx, [edx + CPUM.fApicDisVectors]
+    mov     edx, [edx + CPUM.pvApicBase]
+    shr     ecx, 1
+    jnc     gth_nolint0
+    and     dword [edx + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
+gth_nolint0:
+    shr     ecx, 1
+    jnc     gth_nolint1
+    and     dword [edx + APIC_REG_LVT_LINT1], ~APIC_REG_LVT_MASKED
+gth_nolint1:
+    shr     ecx, 1
+    jnc     gth_nopc
+    and     dword [edx + APIC_REG_LVT_PC], ~APIC_REG_LVT_MASKED
+gth_nopc:
+    shr     ecx, 1
+    jnc     gth_notherm
+    and     dword [edx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
+gth_notherm:
+%endif
 
     ; restore original flags
     popf
@@ -624,30 +647,6 @@ GLOBALNAME ICExitTarget
     mov     cr0, ecx
     ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is waste of time.
     ;mov     cr2, ecx
-
-%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    ; Restore blocked Local APIC NMI vectors
-    CPUM_FROM_CPUMCPU_WITH_OFFSET edx, ebp
-    mov     ebx, [edx + CPUM.pvApicBase]
-    mov     ecx, [edx + CPUM.fApicDisVectors]
-    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
-    shr     ecx, 1
-    jnc     gth_nolint0
-    and     dword [ebx + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
-gth_nolint0:
-    shr     ecx, 1
-    jnc     gth_nolint1
-    and     dword [ebx + APIC_REG_LVT_LINT1], ~APIC_REG_LVT_MASKED
-gth_nolint1:
-    shr     ecx, 1
-    jnc     gth_nopc
-    and     dword [ebx + APIC_REG_LVT_PC], ~APIC_REG_LVT_MASKED
-gth_nopc:
-    shr     ecx, 1
-    jnc     gth_notherm
-    and     dword [ebx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
-gth_notherm:
-%endif
 
     ; restore general registers.
     mov     edi, [edx + CPUMCPU.Host.edi]
