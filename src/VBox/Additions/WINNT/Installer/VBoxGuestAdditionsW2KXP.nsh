@@ -387,6 +387,7 @@ cropengl:
     ${If} $g_strWinVersion   == '7'
     ${OrIf} $g_strWinVersion == 'Vista'
     ${OrIf} $g_strWinVersion == 'XP'
+    ${OrIf} $g_strWinVersion == '2003'
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
