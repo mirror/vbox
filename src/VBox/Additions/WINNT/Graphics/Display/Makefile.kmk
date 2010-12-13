@@ -71,7 +71,6 @@ DLLS += VBoxDispD3D
  if defined(VBOX_SIGNING_MODE)
 VBoxDispD3D_NOINST = true
  endif
-VBoxDispD3D_NAME.amd64 = VBoxDispD3D64
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
 VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP LOG_TO_BACKDOOR
 ifdef DEBUG_misha
@@ -92,10 +91,6 @@ endif
 ifdef VBOXWDDM_TEST_UHGSMI
  VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
 endif
-VBoxDispD3D_SOURCES.x86  = \
-	wddm/VBoxDispD3D.def
-VBoxDispD3D_SOURCES.amd64  = \
-	wddm/VBoxDispD3D64.def
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
@@ -103,7 +98,8 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispMp.cpp \
 	wddm/VBoxScreen.cpp \
 	wddm/VBoxDispMpTst.cpp \
-	wddm/VBoxDispD3D.rc
+	wddm/VBoxDispD3D.rc \
+	wddm/VBoxDispD3D.def
 #ifdef VBOX_WITH_CRHGSMI
 #VBoxDispD3D_SOURCES += \
 #    wddm/VBoxUhgsmiDisp.cpp \
@@ -122,7 +118,7 @@ VBoxDispD3D_SDKS     = WINDDKWLH
 #
 DLLS.amd64 += VBoxDispD3D-x86
 VBoxDispD3D-x86_EXTENDS = VBoxDispD3D
-VBoxDispD3D-x86_NAME = VBoxDispD3D
+VBoxDispD3D-x86_NAME = VBoxDispD3D32
 VBoxDispD3D-x86_BLD_TRG_ARCH = x86
 VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \

@@ -37,9 +37,9 @@ BEGIN
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox Video Usermode D3D 64bit Driver\0"
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-         VALUE "InternalName",     "VBoxDispD3D64\0"
+         VALUE "InternalName",     "VBoxDispD3D\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-         VALUE "OriginalFilename", "VBoxDispD3D64.dll\0"
+         VALUE "OriginalFilename", "VBoxDispD3D.dll\0"
          VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
 #else

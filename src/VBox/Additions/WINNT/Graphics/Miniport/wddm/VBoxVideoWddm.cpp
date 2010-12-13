@@ -1258,8 +1258,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         {
             DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
 
-            pCaps->HighestAcceptableAddress.HighPart = 0x0;
-            pCaps->HighestAcceptableAddress.LowPart = 0xffffffffUL;
+            pCaps->HighestAcceptableAddress.QuadPart = ~((uintptr_t)0);
             pCaps->MaxAllocationListSlotId = 16;
             pCaps->ApertureSegmentCommitLimit = 0;
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;

@@ -583,6 +583,8 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
     memset(&DDev, 0, sizeof (DDev));
     DDev.cb = sizeof (DDev);
 
+    *phDc = NULL;
+
     for (int i = 0; ; ++i)
     {
         if (EnumDisplayDevices(NULL, /* LPCTSTR lpDevice */ i, /* DWORD iDevNum */
@@ -622,10 +624,10 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
 HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
 {
     D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
-    OpenAdapterData.hDc = GetWindowDC(NULL);
     HRESULT hr = vboxDispKmtAdpHdcCreate(&OpenAdapterData.hDc);
-    if (OpenAdapterData.hDc)
+    if (hr == S_OK)
     {
+        Assert(OpenAdapterData.hDc);
         NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
 #ifdef DEBUG_misha
         /* may fail with xpdm driver */

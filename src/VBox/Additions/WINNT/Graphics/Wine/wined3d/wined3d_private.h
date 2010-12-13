@@ -39,15 +39,21 @@
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
 #define COBJMACROS
+#ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include "windef.h"
 #include "winbase.h"
 #include "winreg.h"
 #include "wingdi.h"
 #include "winuser.h"
+#else
+#include <windows.h>
+#endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
 
+#ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include "objbase.h"
+#endif
 #include "wine/wined3d.h"
 #include "wined3d_gl.h"
 #include "wine/list.h"

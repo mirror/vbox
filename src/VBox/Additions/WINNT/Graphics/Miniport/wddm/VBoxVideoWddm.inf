@@ -48,15 +48,13 @@ RegisterDlls = VBoxVideo_RegisterDlls
 [VBoxVideo.Miniport]
 VBoxVideoWddm.sys
 
-;x86   [VBoxVideo.Display]
-;amd64 [VBoxVideo.Display_wow64]
+[VBoxVideo.Display]
 ;dispd3d VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-;amd64 [VBoxVideo.Display]
-;amd64 ;dispd3d VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 [VBoxVideo.Display_wow64]
+;amd64 ;dispd3d VBoxDispD3D32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-;x86   [VBoxVideo.GL]
-;amd64 [VBoxVideo.GL_wow64]
+[VBoxVideo.GL]
 ;gl VBoxOGL.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl VBoxD3D9wddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl wined3dwddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
@@ -68,27 +66,24 @@ VBoxVideoWddm.sys
 ;gl VBoxOGLpackspu.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl VBoxOGLpassthroughspu.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-;amd64 [VBoxVideo.GL]
-;amd64 ;gl VBoxOGL64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxD3D964.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl wined3d64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl libWine64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLarrayspu64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLcrutil64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLerrorspu64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLfeedbackspu64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLpackspu64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxOGLpassthroughspu64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 [VBoxVideo.GL_wow64]
+;amd64 ;gl VBoxOGL32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxD3D9wddm32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl wined3dwddm32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl libWine32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLarrayspu32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLcrutil32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLerrorspu32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLfeedbackspu32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLpackspu32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;gl VBoxOGLpassthroughspu32.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo_SoftwareDeviceSettings]
-;x86   ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
-;x86   ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
-;amd64 ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
-;amd64 ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
-;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
-;x86   ;gl HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL.dll
-;amd64 ;gl HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL64.dll
-;amd64 ;gl HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxOGL.dll
+;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
+;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D32.dll
+;gl HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL.dll
+;amd64 ;gl HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxOGL32.dll
 ;gl        HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
 ;amd64 ;gl HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
 ;gl        HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
@@ -97,26 +92,26 @@ HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo_RegisterDlls]
 ;dispd3d 11,,VBoxDispD3D.dll,1
-;amd64 ;dispd3d 11,,VBoxDispD3D64.dll,1
-;amd64 ;gl 11,,VBoxOGL64.dll,1
+;amd64 ;dispd3d 11,,VBoxDispD3D32.dll,1
+;amd64 ;gl 11,,VBoxOGL32.dll,1
 ;gl 11,,VBoxOGL.dll,1
-;amd64 ;gl 11,,VBoxD3D964.dll,1
+;amd64 ;gl 11,,VBoxD3D9wddm32.dll,1
 ;gl 11,,VBoxD3D9wddm.dll,1
-;amd64 ;gl 11,,wined3d64.dll,1
+;amd64 ;gl 11,,wined3dwddm32.dll,1
 ;gl 11,,wined3dwddm.dll,1
-;amd64 ;gl 11,,libWine64.dll,1
+;amd64 ;gl 11,,libWine32.dll,1
 ;gl 11,,libWine.dll,1
-;amd64 ;gl 11,,VBoxOGLarrayspu64.dll,1
+;amd64 ;gl 11,,VBoxOGLarrayspu32.dll,1
 ;gl 11,,VBoxOGLarrayspu.dll,1
-;amd64 ;gl 11,,VBoxOGLcrutil64.dll,1
+;amd64 ;gl 11,,VBoxOGLcrutil32.dll,1
 ;gl 11,,VBoxOGLcrutil.dll,1
-;amd64 ;gl 11,,VBoxOGLerrorspu64.dll,1
+;amd64 ;gl 11,,VBoxOGLerrorspu32.dll,1
 ;gl 11,,VBoxOGLerrorspu.dll,1
-;amd64 ;gl 11,,VBoxOGLfeedbackspu64.dll,1
+;amd64 ;gl 11,,VBoxOGLfeedbackspu32.dll,1
 ;gl 11,,VBoxOGLfeedbackspu.dll,1
-;amd64 ;gl 11,,VBoxOGLpackspu64.dll,1
+;amd64 ;gl 11,,VBoxOGLpackspu32.dll,1
 ;gl 11,,VBoxOGLpackspu.dll,1
-;amd64 ;gl 11,,VBoxOGLpassthroughspu64.dll,1
+;amd64 ;gl 11,,VBoxOGLpassthroughspu32.dll,1
 ;gl 11,,VBoxOGLpassthroughspu.dll,1
 
 
@@ -142,27 +137,27 @@ HKR,,TypesSupported,0x00010001,7
 
 [SourceDisksFiles]
 VBoxVideoWddm.sys = 1
-;amd64 ;dispd3d VBoxDispD3D64.dll = 1
+;amd64 ;dispd3d VBoxDispD3D32.dll = 1
 ;dispd3d VBoxDispD3D.dll = 1
-;amd64 ;gl VBoxOGL64.dll = 1
+;amd64 ;gl VBoxOGL32.dll = 1
 ;gl VBoxOGL.dll = 1
-;amd64 ;gl VBoxD3D964.dll = 1
+;amd64 ;gl VBoxD3D9wddm32.dll = 1
 ;gl VBoxD3D9wddm.dll = 1
-;amd64 ;gl wined3d64.dll = 1
+;amd64 ;gl wined3dwddm32.dll = 1
 ;gl wined3dwddm.dll = 1
-;amd64 ;gl libWine64.dll = 1
+;amd64 ;gl libWine32.dll = 1
 ;gl libWine.dll = 1
-;amd64 ;gl VBoxOGLarrayspu64.dll = 1
+;amd64 ;gl VBoxOGLarrayspu32.dll = 1
 ;gl VBoxOGLarrayspu.dll = 1
-;amd64 ;gl VBoxOGLcrutil64.dll = 1
+;amd64 ;gl VBoxOGLcrutil32.dll = 1
 ;gl VBoxOGLcrutil.dll = 1
-;amd64 ;gl VBoxOGLerrorspu64.dll = 1
+;amd64 ;gl VBoxOGLerrorspu32.dll = 1
 ;gl VBoxOGLerrorspu.dll = 1
-;amd64 ;gl VBoxOGLfeedbackspu64.dll = 1
+;amd64 ;gl VBoxOGLfeedbackspu32.dll = 1
 ;gl VBoxOGLfeedbackspu.dll = 1
-;amd64 ;gl VBoxOGLpackspu64.dll = 1
+;amd64 ;gl VBoxOGLpackspu32.dll = 1
 ;gl VBoxOGLpackspu.dll = 1
-;amd64 ;gl VBoxOGLpassthroughspu64.dll = 1
+;amd64 ;gl VBoxOGLpassthroughspu32.dll = 1
 ;gl VBoxOGLpassthroughspu.dll = 1 
 
 [Strings]
