@@ -36,7 +36,11 @@
 
 #ifdef DEBUG_misha
 /* just for simplicity */
+#ifdef RT_ARCH_X86
 #define AssertBreakpoint() do { __asm {int 3} } while (0)
+#else
+#define AssertBreakpoint() do { /* @todo */ } while (0)
+#endif
 #define Assert(_expr) do { \
         if (!(_expr)) AssertBreakpoint(); \
     } while (0)
