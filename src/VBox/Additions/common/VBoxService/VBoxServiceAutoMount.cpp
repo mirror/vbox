@@ -53,7 +53,11 @@ RT_C_DECLS_END
 #endif
 
 #ifndef _PATH_MOUNTED
- #define _PATH_MOUNTED "/etc/mtab"
+ #ifdef RT_OS_SOLARIS
+  #define _PATH_MOUNTED         "/etc/mnttab"
+ #else
+  #define _PATH_MOUNTED         "/etc/mtab"
+ #endif
 #endif
 
 /*******************************************************************************
@@ -109,7 +113,8 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
 #ifdef RT_OS_SOLARIS
     FILE *pFh = fopen(_PATH_MOUNTED, "r");
     if (!pFh)
-        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mtab!\n");
+        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mount tab \"%s\"!\n",
+                         _PATH_MOUNTED);
     else
     {
         mnttab mntTab;
@@ -127,7 +132,8 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
 #else
     FILE *pFh = setmntent(_PATH_MOUNTED, "r+t");
     if (pFh == NULL)
-        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mtab!\n");
+        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mount tab \"%s\"!\n",
+                         _PATH_MOUNTED);
     else
     {
         mntent *pMntEnt;
