@@ -242,7 +242,7 @@ void filter_input_end(void *pvCtx)
 
     pCtx->fEndedByFilter = true;
 
-    c = ASMAtomicDecU32(&pCtx->cRefs);
+    c = ASMAtomicDecS32(&pCtx->cRefs);
 
     if (c == 0)
     {
@@ -423,7 +423,7 @@ static DECLCALLBACK(void) iface_AudioInputEventEnd (PPDMIAUDIOSNIFFERPORT pInter
 
     Assert(g_pData == pThis);
 
-    c = ASMAtomicDecU32(&pCtx->cRefs);
+    c = ASMAtomicDecS32(&pCtx->cRefs);
 
     if (c == 0)
     {
