@@ -677,8 +677,10 @@ void ConfigFileBase::readMedium(MediaType t,
                 med.hdType = MediumType_Shareable;
             else if (strType == "READONLY")
                 med.hdType = MediumType_Readonly;
+            else if (strType == "MULTIATTACH")
+                med.hdType = MediumType_MultiAttach;
             else
-                throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
+                throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable, Writethrough, Shareable, Readonly or MultiAttach"));
         }
     }
     else
@@ -1036,7 +1038,9 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
             mdm.hdType == MediumType_Immutable ? "Immutable" :
             mdm.hdType == MediumType_Writethrough ? "Writethrough" :
             mdm.hdType == MediumType_Shareable ? "Shareable" :
-            mdm.hdType == MediumType_Readonly ? "Readonly" : "INVALID";
+            mdm.hdType == MediumType_Readonly ? "Readonly" :
+            mdm.hdType == MediumType_MultiAttach ? "MultiAttach" :
+            "INVALID";
         pelmMedium->setAttribute("type", pcszType);
     }
 
@@ -4479,6 +4483,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 || cFloppy > 1)
                 m->sv = SettingsVersion_v1_11;
         }
+    }
+
+    // Settings version 1.11 is required if Readonly/MultiAttach media
+    // are present.
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        /// @todo add code going over all medium attachments and check if
+        // they are of type Readonly or MultiAttach.
     }
 
     // settings version 1.9 is required if there is not exactly one DVD

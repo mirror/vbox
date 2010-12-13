@@ -7545,6 +7545,26 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     mData->m_strConfigFileFull.c_str());
                 }
 
+                if (medium->getType() == MediumType_MultiAttach)
+                {
+                    if (isSnapshotMachine())
+                        return setError(E_FAIL,
+                                        tr("Multi-attach hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
+                                           "of the virtual machine '%s' ('%s')"),
+                                        medium->getLocationFull().c_str(),
+                                        dev.uuid.raw(),
+                                        puuidSnapshot->raw(),
+                                        mUserData->s.strName.c_str(),
+                                        mData->m_strConfigFileFull.c_str());
+
+                    return setError(E_FAIL,
+                                    tr("Multi-attach hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s')"),
+                                    medium->getLocationFull().c_str(),
+                                    dev.uuid.raw(),
+                                    mUserData->s.strName.c_str(),
+                                    mData->m_strConfigFileFull.c_str());
+                }
+
                 if (    !isSnapshotMachine()
                      && medium->getChildren().size() != 0
                    )
