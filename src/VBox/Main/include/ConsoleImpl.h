@@ -312,14 +312,14 @@ private:
      *
      *  @sa SafeVMPtr, SafeVMPtrQuiet
      */
-    typedef AutoVMCallerBase <false, false> AutoVMCaller;
+    typedef AutoVMCallerBase<false, false> AutoVMCaller;
 
     /**
      *  Same as AutoVMCaller but doesn't set extended error info on failure.
      *
      *  @note Temporarily locks the argument for writing.
      */
-    typedef AutoVMCallerBase <true, false> AutoVMCallerQuiet;
+    typedef AutoVMCallerBase<true, false> AutoVMCallerQuiet;
 
     /**
      *  Same as AutoVMCaller but allows a null VM pointer (to trigger an error
@@ -327,7 +327,7 @@ private:
      *
      *  @note Temporarily locks the argument for writing.
      */
-    typedef AutoVMCallerBase <false, true> AutoVMCallerWeak;
+    typedef AutoVMCallerBase<false, true> AutoVMCallerWeak;
 
     /**
      *  Same as AutoVMCaller but doesn't set extended error info on failure
@@ -336,20 +336,24 @@ private:
      *
      *  @note Temporarily locks the argument for writing.
      */
-    typedef AutoVMCallerBase <true, true> AutoVMCallerQuietWeak;
+    typedef AutoVMCallerBase<true, true> AutoVMCallerQuietWeak;
 
     /**
      *  Base template for SaveVMPtr and SaveVMPtrQuiet.
      */
-    template <bool taQuiet = false>
-    class SafeVMPtrBase : public AutoVMCallerBase <taQuiet, true>
+    template<bool taQuiet = false>
+    class SafeVMPtrBase : public AutoVMCallerBase<taQuiet, true>
     {
-        typedef AutoVMCallerBase <taQuiet, true> Base;
+        typedef AutoVMCallerBase<taQuiet, true> Base;
     public:
         SafeVMPtrBase(Console *aThat) : Base(aThat), mpVM(NULL)
         {
             if (SUCCEEDED(Base::mRC))
+            {
                 mpVM = aThat->mpVM;
+                if (!mpVM)
+                    Base::mRC = E_FAIL; /** @todo use setError here. */
+            }
         }
         /** Smart SaveVMPtr to PVM cast operator */
         operator PVM() const { return mpVM; }
@@ -380,7 +384,7 @@ public:
      *
      *  @sa SafeVMPtrQuiet, AutoVMCaller
      */
-    typedef SafeVMPtrBase <false> SafeVMPtr;
+    typedef SafeVMPtrBase<false> SafeVMPtr;
 
     /**
      *  A deviation of SaveVMPtr that doesn't set the error info on failure.
@@ -397,7 +401,7 @@ public:
      *
      *  @sa SafeVMPtr, AutoVMCaller
      */
-    typedef SafeVMPtrBase <true> SafeVMPtrQuiet;
+    typedef SafeVMPtrBase<true> SafeVMPtrQuiet;
 
     class SharedFolderData
     {
