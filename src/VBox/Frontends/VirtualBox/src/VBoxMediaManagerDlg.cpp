@@ -1063,7 +1063,8 @@ void VBoxMediaManagerDlg::doRemoveMedium()
              * VBoxProblemReporter::confirmRemoveMedium() is aware of that and
              * will give a corresponding hint. Therefore, once the code is
              * changed below, the hint should be re-checked for validity. */
-            if (item->state() != KMediumState_Inaccessible)
+            if (item->state() != KMediumState_Inaccessible &&
+                item->medium().medium().GetMediumFormat().GetCapabilities() & MediumFormatCapabilities_File)
             {
                 int rc = vboxProblem().
                     confirmDeleteHardDiskStorage (this, item->location());
