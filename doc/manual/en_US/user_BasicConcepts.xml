@@ -6,7 +6,7 @@
 
   <para>Whereas <xref linkend="Introduction" /> gave you a quick introduction
   to VirtualBox and how to get your first virtual machine running, the
-  following chapter describe in detail how to configure virtual
+  following chapter describes in detail how to configure virtual
   machines.</para>
 
   <para>You have considerable latitude in deciding what virtual hardware will
@@ -226,9 +226,10 @@
             incurs additional overhead, VirtualBox only enables this support
             upon explicit request.</para>
 
-            <para>On 64-bit hosts, 64-bit guest support is always enabled, so
-            you can simply install a 64-bit operating system in the
-            guest.</para>
+            <para>On 64-bit hosts (which typically come with hardware
+            virtualization support), 64-bit guest operating systems are always
+            supported regardless of settings, so you can simply install a
+            64-bit operating system in the guest.</para>
           </listitem>
         </orderedlist></para>
 
@@ -351,7 +352,12 @@
             <para>The type of the guest operating system that is (or will be)
             installed in the VM. This is the same setting that was specified
             in the "New Virtual Machine" wizard, as described in <xref
-            linkend="gui-createvm" />.</para>
+            linkend="gui-createvm" />. </para>
+
+            <para>Whereas the default settings of a newly created VM depend on
+            the selected operating system type, changing the type later has no
+            effect on VM settings; this value is then purely informational and
+            decorative.</para>
           </glossdef>
         </glossentry>
       </glosslist>
@@ -376,13 +382,17 @@
             <glossterm>Shared clipboard</glossterm>
 
             <glossdef>
-              <para>If the virtual machine has Guest Additions installed, you
-              can select here whether the clipboard of the guest operating
-              system should be shared with that of your host. If you select
-              "Bidirectional", then VirtualBox will always make sure that both
-              clipboards contain the same data. If you select "Host to guest"
-              or "Guest to host", then VirtualBox will only ever copy
-              clipboard data in one direction.</para>
+              <para>You can select here whether the clipboard of the guest
+              operating system should be shared with that of your host. If you
+              select "Bidirectional", then VirtualBox will always make sure
+              that both clipboards contain the same data. If you select "Host
+              to guest" or "Guest to host", then VirtualBox will only ever
+              copy clipboard data in one direction.</para>
+
+              <para>Clipboard sharing requires that the VirtualBox Guest
+              Additions be installed. As a result, this setting has no effect
+              otherwise; see <xref linkend="guestadditions" /> for
+              details.</para>
             </glossdef>
           </glossentry>
 
@@ -476,6 +486,23 @@
               a network via the PXE mechanism. This needs to be configured in
               detail on the command line; please see <xref
               linkend="vboxmanage-modifyvm" />.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>Chipset</glossterm>
+
+            <glossdef>
+              <para>Here you can select which chipset will be presented to the
+              virtual machine. Before VirtualBox 4.0, PIIX3 was the only
+              available option here. For modern guest operating systems such
+              as Mac OS X server, that old chipset is no longer well
+              supported. As a result, VirtualBox 4.0 introduced an emulation
+              of the more modern ICH9 chipset, which supports PCI express,
+              three PCI buses, PCI-to-PCI bridges and Message Signalled
+              Interrupts (MSI). This allows modern operating systems to
+              address more PCI devices and no longer requires IRQ
+              sharing.</para>
             </glossdef>
           </glossentry>
 
@@ -766,7 +793,7 @@
     can connect that disk as a second hard disk. You could also add a second
     virtual CD/DVD drive, or change where these items are attached.</para>
 
-    <para>In addition to the IDE controller, VirtualBox can also present an
+    <para>In addition to the IDE controller, VirtualBox can also present a
     SATA controller and a SCSI controller to the guest, which gives you 30 or
     16 additional slots to attach devices to, respectively. This, however, may
     require that you run a modern guest operating system. See <xref
