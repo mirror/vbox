@@ -1880,20 +1880,6 @@ static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 *   Driver methods                                                             *
 *******************************************************************************/
 
-static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
-{
-    LogFlowFunc(("\n"));
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-
-    /*
-     * We must close the disk here to ensure that
-     * the backend closes all files before the
-     * async transport driver is destructed.
-     */
-    int rc = VDCloseAll(pThis->pDisk);
-    AssertRC(rc);
-}
-
 /**
  * VM resume notification that we use to undo what the temporary read-only image
  * mode set by drvvdSuspend.
@@ -2763,7 +2749,7 @@ const PDMDRVREG g_DrvVD =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvvdPowerOff,
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
