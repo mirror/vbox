@@ -120,6 +120,7 @@ RT_EXPORT_SYMBOL(RTSemEventMultiCreate);
 DECLINLINE(void) rtR0SemEventMultiLnxRetain(PRTSEMEVENTMULTIINTERNAL pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    NOREF(cRefs);
     Assert(cRefs && cRefs < 100000);
 }
 
