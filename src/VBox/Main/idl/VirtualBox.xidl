@@ -8112,7 +8112,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          ExecuteProcessFlag flags.
+          <link to="ExecuteProcessFlag"/> flags.
         </desc>
       </param>
       <param name="arguments" type="wstring" safearray="yes" dir="in">
@@ -8259,7 +8259,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          CopyFileFlag flags. Not used at the moment and should be set to 0.
+          <link to="CopyFileFlag"/> flags. Not used at the moment and should be set to 0.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8300,7 +8300,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          CreateDirectoryFlag flags.
+          <link to="CreateDirectoryFlag"/> flags.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8324,7 +8324,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          ProcessInputFlag flags.
+          <link to="ProcessInputFlag"/> flags.
         </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
@@ -8362,7 +8362,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Flags for Guest Additions update.
+          <link to="AdditionsUpdateFlag"/> flags.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
