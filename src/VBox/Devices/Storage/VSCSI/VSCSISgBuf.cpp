@@ -48,28 +48,32 @@ uint8_t *vscsiIoMemCtxGetBuffer(PVSCSIIOMEMCTX pIoMemCtx, size_t *pcbData)
     size_t cbData = RT_MIN(*pcbData, pIoMemCtx->cbBufLeft);
     uint8_t *pbBuf = pIoMemCtx->pbBuf;
 
-    pIoMemCtx->cbBufLeft -= cbData;
-
-    /* Advance to the next segment if required. */
-    if (!pIoMemCtx->cbBufLeft)
+    if (   pbBuf
+        && cbData)
     {
-        pIoMemCtx->iSegIdx++;
+        pIoMemCtx->cbBufLeft -= cbData;
 
-        if (RT_UNLIKELY(pIoMemCtx->iSegIdx == pIoMemCtx->cSegments))
+        /* Advance to the next segment if required. */
+        if (!pIoMemCtx->cbBufLeft)
         {
-            pIoMemCtx->cbBufLeft = 0;
-            pIoMemCtx->pbBuf     = NULL;
+            pIoMemCtx->iSegIdx++;
+
+            if (RT_UNLIKELY(pIoMemCtx->iSegIdx == pIoMemCtx->cSegments))
+            {
+                pIoMemCtx->cbBufLeft = 0;
+                pIoMemCtx->pbBuf     = NULL;
+            }
+            else
+            {
+                pIoMemCtx->pbBuf     = (uint8_t *)pIoMemCtx->paDataSeg[pIoMemCtx->iSegIdx].pvSeg;
+                pIoMemCtx->cbBufLeft = pIoMemCtx->paDataSeg[pIoMemCtx->iSegIdx].cbSeg;
+            }
         }
         else
-        {
-            pIoMemCtx->pbBuf     = (uint8_t *)pIoMemCtx->paDataSeg[pIoMemCtx->iSegIdx].pvSeg;
-            pIoMemCtx->cbBufLeft = pIoMemCtx->paDataSeg[pIoMemCtx->iSegIdx].cbSeg;
-        }
-
-        *pcbData = cbData;
+            pIoMemCtx->pbBuf += cbData;
     }
-    else
-        pIoMemCtx->pbBuf += cbData;
+
+    *pcbData = cbData;
 
     return pbBuf;
 }
