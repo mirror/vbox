@@ -2176,6 +2176,67 @@ bool VBoxProblemReporter::confirmInstallingPackage(const QString &strPackName, c
                             tr("&Install"));
 }
 
+bool VBoxProblemReporter::confirmReplacePackage(const QString &strPackName, const QString &strPackVersionNew,
+                                                const QString &strPackVersionOld, const QString &strPackDescription,
+                                                QWidget *pParent /* = 0 */)
+{
+    if (!pParent)
+        pParent = pParent ? pParent : mainWindowShown(); /* this is boring stuff that messageOkCancel should do! */
+
+    QString strBelehrung = tr("Extension packs complement the functionality of VirtualBox and can contain "
+                              "system level software that could be potentially harmful to your system. "
+                              "Please review the description below and only proceed if you have obtained "
+                              "the extension pack from a trusted source.");
+
+    QByteArray  ba1     = strPackVersionNew.toUtf8();
+    QByteArray  ba2     = strPackVersionOld.toUtf8();
+    int         iVerCmp = RTStrVersionCompare(ba1.constData(), ba2.constData());
+
+    bool fRc;
+    if (iVerCmp > 0)
+        fRc = messageOkCancel(pParent,
+                              Question,
+                              tr("<p>An older version of the extension pack is already installed, would you like to upgrade? "
+                                 "<p>%1</p>"
+                                 "<p><table cellpadding=0 cellspacing=0>"
+                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
+                                 "<tr><td><b>New Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
+                                 "<tr><td><b>Current Version:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
+                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%5</td></tr>"
+                                 "</table></p>")
+                              .arg(strBelehrung).arg(strPackName).arg(strPackVersionNew).arg(strPackVersionOld).arg(strPackDescription),
+                              0,
+                              tr("&Upgrade"));
+    else if (iVerCmp < 0)
+        fRc = messageOkCancel(pParent,
+                              Question,
+                              tr("<p>An newer version of the extension pack is already installed, would you like to downgrade? "
+                                 "<p>%1</p>"
+                                 "<p><table cellpadding=0 cellspacing=0>"
+                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
+                                 "<tr><td><b>New Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
+                                 "<tr><td><b>Current Version:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
+                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%5</td></tr>"
+                                 "</table></p>")
+                              .arg(strBelehrung).arg(strPackName).arg(strPackVersionNew).arg(strPackVersionOld).arg(strPackDescription),
+                              0,
+                              tr("&Downgrade"));
+    else
+        fRc = messageOkCancel(pParent,
+                              Question,
+                              tr("<p>The extension pack is already installed with the same version, would you like reinstall it? "
+                                 "<p>%1</p>"
+                                 "<p><table cellpadding=0 cellspacing=0>"
+                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
+                                 "<tr><td><b>Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
+                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
+                                 "</table></p>")
+                              .arg(strBelehrung).arg(strPackName).arg(strPackVersionOld).arg(strPackDescription),
+                              0,
+                              tr("&Reinstall"));
+    return fRc;
+}
+
 bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWidget *pParent /* = 0 */)
 {
     return messageOkCancel (pParent ? pParent : mainWindowShown(),
