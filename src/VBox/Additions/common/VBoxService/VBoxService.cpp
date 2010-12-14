@@ -353,7 +353,13 @@ int VBoxServiceStartServices(void)
         }
         g_aServices[j].fStarted = true;
 
-        /* wait for the thread to initialize */
+        /* Wait for the thread to initialize.
+         *
+         * @todo There is a race between waiting and checking
+         *       the fShutdown flag of a thread here and processing
+         *       the thread's actual worker loop. If the thread decides
+         *       to exit the loop before we skipped the fShutdown check
+         *       below the service will fail to start! */
         RTThreadUserWait(g_aServices[j].Thread, 60 * 1000);
         if (g_aServices[j].fShutdown)
         {
