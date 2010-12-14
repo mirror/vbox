@@ -8112,8 +8112,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Execution flags - currently not supported and therefore
-          has to be set to 0.
+          ExecuteProcessFlag flags.
         </desc>
       </param>
       <param name="arguments" type="wstring" safearray="yes" dir="in">
@@ -8260,7 +8259,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Copy flags. Not used at the moment and must be set to 0.
+          CopyFileFlag flags. Not used at the moment and should be set to 0.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8301,7 +8300,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Additional flags. Not used at the moment and must be set to 0.
+          CreateDirectoryFlag flags.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8325,7 +8324,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Not used, must be set to zero.
+          ProcessInputFlag flags.
         </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
