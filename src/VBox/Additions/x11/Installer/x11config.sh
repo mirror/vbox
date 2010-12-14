@@ -31,7 +31,8 @@ ALL_SECTIONS=\
 '[Pp][Oo][Ii][Nn][Tt][Ee][Rr]\)"'
 # ^\s*Section\s*"(InputDevice|Device|ServerLayout|Screen|Monitor|Keyboard|Pointer)"
 
-KBD_SECTION='[Kk][Ee][Yy][Bb][Oo][Aa][Rr][Dd]' # Keyboard
+KBD_SECTION='^[ '$tab']*[Ss][Ee][Cc][Tt][Ii][Oo][Nn][ '$tab']*"'\
+'[Ii][Nn][Pp][Uu][Tt][Dd][Ee][Vv][Ii][Cc][Ee]"' # ^\s*section\s*\"inputdevice\"
 
 END_SECTION='[Ee][Nn][Dd][Ss][Ee][Cc][Tt][Ii][Oo][Nn]' # EndSection
 
