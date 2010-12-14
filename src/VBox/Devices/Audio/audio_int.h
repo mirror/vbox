@@ -40,6 +40,7 @@
 #define qemu_mallocz RTMemAllocZ
 #define qemu_free RTMemFree
 #define qemu_strdup RTStrDup
+#define qemu_strfree RTStrFree
 
 struct audio_pcm_ops;
 

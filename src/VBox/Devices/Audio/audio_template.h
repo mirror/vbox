@@ -169,7 +169,7 @@ static int glue (audio_pcm_sw_init_, TYPE) (
     sw->name = qemu_strdup (name);
     err = glue (audio_pcm_sw_alloc_resources_, TYPE) (sw);
     if (err) {
-        qemu_free (sw->name);
+        qemu_strfree (sw->name);
         sw->name = NULL;
     }
     return err;
@@ -179,7 +179,7 @@ static void glue (audio_pcm_sw_fini_, TYPE) (SW *sw)
 {
     glue (audio_pcm_sw_free_resources_, TYPE) (sw);
     if (sw->name) {
-        qemu_free (sw->name);
+        qemu_strfree (sw->name);
         sw->name = NULL;
     }
 }
