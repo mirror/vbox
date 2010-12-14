@@ -12701,7 +12701,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="444e5d4a-ecd9-4c38-af95-a2fbfd69b486"
+    uuid="b5bd49dc-26ef-42b4-ae7a-0c4b734a7653"
     wsmap="managed"
     >
     <attribute name="enabled" type="boolean">
