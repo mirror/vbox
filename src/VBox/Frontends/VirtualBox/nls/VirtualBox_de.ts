@@ -557,7 +557,7 @@
     </message>
     <message>
         <source>Switch to &amp;Scale Mode</source>
-        <translation>Den &amp;skalierten Modus aktivieren</translation>
+        <translation>&amp;Skalierten Modus einschalten</translation>
     </message>
     <message>
         <source>Switch between normal and scale mode</source>
@@ -580,7 +580,7 @@
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Noch keine Beschreibung. Betätigen Sie den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
+        <translation>Noch keine Beschreibung. Betätigen Sie den Editieren-Knopf um eine Beschreibung zu erstellen.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -1783,22 +1783,6 @@
     <message>
         <source>Snapshot %1</source>
         <translation>Sicherungspunkt %1</translation>
-    </message>
-    <message>
-        <source>More CD/DVD Images...</source>
-        <translation>Mehr CD/DVD-Abbilder...</translation>
-    </message>
-    <message>
-        <source>Unmount CD/DVD Device</source>
-        <translation>CD/DVD-Medium auswerfen</translation>
-    </message>
-    <message>
-        <source>More Floppy Images...</source>
-        <translation>Mehr Diskettenabbilder...</translation>
-    </message>
-    <message>
-        <source>Unmount Floppy Device</source>
-        <translation>Diskette auswerfen</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -5628,14 +5612,6 @@
         <translation>&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statuszeile wird so &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeiger-Integration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeiger-Integration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;Vollbildmodus&lt;/b&gt; geschaltet. Sie können jederzeit durch Betätigen von &lt;b&gt;%1&lt;/b&gt; zum normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im Vollbildmodus nicht angezeigt. Auf dieses kann durch Betätigen von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann durch Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&amp;Contents...</source>
         <translation>&amp;Inhalt...</translation>
     </message>
@@ -5707,10 +5683,6 @@
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
         <translation>Im folgenden Dialog haben Sie die Möglichkeit, das Speichermedium explizit zu löschen oder für eine spätere Verwendung zu bewahren.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Beachten Sie, dass der Datencontainer für dieses Medium nicht gelöscht wird und Sie daher das Medium später zu dieser Liste wieder hinzufügen können.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -5995,10 +5967,6 @@
         <translation>&lt;p&gt;Für das Löschen des Sicherungspunktes %1 wird vorübergehend mehr Platz auf der Festplatte benötigt. Im schlimmsten Fall wird die Größe des Abbildes %2 um %3 wachsen. Auf diesem Dateisystem sind aber nur noch %4 frei.&lt;/p&gt;&lt;p&gt;Falls während der Operation der Plattenplatz nicht ausreicht kann dies zu Fehlern im Abbild und in der VM-Konfiguration führen, im schlimmsten Fall zum Verlust von VM und VM-Abbild.&lt;/p&gt;&lt;p&gt;Sie können auf eigenes Risiko fortfahren.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die VirtualBox-Gasterweiterungen sind anscheinend für diese VM nicht verfügbar, sind aber Vorrausetzung für Gemeinsame Ordner. Um Gemeinsame Ordner zu benutzen, müssen Sie daher die Gasterweiterungen installieren oder diese neu installieren (falls diese nicht richtig funktionieren). Dies können Sie durch &lt;b&gt;Gasterweiterung installieren...&lt;/b&gt; im Menü &lt;b&gt;Maschine&lt;/b&gt; erreichen. Beachten Sie, dass Gemeinsame Ordner erst benutzt werden können, wenn der Gast vollständig gebootet wurde.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
         <translation>Die Regeln für die Port-Weiterleitung enthalten momentan Fehler. Keiner der Host- oder Gast-Ports darf Null sein.</translation>
     </message>
@@ -6090,10 +6058,6 @@
         <translation>Das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; konnte nicht deinstalliert werden.</translation>
     </message>
     <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">Sie sind im Begriff, das Zusatzpaket &lt;b&gt;%1&lt;/p&gt; zu entfernen und von der Festplatte zu löschen. Sind Sie sicher?</translation>
-    </message>
-    <message>
         <source>&amp;Remove</source>
         <translation>&amp;Entfernen</translation>
     </message>
@@ -6136,6 +6100,35 @@
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sie sind dabei, das Zusatzpaket &lt;b&gt;%1&lt;/b&gt; zu entfernen.&lt;/p&gt;&lt;p&gt;Möchten Sie das Paket wirklich löschen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Beachten Sie, dass der Datencontainer dieses Mediums nicht gelöscht wird und Sie daher das Medium später wieder verwenden können.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Die VirtualBox-Gasterweiterungen sind anscheinend für diese VM nicht verfügbar, sind aber Vorrausetzung für Gemeinsame Ordner. Um diesen Dienst zu benutzen müssen Sie daher die Gasterweiterungen installieren oder diese, falls sie nicht richtig funktionieren, neu installieren. Dies können Sie durch Auswahl von &lt;b&gt;Gasterweiterungen installieren...&lt;/b&gt; im Menü &lt;b&gt;Geräte&lt;/b&gt; erreichen. Beachten Sie, dass Gemeinsame Ordner erst benutzt werden können, wenn der Gast vollständig gebootet wurde.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;Vollbildmodus&lt;/b&gt; geschaltet. Sie können jederzeit durch Betätigen von &lt;b&gt;%1&lt;/b&gt; zum normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist derzeit &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im Vollbildmodus nicht angezeigt. Sie können es aber durch Betätigen von &lt;b&gt;Host+Pos1&lt;/b&gt; aufrufen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist derzeit &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Sie können es aber durch Betätigen von &lt;b&gt;Host+Pos1&lt;/b&gt; aufrufen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;skalierten&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist derzeit &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Sie können es aber durch Betätigen von &lt;b&gt;Host+Pos1&lt;/b&gt; aufrufen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>Einschalten</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>Das Zusatzpaket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; wurde erfolgreich installiert.</translation>
     </message>
 </context>
 <context>
