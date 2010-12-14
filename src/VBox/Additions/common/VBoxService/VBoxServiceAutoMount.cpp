@@ -65,7 +65,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
-/** The guest property service client ID. */
+/** The Shared Folders service client ID. */
 static uint32_t         g_SharedFoldersSvcClientID = 0;
 
 /** @copydoc VBOXSERVICE::pfnPreInit */

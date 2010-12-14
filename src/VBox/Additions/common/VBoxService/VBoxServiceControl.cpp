@@ -39,7 +39,7 @@ using namespace guestControl;
 uint32_t g_ControlInterval = 0;
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
-/** The guest property service client ID. */
+/** The Guest Control service client ID. */
 static uint32_t             g_GuestControlSvcClientID = 0;
 /** List of spawned processes */
 RTLISTNODE                  g_GuestControlExecThreads;
