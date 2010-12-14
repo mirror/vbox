@@ -128,6 +128,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: fixed black fullscreen minitoolbar on KDE4 hosts
+          (Linux hosts only; bug #5449)</para>
+      </listitem>
+
+      <listitem>
         <para>Bridged networking: improved throughput by filtering out outgoing
           packets intended for the host before they reach the physical network
           (Linux hosts only; bug #7792)</para>
