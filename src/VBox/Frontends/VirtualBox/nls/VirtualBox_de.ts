@@ -343,7 +343,7 @@
     <message>
         <source>not complete</source>
         <comment>value state</comment>
-        <translation>nicht komplett</translation>
+        <translation>unvollständig</translation>
     </message>
     <message>
         <source>invalid</source>
@@ -1840,7 +1840,7 @@
     <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>haben Sie weniger als &lt;b&gt;%1&lt;/b&gt; Grafikspeicher reserviert. Um in den Vollbildmodus oder in den nahtlosen Modus schalten zu können, ist das zu wenig.</translation>
+        <translation>haben Sie weniger als &lt;b&gt;%1&lt;/b&gt; Grafikspeicher reserviert. Um in den Vollbildmodus oder in den nahtlosen Modus schalten zu können, ist dies zu wenig.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -1944,7 +1944,7 @@
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Sie haben die 3D-Unterstützung für ein Betriebssystem aktiviert, welches den WDDM-Videotreiber benutzt. Setzen Sie die Größe des Video-RAMs auf mindestens &lt;b&gt;%1&lt;/b&gt; um eine optimale Performance zu erreichen.</translation>
+        <translation>Sie haben die 3D-Unterstützung für ein Betriebssystem aktiviert, welches den WDDM-Videotreiber benutzt. Setzen Sie die Größe des Grafikspeichers auf mindestens &lt;b&gt;%1&lt;/b&gt; um eine optimale Performance zu erreichen.</translation>
     </message>
 </context>
 <context>
@@ -2676,7 +2676,7 @@
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>haben Sie mehr als &lt;b&gt;%1%&lt;/b&gt; des Hauptspeichers (&lt;b&gt;%2&lt;/b&gt;) für die virtuelle Maschine reserviert. Dadurch bleibt eventuell zu wenig Speicher für den Host übrig. Fahren Sie auf eigenes Risiko fort.</translation>
+        <translation>haben Sie mehr als &lt;b&gt;%1%&lt;/b&gt; des Hauptspeichers (&lt;b&gt;%2&lt;/b&gt;) für die virtuelle Maschine reserviert. Dadurch bleibt möglicherweise nicht genug Speicher für den Host übrig. Fahren Sie auf eigenes Risiko fort.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
@@ -5589,11 +5589,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der nahtlose Modus konnte nicht aktiviert werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten der VM mindestens &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung stellen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der nahtlose Modus konnte nicht aktiviert werden, weil dem Gast zu wenig Grafikspeicher zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten der VM mindestens &lt;b&gt;%1&lt;/b&gt; Grafikspeicher zur Verfügung stellen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der Vollbildmodus konnte nicht aktiviert werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten die VM so konfigurieren, dass ihr zumindest &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung steht.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt; um dennoch in den Vollbildmodus zu wechseln oder betätigen Sie &lt;b&gt;Abbrechen&lt;/b&gt; um dies nicht zu tun.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der Vollbildmodus konnte nicht aktiviert werden, weil dem Gast zu wenig Grafikspeicher zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten die VM so konfigurieren, dass ihr zumindest &lt;b&gt;%1&lt;/b&gt; Grafikspeicher zur Verfügung steht.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt; um dennoch in den Vollbildmodus zu wechseln oder betätigen Sie &lt;b&gt;Abbrechen&lt;/b&gt; um dies nicht zu tun.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
@@ -5928,7 +5928,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der Gast-Bildschirm konnte nicht auf diesen Host-Bildschirm gesetzt werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten der VM mindestens &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung stellen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der Gast-Bildschirm konnte nicht auf diesen Host-Bildschirm gesetzt werden, weil dem Gast zu wenig Grafikspeicher zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten der VM mindestens &lt;b&gt;%1&lt;/b&gt; Grafikspeicher zur Verfügung stellen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
