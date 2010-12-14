@@ -1447,8 +1447,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             {
                 RTPrintf("vrde=\"on\"\n");
                 RTPrintf("vrdeport=%d\n", currentPort);
-                RTPrintf("vrdeproperty[TCP/Ports]=\"%lS\"\n", ports.raw());
-                RTPrintf("vrdeproperty[TCP/Address]=\"%lS\"\n", address.raw());
+                RTPrintf("vrdeports=\"%lS\"\n", ports.raw());
+                RTPrintf("vrdeaddress=\"%lS\"\n", address.raw());
                 RTPrintf("vrdeauthtype=\"%s\"\n", strAuthType);
                 RTPrintf("vrdemulticon=\"%s\"\n", fMultiCon ? "on" : "off");
                 RTPrintf("vrdereusecon=\"%s\"\n", fReuseCon ? "on" : "off");
@@ -1467,6 +1467,30 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Video redirection: enabled (Quality %d)\n", ulVideoChannelQuality);
                 else
                     RTPrintf("Video redirection: disabled\n");
+            }
+            com::SafeArray<BSTR> aProperties;
+            if (SUCCEEDED(vrdeServer->COMGETTER(VRDEProperties)(ComSafeArrayAsOutParam(aProperties))))
+            {
+                unsigned i;
+                for (i = 0; i < aProperties.size(); ++i)
+                {
+                    Bstr value;
+                    vrdeServer->GetVRDEProperty(aProperties[i], value.asOutParam());
+                    if (details == VMINFO_MACHINEREADABLE)
+                    {
+                        if (value.isEmpty())
+                            RTPrintf("vrdeproperty[%lS]=<not set>\n", aProperties[i]);
+                        else
+                            RTPrintf("vrdeproperty[%lS]=\"%lS\"\n", aProperties[i], value.raw());
+                    }
+                    else
+                    {
+                        if (value.isEmpty())
+                            RTPrintf("VRDE property: %-10lS = <not set>\n", aProperties[i]);
+                        else
+                            RTPrintf("VRDE property: %-10lS = \"%lS\"\n", aProperties[i], value.raw());
+                    }
+                }
             }
         }
         else

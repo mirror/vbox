@@ -12757,6 +12757,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="VRDEProperties" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of names of properties, which are supported by this VRDE server.
+      </desc>
+    </attribute>
+
     <method name="setVRDEProperty">
       <desc>
         Sets a VRDE specific property string.

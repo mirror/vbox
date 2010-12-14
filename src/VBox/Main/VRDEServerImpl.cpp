@@ -25,8 +25,10 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/ctype.h>
 #include <iprt/ldr.h>
+#include <iprt/path.h>
 
 #include <VBox/err.h>
+#include <VBox/sup.h>
 
 #include <VBox/RemoteDesktop/VRDE.h>
 
@@ -486,6 +488,149 @@ STDMETHODIMP VRDEServer::GetVRDEProperty (IN_BSTR aKey, BSTR *aValue)
     return S_OK;
 }
 
+static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDESUPPORTEDPROPERTIES *ppfn)
+{
+    int rc = VINF_SUCCESS;
+
+    RTLDRMOD hmod = NIL_RTLDRMOD;
+
+    char szErr[4096 + 512];
+    szErr[0] = '\0';
+    if (RTPathHavePath(pszLibraryName))
+        rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &hmod, szErr, sizeof(szErr));
+    else
+        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &hmod, szErr, sizeof(szErr));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hmod, "VRDESupportedProperties", (void **)ppfn);
+
+        if (RT_FAILURE(rc) && rc != VERR_SYMBOL_NOT_FOUND)
+            LogRel(("VRDE: Error resolving symbol '%s', rc %Rrc.\n", "VRDESupportedProperties", rc));
+    }
+    else
+    {
+        if (szErr[0])
+            LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, szErr, rc));
+        else
+            LogRel(("VRDE: Error loading the library '%s' rc = %Rrc.\n", pszLibraryName, rc));
+
+        hmod = NIL_RTLDRMOD;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        *phmod = hmod;
+    }
+    else
+    {
+        if (hmod != NIL_RTLDRMOD)
+        {
+            RTLdrClose(hmod);
+            hmod = NIL_RTLDRMOD;
+        }
+    }
+
+    return rc;
+}
+
+STDMETHODIMP VRDEServer::COMGETTER(VRDEProperties)(ComSafeArrayOut(BSTR, aProperties))
+{
+    if (ComSafeArrayOutIsNull(aProperties))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    size_t cProperties = 0;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (!mData->mEnabled)
+    {
+        com::SafeArray<BSTR> properties(cProperties);
+        properties.detachTo(ComSafeArrayOutArg(aProperties));
+        return S_OK;
+    }
+    alock.release();
+
+    /*
+     * Check that a VRDE extension pack name is set and resolve it into a
+     * library path.
+     */
+    Bstr bstrExtPack;
+    HRESULT hrc = COMGETTER(VRDEExtPack)(bstrExtPack.asOutParam());
+    Log(("VRDEPROP: get extpack hrc 0x%08X, isEmpty %d\n", hrc, bstrExtPack.isEmpty()));
+    if (FAILED(hrc))
+        return hrc;
+    if (bstrExtPack.isEmpty())
+        return E_FAIL;
+
+    Utf8Str strExtPack(bstrExtPack);
+    Utf8Str strVrdeLibrary;
+    int vrc = VINF_SUCCESS;
+    if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+        strVrdeLibrary = "VBoxVRDP";
+    else
+    {
+#ifdef VBOX_WITH_EXTPACK
+        VirtualBox *pVirtualBox = mParent->getVirtualBox();
+        ExtPackManager *pExtPackMgr = pVirtualBox->getExtPackManager();
+        vrc = pExtPackMgr->getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
+#else
+        vrc = VERR_FILE_NOT_FOUND;
+#endif
+    }
+    Log(("VRDEPROP: library get rc %Rrc\n", vrc));
+
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Load the VRDE library and start the server, if it is enabled.
+         */
+        PFNVRDESUPPORTEDPROPERTIES pfn = NULL;
+        RTLDRMOD hmod = NIL_RTLDRMOD;
+        vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, &pfn);
+        Log(("VRDEPROP: load library [%s] rc %Rrc\n", strVrdeLibrary.c_str(), vrc));
+        if (RT_SUCCESS(vrc))
+        {
+            const char * const *papszNames = pfn();
+
+            if (papszNames)
+            {
+                size_t i;
+                for (i = 0; papszNames[i] != NULL; ++i)
+                {
+                    cProperties++;
+                }
+            }
+            Log(("VRDEPROP: %d properties\n", cProperties));
+
+            com::SafeArray<BSTR> properties(cProperties);
+
+            if (cProperties > 0)
+            {
+                size_t i;
+                for (i = 0; papszNames[i] != NULL && i < cProperties; ++i)
+                {
+                    Bstr tmp(papszNames[i]);
+                    tmp.cloneTo(&properties[i]);
+                }
+            }
+
+            /* Do not forget to unload the library. */
+            RTLdrClose(hmod);
+            hmod = NIL_RTLDRMOD;
+
+            properties.detachTo(ComSafeArrayOutArg(aProperties));
+        }
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        return E_FAIL;
+    }
+
+    return S_OK;
+}
 
 STDMETHODIMP VRDEServer::COMGETTER(AuthType) (AuthType_T *aType)
 {

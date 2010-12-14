@@ -1415,6 +1415,16 @@ typedef DECLCALLBACK(int) FNVRDECREATESERVER (const VRDEINTERFACEHDR *pCallbacks
                                               HVRDESERVER *phServer);
 typedef FNVRDECREATESERVER *PFNVRDECREATESERVER;
 
+/**
+ * List of names of the VRDE properties, which are recognized by the VRDE.
+ *
+ * @returns pointer to array of pointers to name strings (UTF8).
+ */
+DECLEXPORT(const char * const *) VRDESupportedProperties (void);
+
+typedef DECLCALLBACK(const char * const *) FNVRDESUPPORTEDPROPERTIES (void);
+typedef FNVRDESUPPORTEDPROPERTIES *PFNVRDESUPPORTEDPROPERTIES;
+
 RT_C_DECLS_END
 
 /** @} */
