@@ -37,6 +37,10 @@
                 disk images (bug #5511; also, <computeroutput>VBoxManage unregistervm --delete</computeroutput>
                 can do the same now)</para>
             </listitem>
+            <listitem>
+              <para>Built-in creation of desktop file shortcuts to start VMs on double click (bug #2322)</para>
+            </listitem>
+
           </itemizedlist>
         </para>
       </listitem>
@@ -107,11 +111,6 @@
 
       <listitem>
         <para>VMM: fixed guru meditation when running Minix (VT-x only; bug #6557)</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: built-in creation of desktop file shortcuts to start VMs on
-          double click (bug #2322)</para>
       </listitem>
 
       <listitem>
