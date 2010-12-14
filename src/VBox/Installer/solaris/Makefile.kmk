@@ -46,7 +46,9 @@ SOLARIS_DRIVERINST_DIR_64  := $(SOLARIS_DRIVERINST_DIR)/amd64
 SOLARIS_USR_DIR            := $(SOLARIS_BASEINST_DIR)/usr
 SOLARIS_USRBIN_DIR         := $(SOLARIS_USR_DIR)/bin
 SOLARIS_USRSHR_APPS_DIR    := $(SOLARIS_USR_DIR)/share/applications
+SOLARIS_USRSHR_APPREG_DIR  := $(SOLARIS_USR_DIR)/share/application-registry
 SOLARIS_USRSHR_MIMEXML_DIR := $(SOLARIS_USR_DIR)/share/mime/packages
+SOLARIS_USRSHR_MIMEINFO_DIR := $(SOLARIS_USR_DIR)/share/mime-info
 SOLARIS_USRSHR_ICONS_DIR   := $(SOLARIS_USR_DIR)/share/icons/hicolor
 SOLARIS_USRSHR_PIXMAPS_DIR := $(SOLARIS_USR_DIR)/share/pixmaps
 SOLARIS_VBOXSMF_DIR        := $(SOLARIS_BASEINST_DIR)/var/svc/manifest/application/virtualbox
@@ -573,7 +575,9 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_NETADP),$(MKDIR) -p $(SOLARIS_ETC_DIR),)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_VBOXSMF_DIR)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_USRSHR_APPS_DIR),)
+	$(QUIET)$(MKDIR) -p $(SOLARIS_USRSHR_APPREG_DIR)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_USRSHR_MIMEXML_DIR)
+	$(QUIET)$(MKDIR) -p $(SOLARIS_USRSHR_MIMEINFO_DIR)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_USRSHR_PIXMAPS_DIR)
 	$(QUIET)$(if $(VBOX_WITH_NETADP),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/hostname.vboxnet0    $(SOLARIS_ETC_DIR)/hostname.vboxnet0,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                                          $(SOLARIS_VBOXINST_DIR)/LICENSE
@@ -634,9 +638,25 @@ endif
 	$(QUIET)$(SED) \
 		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
 		-e "s+@VBOX_DOC_PATH@+/opt/VirtualBox+" \
-		--output $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop \
+		--output $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp \
 		$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.desktop.in
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml                        $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp                            $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop
+    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp
+	# S10 cannot deal with icon information in virtrtualbox.xml
+	$(QUIET)$(SED) \
+		-e '/<icon/d' \
+		--output $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp \
+		$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp                             $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml
+    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp
+	$(QUIET)$(SED) \
+		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp \
+		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp                     $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications
+    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.keys                                    $(SOLARIS_USRSHR_MIMEINFO_DIR)/virtualbox.keys
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.mime                                    $(SOLARIS_USRSHR_MIMEINFO_DIR)/virtualbox.mime
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
