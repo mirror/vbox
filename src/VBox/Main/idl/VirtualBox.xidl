@@ -7937,7 +7937,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="1039b0cc-9bc1-4c6d-8d12-864aa48aa5b9"
+    uuid="7ce7e4d8-cdaa-4d83-a0f4-510c8ee70aea"
     wsmap="managed"
     >
     <desc>
@@ -8326,6 +8326,12 @@
       <param name="flags" type="unsigned long" dir="in">
         <desc>
           Not used, must be set to zero.
+        </desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          The maximum timeout value (in msec) to wait for getting the
+          data transfered to the guest. Pass 0 for an infinite timeout.
         </desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">

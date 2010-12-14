@@ -345,6 +345,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             /* Transfer the current chunk ... */
                             ULONG uBytesWritten;
                             rc = pGuest->SetProcessInput(uPID, uFlags,
+                                                         5 * 1000 /* Wait 5s for getting the input data transfered. */,
                                                          ComSafeArrayAsInParam(aInputData), &uBytesWritten);
                             if (FAILED(rc))
                             {
@@ -605,6 +606,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                 #endif
                                     ULONG uBytesWritten;
                                     rc = pGuest->SetProcessInput(uPID, uFlags,
+                                                                 5 * 1000 /* Wait 5s for getting the input data transfered. */,
                                                                  ComSafeArrayAsInParam(aInputData), &uBytesWritten);
                                     if (FAILED(rc))
                                     {
@@ -621,6 +623,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                 #endif
                                     Assert(cbLength >= uBytesWritten);
                                     cbLength -= uBytesWritten;
+                                }
+                                else if (RT_FAILURE(vrc))
+                                {
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Error while reading setup file \"%s\" (To read: %u, Size: %u) from installation medium (%Rrc)"),
+                                                                         installerImage.c_str(), cbToRead, cbLength, vrc);
                                 }
                             }
 
@@ -2155,7 +2163,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten)
+STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2215,6 +2223,10 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYT
                                     TRUE /* Cancelable */);
             }
             if (FAILED(rc)) return rc;
+
+            /* Adjust timeout. */
+            if (aTimeoutMS == 0)
+                aTimeoutMS = UINT32_MAX;
 
             PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
             AssertReturn(pData, VBOX_E_IPRT_ERROR);
@@ -2277,7 +2289,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYT
                     ComAssert(!it->second.pProgress.isNull());
 
                     /* Wait until operation completed. */
-                    rc = it->second.pProgress->WaitForCompletion(UINT32_MAX /* Wait forever */);
+                    rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);
                     if (FAILED(rc)) throw rc;
 
                     /* Was the operation canceled by one of the parties? */
@@ -2384,7 +2396,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         }
         if (FAILED(rc)) return rc;
 
-        /* Adjust timeout */
+        /* Adjust timeout. */
         if (aTimeoutMS == 0)
             aTimeoutMS = UINT32_MAX;
 
