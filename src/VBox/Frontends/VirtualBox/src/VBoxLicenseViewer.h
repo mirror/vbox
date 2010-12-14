@@ -30,13 +30,13 @@ class QPushButton;
 /**
  *  This class is used to show a user license under linux.
  */
-class VBoxLicenseViewer : public QIWithRetranslateUI<QDialog>
+class VBoxLicenseViewer : public QIWithRetranslateUI2<QDialog>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxLicenseViewer();
+    VBoxLicenseViewer(QWidget *pParent = 0);
 
     int showLicenseFromFile(const QString &strLicenseFileName);
     int showLicenseFromString(const QString &strLicenseText);

@@ -165,7 +165,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (extPackFile.GetShowLicense())
     {
         QString strLicense = extPackFile.GetLicense();
-        VBoxLicenseViewer licenseViewer;
+        VBoxLicenseViewer licenseViewer(pParent);
         if (licenseViewer.showLicenseFromString(strLicense) != QDialog::Accepted)
             return;
     }
