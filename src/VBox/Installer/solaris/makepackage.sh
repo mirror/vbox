@@ -18,7 +18,7 @@
 
 #
 # Usage:
-#       makespackage.sh [--hardened] $(PATH_TARGET)/install packagename {$(KBUILD_TARGET_ARCH)|neutral} $(VBOX_SVN_REV) [VBIPackageName]
+#       makepackage.sh [--hardened] $(PATH_TARGET)/install packagename {$(KBUILD_TARGET_ARCH)|neutral} $(VBOX_SVN_REV) [VBIPackageName]
 
 
 # Parse options.
@@ -138,7 +138,7 @@ cd "$PKG_BASE_DIR"
 find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|checkinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.depend|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
 # Include opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure.
-# Inlcude var/svc for manifest class action script does not create them.
+# Include var/svc for manifest class action script does not create them.
 find . -type d | $VBOX_GGREP -E 'opt/VirtualBox|var/svc/manifest/application/virtualbox' | pkgproto >> prototype
 
 # fix up file permissions (owner/group)
