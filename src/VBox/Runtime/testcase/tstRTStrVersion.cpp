@@ -85,7 +85,7 @@ int main()
         { "VirtualBox-3.1.0",           "VirtualBox-3.1.2_Beta1",           -1 },
         { "3.1.0_BETA-r12345",          "3.1.2",                            -1 },
         { "3.1.0_BETA1r12345",          "3.1.0",                            -1 },
-        { "3.1.0_BETAr12345",           "3.1.0",                             1 }, /* not considered a beta because of missing punctuation */
+        { "3.1.0_BETAr12345",           "3.1.0",                            -1 },
         { "3.1.0_BETA-r12345",          "3.1.0",                            -1 },
         { "3.1.0_BETA-r12345",          "3.1.0",                            -1 },
         { "3.1.0_BETA-r12345",          "3.1.0.0",                          -1 },
@@ -98,6 +98,13 @@ int main()
         { "3.1.0_BETA2-r12345",         "3.1.0_BETA999-r12345",             -1 },
         { "3.1.0_BETA2",                "3.1.0_ABC",                        -1 }, /* ABC isn't indicating a prerelease, BETA does */
         { "3.1.0_BETA",                 "3.1.0_ATEB",                       -1 },
+        { "4.0.0_ALPHAr68482",          "4.0.0_ALPHAr68483",                -1 },
+        { "4.0.0_ALPHA1r68482",         "4.0.0_ALPHAr68482",                 0 },
+        { "4.0.0_ALPHA-r68482",         "4.0.0_ALPHAr68482",                 0 },
+        { "4.0.0_ALPHAr68483",          "4.0.0_BETAr68783",                 -1 },
+        { "4.0.0_ALPHAr68483",          "4.0.0_BETA1r68783",                -1 },
+        { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68783",                -1 },
+        { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68784",                -1 },
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
