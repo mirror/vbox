@@ -570,8 +570,8 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen></para>
 
         <para>Note that the <computeroutput>/dev/vboxdrv</computeroutput>
         kernel module device node must be owned by root:root and must be
-        read/writable only for the user.
-        
+        read/writable only for the user.</para>
+
         <para>Next, you will have to install the system initialization script
         for the kernel module:<screen>cp /opt/VirtualBox/vboxdrv.sh /etc/init.d/vboxdrv</screen>(assuming
         you installed VirtualBox to the
