@@ -1340,9 +1340,10 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     Bool rc = TRUE;
     Bool fPrimaryMoved = FALSE;
-    uint32_t cPrimary, cIndex;
+    uint32_t cIndex;
     uint32_t cwReal, chReal;
-    int32_t cxRel, cyRel, cxReal, cyReal, cxOld, cyOld;
+    uint32_t offStart, offStartReal;
+    int32_t cxReal, cyReal, cxOld, cyOld;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
@@ -1352,24 +1353,25 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     pVBox->aScreenLocation[cDisplay].cy = cHeight;
     pVBox->aScreenLocation[cDisplay].x = x;
     pVBox->aScreenLocation[cDisplay].y = y;
-    cPrimary = vboxGetPrimaryIndex(pScrn);
     cIndex = vboxGetRealLocationIndex(pScrn, cDisplay);
-    if (cDisplay == cPrimary && (x != cxOld || y != cyOld))
-        fPrimaryMoved = TRUE;
     cwReal = pVBox->aScreenLocation[cIndex].cx;
     chReal = pVBox->aScreenLocation[cIndex].cy;
     cxReal = pVBox->aScreenLocation[cIndex].x;
     cyReal = pVBox->aScreenLocation[cIndex].y;
-    cxRel = cxReal - pVBox->aScreenLocation[cPrimary].x;
-    cyRel = cyReal - pVBox->aScreenLocation[cPrimary].y;
+    offStart = cyReal * pVBox->cbLine + cxReal * vboxBPP(pScrn) / 8;
+    /* Silently fail if the mode - specifically the virtual width - is too
+     * large for VRAM as we sometimes have to do this - see comments in
+     * VBOXPreInit. */
+    if (offStart + pVBox->cbLine * chReal > pVBox->cbFramebuffer)
+        return TRUE;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!pVBox->vtSwitch)
     {
-        TRACE_LOG("setting mode.  cWidth=%u, cHeight=%u, cwReal=%u, chReal=%u, pScrn->virtualX=%d, pScrn->virtualY=%d, vboxBPP(pScrn)=%d, x=%d, y=%d, cDisplay=%u, cPrimary=%u, cIndex=%u, cxRel=%d, cyRel=%d, cxReal=%d, cyReal=%d, pVBox->cbLine=%d\n",
+        TRACE_LOG("setting mode.  cWidth=%u, cHeight=%u, cwReal=%u, chReal=%u, pScrn->virtualX=%d, pScrn->virtualY=%d, vboxBPP(pScrn)=%d, x=%d, y=%d, cDisplay=%u, cIndex=%u, cxReal=%d, cyReal=%d, pVBox->cbLine=%d\n",
                   cWidth, cHeight, cwReal, chReal, pScrn->virtualX,
-                  pScrn->virtualY, vboxBPP(pScrn), x, y, cDisplay, cPrimary,
-                  cIndex, cxRel, cyRel, cxReal, cyReal, pVBox->cbLine);
+                  pScrn->virtualY, vboxBPP(pScrn), x, y, cDisplay,
+                  cIndex, cxReal, cyReal, pVBox->cbLine);
         if (cDisplay == 0)
             VBoxVideoSetModeRegisters(cwReal, chReal, pScrn->displayWidth,
                                       vboxBPP(pScrn), cxReal, cyReal);
@@ -1380,24 +1382,9 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     if (    vbox_device_available(pVBox)
         && (pVBox->fHaveHGSMI)
         && !pVBox->vtSwitch)
-        VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, cxRel, cyRel,
-                                      cyReal * pVBox->cbLine
-                                    + cxReal * vboxBPP(pScrn) / 8,
-                                    pVBox->cbLine,
-                                    cwReal, chReal, vboxBPP(pScrn));
-    /* The guest-host protocol says that first screen is always at offset
-     * (0,0).  Ergo, if the guest changes that offset we need to move all
-     * other screens in the host to keep the relative positions right. */
-    if (fPrimaryMoved)
-    {
-        unsigned i;
-        for (i = 1; i < pVBox->cScreens; ++i)
-            if (i != cPrimary)
-                VBOXSetMode(pScrn, i, pVBox->aScreenLocation[i].cx,
-                            pVBox->aScreenLocation[i].cy,
-                            pVBox->aScreenLocation[i].x,
-                            pVBox->aScreenLocation[i].y);
-    }
+        VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, cxReal, cyReal,
+                                    offStart, pVBox->cbLine, cwReal, chReal,
+                                    vboxBPP(pScrn));
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }

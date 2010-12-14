@@ -214,10 +214,8 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
                 || aRects[i].x2 <   pVBox->aScreenLocation[j].x
                 || aRects[i].y2 <   pVBox->aScreenLocation[j].y)
                 continue;
-            cmdHdr.x =   (int16_t)aRects[i].x1
-                       - pVBox->aScreenLocation[0].x;
-            cmdHdr.y =   (int16_t)aRects[i].y1
-                       - pVBox->aScreenLocation[0].y;
+            cmdHdr.x = (int16_t)aRects[i].x1;
+            cmdHdr.y = (int16_t)aRects[i].y1;
             cmdHdr.w = (uint16_t)(aRects[i].x2 - aRects[i].x1);
             cmdHdr.h = (uint16_t)(aRects[i].y2 - aRects[i].y1);
 
