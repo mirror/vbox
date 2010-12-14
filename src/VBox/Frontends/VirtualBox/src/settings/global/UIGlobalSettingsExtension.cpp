@@ -109,60 +109,95 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
  *
  * This code is shared by UIGlobalSettingsExtension::sltInstallPackage and
  * VBoxSelectorWnd::sltOpenUrls.
- * @todo    Is there perhaps a better home for this method?
  *
- * @returns true if successfully installed, false if not.
  * @param   strFilePath     The path to the tarball.
  * @param   pParent         The parent widget.
  * @param   pstrExtPackName Where to return the extension pack name. Optional.
  */
-/*static*/ bool UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QWidget *pParent, QString *pstrExtPackName)
+/*static*/ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QWidget *pParent, QString *pstrExtPackName)
 {
-    bool fInstalled = false;
-
-    /* Open the extpack tarball via IExtPackManager: */
+    /*
+     * Open the extpack tarball via IExtPackManager.
+     */
     CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
     CExtPackFile extPackFile = manager.OpenExtPackFile(strFilePath);
-    if (manager.isOk())
+    if (!manager.isOk())
     {
-        if (pstrExtPackName)
-            *pstrExtPackName = extPackFile.GetName();
-        if (extPackFile.GetUsable())
-        {
-            /* Ask user to confirm installation: */
-            QString strPackName = extPackFile.GetName();
-            QString strPackVersion = QString("%1r%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision());
-            QString strPackDescription = extPackFile.GetDescription();
-            if (vboxProblem().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription))
-            {
-                /* Display license if necessary: */
-                bool fShouldBeLicenseShown = extPackFile.GetShowLicense();
-                QString strLicense = extPackFile.GetLicense();
-                VBoxLicenseViewer licenseViewer;
-                if (!fShouldBeLicenseShown || licenseViewer.showLicenseFromString(strLicense) == QDialog::Accepted)
-                {
-                    /* Install package: */
-                    extPackFile.Install();
-                    if (extPackFile.isOk())
-                    {
-                        vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
-                        fInstalled = true;
-                    }
-                    else
-                        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
-                }
-            }
-        }
-        else
-            vboxProblem().badExtPackFile(strFilePath, extPackFile, pParent);
-    }
-    else
         vboxProblem().cannotOpenExtPack(strFilePath, manager, pParent);
+        return;
+    }
 
-    return fInstalled;
+    if (!extPackFile.GetUsable())
+    {
+        vboxProblem().badExtPackFile(strFilePath, extPackFile, pParent);
+        return;
+    }
+
+    QString strPackName = extPackFile.GetName();
+    QString strPackDescription = extPackFile.GetDescription();
+    QString strPackVersion = QString("%1r%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision());
+
+    /*
+     * Check if there is a version of the extension pack already
+     * installed on the system and let the user decide what to do about
+     * it.
+     */
+    CExtPack extPackCur = manager.Find(strPackName);
+    bool fUninstallIt = extPackCur.isOk();
+    if (fUninstallIt)
+    {
+        QString strPackVersionCur = QString("%1r%2").arg(extPackCur.GetVersion()).arg(extPackCur.GetRevision());
+        if (!vboxProblem().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription))
+            return;
+    }
+    /*
+     * If it's a new package just ask for general confirmation.
+     */
+    else
+    {
+        if (!vboxProblem().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription))
+            return;
+    }
+
+    /*
+     * Display the license dialog if required by the extension pack.
+     */
+    if (extPackFile.GetShowLicense())
+    {
+        QString strLicense = extPackFile.GetLicense();
+        VBoxLicenseViewer licenseViewer;
+        if (licenseViewer.showLicenseFromString(strLicense) != QDialog::Accepted)
+            return;
+    }
+
+    /*
+     * Perform uninstallation of any pervious package.  Set the package name
+     * return value before doing this as the caller should do a refresh even
+     * on failure.
+     */
+    if (pstrExtPackName)
+        *pstrExtPackName = strPackName;
+    if (fUninstallIt)
+    {
+        manager.Uninstall(strPackName, false /*aForcedRemoval*/);
+        if (!extPackFile.isOk())
+        {
+            vboxProblem().cannotUninstallExtPack(strFilePath, manager, pParent);
+            return;
+        }
+    }
+
+    /*
+     * Install the selected package.
+     */
+    extPackFile.Install();
+    if (extPackFile.isOk())
+        vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+    else
+        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
 }
 
-/* Load data to cashe from corresponding external object(s),
+/* Load data to cache from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 {
@@ -258,36 +293,76 @@ void UIGlobalSettingsExtension::sltShowContextMenu(const QPoint &position)
 /* Package add procedure: */
 void UIGlobalSettingsExtension::sltInstallPackage()
 {
-    /* Open file-open window to let user to choose package file: */
-    QString strFilePath;
-    QString strBaseFolder = vboxGlobal().virtualBox().GetHomeFolder();
+    /*
+     * Open file-open window to let user to choose package file.
+     *
+     * The default location is the user's Download or Downloads directory with
+     * the user's home directory as a fallback.  ExtPacks are downloaded.
+     */
+    QString strBaseFolder = QDir::homePath() + "/Downloads";
+    if (!QDir(strBaseFolder).exists())
+    {
+        strBaseFolder = QDir::homePath() + "/Download";
+        if (!QDir(strBaseFolder).exists())
+            strBaseFolder = QDir::homePath();
+    }
     QString strTitle = tr("Select an extension package file");
     QStringList extensions;
     for (int i = 0; i < VBoxDefs::VBoxExtPackFileExts.size(); ++i)
         extensions << QString("*.%1").arg(VBoxDefs::VBoxExtPackFileExts[i]);
     QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
 
-    /* Create open file dialog: */
     QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+
+    QString strFilePath;
     if (!fileNames.isEmpty())
         strFilePath = fileNames.at(0);
 
     /*
-     * Install chosen package.
+     * Install the chosen package.
      */
     if (!strFilePath.isEmpty())
     {
         QString strExtPackName;
-        if (doInstallation(strFilePath, this, &strExtPackName))
+        doInstallation(strFilePath, this, &strExtPackName);
+
+        /*
+         * Since we might be reinstalling an existing package, we have to
+         * do a little refreshing regardless of what the user chose.
+         */
+        if (!strExtPackName.isNull())
         {
-            /* Insert the fresly installed extension pack, mark it as
-             * current in the tree and sort by name (col 1): */
+            /* Remove it from the cache. */
+            for (int i = 0; i < m_cache.m_items.size(); i++)
+                if (!strExtPackName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
+                {
+                    m_cache.m_items.removeAt(i);
+                    break;
+                }
+
+            /* Remove it from the tree. */
+            const int cItems = m_pPackagesTree->topLevelItemCount();
+            for (int i = 0; i < cItems; i++)
+            {
+                UIExtensionPackageItem *pItem = static_cast<UIExtensionPackageItem*>(m_pPackagesTree->topLevelItem(i));
+                if (!strExtPackName.compare(pItem->name(), Qt::CaseInsensitive))
+                {
+                    delete pItem;
+                    break;
+                }
+            }
+
+            /* Reinsert it into the cache and tree. */
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             const CExtPack &package = manager.Find(strExtPackName);
-            m_cache.m_items << fetchData(package);
-            UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_cache.m_items.last());
-            m_pPackagesTree->setCurrentItem(pItem);
-            m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
+            if (package.isOk())
+            {
+                m_cache.m_items << fetchData(package);
+
+                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_cache.m_items.last());
+                m_pPackagesTree->setCurrentItem(pItem);
+                m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
+            }
         }
     }
 }
@@ -318,7 +393,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 /* Remove selected package from cache: */
                 for (int i = 0; i < m_cache.m_items.size(); ++i)
                 {
-                    if (m_cache.m_items[i].m_strName == strSelectedPackageName)
+                    if (!strSelectedPackageName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
                     {
                         m_cache.m_items.removeAt(i);
                         break;

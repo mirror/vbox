@@ -134,7 +134,8 @@ public:
                           const QString &aCancelText = QString::null) const
     {
         return messageOkCancel (aParent, aType, aMessage, QString::null,
-                                aAutoConfirmId, aOkText, aCancelText); }
+                                aAutoConfirmId, aOkText, aCancelText);
+    }
 
     bool showModalProgressDialog(CProgress &progress, const QString &strTitle,
                                  const QString &strImage = "", QWidget *pParent = 0,
@@ -343,6 +344,8 @@ public:
     void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0);
     void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent = 0);
     bool confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0);
+    bool confirmReplacePackage(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
+                               const QString &strPackDescription, QWidget *pParent = 0);
     bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent = 0);
     void notifyAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0);
 
