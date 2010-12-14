@@ -68,8 +68,8 @@
         configurations. For example, installing a complete mail server
         solution on a real machine can be a tedious task. With VirtualBox,
         such a complex setup (then often called an "appliance") can be packed
-        into a virtual machine. Installing and running a mail server
-        becomes as easy as importing such an appliance into VirtualBox.</para>
+        into a virtual machine. Installing and running a mail server becomes
+        as easy as importing such an appliance into VirtualBox.</para>
       </listitem>
 
       <listitem>
@@ -502,20 +502,20 @@
   </sect1>
 
   <sect1 id="intro-installing">
-    <title>Installing VirtualBox</title>
+    <title>Installing VirtualBox and extension packs</title>
 
     <para>VirtualBox comes in many different packages, and installation
-    depends on your host platform. If you have installed software before,
-    installation should be straightforward: on each host platform, VirtualBox
-    uses the installation method that is most common and easy to use. If you
-    run into trouble or have special requirements, please refer to <xref
-    linkend="installation" /> for details about the various installation
+    depends on your host operating system. If you have installed software
+    before, installation should be straightforward: on each host platform,
+    VirtualBox uses the installation method that is most common and easy to
+    use. If you run into trouble or have special requirements, please refer to
+    <xref linkend="installation" /> for details about the various installation
     methods.</para>
 
     <para>Starting with version 4.0, VirtualBox is split into several
     components.<orderedlist>
         <listitem>
-          <para>The base package consists of all open source components and is
+          <para>The base package consists of all open-source components and is
           licensed under the GNU General Public License V2.</para>
         </listitem>
 
@@ -542,9 +542,20 @@
             </orderedlist></para>
 
           <para>VirtualBox extension packages have a
-          <computeroutput>.vbox-extpack</computeroutput> file name extension. To
-          install an extension, simply double-click on package file, and the
-          VirtualBox Manager will guide you through the required steps.</para>
+          <computeroutput>.vbox-extpack</computeroutput> file name extension.
+          To install an extension, simply double-click on the package file,
+          and the VirtualBox Manager will guide you through the required
+          steps. </para>
+
+          <para>To view the extension packs that are currently installed,
+          please start the VirtualBox Manager (see the next section). From the
+          "File" menu, please select "Preferences". In the window that shows
+          up, go to the "Extensions" category which shows you the extensions
+          which are currently installed and allows you to remove a package or
+          add a new one.</para>
+
+          <para>Alternatively you can use VBoxManage on the command line: see
+          <xref linkend="vboxmanage-extpack" /> for details.</para>
         </listitem>
       </orderedlist></para>
   </sect1>
@@ -814,7 +825,7 @@
     however.</para>
 
     <sect2>
-      <title>Starting a VM for the first time</title>
+      <title>Starting a new VM for the first time</title>
 
       <para>When a VM gets started for the first time, another wizard -- the
       <emphasis role="bold">"First Start Wizard"</emphasis> -- will pop up to
@@ -1256,8 +1267,8 @@
             by right-clicking on any snapshot you have taken in the list of
             snapshots. By restoring a snapshot, you go back (or forward) in
             time: the current state of the machine is lost, and the machine is
-            restored to exactly the same state as it was when the snapshot
-            was taken.<footnote>
+            restored to exactly the same state as it was when the snapshot was
+            taken.<footnote>
                 <para>Both the terminology and the functionality of restoring
                 snapshots has changed with VirtualBox 3.1. Before that
                 version, it was only possible to go back to the very last
@@ -1454,8 +1465,8 @@
         </listitem>
       </orderedlist></para>
 
-    <para>To <emphasis role="bold">import</emphasis> an appliance in one of the
-    above formats, simply double-click on the OVF/OVA file.<footnote>
+    <para>To <emphasis role="bold">import</emphasis> an appliance in one of
+    the above formats, simply double-click on the OVF/OVA file.<footnote>
         <para>Starting with version 4.0, VirtualBox creates file type
         associations for OVF and OVA files on your host operating
         system.</para>

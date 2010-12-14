@@ -176,16 +176,6 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
         </listitem>
 
         <listitem>
-          <para><computeroutput>hdds</computeroutput>,
-          <computeroutput>dvds</computeroutput> and
-          <computeroutput>floppies</computeroutput> all give you information
-          about virtual disk images currently registered in VirtualBox,
-          including all their settings, the unique identifiers (UUIDs)
-          associated with them by VirtualBox and all files associated with
-          them.</para>
-        </listitem>
-
-        <listitem>
           <para><computeroutput>ostypes</computeroutput> lists all guest
           operating systems presently known to VirtualBox, along with the
           identifiers used to refer to them with the
@@ -194,10 +184,19 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
 
         <listitem>
           <para><computeroutput>hostdvds</computeroutput>,
-          <computeroutput>hostfloppies</computeroutput> and
-          <computeroutput>hostifs</computeroutput>, respectively, list DVD,
-          floppy and host networking interfaces on the host, along with the
-          name used to access them from within VirtualBox.</para>
+          <computeroutput>hostfloppies</computeroutput>, respectively, list
+          DVD, floppy, bridged networking and host-only networking interfaces
+          on the host, along with the name used to access them from within
+          VirtualBox.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>bridgedifs</computeroutput>,
+          <computeroutput>hostonlyifs</computeroutput> and
+          <computeroutput>dhcpservers</computeroutput>, respectively, list
+          bridged network interfaces, host-only network interfaces and DHCP
+          servers currently available on the host. Please see <xref
+          linkend="networkingdetails" /> for details on these.</para>
         </listitem>
 
         <listitem>
@@ -215,10 +214,14 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
         </listitem>
 
         <listitem>
-          <para><computeroutput>systemproperties</computeroutput> displays
-          some global VirtualBox settings, such as minimum and maximum guest
-          RAM and virtual hard disk size, folder settings and the current
-          authentication library in use.</para>
+          <para><computeroutput>hdds</computeroutput>,
+          <computeroutput>dvds</computeroutput> and
+          <computeroutput>floppies</computeroutput> all give you information
+          about virtual disk images currently in use by VirtualBox, including
+          all their settings, the unique identifiers (UUIDs) associated with
+          them by VirtualBox and all files associated with them. This is the
+          command-line equivalent of the Virtual Media Manager; see <xref
+          linkend="vdis" />.</para>
         </listitem>
 
         <listitem>
@@ -226,6 +229,20 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
           virtual disk back-ends of VirtualBox. For each such format (such as
           VDI, VMDK or RAW), this lists the back-end's capabilities and
           configuration.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>systemproperties</computeroutput> displays
+          some global VirtualBox settings, such as minimum and maximum guest
+          RAM and virtual hard disk size, folder settings and the current
+          authentication library in use.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>extpacks</computeroutput> displays all
+          VirtualBox extension packs currently installed; see <xref
+          linkend="intro-installing" /> and <xref
+          linkend="vboxmanage-extpack" /> for more information.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
@@ -2674,7 +2691,8 @@ Value: 2006.01.01</screen>
                 <glossterm>--follow</glossterm>
 
                 <glossdef>
-                  <para>Enables following symlinks on the host's source.</para>
+                  <para>Enables following symlinks on the host's
+                  source.</para>
                 </glossdef>
               </glossentry>
 
@@ -2682,7 +2700,8 @@ Value: 2006.01.01</screen>
                 <glossterm>--recursive</glossterm>
 
                 <glossdef>
-                  <para>Recursively copies files/directories of the specified source.</para>
+                  <para>Recursively copies files/directories of the specified
+                  source.</para>
                 </glossdef>
               </glossentry>
 
@@ -2706,8 +2725,8 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><computeroutput>createdirectory</computeroutput>, which allows copying
-          files from the host to the guest (only with installed Guest
+          <para><computeroutput>createdirectory</computeroutput>, which allows
+          copying files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
           <screen>VBoxManage createdir[ectory]|mkdir|md &lt;vmname&gt;|&lt;uuid&gt;
@@ -2728,12 +2747,13 @@ Value: 2006.01.01</screen>
                 <glossterm>directory to create on guest</glossterm>
 
                 <glossdef>
-                  <para>Absolute path of directory/directories to create on guest, e.g.
-                  <computeroutput>D:\Foo\Bar</computeroutput>. Parent directories
-                  need to exist (e.g. in this example <computeroutput>D:\Foo</computeroutput>)
-                  when switch <computeroutput>--parents</computeroutput> is omitted. The
-                  specified user must have appropriate rights to create the specified
-                  directory.</para>
+                  <para>Absolute path of directory/directories to create on
+                  guest, e.g. <computeroutput>D:\Foo\Bar</computeroutput>.
+                  Parent directories need to exist (e.g. in this example
+                  <computeroutput>D:\Foo</computeroutput>) when switch
+                  <computeroutput>--parents</computeroutput> is omitted. The
+                  specified user must have appropriate rights to create the
+                  specified directory.</para>
                 </glossdef>
               </glossentry>
 
@@ -2760,11 +2780,13 @@ Value: 2006.01.01</screen>
                 <glossterm>--parents</glossterm>
 
                 <glossdef>
-                  <para>Also creates not yet existing parent directories of the
-                  specified directory, e.g. if the directory <computeroutput>D:\Foo</computeroutput>
-                  of <computeroutput>D:\Foo\Bar</computeroutput> does not exist yet it will
-                  be created. Without specifying <computeroutput>--parent</computeroutput> the
-                  action would have failed.</para>
+                  <para>Also creates not yet existing parent directories of
+                  the specified directory, e.g. if the directory
+                  <computeroutput>D:\Foo</computeroutput> of
+                  <computeroutput>D:\Foo\Bar</computeroutput> does not exist
+                  yet it will be created. Without specifying
+                  <computeroutput>--parent</computeroutput> the action would
+                  have failed.</para>
                 </glossdef>
               </glossentry>
 
@@ -2772,8 +2794,10 @@ Value: 2006.01.01</screen>
                 <glossterm>--mode &lt;mode&gt;</glossterm>
 
                 <glossdef>
-                  <para>Sets the permission mode of the specified directory. Only octal
-                  modes (e.g. <computeroutput>0755</computeroutput>) are supported right now.</para>
+                  <para>Sets the permission mode of the specified directory.
+                  Only octal modes (e.g.
+                  <computeroutput>0755</computeroutput>) are supported right
+                  now.</para>
                 </glossdef>
               </glossentry>
 
@@ -2784,7 +2808,6 @@ Value: 2006.01.01</screen>
                   <para>Tells VBoxManage to be more verbose.</para>
                 </glossdef>
               </glossentry>
-
             </glosslist></para>
         </listitem>
 
@@ -2903,5 +2926,36 @@ Value: 2006.01.01</screen>
     <computeroutput>VBoxManage dhcpserver add</computeroutput>, you can use
     <computeroutput>VBoxManage dhcpserver modify</computeroutput> for a given
     network or host-only interface name.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-extpack">
+    <title>VBoxManage extpack</title>
+
+    <para>The "extpack" command allows you to add or remove VirtualBox
+    extension packs, as described in <xref
+    linkend="intro-installing" />.<itemizedlist>
+        <listitem>
+          <para>To add a new extension pack, use <computeroutput>VBoxManage
+          extpack install &lt;tarball&gt;</computeroutput>. </para>
+        </listitem>
+
+        <listitem>
+          <para>To remove a previously installed extension pack, use
+          <computeroutput>VBoxManage extpack uninstall
+          &lt;name&gt;</computeroutput>. You can use
+          <computeroutput>VBoxManage list extpacks</computeroutput> to show
+          the names of the extension packs which are currently installed;
+          please see <xref linkend="vboxmanage-list" /> also. The optional
+          <computeroutput>--force</computeroutput> parameter can be used to
+          override the refusal of an extension pack to be uninstalled.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>VBoxManage extpack
+          cleanup</computeroutput> command can be used to remove temporary
+          files and directories that may have been left behind if a previous
+          install or uninstall command failed.</para>
+        </listitem>
+      </itemizedlist></para>
   </sect1>
 </chapter>
