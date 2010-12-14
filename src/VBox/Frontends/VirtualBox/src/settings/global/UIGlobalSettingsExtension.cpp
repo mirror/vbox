@@ -143,8 +143,8 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
      * it.
      */
     CExtPack extPackCur = manager.Find(strPackName);
-    bool fUninstallIt = extPackCur.isOk();
-    if (fUninstallIt)
+    bool fReplaceIt = extPackCur.isOk();
+    if (fReplaceIt)
     {
         QString strPackVersionCur = QString("%1r%2").arg(extPackCur.GetVersion()).arg(extPackCur.GetRevision());
         if (!vboxProblem().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
@@ -171,32 +171,19 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     }
 
     /*
-     * Perform uninstallation of any previous package.
+     * Install the selected package.
      *
      * Set the package name return value before doing this as the caller should
      * do a refresh even on failure.
      */
-    if (pstrExtPackName)
-        *pstrExtPackName = strPackName;
-    if (fUninstallIt)
-    {
-        /** @todo Refuse this if any VMs are running. */
-        manager.Uninstall(strPackName, false /*aForcedRemoval*/);
-        if (!extPackFile.isOk())
-        {
-            vboxProblem().cannotUninstallExtPack(strFilePath, manager, pParent);
-            return;
-        }
-    }
-
-    /*
-     * Install the selected package.
-     */
-    extPackFile.Install();
+    extPackFile.Install(fReplaceIt);
     if (extPackFile.isOk())
         vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
     else
         vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
+
+    if (pstrExtPackName)
+        *pstrExtPackName = strPackName;
 }
 
 /* Load data to cache from corresponding external object(s),

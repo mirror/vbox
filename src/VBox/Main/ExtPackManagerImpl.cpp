@@ -579,14 +579,14 @@ STDMETHODIMP ExtPackFile::COMGETTER(FilePath)(BSTR *a_pbstrPath)
     return hrc;
 }
 
-STDMETHODIMP ExtPackFile::Install(void)
+STDMETHODIMP ExtPackFile::Install(BOOL a_fReplace)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
         if (m->fUsable)
-            hrc = m->ptrExtPackMgr->doInstall(this);
+            hrc = m->ptrExtPackMgr->doInstall(this, RT_BOOL(a_fReplace));
         else
             hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     }
@@ -1061,7 +1061,14 @@ HRESULT ExtPack::refresh(bool *a_pfCanDelete)
      */
     if (m->fUsable)
     {
-        /** @todo not important, so it can wait. */
+        if (m->hMainMod == NIL_RTLDRMOD)
+            probeAndLoad();
+        else if (   !objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
+                 || !objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
+                 || !objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
+        {
+            /** @todo not important, so it can wait. */
+        }
     }
     /*
      * Ok, it is currently not usable.  If anything has changed since last time
@@ -1917,7 +1924,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
          * stale by direct meddling or some other user.
          */
         ExtPack *pExtPack;
-        hrc = refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+        hrc = refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, &pExtPack);
         if (SUCCEEDED(hrc))
         {
             if (!pExtPack)
@@ -1948,7 +1955,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                                                 (const char *)NULL);
                     if (SUCCEEDED(hrc))
                     {
-                        hrc = refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+                        hrc = refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, &pExtPack);
                         if (SUCCEEDED(hrc))
                         {
                             if (!pExtPack)
@@ -1962,7 +1969,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                     else
                     {
                         ErrorInfoKeeper Eik;
-                        refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, NULL);
+                        refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, NULL);
                     }
                 }
             }
@@ -2290,7 +2297,7 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
  *          on failure.
  *
  * @param   a_pszName           The extension to update..
- * @param   a_fUnsuableIsError  If @c true, report an unusable extension pack
+ * @param   a_fUnusableIsError  If @c true, report an unusable extension pack
  *                              as an error.
  * @param   a_ppExtPack         Where to store the pointer to the extension
  *                              pack of it is still around after the refresh.
@@ -2299,7 +2306,7 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
  * @remarks Caller holds the extension manager lock.
  * @remarks Only called in VBoxSVC.
  */
-HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIsError, ExtPack **a_ppExtPack)
+HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIsError, ExtPack **a_ppExtPack)
 {
     Assert(m->pVirtualBox != NULL); /* Only called from VBoxSVC. */
 
@@ -2396,7 +2403,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
      */
     if (   SUCCEEDED(hrc)
         && pExtPack
-        && a_fUnsuableIsError
+        && a_fUnusableIsError
         && !pExtPack->m->fUsable)
         hrc = setError(E_FAIL, "%s", pExtPack->m->strWhyUnusable.c_str());
 
@@ -2411,8 +2418,10 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
  * @returns COM status code.
  * @param   a_pExtPackFile  The extension pack file, caller checks that it's
  *                          usable.
+ * @param   a_fReplace      Whether to replace any existing extpack or just
+ *                          fail.
  */
-HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile)
+HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace)
 {
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
     iprt::MiniString const * const pStrName     = &a_pExtPackFile->m->Desc.strName;
@@ -2429,24 +2438,35 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile)
          * may be made stale by direct meddling or some other user.
          */
         ExtPack *pExtPack;
-        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
-        if (SUCCEEDED(hrc) && !pExtPack)
+        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+        if (SUCCEEDED(hrc))
+        {
+            if (pExtPack && a_fReplace)
+                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
+            else if (pExtPack)
+                hrc = setError(E_FAIL,
+                               tr("Extension pack '%s' is already installed."
+                                  " In case of a reinstallation, please uninstall it first"),
+                               pStrName->c_str());
+        }
+        if (SUCCEEDED(hrc))
         {
             /*
              * Run the privileged helper binary that performs the actual
              * installation.  Then create an object for the packet (we do this
              * even on failure, to be on the safe side).
              */
-/** @todo add a hash (SHA-256) of the tarball or maybe just the manifest. */
+            /** @todo add a hash (SHA-256) of the tarball or maybe just the manifest. */
             hrc = runSetUidToRootHelper("install",
                                         "--base-dir",   m->strBaseDir.c_str(),
                                         "--cert-dir",   m->strCertificatDirPath.c_str(),
                                         "--name",       pStrName->c_str(),
                                         "--tarball",    pStrTarball->c_str(),
+                                        pExtPack ? "--replace" : (const char *)NULL,
                                         (const char *)NULL);
             if (SUCCEEDED(hrc))
             {
-                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnsuableIsError*/, &pExtPack);
+                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnusableIsError*/, &pExtPack);
                 if (SUCCEEDED(hrc))
                 {
                     LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
@@ -2456,14 +2476,9 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile)
             else
             {
                 ErrorInfoKeeper Eik;
-                refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, NULL);
+                refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, NULL);
             }
         }
-        else if (SUCCEEDED(hrc))
-            hrc = setError(E_FAIL,
-                           tr("Extension pack '%s' is already installed."
-                              " In case of a reinstallation, please uninstall it first"),
-                           pStrName->c_str());
 
         /*
          * Do VirtualBoxReady callbacks now for any freshly installed

@@ -14475,7 +14475,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackFile" extends="IExtPackBase"
-    uuid="e57e5ab7-e0e8-4a55-9241-afa7ad219911"
+    uuid="64b65bda-eedf-442c-9fd2-d179a021031a"
     wsmap="suppress"
     >
     <desc>
@@ -14494,6 +14494,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Install the extension pack.
       </desc>
+      <param name="replace" type="boolean" dir="in">
+        <desc>
+          Set this to automatically uninstall any existing extension pack with
+          the same name as the one being installed.
+        </desc>
+      </param>
     </method>
   </interface>
 
