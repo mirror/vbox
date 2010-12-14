@@ -2883,7 +2883,7 @@ Bit32u lba;
   // sector will be 0 only on lba access. Convert to lba-chs
   if (sector == 0) {
 #ifdef VBOX
-    if (count >= 256 || lba + count >= 268435456)
+    if (lba + count >= 268435456)
     {
       sector = (lba & 0xff000000L) >> 24;
       cylinder = 0; /* The parameter lba is just a 32 bit value. */
@@ -3082,7 +3082,7 @@ Bit32u lba;
   // sector will be 0 only on lba access. Convert to lba-chs
   if (sector == 0) {
 #ifdef VBOX
-    if (count >= 256 || lba + count >= 268435456)
+    if (lba + count >= 268435456)
     {
       sector = (lba & 0xff000000L) >> 24;
       cylinder = 0; /* The parameter lba is just a 32 bit value. */
@@ -5764,7 +5764,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
         else
 #endif
         {
-          if (count >= 256 || lba + count >= 268435456)
+          if (lba + count >= 268435456)
             status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
           else {
             write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);  
@@ -5785,7 +5785,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
         else
 #endif
         {
-          if (count >= 256 || lba + count >= 268435456)
+          if (lba + count >= 268435456)
             status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
           else
             status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
