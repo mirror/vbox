@@ -33,8 +33,8 @@
 #include <QFile>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-VBoxLicenseViewer::VBoxLicenseViewer()
-    : QIWithRetranslateUI<QDialog>()
+VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI2<QDialog>(pParent)
     , mLicenseText (0)
     , mAgreeButton (0)
     , mDisagreeButton (0)
