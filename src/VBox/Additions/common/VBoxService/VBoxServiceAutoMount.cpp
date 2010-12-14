@@ -531,6 +531,28 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
             VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings fouund\n");
     }
 
+    /*
+     * Because this thread is a one-timer at the moment we don't want to break/change
+     * the semantics of the main thread's start/stop sub-threads handling.
+     *
+     * This thread exits so fast while doing its own startup in VBoxServiceStartServices()
+     * that this->fShutdown flag is set to true in VBoxServiceThread() before we have the
+     * chance to check for a service failure in VBoxServiceStartServices() to indicate
+     * a VBoxService startup error.
+     *
+     * Therefore *no* service threads are allowed to quit themselves and need to wait
+     * for the pfShutdown flag to be set by the main thread.
+     */
+    for (;;)
+    {
+        /* Do we need to shutdown? */
+        if (*pfShutdown)
+            break;
+
+        /* Let's sleep for a bit and let others run ... */
+        RTThreadSleep(500);
+    }
+
     RTSemEventMultiDestroy(g_AutoMountEvent);
     g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
 
