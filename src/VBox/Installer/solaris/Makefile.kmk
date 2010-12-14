@@ -641,20 +641,20 @@ endif
 		--output $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp \
 		$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.desktop.in
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp                            $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop
-    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp
+	$(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop.tmp
 	# S10 cannot deal with icon information in virtrtualbox.xml
 	$(QUIET)$(SED) \
 		-e '/<icon/d' \
 		--output $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp \
 		$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp                             $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml
-    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp
+	$(QUIET)$(RM) -f $(SOLARIS_USRSHR_MIMEXML_DIR)/virtualbox.xml.tmp
 	$(QUIET)$(SED) \
 		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
 		--output $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp                     $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications
-    $(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp
+	$(QUIET)$(RM) -f $(SOLARIS_USRSHR_APPREG_DIR)/virtualbox.applications.tmp
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.keys                                    $(SOLARIS_USRSHR_MIMEINFO_DIR)/virtualbox.keys
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.mime                                    $(SOLARIS_USRSHR_MIMEINFO_DIR)/virtualbox.mime
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
