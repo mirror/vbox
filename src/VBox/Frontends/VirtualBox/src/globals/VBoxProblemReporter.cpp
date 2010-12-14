@@ -2125,7 +2125,7 @@ void VBoxProblemReporter::cannotUpdateGuestAdditions (const CProgress &aProgress
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent /* = 0 */)
+void VBoxProblemReporter::cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent)
 {
     message (pParent ? pParent : mainWindowShown(),
              Error,
@@ -2133,7 +2133,7 @@ void VBoxProblemReporter::cannotOpenExtPack(const QString &strFilename, const CE
              formatErrorInfo(extPackManager));
 }
 
-void VBoxProblemReporter::badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent /* = 0 */)
+void VBoxProblemReporter::badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent)
 {
     message (pParent ? pParent : mainWindowShown(),
              Error,
@@ -2141,7 +2141,7 @@ void VBoxProblemReporter::badExtPackFile(const QString &strFilename, const CExtP
              "<!--EOM-->" + extPackFile.GetWhyUnusable());
 }
 
-void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent /* = 0 */)
+void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent)
 {
     message (pParent ? pParent : mainWindowShown(),
              Error,
@@ -2149,7 +2149,7 @@ void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const
              formatErrorInfo(extPackFile));
 }
 
-void VBoxProblemReporter::cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent /* = 0 */)
+void VBoxProblemReporter::cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent)
 {
     message (pParent ? pParent : mainWindowShown(),
              Error,
@@ -2158,7 +2158,7 @@ void VBoxProblemReporter::cannotUninstallExtPack(const QString &strPackName, con
 }
 
 bool VBoxProblemReporter::confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion,
-                                                   const QString &strPackDescription, QWidget *pParent /* = 0 */)
+                                                   const QString &strPackDescription, QWidget *pParent)
 {
     return messageOkCancel (pParent ? pParent : mainWindowShown(),
                             Question,
@@ -2178,7 +2178,7 @@ bool VBoxProblemReporter::confirmInstallingPackage(const QString &strPackName, c
 
 bool VBoxProblemReporter::confirmReplacePackage(const QString &strPackName, const QString &strPackVersionNew,
                                                 const QString &strPackVersionOld, const QString &strPackDescription,
-                                                QWidget *pParent /* = 0 */)
+                                                QWidget *pParent)
 {
     if (!pParent)
         pParent = pParent ? pParent : mainWindowShown(); /* this is boring stuff that messageOkCancel should do! */
@@ -2237,7 +2237,7 @@ bool VBoxProblemReporter::confirmReplacePackage(const QString &strPackName, cons
     return fRc;
 }
 
-bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWidget *pParent /* = 0 */)
+bool VBoxProblemReporter::confirmRemovingPackage(const QString &strPackName, QWidget *pParent)
 {
     return messageOkCancel (pParent ? pParent : mainWindowShown(),
                             Question,
