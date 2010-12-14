@@ -111,8 +111,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            bridgedifs|dhcpservers|hostinfo|\n"
 #endif
                      "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
-                     "                            usbhost|usbfilters|systemproperties|\n"
-                     "                            extpacks\n"
+                     "                            usbhost|usbfilters|systemproperties|extpacks\n"
                      "\n");
 
     if (u64Cmd & USAGE_SHOWVMINFO)
@@ -608,8 +607,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage debugvm          <uuid>|<name>\n"
                      "                            dumpguestcore --filename <name> |\n"
                      "                            injectnmi |\n"
-                     "                            statistics [--reset] [--pattern <pattern>] "
-                     "                                [--descriptions]\n"
+                     "                            statistics [--reset] [--pattern <pattern>]\n"
+                     "                            [--descriptions]\n"
                      "\n");
     }
     if (u64Cmd & USAGE_METRICS)
@@ -659,11 +658,11 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #if defined(VBOX_WITH_NETFLT)
                      "                                       --ifname <hostonly_if_name>\n"
 #endif
-                     "                                [--ip <ip_address>\n"
-                     "                                 --netmask <network_mask>\n"
-                     "                                 --lowerip <lower_ip>\n"
-                     "                                 --upperip <upper_ip>]\n"
-                     "                                [--enable | --disable]\n\n"
+                     "                            [--ip <ip_address>\n"
+                     "                            --netmask <network_mask>\n"
+                     "                            --lowerip <lower_ip>\n"
+                     "                            --upperip <upper_ip>]\n"
+                     "                            [--enable | --disable]\n\n"
                      "VBoxManage dhcpserver       remove --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                                   --ifname <hostonly_if_name>\n"
@@ -673,9 +672,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_EXTPACK)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage extpack          install <tarball>\n"
-                     "VBoxManage extpack          uninstall [--force] <name>\n"
-                     "VBoxManage extpack          cleanup\n"
+                     "VBoxManage extpack          install <tarball> |\n"
+                     "                            uninstall [--force] <name> |\n"
+                     "                            cleanup\n"
                      "\n");
     }
 }
