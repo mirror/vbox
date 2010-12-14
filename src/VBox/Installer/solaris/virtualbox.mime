@@ -1,11 +1,11 @@
 application/x-virtualbox-vbox:
     ext: vbox
 
-application/x-virtualbox-vbox-extpack
+application/x-virtualbox-vbox-extpack:
     ext: vbox-extpack
 
-application/x-virtualbox-ovf
+application/x-virtualbox-ovf:
     ext: ovf
 
-application/x-virtualbox-ova
+application/x-virtualbox-ova:
     ext: ova
