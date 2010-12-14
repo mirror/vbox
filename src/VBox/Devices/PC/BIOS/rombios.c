@@ -2864,8 +2864,13 @@ Bit32u lba;
   iobase2 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase2);
   mode    = read_byte(ebda_seg, &EbdaData->ata.devices[device].mode);
   blksize = read_word(ebda_seg, &EbdaData->ata.devices[device].blksize);
-  if (mode == ATA_MODE_PIO32) blksize>>=2;
-  else blksize>>=1;
+  if (blksize == 0) {   /* If transfer size is exactly 64K */
+      if (mode == ATA_MODE_PIO32) blksize=0x4000;
+      else blksize=0x8000;
+  } else {
+    if (mode == ATA_MODE_PIO32) blksize>>=2;
+    else blksize>>=1;
+  }
 
 #ifdef VBOX
   status = inb(iobase1 + ATA_CB_STAT);
