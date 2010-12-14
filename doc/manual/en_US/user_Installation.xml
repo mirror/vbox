@@ -428,9 +428,8 @@
 
         <itemizedlist>
           <listitem>
-            <para>It unpacks the application files to a target directory of
-            choice. By default, <screen>/opt/VirtualBox/</screen> will be
-            used.</para>
+            <para>It unpacks the application files to the target directory,
+            <screen>/opt/VirtualBox/</screen> which cannot be changed.</para>
           </listitem>
 
           <listitem>
@@ -454,7 +453,9 @@
           <listitem>
             <para>It creates symbolic links in
             <computeroutput>/usr/bin</computeroutput> to
-            the executables
+            the a shell script (<computeroutput>/opt/VirtualBox/VBox</computeroutput>)
+            which does some sanity checks and
+            dispatches to the actual executables,
             <computeroutput>VirtualBox</computeroutput>,
             <computeroutput>VBoxSDL</computeroutput>,
             <computeroutput>VBoxVRDP</computeroutput>,
@@ -464,7 +465,7 @@
 
           <listitem>
             <para>It creates
-            <computeroutput>/etc/udev/10-vboxdrv.rules</computeroutput>, a
+            <computeroutput>/etc/udev/rules.d/10-vboxdrv.rules</computeroutput>, a
             description file for udev, if that is present, which makes the
             USB devices accessible to all users in the
             <computeroutput>vboxusers</computeroutput> group.</para>
@@ -567,19 +568,10 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen></para>
         In general, make sure that the correct Linux kernel sources are used
         for the build process.</para>
 
-        <para>Note that the user who is going to run VirtualBox needs read and
-        write permission on the VirtualBox kernel module device node
-        <computeroutput>/dev/vboxdrv</computeroutput>. You can either define a
-        <computeroutput>vboxusers</computeroutput> group by entering<screen>groupadd vboxusers
-chgrp vboxusers /dev/vboxdrv
-chmod 660 /dev/vboxdrv</screen>or, alternatively, simply give all users access
-        (insecure, not recommended!)<screen>chmod 666 /dev/vboxdrv</screen>You
-        should also add any users who will be allowed to use host USB devices
-        in VirtualBox guests to the appropriate USB users group for your
-        distribution. This group is often called
-        <computeroutput>usb</computeroutput> or
-        <computeroutput>usbusers</computeroutput>.</para>
-
+        <para>Note that the <computeroutput>/dev/vboxdrv</computeroutput>
+        kernel module device node must be owned by root:root and must be
+        read/writable only for the user.
+        
         <para>Next, you will have to install the system initialization script
         for the kernel module:<screen>cp /opt/VirtualBox/vboxdrv.sh /etc/init.d/vboxdrv</screen>(assuming
         you installed VirtualBox to the
@@ -591,7 +583,6 @@ echo INSTALL_DIR=/opt/VirtualBox &gt; /etc/vbox/vbox.cfg</screen>and, for
         convenience, create the following symbolic links:</para>
 
         <screen>ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VirtualBox
-ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxSVC
 ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxManage
 ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxHeadless
 ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxSDL</screen>
