@@ -142,6 +142,9 @@ static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
             case MediumType_Readonly:
                 typeStr = "readonly";
                 break;
+            case MediumType_MultiAttach:
+                typeStr = "multiattach";
+                break;
         }
         RTPrintf("Type:        %s\n", typeStr);
 

@@ -436,7 +436,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--type dvddrive|hdd|fdd]\n"
                      "                            [--medium none|emptydrive|\n"
                      "                                      <uuid>|<filename>|host:<drive>|iscsi]\n"
-                     "                            [--mtype normal|writethrough|immutable|shareable]\n"
+                     "                            [--mtype normal|writethrough|immutable|shareable|\n"
+                     "                                      readonly|multiattach]\n"
                      "                            [--comment <text>]\n"
                      "                            [--passthrough on|off]\n"
                      "                            [--bandwidthgroup <name>]\n"
@@ -490,7 +491,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_MODIFYHD)
         RTStrmPrintf(pStrm,
                      "VBoxManage modifyhd         <uuid>|<filename>\n"
-                     "                            [--type normal|writethrough|immutable|shareable]\n"
+                     "                            [--type normal|writethrough|immutable|shareable|\n"
+                     "                                      readonly|multiattach]\n"
                      "                            [--autoreset on|off]\n"
                      "                            [--compact]\n"
                      "                            [--resize <megabytes>|--resizebyte <bytes>]\n"

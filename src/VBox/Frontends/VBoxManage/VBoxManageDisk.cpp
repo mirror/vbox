@@ -108,6 +108,10 @@ int parseDiskType(const char *psz, MediumType_T *pDiskType)
         DiskType = MediumType_Writethrough;
     else if (!RTStrICmp(psz, "shareable"))
         DiskType = MediumType_Shareable;
+    else if (!RTStrICmp(psz, "readonly"))
+        DiskType = MediumType_Readonly;
+    else if (!RTStrICmp(psz, "multiattach"))
+        DiskType = MediumType_MultiAttach;
     else
         rc = VERR_PARSE_ERROR;
 
@@ -1004,6 +1008,12 @@ int handleShowHardDiskInfo(HandlerArg *a)
                 break;
             case MediumType_Shareable:
                 typeStr = "shareable";
+                break;
+            case MediumType_Readonly:
+                typeStr = "readonly";
+                break;
+            case MediumType_MultiAttach:
+                typeStr = "multiattach";
                 break;
         }
         RTPrintf("Type:                 %s\n", typeStr);
