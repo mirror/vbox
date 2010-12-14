@@ -4435,10 +4435,21 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_11;
     }
 
-    // Settings version 1.11 is required if more than one controller of each type
-    // is present.
+    // settings version 1.9 is required if there is not exactly one DVD
+    // or more than one floppy drive present or the DVD is not at the secondary
+    // master; this check is a bit more complicated
+    //
+    // settings version 1.10 is required if the host cache should be disabled
+    //
+    // settings version 1.11 is required for bandwidth limits and if more than
+    // one controller of each type is present.
     if (m->sv < SettingsVersion_v1_11)
     {
+        // count attached DVDs and floppies (only if < v1.9)
+        size_t cDVDs = 0;
+        size_t cFloppies = 0;
+
+        // count storage controllers (if < v1.11)
         size_t cSata = 0;
         size_t cScsiLsi = 0;
         size_t cScsiBuslogic = 0;
@@ -4446,11 +4457,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         size_t cIde = 0;
         size_t cFloppy = 0;
 
+        // need to run thru all the storage controllers and attached devices to figure this out
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
              it != storageMachine.llStorageControllers.end();
              ++it)
         {
-            switch ((*it).storageBus)
+            const StorageController &sctl = *it;
+
+            // count storage controllers of each type; 1.11 is required if more than one
+            // controller of one type is present
+            switch (sctl.storageBus)
             {
                 case StorageBus_IDE:
                     cIde++;
@@ -4462,7 +4478,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                     cSas++;
                     break;
                 case StorageBus_SCSI:
-                    if ((*it).controllerType == StorageControllerType_LsiLogic)
+                    if (sctl.controllerType == StorageControllerType_LsiLogic)
                         cScsiLsi++;
                     else
                         cScsiBuslogic++;
@@ -4481,37 +4497,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 || cSas > 1
                 || cIde > 1
                 || cFloppy > 1)
+            {
                 m->sv = SettingsVersion_v1_11;
-        }
-    }
+                break; // abort the loop -- we will not raise the version further
+            }
 
-    // Settings version 1.11 is required if Readonly/MultiAttach media
-    // are present.
-    if (m->sv < SettingsVersion_v1_11)
-    {
-        /// @todo add code going over all medium attachments and check if
-        // they are of type Readonly or MultiAttach.
-    }
-
-    // settings version 1.9 is required if there is not exactly one DVD
-    // or more than one floppy drive present or the DVD is not at the secondary
-    // master; this check is a bit more complicated
-    //
-    // settings version 1.10 is required if the host cache should be disabled
-    //
-    // settings version 1.11 is required for bandwidth limits
-    if (m->sv < SettingsVersion_v1_11)
-    {
-        // count attached DVDs and floppies (only if < v1.9)
-        size_t cDVDs = 0;
-        size_t cFloppies = 0;
-
-        // need to run thru all the storage controllers and attached devices to figure this out
-        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
-             it != storageMachine.llStorageControllers.end();
-             ++it)
-        {
-            const StorageController &sctl = *it;
             for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
                  it2 != sctl.llAttachedDevices.end();
                  ++it2)
@@ -4519,12 +4509,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 const AttachedDevice &att = *it2;
 
                 // Bandwidth limitations are new in VirtualBox 4.0 (1.11)
-                if (    (m->sv < SettingsVersion_v1_11)
-                     && (att.strBwGroup.length() != 0)
-                   )
+                if (m->sv < SettingsVersion_v1_11)
                 {
-                    m->sv = SettingsVersion_v1_11;
-                    break; /* abort the loop -- we will not raise the version further */
+                    if (att.strBwGroup.length() != 0)
+                    {
+                        m->sv = SettingsVersion_v1_11;
+                        break; // abort the loop -- we will not raise the version further
+                    }
                 }
 
                 // disabling the host IO cache requires settings version 1.10
@@ -4555,6 +4546,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                         ++cFloppies;
                 }
             }
+
+            if (m->sv >= SettingsVersion_v1_11)
+                break;  // abort the loop -- we will not raise the version further
         }
 
         // VirtualBox before 3.1 had zero or one floppy and exactly one DVD,
