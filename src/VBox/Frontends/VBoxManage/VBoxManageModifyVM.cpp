@@ -140,6 +140,8 @@ enum
     MODIFYVM_VRDPVIDEOCHANNELQUALITY, /* VRDE: deprecated */
     MODIFYVM_VRDP,                    /* VRDE: deprecated */
     MODIFYVM_VRDEPROPERTY,
+    MODIFYVM_VRDEPORT,
+    MODIFYVM_VRDEADDRESS,
     MODIFYVM_VRDEAUTHTYPE,
     MODIFYVM_VRDEAUTHLIBRARY,
     MODIFYVM_VRDEMULTICON,
@@ -264,6 +266,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },     /* deprecated */
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdeproperty",             MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING },
+    { "--vrdeport",                 MODIFYVM_VRDEPORT,                  RTGETOPT_REQ_STRING },
+    { "--vrdeaddress",              MODIFYVM_VRDEADDRESS,               RTGETOPT_REQ_STRING },
     { "--vrdeauthtype",             MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING },
     { "--vrdeauthlibrary",          MODIFYVM_VRDEAUTHLIBRARY,           RTGETOPT_REQ_STRING },
     { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
@@ -295,12 +299,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 static void vrdeWarningDeprecatedOption(const char *pszOption)
 {
     RTStrmPrintf(g_pStdErr, "Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n", pszOption, pszOption);
-}
-
-static void vrdeWarningDeprecatedProperty(const char *pszOption, const char *pszProperty, const char *pszArg)
-{
-    RTStrmPrintf(g_pStdErr, "Warning: '--%s' is deprecated. Use '--vrdeproperty \"%s=%s\"'.\n",
-                 pszOption, pszProperty, pszArg);
 }
 
 
@@ -1882,9 +1880,10 @@ int handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_VRDPPORT:
-            {
-                vrdeWarningDeprecatedProperty("vrdpport", "TCP/Ports", ValueUnion.psz);
+                vrdeWarningDeprecatedOption("port");
 
+            case MODIFYVM_VRDEPORT:
+            {
                 ComPtr<IVRDEServer> vrdeServer;
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
                 ASSERT(vrdeServer);
@@ -1897,9 +1896,10 @@ int handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_VRDPADDRESS:
-            {
-                vrdeWarningDeprecatedProperty("vrdpaddress", "TCP/Address", ValueUnion.psz);
+                vrdeWarningDeprecatedOption("address");
 
+            case MODIFYVM_VRDEADDRESS:
+            {
                 ComPtr<IVRDEServer> vrdeServer;
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
                 ASSERT(vrdeServer);

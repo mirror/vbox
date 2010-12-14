@@ -87,6 +87,7 @@ public:
     STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
     STDMETHOD(COMGETTER(AuthLibrary)) (BSTR *aValue);
     STDMETHOD(COMSETTER(AuthLibrary)) (IN_BSTR aValue);
+    STDMETHOD(COMGETTER(VRDEProperties)) (ComSafeArrayOut (BSTR, aProperties));
 
     // IVRDEServer methods
     STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);
