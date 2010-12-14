@@ -727,14 +727,10 @@ typedef struct {
     ata_device_t  devices[BX_MAX_ATA_DEVICES];
     //
     // map between (bios hd id - 0x80) and ata channels and scsi disks.
-#ifdef VBOX_WITH_SCSI
-    Bit8u  hdcount, hdidmap[BX_MAX_ATA_DEVICES+BX_MAX_SCSI_DEVICES];
-#else
-    Bit8u  hdcount, hdidmap[BX_MAX_ATA_DEVICES];
-#endif
+    Bit8u  hdcount, hdidmap[BX_MAX_STORAGE_DEVICES];
 
     // map between (bios cd id - 0xE0) and ata channels
-    Bit8u  cdcount, cdidmap[BX_MAX_ATA_DEVICES];
+    Bit8u  cdcount, cdidmap[BX_MAX_STORAGE_DEVICES];
 
     // Buffer for DPTE table
     dpte_t dpte;
@@ -2354,7 +2350,7 @@ void ata_init( )
     }
 
   // hdidmap  and cdidmap init.
-  for (device=0; device<BX_MAX_ATA_DEVICES; device++) {
+  for (device=0; device<BX_MAX_STORAGE_DEVICES; device++) {
     write_byte(ebda_seg,&EbdaData->ata.hdidmap[device],BX_MAX_STORAGE_DEVICES);
     write_byte(ebda_seg,&EbdaData->ata.cdidmap[device],BX_MAX_STORAGE_DEVICES);
     }
