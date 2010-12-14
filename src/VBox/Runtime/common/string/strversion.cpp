@@ -55,7 +55,9 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
 {
     const char *psz = *ppszVer;
 
-    /* Check for end-of-string. */
+    /*
+     * Check for end-of-string.
+     */
     if (!*psz)
     {
         *pi32Value = 0;
@@ -63,12 +65,16 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
         return false;
     }
 
+    /*
+     * Try convert the block to a number the simple way.
+     */
+    char ch;
     bool fNumeric = RT_C_IS_DIGIT(*psz);
     if (fNumeric)
     {
         do
-            psz++;
-        while (*psz && RT_C_IS_DIGIT(*psz));
+            ch = *++psz;
+        while (ch && RT_C_IS_DIGIT(ch));
 
         int rc = RTStrToInt32Ex(*ppszVer, NULL, 10, pi32Value);
         if (RT_FAILURE(rc) || rc == VWRN_NUMBER_TOO_BIG)
@@ -80,34 +86,65 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
     }
     else
     {
+        /*
+         * Find the end of the current string.  Make a special case for SVN
+         * revision numbers that immediately follows a release tag string.
+         */
         do
-            psz++;
-        while (*psz && !RT_C_IS_DIGIT(*psz) && !RTSTRVER_IS_PUNCTUACTION(*psz));
-        size_t cchBlock = psz - *ppszVer;
+            ch = *++psz;
+        while (    ch
+               && !RT_C_IS_DIGIT(ch)
+               && !RTSTRVER_IS_PUNCTUACTION(ch));
 
-        /* Translate standard pre release terms to negative values. */
-        int32_t iVal1;
-        if (     cchBlock == 2 && !RTStrNICmp(*ppszVer, "RC", 2))
-            iVal1 = -100000;
-        else if (cchBlock == 3 && !RTStrNICmp(*ppszVer, "PRE", 3))
-            iVal1 = -200000;
-        else if (cchBlock == 5 && !RTStrNICmp(*ppszVer, "GAMMA", 5))
-            iVal1 = -300000;
-        else if (cchBlock == 4 && !RTStrNICmp(*ppszVer, "BETA", 4))
-            iVal1 = -400000;
-        else if (cchBlock == 5 && !RTStrNICmp(*ppszVer, "ALPHA", 5))
-            iVal1 = -500000;
-        else
-            iVal1 = 0;
+        size_t cchBlock = psz - *ppszVer;
+        if (   cchBlock > 1
+            && psz[-1] == 'r'
+            && RT_C_IS_DIGIT(*psz))
+        {
+            psz--;
+            cchBlock--;
+        }
+
+
+        /*
+         * Translate standard pre release terms to negative values.
+         */
+        static const struct
+        {
+            size_t      cch;
+            const char *psz;
+            int32_t     iValue;
+        } s_aTerms[] =
+        {
+            { 2, "RC",      -100000 },
+            { 3, "PRE",     -200000 },
+            { 5, "GAMMA",   -300000 },
+            { 4, "BETA",    -400000 },
+            { 5, "ALPHA",   -500000 }
+        };
+
+        int32_t iVal1 = 0;
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aTerms); i++)
+            if (   cchBlock == s_aTerms[i].cch
+                && !RTStrNCmp(s_aTerms[i].psz, *ppszVer, cchBlock))
+            {
+                iVal1 = s_aTerms[i].iValue;
+                break;
+            }
         if (iVal1 != 0)
         {
-            /* Trailing number? Add it assuming BETA == BETA1. */
+            /*
+             * Does the prelease term have a trailing number?
+             * Add it assuming BETA == BETA1.
+             */
             if (RT_C_IS_DIGIT(*psz))
             {
                 const char *psz2 = psz;
                 do
-                    psz++;
-                while (*psz && !RT_C_IS_DIGIT(*psz) && !RTSTRVER_IS_PUNCTUACTION(*psz));
+                    ch = *++psz;
+                while (   ch
+                       && RT_C_IS_DIGIT(ch)
+                       && !RTSTRVER_IS_PUNCTUACTION(ch));
 
                 int rc = RTStrToInt32Ex(psz2, NULL, 10, pi32Value);
                 if (RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG && *pi32Value)
@@ -124,7 +161,9 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
     }
     *pcchBlock = psz - *ppszVer;
 
-    /* skip punctuation */
+    /*
+     * Skip trailing punctuation.
+     */
     if (RTSTRVER_IS_PUNCTUACTION(*psz))
         psz++;
     *ppszVer = psz;
