@@ -227,6 +227,8 @@
 /* A SCSI device starts always at BX_MAX_ATA_DEVICES. */
 #    define VBOX_IS_SCSI_DEVICE(device_id) (device_id >= BX_MAX_ATA_DEVICES)
 #    define VBOX_GET_SCSI_DEVICE(device_id) (device_id - BX_MAX_ATA_DEVICES)
+#else
+#    define BX_MAX_STORAGE_DEVICES  BX_MAX_ATA_DEVICES
 #endif
 
 #ifndef VBOX
@@ -5452,36 +5454,20 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
 
   write_byte(0x0040, 0x008e, 0);  // clear completion flag
 
-#ifdef VBOX_WITH_SCSI
   // basic check : device has to be defined
   if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_STORAGE_DEVICES) ) {
-    BX_INFO("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
+    BX_DEBUG("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
-#else
-  // basic check : device has to be defined
-  if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_ATA_DEVICES) ) {
-    BX_INFO("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
-    goto int13_fail;
-    }
-#endif
 
   // Get the ata channel
   device=read_byte(ebda_seg,&EbdaData->ata.hdidmap[GET_ELDL()-0x80]);
 
-#ifdef VBOX_WITH_SCSI
   // basic check : device has to be valid
   if (device >= BX_MAX_STORAGE_DEVICES) {
-    BX_INFO("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
+    BX_DEBUG("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
-#else
-  // basic check : device has to be valid
-  if (device >= BX_MAX_ATA_DEVICES) {
-    BX_INFO("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
-    goto int13_fail;
-    }
-#endif
 
   switch (GET_AH()) {
 
@@ -5542,7 +5528,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
 
       // sanity check on cyl heads, sec
       if( (cylinder >= nlc) || (head >= nlh) || (sector > nlspt )) {
-        BX_INFO("int13_harddisk: function %02x, parameters out of range %04x/%04x/%04x!\n", GET_AH(), cylinder, head, sector);
+        BX_INFO("int13_harddisk: function %02x, disk %02x, parameters out of range %04x/%04x/%04x!\n", GET_AH(), GET_DL(), cylinder, head, sector);
         goto int13_fail;
         }
 
@@ -6022,7 +6008,7 @@ int13_cdrom(EHBX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
   /* basic check : device should be 0xE0+ */
   if( (GET_ELDL() < 0xE0) || (GET_ELDL() >= 0xE0+BX_MAX_ATA_DEVICES) ) {
-    BX_INFO("int13_cdrom: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
+    BX_DEBUG("int13_cdrom: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
 
@@ -6031,7 +6017,7 @@ int13_cdrom(EHBX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
   /* basic check : device has to be valid  */
   if (device >= BX_MAX_ATA_DEVICES) {
-    BX_INFO("int13_cdrom: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
+    BX_DEBUG("int13_cdrom: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
 
