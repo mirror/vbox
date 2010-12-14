@@ -100,7 +100,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--parents] [--mode <mode>] [--verbose]\n"
                  "\n"
                  "                            updateadditions <vmname>|<uuid>\n"
-                 "                            [--source <guest additions .ISO file to use>] [--verbose]\n"
+                 "                            [--source <guest additions .ISO>] [--verbose]\n"
                  "\n");
 }
 
