@@ -386,17 +386,10 @@
       <sect3 id="vista_networking">
         <title>Windows Vista networking</title>
 
-        <para>Earlier versions of VirtualBox provided a virtual AMD PCNet
-        Ethernet card to guests by default. Since Microsoft no longer ships a
-        driver for that card with Windows (starting with Windows Vista), if
-        you select Windows Vista or newer as the guest operating system for a
-        virtual machine, VirtualBox will instead present a virtual Intel
-        network controller to the guest (see <xref
-        linkend="nichardware" />).</para>
-
-        <para>However, if for any reason you have a 32-bit Windows Vista VM
-        that is configured to use an AMD PCNet card, you will have no
-        networking in the guest initially.</para>
+        <para>If, for some reason, you want to use an AMD PCNet card with
+        Microsoft Windows Vista or later instead of the Intel E1000 card that
+        VirtualBox provides by default, you will need to install a driver for
+        that manually (see <xref linkend="nichardware" />).</para>
 
         <para>As a convenience, VirtualBox ships with a 32-bit driver for the
         AMD PCNet card, which comes with the Windows Guest Additions. If you
@@ -409,13 +402,8 @@
         <computeroutput>x86\Network\AMD\netamd.inf</computeroutput>
         subdirectory of the default install directory.</para>
 
-        <para>Alternatively, change the Vista guest's VM settings to use an
-        Intel networking card instead of the default AMD PCNet card; see <xref
-        linkend="settings-network" /> for details.</para>
-
         <para>Unfortunately, there is no 64-bit driver available for the AMD
-        PCNet card. So for 64-bit Windows VMs, you should always use the Intel
-        networking devices.</para>
+        PCNet card.</para>
       </sect3>
     </sect2>
 
@@ -1146,8 +1134,8 @@ $</screen>
       that folder as soon as a user logs into the guest OS. The details depend
       on the guest OS type:<itemizedlist>
           <listitem>
-            <para>With Windows guests, any auto-mounted shared folder will
-            receive its own drive letter (e.g.
+            <para>With <emphasis role="bold">Windows guests,</emphasis> any
+            auto-mounted shared folder will receive its own drive letter (e.g.
             <computeroutput>E:</computeroutput>) depending on the free drive
             letters remaining in the guest.</para>
 
@@ -1157,13 +1145,13 @@ $</screen>
           </listitem>
 
           <listitem>
-            <para>With Linux and Solaris guests, auto-mounted shared folders
-            are mounted into the <computeroutput>/media</computeroutput>
-            directory, along with the prefix
-            <computeroutput>sf_</computeroutput>. For example, the shared
-            folder <computeroutput>myfiles</computeroutput> would be mounted
-            to <computeroutput>/media/sf_myfiles</computeroutput> on Linux and
-            <computeroutput>/mnt/sf_myfiles</computeroutput> on
+            <para>With <emphasis role="bold">Linux guests,</emphasis>
+            auto-mounted shared folders are mounted into the
+            <computeroutput>/media</computeroutput> directory, along with the
+            prefix <computeroutput>sf_</computeroutput>. For example, the
+            shared folder <computeroutput>myfiles</computeroutput> would be
+            mounted to <computeroutput>/media/sf_myfiles</computeroutput> on
+            Linux and <computeroutput>/mnt/sf_myfiles</computeroutput> on
             Solaris.</para>
 
             <para>The guest property
@@ -1181,17 +1169,16 @@ $</screen>
                 read/write.</para>
               </note></para>
 
-              <para>The guest property
-              <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>
-              determines the absolute mount directory that is used for all auto-mounted
-              Shared Folders. When no value is specified the standard media or mount
-              directory is used according to the guest OS.</para>
+            <para>To change the mount directory to something other than
+            <computeroutput>/media</computeroutput>, you can set the guest
+            property
+            <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>.</para>
           </listitem>
 
           <listitem>
-            <para>Solaris guests behave like Linux guests except that
-            <computeroutput>/mnt</computeroutput> is used for mounting the
-            shared folders instead of
+            <para><emphasis role="bold">Solaris guests</emphasis> behave like
+            Linux guests except that <computeroutput>/mnt</computeroutput> is
+            used as the default mount directory instead of
             <computeroutput>/media</computeroutput>.</para>
           </listitem>
         </itemizedlist></para>

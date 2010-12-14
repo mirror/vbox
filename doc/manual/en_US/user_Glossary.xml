@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <glossary id="Glossary">
   <glossdiv>
     <title>A</title>
@@ -221,6 +221,19 @@
         typically written in hexadecimal notation where the bytes are
         separated by colons, such as
         <computeroutput>00:17:3A:5E:CB:08</computeroutput>.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
+      <glossterm>MSI</glossterm>
+
+      <glossdef>
+        <para>Message Signalled Interrupts, as supported by modern chipsets
+        such as the ICH9; see <xref linkend="settings-motherboard" />. As
+        opposed to traditional pin-based interrupts, with MSI, a small amount
+        of data can accompany the actual interrupt message. This reduces the
+        amount of hardware pins required, allows for more interrupts and
+        better performance.</para>
       </glossdef>
     </glossentry>
   </glossdiv>
