@@ -4,37 +4,30 @@
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
-        <location filename="../src/gui/kernel/qapplication.cpp" line="+2316"/>
         <source>Services</source>
         <translation>服務</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Hide %1</source>
-        <translation>隱藏%1</translation>
+        <translation>隱藏 %1</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Hide Others</source>
         <translation>隱藏其他</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Show All</source>
-        <translation>顯示全部</translation>
+        <translation>全部顯示</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Preferences...</source>
-        <translation>偏好設定⋯</translation>
+        <translation>喜好設定...</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Quit %1</source>
-        <translation>結束 %1</translation>
+        <translation>離開 %1</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>About %1</source>
         <translation>關於 %1</translation>
     </message>
@@ -111,7 +104,7 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
+            <numerusform>缺少所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -132,14 +125,14 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation>無法解碼媒體來源。</translation>
+        <translation>無法偵測解碼媒體來源。</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation>音量:: %1%</translation>
+        <translation>音量: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
@@ -470,7 +463,7 @@ to
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation>對齊</translation>
+        <translation>上移一行</translation>
     </message>
     <message>
         <source>Customize...</source>
@@ -1191,7 +1184,7 @@ Please verify the correct directory name was given.</source>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
         <translation>「%1」有寫入保護。
-您無論如何要刪除它嗎?</translation>
+您仍然要刪除嗎?</translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
@@ -1887,7 +1880,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Mac OS X input method</source>
-        <translation>Mac OS X 輸入方法</translation>
+        <translation>Mac OS X 輸入法</translation>
     </message>
 </context>
 <context>
@@ -2392,7 +2385,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation>登入 %1 失敗: 要求驗證</translation>
+        <translation>登入 %1 失敗: 需要驗證</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
@@ -2554,7 +2547,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation>無效的網址: %1</translation>
+        <translation>無效的 URI: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
@@ -3313,7 +3306,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Line up</source>
-        <translation>對齊</translation>
+        <translation>上移一行</translation>
     </message>
     <message>
         <source>Position</source>
@@ -3321,14 +3314,14 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Line down</source>
-        <translation>下一行</translation>
+        <translation>下移一行</translation>
     </message>
 </context>
 <context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1: 無法在鎖定設定金鑰</translation>
+        <translation>%1: 無法在鎖定時設定金鑰</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
@@ -3547,7 +3540,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>媒體預覽</translation>
+        <translation>上一個媒體</translation>
     </message>
     <message>
         <source>Media Next</source>
@@ -4225,7 +4218,7 @@ Please choose a different file name.</source>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation>隱藏拼字與文法</translation>
+        <translation>隱藏拼字和文法</translation>
     </message>
     <message>
         <source>Check Spelling</source>
@@ -4514,7 +4507,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation>不允許使用在 DTD 中的內部一般實體參照</translation>
+        <translation>在 DTD 中不允許內部一般實體參照</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
@@ -4700,7 +4693,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation>年 %1 無效因為它以 %2 開始。</translation>
+        <translation>年 %1 無效因為以 %2 開始。</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
@@ -4716,11 +4709,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation>對於月 %2 %1 是無效的天。</translation>
+        <translation>對於月 %2 天 %1 是無效的。</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>時間 24:%1:%2.%3 無效。 小時是 24，但分鐘、 秒，和毫秒不是全部 0;</translation>
+        <translation>時間 24:%1:%2。%3 無效。 小時是 24，但分鐘、 秒和毫秒不是全部 0;</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
@@ -4732,11 +4725,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation>必須至少一個元件。</translation>
+        <translation>必須至少存在一個元件。</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation>至少一個時間元件必須出現之後 %1-分隔符號。</translation>
+        <translation>至少一個時間元件必須出現在 %1-分隔符號之後。</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
@@ -4744,11 +4737,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation>一個整數的組 %1，第一個運算元不能為無窮大 (%2)。</translation>
+        <translation>在整數除法的第一個運算元 %1，不能無窮大 (%2)。</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation>第二個運算元一的組 %1，不能為零 (%2)。</translation>
+        <translation>在除法的第二個運算元 %1，不能為零 (%2)。</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
@@ -4756,7 +4749,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation>當轉換從 %2 到 %1 時，來源值不能為 %3。</translation>
+        <translation>從 %2 轉換到 %1 時，來源值不能為 %3。</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
@@ -4788,7 +4781,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation>有效的布林值不能包含兩個或多個原子值的順序計算。</translation>
+        <translation>有效的布林值不能計算包含序列兩個或多個原子值。</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
@@ -4820,7 +4813,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation>計算的屬性的名稱不能包含命名空間 URI %1 使用 %2 的本地名稱。</translation>
+        <translation>計算屬性的名稱不能有命名空間 URI %1 使用 %2 的本機名稱。</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
@@ -4828,7 +4821,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation>當轉換為 %1 或從它衍生的類型，來源值必須是相同類型，或必須是字串常值，類型 %2 不允許。</translation>
+        <translation>轉換為 %1 或從它衍生的類型時，來源值必須是相同類型，或必須是字串常值，類型 %2 不允許。</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
@@ -4840,7 +4833,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation>轉換為 %1 不可能，因為它是一個抽象的類型，並且可以因此不能產生實體。</translation>
+        <translation>轉換為 %1 不可能，因為它是一個抽象的類型，因此永遠不能是實體。</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
@@ -4884,7 +4877,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation>在處理指示的目標名稱不能為 %1 上的任意組合的和小寫。 因此， %2 無效。</translation>
+        <translation>在大寫和小寫的任何組合中，處理指示的目標名稱不能為 %1。 因此 %2 無效。</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
@@ -4892,7 +4885,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation>節點或者原子值，就必須包含在路徑中的最後一步。 它不能兩者的混合物。</translation>
+        <translation>路徑中的上次步驟必須包含節點或者原子值。 不能是兩者的混合。</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
@@ -4932,7 +4925,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation>%1 的第二個參數不能是類型 %2。 它的類型必須是 %3、%4 或 %5。</translation>
+        <translation>%1 的第二個引數不能是類型 %2。 必須是 %3, %4, 或 %5。</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
@@ -4944,7 +4937,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation>如果這兩個值都帶偏移量，它們必須具有相同區域偏。 %1 和 %2 不一樣。</translation>
+        <translation>如果兩個值都有時區偏移，必須有相同的時區偏移。 %1 和 %2 不一樣。</translation>
     </message>
     <message>
         <source>%1 was called.</source>
@@ -4956,11 +4949,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation>在置換字串中 %1 後面必須有至少一個數位當不逃脫時。</translation>
+        <translation>在置換字串中，在不脫離 %1 後面必須至少有一個位數。</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation>在置換字串中 %1 只可用來逃避本身或 %2，不是 %3</translation>
+        <translation>在置換字串中，%1 只能用來脫離本身或 %2，不是 %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
@@ -4976,7 +4969,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation>空白字元已移除，除了當它們出現在字元類別</translation>
+        <translation>空白字元已移除，除非出現在字元類別</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
@@ -4992,11 +4985,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation>無法擷取 %1。</translation>
+        <translation>無法檢索 %1。</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation>第二個參數函數 %1 的根節點必須是文檔節點。 %2 不是文檔節點。</translation>
+        <translation>函數 %1 的第二個引數之根節點必須是文件節點。 %2 不是文件節點。</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
@@ -5008,7 +5001,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation>不支援范式 %1 群島 支援的形式是 %2、 %3、 %4，和 %5，和無即空字串 (沒有歸一化)。</translation>
+        <translation>不支援正規化表單 %1 。 支援的表單是 %2, %3, %4, 和 %5 和無，即空字串 (未正規化)。</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
@@ -5024,7 +5017,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation>項目 %1 相符所需的類型 %2。</translation>
+        <translation>項目 %1 不符合所需的類型 %2。</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
@@ -5036,7 +5029,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation>初始化的變數 %1 取決於本身</translation>
+        <translation>變數 %1 的初始化取決於本身</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
@@ -5076,7 +5069,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation>只有字首 %1 可以宣告繫結命名空間 %2。 預設，它已經繫結至字首 %1。</translation>
+        <translation>只有字首 %1 可以宣告繫結命名空間 %2。 預設，已經繫結到字首 %1。</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
@@ -5084,11 +5077,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation>一個選項的名稱必須具有首碼。 沒有選項的預設命名空間。</translation>
+        <translation>一個選項的名稱必須有字首。 選項沒有預設的命名空間。</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation>架構匯入功能不支援，且因此 %1 的宣告不能發生。</translation>
+        <translation>架構匯入功能不支援，因此 %1 的宣告不能發生。</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
@@ -5096,7 +5089,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation>不支援模組導入功能</translation>
+        <translation>不支援模組匯入功能</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
@@ -5108,11 +5101,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation>保留了 %1 的命名空間，因此使用者定義函數可以不使用該服務。 請嘗試存在這種情況下，在預定義的首碼 %2，。</translation>
+        <translation>命名空間 %1 已保留，因此使用者定義的函數可能不使用。 請在這些情形下，嘗試預先設定字首 %2。</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation>庫的模組中的使用者定義函數的命名空間必須等於模組命名空間。 其它換句話說，它應該是 %1，而不是 %2</translation>
+        <translation>在程式庫模組中使用者定義函數的命名空間必須等於模組命名空間。 換句話說，應該是 %1 而不是 %2</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
@@ -5128,11 +5121,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation>運算式中綁定的變數的名稱必須不同位置的變數從。 因此，名為 %1 的兩個變數的影響-。</translation>
+        <translation>在運算式中繫結的變數名稱必須與位置變數不同。 因此，名為 %1 的兩個變數相抵觸。</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation>架構驗證功能不支援。 因此，%1-運算式不能使用。</translation>
+        <translation>架構驗證功能不支援，因此%1 運算式不能使用。</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
@@ -5152,7 +5145,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation>命名空間 URI 在綁定到一個的首碼時，不能為空字串 %1。</translation>
+        <translation>在繫結字首 %1 時命名空間 URI 不能是空字串。</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
@@ -5168,7 +5161,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>字首 %1 只能繫結至 %2 (以及它，在這兩種情況下，預先宣告)。</translation>
+        <translation>字首 %1 只能繫結到 %2 (或者是預先宣告的情形下)。</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
@@ -5176,7 +5169,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation>命名空間 URI 必須是常量和不能使用密封式的運算式。</translation>
+        <translation>命名空間 URI 必須是常數且不能使用封閉的運算式。</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
@@ -5188,7 +5181,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation>名為 %1 並不涉及任何架構類型。</translation>
+        <translation>名稱 %1 未參照任何架構類型。</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
@@ -5208,7 +5201,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation>擴展的名稱必須是運算式的在命名空間。</translation>
+        <translation>擴展運算式的名稱必須在命名空間。</translation>
     </message>
     <message>
         <source>empty</source>
@@ -5220,7 +5213,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>exactly one</source>
-        <translation>一個</translation>
+        <translation>只有一個</translation>
     </message>
     <message>
         <source>one or more</source>
@@ -5244,7 +5237,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation>這是節點的不可能在任何其他類型後添加的屬性。</translation>
+        <translation>不可能在任何其他節點的類型後加入屬性。</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
@@ -5256,11 +5249,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation>屬性 %1 無法序列化因為它出現在最上層。</translation>
+        <translation>屬性 %1 無法序列化因為出現在最上層。</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation>使用者定義函數的命名空間不能為空 (用預定義的首碼 %1 的存在這樣的情況下)</translation>
+        <translation>使用者定義函數的命名空間不能為空 (請在這種情形下，嘗試預先設定字首 %1)</translation>
     </message>
 </context>
 <context>
@@ -5271,7 +5264,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation>音量:: %1%</translation>
+        <translation>音量: %1%</translation>
     </message>
 </context>
 <context>
