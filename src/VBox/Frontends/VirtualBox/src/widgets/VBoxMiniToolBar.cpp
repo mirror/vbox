@@ -125,6 +125,9 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
 
     /* Enable mouse-tracking for this & children allowing to get mouse-move events: */
     setMouseTrackingEnabled(m_fAutoHide);
+
+    /* Auto-fill background to make it use own color: */
+    setAutoFillBackground(true);
 }
 
 /* Appends passed menus into internal menu-list */
