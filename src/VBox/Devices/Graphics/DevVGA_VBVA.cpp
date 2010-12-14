@@ -1840,7 +1840,6 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
             VBVAENABLE *pEnable = (VBVAENABLE *)pvBuffer;
             unsigned uScreenId;
-#ifdef VBOXWDDM_WITH_VBVA
             if (pEnable->u32Flags & VBVA_F_EXTENDED)
             {
                 if (cbBuffer < sizeof (VBVAENABLE_EX))
@@ -1853,7 +1852,6 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 uScreenId = pEnableEx->u32ScreenId;
             }
             else
-#endif
             {
                 uScreenId = vbvaViewFromOffset (pIns, pCtx, pvBuffer);
             }
@@ -1871,9 +1869,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             {
                 /* Guest reported offset relative to view. */
                 uint32_t u32Offset = pEnable->u32Offset;
-#ifdef VBOXWDDM_WITH_VBVA
                 if (!(pEnable->u32Flags & VBVA_F_ABSOFFSET))
-#endif
                 {
                     u32Offset += pCtx->aViews[uScreenId].view.u32ViewOffset;
                 }
