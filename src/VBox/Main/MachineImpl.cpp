@@ -3395,6 +3395,33 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         tr("Medium '%s' is already attached to this virtual machine"),
                         medium->getLocationFull().c_str());
 
+    if (!medium.isNull())
+    {
+        MediumType_T mtype = medium->getType();
+        if (    mtype == MediumType_MultiAttach
+             || mtype == MediumType_Readonly
+           )
+        {
+            // These two types are new with VirtualBox 4.0 and therefore require settings
+            // version 1.11 in the settings backend. Unfortunately it is not enough to do
+            // the usual routine in MachineConfigFile::bumpSettingsVersionIfNeeded() for
+            // two reasons: The medium type is a property of the media registry tree, which
+            // can reside in the global config file (for pre-4.0 media); we would therefore
+            // possibly need to bump the global config version. We don't want to do that though
+            // because that might make downgrading to pre-4.0 impossible.
+            // As a result, we can only use these two new types if the medium is NOT in the
+            // global registry:
+            const Guid &uuidGlobalRegistry = mParent->getGlobalRegistryId();
+            if (    medium->isInRegistry(uuidGlobalRegistry)
+                 || !mData->pMachineConfigFile->canHaveOwnMediaRegistry()
+               )
+                return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                tr("Cannot attach medium '%s': the media types 'MultiAttach' and 'Readonly' can only be attached "
+                                   "to machines that were created with VirtualBox 4.0 or later"),
+                                medium->getLocationFull().c_str());
+        }
+    }
+
     bool fIndirect = false;
     if (!medium.isNull())
         fIndirect = medium->isReadOnly();
