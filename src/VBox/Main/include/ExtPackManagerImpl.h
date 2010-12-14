@@ -69,7 +69,7 @@ public:
     /** @name IExtPackFile interfaces
      * @{ */
     STDMETHOD(COMGETTER(FilePath))(BSTR *a_pbstrPath);
-    STDMETHOD(Install)(void);
+    STDMETHOD(Install)(BOOL a_fReplace);
     /** @}  */
 
 private:
@@ -218,7 +218,7 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-    HRESULT     doInstall(ExtPackFile *a_pExtPackFile);
+    HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace);
     void        callAllVirtualBoxReadyHooks(void);
     void        callAllConsoleReadyHooks(IConsole *a_pConsole);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
