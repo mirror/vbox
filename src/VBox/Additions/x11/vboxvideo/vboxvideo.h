@@ -184,6 +184,8 @@ typedef struct VBOXRec
     void *base;
     /** The amount of VRAM available for use as a framebuffer */
     unsigned long cbFramebuffer;
+    /** The size of the framebuffer and the VBVA buffers at the end of it. */
+    unsigned long cbView;
     /** The current line size in bytes */
     uint32_t cbLine;
     CARD8 *state, *pstate;	/* SVGA state */

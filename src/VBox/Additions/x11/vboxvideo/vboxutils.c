@@ -241,7 +241,7 @@ vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
     {
         pViews[i].u32ViewIndex = i;
         pViews[i].u32ViewOffset = 0;
-        pViews[i].u32ViewSize = pVBox->cbFramebuffer;
+        pViews[i].u32ViewSize = pVBox->cbView;
         pViews[i].u32MaxScreenSize = pVBox->cbFramebuffer;
     }
     return VINF_SUCCESS;
@@ -281,12 +281,10 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
         xf86DrvMsg(scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
         return FALSE;
     }
-    pVBox->cbFramebuffer = offVRAMBaseMapping;
+    pVBox->cbView = pVBox->cbFramebuffer = offVRAMBaseMapping;
     pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
     xf86DrvMsg(scrnIndex, X_INFO, "Requested monitor count: %u\n",
                pVBox->cScreens);
-    rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
-                               vboxFillViewInfo, (void *)pVBox);
     for (i = 0; i < pVBox->cScreens; ++i)
     {
         pVBox->cbFramebuffer -= VBVA_MIN_BUFFER_SIZE;
@@ -295,6 +293,8 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
                                    pVBox->aoffVBVABuffer[i], 
                                    VBVA_MIN_BUFFER_SIZE);
     }
+    rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
+                               vboxFillViewInfo, (void *)pVBox);
 
     /* Set up the dirty rectangle handler.  Since this seems to be a
        delicate operation, and removing it doubly so, this will
