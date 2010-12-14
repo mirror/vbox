@@ -945,8 +945,8 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
 
     if (!mpDrv)
         return;
-    x2 = mpDrv->IConnector.cx;
-    y2 = mpDrv->IConnector.cy;
+    x2 = mpDrv->IConnector.cx + maFramebuffers[0].xOrigin;
+    y2 = mpDrv->IConnector.cy + maFramebuffers[0].yOrigin;
     for (unsigned i = 1; i < mcMonitors; ++i)
     {
         x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
