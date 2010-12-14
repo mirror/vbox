@@ -65,7 +65,8 @@ RT_C_DECLS_END
 *******************************************************************************/
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
-
+/** The guest property service client ID. */
+static uint32_t         g_SharedFoldersSvcClientID = 0;
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceAutoMountPreInit(void)
@@ -92,6 +93,26 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 
     int rc = RTSemEventMultiCreate(&g_AutoMountEvent);
     AssertRCReturn(rc, rc);
+
+    rc = VbglR3SharedFolderConnect(&g_SharedFoldersSvcClientID);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServiceVerbose(3, "VBoxServiceAutoMountInit: Service Client ID: %#x\n", g_SharedFoldersSvcClientID);
+    }
+    else
+    {
+        /* If the service was not found, we disable this service without
+           causing VBoxService to fail. */
+        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
+        {
+            VBoxServiceVerbose(0, "VBoxServiceAutoMountInit: Shared Folders service is not available\n");
+            rc = VERR_SERVICE_DISABLED;
+        }
+        else
+            VBoxServiceError("Control: Failed to connect to the Shared Folders service! Error: %Rrc\n", rc);
+        RTSemEventMultiDestroy(g_AutoMountEvent);
+        g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
+    }
 
     return rc;
 }
@@ -195,7 +216,7 @@ static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, cons
             {
                 if (rc == VERR_WRITE_PROTECT)
                 {
-                    VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Mount directory \"%s\" already is used/mounted\n", pszMountPoint);
+                    VBoxServiceVerbose(3, "VBoxServiceAutoMountPrepareMountPoint: Mount directory \"%s\" already is used/mounted\n", pszMountPoint);
                     rc = VINF_SUCCESS;
                 }
                 else
@@ -458,65 +479,56 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    uint32_t u32ClientId;
-    int rc = VbglR3SharedFolderConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Failed to connect to the shared folder service, error %Rrc\n", rc);
-    else
-    {
-        uint32_t cMappings;
-        PVBGLR3SHAREDFOLDERMAPPING paMappings;
-
-        rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
+    uint32_t cMappings;
+    PVBGLR3SHAREDFOLDERMAPPING paMappings;
+    int rc = VbglR3SharedFolderGetMappings(g_SharedFoldersSvcClientID, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
-        if (   RT_SUCCESS(rc)
-            && cMappings)
+    if (   RT_SUCCESS(rc)
+        && cMappings)
+    {
+        char *pszMountDir;
+        rc = VbglR3SharedFolderGetMountDir(&pszMountDir);
+        if (rc == VERR_NOT_FOUND)
+            rc = RTStrDupEx(&pszMountDir, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR);
+        if (RT_SUCCESS(rc))
         {
-            char *pszMountDir;
-            rc = VbglR3SharedFolderGetMountDir(&pszMountDir);
-            if (rc == VERR_NOT_FOUND)
-                rc = RTStrDupEx(&pszMountDir, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR);
+            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount dir set to \"%s\"\n", pszMountDir);
+
+            char *pszSharePrefix;
+            rc = VbglR3SharedFolderGetMountPrefix(&pszSharePrefix);
             if (RT_SUCCESS(rc))
             {
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount dir set to \"%s\"\n", pszMountDir);
-
-                char *pszSharePrefix;
-                rc = VbglR3SharedFolderGetMountPrefix(&pszSharePrefix);
-                if (RT_SUCCESS(rc))
+                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount prefix set to \"%s\"\n", pszSharePrefix);
+#ifdef USE_VIRTUAL_SHARES
+                /* Check for a fixed/virtual auto-mount share. */
+                if (VbglR3SharedFolderExists(g_SharedFoldersSvcClientID, "vbsfAutoMount"))
                 {
-                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount prefix set to \"%s\"\n", pszSharePrefix);
-    #if 0
-                    /* Check for a fixed/virtual auto-mount share. */
-                    if (VbglR3SharedFolderExists(u32ClientId, "vbsfAutoMount"))
-                    {
-                        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Host supports auto-mount root\n");
-                    }
-                    else
-                    {
-    #endif
-                        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Got %u shared folder mappings\n", cMappings);
-                        rc = VBoxServiceAutoMountProcessMappings(paMappings, cMappings, pszMountDir, pszSharePrefix, u32ClientId);
-    #if 0
-                    }
-    #endif
-                    RTStrFree(pszSharePrefix);
-                } /* Mount share prefix. */
+                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Host supports auto-mount root\n");
+                }
                 else
-                    VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mount prefix, rc = %Rrc\n", rc);
-                RTStrFree(pszMountDir);
-            }
+                {
+#endif
+                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Got %u shared folder mappings\n", cMappings);
+                    rc = VBoxServiceAutoMountProcessMappings(paMappings, cMappings, pszMountDir, pszSharePrefix, g_SharedFoldersSvcClientID);
+#ifdef USE_VIRTUAL_SHARES
+                }
+#endif
+                RTStrFree(pszSharePrefix);
+            } /* Mount share prefix. */
             else
-                VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder directory, rc = %Rrc\n", rc);
-            RTMemFree(paMappings);
+                VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mount prefix, rc = %Rrc\n", rc);
+            RTStrFree(pszMountDir);
         }
         else
-        {
-            if (RT_FAILURE(rc))
-                VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
-            else if (!cMappings)
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings fouund\n");
-        }
-        VbglR3SharedFolderDisconnect(u32ClientId);
+            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder directory, rc = %Rrc\n", rc);
+        VbglR3SharedFolderFreeMappings(paMappings);
+    }
+    else
+    {
+        if (RT_FAILURE(rc))
+            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mappings, rc = %Rrc\n", rc);
+        else if (!cMappings)
+            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: No shared folder mappings fouund\n");
     }
 
     RTSemEventMultiDestroy(g_AutoMountEvent);
@@ -530,6 +542,15 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
 static DECLCALLBACK(void) VBoxServiceAutoMountTerm(void)
 {
     VBoxServiceVerbose(3, "VBoxServiceAutoMountTerm\n");
+
+    VbglR3SharedFolderDisconnect(g_SharedFoldersSvcClientID);
+    g_SharedFoldersSvcClientID = 0;
+
+    if (g_AutoMountEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_AutoMountEvent);
+        g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
+    }
     return;
 }
 
@@ -537,7 +558,13 @@ static DECLCALLBACK(void) VBoxServiceAutoMountTerm(void)
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServiceAutoMountStop(void)
 {
-    RTSemEventMultiSignal(g_AutoMountEvent);
+    /*
+     * We need this check because at the moment our auto-mount
+     * thread really is a one-timer which destroys the event itself
+     * after running.
+     */
+    if (g_AutoMountEvent != NIL_RTSEMEVENTMULTI)
+        RTSemEventMultiSignal(g_AutoMountEvent);
 }
 
 
