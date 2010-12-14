@@ -175,7 +175,8 @@ BLDDIRS += \
 	$(SOLARIS_USR_DIR)/share/icons \
 	$(SOLARIS_USRSHR_ICONS_DIR) \
     $(foreach s,16 20 24 32 48 64 72 96 128 256,\
-	    $(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s))
+	    $(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s) \
+	    $(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s)/mimetypes)
 
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
@@ -186,7 +187,7 @@ VBOX_MIME_ICONS = \
 SOLARIS_COMMON_ICONS = \
 	$(foreach f,ova ovf vbox vbox-extpack, \
 	    $(foreach s,16 20 24 32 48 64 72 96 128 256,\
-	        $(s)x$(s)/virtualbox-$(f).png))
+	        $(s)x$(s)/mimetypes/virtualbox-$(f).png))
 
 
 #
