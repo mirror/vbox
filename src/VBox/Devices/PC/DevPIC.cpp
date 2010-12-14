@@ -135,6 +135,9 @@ typedef struct DEVPIC
     PPDMDEVINSRC            pDevInsRC;
     /** Pointer to the PIC RC helpers. */
     PCPDMPICHLPRC           pPicHlpRC;
+    /** Number of release log entries. Used to prevent flooding. */
+    uint32_t                cRelLogEntries;
+    uint32_t                u32AlignmentPadding;
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER             StatSetIrqGC;
     STAMCOUNTER             StatSetIrqHC;
@@ -488,7 +491,8 @@ static int pic_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             if (val & 0x02)
                 AssertReleaseMsgFailed(("single mode not supported"));
             if (val & 0x08)
-                AssertReleaseMsgFailed(("level sensitive irq not supported"));
+                if (pThis->cRelLogEntries++ < 64)
+                    LogRel(("pic_write: Level sensitive IRQ setting ignored.\n"));
         } else if (val & 0x08) {
             if (val & 0x04)
                 s->poll = 1;
@@ -943,6 +947,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->aPics[1].pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->aPics[0].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->aPics[1].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->cRelLogEntries = 0;
 
     /*
      * Register us as the PIC with PDM.
