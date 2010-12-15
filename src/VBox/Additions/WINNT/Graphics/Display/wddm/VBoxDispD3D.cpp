@@ -5686,13 +5686,15 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
         }
     }
 
-    Assert(pRc->hResource);
     Assert(pRc->hKMResource || VBOXDISPMODE_IS_3D(pAdapter));
     if (pRc->hKMResource)
     {
         if (!(pRc->fFlags & VBOXWDDM_RESOURCE_F_OPENNED))
         {
             D3DDDICB_DEALLOCATE Dealloc;
+
+            Assert(pRc->hResource);
+
             Dealloc.hResource = pRc->hResource;
             /* according to the docs the below two are ignored in case we set the hResource */
             Dealloc.NumAllocations = 0;
