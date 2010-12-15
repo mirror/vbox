@@ -1218,15 +1218,15 @@ $</screen>
             <para>It is only available for certain Windows, Linux and Solaris
             guests. In particular:<itemizedlist>
                 <listitem>
-                  <para>For Windows guests, support is restricted to 32-bit
-                  versions of XP and Vista. Both OpenGL and Direct3D 8/9 are
-                  supported (experimental).</para>
+                  <para>3D acceleration with Windows guests requires Windows 2000,
+                    Windows XP, Vista or Windows 7. Both OpenGL and Direct3D 8/9
+                    (not with Windows 2000) are supported (experimental).</para>
                 </listitem>
 
                 <listitem>
                   <para>OpenGL on Linux requires kernel 2.6.27 and higher as
-                  well as X.org server version 1.5 and higher. Ubuntu 8.10 and
-                  Fedora 10 have been tested and confirmed as working.</para>
+                  well as X.org server version 1.5 and higher. Ubuntu 10.10 and
+                  Fedora 14 have been tested and confirmed as working.</para>
                 </listitem>
 
                 <listitem>
