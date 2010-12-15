@@ -114,6 +114,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed crash under certain circumstances (Linux hosts only,
+          non VT-x/AMD-V mode only; bugs #4529 and #7819)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: add configuration dialog for port forwarding in NAT mode
           (bug #1657)</para>
       </listitem>
@@ -129,6 +134,11 @@
       <listitem>
         <para>GUI: fixed black fullscreen minitoolbar on KDE4 hosts
           (Linux hosts only; bug #5449)</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: implemented multi-sector reading to speed up booting of certain
+          guests (e.g. Solaris)</para>
       </listitem>
 
       <listitem>
