@@ -110,11 +110,7 @@ static int glue (audio_pcm_sw_alloc_resources_, TYPE) (SW *sw)
 {
     int samples;
 
-#ifdef DAC
-    samples = sw->hw->samples;
-#else
     samples = ((int64_t) sw->hw->samples << 32) / sw->ratio;
-#endif
 
     sw->buf = audio_calloc (AUDIO_FUNC, samples, sizeof (st_sample_t));
     if (!sw->buf) {
