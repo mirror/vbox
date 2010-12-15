@@ -945,8 +945,11 @@ typedef struct VBVAFLUSH
 } VBVAFLUSH;
 
 /* VBVAINFOSCREEN::u8Flags */
-#define VBVA_SCREEN_F_NONE   0x0000
-#define VBVA_SCREEN_F_ACTIVE 0x0001
+#define VBVA_SCREEN_F_NONE     0x0000
+#define VBVA_SCREEN_F_ACTIVE   0x0001
+/** The virtual monitor has been disabled by the guest and should be blacked
+ * out by the host and ignored for purposes of pointer position calculation. */
+#define VBVA_SCREEN_F_DISABLED 0x0002
 
 typedef struct VBVAINFOSCREEN
 {
