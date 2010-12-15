@@ -399,6 +399,16 @@
     </glossentry>
 
     <glossentry>
+      <glossterm>VMM</glossterm>
+
+      <glossdef>
+        <para>Virtual Machine Manager -- the component of VirtualBox that
+        controls VM execution. See <xref linkend="technical-components" /> for
+        a list of VirtualBox components.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
       <glossterm>VRDP</glossterm>
 
       <glossdef>
