@@ -691,10 +691,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                     ComSafeArrayAsInParam(installerEnv),
                                                     Bstr("").raw() /* Username */,
                                                     Bstr("").raw() /* Password */,
-                                                    5 * 1000 /* Wait 5s for getting the process started */,
+                                                    10 * 1000 /* Wait 10s for getting the process started */,
                                                     &uPID, progressInstaller.asOutParam(), &vrc);
                 if (SUCCEEDED(rc))
                 {
+                    LogRel(("Guest Additions update is running ...\n"));
+
                     /* If the caller does not want to wait for out guest update process to end,
                      * complete the progress object now so that the caller can do other work. */
                     if (aTask->uFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
@@ -702,7 +704,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                     else
                         aTask->progress->SetCurrentOperationProgress(70);
 
-                    LogRel(("Guest Additions update is running ...\n"));
+                    /* Wait until the Guest Additions installer finishes ... */
                     while (   SUCCEEDED(progressInstaller->COMGETTER(Completed(&fCompleted)))
                            && !fCompleted)
                     {
@@ -718,7 +720,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         {
                             break;
                         }
-                        RTThreadSleep(1);
+                        RTThreadSleep(100);
                     }
 
                     ULONG uRetStatus, uRetExitCode, uRetFlags;
@@ -736,6 +738,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                             }
                             else
                             {
+                                LogRel(("Guest Additions update failed (Exit code=%u, Status=%u, Flags=%u)\n",
+                                        uRetExitCode, uRetStatus, uRetFlags));
                                 rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                      Guest::tr("Guest Additions update failed with exit code=%u (status=%u, flags=%u)"),
                                                                      uRetExitCode, uRetStatus, uRetFlags);
@@ -744,13 +748,14 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         else if (   SUCCEEDED(progressInstaller->COMGETTER(Canceled(&fCanceled)))
                                  && fCanceled)
                         {
+                            LogRel(("Guest Additions update was canceled\n"));
                             rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                  Guest::tr("Guest Additions update was canceled by the guest with exit code=%u (status=%u, flags=%u)"),
                                                                  uRetExitCode, uRetStatus, uRetFlags);
                         }
                         else
                         {
-                            /* Guest Additions update was canceled by the user. */
+                            LogRel(("Guest Additions update was canceled by the user\n"));
                         }
                     }
                     else
