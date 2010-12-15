@@ -1043,6 +1043,7 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
             "INVALID";
         // no need to save the usual DVD medium types
         if (devType != DeviceType_DVD || (   mdm.hdType != MediumType_Normal
+                                          && mdm.hdType != MediumType_Writethrough
                                           && mdm.hdType != MediumType_Readonly))
             pelmMedium->setAttribute("type", pcszType);
     }
