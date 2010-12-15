@@ -2903,8 +2903,8 @@ Value: 2006.01.01</screen>
           <para>With <computeroutput>dumpguestcore --filename
           &lt;name&gt;</computeroutput>, you can create a system dump of the
           running VM, which will be written into the given file. This file
-          will have the standard ELF core format (with custom
-          sections).</para>
+          will have the standard ELF core format (with custom sections); see
+          <xref linkend="guestcoreformat" />.</para>
         </listitem>
 
         <listitem>
