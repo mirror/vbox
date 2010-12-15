@@ -1041,7 +1041,10 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
             mdm.hdType == MediumType_Readonly ? "Readonly" :
             mdm.hdType == MediumType_MultiAttach ? "MultiAttach" :
             "INVALID";
-        pelmMedium->setAttribute("type", pcszType);
+        // no need to save the usual DVD medium types
+        if (devType != DeviceType_DVD || (   mdm.hdType != MediumType_Normal
+                                          && mdm.hdType != MediumType_Readonly))
+            pelmMedium->setAttribute("type", pcszType);
     }
 
     for (MediaList::const_iterator it = mdm.llChildren.begin();
