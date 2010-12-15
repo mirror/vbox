@@ -557,6 +557,17 @@ int handleStorageAttach(HandlerArg *a)
                     throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
             }
 
+            // set medium type, if so desired
+            if (pMedium2Mount && mediumType != MediumType_Normal)
+            {
+                CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(mediumType));
+            }
+
+            if (pMedium2Mount && !bstrComment.isEmpty())
+            {
+                CHECK_ERROR(pMedium2Mount, COMSETTER(Description)(bstrComment.raw()));
+            }
+
             switch (devTypeRequested)
             {
                 case DeviceType_DVD:
@@ -619,17 +630,6 @@ int handleStorageAttach(HandlerArg *a)
                                                       pMedium2Mount));
                 }
                 break;
-            }
-
-            // set medium type, if so desired
-            if (pMedium2Mount && mediumType != MediumType_Normal)
-            {
-                CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(mediumType));
-            }
-
-            if (!bstrComment.isEmpty())
-            {
-                CHECK_ERROR(pMedium2Mount, COMSETTER(Description)(bstrComment.raw()));
             }
         }
 
