@@ -548,12 +548,9 @@
       </listitem>
 
       <listitem>
-        <para>Finally, a <emphasis role="bold">read-only image</emphasis> is
-        one that cannot be written to at all. This can only be used for DVD
-        and floppy images: for DVD images, this mode is automatically used and
-        cannot be changed, whereas the mode can be manually set for a floppy
-        image to simulate a floppy which is write-protected. It is an error to
-        enable read-only mode for a hard disk.</para>
+        <para>Finally, the <emphasis role="bold">read-only image</emphasis> is
+        used automatically for CD/DVD images, since CDs/DVDs can never be
+        written to.</para>
       </listitem>
     </orderedlist>
 
