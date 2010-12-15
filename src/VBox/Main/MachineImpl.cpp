@@ -3398,11 +3398,14 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     if (!medium.isNull())
     {
         MediumType_T mtype = medium->getType();
-        if (    mtype == MediumType_MultiAttach
-             || mtype == MediumType_Readonly
-           )
+        // MediumType_Readonly is also new, but only applies to DVDs and floppies.
+        // For DVDs it's not written to the config file, so needs no global config
+        // version bump. For floppies it's a new attribute "type", which is ignored
+        // by older VirtualBox version, so needs no global config version bump either.
+        // For hard disks this type is not accepted.
+        if (mtype == MediumType_MultiAttach)
         {
-            // These two types are new with VirtualBox 4.0 and therefore require settings
+            // This type is new with VirtualBox 4.0 and therefore requires settings
             // version 1.11 in the settings backend. Unfortunately it is not enough to do
             // the usual routine in MachineConfigFile::bumpSettingsVersionIfNeeded() for
             // two reasons: The medium type is a property of the media registry tree, which
@@ -3416,7 +3419,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                  || !mData->pMachineConfigFile->canHaveOwnMediaRegistry()
                )
                 return setError(VBOX_E_INVALID_OBJECT_STATE,
-                                tr("Cannot attach medium '%s': the media types 'MultiAttach' and 'Readonly' can only be attached "
+                                tr("Cannot attach medium '%s': the media type 'MultiAttach' can only be attached "
                                    "to machines that were created with VirtualBox 4.0 or later"),
                                 medium->getLocationFull().c_str());
         }
