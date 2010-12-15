@@ -1906,28 +1906,66 @@ Virtual system 0:
     <title>VBoxManage modifyhd</title>
 
     <para>With the <computeroutput>modifyhd</computeroutput> command, you can
-    change the type of an existing image between the normal, immutable and
-    write-through modes; see <xref linkend="hdimagewrites" /> for
-    details.<note>
-        <para>For compatibility with earlier versions of VirtualBox, the
-        "modifyvdi" command is also supported and mapped internally to the
-        "modifyhd" command.</para>
+    change the characteristics of a disk image after it has been
+    created:<screen>VBoxManage modifyhd         &lt;uuid&gt;|&lt;filename&gt;
+                            [--type normal|writethrough|immutable|shareable|
+                                    readonly|multiattach]
+                            [--autoreset on|off]
+                            [--compact]
+                            [--resize &lt;megabytes&gt;|--resizebyte &lt;bytes&gt;]</screen><note>
+        <para>Despite the "hd" in the subcommand name, the command works with
+        all disk images, not only hard disks. For compatibility with earlier
+        versions of VirtualBox, the "modifyvdi" command is also supported and
+        mapped internally to the "modifyhd" command.</para>
       </note></para>
 
-    <para>For immutable (differencing) hard disks only, the
-    <computeroutput>modifyhd autoreset on|off</computeroutput> command
-    determines whether the disk is automatically reset on every VM startup
-    (again, see <xref linkend="hdimagewrites" />). The default is "on".</para>
+    <para>The following options are available:<itemizedlist>
+        <listitem>
+          <para>With the <computeroutput>--type</computeroutput> argument, you
+          can change the type of an existing image between the normal,
+          immutable, write-through and other modes; see <xref
+          linkend="hdimagewrites" /> for details.</para>
+        </listitem>
 
-    <para>In addition, the <computeroutput>modifyhd --compact</computeroutput>
-    command can be used to compact disk images, i.e. remove blocks that only
-    contains zeroes. For this operation to be effective, it is required to
-    zero out free space in the guest system using a suitable software tool.
-    Microsoft provides the <computeroutput>sdelete</computeroutput> tool for
-    Windows guests. Execute <computeroutput>sdelete -c</computeroutput> in the
-    guest to zero the free disk space before compressing the virtual disk
-    image. Compaction works both for base images and for diff images created
-    as part of a snapshot.</para>
+        <listitem>
+          <para>For immutable (differencing) hard disks only, the
+          <computeroutput>--autoreset on|off</computeroutput> option
+          determines whether the disk is automatically reset on every VM
+          startup (again, see <xref linkend="hdimagewrites" />). The default
+          is "on".</para>
+        </listitem>
+
+        <listitem>
+          <para>With the <computeroutput>--compact</computeroutput> option,
+          can be used to compact disk images, i.e. remove blocks that only
+          contains zeroes. This will shrink a dynamically expanding image
+          again; it will reduce the <emphasis>physical</emphasis> size of the
+          image without affecting the logical size of the virtual disk.
+          Compaction works both for base images and for diff images created as
+          part of a snapshot.</para>
+
+          <para>For this operation to be effective, it is required that free
+          space in the guest system first be zeroed out using a suitable
+          software tool. For Windows guests, you can use the
+          <computeroutput>sdelete</computeroutput> tool provided by Microsoft.
+          Execute <computeroutput>sdelete -c</computeroutput> in the guest to
+          zero the free disk space before compressing the virtual disk image.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>The --resize option allows you to expand the capacity of an
+          existing image; this increases the <emphasis>logical</emphasis> size
+          of a virtual disk without affecting the physical size much.<footnote>
+              <para>Image resizing was added with VirtualBox 4.0.</para>
+            </footnote> This currently works only for the VDI and VHD formats,
+          and only for the dynamically expanding variants. For example, if you
+          originally created a 10G disk which is now full, you can use the
+          --resize command to add more space to the virtual disk without
+          having to create a new image and copy all data from within a virtual
+          machine.</para>
+        </listitem>
+      </itemizedlist></para>
   </sect1>
 
   <sect1 id="vboxmanage-clonevdi">
@@ -2936,7 +2974,7 @@ Value: 2006.01.01</screen>
     linkend="intro-installing" />.<itemizedlist>
         <listitem>
           <para>To add a new extension pack, use <computeroutput>VBoxManage
-          extpack install &lt;tarball&gt;</computeroutput>. </para>
+          extpack install &lt;tarball&gt;</computeroutput>.</para>
         </listitem>
 
         <listitem>

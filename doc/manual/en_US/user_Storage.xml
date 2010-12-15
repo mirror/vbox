@@ -250,10 +250,13 @@
     reads from or writes to a hard disk, VirtualBox redirects the request to
     the image file.</para>
 
-    <para>Note that when you create an image file, its size needs to be
-    specified, which represents a fixed geometry of the virtual disk. It is
-    therefore not possible to change the size of the virtual hard disk
-    later.</para>
+    <para>Like a physical disk, a virtual disk has a size (capacity), which
+    must be specified when the image file is created. As opposed to a physical
+    disk however, VirtualBox allows you to expand an image file after
+    creation, even if it has data already; see <xref
+    linkend="vboxmanage-modifyvdi" /> for details.<footnote>
+        <para>Image resizing was added with VirtualBox 4.0.</para>
+      </footnote></para>
 
     <para>VirtualBox supports four variants of disk image files:<itemizedlist>
         <listitem>
@@ -289,15 +292,16 @@
         </listitem>
       </itemizedlist></para>
 
-    <para>Irrespective of the disk format, as briefly mentioned in <xref
-    linkend="gui-createvm" />, there are two options of how to create a disk
-    image: fixed-size or dynamically expanding.</para>
+    <para>Irrespective of the disk capacity and format, as briefly mentioned
+    in <xref linkend="gui-createvm" />, there are two options of how to create
+    a disk image: fixed-size or dynamically expanding.</para>
 
     <itemizedlist>
       <listitem>
         <para>If you create a <emphasis role="bold">fixed-size
-        image</emphasis> of e.g. 10 GB, an image file of roughly the same size
-        will be created on your host system. Note that the creation of a
+        image</emphasis>, an image file will be created on your host system
+        which has roughly the same size as the virtual disk's capacity. So,
+        for a 10G disk, you will have a 10G file. Note that the creation of a
         fixed-size image can take a long time depending on the size of the
         image and the write performance of your hard disk.</para>
       </listitem>
@@ -476,7 +480,7 @@
       </listitem>
 
       <listitem>
-        <para>Finally, <emphasis role="bold">immutable images</emphasis> only
+        <para>Next, <emphasis role="bold">immutable images</emphasis> only
         remember write accesses temporarily while the virtual machine is
         running; all changes are lost when the virtual machine is powered on
         the next time. As a result, as opposed to "normal" images, the same
@@ -526,6 +530,30 @@
         <computeroutput>autoreset</computeroutput> parameter of
         <computeroutput>VBoxManage modifyhd</computeroutput>; see <xref
         linkend="vboxmanage-modifyvdi" /> for details.</para>
+      </listitem>
+
+      <listitem>
+        <para>An image in <emphasis role="bold">multiattach mode</emphasis>
+        can be attached to more than one virtual machine at the same time,
+        even if these machines are running simultaneously. For each virtual
+        machine to which such an image is attached, a differencing image is
+        created. As a result, data that is written to such a virtual disk by
+        one machine is not seen by the other machines to which the image is
+        attached; each machine creates its own write history of the
+        multiattach image.</para>
+
+        <para>Technically, a "multiattach" image behaves identically to an
+        "immutable" image except the differencing image is not reset every
+        time the machine starts. </para>
+      </listitem>
+
+      <listitem>
+        <para>Finally, a <emphasis role="bold">read-only image</emphasis> is
+        one that cannot be written to at all. This can only be used for DVD
+        and floppy images: for DVD images, this mode is automatically used and
+        cannot be changed, whereas the mode can be manually set for a floppy
+        image to simulate a floppy which is write-protected. It is an error to
+        enable read-only mode for a hard disk.</para>
       </listitem>
     </orderedlist>
 
