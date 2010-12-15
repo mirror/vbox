@@ -1154,7 +1154,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             RTLDRMOD hlibAuth = 0;
             do
             {
-                rc = RTLdrLoad(filename.c_str(), &hlibAuth);
+                rc = RTLdrLoad(filename.c_str(), &hlibAuth, RTLDRFLAGS_LOCAL);
                 if (RT_FAILURE(rc))
                 {
                     WEBDEBUG(("%s() Failed to load external authentication library. Error code: %Rrc\n", __FUNCTION__, rc));

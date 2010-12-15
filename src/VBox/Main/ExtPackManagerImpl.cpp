@@ -148,6 +148,10 @@ struct ExtPackManager::Data
     VirtualBox         *pVirtualBox;
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
+    /** File handle for the VBoxVMM libary which we slurp because ExtPacks depend on it. */
+    RTLDRMOD            hVBoxVMM;
+#endif
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
@@ -1170,7 +1174,7 @@ void ExtPack::probeAndLoad(void)
     if (fIsNative)
     {
         char szError[8192];
-        vrc = RTLdrLoadEx(m->strMainModPath.c_str(), &m->hMainMod, szError, sizeof(szError));
+        vrc = RTLdrLoadEx(m->strMainModPath.c_str(), &m->hMainMod, 0 /*=fFlags*/, szError, sizeof(szError));
         if (RT_FAILURE(vrc))
         {
             m->hMainMod = NIL_RTLDRMOD;
@@ -1760,6 +1764,20 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
     m->strCertificatDirPath = szCertificatDir;
     m->pVirtualBox          = a_pVirtualBox;
     m->enmContext           = a_enmContext;
+
+    /*
+     * Slurp in VBoxVMM which is used by VBoxPuelMain.
+     */
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
+    if (a_enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
+    {
+        char szError[8192];
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRFLAGS_GLOBAL, szError, sizeof(szError));
+        if (RT_FAILURE(vrc))
+            m->hVBoxVMM = NIL_RTLDRMOD;
+        /* cleanup in ::uninit()? */
+    }
+#endif
 
     /*
      * Go looking for extensions.  The RTDirOpen may fail if nothing has been

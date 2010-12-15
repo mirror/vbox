@@ -2339,7 +2339,7 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
         if (RTPathHavePath(pszLibraryName))
             rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &mVRDPLibrary, szErr, sizeof(szErr));
         else
-            rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary, szErr, sizeof(szErr));
+            rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary, 0 /*=fFlags*/, szErr, sizeof(szErr));
         if (RT_SUCCESS(rc))
         {
             struct SymbolEntry

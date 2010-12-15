@@ -2082,10 +2082,11 @@ SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys)
  * @returns iprt status code.
  * @param   pszFilename     The full file name.
  * @param   phLdrMod        Where to store the handle to the loaded module.
+ * @param   fFlags          See RTLDFLAGS_.
  * @param   pszError        Where to return the loader error. Optional.
  * @param   cbError         The size of the buffer pointed to by @a pszError.
  */
-static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError)
+static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
 {
 #ifdef VBOX_WITH_HARDENING
     /*
@@ -2102,11 +2103,11 @@ static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, c
     /*
      * Try load it.
      */
-    return RTLdrLoadEx(pszFilename, phLdrMod, pszError, cbError);
+    return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, pszError, cbError);
 }
 
 
-SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError)
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
 {
     /*
      * Validate input.
@@ -2144,13 +2145,13 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod,
     /*
      * Pass it on to the common library loader.
      */
-    return supR3HardenedLdrLoadIt(pszFilename, phLdrMod, pszError, cbError);
+    return supR3HardenedLdrLoadIt(pszFilename, phLdrMod, fFlags, pszError, cbError);
 }
 
 
-SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError)
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
 {
-    LogFlow(("SUPR3HardenedLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, pszError, cbError));
+    LogFlow(("SUPR3HardenedLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p fFlags=%08x pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, fFlags, pszError, cbError));
 
     /*
      * Validate input.
@@ -2206,7 +2207,7 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
     /*
      * Pass it on to SUPR3HardenedLdrLoad.
      */
-    rc = SUPR3HardenedLdrLoad(szPath, phLdrMod, pszError, cbError);
+    rc = SUPR3HardenedLdrLoad(szPath, phLdrMod, fFlags, pszError, cbError);
 
     LogFlow(("SUPR3HardenedLdrLoadAppPriv: returns %Rrc\n", rc));
     return rc;
@@ -2243,7 +2244,7 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Try load it.
      */
-    return RTLdrLoadEx(pszFilename, phLdrMod, pszErr, cbErr);
+    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*=fFlags*/, pszErr, cbErr);
 }
 
 
