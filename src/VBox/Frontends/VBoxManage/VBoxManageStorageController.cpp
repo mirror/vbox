@@ -72,6 +72,7 @@ int handleStorageAttach(HandlerArg *a)
     ULONG port   = ~0U;
     ULONG device = ~0U;
     bool fForceUnmount = false;
+    bool fSetMediumType = false;
     MediumType_T mediumType = MediumType_Normal;
     Bstr bstrComment;
     const char *pszCtl  = NULL;
@@ -214,6 +215,7 @@ int handleStorageAttach(HandlerArg *a)
                 int vrc = parseDiskType(ValueUnion.psz, &mediumType);
                 if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                fSetMediumType = true;
                 break;
             }
 
@@ -558,9 +560,10 @@ int handleStorageAttach(HandlerArg *a)
             }
 
             // set medium type, if so desired
-            if (pMedium2Mount && mediumType != MediumType_Normal)
+            if (pMedium2Mount && fSetMediumType)
             {
                 CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(mediumType));
+                throw  Utf8Str("Failed to set the medium type");
             }
 
             if (pMedium2Mount && !bstrComment.isEmpty())
