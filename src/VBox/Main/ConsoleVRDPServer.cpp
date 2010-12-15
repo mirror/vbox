@@ -649,9 +649,18 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 #ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
         case VRDE_QP_VIDEO_CHANNEL:
         {
-            BOOL fVideoEnabled = FALSE;
+            com::Bstr bstr;
+            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(), bstr.asOutParam());
 
-            server->mConsole->getVRDEServer()->COMGETTER(VideoChannel)(&fVideoEnabled);
+            if (hrc != S_OK)
+            {
+                bstr = "";
+            }
+
+            com::Utf8Str value = bstr;
+
+            BOOL fVideoEnabled =    RTStrICmp(value.c_str(), "true") == 0
+                                 || RTStrICmp(value.c_str(), "1") == 0;
 
             if (cbBuffer >= sizeof(uint32_t))
             {
@@ -668,9 +677,17 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
         case VRDE_QP_VIDEO_CHANNEL_QUALITY:
         {
-            ULONG ulQuality = 0;
+            com::Bstr bstr;
+            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(), bstr.asOutParam());
 
-            server->mConsole->getVRDEServer()->COMGETTER(VideoChannelQuality)(&ulQuality);
+            if (hrc != S_OK)
+            {
+                bstr = "";
+            }
+
+            com::Utf8Str value = bstr;
+
+            ULONG ulQuality = RTStrToUInt32(value.c_str()); /* This returns 0 on invalid string which is ok. */
 
             if (cbBuffer >= sizeof(uint32_t))
             {

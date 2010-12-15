@@ -39,8 +39,6 @@ public:
         ULONG mAuthTimeout;
         BOOL mAllowMultiConnection;
         BOOL mReuseSingleConnection;
-        BOOL mVideoChannel;
-        ULONG mVideoChannelQuality;
         Utf8Str mVrdeExtPack;
         settings::StringsMap mProperties;
     };
@@ -79,10 +77,6 @@ public:
     STDMETHOD(COMSETTER(AllowMultiConnection)) (BOOL aAllowMultiConnection);
     STDMETHOD(COMGETTER(ReuseSingleConnection)) (BOOL *aReuseSingleConnection);
     STDMETHOD(COMSETTER(ReuseSingleConnection)) (BOOL aReuseSingleConnection);
-    STDMETHOD(COMGETTER(VideoChannel)) (BOOL *aVideoChannel);
-    STDMETHOD(COMSETTER(VideoChannel)) (BOOL aVideoChannel);
-    STDMETHOD(COMGETTER(VideoChannelQuality)) (ULONG *aVideoChannelQuality);
-    STDMETHOD(COMSETTER(VideoChannelQuality)) (ULONG aVideoChannelQuality);
     STDMETHOD(COMGETTER(VRDEExtPack))(BSTR *aExtPack);
     STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
     STDMETHOD(COMGETTER(AuthLibrary)) (BSTR *aValue);

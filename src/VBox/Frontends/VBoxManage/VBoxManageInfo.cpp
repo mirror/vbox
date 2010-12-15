@@ -1405,10 +1405,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             vrdeServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
             BOOL fReuseCon;
             vrdeServer->COMGETTER(ReuseSingleConnection)(&fReuseCon);
-            BOOL fVideoChannel;
-            vrdeServer->COMGETTER(VideoChannel)(&fVideoChannel);
-            ULONG ulVideoChannelQuality;
-            vrdeServer->COMGETTER(VideoChannelQuality)(&ulVideoChannelQuality);
+            Bstr videoChannel;
+            vrdeServer->GetVRDEProperty(Bstr("VideoChannel/Enabled").raw(), videoChannel.asOutParam());
+            BOOL fVideoChannel =    (videoChannel.compare(Bstr("true"), Bstr::CaseInsensitive)== 0)
+                                 || (videoChannel == "1");
+            Bstr videoChannelQuality;
+            vrdeServer->GetVRDEProperty(Bstr("VideoChannel/Quality").raw(), videoChannelQuality.asOutParam());
             AuthType_T authType;
             const char *strAuthType;
             vrdeServer->COMGETTER(AuthType)(&authType);
@@ -1454,7 +1456,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("vrdereusecon=\"%s\"\n", fReuseCon ? "on" : "off");
                 RTPrintf("vrdevideochannel=\"%s\"\n", fVideoChannel ? "on" : "off");
                 if (fVideoChannel)
-                    RTPrintf("vrdevideochannelquality=\"%d\"\n", ulVideoChannelQuality);
+                    RTPrintf("vrdevideochannelquality=\"%lS\"\n", videoChannelQuality.raw());
             }
             else
             {
@@ -1464,7 +1466,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 if (console && currentPort != -1 && currentPort != 0)
                    RTPrintf("VRDE port:       %d\n", currentPort);
                 if (fVideoChannel)
-                    RTPrintf("Video redirection: enabled (Quality %d)\n", ulVideoChannelQuality);
+                    RTPrintf("Video redirection: enabled (Quality %lS)\n", videoChannelQuality.raw());
                 else
                     RTPrintf("Video redirection: disabled\n");
             }

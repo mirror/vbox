@@ -1400,8 +1400,6 @@ bool VRDESettings::operator==(const VRDESettings& v) const
                   && (strAuthLibrary            == v.strAuthLibrary)
                   && (fAllowMultiConnection     == v.fAllowMultiConnection)
                   && (fReuseSingleConnection    == v.fReuseSingleConnection)
-                  && (fVideoChannel             == v.fVideoChannel)
-                  && (ulVideoChannelQuality     == v.ulVideoChannelQuality)
                   && (strVrdeExtPack            == v.strVrdeExtPack)
                   && (mapProperties             == v.mapProperties)
                 )
@@ -2492,12 +2490,25 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("allowMultiConnection", hw.vrdeSettings.fAllowMultiConnection);
             pelmHwChild->getAttributeValue("reuseSingleConnection", hw.vrdeSettings.fReuseSingleConnection);
 
+            /* 3.2 and 4.0 betas, 4.0 has this information in VRDEProperties. */
             const xml::ElementNode *pelmVideoChannel;
             if ((pelmVideoChannel = pelmHwChild->findChildElement("VideoChannel")))
             {
-                pelmVideoChannel->getAttributeValue("enabled", hw.vrdeSettings.fVideoChannel);
-                pelmVideoChannel->getAttributeValue("quality", hw.vrdeSettings.ulVideoChannelQuality);
-                hw.vrdeSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdeSettings.ulVideoChannelQuality, 10, 100);
+                bool fVideoChannel = false;
+                pelmVideoChannel->getAttributeValue("enabled", fVideoChannel);
+                hw.vrdeSettings.mapProperties["VideoChannel/Enabled"] = fVideoChannel? "true": "false";
+
+                uint32_t ulVideoChannelQuality = 75;
+                pelmVideoChannel->getAttributeValue("quality", ulVideoChannelQuality);
+                ulVideoChannelQuality = RT_CLAMP(ulVideoChannelQuality, 10, 100);
+                char *pszBuffer = NULL;
+                if (RTStrAPrintf(&pszBuffer, "%d", ulVideoChannelQuality) >= 0)
+                {
+                    hw.vrdeSettings.mapProperties["VideoChannel/Quality"] = pszBuffer;
+                    RTStrFree(pszBuffer);
+                }
+                else
+                    hw.vrdeSettings.mapProperties["VideoChannel/Quality"] = "75";
             }
             pelmHwChild->getAttributeValue("VRDEExtPack", hw.vrdeSettings.strVrdeExtPack);
 
@@ -3479,11 +3490,28 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (hw.vrdeSettings.fReuseSingleConnection)
         pelmVRDE->setAttribute("reuseSingleConnection", hw.vrdeSettings.fReuseSingleConnection);
 
-    if (m->sv >= SettingsVersion_v1_10)
+    if (m->sv == SettingsVersion_v1_10)
     {
         xml::ElementNode *pelmVideoChannel = pelmVRDE->createChild("VideoChannel");
-        pelmVideoChannel->setAttribute("enabled", hw.vrdeSettings.fVideoChannel);
-        pelmVideoChannel->setAttribute("quality", hw.vrdeSettings.ulVideoChannelQuality);
+
+        /* In 4.0 videochannel settings were replaced with properties, so look at properties. */
+        Utf8Str str;
+        StringsMap::const_iterator it = hw.vrdeSettings.mapProperties.find("VideoChannel/Enabled");
+        if (it != hw.vrdeSettings.mapProperties.end())
+            str = it->second;
+        bool fVideoChannel =    RTStrICmp(str.c_str(), "true") == 0
+                             || RTStrCmp(str.c_str(), "1") == 0;
+        pelmVideoChannel->setAttribute("enabled", fVideoChannel);
+
+        it = hw.vrdeSettings.mapProperties.find("VideoChannel/Quality");
+        if (it != hw.vrdeSettings.mapProperties.end())
+            str = it->second;
+        uint32_t ulVideoChannelQuality = RTStrToUInt32(str.c_str()); /* This returns 0 on invalid string which is ok. */
+        if (ulVideoChannelQuality == 0)
+            ulVideoChannelQuality = 75;
+        else
+            ulVideoChannelQuality = RT_CLAMP(ulVideoChannelQuality, 10, 100);
+        pelmVideoChannel->setAttribute("quality", ulVideoChannelQuality);
     }
     if (m->sv >= SettingsVersion_v1_11)
     {
@@ -4407,10 +4435,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_11;
     }
 
-    if (m->sv < SettingsVersion_v1_11)
+    if (m->sv < SettingsVersion_v1_10)
     {
         /* If the properties contain elements other than "TCP/Ports" and "TCP/Address",
-         * then increase the version to VBox 4.0.
+         * then increase the version to at least VBox 3.2, which can have video channel properties.
          */
         unsigned cOldProperties = 0;
 
@@ -4418,6 +4446,30 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         if (it != hardwareMachine.vrdeSettings.mapProperties.end())
             cOldProperties++;
         it = hardwareMachine.vrdeSettings.mapProperties.find("TCP/Address");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+
+        if (hardwareMachine.vrdeSettings.mapProperties.size() != cOldProperties)
+            m->sv = SettingsVersion_v1_10;
+    }
+
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        /* If the properties contain elements other than "TCP/Ports", "TCP/Address",
+         * "VideoChannel/Enabled" and "VideoChannel/Quality" then increase the version to VBox 4.0.
+         */
+        unsigned cOldProperties = 0;
+
+        StringsMap::const_iterator it = hardwareMachine.vrdeSettings.mapProperties.find("TCP/Ports");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+        it = hardwareMachine.vrdeSettings.mapProperties.find("TCP/Address");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+        it = hardwareMachine.vrdeSettings.mapProperties.find("VideoChannel/Enabled");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+        it = hardwareMachine.vrdeSettings.mapProperties.find("VideoChannel/Quality");
         if (it != hardwareMachine.vrdeSettings.mapProperties.end())
             cOldProperties++;
 
@@ -4556,8 +4608,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     {
         if (   (hardwareMachine.ioSettings.fIoCacheEnabled != true)
             || (hardwareMachine.ioSettings.ulIoCacheSize != 5)
-                // and remote desktop video redirection channel
-            || (hardwareMachine.vrdeSettings.fVideoChannel)
                 // and page fusion
             || (hardwareMachine.fPageFusionEnabled)
                 // and CPU hotplug, RTC timezone control, HID type and HPET

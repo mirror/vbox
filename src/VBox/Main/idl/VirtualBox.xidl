@@ -12701,7 +12701,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="b5bd49dc-26ef-42b4-ae7a-0c4b734a7653"
+    uuid="be24e0db-e1d6-4d58-b85b-21053d1511b4"
     wsmap="managed"
     >
     <attribute name="enabled" type="boolean">
@@ -12728,18 +12728,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Flag whether the existing connection must be dropped and a new connection
         must be established by the VRDE server, when a new client connects in single
         connection mode.
-      </desc>
-    </attribute>
-
-    <attribute name="videoChannel" type="boolean">
-      <desc>
-        Flag whether video redirectiron channel is enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoChannelQuality" type="unsigned long">
-      <desc>
-        Image quality in percents.
       </desc>
     </attribute>
 

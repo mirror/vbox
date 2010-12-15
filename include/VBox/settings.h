@@ -282,9 +282,7 @@ struct VRDESettings
           authType(AuthType_Null),
           ulAuthTimeout(5000),
           fAllowMultiConnection(false),
-          fReuseSingleConnection(false),
-          fVideoChannel(false),
-          ulVideoChannelQuality(75)
+          fReuseSingleConnection(false)
     {}
 
     bool operator==(const VRDESettings& v) const;
@@ -294,9 +292,7 @@ struct VRDESettings
     uint32_t        ulAuthTimeout;
     com::Utf8Str    strAuthLibrary;
     bool            fAllowMultiConnection,
-                    fReuseSingleConnection,
-                    fVideoChannel;
-    uint32_t        ulVideoChannelQuality;
+                    fReuseSingleConnection;
     com::Utf8Str    strVrdeExtPack;
     StringsMap      mapProperties;
 };
