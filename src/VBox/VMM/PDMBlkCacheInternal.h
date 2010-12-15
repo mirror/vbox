@@ -246,6 +246,10 @@ typedef struct PDMBLKCACHE
     /** Number of times a write was deferred because the cache entry was still in progress */
     STAMCOUNTER StatWriteDeferred;
 #endif
+
+    /** Flag whether the cache was suspended. */
+    volatile bool                 fSuspended;
+
 } PDMBLKCACHE, *PPDMBLKCACHE;
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(PDMBLKCACHE, StatWriteDeferred, sizeof(uint64_t));

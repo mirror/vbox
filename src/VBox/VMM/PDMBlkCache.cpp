@@ -646,6 +646,11 @@ static void pdmBlkCacheEntryCommit(PPDMBLKCACHEENTRY pEntry)
 static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
 {
     uint32_t cbCommitted = 0;
+
+    /* Return if the cache was suspended. */
+    if (pBlkCache->fSuspended)
+        return;
+
     RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
     /* The list is moved to a new header to reduce locking overhead. */
@@ -682,7 +687,12 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
     RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
     AssertMsg(pBlkCache->pCache->cbDirty >= cbCommitted,
               ("Number of committed bytes exceeds number of dirty bytes\n"));
-    ASMAtomicSubU32(&pBlkCache->pCache->cbDirty, cbCommitted);
+    uint32_t cbDirtyOld = ASMAtomicSubU32(&pBlkCache->pCache->cbDirty, cbCommitted);
+
+    /* Reset the commit timer if we don't have any dirty bits. */
+    if (   !(cbDirtyOld - cbCommitted)
+        && pBlkCache->pCache->u32CommitTimeoutMs != 0)
+        TMTimerStop(pBlkCache->pCache->pTimerCommit);
 }
 
 /**
@@ -751,7 +761,12 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
 
         /* Prevent committing if the VM was suspended. */
         if (RT_LIKELY(!ASMAtomicReadBool(&pCache->fIoErrorVmSuspended)))
-            fDirtyBytesExceeded = (cbDirty >= pCache->cbCommitDirtyThreshold);
+            fDirtyBytesExceeded = (cbDirty + pEntry->cbData >= pCache->cbCommitDirtyThreshold);
+        else if (!cbDirty && pCache->u32CommitTimeoutMs > 0)
+        {
+            /* Arm the commit timer. */
+            TMTimerSetMillies(pCache->pTimerCommit, pCache->u32CommitTimeoutMs);
+        }
     }
 
     return fDirtyBytesExceeded;
@@ -787,7 +802,6 @@ static void pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUse
         && !ASMAtomicReadBool(&pCache->fIoErrorVmSuspended))
         pdmBlkCacheCommitDirtyEntries(pCache);
 
-    TMTimerSetMillies(pTimer, pCache->u32CommitTimeoutMs);
     LogFlowFunc(("Entries committed, going to sleep\n"));
 }
 
@@ -1190,6 +1204,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
         if (   pBlkCache
             && pBlkCache->pszId)
         {
+            pBlkCache->fSuspended = false;
             pBlkCache->pCache = pBlkCacheGlobal;
             RTListInit(&pBlkCache->ListDirtyNotCommitted);
 
@@ -1202,29 +1217,21 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
                     pBlkCache->pTree  = (PAVLRU64TREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
                     if (pBlkCache->pTree)
                     {
-                        /* Arm the timer if this is the first endpoint. */
-                        if (   !pBlkCacheGlobal->cRefs
-                            && pBlkCacheGlobal->u32CommitTimeoutMs > 0)
-                            rc = TMTimerSetMillies(pBlkCacheGlobal->pTimerCommit, pBlkCacheGlobal->u32CommitTimeoutMs);
-
-                        if (RT_SUCCESS(rc))
-                        {
 #ifdef VBOX_WITH_STATISTICS
-                            STAMR3RegisterF(pBlkCacheGlobal->pVM, &pBlkCache->StatWriteDeferred,
-                                           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                                           STAMUNIT_COUNT, "Number of deferred writes",
-                                           "/PDM/BlkCache/%s/Cache/DeferredWrites", pBlkCache->pszId);
+                        STAMR3RegisterF(pBlkCacheGlobal->pVM, &pBlkCache->StatWriteDeferred,
+                                        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                        STAMUNIT_COUNT, "Number of deferred writes",
+                                        "/PDM/BlkCache/%s/Cache/DeferredWrites", pBlkCache->pszId);
 #endif
 
-                            /* Add to the list of users. */
-                            pBlkCacheGlobal->cRefs++;
-                            RTListAppend(&pBlkCacheGlobal->ListUsers, &pBlkCache->NodeCacheUser);
-                            pdmBlkCacheLockLeave(pBlkCacheGlobal);
+                        /* Add to the list of users. */
+                        pBlkCacheGlobal->cRefs++;
+                        RTListAppend(&pBlkCacheGlobal->ListUsers, &pBlkCache->NodeCacheUser);
+                        pdmBlkCacheLockLeave(pBlkCacheGlobal);
 
-                            *ppBlkCache = pBlkCache;
-                            LogFlowFunc(("returns success\n"));
-                            return VINF_SUCCESS;
-                        }
+                        *ppBlkCache = pBlkCache;
+                        LogFlowFunc(("returns success\n"));
+                        return VINF_SUCCESS;
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -1416,10 +1423,6 @@ VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache)
 
     pCache->cRefs--;
     RTListNodeRemove(&pBlkCache->NodeCacheUser);
-
-    if (   !pCache->cRefs
-        && pCache->u32CommitTimeoutMs > 0)
-        TMTimerStop(pCache->pTimerCommit);
 
     pdmBlkCacheLockLeave(pCache);
 
@@ -1934,6 +1937,9 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
     LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pcSgBuf=%#p cbRead=%u pvUser=%#p\n",
                  pBlkCache, pBlkCache->pszId, off, pcSgBuf, cbRead, pvUser));
 
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+    AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
+
     RTSGBUF SgBuf;
     RTSgBufClone(&SgBuf, pcSgBuf);
 
@@ -2148,6 +2154,9 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
 
     LogFlowFunc((": pBlkCache=%#p{%s} off=%llu pcSgBuf=%#p cbWrite=%u pvUser=%#p\n",
                  pBlkCache, pBlkCache->pszId, off, pcSgBuf, cbWrite, pvUser));
+
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+    AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
 
     RTSGBUF SgBuf;
     RTSgBufClone(&SgBuf, pcSgBuf);
@@ -2377,6 +2386,9 @@ VMMR3DECL(int) PDMR3BlkCacheFlush(PPDMBLKCACHE pBlkCache, void *pvUser)
 
     LogFlowFunc((": pBlkCache=%#p{%s}\n", pBlkCache, pBlkCache->pszId));
 
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+    AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
+
     /* Commit dirty entries in the cache. */
     pdmBlkCacheCommit(pBlkCache);
 
@@ -2536,5 +2548,65 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
         pdmBlkCacheIoXferCompleteEntry(pBlkCache, hIoXfer, rcIoXfer);
     else
         pdmBlkCacheReqUpdate(pBlkCache, hIoXfer->pReq, hIoXfer->cbXfer, rcIoXfer, true);
+}
+
+/**
+ * Callback for the AVL do with all routine. Waits for a cachen entry to finish any pending I/O.
+ *
+ * @returns IPRT status code.
+ * @param    pNode     The node to destroy.
+ * @param    pvUser    Opaque user data.
+ */
+static int pdmBlkCacheEntryQuiesce(PAVLRU64NODECORE pNode, void *pvUser)
+{
+    PPDMBLKCACHEENTRY  pEntry = (PPDMBLKCACHEENTRY)pNode;
+    PPDMBLKCACHE pBlkCache = pEntry->pBlkCache;
+
+    while (ASMAtomicReadU32(&pEntry->fFlags) & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS)
+    {
+        /* Leave the locks to let the I/O thread make progress but reference the entry to prevent eviction. */
+        pdmBlkCacheEntryRef(pEntry);
+        RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+
+        RTThreadSleep(1);
+
+        /* Re-enter all locks and drop the reference. */
+        RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
+        pdmBlkCacheEntryRelease(pEntry);
+    }
+
+    AssertMsg(!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS),
+                ("Entry is dirty and/or still in progress fFlags=%#x\n", pEntry->fFlags));
+
+    return VINF_SUCCESS;
+}
+
+VMMR3DECL(int) PDMR3BlkCacheSuspend(PPDMBLKCACHE pBlkCache)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("pBlkCache=%#p\n", pBlkCache));
+
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+
+    ASMAtomicXchgBool(&pBlkCache->fSuspended, true);
+
+    /* Wait for all I/O to complete. */
+    RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
+    rc = RTAvlrU64DoWithAll(pBlkCache->pTree, true, pdmBlkCacheEntryQuiesce, NULL);
+    AssertRC(rc);
+    RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+
+    return rc;
+}
+
+VMMR3DECL(int) PDMR3BlkCacheResume(PPDMBLKCACHE pBlkCache)
+{
+    LogFlowFunc(("pBlkCache=%#p\n", pBlkCache));
+
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+
+    ASMAtomicXchgBool(&pBlkCache->fSuspended, false);
+
+    return VINF_SUCCESS;
 }
 
