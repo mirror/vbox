@@ -1896,8 +1896,15 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 {
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
     drvvdSetWritable(pThis);
     pThis->fErrorUseRuntime = true;
+
+    if (pThis->pBlkCache)
+    {
+        int rc = PDMR3BlkCacheResume(pThis->pBlkCache);
+        AssertRC(rc);
+    }
 }
 
 /**
@@ -1919,6 +1926,13 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    if (pThis->pBlkCache)
+    {
+        int rc = PDMR3BlkCacheSuspend(pThis->pBlkCache);
+        AssertRC(rc);
+    }
+
     drvvdSetReadonly(pThis);
 }
 
