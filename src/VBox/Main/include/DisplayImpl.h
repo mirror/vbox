@@ -52,6 +52,8 @@ typedef struct _DISPLAYFBINFO
     uint8_t *pu8FramebufferVRAM;
     uint32_t u32LineSize;
 
+    uint16_t flags;
+
     VBOXVIDEOINFOHOSTEVENTS *pHostEvents;
 
     volatile uint32_t u32ResizeStatus;
@@ -75,6 +77,7 @@ typedef struct _DISPLAYFBINFO
         uint32_t cbLine;
         int w;
         int h;
+        uint16_t flags;
     } pendingResize;
 
 #ifdef VBOX_WITH_HGSMI
@@ -121,7 +124,7 @@ public:
     int  registerSSM(PVM pVM);
 
     // public methods only for internal purposes
-    int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
+    int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h, uint16_t flags);
     void handleDisplayUpdateLegacy (int x, int y, int cx, int cy);
     void handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int h);
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -242,6 +245,7 @@ private:
     uint32_t mLastBitsPerPixel;
     int mLastWidth;
     int mLastHeight;
+    uint16_t mLastFlags;
 
     VBVAMEMORY *mpVbvaMemory;
     bool        mfVideoAccelEnabled;

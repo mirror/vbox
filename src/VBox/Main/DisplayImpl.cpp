@@ -616,11 +616,11 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
  *  @thread EMT
  */
 int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM,
-                                  uint32_t cbLine, int w, int h)
+                                  uint32_t cbLine, int w, int h, uint16_t flags)
 {
     LogRel (("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p "
-             "w=%d h=%d bpp=%d cbLine=0x%X\n",
-             uScreenId, pvVRAM, w, h, bpp, cbLine));
+             "w=%d h=%d bpp=%d cbLine=0x%X, flags=0x%X\n",
+             uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
 
     /* If there is no framebuffer, this call is not interesting. */
     if (   uScreenId >= mcMonitors
@@ -634,6 +634,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     mLastBitsPerPixel = bpp,
     mLastWidth = w;
     mLastHeight = h;
+    mLastFlags = flags;
 
     ULONG pixelFormat;
 
@@ -674,6 +675,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         maFramebuffers[uScreenId].pendingResize.cbLine      = cbLine;
         maFramebuffers[uScreenId].pendingResize.w           = w;
         maFramebuffers[uScreenId].pendingResize.h           = h;
+        maFramebuffers[uScreenId].pendingResize.flags       = flags;
 
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
@@ -738,7 +740,7 @@ void Display::handleResizeCompletedEMT (void)
              */
             pFBInfo->pendingResize.fPending = false;
             handleDisplayResize (uScreenId, pFBInfo->pendingResize.bpp, pFBInfo->pendingResize.pvVRAM,
-                                 pFBInfo->pendingResize.cbLine, pFBInfo->pendingResize.w, pFBInfo->pendingResize.h);
+                                 pFBInfo->pendingResize.cbLine, pFBInfo->pendingResize.w, pFBInfo->pendingResize.h, pFBInfo->pendingResize.flags);
             continue;
         }
 
@@ -945,14 +947,24 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
 
     if (!mpDrv)
         return;
-    x2 = mpDrv->IConnector.cx + maFramebuffers[0].xOrigin;
-    y2 = mpDrv->IConnector.cy + maFramebuffers[0].yOrigin;
+    /* If VBVA is not in use then maFramebuffers will be zeroed out and this
+     * will still work as it should. */
+    if (!(maFramebuffers[0].flags & VBVA_SCREEN_F_DISABLED))
+    {
+        x2 = mpDrv->IConnector.cx + (int32_t)maFramebuffers[0].xOrigin;
+        y2 = mpDrv->IConnector.cy + (int32_t)maFramebuffers[0].yOrigin;
+    }
     for (unsigned i = 1; i < mcMonitors; ++i)
     {
-        x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
-        y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
-        x2 = RT_MAX(x2, maFramebuffers[i].xOrigin + (int32_t)maFramebuffers[i].w);
-        y2 = RT_MAX(y2, maFramebuffers[i].yOrigin + (int32_t)maFramebuffers[i].h);
+        if (!(maFramebuffers[i].flags & VBVA_SCREEN_F_DISABLED))
+        {
+            x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
+            y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
+            x2 = RT_MAX(x2,   maFramebuffers[i].xOrigin
+                            + (int32_t)maFramebuffers[i].w);
+            y2 = RT_MAX(y2,   maFramebuffers[i].yOrigin
+                            + (int32_t)maFramebuffers[i].h);
+        }
     }
     *px1 = x1;
     *py1 = y1;
@@ -2991,7 +3003,8 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
                                       pFBInfo->pu8FramebufferVRAM,
                                       pFBInfo->u32LineSize,
                                       pFBInfo->w,
-                                      pFBInfo->h);
+                                      pFBInfo->h,
+                                      pFBInfo->flags);
         }
         else if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         {
@@ -3000,7 +3013,8 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
                                       that->mLastAddress,
                                       that->mLastBytesPerLine,
                                       that->mLastWidth,
-                                      that->mLastHeight);
+                                      that->mLastHeight,
+                                      that->mLastFlags);
         }
     }
 
@@ -3021,7 +3035,7 @@ DECLCALLBACK(int) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterfac
     LogFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
                   bpp, pvVRAM, cbLine, cx, cy));
 
-    return pDrv->pDisplay->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy);
+    return pDrv->pDisplay->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, VBVA_SCREEN_F_ACTIVE);
 }
 
 /**
@@ -3433,7 +3447,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
             if (uScreenId != VBOX_VIDEO_PRIMARY_SCREEN)
             {
                 /* Primary screen resize is initiated by the VGA device. */
-                pDrv->pDisplay->handleDisplayResize(uScreenId, pScreen->bitsPerPixel, (uint8_t *)pvVRAM + pFBInfo->u32Offset, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height);
+                pDrv->pDisplay->handleDisplayResize(uScreenId, pScreen->bitsPerPixel, (uint8_t *)pvVRAM + pFBInfo->u32Offset, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height, VBVA_SCREEN_F_ACTIVE);
             }
         }
         else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_END)
@@ -3858,6 +3872,8 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
     pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM + pScreen->u32StartOffset;
     pFBInfo->u32LineSize = pScreen->u32LineSize;
 
+    pFBInfo->flags = pScreen->u16Flags;
+
     if (fNewOrigin)
     {
         /* @todo May be framebuffer/display should be notified in this case. */
@@ -3898,7 +3914,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     return pThis->handleDisplayResize(pScreen->u32ViewIndex, pScreen->u16BitsPerPixel,
                                       (uint8_t *)pvVRAM + pScreen->u32StartOffset,
-                                      pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height);
+                                      pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height, pScreen->u16Flags);
 }
 
 DECLCALLBACK(int) Display::displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
