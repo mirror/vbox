@@ -263,7 +263,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },     /* deprecated */
+    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdeproperty",             MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING },
     { "--vrdeport",                 MODIFYVM_VRDEPORT,                  RTGETOPT_REQ_STRING },
@@ -273,7 +273,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
+    { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },
     { "--vrdeextpack",              MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
@@ -1987,7 +1987,8 @@ int handleModifyVM(HandlerArg *a)
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
                 ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdeServer, COMSETTER(VideoChannel)(ValueUnion.f));
+                CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("VideoChannel/Enabled").raw(),
+                                                        ValueUnion.f? Bstr("true").raw():  Bstr("false").raw()));
                 break;
             }
 
@@ -1999,7 +2000,8 @@ int handleModifyVM(HandlerArg *a)
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
                 ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdeServer, COMSETTER(VideoChannelQuality)(ValueUnion.u32));
+                CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("VideoChannel/Quality").raw(),
+                                                        Bstr(ValueUnion.psz).raw()));
                 break;
             }
 

@@ -92,8 +92,6 @@ HRESULT VRDEServer::init (Machine *aParent)
     mData->mEnabled              = FALSE;
     mData->mAllowMultiConnection = FALSE;
     mData->mReuseSingleConnection = FALSE;
-    mData->mVideoChannel         = FALSE;
-    mData->mVideoChannelQuality  = 75;
     mData->mVrdeExtPack.setNull();
 
     /* Confirm a successful initialization */
@@ -211,8 +209,6 @@ HRESULT VRDEServer::loadSettings(const settings::VRDESettings &data)
     mData->mAuthLibrary = data.strAuthLibrary;
     mData->mAllowMultiConnection = data.fAllowMultiConnection;
     mData->mReuseSingleConnection = data.fReuseSingleConnection;
-    mData->mVideoChannel = data.fVideoChannel;
-    mData->mVideoChannelQuality = data.ulVideoChannelQuality;
     mData->mVrdeExtPack = data.strVrdeExtPack;
     mData->mProperties = data.mapProperties;
 
@@ -239,8 +235,6 @@ HRESULT VRDEServer::saveSettings(settings::VRDESettings &data)
     data.ulAuthTimeout = mData->mAuthTimeout;
     data.fAllowMultiConnection = !!mData->mAllowMultiConnection;
     data.fReuseSingleConnection = !!mData->mReuseSingleConnection;
-    data.fVideoChannel = !!mData->mVideoChannel;
-    data.ulVideoChannelQuality = mData->mVideoChannelQuality;
     data.strVrdeExtPack = mData->mVrdeExtPack;
     data.mapProperties = mData->mProperties;
 
@@ -869,98 +863,6 @@ STDMETHODIMP VRDEServer::COMSETTER(ReuseSingleConnection) (
         mlock.release();
 
         mParent->onVRDEServerChange(/* aRestart */ TRUE); // @todo needs a restart?
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP VRDEServer::COMGETTER(VideoChannel) (
-    BOOL *aVideoChannel)
-{
-    CheckComArgOutPointerValid(aVideoChannel);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aVideoChannel = mData->mVideoChannel;
-
-    return S_OK;
-}
-
-STDMETHODIMP VRDEServer::COMSETTER(VideoChannel) (
-    BOOL aVideoChannel)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mData->mVideoChannel != aVideoChannel)
-    {
-        mData.backup();
-        mData->mVideoChannel = aVideoChannel;
-
-        /* leave the lock before informing callbacks */
-        alock.release();
-
-        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
-        mlock.release();
-
-        mParent->onVRDEServerChange(/* aRestart */ TRUE);
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP VRDEServer::COMGETTER(VideoChannelQuality) (
-    ULONG *aVideoChannelQuality)
-{
-    CheckComArgOutPointerValid(aVideoChannelQuality);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aVideoChannelQuality = mData->mVideoChannelQuality;
-
-    return S_OK;
-}
-
-STDMETHODIMP VRDEServer::COMSETTER(VideoChannelQuality) (
-    ULONG aVideoChannelQuality)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    aVideoChannelQuality = RT_CLAMP(aVideoChannelQuality, 10, 100);
-
-    if (mData->mVideoChannelQuality != aVideoChannelQuality)
-    {
-        mData.backup();
-        mData->mVideoChannelQuality = aVideoChannelQuality;
-
-        /* leave the lock before informing callbacks */
-        alock.release();
-
-        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
-        mParent->setModified(Machine::IsModified_VRDEServer);
-        mlock.release();
-
-        mParent->onVRDEServerChange(/* aRestart */ FALSE);
     }
 
     return S_OK;
