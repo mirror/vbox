@@ -210,6 +210,7 @@ public:
 #ifdef VBOX_WITH_EXTPACK
     ExtPackManager *getExtPackManager();
 #endif
+    EventSource *getEventSource() { return mEventSource; }
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void VRDPClientConnect(uint32_t u32ClientId);
