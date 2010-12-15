@@ -1008,7 +1008,8 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
 
     pelmMedium->setAttributePath("location", mdm.strLocation);
 
-    pelmMedium->setAttribute("format", mdm.strFormat);
+    if (devType == DeviceType_HardDisk || RTStrICmp(mdm.strFormat.c_str(), "RAW"))
+        pelmMedium->setAttribute("format", mdm.strFormat);
     if (mdm.fAutoReset)
         pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
     if (mdm.strDescription.length())
