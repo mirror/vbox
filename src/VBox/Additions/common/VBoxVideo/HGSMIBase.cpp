@@ -520,9 +520,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
          */
         fFlags |= VBOX_MOUSE_POINTER_VISIBLE;
     }
-#ifndef DEBUG_misha
-    LogFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
-#endif
+    LogFlowFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
     if (cbData > cbLength)
     {
         LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
@@ -557,9 +555,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     }
     else
         rc = VERR_NO_MEMORY;
-#ifndef DEBUG_misha
-    LogFunc(("rc %d\n", rc));
-#endif
+    LogFlowFunc(("rc %d\n", rc));
     return RT_SUCCESS(rc);
 }
 
