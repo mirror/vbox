@@ -1638,6 +1638,20 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
         return S_OK;
     }
 
+    DeviceType_T devType = getDeviceType();
+    // DVD media can only be readonly.
+    if (devType == DeviceType_DVD && aType != MediumType_Readonly)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot change the type of DVD medium '%s'"),
+                        m->strLocationFull.c_str());
+    // Floppy media can only be writethrough or readonly.
+    if (   devType == DeviceType_Floppy
+        && aType != MediumType_Writethrough
+        && aType != MediumType_Readonly)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot change the type of floppy medium '%s'"),
+                        m->strLocationFull.c_str());
+
     /* cannot change the type of a differencing medium */
     if (m->pParent)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -1696,17 +1710,24 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
                                     tr("Cannot change type for medium '%s' to 'Shareable' since it is a dynamic medium storage unit"),
                                     m->strLocationFull.c_str());
             }
+            else if (aType == MediumType_Readonly && devType == DeviceType_HardDisk)
+            {
+                // Readonly hard disks are not allowed, this medium type is reserved for
+                // DVDs and floppy images at the moment. Later we might allow readonly hard
+                // disks, but that's extremely unusual and many guest OSes will have trouble.
+                return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                tr("Cannot change type for medium '%s' to 'Readonly' since it is a hard disk"),
+                                m->strLocationFull.c_str());
+            }
             break;
         }
         default:
             AssertFailedReturn(E_FAIL);
     }
 
-    if (    aType == MediumType_MultiAttach
-         || aType == MediumType_Readonly
-       )
+    if (aType == MediumType_MultiAttach)
     {
-        // These two types are new with VirtualBox 4.0 and therefore require settings
+        // This type is new with VirtualBox 4.0 and therefore requires settings
         // version 1.11 in the settings backend. Unfortunately it is not enough to do
         // the usual routine in MachineConfigFile::bumpSettingsVersionIfNeeded() for
         // two reasons: The medium type is a property of the media registry tree, which
@@ -1718,7 +1739,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
         const Guid &uuidGlobalRegistry = m->pVirtualBox->getGlobalRegistryId();
         if (isInRegistry(uuidGlobalRegistry))
             return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot change type for medium '%s': the media types 'MultiAttach' and 'Readonly' can only be used "
+                            tr("Cannot change type for medium '%s': the media type 'MultiAttach' can only be used "
                                "on media registered with a machine that was created with VirtualBox 4.0 or later"),
                             m->strLocationFull.c_str());
     }
