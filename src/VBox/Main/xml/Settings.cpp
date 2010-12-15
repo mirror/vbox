@@ -646,12 +646,8 @@ void ConfigFileBase::readMedium(MediaType t,
 
             if (fNeedsFilePath)
             {
-                if (!(pelmImage->getAttributeValue("filePath", med.strLocation)))
+                if (!(pelmImage->getAttributeValuePath("filePath", med.strLocation)))
                     throw ConfigFileError(this, &elmMedium, N_("Required %s/@filePath attribute is missing"), elmMedium.getName());
-                else
-                    // IPRT can handle forward slashes in file paths everywhere, but there might be
-                    // backslashes in the settings file, so convert them into forward slashes.
-                    med.strLocation.useForwardSlashes();
             }
         }
 
@@ -1010,10 +1006,7 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
 
     pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
 
-    // always use forward slashes when writing out settings, never '\'
-    Utf8Str strLocation(mdm.strLocation);
-    strLocation.useForwardSlashes();
-    pelmMedium->setAttribute("location", strLocation);
+    pelmMedium->setAttributePath("location", mdm.strLocation);
 
     pelmMedium->setAttribute("format", mdm.strFormat);
     if (mdm.fAutoReset)
@@ -3060,7 +3053,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
         throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@timeStamp attribute is missing"));
     parseTimestamp(snap.timestamp, strTemp);
 
-    elmSnapshot.getAttributeValue("stateFile", snap.strStateFile);      // online snapshots only
+    elmSnapshot.getAttributeValuePath("stateFile", snap.strStateFile);      // online snapshots only
 
     // parse Hardware before the other elements because other things depend on it
     const xml::ElementNode *pelmHardware;
@@ -3183,14 +3176,12 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         if (m->sv < SettingsVersion_v1_5)
             convertOldOSType_pre1_5(machineUserData.strOsType);
 
-        elmMachine.getAttributeValue("stateFile", strStateFile);
+        elmMachine.getAttributeValuePath("stateFile", strStateFile);
+
         if (elmMachine.getAttributeValue("currentSnapshot", str))
             parseUUID(uuidCurrentSnapshot, str);
 
-        elmMachine.getAttributeValue("snapshotFolder", machineUserData.strSnapshotFolder);
-        // IPRT can handle forward slashes in file paths everywhere, but there might be
-        // backslashes in the settings file, so convert them into forward slashes.
-        machineUserData.strSnapshotFolder.useForwardSlashes();
+        elmMachine.getAttributeValuePath("snapshotFolder", machineUserData.strSnapshotFolder);
 
         if (!elmMachine.getAttributeValue("currentStateModified", fCurrentStateModified))
             fCurrentStateModified = true;
@@ -4121,7 +4112,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
     pelmSnapshot->setAttribute("timeStamp", makeString(snap.timestamp));
 
     if (snap.strStateFile.length())
-        pelmSnapshot->setAttribute("stateFile", snap.strStateFile);
+        pelmSnapshot->setAttributePath("stateFile", snap.strStateFile);
 
     if (snap.strDescription.length())
         pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
@@ -4209,18 +4200,13 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     if (    strStateFile.length()
          && !(fl & BuildMachineXML_SuppressSavedState)
        )
-        elmMachine.setAttribute("stateFile", strStateFile);
+        elmMachine.setAttributePath("stateFile", strStateFile);
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && !uuidCurrentSnapshot.isEmpty())
         elmMachine.setAttribute("currentSnapshot", uuidCurrentSnapshot.toStringCurly());
 
     if (machineUserData.strSnapshotFolder.length())
-    {
-        // always use forward slashes when writing out settings, never '\'
-        Utf8Str strSnapshotFolder(machineUserData.strSnapshotFolder);
-        strSnapshotFolder.useForwardSlashes();
-        elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
-    }
+        elmMachine.setAttributePath("snapshotFolder", machineUserData.strSnapshotFolder);
     if (!fCurrentStateModified)
         elmMachine.setAttribute("currentStateModified", fCurrentStateModified);
     elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));

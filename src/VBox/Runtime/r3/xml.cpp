@@ -837,6 +837,24 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, iprt::MiniString &str
 }
 
 /**
+ * Like getAttributeValue (ministring variant), but makes sure that all backslashes
+ * are converted to forward slashes.
+ * @param pcszMatch
+ * @param str
+ * @return
+ */
+bool ElementNode::getAttributeValuePath(const char *pcszMatch, iprt::MiniString &str) const
+{
+    if (getAttributeValue(pcszMatch, str))
+    {
+        str.findReplace('\\', '/');
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a signed integer. This calls
  * RTStrToInt32Ex internally and will only output the integer if that
@@ -1050,6 +1068,20 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
 
     return pattrReturn;
 
+}
+
+/**
+ * Like setAttribute (ministring variant), but replaces all backslashes with forward slashes
+ * before calling that one.
+ * @param pcszName
+ * @param strValue
+ * @return
+ */
+AttributeNode* ElementNode::setAttributePath(const char *pcszName, const iprt::MiniString &strValue)
+{
+    iprt::MiniString strTemp(strValue);
+    strTemp.findReplace('\\', '/');
+    return setAttribute(pcszName, strTemp.c_str());
 }
 
 /**

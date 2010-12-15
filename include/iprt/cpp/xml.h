@@ -453,6 +453,7 @@ public:
     const AttributeNode* findAttribute(const char *pcszMatch) const;
     bool getAttributeValue(const char *pcszMatch, const char *&ppcsz) const;
     bool getAttributeValue(const char *pcszMatch, iprt::MiniString &str) const;
+    bool getAttributeValuePath(const char *pcszMatch, iprt::MiniString &str) const;
     bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
@@ -472,6 +473,7 @@ public:
     {
         return setAttribute(pcszName, strValue.c_str());
     }
+    AttributeNode* setAttributePath(const char *pcszName, const iprt::MiniString &strValue);
     AttributeNode* setAttribute(const char *pcszName, int32_t i);
     AttributeNode* setAttribute(const char *pcszName, uint32_t i);
     AttributeNode* setAttribute(const char *pcszName, int64_t i);
