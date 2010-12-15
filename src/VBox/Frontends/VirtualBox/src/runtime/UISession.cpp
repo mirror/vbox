@@ -360,6 +360,10 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
      * First try updating the Guest Additions directly without mounting the .ISO.
      */
     bool fDoMount = false;
+    /* Auto-update in GUI currently is disabled. */
+#ifndef VBOX_WITH_ADDITIONS_AUTOUPDATE_UI
+    fDoMount = true;
+#else
     CGuest guest = session().GetConsole().GetGuest();
     /* Since we are going to show a modal progress dialog we don't want to wait for the whole
      * update progress being complete - the user might need to interact with the VM to confirm (WHQL)
@@ -393,6 +397,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
             fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
         }
     }
+#endif /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
 
     if (fDoMount) /* Fallback to only mounting the .ISO file. */
     {
