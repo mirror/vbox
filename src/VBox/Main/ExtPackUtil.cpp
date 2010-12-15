@@ -1136,7 +1136,7 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
             rc = VBoxExtPackValidateMember(pszName, enmType, hVfsObj, pszError, cbError);
             if (RT_SUCCESS(rc))
             {
-                PRTVFSFILE phVfsFile;
+                PRTVFSFILE phVfsFile = NULL;
                 if (!strcmp(pszAdjName, VBOX_EXTPACK_DESCRIPTION_NAME))
                     phVfsFile = &hXmlFile;
                 else if (!strcmp(pszAdjName, VBOX_EXTPACK_MANIFEST_NAME))
@@ -1145,8 +1145,6 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
                     phVfsFile = &hSignatureFile;
                 else if (!strncmp(pszAdjName, VBOX_EXTPACK_LICENSE_NAME_PREFIX, sizeof(VBOX_EXTPACK_LICENSE_NAME_PREFIX) - 1))
                     rc = VBoxExtPackValidateStandardFile(pszAdjName, enmType, &hVfsObj, NULL, pszError, cbError);
-                else
-                    phVfsFile = NULL;
                 if (phVfsFile)
                     rc = VBoxExtPackValidateStandardFile(pszAdjName, enmType, &hVfsObj, phVfsFile, pszError, cbError);
             }
