@@ -2057,9 +2057,9 @@ void VBoxProblemReporter::cannotRemoveFiles (const CProgress &aProgress, QWidget
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-bool VBoxProblemReporter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget * /* aParent  = NULL */) const
+bool VBoxProblemReporter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = NULL */) const
 {
-    return messageOkCancel(mainWindowShown(), Warning,
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), Warning,
         tr("<p>The virtual machine(s) <b>%1</b> are currently in a saved state.</p>"
            "<p>If you continue the runtime state of the exported machine(s) "
            "will be discarded. Note that the existing machine(s) are not "
