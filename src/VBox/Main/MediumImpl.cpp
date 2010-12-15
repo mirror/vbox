@@ -1746,10 +1746,11 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 
     m->type = aType;
 
-    // save the global settings; for that we should hold only the VirtualBox lock
+    // save the settings
+    GuidList llRegistriesThatNeedSaving;
+    addToRegistryIDList(llRegistriesThatNeedSaving);
     mlock.release();
-    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -1869,18 +1870,22 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
                         tr("Medium '%s' is not differencing"),
                         m->strLocationFull.c_str());
 
+    HRESULT rc = S_OK;
+
     if (m->autoReset != !!aAutoReset)
     {
         m->autoReset = !!aAutoReset;
 
-        // save the global settings; for that we should hold only the VirtualBox lock
+        // save the settings
+        GuidList llRegistriesThatNeedSaving;
+        addToRegistryIDList(llRegistriesThatNeedSaving);
         mlock.release();
-        AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        return m->pVirtualBox->saveSettings();
+        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
 
-    return S_OK;
+    return rc;
 }
+
 STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
 {
     CheckComArgOutPointerValid(aLastAccessError);
@@ -2299,10 +2304,11 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
 
     it->second = aValue;
 
-    // save the global settings; for that we should hold only the VirtualBox lock
+    // save the settings
+    GuidList llRegistriesThatNeedSaving;
+    addToRegistryIDList(llRegistriesThatNeedSaving);
     mlock.release();
-    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -2376,11 +2382,11 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
         it->second = Utf8Str(values[i]);
     }
 
+    // save the settings
+    GuidList llRegistriesThatNeedSaving;
+    addToRegistryIDList(llRegistriesThatNeedSaving);
     mlock.release();
-
-    // saveSettings needs vbox lock
-    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -6603,9 +6609,9 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
     if (task.isAsync())
     {
         // in asynchronous mode, save settings now
-        // for that we should hold only the VirtualBox lock
-        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        m->pVirtualBox->saveSettings();
+        GuidList llRegistriesThatNeedSaving;
+        addToRegistryIDList(llRegistriesThatNeedSaving);
+        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
     else
         // synchronous mode: report save settings result to caller
@@ -6868,8 +6874,10 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
     // now, at the end of this task (always asynchronous), save the settings
     {
-        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        m->pVirtualBox->saveSettings();
+        // save the settings
+        GuidList llRegistriesThatNeedSaving;
+        addToRegistryIDList(llRegistriesThatNeedSaving);
+        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
 
     /* Everything is explicitly unlocked when the task exits,
@@ -7622,8 +7630,10 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
 
     // now, at the end of this task (always asynchronous), save the settings
     {
-        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        m->pVirtualBox->saveSettings();
+        // save the settings
+        GuidList llRegistriesThatNeedSaving;
+        addToRegistryIDList(llRegistriesThatNeedSaving);
+        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
 
     /* Everything is explicitly unlocked when the task exits,
