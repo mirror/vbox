@@ -15019,14 +15019,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IVBoxSVCUnavailableEvent">IVBoxSVCUnavailableEvent</link>.
       </desc>
     </const>
-    <const name="OnBandwidthGroupChanged" value="69">
+    <const name="OnVBoxSVCAvailable" value="69">
+      <desc>
+        See <link to="IVBoxSVCAvailableEvent">IVBoxSVCAvailableEvent</link>.
+      </desc>
+    </const>
+    <const name="OnBandwidthGroupChanged" value="70">
       <desc>
         See <link to="IBandwidthGroupChangedEvent">IBandwidthGroupChangedEvent</link>.
       </desc>
     </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="70">
+    <const name="Last" value="71">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -16317,6 +16322,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when VBoxSVC becomes unavailable (due to a crash or similar
       unexpected circumstances).
+    </desc>
+  </interface>
+
+  <interface
+    name="IVBoxSVCAvailableEvent" extends="IEvent"
+    uuid="0c971ea4-f3e0-4f4d-8558-ea0239c83031"
+    wsmap="managed" autogen="VBoxEvent" id="OnVBoxSVCAvailable"
+    >
+    <desc>
+      Notification when VBoxSVC becomes available again after being unavailable.
     </desc>
   </interface>
 
