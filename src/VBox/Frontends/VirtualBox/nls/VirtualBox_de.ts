@@ -4021,17 +4021,37 @@
     <message>
         <source>Normal</source>
         <comment>DiskType</comment>
-        <translation>Normal</translation>
+        <translation>normal</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>Nicht veränderlich</translation>
+        <translation>nicht veränderlich</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation>Durchschreibend</translation>
+        <translation>durchschreibend</translation>
+    </message>
+    <message>
+        <source>Differencing</source>
+        <comment>DiskType</comment>
+        <translation>differentiell</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
+        <translation>gemeinsam benutzbar</translation>
+    </message>
+    <message>
+        <source>Readonly</source>
+        <comment>DiskType</comment>
+        <translation>nur lesbar</translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>DiskType</comment>
+        <translation>mehrfach anschließbar</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4412,11 +4432,6 @@
         <source>Setting Up</source>
         <comment>MachineState</comment>
         <translation>wird geändert</translation>
-    </message>
-    <message>
-        <source>Differencing</source>
-        <comment>DiskType</comment>
-        <translation>Differentiell</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -4810,11 +4825,6 @@
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
         <translation></translation>
-    </message>
-    <message>
-        <source>Shareable</source>
-        <comment>DiskType</comment>
-        <translation>Gemeinsam benutzbar</translation>
     </message>
     <message>
         <source>Unknown device</source>
@@ -6022,12 +6032,12 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie sind dabei, ein neues CD/DVD-ROM-Gerät an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie sind dabei, ein neues CD/DVD-ROM-Gerät an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein Medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
         <comment>add attachment routine</comment>
-        <translation>&amp;Platte auswählen</translation>
+        <translation>&amp;Medium auswählen</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
