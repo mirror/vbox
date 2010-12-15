@@ -55,6 +55,9 @@ protected slots:
     /* Category-change slot: */
     virtual void sltCategoryChanged(int cId);
 
+    /* Mark dialog as processed: */
+    virtual void sltMarkProcessed();
+
 protected:
 
     /* UI translator: */
@@ -90,11 +93,15 @@ private slots:
     /* Slot to update whats-this: */
     void sltUpdateWhatsThis(bool fGotFocus = false);
 
+    /* Slot to handle reject: */
+    void reject();
+
 private:
 
     /* Event-handlers: */
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
+    void closeEvent(QCloseEvent *pEvent);
 
     void assignValidator(UISettingsPage *pPage);
 
@@ -102,6 +109,7 @@ private:
     bool m_fPolished;
 
     /* Error & Warning stuff: */
+    bool m_fProcessed;
     bool m_fValid;
     bool m_fSilent;
     QString m_strErrorHint;

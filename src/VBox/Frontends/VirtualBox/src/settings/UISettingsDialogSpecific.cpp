@@ -393,6 +393,7 @@ void UIGLSettingsDlg::getFrom()
     /* Create global settings loader,
      * it will load global settings & delete itself in the appropriate time: */
     UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    connect(pGlobalSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkProcessed()));
     /* Set pages to be loaded: */
     pGlobalSettingsLoader->setPageList(m_pSelector->settingPages());
     /* Start loader: */
@@ -691,6 +692,7 @@ void UIVMSettingsDlg::getFrom()
     /* Create machine settings loader,
      * it will load machine settings & delete itself in the appropriate time: */
     UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    connect(pMachineSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkProcessed()));
     connect(pMachineSettingsLoader, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltSetFirstRunFlag()));
     /* Set pages to be loaded: */
     pMachineSettingsLoader->setPageList(m_pSelector->settingPages());
