@@ -21,6 +21,7 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTimer>
+#include <QCloseEvent>
 
 /* Local includes */
 #include "UISettingsDialog.h"
@@ -48,6 +49,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent /* = 0 */)
     , m_pStack(0)
     /* Common variables: */
     , m_fPolished(false)
+    /* Loading stuff: */
+    , m_fProcessed(false)
     /* Error/Warning stuff: */
     , m_fValid(true)
     , m_fSilent(true)
@@ -185,6 +188,11 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+}
+
+void UISettingsDialog::sltMarkProcessed()
+{
+    m_fProcessed = true;
 }
 
 void UISettingsDialog::retranslateUi()
@@ -411,6 +419,12 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
 #endif
 }
 
+void UISettingsDialog::reject()
+{
+    if (m_fProcessed)
+        QIMainDialog::reject();
+}
+
 bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore objects which are NOT widgets: */
@@ -506,6 +520,11 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
         s.setWidth(iMinWidth);
     resize(s);
 #endif /* Q_WS_MAC */
+}
+
+void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
+{
+    m_fProcessed ? pEvent->accept() : pEvent->ignore();
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)

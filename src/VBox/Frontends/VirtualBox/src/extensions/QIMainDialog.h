@@ -66,10 +66,10 @@ protected:
 
 protected slots:
 
-    void accept();
-    void reject();
-    void done (QDialog::DialogCode aRescode);
+    virtual void accept();
+    virtual void reject();
 
+    void done (QDialog::DialogCode aRescode);
     void setResult (QDialog::DialogCode aRescode);
 
     void openAction (QAction *aAction);

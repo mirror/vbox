@@ -327,8 +327,9 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                         {
                             reject();
                             return true;
-                            break;
                         }
+                        default:
+                            break;
                     }
                 }
         }
