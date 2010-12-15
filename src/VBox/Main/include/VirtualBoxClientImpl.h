@@ -75,7 +75,7 @@ private:
         Data()
         {}
 
-        const ComPtr<IVirtualBox> m_pVirtualBox;
+        ComPtr<IVirtualBox> m_pVirtualBox;
         const ComObjPtr<EventSource> m_pEventSource;
 
         RTTHREAD m_ThreadWatcher;

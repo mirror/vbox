@@ -72,7 +72,7 @@ HRESULT VirtualBoxClient::init()
     if (ASMAtomicIncU32(&g_cInstances) != 1)
         AssertFailedReturn(E_FAIL);
 
-    rc = unconst(mData.m_pVirtualBox).createLocalObject(CLSID_VirtualBox);
+    rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
     AssertComRCReturnRC(rc);
 
     rc = unconst(mData.m_pEventSource).createObject();
@@ -129,7 +129,7 @@ void VirtualBoxClient::uninit()
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
     }
 
-    unconst(mData.m_pVirtualBox).setNull();
+    mData.m_pVirtualBox.setNull();
 
     ASMAtomicDecU32(&g_cInstances);
 }
@@ -150,7 +150,7 @@ STDMETHODIMP VirtualBoxClient::COMGETTER(VirtualBox)(IVirtualBox **aVirtualBox)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* this is const, no need to lock */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     mData.m_pVirtualBox.queryInterfaceTo(aVirtualBox);
     return S_OK;
 }
@@ -219,7 +219,11 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
     {
         {
             HRESULT rc = S_OK;
-            ComPtr<IVirtualBox> pV = pThis->mData.m_pVirtualBox;
+            ComPtr<IVirtualBox> pV;
+            {
+                AutoReadLock alock(pThis COMMA_LOCKVAL_SRC_POS);
+                pV = pThis->mData.m_pVirtualBox;
+            }
             if (!pV.isNull())
             {
                 ULONG rev;
@@ -227,11 +231,13 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                 if (FAILED_DEAD_INTERFACE(rc))
                 {
                     LogRel(("VirtualBoxClient: detected unresponsive VBoxSVC (rc=%Rhrc)\n", rc));
+                    {
+                        AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
+                        /* Throw away the VirtualBox reference, it's no longer
+                         * usable as VBoxSVC terminated in the mean time. */
+                        pThis->mData.m_pVirtualBox.setNull();
+                    }
                     fireVBoxSVCUnavailableEvent(pThis->mData.m_pEventSource);
-
-                    /* Throw away the VirtualBox reference, it's no longer
-                     * usable as VBoxSVC terminated in the mean time. */
-                    unconst(pThis->mData.m_pVirtualBox).setNull();
                 }
             }
             else
@@ -240,11 +246,22 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                  * this fails use an increased waiting time as very frequent
                  * restart attempts in some wedged config can cause high CPU
                  * and disk load. */
-                rc = unconst(pThis->mData.m_pVirtualBox).createLocalObject(CLSID_VirtualBox);
+                ComPtr<IVirtualBox> pVBox;
+                rc = pVBox.createLocalObject(CLSID_VirtualBox);
                 if (FAILED(rc))
                     cMillies = 3 * VBOXCLIENT_DEFAULT_INTERVAL;
                 else
+                {
+                    LogRel(("VirtualBoxClient: detected working VBoxSVC (rc=%Rhrc)\n", rc));
+                    {
+                        AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
+                        /* Update the VirtualBox reference, there's a working
+                         * VBoxSVC again from now on. */
+                        pThis->mData.m_pVirtualBox = pVBox;
+                    }
+                    fireVBoxSVCAvailableEvent(pThis->mData.m_pEventSource);
                     cMillies = VBOXCLIENT_DEFAULT_INTERVAL;
+                }
             }
         }
         vrc = RTSemEventWait(sem, cMillies);
