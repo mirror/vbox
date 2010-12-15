@@ -95,14 +95,14 @@ static const RTLDROPS s_rtldrNativeOps =
  */
 RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
-    return RTLdrLoadEx(pszFilename, phLdrMod, NULL, 0);
+    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*=fFlags*/, NULL, 0);
 }
 RT_EXPORT_SYMBOL(RTLdrLoad);
 
 
-RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError)
+RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
 {
-    LogFlow(("RTLdrLoadEx: pszFilename=%p:{%s} phLdrMod=%p pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, pszError, cbError));
+    LogFlow(("RTLdrLoadEx: pszFilename=%p:{%s} phLdrMod=%p fFlags=%08x pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, fFlags, pszError, cbError));
 
     /*
      * Validate and massage the input.
@@ -135,7 +135,7 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszEr
         /*
          * Attempt to open the module.
          */
-        rc = rtldrNativeLoad(pszFilename, &pMod->hNative, pszError, cbError);
+        rc = rtldrNativeLoad(pszFilename, &pMod->hNative, fFlags, pszError, cbError);
         if (RT_SUCCESS(rc))
         {
             *phLdrMod = &pMod->Core;

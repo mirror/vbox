@@ -835,7 +835,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             char    szErr[8192];
 
             Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, szErr, sizeof(szErr));
+            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, 0 /*=fFlags*/, szErr, sizeof(szErr));
 
             if (RT_SUCCESS(rrc))
             {

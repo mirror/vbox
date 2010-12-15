@@ -40,7 +40,7 @@
 #include "internal/ldr.h"
 
 
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError, size_t cbError)
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, char *pszError, size_t cbError)
 {
     /*
      * Do we need to add an extension?
@@ -68,7 +68,12 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError
     /*
      * Attempt load.
      */
-    void *pvMod = dlopen(pszFilename, RTLD_NOW | RTLD_LOCAL);
+    int fFlagsNative = RTLD_NOW;
+    if (fFlags & RTLDRFLAGS_GLOBAL)
+        fFlagsNative |= RTLD_GLOBAL;
+    else
+        fFlagsNative |= RTLD_LOCAL;
+    void *pvMod = dlopen(pszFilename, fFlagsNative);
     if (pvMod)
     {
         *phHandle = (uintptr_t)pvMod;

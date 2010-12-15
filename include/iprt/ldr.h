@@ -35,6 +35,14 @@
  * @{
  */
 
+/** Symbols defined in this library are not made available to resolve
+ * references in subsequently loaded libraries (default). */
+#define RTLDRFLAGS_LOCAL        0
+/** Symbols defined in this library will be made available for symbol
+ * resolution of subsequently loaded libraries. */
+#define RTLDRFLAGS_GLOBAL       RT_BIT(0)
+
+
 RT_C_DECLS_BEGIN
 
 
@@ -88,10 +96,11 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
  * @returns iprt status code.
  * @param   pszFilename Image filename.
  * @param   phLdrMod    Where to store the handle to the loader module.
+ * @param   fFlags      See RTLDFLAGS_.
  * @param   pszError    Where to store an error message on failure. Optional.
  * @param   cbError     The size of the buffer pointed to by @a pszError.
  */
-RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszError, size_t cbError);
+RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError);
 
 /**
  * Loads a dynamic load library (/shared object) image file residing in the

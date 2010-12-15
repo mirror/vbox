@@ -263,7 +263,7 @@ int HGCMService::loadServiceDLL (void)
 
     char szErr[8192];
     szErr[0] = '\0';
-    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod, szErr, sizeof(szErr));
+    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod, 0 /*=fFlags*/, szErr, sizeof(szErr));
 
     if (RT_SUCCESS(rc))
     {

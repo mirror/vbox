@@ -39,9 +39,10 @@
 #include "internal/ldr.h"
 
 
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, char *pszError, size_t cbError)
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, char *pszError, size_t cbError)
 {
     Assert(sizeof(*phHandle) >= sizeof(HMODULE));
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
 
     /*
      * Do we need to add an extension?

@@ -493,7 +493,7 @@ static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDES
     if (RTPathHavePath(pszLibraryName))
         rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &hmod, szErr, sizeof(szErr));
     else
-        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &hmod, szErr, sizeof(szErr));
+        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &hmod, 0 /*=fFlags*/, szErr, sizeof(szErr));
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hmod, "VRDESupportedProperties", (void **)ppfn);
