@@ -663,6 +663,16 @@ public:
     size_t find(const char *pcszFind, size_t pos = 0) const;
 
     /**
+     * Replaces all occurences of cFind with cReplace in the member string.
+     * In order not to produce invalid UTF-8, the characters must be ASCII
+     * values less than 128; this is not verified.
+     *
+     * @param cFind Character to replace. Must be ASCII < 128.
+     * @param cReplace Character to replace cFind with. Must be ASCII < 128.
+     */
+    void findReplace(char cFind, char cReplace);
+
+    /**
      * Returns a substring of "this" as a new Utf8Str.
      *
      * Works exactly like its equivalent in std::string except that this interprets

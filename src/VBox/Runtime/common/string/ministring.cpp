@@ -213,6 +213,16 @@ size_t MiniString::find(const char *pcszFind, size_t pos /*= 0*/)
     return npos;
 }
 
+void MiniString::findReplace(char cFind, char cReplace)
+{
+    for (size_t i = 0; i < length(); ++i)
+    {
+        char *p = &m_psz[i];
+        if (*p == cFind)
+            *p = cReplace;
+    }
+}
+
 MiniString MiniString::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
     const
 {
