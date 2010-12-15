@@ -3731,6 +3731,17 @@ void VirtualBox::addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving,
     llRegistriesThatNeedSaving.push_back(uuid);
 }
 
+/**
+ * Saves all settings files according to the given list of UUIDs, which are
+ * either machine IDs (in which case Machine::saveSettings is invoked) or
+ * the global registry UUID (in which case VirtualBox::saveSettings is invoked).
+ *
+ * This locks machines and the VirtualBox object as necessary, so better not
+ * hold any locks before calling this.
+ *
+ * @param llRegistriesThatNeedSaving
+ * @return
+ */
 HRESULT VirtualBox::saveRegistries(const GuidList &llRegistriesThatNeedSaving)
 {
     bool fNeedsGlobalSettings = false;
