@@ -35,7 +35,8 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
                                      ? ppdev->lDeltaScreen
                                      : -ppdev->lDeltaScreen, ppdev->cxScreen,
                                      ppdev->cyScreen,
-                                     (uint16_t)ppdev->ulBitCount);
+                                     (uint16_t)ppdev->ulBitCount,
+                                     VBVA_SCREEN_F_ACTIVE);
     }
 
     return;

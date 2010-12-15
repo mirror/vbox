@@ -290,7 +290,8 @@ RTDECL(void)     VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cbPitch,
                                              uint32_t cWidth,
                                              uint32_t cHeight,
-                                             uint16_t cBPP);
+                                             uint16_t cBPP,
+                                             uint16_t fFlags);
 
 /** @}  */
 
