@@ -124,7 +124,6 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     uint32_t fFeatures = 0;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY();
     /* We may want to force the use of a software cursor.  Currently this is
      * needed if the guest uses a large virtual resolution, as in this case
      * the host and guest tend to disagree about the pointer location. */
@@ -159,7 +158,6 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
            )
             rc = FALSE;
     }
-    TRACE_LOG("rc=%s\n", BOOL_STR(rc));
     return rc;
 }
 
@@ -273,6 +271,9 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
                                 NULL);
     pvGuestHeapMemory =   ((uint8_t *)pVBox->base) + offVRAMBaseMapping
                         + offGuestHeapMemory;
+    TRACE_LOG("video RAM: %u KB, guest heap offset: 0x%x, cbGuestHeapMemory: %u\n",
+              pScrn->videoRam, offVRAMBaseMapping + offGuestHeapMemory,
+              cbGuestHeapMemory);
     rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory,
                                     cbGuestHeapMemory,
                                     offVRAMBaseMapping + offGuestHeapMemory);
@@ -289,18 +290,20 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     {
         pVBox->cbFramebuffer -= VBVA_MIN_BUFFER_SIZE;
         pVBox->aoffVBVABuffer[i] = pVBox->cbFramebuffer;
+        TRACE_LOG("VBVA buffer offset for screen %u: 0x%lx\n", i,
+                  (unsigned long) pVBox->cbFramebuffer);
         VBoxVBVASetupBufferContext(&pVBox->aVbvaCtx[i],
                                    pVBox->aoffVBVABuffer[i], 
                                    VBVA_MIN_BUFFER_SIZE);
     }
+    TRACE_LOG("Maximum framebuffer size: %lu (0x%lx)\n",
+              (unsigned long) pVBox->cbFramebuffer,
+              (unsigned long) pVBox->cbFramebuffer);
     rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
                                vboxFillViewInfo, (void *)pVBox);
 
-    /* Set up the dirty rectangle handler.  Since this seems to be a
-       delicate operation, and removing it doubly so, this will
-       remain in place whether it is needed or not, and will simply
-       return if VBVA is not active.  I assume that it will be active
-       most of the time. */
+    /* Set up the dirty rectangle handler.  It will be added into a function
+     * chain and gets removed when the screen is cleaned up. */
     if (ShadowFBInit2(pScreen, NULL, vboxHandleDirtyRect) != TRUE)
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
@@ -609,7 +612,6 @@ vbox_use_hw_cursor_argb(ScreenPtr pScreen, CursorPtr pCurs)
      * our list of video modes. */
     vboxWriteHostModes(pScrn, pScrn->currentMode);
 #endif
-    TRACE_LOG("rc=%s\n", BOOL_STR(rc));
     return rc;
 }
 
@@ -631,7 +633,6 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
                       | VBOX_MOUSE_POINTER_ALPHA;
     int rc;
 
-    TRACE_ENTRY();
     pVBox = pScrn->driverPrivate;
     bitsp = pCurs->bits;
     w     = bitsp->width;
@@ -693,7 +694,6 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, fFlags, bitsp->xhot,
                                      bitsp->yhot, w, h, p, sizeData);
-    TRACE_LOG(": leaving, returning %d\n", rc);
     free(p);
 }
 #endif
