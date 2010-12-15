@@ -2847,6 +2847,8 @@ void VBoxGlobal::retranslateUi()
     mDiskTypes [KMediumType_Immutable] =        tr ("Immutable", "DiskType");
     mDiskTypes [KMediumType_Writethrough] =     tr ("Writethrough", "DiskType");
     mDiskTypes [KMediumType_Shareable] =        tr ("Shareable", "DiskType");
+    mDiskTypes [KMediumType_Readonly] =         tr ("Readonly", "DiskType");
+    mDiskTypes [KMediumType_MultiAttach] =      tr ("Multi-attach", "DiskType");
     mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
 
     mAuthTypes [KAuthType_Null] =       tr ("Null", "AuthType");
