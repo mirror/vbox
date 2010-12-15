@@ -524,7 +524,10 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
 {
-    m_fProcessed ? pEvent->accept() : pEvent->ignore();
+    if (m_fProcessed)
+        QIMainDialog::closeEvent(pEvent);
+    else
+        pEvent->ignore();
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
