@@ -2888,6 +2888,46 @@ Value: 2006.01.01</screen>
       </itemizedlist></para>
   </sect1>
 
+  <sect1 id="vboxmanage-debugvm">
+    <title>VBoxManage debugvm</title>
+
+    <para>The "debugvm" commands are for experts who want to tinker with the
+    exact details of virtual machine execution. Like the VM debugger described
+    in <xref linkend="debugger" />, these commands are only useful if you are
+    very familiar with the details of the PC architecture and how to debug
+    software.</para>
+
+    <para>The subcommands of "debugvm" all operate on a running virtual
+    machine. The following are available:<itemizedlist>
+        <listitem>
+          <para>With <computeroutput>dumpguestcore --filename
+          &lt;name&gt;</computeroutput>, you can create a system dump of the
+          running VM, which will be written into the given file. This file
+          will have the standard ELF core format (with custom
+          sections).</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>injectnmi</computeroutput> command causes
+          a non-maskable interrupt (NMI) in the guest, which might be useful
+          for certain debugging scenarios. What happens exactly is dependent
+          on the guest operating system, but an NMI can crash the whole guest
+          operating system. Do not use unless you know what you're
+          doing.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>statistics</computeroutput> command can be
+          used to display VMM statistics on the command line. The
+          <computeroutput>--reset</computeroutput> option will reset
+          statistics. The affected statistics can be filtered with the
+          <computeroutput>--pattern</computeroutput> option, which accepts
+          DOS/NT-style wildcards (<computeroutput>?</computeroutput> and
+          <computeroutput>*</computeroutput>).</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+
   <sect1 id="vboxmanage-dhcpserver">
     <title>VBoxManage dhcpserver</title>
 

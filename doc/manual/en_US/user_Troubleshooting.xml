@@ -134,6 +134,10 @@
           url="http://www.virtualbox.org/wiki/Core_dump">http://www.virtualbox.org/wiki/Core_dump</ulink>.</para>
         </footnote></para>
 
+      <para>You can also use <computeroutput>VBoxManage
+      debugvm</computeroutput> to create a dump of a complete virtual machine;
+      see <xref linkend="vboxmanage-debugvm" />.</para>
+
       <para>For network related problems, it is often helpful to capture a
       trace of network traffic. If the traffic is routed through an adapter on
       the host, it is possible to use Wireshark or a similar tool to capture
@@ -151,7 +155,7 @@
     </sect2>
 
     <sect2>
-      <title>The built-in VM debugger</title>
+      <title id="debugger">The built-in VM debugger</title>
 
       <para>VirtualBox includes a built-in VM debugger, which advanced users
       may find useful. This debugger allows for examining and, to some extent,
