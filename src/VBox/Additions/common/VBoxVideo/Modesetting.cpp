@@ -138,7 +138,8 @@ RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                          uint32_t cbPitch,
                                          uint32_t cWidth,
                                          uint32_t cHeight,
-                                         uint16_t cBPP)
+                                         uint16_t cBPP,
+                                         uint16_t fFlags)
 {
     /* Issue the screen info command. */
     void *p = VBoxHGSMIBufferAlloc(pCtx,
@@ -161,7 +162,7 @@ RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         pScreen->u32Width        = cWidth;
         pScreen->u32Height       = cHeight;
         pScreen->u16BitsPerPixel = cBPP;
-        pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
+        pScreen->u16Flags        = fFlags;
 
         VBoxHGSMIBufferSubmit(pCtx, p);
 
