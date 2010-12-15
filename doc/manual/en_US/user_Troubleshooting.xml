@@ -408,10 +408,12 @@
     <sect2 id="guestcoreformat">
       <title>VM core format</title>
 
-      <para>VirtualBox uses the 64-bit ELF format for its VM core files. The
-      VM core file contain the memory and CPU dumps of the VM and can be
-      useful for debugging your guest OS. The 64-bit ELF object format
-      specficiation can be obtained here: <literal><ulink
+      <para>VirtualBox uses the 64-bit ELF format for its VM core files
+      created by <computeroutput>VBoxManage debugvm</computeroutput>; see
+      <xref linkend="vboxmanage-debugvm" />. The VM core file contain the
+      memory and CPU dumps of the VM and can be useful for debugging your
+      guest OS. The 64-bit ELF object format specficiation can be obtained
+      here: <literal><ulink
       url="http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf">http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ulink></literal>.</para>
 
       <para>The overall layout of the VM core format is as follows:</para>
