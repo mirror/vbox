@@ -14764,7 +14764,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="c9412a17-c1e1-46db-b4b7-18de9c967e85"
+    uuid="f33c82ca-1379-43a5-9211-8caae647e694"
     >
 
     <desc>
@@ -15017,9 +15017,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IBandwidthGroupChangedEvent">IBandwidthGroupChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestMonitorDisabled" value="71">
+      <desc>
+        See <link to="IGuestMonitorDisabledEvent">IGuestMonitorDisabledEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="71">
+    <const name="Last" value="72">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -16334,6 +16339,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">
       <desc>
         The changed bandwidth group.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IGuestMonitorDisabledEvent" extends="IEvent"
+    uuid="87760f7d-05fc-40d8-be04-5bf2763a51d5"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMonitorDisabled"
+    >
+    <desc>
+      Notification when the guest disables one of its monitors.
+    </desc>
+
+    <attribute name="screenId" type="unsigned long" readonly="yes">
+      <desc>
+        The monitor which was disabled.
       </desc>
     </attribute>
   </interface>
