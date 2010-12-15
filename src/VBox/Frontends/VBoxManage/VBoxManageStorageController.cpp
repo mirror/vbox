@@ -563,7 +563,8 @@ int handleStorageAttach(HandlerArg *a)
             if (pMedium2Mount && fSetMediumType)
             {
                 CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(mediumType));
-                throw  Utf8Str("Failed to set the medium type");
+                if (FAILED(rc))
+                    throw  Utf8Str("Failed to set the medium type");
             }
 
             if (pMedium2Mount && !bstrComment.isEmpty())
