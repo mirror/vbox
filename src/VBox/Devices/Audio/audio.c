@@ -936,6 +936,9 @@ int audio_pcm_sw_read (SWVoiceIn *sw, void *buf, int size)
             return 0;
         }
 
+        if (ret + osamp > sw->buf_samples)
+            Log(("audio_pcm_sw_read: buffer overflow!! ret = %d, osamp = %d, buf_samples = %d\n",
+                  ret, osamp, sw->buf_samples));
         st_rate_flow (sw->rate, src, dst, &isamp, &osamp);
         swlim -= osamp;
         rpos = (rpos + isamp) % hw->samples;
@@ -944,6 +947,8 @@ int audio_pcm_sw_read (SWVoiceIn *sw, void *buf, int size)
         total += isamp;
     }
 
+    if (ret > sw->buf_samples)
+        Log(("audio_pcm_sw_read: buffer overflow!! ret = %d, buf_samples = %d\n", ret, sw->buf_samples));
     sw->clip (buf, sw->buf, ret);
     sw->total_hw_samples_acquired += total;
     return ret << sw->info.shift;
@@ -1035,6 +1040,9 @@ int audio_pcm_sw_write (SWVoiceOut *sw, void *buf, int size)
     dead = hwsamples - live;
     swlim = ((int64_t) dead << 32) / sw->ratio;
     swlim = audio_MIN (swlim, samples);
+    if (swlim > sw->buf_samples)
+        Log(("audio_pcm_sw_write: buffer overflow!! swlim = %d, buf_samples = %d\n",
+             swlim, pos, sw->buf_samples));
     if (swlim) {
 #ifndef VBOX
         sw->conv (sw->buf, buf, swlim, &sw->vol);
@@ -1052,6 +1060,9 @@ int audio_pcm_sw_write (SWVoiceOut *sw, void *buf, int size)
         }
         isamp = swlim;
         osamp = blck;
+        if (pos + isamp > sw->buf_samples)
+            Log(("audio_pcm_sw_write: buffer overflow!! isamp = %d, pos = %d, buf_samples = %d\n",
+                 isamp, pos, sw->buf_samples));
         st_rate_flow_mix (
             sw->rate,
             sw->buf + pos,

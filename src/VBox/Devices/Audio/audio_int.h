@@ -121,6 +121,7 @@ struct SWVoiceOut {
     t_sample *conv;
     int64_t ratio;
     st_sample_t *buf;
+    int buf_samples;
     void *rate;
     int total_hw_samples_mixed;
     int active;
@@ -139,6 +140,7 @@ struct SWVoiceIn {
     void *rate;
     int total_hw_samples_acquired;
     st_sample_t *buf;
+    int buf_samples; /* for debugging only */
     f_sample *clip;
     HWVoiceIn *hw;
     char *name;
