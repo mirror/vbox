@@ -319,8 +319,8 @@ DECLHIDDEN(int)     supR3HardenedError(int rc, bool fFatal, const char *pszForma
 DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const char *pszProgName);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
-DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr);
-DECLHIDDEN(int)     supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, char *pszErr, size_t cbErr);
+DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, PRTERRINFO pErrInfo);
 DECLHIDDEN(void)    supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
 DECLHIDDEN(int)     supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 

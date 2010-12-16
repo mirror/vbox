@@ -294,8 +294,9 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
         /*
          * Load the loader item.
          */
-        char szErr[4096+1024];
-        rc = SUPR3HardenedLdrLoadPlugIn(pModule->szFilename, &pModule->hLdrMod, szErr, sizeof(szErr));
+        RTERRINFOSTATIC ErrInfo;
+        RTErrInfoInitStatic(&ErrInfo);
+        rc = SUPR3HardenedLdrLoadPlugIn(pModule->szFilename, &pModule->hLdrMod, &ErrInfo.Core);
         if (RT_SUCCESS(rc))
         {
             pModule->pNext = pUVM->pdm.s.pModules;
@@ -305,7 +306,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
         {
             /* Something went wrong, most likely module not found. Don't consider other unlikely errors */
             rc = VMSetError(pUVM->pVM, rc, RT_SRC_POS,
-                            N_("Unable to load R3 module %s (%s): %s"), pModule->szFilename, pszName, szErr);
+                            N_("Unable to load R3 module %s (%s): %s"), pModule->szFilename, pszName, ErrInfo.Core.pszMsg);
             RTMemFree(pModule);
         }
     }
@@ -482,11 +483,12 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     /*
      * Open the loader item.
      */
-    char szErr[4096+1024];
-    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, szErr, sizeof(szErr));
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, &ErrInfo.Core);
     if (RT_SUCCESS(rc))
     {
-        szErr[0] = '\0';
+        RTErrInfoClear(&ErrInfo.Core);
         rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_X86_32, &pModule->hLdrMod);
     }
     if (RT_SUCCESS(rc))
@@ -564,8 +566,8 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
-    if (RT_FAILURE(rc) && szErr[0])
-        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load RC module %s: %s"), pszFilename, szErr);
+    if (RT_FAILURE(rc) && RTErrInfoIsSet(&ErrInfo.Core))
+        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load RC module %s: %s"), pszFilename, ErrInfo.Core.pszMsg);
     else if (RT_FAILURE(rc))
         rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load RC module %s"), pszFilename);
 
@@ -632,9 +634,10 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
     /*
      * Ask the support library to load it.
      */
-    char szErr[4096+1024];
-    void *pvImageBase;
-    int rc = SUPR3LoadModule(pszFilename, pszName, &pvImageBase, szErr, sizeof(szErr));
+    void           *pvImageBase;
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    int rc = SUPR3LoadModule(pszFilename, pszName, &pvImageBase, &ErrInfo.Core);
     if (RT_SUCCESS(rc))
     {
         pModule->hLdrMod = NIL_RTLDRMOD;
@@ -661,11 +664,11 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
 
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     RTMemFree(pModule);
-    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc szErr=\"%s\"\n", pszName, rc, szErr));
+    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc szErr=\"%s\"\n", pszName, rc, ErrInfo.Core.pszMsg));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
-        rc = VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s: %s"), pszFilename, szErr);
+        rc = VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s: %s"), pszFilename, ErrInfo.Core.pszMsg);
 
     RTMemTmpFree(pszFile); /* might be reference thru pszFilename in the above VMSetError call. */
     return rc;

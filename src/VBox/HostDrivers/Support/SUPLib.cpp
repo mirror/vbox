@@ -1437,24 +1437,20 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
 }
 
 
-SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, char *pszErr, size_t cbErr)
+SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, PRTERRINFO pErrInfo)
 {
     /*
      * Quick input validation.
      */
     AssertPtr(pszArgv0);
-    AssertPtr(pszErr);
-    Assert(cbErr > 32);
+    RTErrInfoClear(pErrInfo);
 
     /*
      * Get the executable image path as we need it for all the tests here.
      */
     char szExecPath[RTPATH_MAX];
     if (!RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)))
-    {
-        RTStrPrintf(pszErr, cbErr, "RTProcGetExecutablePath failed");
-        return VERR_INTERNAL_ERROR_2;
-    }
+        return RTErrInfoSet(pErrInfo, VERR_INTERNAL_ERROR_2, "RTProcGetExecutablePath failed");
 
     int rc;
     if (fInternal)
@@ -1464,10 +1460,8 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
          * searching involved.
          */
         if (RTPathCompare(pszArgv0, szExecPath) != 0)
-        {
-            RTStrPrintf(pszErr, cbErr, "argv[0] does not match the executable image path: '%s' != '%s'", pszArgv0, szExecPath);
-            return VERR_SUPLIB_INVALID_ARGV0_INTERNAL;
-        }
+            return RTErrInfoSetF(pErrInfo, VERR_SUPLIB_INVALID_ARGV0_INTERNAL,
+                                 "argv[0] does not match the executable image path: '%s' != '%s'", pszArgv0, szExecPath);
 
         /*
          * Internal applications must reside in or under the
@@ -1476,23 +1470,17 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
         char szAppPrivateArch[RTPATH_MAX];
         rc = RTPathAppPrivateArch(szAppPrivateArch, sizeof(szAppPrivateArch));
         if (RT_FAILURE(rc))
-        {
-            RTStrPrintf(pszErr, cbErr, "RTPathAppPrivateArch failed with rc=%Rrc", rc);
-            return VERR_SUPLIB_INVALID_ARGV0_INTERNAL;
-        }
+            return RTErrInfoSetF(pErrInfo, VERR_SUPLIB_INVALID_ARGV0_INTERNAL,
+                                 "RTPathAppPrivateArch failed with rc=%Rrc", rc);
         size_t cchAppPrivateArch = strlen(szAppPrivateArch);
         if (   cchAppPrivateArch >= strlen(szExecPath)
             || !RTPATH_IS_SLASH(szExecPath[cchAppPrivateArch]))
-        {
-            RTStrPrintf(pszErr, cbErr, "Internal executable does reside under RTPathAppPrivateArch");
-            return VERR_SUPLIB_INVALID_INTERNAL_APP_DIR;
-        }
+            return RTErrInfoSet(pErrInfo, VERR_SUPLIB_INVALID_INTERNAL_APP_DIR,
+                                "Internal executable does reside under RTPathAppPrivateArch");
         szExecPath[cchAppPrivateArch] = '\0';
         if (RTPathCompare(szExecPath, szAppPrivateArch) != 0)
-        {
-            RTStrPrintf(pszErr, cbErr, "Internal executable does reside under RTPathAppPrivateArch");
-            return VERR_SUPLIB_INVALID_INTERNAL_APP_DIR;
-        }
+            return RTErrInfoSet(pErrInfo, VERR_SUPLIB_INVALID_INTERNAL_APP_DIR,
+                                "Internal executable does reside under RTPathAppPrivateArch");
         szExecPath[cchAppPrivateArch] = RTPATH_SLASH;
     }
 
@@ -1500,7 +1488,7 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
     /*
      * Verify that the image file and parent directories are sane.
      */
-    rc = supR3HardenedVerifyFile(szExecPath, RTHCUINTPTR_MAX, pszErr, cbErr);
+    rc = supR3HardenedVerifyFile(szExecPath, RTHCUINTPTR_MAX, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
 #endif
@@ -1509,21 +1497,20 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
 }
 
 
-SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr)
+SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo)
 {
     /*
      * Quick input validation
      */
     AssertPtr(pszDirPath);
-    AssertPtr(pszErr);
-    Assert(cbErr > 32);
+    RTErrInfoClear(pErrInfo);
 
     /*
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-    int rc = supR3HardenedVerifyDir(pszDirPath, fRecursive, fCheckFiles, pszErr, cbErr);
-    if (RT_FAILURE(rc) && (!pszErr || !cbErr))
+    int rc = supR3HardenedVerifyDir(pszDirPath, fRecursive, fCheckFiles, pErrInfo);
+    if (RT_FAILURE(rc) && !RTErrInfoIsSet(pErrInfo))
         LogRel(("supR3HardenedVerifyDir: Verification of \"%s\" failed, rc=%Rrc\n", pszDirPath, rc));
     return rc;
 #else
@@ -1532,21 +1519,20 @@ SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, b
 }
 
 
-SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, size_t cbErr)
+SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, PRTERRINFO pErrInfo)
 {
     /*
      * Quick input validation
      */
     AssertPtr(pszFilename);
-    AssertPtr(pszErr);
-    Assert(cbErr > 32);
+    RTErrInfoClear(pErrInfo);
 
     /*
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-    int rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX,  pszErr, cbErr);
-    if (RT_FAILURE(rc) && (!pszErr || !cbErr))
+    int rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pErrInfo);
+    if (RT_FAILURE(rc) && !RTErrInfoIsSet(pErrInfo))
         LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
     return rc;
 #else
@@ -1555,17 +1541,17 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, 
 }
 
 
-SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase, char *pszErr, size_t cbErr)
+SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase, PRTERRINFO pErrInfo)
 {
     /*
      * Check that the module can be trusted.
      */
-    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, pszErr, cbErr);
+    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
         if (RT_FAILURE(rc))
-            RTStrPrintf(pszErr, cbErr, "supLoadModule returned %Rrc", rc);
+            RTErrInfoSetF(pErrInfo, rc, "supLoadModule returned %Rrc", rc);
     }
     return rc;
 }
@@ -2054,7 +2040,7 @@ SUPR3DECL(int) SUPR3GetSymbolR0(void *pvImageBase, const char *pszSymbol, void *
 SUPR3DECL(int) SUPR3LoadVMM(const char *pszFilename)
 {
     void *pvImageBase;
-    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase, NULL, 0);
+    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase, NULL /*pErrInfo*/);
 }
 
 
@@ -2083,10 +2069,11 @@ SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys)
  * @param   pszFilename     The full file name.
  * @param   phLdrMod        Where to store the handle to the loaded module.
  * @param   fFlags          See RTLDFLAGS_.
- * @param   pszError        Where to return the loader error. Optional.
- * @param   cbError         The size of the buffer pointed to by @a pszError.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
+ *
  */
-static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
+static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
 #ifdef VBOX_WITH_HARDENING
     /*
@@ -2096,38 +2083,23 @@ static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, u
     if (RT_FAILURE(rc))
     {
         LogRel(("supR3HardenedLdrLoadIt: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
-        return rc;
+        return RTErrInfoSet(pErrInfo, rc, "supR3HardenedVerifyFixedFile failed");
     }
 #endif
 
     /*
      * Try load it.
      */
-    RTERRINFO  ErrInfo;
-    PRTERRINFO pErrInfo;
-    if (!pszError || !cbError)
-        pErrInfo = NULL;
-    else
-        pErrInfo = RTErrInfoInit(&ErrInfo, pszError, cbError);
     return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, pErrInfo);
 }
 
 
-SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     /*
      * Validate input.
      */
-    if (!pszError)
-        AssertReturn(!cbError, VERR_INVALID_PARAMETER);
-    else
-    {
-        AssertPtrReturn(pszError, VERR_INVALID_POINTER);
-        if (cbError)
-            *pszError = '\0';
-        else
-            pszError = NULL;
-    }
+    RTErrInfoClear(pErrInfo);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertPtrReturn(phLdrMod, VERR_INVALID_POINTER);
     *phLdrMod = NIL_RTLDRMOD;
@@ -2151,27 +2123,18 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod,
     /*
      * Pass it on to the common library loader.
      */
-    return supR3HardenedLdrLoadIt(pszFilename, phLdrMod, fFlags, pszError, cbError);
+    return supR3HardenedLdrLoadIt(pszFilename, phLdrMod, fFlags, pErrInfo);
 }
 
 
-SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
-    LogFlow(("SUPR3HardenedLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p fFlags=%08x pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, fFlags, pszError, cbError));
+    LogFlow(("SUPR3HardenedLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p fFlags=%08x pErrInfo=%p\n", pszFilename, pszFilename, phLdrMod, fFlags, pErrInfo));
 
     /*
      * Validate input.
      */
-    if (!pszError)
-        AssertReturn(!cbError, VERR_INVALID_PARAMETER);
-    else
-    {
-        AssertPtrReturn(pszError, VERR_INVALID_POINTER);
-        if (cbError)
-            *pszError = '\0';
-        else
-            pszError = NULL;
-    }
+    RTErrInfoClear(pErrInfo);
     AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
     *phLdrMod = NIL_RTLDRMOD;
     AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
@@ -2213,22 +2176,21 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
     /*
      * Pass it on to SUPR3HardenedLdrLoad.
      */
-    rc = SUPR3HardenedLdrLoad(szPath, phLdrMod, fFlags, pszError, cbError);
+    rc = SUPR3HardenedLdrLoad(szPath, phLdrMod, fFlags, pErrInfo);
 
     LogFlow(("SUPR3HardenedLdrLoadAppPriv: returns %Rrc\n", rc));
     return rc;
 }
 
 
-SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszErr, size_t cbErr)
+SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
 {
     int rc;
 
     /*
      * Validate input.
      */
-    AssertPtr(pszErr);
-    Assert(cbErr > 32);
+    RTErrInfoClear(pErrInfo);
     AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
     *phLdrMod = NIL_RTLDRMOD;
     AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
@@ -2238,10 +2200,10 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Verify the image file.
      */
-    rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pszErr, cbErr);
+    rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pErrInfo);
     if (RT_FAILURE(rc))
     {
-        if (!pszErr || !cbErr)
+        if (!RTErrInfoIsSet(pErrInfo))
             LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
         return rc;
     }
@@ -2250,12 +2212,6 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Try load it.
      */
-    RTERRINFO  ErrInfo;
-    PRTERRINFO pErrInfo;
-    if (!pszErr || !cbErr)
-        pErrInfo = NULL;
-    else
-        pErrInfo = RTErrInfoInit(&ErrInfo, pszErr, cbErr);
     return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*fFlags*/, pErrInfo);
 }
 
