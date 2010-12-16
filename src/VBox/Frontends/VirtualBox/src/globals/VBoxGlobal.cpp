@@ -5114,7 +5114,7 @@ void VBoxGlobal::init()
     {
         RTERRINFOSTATIC ErrInfo;
         RTErrInfoInitStatic(&ErrInfo);
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg, 0 /*fFlags*/, &ErrInfo.Core);
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
         if (RT_FAILURE(vrc))
         {
             mhVBoxDbg = NIL_RTLDRMOD;

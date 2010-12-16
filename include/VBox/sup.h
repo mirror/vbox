@@ -1035,7 +1035,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, PRTERRINFO pEr
  * @returns iprt status code.
  * @param   pszFilename     Image filename. This must have a path.
  * @param   phLdrMod        Where to store the handle to the loaded module.
- * @param   fFlags          See RTLDRFLAGS_.
+ * @param   fFlags          See RTLDRLOAD_FLAGS_XXX.
  * @param   pErrInfo        Where to return extended error information.
  *                          Optional.
  */
@@ -1051,7 +1051,7 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod,
  * @returns iprt status code.
  * @param   pszFilename     Image filename.
  * @param   phLdrMod        Where to store the handle to the loaded module.
- * @param   fFlags          See RTLDRFLAGS_*.
+ * @param   fFlags          See RTLDRLOAD_FLAGS_XXX.
  * @param   pErrInfo        Where to return extended error information.
  *                          Optional.
  */

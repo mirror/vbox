@@ -264,7 +264,7 @@ int HGCMService::loadServiceDLL (void)
     RTERRINFOSTATIC ErrInfo;
     RTErrInfoInitStatic (&ErrInfo);
 
-    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod, 0 /*fFlags*/, &ErrInfo.Core);
+    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
 
     if (RT_SUCCESS(rc))
     {
