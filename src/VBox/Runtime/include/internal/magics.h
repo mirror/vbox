@@ -160,6 +160,34 @@
 #define RTTARFILE_MAGIC                 UINT32_C(0x18471108)
 /** The value of RTTARFILE::u32Magic after RTTarFileClose(). */
 #define RTTARFILE_MAGIC_DEAD            UINT32_C(0x19120420)
+/** The value of RTVFSOBJINTERNAL::u32Magic. (Yasunari Kawabata) */
+#define RTVFSOBJ_MAGIC                  UINT32_C(0x18990614)
+/** The value of RTVFSOBJINTERNAL::u32Magic arter close. */
+#define RTVFSOBJ_MAGIC_DEAD             UINT32_C(0x19720416)
+/** The value of RTVFSINTERNAL::u32Magic. (Sir Kingsley William Amis) */
+#define RTVFS_MAGIC                     UINT32_C(0x19220416)
+/** The value of RTVFSINTERNAL::u32Magic after close.  */
+#define RTVFS_MAGIC_DEAD                UINT32_C(0x19951022)
+/** The value of RTVFSFSSTREAMINTERNAL::u32Magic. (William McGuire "Bill" Bryson) */
+#define RTVFSFSSTREAM_MAGIC             UINT32_C(0x19511208)
+/** The value of RTVFSFSSTREAMINTERNAL::u32Magic after close */
+#define RTVFSFSSTREAM_MAGIC_DEAD        (~RTVFSFSSTREAM_MAGIC)
+/** The value of RTVFSDIRINTERNAL::u32Magic. (Franklin Patrick Herbert, Jr.) */
+#define RTVFSDIR_MAGIC                  UINT32_C(0x19201008)
+/** The value of RTVFSDIRINTERNAL::u32Magic after close. */
+#define RTVFSDIR_MAGIC_DEAD             UINT32_C(0x19860211)
+/** The value of RTVFSFILEINTERNAL::u32Magic. (Charles John Huffam Dickens) */
+#define RTVFSFILE_MAGIC                 UINT32_C(0x18120207)
+/** The value of RTVFSFILEINTERNAL::u32Magic after close. */
+#define RTVFSFILE_MAGIC_DEAD            UINT32_C(0x18700609)
+/** The value of RTVFSIOSTREAMINTERNAL::u32Magic. (Ernest Miller Hemingway) */
+#define RTVFSIOSTREAM_MAGIC             UINT32_C(0x18990721)
+/** The value of RTVFSIOSTREAMINTERNAL::u32Magic after close. */
+#define RTVFSIOSTREAM_MAGIC_DEAD        UINT32_C(0x19610702)
+/** The value of RTVFSSYMLINKINTERNAL::u32Magic. (Francis Scott Key Fitzgerald) */
+#define RTVFSSYMLINK_MAGIC              UINT32_C(0x18960924)
+/** The value of RTVFSSYMLINKINTERNAL::u32Magic after close. */
+#define RTVFSSYMLINK_MAGIC_DEAD         UINT32_C(0x19401221)
 
 /** @} */
 
