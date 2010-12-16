@@ -313,7 +313,11 @@ setup()
     echo
     # openSUSE 10.3 shipped X.Org 7.2 with X.Org Server 1.3, but didn't
     # advertise the fact.
-    grep -q '10\.3' /etc/SuSE-release 2>/dev/null && x_version=1.3
+    if grep -q '10\.3' /etc/SuSE-release 2>/dev/null; then
+        case $x_version in 7.2.*)
+            x_version=1.3.0;;
+        esac
+    fi
     case $x_version in
         1.9.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
