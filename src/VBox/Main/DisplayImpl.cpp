@@ -428,6 +428,7 @@ HRESULT Display::init (Console *aParent)
         maFramebuffers[ul].u32InformationSize = 0;
 
         maFramebuffers[ul].pFramebuffer = NULL;
+        maFramebuffers[ul].fDisabled = false;
 
         maFramebuffers[ul].xOrigin = 0;
         maFramebuffers[ul].yOrigin = 0;
@@ -3851,8 +3852,34 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
     {
-        fireGuestMonitorDisabledEvent(pThis->mParent->getEventSource(), pScreen->u32ViewIndex);
+        pFBInfo->fDisabled = true;
+
+        /* Temporary: ask framebuffer to resize using a default format. The framebuffer will be black. */
+        pThis->handleDisplayResize(pScreen->u32ViewIndex, 0,
+                                   (uint8_t *)NULL,
+                                   0, pFBInfo->w, pFBInfo->h, pScreen->u16Flags);
+
+        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                     GuestMonitorChangedEventType_Disabled,
+                                     pScreen->u32ViewIndex,
+                                     0, 0, 0, 0);
         return VINF_SUCCESS;
+    }
+
+    if (pFBInfo->fDisabled)
+    {
+        pFBInfo->fDisabled = false;
+        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                     GuestMonitorChangedEventType_Enabled,
+                                     pScreen->u32ViewIndex,
+                                     pScreen->i32OriginX, pScreen->i32OriginY,
+                                     pScreen->u32Width, pScreen->u32Height);
+        if (pFBInfo->pFramebuffer.isNull())
+        {
+            /* @todo If no framebuffer, remember the resize parameters to issue a requestResize later. */
+            return VINF_SUCCESS;
+        }
+        /* If the framebuffer already set for the screen, do a regular resize. */
     }
 
     /* Check if this is a real resize or a notification about the screen origin.
@@ -3885,7 +3912,11 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     if (fNewOrigin)
     {
-        /* @todo May be framebuffer/display should be notified in this case. */
+        fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                     GuestMonitorChangedEventType_NewOrigin,
+                                     pScreen->u32ViewIndex,
+                                     pScreen->i32OriginX, pScreen->i32OriginY,
+                                     0, 0);
     }
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
