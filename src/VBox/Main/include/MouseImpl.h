@@ -104,7 +104,8 @@ private:
     HRESULT reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
                            int32_t dz, int32_t dw, uint32_t fButtons,
                            bool fUsesVMMDevEvent);
-    HRESULT convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY);
+    HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
+                              bool *pfValid);
 
     void getDeviceCaps(bool *pfAbs, bool *pfRel);
     void sendMouseCapsNotifications(void);

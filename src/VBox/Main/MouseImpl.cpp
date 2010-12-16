@@ -441,17 +441,22 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 
 /**
  * Convert an (X, Y) value pair in screen co-ordinates (starting from 1) to a
- * value from 0 to 0xffff.
+ * value from 0 to 0xffff.  Sets the optional validity value to false if the
+ * pair is not on an active screen and to true otherwise.
  *
  * @returns   COM status value
  */
-HRESULT Mouse::convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY)
+HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
+                                 bool *pfValid)
 {
     AssertPtrReturn(pcX, E_POINTER);
     AssertPtrReturn(pcY, E_POINTER);
+    AssertPtrNullReturn(pfValid, E_POINTER);
     Display *pDisplay = mParent->getDisplay();
     ComAssertRet(pDisplay, E_FAIL);
 
+    if (pfValid)
+        *pfValid = true;
     if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_NEW_PROTOCOL))
     {
         ULONG displayWidth, displayHeight;
@@ -471,6 +476,9 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY)
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
         *pcX = x1 != x2 ? (x - 1 - x1) * 0xFFFF / (x2 - x1) : 0;
         *pcY = y1 != y2 ? (y - 1 - y1) * 0xFFFF / (y2 - y1) : 0;
+        if (*pcX < 0 || *pcX > 0xFFFF || *pcY < 0 || *pcY > 0xFFFF)
+            if (pfValid)
+                *pfValid = false;
     }
     return S_OK;
 }
@@ -500,12 +508,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, buttonState=0x%x\n",
              __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
 
-    uint32_t mouseXAbs, mouseYAbs, fButtons;
+    int32_t mouseXAbs, mouseYAbs;
+    uint32_t fButtons;
+    bool fValid;
 
     /** @todo the front end should do this conversion to avoid races */
     /** @note Or maybe not... races are pretty inherent in everything done in
      *        this object and not really bad as far as I can see. */
-    HRESULT rc = convertDisplayRes(x, y, &mouseXAbs, &mouseYAbs);
+    HRESULT rc = convertDisplayRes(x, y, &mouseXAbs, &mouseYAbs, &fValid);
     if (FAILED(rc)) return rc;
 
     /** @todo multi-monitor Windows guests expect this to be unbounded.
@@ -520,14 +530,18 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
      * device then make sure the guest is aware of it, so that it knows to
      * ignore relative movement on the PS/2 device. */
     updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
-    rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
-                        RT_BOOL(  mfVMMDevGuestCaps
-                                & VMMDEV_MOUSE_NEW_PROTOCOL));
+    if (fValid)
+    {
+        rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
+                            RT_BOOL(  mfVMMDevGuestCaps
+                                    & VMMDEV_MOUSE_NEW_PROTOCOL));
 
 #ifndef VBOXBFE_WITHOUT_COM
-    mMouseEvent.reinit(VBoxEventType_OnGuestMouse, true, x, y, dz, dw, fButtons);
-    mMouseEvent.fire(0);
+        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, true, x, y, dz, dw,
+                           fButtons);
+        mMouseEvent.fire(0);
 #endif
+    }
 
     return rc;
 }
