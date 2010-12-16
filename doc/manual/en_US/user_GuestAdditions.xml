@@ -1155,14 +1155,13 @@ $</screen>
             determines the prefix that is used. Change that guest property to
             a value other than "sf" to change that prefix; see <xref
             linkend="guestadd-guestprops" /> for details.<note>
-                <para>Read/write access to auto-mounted shared folders is only
+                <para>Access to auto-mounted shared folders is only
                 granted to the user group
                 <computeroutput>vboxsf</computeroutput>, which is created by
-                the VirtualBox Guest Additions installer. You must therefore
-                add user accounts to that group for a user to have read/write
-                access. Other users are granted read-only access, even if the
-                shared folder in question has been defined as
-                read/write.</para>
+                the VirtualBox Guest Additions installer. Hence guest users
+                have to be member of that group to have read/write
+                access or to have read-only access in case the folder is not
+                mapped writable.</para>
               </note></para>
 
             <para>To change the mount directory to something other than
