@@ -641,6 +641,7 @@ VBoxC_SOURCES = \
 	ConsoleImplTeleporter.cpp \
 	ConsoleVRDPServer.cpp \
 	GuestImpl.cpp \
+	GuestCtrlImpl.cpp \
 	KeyboardImpl.cpp \
 	MouseImpl.cpp \
 	DisplayImpl.cpp \
