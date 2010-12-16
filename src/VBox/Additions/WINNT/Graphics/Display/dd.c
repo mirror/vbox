@@ -569,6 +569,27 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
     {
         DISPDBG((0, " -> GUID_VideoPortCaps\n"));
     }
+    else
+    if (IsEqualIID(&lpData->guidInfo, &GUID_OptSurfaceKmodeInfo))
+    {
+        DISPDBG((0, " -> GUID_OptSurfaceKmodeInfo\n"));
+    }
+    else
+    if (IsEqualIID(&lpData->guidInfo, &GUID_OptSurfaceUmodeInfo))
+    {
+        DISPDBG((0, " -> GUID_OptSurfaceUmodeInfo\n"));
+    }
+    else
+    if (IsEqualIID(&lpData->guidInfo, &GUID_UserModeDriverInfo))
+    {
+        DISPDBG((0, " -> GUID_UserModeDriverInfo\n"));
+    }
+    else
+    if (IsEqualIID(&lpData->guidInfo, &GUID_UserModeDriverPassword))
+    {
+        DISPDBG((0, " -> GUID_UserModeDriverPassword\n"));
+    }
+        
 
     /* Always return this */
     return DDHAL_DRIVER_HANDLED;
