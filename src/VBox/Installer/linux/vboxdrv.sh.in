@@ -28,7 +28,6 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
-GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
 DEBIAN=%DEBIAN%
@@ -191,7 +190,7 @@ start()
         fi
     fi
     # ensure permissions
-    if ! chown :$GROUPNAME $DEVICE 2>/dev/null; then
+    if ! chown :root $DEVICE 2>/dev/null; then
         rmmod vboxnetadp 2>/dev/null
         rmmod vboxnetflt 2>/dev/null
         rmmod vboxdrv 2>/dev/null
