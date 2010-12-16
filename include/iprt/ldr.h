@@ -97,10 +97,9 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
  * @param   pszFilename Image filename.
  * @param   phLdrMod    Where to store the handle to the loader module.
  * @param   fFlags      See RTLDFLAGS_.
- * @param   pszError    Where to store an error message on failure. Optional.
- * @param   cbError     The size of the buffer pointed to by @a pszError.
+ * @param   pErrInfo    Where to return extended error information. Optional.
  */
-RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError);
+RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);
 
 /**
  * Loads a dynamic load library (/shared object) image file residing in the

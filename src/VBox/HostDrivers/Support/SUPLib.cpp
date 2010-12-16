@@ -2103,7 +2103,13 @@ static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, u
     /*
      * Try load it.
      */
-    return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, pszError, cbError);
+    RTERRINFO  ErrInfo;
+    PRTERRINFO pErrInfo;
+    if (!pszError || !cbError)
+        pErrInfo = NULL;
+    else
+        pErrInfo = RTErrInfoInit(&ErrInfo, pszError, cbError);
+    return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, pErrInfo);
 }
 
 
@@ -2244,7 +2250,13 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Try load it.
      */
-    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*=fFlags*/, pszErr, cbErr);
+    RTERRINFO  ErrInfo;
+    PRTERRINFO pErrInfo;
+    if (!pszErr || !cbErr)
+        pErrInfo = NULL;
+    else
+        pErrInfo = RTErrInfoInit(&ErrInfo, pszErr, cbErr);
+    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*fFlags*/, pErrInfo);
 }
 
 

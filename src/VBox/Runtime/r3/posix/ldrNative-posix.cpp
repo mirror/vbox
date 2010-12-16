@@ -40,7 +40,7 @@
 #include "internal/ldr.h"
 
 
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, char *pszError, size_t cbError)
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     /*
      * Do we need to add an extension?
@@ -59,7 +59,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
         size_t cch = strlen(pszFilename);
         char *psz = (char *)alloca(cch + sizeof(s_szSuff));
         if (!psz)
-            return VERR_NO_MEMORY;
+            return RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "alloca failed");
         memcpy(psz, pszFilename, cch);
         memcpy(psz + cch, s_szSuff, sizeof(s_szSuff));
         pszFilename = psz;
@@ -81,8 +81,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
     }
 
     const char *pszDlError = dlerror();
-    if (pszError)
-        RTStrCopy(pszError, cbError, pszDlError);
+    RTErrInfoSet(pErrInfo, VERR_FILE_NOT_FOUND, pszDlError);
     LogRel(("rtldrNativeLoad: dlopen('%s', RTLD_NOW | RTLD_LOCAL) failed: %s\n", pszFilename, pszDlError));
     return VERR_FILE_NOT_FOUND;
 }
