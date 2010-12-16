@@ -345,10 +345,8 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
     TRACE_ENTRY();
 
-    if (!pVBox->useDevice)
-        return FALSE;
     pVBox->fHaveHGSMI = vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox);
-    return TRUE;
+    return pVBox->fHaveHGSMI;
 }
 
 Bool
@@ -1061,18 +1059,28 @@ static unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
  *
  * The return type is void as we guarantee we will return some mode.
  */
-void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t *pcx,
+void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t iScreen, uint32_t *pcx,
                           uint32_t *pcy, uint32_t *pcBits)
 {
     /* Query the host for the preferred resolution and colour depth */
-    uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 32;
+    uint32_t cx = 0, cy = 0, iScreenIn = 0, cBits = 32;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
+    bool found = false;
+    if (   pVBox->aPreferredSize[iScreen].cx
+        && pVBox->aPreferredSize[iScreen].cy)
+    {
+        cx = pVBox->aPreferredSize[iScreen].cx;
+        cy = pVBox->aPreferredSize[iScreen].cy;
+        found = true;
+    }
     if (pVBox->useDevice)
     {
-        bool found = vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay);
-        if ((cx == 0) || (cy == 0))
+        if (!found)
+            found = vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits,
+                                                &iScreenIn);
+        if ((cx == 0) || (cy == 0) || iScreenIn != iScreen)
             found = false;
         if (!found)
             found = vboxRetrieveVideoMode(pScrn, &cx, &cy, &cBits);
@@ -1138,7 +1146,7 @@ void vboxWriteHostModes(ScrnInfoPtr pScrn, DisplayModePtr pCurrent)
     bool found = false;
 
     TRACE_ENTRY();
-    vboxGetPreferredMode(pScrn, &cx, &cy, &cBits);
+    vboxGetPreferredMode(pScrn, 0, &cx, &cy, &cBits);
 #ifdef DEBUG
     /* Count the number of modes for sanity */
     unsigned cModes = 1, cMode = 0;

@@ -433,33 +433,16 @@ vbox_output_get_modes (xf86OutputPtr output)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    if (vbox_device_available(pVBox))
-    {
-        Bool rc = FALSE;
-        uint32_t x, y, bpp, iScreen;
-        iScreen = (uintptr_t)output->driver_private;
-        if (   pVBox->aPreferredSize[iScreen].cx
-            && pVBox->aPreferredSize[iScreen].cy)
-        {
-            x = pVBox->aPreferredSize[iScreen].cx;
-            y = pVBox->aPreferredSize[iScreen].cy;
-            rc = TRUE;
-        }
-        else
-            rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &iScreen);
-        /* If we don't find a display request, see if we have a saved hint
-         * from a previous session. */
-        if (!rc || (0 == x) || (0 == y))
-            rc = vboxRetrieveVideoMode(pScrn, &x, &y, &bpp);
-        if (rc && (0 != x) && (0 != y))
-            vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
-    }
+    uint32_t x, y, bpp, iScreen;
+    iScreen = (uintptr_t)output->driver_private;
+    vboxGetPreferredMode(pScrn, iScreen, &x, &y, &bpp);
+    vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
+
     /* Also report any modes the user may have requested in the xorg.conf
      * configuration file. */
     for (i = 0; pScrn->display->modes[i] != NULL; i++)
     {
-        int x, y;
-        if (2 == sscanf(pScrn->display->modes[i], "%dx%d", &x, &y))
+        if (2 == sscanf(pScrn->display->modes[i], "%ux%u", &x, &y))
             vbox_output_add_mode(pVBox, &pModes, pScrn->display->modes[i], x, y,
                                  FALSE, TRUE);
     }
@@ -876,7 +859,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         uint32_t cx = 0, cy = 0, cBits = 0;
 
-        vboxGetPreferredMode(pScrn, &cx, &cy, &cBits);
+        vboxGetPreferredMode(pScrn, 0, &cx, &cy, &cBits);
         /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
         if (cBits != 16)
             cBits = 24;
@@ -1045,7 +1028,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      */
     pVBox->vtSwitch = FALSE;
 
-    if (vbox_device_available(pVBox) && vbox_open (pScrn, pScreen, pVBox)) {
+    if (vbox_open (pScrn, pScreen, pVBox)) {
         vboxEnableVbva(pScrn);
         vboxEnableGraphicsCap(pVBox);
     }
@@ -1323,8 +1306,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         if (vbox_device_available(pVBox))
             vboxEnableGraphicsCap(pVBox);
     }
-    if (    vbox_device_available(pVBox)
-        && (pVBox->fHaveHGSMI)
+    if (   (pVBox->fHaveHGSMI)
         && !pVBox->vtSwitch)
         VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
                                     offStart, pVBox->cbLine, cwReal, cHeight,
