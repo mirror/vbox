@@ -190,11 +190,11 @@ start()
         fi
     fi
     # ensure permissions
-    if ! chown :root $DEVICE 2>/dev/null; then
+    if ! chown :%GROUP% $DEVICE 2>/dev/null; then
         rmmod vboxnetadp 2>/dev/null
         rmmod vboxnetflt 2>/dev/null
         rmmod vboxdrv 2>/dev/null
-        failure "Cannot change owner $GROUPNAME for device $DEVICE"
+        failure "Cannot change group %GROUP% for device $DEVICE"
     fi
     if ! $MODPROBE vboxnetflt > /dev/null 2>&1; then
         failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
