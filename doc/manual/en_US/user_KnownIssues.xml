@@ -107,23 +107,20 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Mac OS X hosts:</emphasis><itemizedlist>
+      <para>On <emphasis role="bold">Mac OS X hosts,</emphasis> the following
+      features are not yet implemented: </para>
+
+      <para><itemizedlist>
           <listitem>
-            <para>The numlock emulation has not yet been implemented.</para>
+            <para>Numlock emulation</para>
           </listitem>
 
           <listitem>
-            <para>The CPU frequency metric is not supported.</para>
+            <para>CPU frequency metric</para>
           </listitem>
 
           <listitem>
-            <para>3D OpenGL acceleration, in particular with Linux guests that
-            have 3D effects enabled (such as with compiz-enabled window
-            managers).</para>
-          </listitem>
-
-          <listitem>
-            <para>Memory ballooning is not supported.</para>
+            <para>Memory ballooning</para>
           </listitem>
         </itemizedlist></para>
     </listitem>
