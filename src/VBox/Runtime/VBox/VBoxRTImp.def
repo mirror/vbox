@@ -395,6 +395,12 @@ EXPORTS
     RTErrConvertFromErrno
     RTErrConvertToErrno
     RTErrGet
+    RTErrInfoAlloc
+    RTErrInfoAllocEx
+    RTErrInfoFree
+    RTErrInfoSet
+    RTErrInfoSetF
+    RTErrInfoSetV
     RTFileAioCtxAssociateWithFile
     RTFileAioCtxCreate
     RTFileAioCtxDestroy
