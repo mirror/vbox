@@ -401,6 +401,11 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
     lpData->ddRVal = DDERR_CURRENTLYNOTAVAIL;
 
     /* Fill in supported stuff */
+    if (IsEqualIID(&lpData->guidInfo, &GUID_D3DCallbacks2))
+    {
+        DISPDBG((0, " -> GUID_D3DCallbacks2\n"));
+    }
+    else
     if (IsEqualIID(&lpData->guidInfo, &GUID_D3DCallbacks3))
     {
         DISPDBG((0, " -> GUID_D3DCallbacks3\n"));
@@ -563,16 +568,6 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
     if (IsEqualIID(&lpData->guidInfo, &GUID_VideoPortCaps))
     {
         DISPDBG((0, " -> GUID_VideoPortCaps\n"));
-    }
-    else
-    if (IsEqualIID(&lpData->guidInfo, &GUID_D3DCallbacks2))
-    {
-        DISPDBG((0, " -> GUID_D3DCallbacks2\n"));
-    }
-    else
-    if (IsEqualIID(&lpData->guidInfo, &GUID_D3DCallbacks3))
-    {
-        DISPDBG((0, " -> GUID_D3DCallbacks3\n"));
     }
 
     /* Always return this */
