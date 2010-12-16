@@ -49,21 +49,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define RTVFSOBJ_MAGIC              UINT32_C(0x20109901)
-#define RTVFSOBJ_MAGIC_DEAD         (~RTVFSOBJ_MAGIC)
-#define RTVFS_MAGIC                 UINT32_C(0x20109902)
-#define RTVFS_MAGIC_DEAD            (~RTVFS_MAGIC)
-#define RTVFSFSSTREAM_MAGIC         UINT32_C(0x20109903)
-#define RTVFSFSSTREAM_MAGIC_DEAD    (~RTVFSFSSTREAM_MAGIC)
-#define RTVFSDIR_MAGIC              UINT32_C(0x20109904)
-#define RTVFSDIR_MAGIC_DEAD         (~RTVFSDIR_MAGIC)
-#define RTVFSFILE_MAGIC             UINT32_C(0x20109905)
-#define RTVFSFILE_MAGIC_DEAD        (~RTVFSFILE_MAGIC)
-#define RTVFSIOSTREAM_MAGIC         UINT32_C(0x20109906)
-#define RTVFSIOSTREAM_MAGIC_DEAD    (~RTVFSIOSTREAM_MAGIC)
-#define RTVFSSYMLINK_MAGIC          UINT32_C(0x20109907)
-#define RTVFSSYMLINK_MAGIC_DEAD     (~RTVFSSYMLINK_MAGIC)
-
 /** The instance data alignment. */
 #define RTVFS_INST_ALIGNMENT        16U
 
