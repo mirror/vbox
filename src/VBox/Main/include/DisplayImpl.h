@@ -41,6 +41,7 @@ typedef struct _DISPLAYFBINFO
     uint32_t u32InformationSize;
 
     ComPtr<IFramebuffer> pFramebuffer;
+    bool fDisabled;
 
     LONG xOrigin;
     LONG yOrigin;

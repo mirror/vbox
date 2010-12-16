@@ -14764,7 +14764,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="ad800907-657f-4cd5-b14e-b609fd280a49"
+    uuid="e71c487f-755e-46e9-a476-dd6a5d134597"
     >
 
     <desc>
@@ -15012,9 +15012,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IBandwidthGroupChangedEvent">IBandwidthGroupChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnGuestMonitorDisabled" value="70">
+    <const name="OnGuestMonitorChanged" value="70">
       <desc>
-        See <link to="IGuestMonitorDisabledEvent">IGuestMonitorDisabledEvent</link>.
+        See <link to="IGuestMonitorChangedEvent">IGuestMonitorChangedEvent</link>.
       </desc>
     </const>
 
@@ -16334,20 +16334,83 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
+  <enum
+    name="GuestMonitorChangedEventType"
+    uuid="ef172985-7e36-4297-95be-e46396968d66"
+    >
+
+    <desc>
+      How the guest monitor has been changed.
+    </desc>
+
+    <const name="Enabled" value="0">
+      <desc>
+        The guest monitor has been enabled by the guest.
+      </desc>
+    </const>
+
+    <const name="Disabled" value="1">
+      <desc>
+        The guest monitor has been disabled by the guest.
+      </desc>
+    </const>
+
+    <const name="NewOrigin" value="2">
+      <desc>
+        The guest monitor origin has changed in the guest.
+      </desc>
+    </const>
+  </enum>
+
   <interface
-    name="IGuestMonitorDisabledEvent" extends="IEvent"
-    uuid="87760f7d-05fc-40d8-be04-5bf2763a51d5"
-    wsmap="managed" autogen="VBoxEvent" id="OnGuestMonitorDisabled"
+    name="IGuestMonitorChangedEvent" extends="IEvent"
+    uuid="0f7b8a22-c71f-4a36-8e5f-a77d01d76090"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMonitorChanged"
     >
     <desc>
-      Notification when the guest disables one of its monitors.
+      Notification when the guest enables one of its monitors.
     </desc>
+
+    <attribute name="changeType" type="GuestMonitorChangedEventType" readonly="yes">
+      <desc>
+        What was changed for this guest monitor.
+      </desc>
+    </attribute>
 
     <attribute name="screenId" type="unsigned long" readonly="yes">
       <desc>
-        The monitor which was disabled.
+        The monitor which was changed.
       </desc>
     </attribute>
+
+    <attribute name="originX" type="unsigned long" readonly="yes">
+      <desc>
+        Physical X origin relative to the primary screen.
+        Valid for Enabled and NewOrigin.
+      </desc>
+    </attribute>
+
+    <attribute name="originY" type="unsigned long" readonly="yes">
+      <desc>
+        Physical Y origin relative to the primary screen.
+        Valid for Enabled and NewOrigin.
+      </desc>
+    </attribute>
+
+    <attribute name="width" type="unsigned long" readonly="yes">
+      <desc>
+        Width of the screen.
+        Valid for Enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="height" type="unsigned long" readonly="yes">
+      <desc>
+        Height of the screen.
+        Valid for Enabled.
+      </desc>
+    </attribute>
+
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">
