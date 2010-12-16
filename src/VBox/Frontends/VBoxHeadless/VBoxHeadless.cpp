@@ -834,12 +834,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         if (fFFMPEG)
         {
-            HRESULT rcc = S_OK;
-            int     rrc = VINF_SUCCESS;
-            char    szErr[8192];
+            HRESULT         rcc = S_OK;
+            int             rrc = VINF_SUCCESS;
+            RTERRINFOSTATIC ErrInfo;
 
             Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, 0 /*=fFlags*/, szErr, sizeof(szErr));
+            RTErrInfoInitStatic(&ErrInfo);
+            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB, 0 /*fFlags*/, &ErrInfo.Core);
 
             if (RT_SUCCESS(rrc))
             {
@@ -860,13 +861,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     LogError("Failed to initialise video capturing - make sure that the file format\n"
                              "you wish to use is supported on your system\n", rcc);
             }
-            if (RT_SUCCESS(rrc) && (rcc == S_OK))
+            if (RT_SUCCESS(rrc) && rcc == S_OK)
             {
                 Log2(("VBoxHeadless: Registering framebuffer\n"));
                 pFramebuffer->AddRef();
                 display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
             }
-            if (!RT_SUCCESS(rrc) || (rcc != S_OK))
+            if (!RT_SUCCESS(rrc) || rcc != S_OK)
                 rc = E_FAIL;
         }
         if (rc != S_OK)

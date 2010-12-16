@@ -893,11 +893,10 @@ SUPR3DECL(int) SUPR3LowFree(void *pv, size_t cPages);
  * @param   pszFilename     The path to the image file.
  * @param   pszModule       The module name. Max 32 bytes.
  * @param   ppvImageBase    Where to store the image address.
- * @param   pszErr          Where to return error message on failure.
- * @param   cbErr           The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule,
-                               void **ppvImageBase, char *pszErr, size_t cbErr);
+SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase, PRTERRINFO pErrInfo);
 
 /**
  * Load a module into R0 HC.
@@ -989,10 +988,9 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszW
  * @param   pszArgv0        The first argument to main().
  * @param   fInternal       Set this to @c true if this is an internal
  *                          VirtualBox application.  Otherwise pass @c false.
- * @param   pszErr          Where to return error message on failure.
- * @param   cbErr           The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
  */
-SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, char *pszErr, size_t cbErr);
+SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, PRTERRINFO pErrInfo);
 
 /**
  * Verifies the integrity of an installation directory.
@@ -1009,10 +1007,10 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
  *                          including files (@a fCheckFiles is ignored).
  * @param   fCheckFiles     Whether to apply the same basic integrity check to
  *                          the files in the directory as the directory itself.
- * @param   pszErr          Where to return error message on failure.
- * @param   cbErr           The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr);
+SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
 
 /**
  * Verifies the integrity of a plug-in module.
@@ -1024,10 +1022,10 @@ SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, b
  *
  * @param   pszFilename     The filename of the plug-in module (nothing can be
  *                          omitted here).
- * @param   pszErr          Where to return error message on failure.
- * @param   cbErr           The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, size_t cbErr);
+SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, PRTERRINFO pErrInfo);
 
 /**
  * Same as RTLdrLoad() but will verify the files it loads (hardened builds).
@@ -1038,10 +1036,10 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, 
  * @param   pszFilename     Image filename. This must have a path.
  * @param   phLdrMod        Where to store the handle to the loaded module.
  * @param   fFlags          See RTLDRFLAGS_.
- * @param   pszError        Where to return error message on failure.
- * @param   cbError         The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError);
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);
 
 /**
  * Same as RTLdrLoadAppPriv() but it will verify the files it loads (hardened
@@ -1054,10 +1052,10 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod,
  * @param   pszFilename     Image filename.
  * @param   phLdrMod        Where to store the handle to the loaded module.
  * @param   fFlags          See RTLDRFLAGS_*.
- * @param   pszError        Where to return error message on failure.
- * @param   cbError         The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError);
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);
 
 /**
  * Same as RTLdrLoad() but will verify the files it loads (hardened builds).
@@ -1069,10 +1067,10 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
  * @returns iprt status code.
  * @param   pszFilename     The full path to the module, with extension.
  * @param   phLdrMod        Where to store the handle to the loaded module.
- * @param   pszErr          Where to return error message on failure.
- * @param   cbErr           The size of the error buffer.
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
  */
-SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszErr, size_t cbErr);
+SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo);
 
 /**
  * Check if the host kernel can run in VMX root mode.

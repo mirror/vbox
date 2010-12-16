@@ -1122,12 +1122,12 @@ void ExtPack::probeAndLoad(void)
         return;
     }
 
-    char szErr[2048];
-    RT_ZERO(szErr);
-    vrc = SUPR3HardenedVerifyDir(m->strExtPackPath.c_str(), true /*fRecursive*/, true /*fCheckFiles*/, szErr, sizeof(szErr));
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    vrc = SUPR3HardenedVerifyDir(m->strExtPackPath.c_str(), true /*fRecursive*/, true /*fCheckFiles*/, &ErrInfo.Core);
     if (RT_FAILURE(vrc))
     {
-        m->strWhyUnusable.printf(tr("%s (rc=%Rrc)"), szErr, vrc);
+        m->strWhyUnusable.printf(tr("%s (rc=%Rrc)"), ErrInfo.Core.pszMsg, vrc);
         return;
     }
 
@@ -1167,15 +1167,13 @@ void ExtPack::probeAndLoad(void)
         return;
     }
 
-    vrc = SUPR3HardenedVerifyPlugIn(m->strMainModPath.c_str(), szErr, sizeof(szErr));
+    vrc = SUPR3HardenedVerifyPlugIn(m->strMainModPath.c_str(), &ErrInfo.Core);
     if (RT_FAILURE(vrc))
     {
-        m->strWhyUnusable.printf(tr("%s"), szErr);
+        m->strWhyUnusable.printf(tr("%s"), ErrInfo.Core.pszMsg);
         return;
     }
 
-    RTERRINFOSTATIC ErrInfo;
-    RTErrInfoInitStatic(&ErrInfo);
     if (fIsNative)
     {
         vrc = RTLdrLoadEx(m->strMainModPath.c_str(), &m->hMainMod, 0 /*fFlags*/, &ErrInfo.Core);
@@ -1772,8 +1770,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
     if (a_enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
     {
-        char szError[8192];
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRFLAGS_GLOBAL, szError, sizeof(szError));
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRFLAGS_GLOBAL, NULL);
         if (RT_FAILURE(vrc))
             m->hVBoxVMM = NIL_RTLDRMOD;
         /* cleanup in ::uninit()? */

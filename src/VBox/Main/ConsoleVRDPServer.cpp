@@ -2334,12 +2334,13 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
 
     if (mVRDPLibrary == NIL_RTLDRMOD)
     {
-        char szErr[4096 + 512];
-        szErr[0] = '\0';
+        RTERRINFOSTATIC ErrInfo;
+        RTErrInfoInitStatic(&ErrInfo);
+
         if (RTPathHavePath(pszLibraryName))
-            rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &mVRDPLibrary, szErr, sizeof(szErr));
+            rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &mVRDPLibrary, &ErrInfo.Core);
         else
-            rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary, 0 /*=fFlags*/, szErr, sizeof(szErr));
+            rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary, 0 /*fFlags*/, &ErrInfo.Core);
         if (RT_SUCCESS(rc))
         {
             struct SymbolEntry
@@ -2370,8 +2371,8 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
         }
         else
         {
-            if (szErr[0])
-                LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, szErr, rc));
+            if (RTErrInfoIsSet(&ErrInfo.Core))
+                LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, ErrInfo.Core.pszMsg, rc));
             else
                 LogRel(("VRDE: Error loading the library '%s' rc = %Rrc.\n", pszLibraryName, rc));
 

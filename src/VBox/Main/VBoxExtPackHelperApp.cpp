@@ -308,10 +308,11 @@ static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTar
 {
     RTMsgInfo("Validating unpacked extension pack...");
 
-    char szErr[4096+1024];
-    int rc = SUPR3HardenedVerifyDir(pszDir, true /*fRecursive*/, true /*fCheckFiles*/, szErr, sizeof(szErr));
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    int rc = SUPR3HardenedVerifyDir(pszDir, true /*fRecursive*/, true /*fCheckFiles*/, &ErrInfo.Core);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Hardening check failed with %Rrc: %s", rc, szErr);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Hardening check failed with %Rrc: %s", rc, ErrInfo.Core.pszMsg);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -1479,10 +1480,11 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-    char szErr[2048];
-    rc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, szErr, sizeof(szErr));
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    rc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, &ErrInfo.Core);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", szErr);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s", ErrInfo.Core.pszMsg);
 
     /*
      * Elevation check.

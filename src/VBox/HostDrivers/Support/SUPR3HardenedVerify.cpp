@@ -763,27 +763,35 @@ DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const 
  *
  * @returns Returns @a rc
  * @param   rc                  The return code.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  * @param   cMsgs               The number of messages in the ellipsis.
  * @param   ...                 Message parts.
  */
-static int supR3HardenedSetErrorN(int rc, char *pszErr, size_t cbErr, unsigned cMsgs, ...)
+static int supR3HardenedSetErrorN(int rc, PRTERRINFO pErrInfo, unsigned cMsgs, ...)
 {
-    va_list va;
-    va_start(va, cMsgs);
-    while (cMsgs-- > 0 && cbErr > 0)
+    if (pErrInfo)
     {
-        const char *pszMsg = va_arg(va,  const char *);
-        size_t cchMsg = VALID_PTR(pszMsg) ? strlen(pszMsg) : 0;
-        if (cchMsg >= cbErr)
-            cchMsg = cbErr - 1;
-        memcpy(pszErr, pszMsg, cchMsg);
-        pszErr[cchMsg] = '\0';
-        pszErr += cchMsg;
-        cbErr -= cchMsg;
+        size_t cbErr  = pErrInfo->cbMsg;
+        char  *pszErr = pErrInfo->pszMsg;
+
+        va_list va;
+        va_start(va, cMsgs);
+        while (cMsgs-- > 0 && cbErr > 0)
+        {
+            const char *pszMsg = va_arg(va,  const char *);
+            size_t cchMsg = VALID_PTR(pszMsg) ? strlen(pszMsg) : 0;
+            if (cchMsg >= cbErr)
+                cchMsg = cbErr - 1;
+            memcpy(pszErr, pszMsg, cchMsg);
+            pszErr[cchMsg] = '\0';
+            pszErr += cchMsg;
+            cbErr -= cchMsg;
+        }
+        va_end(va);
+
+        pErrInfo->rc      = rc;
+        pErrInfo->fFlags |= RTERRINFO_FLAGS_SET;
     }
-    va_end(va);
 
     return rc;
 }
@@ -794,16 +802,15 @@ static int supR3HardenedSetErrorN(int rc, char *pszErr, size_t cbErr, unsigned c
  *
  * @returns Returns @a rc
  * @param   rc                  The return code.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  * @param   pszMsg1             The first message part.
  * @param   pszMsg2             The second message part.
  * @param   pszMsg3             The third message part.
  */
-static int supR3HardenedSetError3(int rc, char *pszErr, size_t cbErr, const char *pszMsg1,
+static int supR3HardenedSetError3(int rc, PRTERRINFO pErrInfo, const char *pszMsg1,
                                   const char *pszMsg2, const char *pszMsg3)
 {
-    return supR3HardenedSetErrorN(rc, pszErr, cbErr, 3, pszMsg1, pszMsg2, pszMsg3);
+    return supR3HardenedSetErrorN(rc, pErrInfo, 3, pszMsg1, pszMsg2, pszMsg3);
 }
 
 
@@ -812,15 +819,14 @@ static int supR3HardenedSetError3(int rc, char *pszErr, size_t cbErr, const char
  *
  * @returns Returns @a rc
  * @param   rc                  The return code.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  * @param   pszMsg1             The first message part.
  * @param   pszMsg2             The second message part.
  */
-static int supR3HardenedSetError2(int rc, char *pszErr, size_t cbErr, const char *pszMsg1,
+static int supR3HardenedSetError2(int rc, PRTERRINFO pErrInfo, const char *pszMsg1,
                                   const char *pszMsg2)
 {
-    return supR3HardenedSetErrorN(rc, pszErr, cbErr, 2, pszMsg1, pszMsg2);
+    return supR3HardenedSetErrorN(rc, pErrInfo, 2, pszMsg1, pszMsg2);
 }
 
 
@@ -829,13 +835,12 @@ static int supR3HardenedSetError2(int rc, char *pszErr, size_t cbErr, const char
  *
  * @returns Returns @a rc
  * @param   rc                  The return code.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  * @param   pszMsg              The message.
  */
-static int supR3HardenedSetError(int rc, char *pszErr, size_t cbErr, const char *pszMsg)
+static int supR3HardenedSetError(int rc, PRTERRINFO pErrInfo, const char *pszMsg)
 {
-    return supR3HardenedSetErrorN(rc, pszErr, cbErr, 1, pszMsg);
+    return supR3HardenedSetErrorN(rc, pErrInfo, 1, pszMsg);
 }
 
 
@@ -876,12 +881,11 @@ typedef SUPR3HARDENEDPATHINFO *PSUPR3HARDENEDPATHINFO;
  *
  * @returns VBox status code.
  * @param   pszPath             The path to check.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  * @param   pInfo               Where to return a copy of the path along with
  *                              parsing information.
  */
-static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size_t cbErr, PSUPR3HARDENEDPATHINFO pInfo)
+static int supR3HardenedVerifyPathSanity(const char *pszPath, PRTERRINFO pErrInfo, PSUPR3HARDENEDPATHINFO pInfo)
 {
     const char *pszSrc = pszPath;
     char       *pszDst = pInfo->szPath;
@@ -893,7 +897,7 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
     if (   RT_C_IS_ALPHA(pszSrc[0])
         || pszSrc[1] != ':'
         || !RTPATH_IS_SLASH(pszSrc[2]))
-        return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pszErr, cbErr, "The path is not absolute: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pErrInfo, "The path is not absolute: '", pszPath, "'");
 
     *pszDst++ = RT_C_TO_UPPER(pszSrc[0]);
     *pszDst++ = ':';
@@ -902,7 +906,7 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
 
 #else
     if (!RTPATH_IS_SLASH(pszSrc[0]))
-        return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pszErr, cbErr, "The path is not absolute: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pErrInfo, "The path is not absolute: '", pszPath, "'");
 
     *pszDst++ = RTPATH_SLASH;
     pszSrc += 1;
@@ -913,10 +917,10 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
      * be approved of.
      */
     if (pszSrc[0] == '\0')
-        return supR3HardenedSetError3(VERR_SUPLIB_PATH_IS_ROOT, pszErr, cbErr, "The path is root: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_PATH_IS_ROOT, pErrInfo, "The path is root: '", pszPath, "'");
     if (   pszSrc[1] == '\0'
         || pszSrc[2] == '\0')
-        return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_SHORT, pszErr, cbErr, "The path is too short: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_SHORT, pErrInfo, "The path is too short: '", pszPath, "'");
 
     /*
      * Check each component.  No parent references or double slashes.
@@ -927,17 +931,17 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
     {
         /* Sanity checks. */
         if (RTPATH_IS_SLASH(pszSrc[0])) /* can be relaxed if we care. */
-            return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_CLEAN, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_CLEAN, pErrInfo,
                                           "The path is not clean of double slashes: '", pszPath, "'");
         if (   pszSrc[0] == '.'
             && pszSrc[1] == '.'
             && RTPATH_IS_SLASH(pszSrc[2]))
-            return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_ABSOLUTE, pErrInfo,
                                           "The path is not absolute: '", pszPath, "'");
 
         /* Record the start of the component. */
         if (pInfo->cComponents >= RT_ELEMENTS(pInfo->aoffComponents) - 1)
-            return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_MANY_COMPONENTS, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_MANY_COMPONENTS, pErrInfo,
                                           "The path has too many components: '", pszPath, "'");
         pInfo->aoffComponents[pInfo->cComponents++] = pszDst - &pInfo->szPath[0];
 
@@ -955,7 +959,7 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
             }
             *pszDst++ = *pszSrc++;
             if ((uintptr_t)(pszDst - &pInfo->szPath[0]) >= SUPR3HARDENED_MAX_PATH)
-                return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_LONG, pszErr, cbErr,
+                return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo,
                                               "The path is too long: '", pszPath, "'");
         }
     }
@@ -999,11 +1003,9 @@ typedef SUPR3HARDENEDFSOBJSTATE const *PCSUPR3HARDENEDFSOBJSTATE;
  * @returns VBox status code, error buffer filled on failure.
  * @param   pszPath             The path to the object.
  * @param   pFsObjState         Where to return the state information.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
-static int supR3HardenedQueryFsObjectByPath(char const *pszPath, PSUPR3HARDENEDFSOBJSTATE pFsObjState,
-                                            char *pszErr, size_t cbErr)
+static int supR3HardenedQueryFsObjectByPath(char const *pszPath, PSUPR3HARDENEDFSOBJSTATE pFsObjState, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1018,7 +1020,7 @@ static int supR3HardenedQueryFsObjectByPath(char const *pszPath, PSUPR3HARDENEDF
     {
         /* Ignore access errors */
         if (errno != EACCES)
-            return supR3HardenedSetErrorN(VERR_SUPLIB_STAT_FAILED, pszErr, cbErr,
+            return supR3HardenedSetErrorN(VERR_SUPLIB_STAT_FAILED, pErrInfo,
                                           5, "stat failed with ", strerror(errno), " on: '", pszPath, "'");
     }
 
@@ -1042,11 +1044,10 @@ static int supR3HardenedQueryFsObjectByPath(char const *pszPath, PSUPR3HARDENEDF
  * @param   pFsObjState         Where to return the state information.
  * @param   pszPath             The path to the object. (For the error message
  *                              only.)
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedQueryFsObjectByHandle(RTHCUINTPTR hNative, PSUPR3HARDENEDFSOBJSTATE pFsObjState,
-                                              char const *pszPath, char *pszErr, size_t cbErr)
+                                              char const *pszPath, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1058,7 +1059,7 @@ static int supR3HardenedQueryFsObjectByHandle(RTHCUINTPTR hNative, PSUPR3HARDENE
      * Stat the object, do not follow links.
      */
     if (fstat((int)hNative, &pFsObjState->Stat) != 0)
-        return supR3HardenedSetErrorN(VERR_SUPLIB_STAT_FAILED, pszErr, cbErr,
+        return supR3HardenedSetErrorN(VERR_SUPLIB_STAT_FAILED, pErrInfo,
                                       5, "fstat failed with ", strerror(errno), " on '", pszPath, "'");
 
     /*
@@ -1080,11 +1081,10 @@ static int supR3HardenedQueryFsObjectByHandle(RTHCUINTPTR hNative, PSUPR3HARDENE
  * @param   pFsObjState2        File system object information/state by handle.
  * @param   pszPath             The path to the object @a pFsObjState
  *                              describes.  (For the error message.)
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, PCSUPR3HARDENEDFSOBJSTATE pFsObjState2,
-                                       const char *pszPath, char *pszErr, size_t cbErr)
+                                       const char *pszPath, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1100,15 +1100,15 @@ static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, P
      */
     if (   pFsObjState1->Stat.st_ino != pFsObjState2->Stat.st_ino
         || pFsObjState1->Stat.st_dev != pFsObjState2->Stat.st_dev)
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pErrInfo,
                                       "The native handle is not the same as '", pszPath, "' (ino/dev)");
     if (   pFsObjState1->Stat.st_uid != pFsObjState2->Stat.st_uid
         || pFsObjState1->Stat.st_gid != pFsObjState2->Stat.st_gid)
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pErrInfo,
                                       "The native handle is not the same as '", pszPath, "' (uid/gid)");
     if (   (pFsObjState1->Stat.st_mode & (S_IFMT | S_IWUSR | S_IWGRP | S_IWOTH))
         != (pFsObjState2->Stat.st_mode & (S_IFMT | S_IWUSR | S_IWGRP | S_IWOTH)))
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_NOT_SAME_OBJECT, pErrInfo,
                                       "The native handle is not the same as '", pszPath, "' (mode)");
     return VINF_SUCCESS;
 #endif
@@ -1127,11 +1127,10 @@ static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, P
  *                              directories).
  * @param   pszPath             The path to the object. (For error messages
  *                              only.)
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bool fDir, bool fRelaxed,
-                                       const char *pszPath, char *pszErr, size_t cbErr)
+                                       const char *pszPath, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1148,7 +1147,7 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
      * This can be extended to include predefined system users if necessary.
      */
     if (pFsObjState->Stat.st_uid != 0)
-        return supR3HardenedSetError3(VERR_SUPLIB_OWNER_NOT_ROOT, pszErr, cbErr, "The owner is not root: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_OWNER_NOT_ROOT, pErrInfo, "The owner is not root: '", pszPath, "'");
 
     /*
      * The group does not matter if it does not have write access, if it has
@@ -1166,7 +1165,7 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
            permit grand parents and beyond to be group writable by admin. */
         if (pFsObjState->Stat.st_gid != 80 /*admin*/) /** @todo dynamically resolve the admin group? */
 #endif
-            return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
                                           "The group is not a system group and it has write access to '", pszPath, "'");
     }
 
@@ -1174,7 +1173,7 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
      * World must not have write access.  There is no relaxing this rule.
      */
     if (pFsObjState->Stat.st_mode & S_IWOTH)
-        return supR3HardenedSetError3(VERR_SUPLIB_WORLD_WRITABLE, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_WORLD_WRITABLE, pErrInfo,
                                       "World writable: '", pszPath, "'");
 
     /*
@@ -1189,17 +1188,17 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         && !S_ISREG(pFsObjState->Stat.st_mode))
     {
         if (S_ISLNK(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pErrInfo,
                                           "Symlinks are not permitted: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pErrInfo,
                                       "Not regular file or directory: '", pszPath, "'");
     }
     if (fDir != !!S_ISDIR(pFsObjState->Stat.st_mode))
     {
         if (S_ISDIR(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pszErr, cbErr,
+            return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
                                           "Expected file but found directory: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pErrInfo,
                                       "Expected directory but found file: '", pszPath, "'");
     }
 
@@ -1221,16 +1220,15 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
  *                              query call.
  * @param   pszPath             The path to the object @a pFsObjState
  *                              describes.  (For the error message.)
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedVerifySameFsObject(RTHCUINTPTR hNative, PCSUPR3HARDENEDFSOBJSTATE pFsObjState,
-                                           const char *pszPath, char *pszErr, size_t cbErr)
+                                           const char *pszPath, PRTERRINFO pErrInfo)
 {
     SUPR3HARDENEDFSOBJSTATE FsObjState2;
-    int rc = supR3HardenedQueryFsObjectByHandle(hNative, &FsObjState2, pszPath, pszErr, cbErr);
+    int rc = supR3HardenedQueryFsObjectByHandle(hNative, &FsObjState2, pszPath, pErrInfo);
     if (RT_SUCCESS(rc))
-        rc = supR3HardenedIsSameFsObject(pFsObjState, &FsObjState2, pszPath, pszErr, cbErr);
+        rc = supR3HardenedIsSameFsObject(pFsObjState, &FsObjState2, pszPath, pErrInfo);
     return rc;
 }
 
@@ -1251,11 +1249,10 @@ static int supR3HardenedVerifySameFsObject(RTHCUINTPTR hNative, PCSUPR3HARDENEDF
  *                              be used to verified that we're opening the same
  *                              thing.
  * @param   fRecursive          Whether to recurse into subdirectories.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, PSUPR3HARDENEDFSOBJSTATE pFsObjState,
-                                           bool fRecursive, char *pszErr, size_t cbErr)
+                                           bool fRecursive, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1277,12 +1274,12 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
         /* Ignore access errors. */
         if (errno == EACCES)
             return VINF_SUCCESS;
-        return supR3HardenedSetErrorN(VERR_SUPLIB_DIR_ENUM_FAILED, pszErr, cbErr,
+        return supR3HardenedSetErrorN(VERR_SUPLIB_DIR_ENUM_FAILED, pErrInfo,
                                       5, "opendir failed with ", strerror(errno), " on '", pszDirPath, "'");
     }
     if (dirfd(pDir) != -1)
     {
-        int rc = supR3HardenedVerifySameFsObject(dirfd(pDir), pFsObjState, pszDirPath, pszErr, cbErr);
+        int rc = supR3HardenedVerifySameFsObject(dirfd(pDir), pFsObjState, pszDirPath, pErrInfo);
         if (RT_FAILURE(rc))
         {
             closedir(pDir);
@@ -1303,7 +1300,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
         int iErr = readdir_r(pDir, &Entry, &pEntry);
         if (iErr)
         {
-            rc = supR3HardenedSetErrorN(VERR_SUPLIB_DIR_ENUM_FAILED, pszErr, cbErr,
+            rc = supR3HardenedSetErrorN(VERR_SUPLIB_DIR_ENUM_FAILED, pErrInfo,
                                         5, "readdir_r failed with ", strerror(iErr), " in '", pszDirPath, "'");
             break;
         }
@@ -1317,7 +1314,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
         size_t cchName = strlen(pEntry->d_name);
         if (cchName + cchDirPath > SUPR3HARDENED_MAX_PATH)
         {
-            rc = supR3HardenedSetErrorN(VERR_SUPLIB_PATH_TOO_LONG, pszErr, cbErr,
+            rc = supR3HardenedSetErrorN(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo,
                                         4, "Path grew too long during recursion: '", pszDirPath, pEntry->d_name, "'");
             break;
         }
@@ -1328,11 +1325,11 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
          * (We don't bother skipping '.' and '..' at this point, a little bit
          * of extra checks doesn't hurt and neither requires relaxed handling.)
          */
-        rc = supR3HardenedQueryFsObjectByPath(pszDirPath, pFsObjState, pszErr, cbErr);
+        rc = supR3HardenedQueryFsObjectByPath(pszDirPath, pFsObjState, pErrInfo);
         if (RT_SUCCESS(rc))
             break;
         rc = supR3HardenedVerifyFsObject(pFsObjState, S_ISDIR(pFsObjState->Stat.st_mode), false /*fRelaxed*/,
-                                         pszDirPath, pszErr, cbErr);
+                                         pszDirPath, pErrInfo);
         if (RT_FAILURE(rc))
             break;
 
@@ -1348,7 +1345,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
             pszDirPath[cchDirPath + cchName + 1] = '\0';
 
             rc = supR3HardenedVerifyDirRecursive(pszDirPath, cchDirPath + cchName + 1, pFsObjState,
-                                                 fRecursive, pszErr, cbErr);
+                                                 fRecursive, pErrInfo);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1367,16 +1364,15 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
  * @param   pszDirPath          See SUPR3HardenedVerifyDir.
  * @param   fRecursive          See SUPR3HardenedVerifyDir.
  * @param   fCheckFiles         See SUPR3HardenedVerifyDir.
- * @param   pszErr              See SUPR3HardenedVerifyDir.
- * @param   cbErr               See SUPR3HardenedVerifyDir.
+ * @param   pErrInfo            See SUPR3HardenedVerifyDir.
  */
-DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr)
+DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo)
 {
     /*
      * Validate the input path and parse it.
      */
     SUPR3HARDENEDPATHINFO Info;
-    int rc = supR3HardenedVerifyPathSanity(pszDirPath, pszErr, cbErr, &Info);
+    int rc = supR3HardenedVerifyPathSanity(pszDirPath, pErrInfo, &Info);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1389,9 +1385,9 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
     {
         bool fRelaxed = iComponent + 2 < cComponents;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
-        rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pszErr, cbErr);
+        rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pErrInfo);
         if (RT_SUCCESS(rc))
-            rc = supR3HardenedVerifyFsObject(&FsObjState, true /*fDir*/, fRelaxed, Info.szPath, pszErr, cbErr);
+            rc = supR3HardenedVerifyFsObject(&FsObjState, true /*fDir*/, fRelaxed, Info.szPath, pErrInfo);
         if (RT_FAILURE(rc))
             return rc;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = iComponent + 1 != cComponents ? RTPATH_SLASH : '\0';
@@ -1405,7 +1401,7 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
         Info.szPath[Info.cch]     = RTPATH_SLASH;
         Info.szPath[Info.cch + 1] = '\0';
         return supR3HardenedVerifyDirRecursive(Info.szPath, Info.cch + 1, &FsObjState,
-                                               fRecursive, pszErr, cbErr);
+                                               fRecursive, pErrInfo);
     }
 
     return VINF_SUCCESS;
@@ -1420,20 +1416,20 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
  * @param   hNativeFile         Handle to the file, verify that it's the same
  *                              as we ended up with when verifying the path.
  *                              RTHCUINTPTR_MAX means NIL here.
- * @param   pszErr              The error buffer.
- * @param   cbErr               The size of the error buffer.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
  */
-DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, char *pszErr, size_t cbErr)
+DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, PRTERRINFO pErrInfo)
 {
     /*
      * Validate the input path and parse it.
      */
     SUPR3HARDENEDPATHINFO Info;
-    int rc = supR3HardenedVerifyPathSanity(pszFilename, pszErr, cbErr, &Info);
+    int rc = supR3HardenedVerifyPathSanity(pszFilename, pErrInfo, &Info);
     if (RT_FAILURE(rc))
         return rc;
     if (Info.fDirSlash)
-        return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pszErr, cbErr,
+        return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
                                       "The file path specifies a directory: '", pszFilename, "'");
 
     /*
@@ -1446,9 +1442,9 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
         bool fFinal   = iComponent + 1 == cComponents;
         bool fRelaxed = iComponent + 2 < cComponents;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
-        rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pszErr, cbErr);
+        rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pErrInfo);
         if (RT_SUCCESS(rc))
-            rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed, Info.szPath, pszErr, cbErr);
+            rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed, Info.szPath, pErrInfo);
         if (RT_FAILURE(rc))
             return rc;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = !fFinal ? RTPATH_SLASH : '\0';
@@ -1458,7 +1454,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
      * Verify the file.
      */
     if (hNativeFile != RTHCUINTPTR_MAX)
-        return supR3HardenedVerifySameFsObject(hNativeFile, &FsObjState, Info.szPath, pszErr, cbErr);
+        return supR3HardenedVerifySameFsObject(hNativeFile, &FsObjState, Info.szPath, pErrInfo);
     return VINF_SUCCESS;
 }
 
