@@ -162,14 +162,14 @@ typedef AUTHENTRY2 *PAUTHENTRY2;
  *
  * Return code:
  *
- *   AuthAccessDenied    Client access has been denied.
- *   AuthAccessGranted   Client has the right to use the
- *                       virtual machine.
- *   AuthDelegateToGuest Guest operating system must
- *                       authenticate the client and the
- *                       library must be called again with
- *                       the result of the guest
- *                       authentication.
+ *   AuthResultAccessDenied    Client access has been denied.
+ *   AuthResultAccessGranted   Client has the right to use the
+ *                             virtual machine.
+ *   AuthResultDelegateToGuest Guest operating system must
+ *                             authenticate the client and the
+ *                             library must be called again with
+ *                             the result of the guest
+ *                             authentication.
  *
  * Note: When 'fLogon' is 0, only pszCaller, pUuid and clientId are valid and the return
  *       code is ignored.
