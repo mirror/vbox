@@ -40,11 +40,31 @@
 #include <iprt/thread.h>
 #include <iprt/path.h>
 
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+# include <errno.h>
+# include <sys/ioctl.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
 #ifdef RT_OS_WINDOWS
 # define _WIN32_WINNT 0x0500
 # include <windows.h>
 # include <winioctl.h>
 #endif
+#ifdef RT_OS_DARWIN
+# include <sys/disk.h>
+#endif /* RT_OS_DARWIN */
+#ifdef RT_OS_SOLARIS
+# include <stropts.h>
+# include <sys/dkio.h>
+# include <sys/vtoc.h>
+#endif /* RT_OS_SOLARIS */
+#ifdef RT_OS_FREEBSD
+# include <sys/disk.h>
+#endif /* RT_OS_FREEBSD */
 
 #include "PDMAsyncCompletionFileInternal.h"
 
@@ -613,11 +633,56 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
         {
             rc = RTErrConvertFromWin32(GetLastError());
         }
+#elif defined(RT_OS_DARWIN)
+        struct stat DevStat;
+        if (!fstat(hFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+        {
+            uint64_t cBlocks;
+            uint32_t cbBlock;
+            if (!ioctl(hFile, DKIOCGETBLOCKCOUNT, &cBlocks))
+            {
+                if (!ioctl(hFile, DKIOCGETBLOCKSIZE, &cbBlock))
+                    cbSize = cBlocks * cbBlock;
+                else
+                    rc = RTErrConvertFromErrno(errno);
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+#elif defined(RT_OS_SOLARIS)
+        struct stat DevStat;
+        if (!fstat(hFile, &DevStat) && (   S_ISBLK(DevStat.st_mode)
+                                        || S_ISCHR(DevStat.st_mode)))
+        {
+            struct dk_minfo mediainfo;
+            if (!ioctl(hFile, DKIOCGMEDIAINFO, &mediainfo))
+                cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+#elif defined(RT_OS_FREEBSD)
+        struct stat DevStat;
+        if (!fstat(hFile, &DevStat) && S_ISCHR(DevStat.st_mode))
+        {
+            off_t cbMedia = 0;
+            if (!ioctl(hFile, DIOCGMEDIASIZE, &cbMedia))
+            {
+                cbSize = cbMedia;
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
 #else
         /* Could be a block device */
         rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &cbSize);
-
 #endif
+
         if (RT_SUCCESS(rc) && (cbSize != 0))
             *pcbSize = cbSize;
         else if (RT_SUCCESS(rc))
