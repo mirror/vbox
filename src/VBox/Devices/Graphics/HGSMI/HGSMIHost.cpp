@@ -1691,7 +1691,7 @@ void HGSMIDestroy (PHGSMIINSTANCE pIns)
 
 static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
 {
-    HGSMIGUESTCOMPLENTRY *pEntry;
+    HGSMIGUESTCOMPLENTRY *pEntry = NULL;
 
     int rc = hgsmiGuestCompletionFIFOAlloc (pIns, &pEntry);
     AssertRC(rc);
