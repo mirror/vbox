@@ -352,7 +352,7 @@
         virtualization layer. As a result, it works with guest operating
         systems other than Windows (even in text mode) and does not require
         application support in the virtual machine either. The VRDE is
-        described in detail in <xref linkend="vrdp" />.</para>
+        described in detail in <xref linkend="vrde" />.</para>
 
         <para>On top of this special capacity, VirtualBox offers you more
         unique features:<itemizedlist>
@@ -362,7 +362,7 @@
               on Windows and PAM on Linux for RDP authentication. In addition,
               it includes an easy-to-use SDK which allows you to create
               arbitrary interfaces for other methods of authentication; see
-              <xref linkend="vbox-authenticate-sdk" /> for details.</para>
+              <xref linkend="vbox-auth" /> for details.</para>
             </listitem>
 
             <listitem>
@@ -532,7 +532,7 @@
 
               <listitem>
                 <para>VirtualBox Remote Desktop Protocol (VRDP) support; see
-                <xref linkend="vrdp" />.</para>
+                <xref linkend="vrde" />.</para>
               </listitem>
 
               <listitem>

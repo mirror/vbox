@@ -310,7 +310,7 @@ UART 1:          disabled
 UART 2:          disabled
 Audio:           disabled (Driver: Unknown)
 Clipboard Mode:  Bidirectional
-VRDP:            disabled
+VRDE:            disabled
 USB:             disabled
 
 USB Device Filters:
@@ -832,7 +832,7 @@ Statistics update:  disabled
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Serial port, audio, clipboard, VRDP and USB settings</title>
+      <title>Serial port, audio, clipboard, remote desktop and USB settings</title>
 
       <para>The following other hardware settings are available through
       <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
@@ -935,31 +935,31 @@ Statistics update:  disabled
       available through <computeroutput>VBoxManage
       modifyvm</computeroutput>:<itemizedlist>
           <listitem>
-            <para><computeroutput>--vrdp on|off</computeroutput>: With the
+            <para><computeroutput>--vrde on|off</computeroutput>: With the
             VirtualBox graphical user interface, this enables or disables the
-            built-in VRDP server. Note that if you are using
+            VirtualBox remote desktop extension (VRDE) server. Note that if you are using
             <computeroutput>VBoxHeadless</computeroutput> (see <xref
-            linkend="vboxheadless" />), VRDP output is always enabled.</para>
+            linkend="vboxheadless" />), VRDE is enabled by default.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpport
+            <para><computeroutput>--vrdeport
             default|&lt;ports&gt;</computeroutput>: A port or a range of ports
-            the VRDP server can bind to; "default" or "0" means port 3389, the
+            the VRDE server can bind to; "default" or "0" means port 3389, the
             standard port for RDP. You can specify a comma-separated list of
             ports or ranges of ports. Use a dash between two port numbers to
-            specify a range. The VRDP server will bind to <emphasis
+            specify a range. The VRDE server will bind to <emphasis
             role="bold">one</emphasis> of available ports from the specified
             list. Only one machine can use a given port at a time. For
-            example, the option <computeroutput> --vrdpport
+            example, the option <computeroutput> --vrdeport
             5000,5010-5012</computeroutput> will tell the server to bind to
             one of following ports: 5000, 5010, 5011 or 5012.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpaddress &lt;IP
+            <para><computeroutput>--vrdeaddress &lt;IP
             address&gt;</computeroutput>: The IP address of the host network
-            interface the VRDP server will bind to. If specified, the VRDP
+            interface the VRDE server will bind to. If specified, the
             server will accept connections only on the specified host network
             interface.</para>
           </listitem>
@@ -972,32 +972,33 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpmulticon on|off</computeroutput>: This
-            enables multiple VRDP connections to the same VRDP server; see
-            <xref lang="" linkend="vrdp-multiconnection" />.</para>
+            <para><computeroutput>--vrdemulticon on|off</computeroutput>: This
+            enables multiple connections to the same VRDE server, if the server
+            supports this feature; see
+            <xref lang="" linkend="vrde-multiconnection" />.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpreusecon on|off</computeroutput>: This
-            specifies the VRDP server behavior when multiple connections are
-            disabled. When this option is enabled, the VRDP server will allow
-            a new client to connect and drop the existing connection. When
+            <para><computeroutput>--vrdereusecon on|off</computeroutput>: This
+            specifies the VRDE server behavior when multiple connections are
+            disabled. When this option is enabled, the server will allow
+            a new client to connect and will drop the existing connection. When
             this option is disabled (this is the default setting), a new
             connection will not be accepted if there is already a client
             connected to the server.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpvideochannel on|off</computeroutput>:
-            This enables VRDP video acceleration; see <xref lang=""
-            linkend="vrdp-videochannel" />.</para>
+            <para><computeroutput>--vrdevideochannel on|off</computeroutput>:
+            This enables video redirection, if it is supported by the VRDE server;
+            see <xref lang="" linkend="vrde-videochannel" />.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpvideochannelquality
-            &lt;percent&gt;</computeroutput>: Sets the image quality for VRDP
-            video acceleration; see <xref lang=""
-            linkend="vrdp-videochannel" />.</para>
+            <para><computeroutput>--vrdevideochannelquality
+            &lt;percent&gt;</computeroutput>: Sets the image quality for
+            video redirection; see <xref lang=""
+            linkend="vrde-videochannel" />.</para>
           </listitem>
         </itemizedlist></para>
     </sect2>
@@ -1187,7 +1188,7 @@ Virtual system 0:
     <para>The optional <computeroutput>--type</computeroutput> specifier
     determines whether the machine will be started in a window (GUI mode,
     which is the default) or whether the output should go through
-    <computeroutput>VBoxHeadless</computeroutput>, with VRDP enabled or not;
+    <computeroutput>VBoxHeadless</computeroutput>, with VRDE enabled or not;
     see <xref linkend="vboxheadless" /> for more information. The list of
     types is subject to change, and it's not guaranteed that all types are
     accepted by any product variant.</para>
@@ -1204,19 +1205,10 @@ Virtual system 0:
       </glossentry>
 
       <glossentry>
-        <glossterm>vrdp</glossterm>
-
-        <glossdef>
-          <para>Starts a VM showing a GUI window, with its graphics card
-          output accessible by an RDP client.</para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
         <glossterm>headless</glossterm>
 
         <glossdef>
-          <para>Starts a VM without a window for remote RDP display
+          <para>Starts a VM without a window for remote display
           only.</para>
         </glossdef>
       </glossentry>
@@ -1335,16 +1327,16 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para><computeroutput>vrdp on|off</computeroutput> lets you enable or
-        disable the built-in VRDP server.</para>
+        <para><computeroutput>vrde on|off</computeroutput> lets you enable or
+        disable the VRDE server, if it is installed.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vrdpport default|&lt;ports&gt;</computeroutput>
-        changes the port or a range of ports that the VRDP server can bind to;
+        <para><computeroutput>vrdeport default|&lt;ports&gt;</computeroutput>
+        changes the port or a range of ports that the VRDE server can bind to;
         "default" or "0" means port 3389, the standard port for RDP. For
         details, see the description for the
-        <computeroutput>--vrdpport</computeroutput> option in <xref
+        <computeroutput>--vrdeport</computeroutput> option in <xref
         linkend="vboxmanage-modifyvm-other" />.</para>
       </listitem>
 
