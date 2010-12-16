@@ -105,17 +105,21 @@ public:
     {
         switch (aType)
         {
-            case VBoxEventType_OnVBoxSVCUnavailable:
+            case VBoxEventType_OnVBoxSVCAvailabilityChanged:
             {
-                ComPtr<IVBoxSVCUnavailableEvent> pVSUEv = aEvent;
-                Assert(pVSUEv);
-
-                LogRel(("VBoxHeadless: VBoxSVC became unavailable, exiting.\n"));
-                RTPrintf("VBoxSVC became unavailable, exiting.\n");
-                /* Terminate the VM as cleanly as possible given that VBoxSVC
-                 * is no longer present. */
-                g_fTerminateFE = true;
-                gEventQ->interruptEventQueueProcessing();
+                ComPtr<IVBoxSVCAvailabilityChangedEvent> pVSACEv = aEvent;
+                Assert(pVSACEv);
+                BOOL fAvailable = FALSE;
+                pVSACEv->COMGETTER(Available)(&fAvailable);
+                if (!fAvailable)
+                {
+                    LogRel(("VBoxHeadless: VBoxSVC became unavailable, exiting.\n"));
+                    RTPrintf("VBoxSVC became unavailable, exiting.\n");
+                    /* Terminate the VM as cleanly as possible given that VBoxSVC
+                     * is no longer present. */
+                    g_fTerminateFE = true;
+                    gEventQ->interruptEventQueueProcessing();
+                }
                 break;
             }
             default:
@@ -997,7 +1001,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
             vboxClientListener = new VirtualBoxClientEventListenerImpl();
             com::SafeArray <VBoxEventType_T> eventTypes;
-            eventTypes.push_back(VBoxEventType_OnVBoxSVCUnavailable);
+            eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
             CHECK_ERROR(pES, RegisterListener(vboxClientListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
