@@ -248,18 +248,22 @@ public:
     {
         switch (aType)
         {
-            case VBoxEventType_OnVBoxSVCUnavailable:
+            case VBoxEventType_OnVBoxSVCAvailabilityChanged:
             {
-                ComPtr<IVBoxSVCUnavailableEvent> pVSUEv = aEvent;
-                Assert(pVSUEv);
-
-                LogRel(("VBoxSDL: VBoxSVC became unavailable, exiting.\n"));
-                RTPrintf("VBoxSVC became unavailable, exiting.\n");
-                /* Send QUIT event to terminate the VM as cleanly as possible
-                 * given that VBoxSVC is no longer present. */
-                SDL_Event event = {0};
-                event.type = SDL_QUIT;
-                PushSDLEventForSure(&event);
+                ComPtr<IVBoxSVCAvailabilityChangedEvent> pVSACEv = aEvent;
+                Assert(pVSACEv);
+                BOOL fAvailable = FALSE;
+                pVSACEv->COMGETTER(Available)(&fAvailable);
+                if (!fAvailable)
+                {
+                    LogRel(("VBoxSDL: VBoxSVC became unavailable, exiting.\n"));
+                    RTPrintf("VBoxSVC became unavailable, exiting.\n");
+                    /* Send QUIT event to terminate the VM as cleanly as possible
+                     * given that VBoxSVC is no longer present. */
+                    SDL_Event event = {0};
+                    event.type = SDL_QUIT;
+                    PushSDLEventForSure(&event);
+                }
                 break;
             }
 
@@ -1819,7 +1823,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
         pVBoxClientListener = new VBoxSDLClientEventListenerImpl();
         com::SafeArray<VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnVBoxSVCUnavailable);
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
         CHECK_ERROR(pES, RegisterListener(pVBoxClientListener, ComSafeArrayAsInParam(eventTypes), true));
     }
 

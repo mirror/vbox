@@ -14764,7 +14764,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="f33c82ca-1379-43a5-9211-8caae647e694"
+    uuid="ad800907-657f-4cd5-b14e-b609fd280a49"
     >
 
     <desc>
@@ -15002,29 +15002,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
       </desc>
     </const>
-    <const name="OnVBoxSVCUnavailable" value="68">
+    <const name="OnVBoxSVCAvailabilityChanged" value="68">
       <desc>
-        See <link to="IVBoxSVCUnavailableEvent">IVBoxSVCUnavailableEvent</link>.
+        See <link to="IVBoxSVCAvailabilityChangedEvent">IVBoxSVCAvailablityChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnVBoxSVCAvailable" value="69">
-      <desc>
-        See <link to="IVBoxSVCAvailableEvent">IVBoxSVCAvailableEvent</link>.
-      </desc>
-    </const>
-    <const name="OnBandwidthGroupChanged" value="70">
+    <const name="OnBandwidthGroupChanged" value="69">
       <desc>
         See <link to="IBandwidthGroupChangedEvent">IBandwidthGroupChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnGuestMonitorDisabled" value="71">
+    <const name="OnGuestMonitorDisabled" value="70">
       <desc>
         See <link to="IGuestMonitorDisabledEvent">IGuestMonitorDisabledEvent</link>.
       </desc>
     </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="72">
+    <const name="Last" value="71">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -16308,24 +16303,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IVBoxSVCUnavailableEvent" extends="IEvent"
-    uuid="99f6b352-f5c1-4d15-9c32-939158da8983"
-    wsmap="managed" autogen="VBoxEvent" id="OnVBoxSVCUnavailable"
+    name="IVBoxSVCAvailabilityChangedEvent" extends="IEvent"
+    uuid="97c78fcd-d4fc-485f-8613-5af88bfcfcdc"
+    wsmap="managed" autogen="VBoxEvent" id="OnVBoxSVCAvailabilityChanged"
     >
     <desc>
       Notification when VBoxSVC becomes unavailable (due to a crash or similar
-      unexpected circumstances).
+      unexpected circumstances) or available again.
     </desc>
-  </interface>
 
-  <interface
-    name="IVBoxSVCAvailableEvent" extends="IEvent"
-    uuid="0c971ea4-f3e0-4f4d-8558-ea0239c83031"
-    wsmap="managed" autogen="VBoxEvent" id="OnVBoxSVCAvailable"
-    >
-    <desc>
-      Notification when VBoxSVC becomes available again after being unavailable.
-    </desc>
+    <attribute name="available" type="boolean" readonly="yes">
+      <desc>
+        Whether VBoxSVC is available now.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
