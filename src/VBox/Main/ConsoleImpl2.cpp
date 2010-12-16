@@ -2064,7 +2064,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                      * introduced by the new distribution model.
                      */
                     static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
+# ifdef VBOX_WITH_EXTPACK
                     if (pConsole->mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
+# endif
                     {
                         InsertConfigNode(pDevices, "usb-ehci", &pDev);
                         InsertConfigNode(pDev,     "0", &pInst);
@@ -2086,6 +2088,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         InsertConfigInteger(pCfg,  "First",    0);
                         InsertConfigInteger(pCfg,  "Last",     0);
                     }
+# ifdef VBOX_WITH_EXTPACK
                     else
                     {
                         /* Fatal if a saved state is being restored, otherwise ignorable. */
@@ -2105,6 +2108,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                    "support in the VM settings"),
                                 s_pszUsbExtPackName);
                     }
+# endif
                 }
 #endif
 
@@ -2771,6 +2775,11 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                  * none of the following paths are taken. This can happen for new VMs which
                  * still don't have a snapshot folder. */
                 (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
+                if (!mfSnapshotFolderDiskTypeShown)
+                {
+                    LogRel(("File system of '%s' (snapshots) is %s\n", utfSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
+                    mfSnapshotFolderDiskTypeShown = true;
+                }
                 LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
                 LONG64 i64Size;
                 hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
