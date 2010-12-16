@@ -1086,6 +1086,8 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
     uint32_t ulInstanceID = 1;
 
+    uint32_t cDVDs = 0;
+
     for (size_t uLoop = 1; uLoop <= 2; ++uLoop)
     {
         int32_t lIndexThis = 0;
@@ -1353,17 +1355,41 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                 case VirtualSystemDescriptionType_CDROM:
                     if (uLoop == 2)
                     {
-                        // we can't have a CD without an IDE controller
-                        if (!idIDESecondaryController)
-                            throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Can't have CD-ROM without secondary IDE controller"));
-
                         strDescription = "CD-ROM Drive";
-                        strCaption = "cdrom1";          // this is what OVFTool writes
+                        strCaption = Utf8StrFmt("cdrom%RI32", ++cDVDs);     // OVFTool starts with 1
                         type = ovf::ResourceType_CDDrive; // 15
                         lAutomaticAllocation = 1;
-                        ulParent = idIDESecondaryController;
-                        lAddressOnParent = 0;           // this is what OVFTool writes
+
+                        // controller=<index>;channel=<c>
+                        size_t pos1 = desc.strExtraConfigCurrent.find("controller=");
+                        size_t pos2 = desc.strExtraConfigCurrent.find("channel=");
+                        int32_t lControllerIndex = -1;
+                        if (pos1 != Utf8Str::npos)
+                        {
+                            RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
+                            if (lControllerIndex == lIDEPrimaryControllerIndex)
+                                ulParent = idIDEPrimaryController;
+                            else if (lControllerIndex == lIDESecondaryControllerIndex)
+                                ulParent = idIDESecondaryController;
+                            else if (lControllerIndex == lSCSIControllerIndex)
+                                ulParent = idSCSIController;
+                            else if (lControllerIndex == lSATAControllerIndex)
+                                ulParent = idSATAController;
+                        }
+                        if (pos2 != Utf8Str::npos)
+                            RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
+
+                        LogFlowFunc(("DVD drive details: pos1=%d, pos2=%d, lControllerIndex=%d, lIDEPrimaryControllerIndex=%d, lIDESecondaryControllerIndex=%d, ulParent=%d, lAddressOnParent=%d\n",
+                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
+
+                        if (    !ulParent
+                             || lAddressOnParent == -1
+                           )
+                            throw setError(VBOX_E_NOT_SUPPORTED,
+                                            tr("Missing or bad extra config string in DVD drive medium: \"%s\""), desc.strExtraConfigCurrent.c_str());
+
+                        // there is no DVD drive map to update because it is
+                        // handled completely with this entry.
                     }
                 break;
 
