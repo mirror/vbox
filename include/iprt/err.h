@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 
 
 /** @defgroup grp_rt_err            RTErr - Status Codes
@@ -279,7 +280,6 @@ RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
  */
 RTDECL(int)  RTErrConvertToErrno(int iErr);
 
-
 #ifdef IN_RING3
 
 /**
@@ -391,6 +391,154 @@ typedef const RTCOMERRMSG *PCRTCOMERRMSG;
 RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 #endif /* IN_RING3 */
+
+/** @defgroup RTERRINFO_FLAGS_XXX   RTERRINFO::fFlags
+ * @{ */
+/** Custom structure (the default). */
+#define RTERRINFO_FLAGS_T_CUSTOM    UINT32_C(0)
+/** Static structure (RTERRINFOSTATIC). */
+#define RTERRINFO_FLAGS_T_STATIC    UINT32_C(1)
+/** Allocated structure (RTErrInfoAlloc). */
+#define RTERRINFO_FLAGS_T_ALLOC     UINT32_C(2)
+/** Reserved type. */
+#define RTERRINFO_FLAGS_T_RESERVED  UINT32_C(3)
+/** Type mask. */
+#define RTERRINFO_FLAGS_T_MASK      UINT32_C(3)
+/** Error info is set. */
+#define RTERRINFO_FLAGS_SET         RT_BIT_32(2)
+/** Fixed flags (magic). */
+#define RTERRINFO_FLAGS_MAGIC       UINT32_C(0xbabe0000)
+/** The bit mask for the magic value. */
+#define RTERRINFO_FLAGS_MAGIC_MASK  UINT32_C(0xffff0000)
+/** @} */
+
+/**
+ * Initializes an error info structure.
+ *
+ * @returns @a pErrInfo.
+ * @param   pErrInfo            The error info structure to init.
+ * @param   pszMsg              The message buffer.  Must be at least one byte.
+ * @param   cbMsg               The size of the message buffer.
+ */
+DECLINLINE(PRTERRINFO) RTErrInfoInit(PRTERRINFO pErrInfo, char *pszMsg, size_t cbMsg)
+{
+    *pszMsg = '\0';
+
+    pErrInfo->fFlags         = RTERRINFO_FLAGS_T_CUSTOM | RTERRINFO_FLAGS_MAGIC;
+    pErrInfo->rc             = /*VINF_SUCCESS*/ 0;
+    pErrInfo->pszMsg         = pszMsg;
+    pErrInfo->cbMsg          = cbMsg;
+    pErrInfo->apvReserved[0] = NULL;
+    pErrInfo->apvReserved[1] = NULL;
+
+    return pErrInfo;
+}
+
+/**
+ * Initialize a static error info structure.
+ *
+ * @param   pStaticErrInfo      The static error info structure to init.
+ */
+DECLINLINE(void) RTErrInfoInitStatic(PRTERRINFOSTATIC pStaticErrInfo)
+{
+    RTErrInfoInit(&pStaticErrInfo->Core, pStaticErrInfo->szMsg, sizeof(pStaticErrInfo->szMsg));
+    pStaticErrInfo->Core.fFlags = RTERRINFO_FLAGS_T_STATIC | RTERRINFO_FLAGS_MAGIC;
+}
+
+/**
+ * Allocates a error info structure with a buffer at least the given size.
+ *
+ * @returns Pointer to an error info structure on success, NULL on failure.
+ *
+ * @param   cbMsg               The minimum message buffer size.  Use 0 to get
+ *                              the default buffer size.
+ */
+RTDECL(PRTERRINFO)  RTErrInfoAlloc(size_t cbMsg);
+
+/**
+ * Same as RTErrInfoAlloc, except that an IPRT status code is returned.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   cbMsg               The minimum message buffer size.  Use 0 to get
+ *                              the default buffer size.
+ * @param   ppErrInfo           Where to store the pointer to the allocated
+ *                              error info structure on success.  This is
+ *                              always set to NULL.
+ */
+RTDECL(int)         RTErrInfoAllocEx(size_t cbMsg, PRTERRINFO *ppErrInfo);
+
+/**
+ * Frees an error info structure allocated by RTErrInfoAlloc or
+ * RTErrInfoAllocEx.
+ *
+ * @param   pErrInfo            The error info structure.
+ */
+RTDECL(void)        RTErrInfoFree(PRTERRINFO pErrInfo);
+
+/**
+ * Fills in the error info details.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   pszMsg              The error message string.
+ */
+RTDECL(int)         RTErrInfoSet(PRTERRINFO pErrInfo, int rc, const char *pszMsg);
+
+/**
+ * Fills in the error info details, with a sprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   pszFormat           The format string.
+ * @param   ...                 The format arguments.
+ */
+RTDECL(int)         RTErrInfoSetF(PRTERRINFO pErrInfo, int rc, const char *pszFormat, ...);
+
+/**
+ * Fills in the error info details, with a vsprintf style message.
+ *
+ * @returns @a rc.
+ *
+ * @param   pErrInfo            The error info structure to fill in.
+ * @param   rc                  The status code to return.
+ * @param   pszFormat           The format string.
+ * @param   va                  The format arguments.
+ */
+RTDECL(int)         RTErrInfoSetV(PRTERRINFO pErrInfo, int rc, const char *pszFormat, va_list va);
+
+/**
+ * Checks if the error info is set.
+ *
+ * @returns true if set, false if not.
+ * @param   pErrInfo            The error info structure. NULL is OK.
+ */
+DECLINLINE(bool)    RTErrInfoIsSet(PCRTERRINFO pErrInfo)
+{
+    if (!pErrInfo)
+        return false;
+    return (pErrInfo->fFlags & (RTERRINFO_FLAGS_MAGIC_MASK | RTERRINFO_FLAGS_SET))
+        == (RTERRINFO_FLAGS_MAGIC | RTERRINFO_FLAGS_SET);
+}
+
+/**
+ * Clears the error info structure.
+ *
+ * @param   pErrInfo            The error info structure. NULL is OK.
+ */
+DECLINLINE(void)    RTErrInfoClear(PRTERRINFO pErrInfo)
+{
+    if (pErrInfo)
+    {
+        pErrInfo->fFlags &= ~RTERRINFO_FLAGS_SET;
+        pErrInfo->rc      = /*VINF_SUCCESS*/0;
+        *pErrInfo->pszMsg = '\0';
+    }
+}
 
 RT_C_DECLS_END
 
