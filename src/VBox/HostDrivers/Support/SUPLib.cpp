@@ -2212,7 +2212,7 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Try load it.
      */
-    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*fFlags*/, pErrInfo);
+    return RTLdrLoadEx(pszFilename, phLdrMod, RTLDRLOAD_FLAGS_LOCAL, pErrInfo);
 }
 
 

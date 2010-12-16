@@ -1176,7 +1176,7 @@ void ExtPack::probeAndLoad(void)
 
     if (fIsNative)
     {
-        vrc = RTLdrLoadEx(m->strMainModPath.c_str(), &m->hMainMod, 0 /*fFlags*/, &ErrInfo.Core);
+        vrc = SUPR3HardenedLdrLoadPlugIn(m->strMainModPath.c_str(), &m->hMainMod, &ErrInfo.Core);
         if (RT_FAILURE(vrc))
         {
             m->hMainMod = NIL_RTLDRMOD;
@@ -1770,7 +1770,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
     if (a_enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
     {
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRFLAGS_GLOBAL, NULL);
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &m->hVBoxVMM, RTLDRLOAD_FLAGS_GLOBAL, NULL);
         if (RT_FAILURE(vrc))
             m->hVBoxVMM = NIL_RTLDRMOD;
         /* cleanup in ::uninit()? */

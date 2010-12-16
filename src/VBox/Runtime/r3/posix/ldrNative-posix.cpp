@@ -69,7 +69,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
      * Attempt load.
      */
     int fFlagsNative = RTLD_NOW;
-    if (fFlags & RTLDRFLAGS_GLOBAL)
+    if (fFlags & RTLDRLOAD_FLAGS_GLOBAL)
         fFlagsNative |= RTLD_GLOBAL;
     else
         fFlagsNative |= RTLD_LOCAL;
