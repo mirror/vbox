@@ -99,7 +99,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     u_char opt[MAX_TCPOPTLEN];
     unsigned optlen, hdrlen;
     int idle, sendalot;
-    int size;
+    int size = 0;
 
     LogFlow(("tcp_output: tp = %lx\n", (long)tp));
 

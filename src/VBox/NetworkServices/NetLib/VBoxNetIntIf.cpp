@@ -97,8 +97,8 @@ int VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, size_t 
     /*
      * Allocate a frame, copy the data and commit it.
      */
-    PINTNETHDR pHdr;
-    void *pvFrame;
+    PINTNETHDR pHdr = NULL;
+    void *pvFrame = NULL;
     int rc = IntNetRingAllocateFrame(pRingBuf, cbFrame, &pHdr, &pvFrame);
     if (RT_SUCCESS(rc))
     {
