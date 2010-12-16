@@ -1646,12 +1646,53 @@ typedef enum RTHANDLESTD
 
 
 /**
+ * Error info.
+ *
+ * See RTErrInfo*.
+ */
+typedef struct RTERRINFO
+{
+    /** Flags, see RTERRINFO_FLAGS_XXX. */
+    uint32_t    fFlags;
+    /** The status code. */
+    int32_t     rc;
+    /** The size of the message  */
+    size_t      cbMsg;
+    /** The error buffer. */
+    char       *pszMsg;
+    /** Reserved for future use. */
+    void       *apvReserved[2];
+} RTERRINFO;
+/** Pointer to an error info structure. */
+typedef RTERRINFO *PRTERRINFO;
+/** Pointer to a const error info structure. */
+typedef RTERRINFO const *PCRTERRINFO;
+
+/**
+ * Static error info structure, see RTErrInfoInitStatic.
+ */
+typedef struct RTERRINFOSTATIC
+{
+    /** The core error info. */
+    RTERRINFO   Core;
+    /** The static message buffer. */
+    char        szMsg[3072];
+} RTERRINFOSTATIC;
+/** Pointer to a error info buffer. */
+typedef RTERRINFOSTATIC *PRTERRINFOSTATIC;
+/** Pointer to a const static error info buffer. */
+typedef RTERRINFOSTATIC const *PCRTERRINFOSTATIC;
+
+
+/**
  * UUID data type.
  *
- * @note IPRT defines that the first three integers in the @c Gen struct
- * interpretation are in little endian representation. This is different to
- * many other UUID implementation, and requires conversion if you need to
- * achieve consistent results.
+ * See RTUuid*.
+ *
+ * @remarks IPRT defines that the first three integers in the @c Gen struct
+ *          interpretation are in little endian representation.  This is
+ *          different to many other UUID implementation, and requires
+ *          conversion if you need to achieve consistent results.
  */
 typedef union RTUUID
 {
@@ -1679,15 +1720,12 @@ typedef RTUUID *PRTUUID;
 /** Pointer to readonly UUID data. */
 typedef const RTUUID *PCRTUUID;
 
-/**
- * UUID string maximum length.
- */
+/** UUID string maximum length. */
 #define RTUUID_STR_LENGTH       37
 
 
 /** Compression handle. */
 typedef struct RTZIPCOMP   *PRTZIPCOMP;
-
 /** Decompressor handle. */
 typedef struct RTZIPDECOMP *PRTZIPDECOMP;
 
