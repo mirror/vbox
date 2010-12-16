@@ -422,9 +422,11 @@
         <para><screen>VBoxManage setproperty websrvauthlibrary default|null|&lt;library&gt;</screen></para>
 
         <para>This way you can specify any shared object/dynamic link module
-        that conforms with the specifications for authentication modules as
-        laid out in section 9.3 of the VirtualBox User Manual; the web service
-        uses the same kind of modules as the VirtualBox RDP server.</para>
+        that conforms with the specifications for VirtualBox external authentication
+        modules as laid out in section <emphasis role="bold">VRDE authentication</emphasis>
+        of the VirtualBox User Manual; the web service uses the same kind of modules as the
+        VirtualBox VRDE server. For technical details on VirtualBox external authentication
+        modules see <xref linkend="vbox-auth" /></para>
 
         <para>By default, after installation, the web service uses the
         VBoxAuth module that ships with VirtualBox. This module uses PAM on
@@ -1452,7 +1454,7 @@ if mach is None:
     print "cannot find machine",name
 else:
     session = mgr.getSessionObject(vbox)
-    # one can also start headless session with "vrdp" instead of "gui"
+    # one can also start headless session with "headless" instead of "gui"
     progress = vb.openRemoteSession(session, mach.id, "gui", "")
     progress.waitForCompletion(-1)
     session.close()
@@ -3172,6 +3174,114 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     </sect1>
   </chapter>
 
+  <chapter id="vbox-auth">
+    <title>VirtualBox external authentication modules</title>
+
+    <para>VirtualBox supports arbitrary external modules to perform authentication.
+    The module is used when the authentication method is set to "external" for a
+    particular VM VRDE access and the library was specified with
+    <computeroutput>VBoxManage setproperty vrdeauthlibrary</computeroutput>.
+    Web service also use the authentication module which was specified with
+    <computeroutput>VBoxManage setproperty websrvauthlibrary</computeroutput>.</para>
+
+    <para>This library will be loaded by the VM or web service process on demand, i.e.
+    when the first remote desktop connection is made by a client or when
+    a client that wants to use the web service logs on.</para>
+
+    <para>External authentication is the most flexible as the external
+    handler can both choose to grant access to everyone (like the "null"
+    authentication method would) and delegate the request to the guest
+    authentication component. When delegating the request to the guest
+    component, the handler will still be called afterwards with the option to
+    override the result.</para>
+
+    <para>An authentication library is required to implement exactly one
+    entry point:</para>
+
+    <screen>#include "VBoxAuth.h"
+
+/**
+ * Authentication library entry point.
+ *
+ * Parameters:
+ *
+ *   szCaller         The name of the component which calls the library (UTF8).
+ *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
+ *   guestJudgement   Result of the guest authentication.
+ *   szUser           User name passed in by the client (UTF8).
+ *   szPassword       Password passed in by the client (UTF8).
+ *   szDomain         Domain passed in by the client (UTF8).
+ *   fLogon           Boolean flag. Indicates whether the entry point is called
+ *                    for a client logon or the client disconnect.
+ *   clientId         Server side unique identifier of the client.
+ *
+ * Return code:
+ *
+ *   AuthResultAccessDenied    Client access has been denied.
+ *   AuthResultAccessGranted   Client has the right to use the
+ *                             virtual machine.
+ *   AuthResultDelegateToGuest Guest operating system must
+ *                             authenticate the client and the
+ *                             library must be called again with
+ *                             the result of the guest
+ *                             authentication.
+ *
+ * Note: When 'fLogon' is 0, only pszCaller, pUuid and clientId are valid and the return
+ *       code is ignored.
+ */
+AuthResult AUTHCALL AuthEntry(
+    const char *szCaller,
+    PAUTHUUID pUuid,
+    AuthGuestJudgement guestJudgement,
+    const char *szUser,
+    const char *szPassword
+    const char *szDomain
+    int fLogon,
+    unsigned clientId)
+{
+    /* Process request against your authentication source of choice. */
+    // if (authSucceeded(...))
+    //     return AuthResultAccessGranted;
+    return AuthResultAccessDenied;
+}</screen>
+
+    <para>A note regarding the UUID implementation of the
+    <computeroutput>pUuid</computeroutput> argument:
+    VirtualBox uses a consistent binary representation of UUIDs on all
+    platforms. For this reason the integer fields comprising the UUID are
+    stored as little endian values. If you want to pass such UUIDs to code
+    which assumes that the integer fields are big endian (often also called
+    network byte order), you need to adjust the contents of the UUID to e.g.
+    achieve the same string representation. The required changes
+    are:<itemizedlist>
+        <listitem>
+          <para>reverse the order of byte 0, 1, 2 and 3</para>
+        </listitem>
+
+        <listitem>
+          <para>reverse the order of byte 4 and 5</para>
+        </listitem>
+
+        <listitem>
+          <para>reverse the order of byte 6 and 7.</para>
+        </listitem>
+      </itemizedlist>Using this conversion you will get identical results
+    when converting the binary UUID to the string representation.</para>
+
+    <para>The <computeroutput>guestJudgement</computeroutput> argument contains
+    information about the guest authentication status. For the first call, it is
+    always set to <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
+    <computeroutput>AuthEntry</computeroutput> function returns
+    <computeroutput>AuthResultDelegateToGuest</computeroutput>, a
+    guest authentication will be attempted and another call to the
+    <computeroutput>AuthEntry</computeroutput> is made with its result.
+    This can be either granted / denied or no judgement (the guest component
+    chose for whatever reason to not make a decision). In case there is a problem
+    with the guest authentication module (e.g. the Additions are not installed or
+    not running or the guest did not respond within a timeout), the "not reacted"
+    status will be returned.</para>
+  </chapter>
+
   <chapter id="javaapi">
     <title>Using Java API</title>
 
@@ -3566,6 +3676,35 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           new class <computeroutput>VirtualBoxManager</computeroutput> must be
           used. See <xref linkend="javaapi" xreflabel="Java API chapter" />
           for details.</para>
+        </listitem>
+
+        <listitem>
+          <para>Support for remote desktop access to virtual machines
+          has been cleaned up to allow third party implementations of
+          the remote desktop server. This is called VirtualBox Remote Desktop Extension
+          and can be added to VirtualBox by installing the corresponding
+          extension package.</para>
+          <para>The following API changes were made to support the VRDE interface:
+            <itemizedlist>
+              <listitem>
+                <para><computeroutput>IVRDPServer</computeroutput> interface has been
+                renamed to <xref linkend="IVRDEServer" xreflabel="IVRDEServer" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>IRemoteDisplayInfo</computeroutput> interface has been
+                renamed to <xref linkend="IVRDEServerInfo" xreflabel="IVRDEServerInfo" />.</para>
+              </listitem>
+            </itemizedlist>
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>VirtualBox external authentication module interface
+          has been updated and made more general.</para>
+          <para>Because of that, <computeroutput>VRDPAuthType</computeroutput> enumeration has been
+          renamed to <xref linkend="AuthType" xreflabel="AuthType" />.
+          </para>
         </listitem>
       </itemizedlist>
     </sect1>
