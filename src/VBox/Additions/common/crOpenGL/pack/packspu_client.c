@@ -219,6 +219,7 @@ packspu_ArrayElement( GLint index )
 #endif
 }
 
+/*#define CR_USE_LOCKARRAYS*/
 
 void PACKSPU_APIENTRY
 packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices )
@@ -233,6 +234,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
     if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         serverArrays = crStateUseServerArrays();
 
+# ifdef CR_USE_LOCKARRAYS
     if (!serverArrays && !ctx->clientState->client.array.locked && (count>3)
         && (!elementsBuffer || !elementsBuffer->id))
     {
@@ -292,6 +294,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
             }
         }
     }
+# endif
 #endif
 
     if (serverArrays) {
@@ -388,6 +391,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
     if (ctx->clientState->extensions.ARB_vertex_buffer_object)
          serverArrays = crStateUseServerArrays();
 
+# ifdef CR_USE_LOCKARRAYS
     if (!serverArrays && !ctx->clientState->client.array.locked && (count>3))
     {
         crStateLockArraysEXT(first, count);
@@ -401,6 +405,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
             crStateUnlockArraysEXT();
         }
     }
+# endif
 #endif
 
     if (serverArrays)
