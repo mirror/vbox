@@ -39,7 +39,7 @@
 #include "internal/ldr.h"
 
 
-int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, char *pszError, size_t cbError)
+int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     Assert(sizeof(*phHandle) >= sizeof(HMODULE));
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
@@ -52,7 +52,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
         size_t cch = strlen(pszFilename);
         char *psz = (char *)alloca(cch + sizeof(".DLL"));
         if (!psz)
-            return VERR_NO_MEMORY;
+            return RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "alloca failed");
         memcpy(psz, pszFilename, cch);
         memcpy(psz + cch, ".DLL", sizeof(".DLL"));
         pszFilename = psz;
@@ -73,9 +73,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
      */
     DWORD dwErr = GetLastError();
     int   rc    = RTErrConvertFromWin32(dwErr);
-    if (cbError)
-        RTStrPrintf(pszError, cbError, "GetLastError=%u", dwErr);
-    return rc;
+    return RTErrInfoSetF(pErrInfo, rc, "GetLastError=%u", dwErr);
 }
 
 

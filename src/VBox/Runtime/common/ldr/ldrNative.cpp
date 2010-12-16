@@ -95,28 +95,19 @@ static const RTLDROPS s_rtldrNativeOps =
  */
 RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
-    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*=fFlags*/, NULL, 0);
+    return RTLdrLoadEx(pszFilename, phLdrMod, 0 /*fFlags*/, NULL);
 }
 RT_EXPORT_SYMBOL(RTLdrLoad);
 
 
-RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, char *pszError, size_t cbError)
+RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
-    LogFlow(("RTLdrLoadEx: pszFilename=%p:{%s} phLdrMod=%p fFlags=%08x pszError=%p cbError=%zu\n", pszFilename, pszFilename, phLdrMod, fFlags, pszError, cbError));
+    LogFlow(("RTLdrLoadEx: pszFilename=%p:{%s} phLdrMod=%p fFlags=%#x pErrInfo=%p\n", pszFilename, pszFilename, phLdrMod, fFlags, pErrInfo));
 
     /*
      * Validate and massage the input.
      */
-    if (!pszError)
-        AssertReturn(!cbError, VERR_INVALID_PARAMETER);
-    else
-    {
-        AssertPtrReturn(pszError, VERR_INVALID_POINTER);
-        if (cbError)
-            *pszError = '\0';
-        else
-            pszError = NULL;
-    }
+    RTErrInfoClear(pErrInfo);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertPtrReturn(phLdrMod, VERR_INVALID_POINTER);
 
@@ -135,7 +126,7 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
         /*
          * Attempt to open the module.
          */
-        rc = rtldrNativeLoad(pszFilename, &pMod->hNative, fFlags, pszError, cbError);
+        rc = rtldrNativeLoad(pszFilename, &pMod->hNative, fFlags, pErrInfo);
         if (RT_SUCCESS(rc))
         {
             *phLdrMod = &pMod->Core;
@@ -145,8 +136,8 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 
         RTMemFree(pMod);
     }
-    else if (cbError)
-        RTStrPrintf(pszError, cbError, "Failed to allocate %zu bytes for the module handle", sizeof(*pMod));
+    else
+        RTErrInfoSetF(pErrInfo, rc, "Failed to allocate %zu bytes for the module handle", sizeof(*pMod));
     *phLdrMod = NIL_RTLDRMOD;
     LogFlow(("RTLdrLoad: returns %Rrc\n", rc));
     return rc;
