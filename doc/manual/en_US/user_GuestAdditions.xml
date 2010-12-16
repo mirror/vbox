@@ -1214,15 +1214,17 @@ $</screen>
             <para>It is only available for certain Windows, Linux and Solaris
             guests. In particular:<itemizedlist>
                 <listitem>
-                  <para>3D acceleration with Windows guests requires Windows 2000,
-                    Windows XP, Vista or Windows 7. Both OpenGL and Direct3D 8/9
-                    (not with Windows 2000) are supported (experimental).</para>
+                  <para>3D acceleration with Windows guests requires Windows
+                  2000, Windows XP, Vista or Windows 7. Both OpenGL and
+                  Direct3D 8/9 (not with Windows 2000) are supported
+                  (experimental).</para>
                 </listitem>
 
                 <listitem>
                   <para>OpenGL on Linux requires kernel 2.6.27 and higher as
-                  well as X.org server version 1.5 and higher. Ubuntu 10.10 and
-                  Fedora 14 have been tested and confirmed as working.</para>
+                  well as X.org server version 1.5 and higher. Ubuntu 10.10
+                  and Fedora 14 have been tested and confirmed as
+                  working.</para>
                 </listitem>
 
                 <listitem>
@@ -1343,7 +1345,7 @@ $</screen>
 
     <para><mediaobject>
         <imageobject>
-          <imagedata align="center" fileref="images/seamless.png" width="10cm" />
+          <imagedata align="center" fileref="images/seamless.png" width="14cm" />
         </imageobject>
       </mediaobject>To enable seamless mode, after starting the virtual
     machine, press the Host key (normally the right control key) together with
@@ -1502,8 +1504,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     Also, copying files from host to the guest as well as remotely creating
     guest directories is available.</para>
 
-    <para>To use these features, use the VirtualBox command line, see
-    <xref linkend="vboxmanage-guestcontrol" />.</para>
+    <para>To use these features, use the VirtualBox command line, see <xref
+    linkend="vboxmanage-guestcontrol" />.</para>
   </sect1>
 
   <sect1>

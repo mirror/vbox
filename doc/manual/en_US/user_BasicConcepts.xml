@@ -352,7 +352,7 @@
             <para>The type of the guest operating system that is (or will be)
             installed in the VM. This is the same setting that was specified
             in the "New Virtual Machine" wizard, as described in <xref
-            linkend="gui-createvm" />. </para>
+            linkend="gui-createvm" />.</para>
 
             <para>Whereas the default settings of a newly created VM depend on
             the selected operating system type, changing the type later has no
@@ -749,142 +749,165 @@
   <sect1 id="settings-storage">
     <title>Storage settings</title>
 
-    <para>In the VM Settings window, the "Storage" section allows you to
-    connect virtual hard disk, CD/DVD and floppy images and drives to your
-    virtual machine:<mediaobject>
+    <para>The "Storage" category in the VM settings allows you to connect
+    virtual hard disk, CD/DVD and floppy images and drives to your virtual
+    machine.</para>
+
+    <para>In a real PC, so-called "storage controllers" connect physical disk
+    drives to the rest of the computer. Similarly, VirtualBox presents virtual
+    storage controllers to a virtual machine. Under each controller, the
+    virtual devices (hard disks, CD/DVD or floppy drives) attached to the
+    controller are shown.<note>
+        <para>This section can only give you a quick introduction to the
+        VirtualBox storage settings. Since VirtualBox gives you an enormous
+        wealth of options in this area, we have dedicated an entire chapter of
+        this User Manual to explaining all the details: please see <xref
+        linkend="storage" />.</para>
+      </note></para>
+
+    <para>If you have used the "Create VM" wizard to create a machine, you
+    will normally see something like the following:</para>
+
+    <para><mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/vm-settings-harddisk.png"
                      width="10cm" />
         </imageobject>
       </mediaobject></para>
 
-    <para>In a real PC, so-called "storage controllers" connect physical disk
-    drives to the rest of the computer. Similarly, VirtualBox presents virtual
-    storage controllers to a virtual machine. Under each controller, the
-    virtual devices (hard disks, CD/DVD or floppy drives) are shown that are
-    attached to the controller.</para>
-
-    <para>If you have used the "Create VM" wizard to create a machine, you
-    will normally see the following devices:<itemizedlist>
+    <para>Depending on the guest operating system type that you selected when
+    you created the VM, the typical layout of storage devices in a new VM is
+    as follows:<itemizedlist>
         <listitem>
-          <para>You will see an IDE controller, under which there are two
-          devices:<itemizedlist>
-              <listitem>
-                <para>one virtual hard disk connected to the IDE slot called
-                "primary master"; this is represented by the disk images that
-                you created with the machine;</para>
-              </listitem>
-
-              <listitem>
-                <para>one virtual CD/DVD drive connected to the "secondary
-                master".</para>
-              </listitem>
-            </itemizedlist></para>
+          <para>You will see an <emphasis role="bold">IDE
+          controller,</emphasis> to which a virtual CD/DVD drive has been
+          attached (to the "secondary master" port of the IDE
+          controller).</para>
         </listitem>
 
         <listitem>
-          <para>In addition, there is a floppy controller to which a virtual
-          floppy drive is attached.</para>
+          <para>You will also see a <emphasis role="bold">SATA
+          controller,</emphasis> which is a more modern type of storage
+          controller for higher hard disk data throughput, to which the
+          virtual hard disks are attached. Initially you will normally have
+          one such virtual disk, but as you can see in the above screenshot,
+          you can have more than one, each represented by a disk image file
+          (VDI files, in this case).</para>
         </listitem>
       </itemizedlist></para>
+
+    <para>If you created your VM with an older version of VirtualBox, the
+    default storage layout may differ. You might then only have an IDE
+    controller to which both the CD/DVD drive and the hard disks have been
+    attached. This might also apply if you selected an older operating system
+    type when you created the VM. Since older operating systems do not support
+    SATA without additional drivers, VirtualBox will make sure that no such
+    devices are present initially. Please see <xref
+    linkend="harddiskcontrollers" /> for additional information.</para>
+
+    <para>VirtualBox also provides a <emphasis role="bold">floppy
+    controller</emphasis>, which is special: you cannot add devices other than
+    floppy drives to it. Virtual floppy drives, like virtual CD/DVD drives,
+    can be connected to either a host floppy drive (if you have one) or a disk
+    image, which in this case must be in RAW format.</para>
 
     <para>You can modify these media attachments freely. For example, if you
     wish to copy some files from another virtual disk that you created, you
-    can connect that disk as a second hard disk. You could also add a second
-    virtual CD/DVD drive, or change where these items are attached.</para>
-
-    <para>In addition to the IDE controller, VirtualBox can also present a
-    SATA controller and a SCSI controller to the guest, which gives you 30 or
-    16 additional slots to attach devices to, respectively. This, however, may
-    require that you run a modern guest operating system. See <xref
-    linkend="harddiskcontrollers" /> for details.</para>
-
-    <para>To <emphasis role="bold">add another virtual hard disk or CD/DVD
-    drive,</emphasis> select the storage controller to which it should be
-    added (IDE, SATA or SCSI) and then click on the "add disk" button below
-    the tree. You can then either select "Add CD/DVD device" or "Add Hard
-    Disk". Alternatively, right-click on the storage controller and select a
-    menu item there.</para>
-
-    <para>On the right part of the window, you can then select to which slot
-    of the controller the virtual disk should be connected to and which image
-    file to use.<itemizedlist>
+    can connect that disk as a second hard disk, as in the above screenshot.
+    You could also add a second virtual CD/DVD drive, or change where these
+    items are attached. The following options are available:<itemizedlist>
         <listitem>
-          <para>For virtual hard disks, a drop-down list appears on the right,
-          listing all the hard disk images that VirtualBox currently knows
-          about.</para>
+          <para>To <emphasis role="bold">add another virtual hard disk, or a
+          CD/DVD or floppy drive,</emphasis> select the storage controller to
+          which it should be added (IDE, SATA, SCSI, SAS, floppy controller)
+          and then click on the "add disk" button below the tree. You can then
+          either select "Add CD/DVD device" or "Add Hard Disk". (If you
+          clicked on a floppy controller, you can add a floppy drive instead.)
+          Alternatively, right-click on the storage controller and select a
+          menu item there.</para>
 
-          <para>The folder icon next to the drop-down allow you to select a
-          different disk image using a standard file dialog.</para>
+          <para>On the right part of the window, you can then set the
+          following:<orderedlist>
+              <listitem>
+                <para>You can then select to which <emphasis
+                role="bold">device slot</emphasis> of the controller the
+                virtual disk should be connected to. IDE controllers have four
+                slots which have traditionally been called "primary master",
+                "primary slave", "secondary master" and "secondary slave". By
+                contrast, SATA and SCSI controllers offer you up to 30 slots
+                to which virtual devices can be attached.</para>
+              </listitem>
 
-          <para>The second icon next to the drop-down allows you to create a
-          new disk image; this will bring up the "Create new disk" wizard,
-          which was described in <xref linkend="gui-createvm" />.</para>
+              <listitem>
+                <para>You can select which <emphasis role="bold">image
+                file</emphasis> to use.<itemizedlist>
+                    <listitem>
+                      <para>For virtual hard disks, a button with a drop-down
+                      list appears on the right, offering you to either select
+                      a <emphasis role="bold">virtual hard disk
+                      file</emphasis> using a standard file dialog or to
+                      <emphasis role="bold">create a new hard disk</emphasis>
+                      (image file), which will bring up the "Create new disk"
+                      wizard, which was described in <xref
+                      linkend="gui-createvm" />.</para>
+
+                      <para>For details on the image file types that are
+                      supported, please see <xref
+                      linkend="vdidetails" />.</para>
+                    </listitem>
+
+                    <listitem>
+                      <para>For virtual CD/DVD drives, the image files will
+                      typically be in the standard ISO format instead. Most
+                      commonly, you will select this option when installing an
+                      operating system from an ISO file that you have obtained
+                      from the Internet. For example, most Linux distributions
+                      are available in this way.</para>
+
+                      <para>For virtual CD/DVD drives, the following
+                      additional options are available:</para>
+
+                      <para><itemizedlist>
+                          <listitem>
+                            <para>If you select <emphasis role="bold">"Host
+                            drive"</emphasis> from the list, then the physical
+                            device of the host computer is connected to the VM,
+                            so that the guest operating system can read from and
+                            write to your physical device. This is, for
+                            instance, useful if you want to install Windows from
+                            a real installation CD. In this case, select your
+                            host drive from the drop-down list presented.</para>
+
+                            <para>If you want to write (burn) CDs or DVDs using
+                            the host drive, you need to also enable the
+                            <emphasis role="bold">"Passthrough"</emphasis>
+                            option; see <xref linkend="storage-cds" />.</para>
+                          </listitem>
+
+                          <listitem>
+                            <para>If you select <emphasis role="bold">"Remove
+                            disk from virtual drive",</emphasis> VirtualBox will
+                            present an empty CD/DVD drive to the guest into
+                            which no media has been inserted.</para>
+                          </listitem>
+                        </itemizedlist></para>
+                    </listitem>
+                  </itemizedlist></para>
+              </listitem>
+            </orderedlist></para>
         </listitem>
 
         <listitem>
-          <para>For virtual CD/DVD drives, there are two kinds of options in
-          the drop-down list.<itemizedlist>
-              <listitem>
-                <para>If you select "Empty", then VirtualBox will present a
-                virtual CD/DVD drive to the guest which has no media
-                inserted.</para>
-              </listitem>
-
-              <listitem>
-                <para>If you select "Host drive" from the list, then the
-                physical device of the host computer is connected to the VM,
-                so that the guest operating system can read from and write to
-                your physical device. This is, for instance, useful if you
-                want to install Windows from a real installation CD. In this
-                case, select your host drive from the drop-down list
-                presented.</para>
-
-                <para>If you want to write (burn) CDs or DVDs using the host
-                drive, you need to enable the <emphasis
-                role="bold">"Passthrough"</emphasis> option; see <xref
-                linkend="storage-cds" />.</para>
-              </listitem>
-
-              <listitem>
-                <para>The other items in the list, like virtual hard disk
-                images, will be image files on your host. The file format here
-                is the ISO format. Most commonly, you will select this option
-                when installing an operating system from an ISO file that you
-                have obtained from the Internet. For example, most Linux
-                distributions are available in this way.</para>
-              </listitem>
-            </itemizedlist></para>
-
-          <note>
-            <para>The identification string of the drive provided to the guest
-            (which, in the guest, would be displayed by configuration tools
-            such as the Windows Device Manager) is always "VBOX CD-ROM",
-            irrespective of the current configuration of the virtual drive.
-            This is to prevent hardware detection from being triggered in the
-            guest operating system every time the configuration is
-            changed.</para>
-          </note>
+          <para>To <emphasis role="bold">remove an attachment,</emphasis>
+          select it and click on the "remove" icon at the bottom (or
+          right-click on it and select the menu item).</para>
         </listitem>
       </itemizedlist></para>
-
-    <para>Note that the floppy controller is special: you cannot add devices
-    other than floppy drives to it. Virtual floppy drives, like virtual CD/DVD
-    drives, can be connected to either a host floppy drive (if you have one)
-    or a disk image, which in this case must be in RAW format.</para>
-
-    <para>To <emphasis role="bold">remove a virtual disk or drive,</emphasis>
-    select it and click on the "remove" icon at the bottom (or right-click on
-    it and select the menu item).</para>
 
     <para>Removable media (CD/DVDs and floppies) can be changed while the
     guest is running. Since the "Settings" dialog is not available at that
     time, you can also access these settings from the "Devices" menu of your
     virtual machine window.</para>
-
-    <para>We have dedicated an entire chapter of this User Manual to virtual
-    storage: please see <xref linkend="storage" /> for every single detail
-    about storage configuration.</para>
   </sect1>
 
   <sect1 id="settings-audio">
@@ -921,16 +944,18 @@
     Translation" (NAT) mode for it. This way the guest can connect to the
     outside world using the host's networking and the outside world can
     connect to services on the guest which you choose to make visible outside
-    of the virtual machine. In most cases, this default setup will work fine
-    for you.</para>
+    of the virtual machine.</para>
 
-    <para>However, VirtualBox is extremely flexible in how it can virtualize
-    networking. It supports up to eight virtual network cards per virtual
-    machine, the first four of which can be configured in detail in the
-    graphical user interface. All eight network cards can be configured on the
-    command line with VBoxManage. Because of this, we have dedicated an entire
-    chapter of this manual to discussing networking configuration; please see
-    <xref linkend="networkingdetails" />.</para>
+    <para>This default setup is good for probably 95% of VirtualBox users.
+    However, VirtualBox is extremely flexible in how it can virtualize
+    networking. It supports many virtual network cards per virtual machine,
+    the first four of which can be configured in detail in the Manager window.
+    Additional network cards can be configured on the command line with
+    VBoxManage. </para>
+
+    <para>Because of the vast array of options available, we have dedicated an
+    entire chapter of this manual to discussing networking configuration;
+    please see <xref linkend="networkingdetails" />.</para>
   </sect1>
 
   <sect1 id="serialports">
@@ -943,21 +968,22 @@
 
     <para>Ever since the original IBM PC, personal computers have been
     equipped with one or two serial ports (also called COM ports by DOS and
-    Windows). While these are no longer as important as they were until a few
-    years ago (especially since mice are no longer connected to serial ports
-    these days), there are still some important uses left for them. For
-    example, serial ports can be used to set up a primitive network over a
-    null-modem cable, in case Ethernet is not available. Also, serial ports
-    are indispensable for system programmers needing to do kernel debugging,
-    since kernel debugging software usually interacts with developers over a
-    serial port. In other words, with virtual serial ports, system programmers
-    can do kernel debugging on a virtual machine instead of needing a real
-    computer to connect to.</para>
+    Windows). Most importantly, computer mice used to be connected to serial
+    ports before USB became commonplace. </para>
+
+    <para>While serial ports are no longer as important as they used to be,
+    there are still some important uses left for them. For example, serial
+    ports can be used to set up a primitive network over a null-modem cable,
+    in case Ethernet is not available. Also, serial ports are indispensable
+    for system programmers needing to do kernel debugging, since kernel
+    debugging software usually interacts with developers over a serial port.
+    With virtual serial ports, system programmers can do kernel debugging on a
+    virtual machine instead of needing a real computer to connect to.</para>
 
     <para>If a virtual serial port is enabled, the guest operating system sees
-    it a standard 16450-type serial port. Both receiving and transmitting data
-    is supported. How this virtual serial port is then connected to the host
-    is configurable, and details depend on your host operating system.</para>
+    a standard 16450-type device. Both receiving and transmitting data is
+    supported. How this virtual serial port is then connected to the host is
+    configurable, and the details depend on your host operating system.</para>
 
     <para>You can use either the graphical user interface or the command-line
     <computeroutput>VBoxManage</computeroutput> tool to set up virtual serial
@@ -1004,8 +1030,8 @@
           <para><itemizedlist>
               <listitem>
                 <para>You can elect to have the virtual serial port
-                "disconnected", which means that the guest will see it as
-                hardware, but it will behave as if no cable had been connected
+                "disconnected", which means that the guest will see the
+                device, but it will behave as if no cable had been connected
                 to it.</para>
               </listitem>
 
@@ -1013,7 +1039,7 @@
                 <para>You can connect the virtual serial port to a physical
                 serial port on your host. (On a Windows host, this will be a
                 name like <computeroutput>COM1</computeroutput>; on Linux or
-                OpenSolaris hosts, it will be a device node like
+                Solaris hosts, it will be a device node like
                 <computeroutput>/dev/ttyS0</computeroutput>). VirtualBox will
                 then simply redirect all data received from and sent to the
                 virtual serial port to the physical device.</para>
