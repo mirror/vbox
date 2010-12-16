@@ -353,7 +353,6 @@ if [ "$ACTION" = "install" ]; then
         test -e $INSTALLATION_DIR/VBoxSDL       && chmod 4511 $INSTALLATION_DIR/VBoxSDL
         test -e $INSTALLATION_DIR/VBoxHeadless  && chmod 4511 $INSTALLATION_DIR/VBoxHeadless
         test -e $INSTALLATION_DIR/VBoxNetDHCP   && chmod 4511 $INSTALLATION_DIR/VBoxNetDHCP
-        test -e $INSTALLATION_DIR/VBoxExtPackHelperApp && chmod 4511 $INSTALLATION_DIR/VBoxExtPackHelperApp
 
         ln -sf $INSTALLATION_DIR/VBoxVMM.so   $INSTALLATION_DIR/components/VBoxVMM.so
         ln -sf $INSTALLATION_DIR/VBoxREM.so   $INSTALLATION_DIR/components/VBoxREM.so
