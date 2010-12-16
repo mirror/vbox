@@ -166,10 +166,11 @@ typedef struct PDMACEPFILEMGR
     uint32_t                               iFreeEntry;
     /** Size of the array. */
     unsigned                               cReqEntries;
-    /** Flag whether at least one endpoint reached its bandwidth limit. */
-    bool                                   fBwLimitReached;
     /** Memory cache for file range locks. */
     RTMEMCACHE                             hMemCacheRangeLocks;
+    /** Number of milliseconds to wait until the bandwidth is refreshed for at least
+     * one endpoint and it is possible to process more requests. */
+    RTMSINTERVAL                           msBwLimitExpired;
     /** Critical section protecting the blocking event handling. */
     RTCRITSECT                             CritSectBlockingEvent;
     /** Event semaphore for blocking external events.
