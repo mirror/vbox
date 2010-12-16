@@ -59,8 +59,9 @@
 # define VBOX_USE_INSERT_PAGE
 #endif
 #if    defined(CONFIG_X86_PAE) \
-    && (   HAVE_26_STYLE_REMAP_PAGE_RANGE \
-        || (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 11)))
+    && (   defined(HAVE_26_STYLE_REMAP_PAGE_RANGE) \
+        || (   LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) \
+            && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 11)))
 # define VBOX_USE_PAE_HACK
 #endif
 
