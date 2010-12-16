@@ -323,6 +323,10 @@
       </listitem>
 
       <listitem>
+        <para>NAT: fixed Linux NFS root issue (bugs #7299)</para>
+      </listitem>
+
+      <listitem>
         <para>Networking: fixed VM reset handling in e1000</para>
       </listitem>
 
