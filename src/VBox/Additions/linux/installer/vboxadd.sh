@@ -214,23 +214,8 @@ running_vboxsf()
     lsmod | grep -q "vboxsf[^_-]"
 }
 
-start()
+do_vboxguest_non_udev()
 {
-    begin "Starting the VirtualBox Guest Additions ";
-    running_vboxguest || {
-        rm -f $dev || {
-            fail "Cannot remove $dev"
-        }
-
-        rm -f $userdev || {
-            fail "Cannot remove $userdev"
-        }
-
-        $MODPROBE vboxguest >/dev/null 2>&1 || {
-            fail "modprobe vboxguest failed"
-        }
-        sleep .5
-    }
     if [ ! -c $dev ]; then
         maj=`sed -n 's;\([0-9]\+\) vboxguest;\1;p' /proc/devices`
         if [ ! -z "$maj" ]; then
@@ -275,6 +260,31 @@ start()
             }
         fi
     fi
+}
+
+start()
+{
+    begin "Starting the VirtualBox Guest Additions ";
+    which udevd >/dev/null || no_udev=1
+    running_vboxguest || {
+        rm -f $dev || {
+            fail "Cannot remove $dev"
+        }
+
+        rm -f $userdev || {
+            fail "Cannot remove $userdev"
+        }
+
+        $MODPROBE vboxguest >/dev/null 2>&1 || {
+            fail "modprobe vboxguest failed"
+        }
+        case "$no_udev" in 1)
+            sleep .5;;
+        esac
+    }
+    case "$no_udev" in 1)
+        do_vboxguest_non_udev;;
+    esac
 
     if [ -n "$BUILDVBOXSF" ]; then
         running_vboxsf || {
