@@ -369,6 +369,23 @@
   </glossdiv>
 
   <glossdiv>
+    <title>T</title>
+
+    <glossentry>
+      <glossterm>TAR</glossterm>
+
+      <glossdef>
+        <para>A widely used file format for archiving. Originally, this stood
+        for "Tape ARchive" and was already supported by very early Unix
+        versions for backing up data on tape. The file format is still widely
+        used today, for example, with OVF archives (with an
+        <computeroutput>.ova</computeroutput> file extension); see <xref
+        linkend="ovf" />.</para>
+      </glossdef>
+    </glossentry>
+  </glossdiv>
+
+  <glossdiv>
     <title>U</title>
 
     <glossentry>

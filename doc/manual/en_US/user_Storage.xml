@@ -347,7 +347,7 @@
     <para><mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtual-disk-manager.png"
-                     width="10cm" />
+                     width="12cm" />
         </imageobject>
       </mediaobject>The known media are conveniently grouped in three tabs for
     the three possible formats. These formats are:</para>
@@ -544,7 +544,7 @@
 
         <para>Technically, a "multiattach" image behaves identically to an
         "immutable" image except the differencing image is not reset every
-        time the machine starts. </para>
+        time the machine starts.</para>
       </listitem>
 
       <listitem>
@@ -615,7 +615,7 @@
     tree in the Virtual Media Manager:<mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtual-disk-manager2.png"
-                     width="10cm" />
+                     width="12cm" />
         </imageobject>
       </mediaobject></para>
 
@@ -862,7 +862,14 @@ VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --typ
     command line tool. Effectively this is the equivalent of the emergency
     eject which many CD/DVD drives provide, with all associated side effects:
     the guest OS can issue error messages, just like on real hardware, and
-    guest applications may misbehave. Use this with caution.</para>
+    guest applications may misbehave. Use this with caution.<note>
+        <para>The identification string of the drive provided to the guest
+        (which, in the guest, would be displayed by configuration tools such
+        as the Windows Device Manager) is always "VBOX CD-ROM", irrespective
+        of the current configuration of the virtual drive. This is to prevent
+        hardware detection from being triggered in the guest operating system
+        every time the configuration is changed.</para>
+      </note></para>
 
     <para>The standard CD/DVD emulation allows for reading standard data CD
     and DVD formats only. As an experimental feature, for additional
