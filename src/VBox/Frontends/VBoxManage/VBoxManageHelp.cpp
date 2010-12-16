@@ -295,6 +295,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--vrde on|off]\n"
                      "                            [--vrdeextpack default|<name>\n"
                      "                            [--vrdeproperty <name=[value]>]\n"
+                     "                            [--vrdeport <hostport>]\n"
+                     "                            [--vrdeaddress <hostip>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
                      "                            [--vrdeauthlibrary default|<name>\n"
                      "                            [--vrdemulticon on|off]\n"
@@ -384,6 +386,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "                            vrde on|off |\n");
         RTStrmPrintf(pStrm,
+                     "                            vrdeport <port> |\n"
                      "                            vrdeproperty <name=[value]> |\n"
                      "                            vrdevideochannelquality <percent>\n");
         RTStrmPrintf(pStrm,

@@ -609,16 +609,18 @@ int handleControlVM(HandlerArg *a)
                 }
             }
         }
-        else if (!strcmp(a->argv[1], "vrdpport"))
+        else if (   !strcmp(a->argv[1], "vrdeport")
+                 || !strcmp(a->argv[1], "vrdpport"))
         {
+            if (!strcmp(a->argv[1], "vrdpport"))
+                RTStrmPrintf(g_pStdErr, "Warning: 'vrdpport' is deprecated. Use 'vrdeport'.\n");
+
             if (a->argc <= 1 + 1)
             {
                 errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
-
-            RTStrmPrintf(g_pStdErr, "Warning: 'vrdpport' is deprecated. Use 'vrdeproperty TCP/Ports=%s'.\n", a->argv[2]);
 
             ComPtr<IVRDEServer> vrdeServer;
             sessionMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
