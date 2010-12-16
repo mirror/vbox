@@ -10241,13 +10241,13 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         rollback(false /* aNotify */);
     }
 
-    Assert(mSnapshotData.mStateFilePath.isEmpty() || !mSnapshotData.mSnapshot);
-    if (!mSnapshotData.mStateFilePath.isEmpty())
+    Assert(mConsoleTaskData.mStateFilePath.isEmpty() || !mConsoleTaskData.mSnapshot);
+    if (!mConsoleTaskData.mStateFilePath.isEmpty())
     {
         LogWarningThisFunc(("canceling failed save state request!\n"));
         endSavingState(E_FAIL, tr("Machine terminated with pending save state!"));
     }
-    else if (!mSnapshotData.mSnapshot.isNull())
+    else if (!mConsoleTaskData.mSnapshot.isNull())
     {
         LogWarningThisFunc(("canceling untaken snapshot!\n"));
 
@@ -10255,10 +10255,10 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          * their parents back by rolling back mMediaData) */
         rollbackMedia();
         /* delete the saved state file (it might have been already created) */
-        if (mSnapshotData.mSnapshot->stateFilePath().length())
-            RTFileDelete(mSnapshotData.mSnapshot->stateFilePath().c_str());
+        if (mConsoleTaskData.mSnapshot->stateFilePath().length())
+            RTFileDelete(mConsoleTaskData.mSnapshot->stateFilePath().c_str());
 
-        mSnapshotData.mSnapshot->uninit();
+        mConsoleTaskData.mSnapshot->uninit();
     }
 
     if (!mData->mSession.mType.isEmpty())
@@ -10751,8 +10751,8 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(    mData->mMachineState == MachineState_Paused
-                  && mSnapshotData.mLastState == MachineState_Null
-                  && mSnapshotData.mStateFilePath.isEmpty(),
+                  && mConsoleTaskData.mLastState == MachineState_Null
+                  && mConsoleTaskData.mStateFilePath.isEmpty(),
                  E_FAIL);
 
     /* create a progress object to track operation completion */
@@ -10776,9 +10776,9 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
     }
 
     /* fill in the snapshot data */
-    mSnapshotData.mLastState = mData->mMachineState;
-    mSnapshotData.mStateFilePath = stateFilePath;
-    mSnapshotData.mProgress = pProgress;
+    mConsoleTaskData.mLastState = mData->mMachineState;
+    mConsoleTaskData.mStateFilePath = stateFilePath;
+    mConsoleTaskData.mProgress = pProgress;
 
     /* set the state to Saving (this is expected by Console::SaveState()) */
     setMachineState(MachineState_Saving);
@@ -10804,8 +10804,8 @@ STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
 
     AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_Saved)
                       || (FAILED(iResult) && mData->mMachineState == MachineState_Saving))
-                  && mSnapshotData.mLastState != MachineState_Null
-                  && !mSnapshotData.mStateFilePath.isEmpty(),
+                  && mConsoleTaskData.mLastState != MachineState_Null
+                  && !mConsoleTaskData.mStateFilePath.isEmpty(),
                  E_FAIL);
 
     /*
@@ -10815,7 +10815,7 @@ STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
      * MachineState_Saved, so no need to do anything.
      */
     if (FAILED(iResult))
-        setMachineState(mSnapshotData.mLastState);
+        setMachineState(mConsoleTaskData.mLastState);
 
     return endSavingState(iResult, aErrMsg);
 }
@@ -11516,7 +11516,7 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
 
     if (SUCCEEDED(aRc))
     {
-        mSSData->mStateFilePath = mSnapshotData.mStateFilePath;
+        mSSData->mStateFilePath = mConsoleTaskData.mStateFilePath;
 
         /* save all VM settings */
         rc = saveSettings(NULL);
@@ -11526,28 +11526,28 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
     else
     {
         /* delete the saved state file (it might have been already created) */
-        RTFileDelete(mSnapshotData.mStateFilePath.c_str());
+        RTFileDelete(mConsoleTaskData.mStateFilePath.c_str());
     }
 
     /* notify the progress object about operation completion */
-    Assert(mSnapshotData.mProgress);
+    Assert(mConsoleTaskData.mProgress);
     if (SUCCEEDED(aRc))
-        mSnapshotData.mProgress->notifyComplete(S_OK);
+        mConsoleTaskData.mProgress->notifyComplete(S_OK);
     else
     {
         if (aErrMsg.length())
-            mSnapshotData.mProgress->notifyComplete(aRc,
+            mConsoleTaskData.mProgress->notifyComplete(aRc,
                                                     COM_IIDOF(ISession),
                                                     getComponentName(),
                                                     aErrMsg.c_str());
         else
-            mSnapshotData.mProgress->notifyComplete(aRc);
+            mConsoleTaskData.mProgress->notifyComplete(aRc);
     }
 
     /* clear out the temporary saved state data */
-    mSnapshotData.mLastState = MachineState_Null;
-    mSnapshotData.mStateFilePath.setNull();
-    mSnapshotData.mProgress.setNull();
+    mConsoleTaskData.mLastState = MachineState_Null;
+    mConsoleTaskData.mStateFilePath.setNull();
+    mConsoleTaskData.mProgress.setNull();
 
     LogFlowThisFuncLeave();
     return rc;
@@ -11730,8 +11730,8 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
                 )
              /* ignore PoweredOff->Saving->PoweredOff transition when taking a
               * snapshot */
-             && (   mSnapshotData.mSnapshot.isNull()
-                 || mSnapshotData.mLastState >= MachineState_Running /** @todo Live Migration: clean up (lazy bird) */
+             && (   mConsoleTaskData.mSnapshot.isNull()
+                 || mConsoleTaskData.mLastState >= MachineState_Running /** @todo Live Migration: clean up (lazy bird) */
                 )
             )
     {

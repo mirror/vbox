@@ -1366,8 +1366,8 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
                   || mData->mMachineState == MachineState_Running
                   || mData->mMachineState == MachineState_Paused, E_FAIL);
-    AssertReturn(mSnapshotData.mLastState == MachineState_Null, E_FAIL);
-    AssertReturn(mSnapshotData.mSnapshot.isNull(), E_FAIL);
+    AssertReturn(mConsoleTaskData.mLastState == MachineState_Null, E_FAIL);
+    AssertReturn(mConsoleTaskData.mSnapshot.isNull(), E_FAIL);
 
     if (    !fTakingSnapshotOnline
          && mData->mMachineState != MachineState_Saved
@@ -1421,8 +1421,12 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertComRCReturnRC(rc);
 
     /* fill in the snapshot data */
-    mSnapshotData.mLastState = mData->mMachineState;
-    mSnapshotData.mSnapshot = pSnapshot;
+    mConsoleTaskData.mLastState = mData->mMachineState;
+    mConsoleTaskData.mSnapshot = pSnapshot;
+    /// @todo in the long run the progress object should be moved to
+    // VBoxSVC to avoid trouble with monitoring the progress object state
+    // when the process where it lives is terminating shortly after the
+    // operation completed.
 
     try
     {
@@ -1435,7 +1439,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         mMediaData.backup();
 
         /* Console::fntTakeSnapshotWorker and friends expects this. */
-        if (mSnapshotData.mLastState == MachineState_Running)
+        if (mConsoleTaskData.mLastState == MachineState_Running)
             setMachineState(MachineState_LiveSnapshotting);
         else
             setMachineState(MachineState_Saving); /** @todo Confusing! Saving is used for both online and offline snapshots. */
@@ -1448,10 +1452,10 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         if (FAILED(rc))
             throw rc;
 
-        if (mSnapshotData.mLastState == MachineState_Saved)
+        if (mConsoleTaskData.mLastState == MachineState_Saved)
         {
             Utf8Str stateFrom = mSSData->mStateFilePath;
-            Utf8Str stateTo = mSnapshotData.mSnapshot->stateFilePath();
+            Utf8Str stateTo = mConsoleTaskData.mSnapshot->stateFilePath();
 
             LogFlowThisFunc(("Copying the execution state from '%s' to '%s'...\n",
                              stateFrom.c_str(), stateTo.c_str()));
@@ -1483,17 +1487,17 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     catch (HRESULT hrc)
     {
         LogThisFunc(("Caught %Rhrc [%s]\n", hrc, Global::stringifyMachineState(mData->mMachineState) ));
-        if (    mSnapshotData.mLastState != mData->mMachineState
-             && (   mSnapshotData.mLastState == MachineState_Running
+        if (    mConsoleTaskData.mLastState != mData->mMachineState
+             && (   mConsoleTaskData.mLastState == MachineState_Running
                   ? mData->mMachineState == MachineState_LiveSnapshotting
                   : mData->mMachineState == MachineState_Saving)
            )
-            setMachineState(mSnapshotData.mLastState);
+            setMachineState(mConsoleTaskData.mLastState);
 
         pSnapshot->uninit();
         pSnapshot.setNull();
-        mSnapshotData.mLastState = MachineState_Null;
-        mSnapshotData.mSnapshot.setNull();
+        mConsoleTaskData.mLastState = MachineState_Null;
+        mConsoleTaskData.mSnapshot.setNull();
 
         rc = hrc;
 
@@ -1539,8 +1543,8 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     AssertReturn(   !aSuccess
                  || (    (    mData->mMachineState == MachineState_Saving
                            || mData->mMachineState == MachineState_LiveSnapshotting)
-                      && mSnapshotData.mLastState != MachineState_Null
-                      && !mSnapshotData.mSnapshot.isNull()
+                      && mConsoleTaskData.mLastState != MachineState_Null
+                      && !mConsoleTaskData.mSnapshot.isNull()
                     )
                  , E_FAIL);
 
@@ -1550,22 +1554,22 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
      * If the state was Running, then let Console::fntTakeSnapshotWorker do it
      * all to avoid races.
      */
-    if (    mData->mMachineState != mSnapshotData.mLastState
-         && mSnapshotData.mLastState != MachineState_Running
+    if (    mData->mMachineState != mConsoleTaskData.mLastState
+         && mConsoleTaskData.mLastState != MachineState_Running
        )
-        setMachineState(mSnapshotData.mLastState);
+        setMachineState(mConsoleTaskData.mLastState);
 
     ComObjPtr<Snapshot> pOldFirstSnap = mData->mFirstSnapshot;
     ComObjPtr<Snapshot> pOldCurrentSnap = mData->mCurrentSnapshot;
 
-    bool fOnline = Global::IsOnline(mSnapshotData.mLastState);
+    bool fOnline = Global::IsOnline(mConsoleTaskData.mLastState);
 
     HRESULT rc = S_OK;
 
     if (aSuccess)
     {
         // new snapshot becomes the current one
-        mData->mCurrentSnapshot = mSnapshotData.mSnapshot;
+        mData->mCurrentSnapshot = mConsoleTaskData.mSnapshot;
 
         /* memorize the first snapshot if necessary */
         if (!mData->mFirstSnapshot)
@@ -1590,7 +1594,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 
         /* inform callbacks */
         mParent->onSnapshotTaken(mData->mUuid,
-                                 mSnapshotData.mSnapshot->getId());
+                                 mConsoleTaskData.mSnapshot->getId());
     }
     else
     {
@@ -1602,15 +1606,15 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
         mData->mCurrentSnapshot = pOldCurrentSnap;      // might have been changed above
 
         /* delete the saved state file (it might have been already created) */
-        if (mSnapshotData.mSnapshot->stateFilePath().length())
-            RTFileDelete(mSnapshotData.mSnapshot->stateFilePath().c_str());
+        if (mConsoleTaskData.mSnapshot->stateFilePath().length())
+            RTFileDelete(mConsoleTaskData.mSnapshot->stateFilePath().c_str());
 
-        mSnapshotData.mSnapshot->uninit();
+        mConsoleTaskData.mSnapshot->uninit();
     }
 
     /* clear out the snapshot data */
-    mSnapshotData.mLastState = MachineState_Null;
-    mSnapshotData.mSnapshot.setNull();
+    mConsoleTaskData.mLastState = MachineState_Null;
+    mConsoleTaskData.mSnapshot.setNull();
 
     // save VirtualBox.xml (media registry most probably changed with diff image);
     // for that we should hold only the VirtualBox lock
