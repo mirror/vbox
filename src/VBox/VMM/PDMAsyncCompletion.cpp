@@ -1220,112 +1220,6 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
             pEndpoint->cUsers            = 1;
             pEndpoint->pBwMgr            = NULL;
 
-#ifdef VBOX_WITH_STATISTICS
-            /* Init the statistics part */
-            for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesNs); i++)
-            {
-                rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesNs[i], STAMTYPE_COUNTER,
-                                     STAMVISIBILITY_USED,
-                                     STAMUNIT_OCCURENCES,
-                                     "Nanosecond resolution runtime statistics",
-                                     "/PDM/AsyncCompletion/File/%s/TaskRun1Ns-%u-%u",
-                                     RTPathFilename(pEndpoint->pszUri),
-                                     i*100, i*100+100-1);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMicroSec); i++)
-                {
-                    rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMicroSec[i], STAMTYPE_COUNTER,
-                                         STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES,
-                                         "Microsecond resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRun2MicroSec-%u-%u",
-                                         RTPathFilename(pEndpoint->pszUri),
-                                        i*100, i*100+100-1);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-                {
-                    rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMs[i], STAMTYPE_COUNTER,
-                                         STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES,
-                                         "Milliseconds resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRun3Ms-%u-%u",
-                                         RTPathFilename(pEndpoint->pszUri),
-                                        i*100, i*100+100-1);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-                {
-                    rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesSec[i], STAMTYPE_COUNTER,
-                                         STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES,
-                                         "Second resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRun4Sec-%u-%u",
-                                         RTPathFilename(pEndpoint->pszUri),
-                                        i*10, i*10+10-1);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunOver100Sec, STAMTYPE_COUNTER,
-                                     STAMVISIBILITY_USED,
-                                     STAMUNIT_OCCURENCES,
-                                     "Tasks which ran more than 100sec",
-                                     "/PDM/AsyncCompletion/File/%s/TaskRunSecGreater100Sec",
-                                     RTPathFilename(pEndpoint->pszUri));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsPerSec, STAMTYPE_COUNTER,
-                                     STAMVISIBILITY_ALWAYS,
-                                     STAMUNIT_OCCURENCES,
-                                     "Processed I/O operations per second",
-                                     "/PDM/AsyncCompletion/File/%s/IoOpsPerSec",
-                                     RTPathFilename(pEndpoint->pszUri));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsStarted, STAMTYPE_COUNTER,
-                                     STAMVISIBILITY_ALWAYS,
-                                     STAMUNIT_OCCURENCES,
-                                     "Started I/O operations for this endpoint",
-                                     "/PDM/AsyncCompletion/File/%s/IoOpsStarted",
-                                     RTPathFilename(pEndpoint->pszUri));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsCompleted, STAMTYPE_COUNTER,
-                                     STAMVISIBILITY_ALWAYS,
-                                     STAMUNIT_OCCURENCES,
-                                     "Completed I/O operations for this endpoint",
-                                     "/PDM/AsyncCompletion/File/%s/IoOpsCompleted",
-                                     RTPathFilename(pEndpoint->pszUri));
-            }
-
-            pEndpoint->tsIntervalStartMs = RTTimeMilliTS();
-#endif
-
             if (   pEndpoint->pszUri
                 && RT_SUCCESS(rc))
             {
@@ -1349,6 +1243,112 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
 
                     /* Reference the template. */
                     ASMAtomicIncU32(&pTemplate->cUsed);
+
+#ifdef VBOX_WITH_STATISTICS
+                    /* Init the statistics part */
+                    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesNs); i++)
+                    {
+                        rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesNs[i], STAMTYPE_COUNTER,
+                                             STAMVISIBILITY_USED,
+                                             STAMUNIT_OCCURENCES,
+                                             "Nanosecond resolution runtime statistics",
+                                             "/PDM/AsyncCompletion/File/%s/TaskRun1Ns-%u-%u",
+                                             RTPathFilename(pEndpoint->pszUri),
+                                             i*100, i*100+100-1);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMicroSec); i++)
+                        {
+                            rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMicroSec[i], STAMTYPE_COUNTER,
+                                                 STAMVISIBILITY_USED,
+                                                 STAMUNIT_OCCURENCES,
+                                                 "Microsecond resolution runtime statistics",
+                                                 "/PDM/AsyncCompletion/File/%s/TaskRun2MicroSec-%u-%u",
+                                                 RTPathFilename(pEndpoint->pszUri),
+                                                 i*100, i*100+100-1);
+                            if (RT_FAILURE(rc))
+                                break;
+                        }
+                    }
+
+                   if (RT_SUCCESS(rc))
+                   {
+                       for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
+                       {
+                           rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMs[i], STAMTYPE_COUNTER,
+                                                STAMVISIBILITY_USED,
+                                                STAMUNIT_OCCURENCES,
+                                                "Milliseconds resolution runtime statistics",
+                                                "/PDM/AsyncCompletion/File/%s/TaskRun3Ms-%u-%u",
+                                                RTPathFilename(pEndpoint->pszUri),
+                                                i*100, i*100+100-1);
+                           if (RT_FAILURE(rc))
+                               break;
+                       }
+                   }
+
+                   if (RT_SUCCESS(rc))
+                   {
+                       for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
+                       {
+                            rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesSec[i], STAMTYPE_COUNTER,
+                                                 STAMVISIBILITY_USED,
+                                                 STAMUNIT_OCCURENCES,
+                                                 "Second resolution runtime statistics",
+                                                 "/PDM/AsyncCompletion/File/%s/TaskRun4Sec-%u-%u",
+                                                 RTPathFilename(pEndpoint->pszUri),
+                                                 i*10, i*10+10-1);
+                            if (RT_FAILURE(rc))
+                                break;
+                        }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunOver100Sec, STAMTYPE_COUNTER,
+                                             STAMVISIBILITY_USED,
+                                             STAMUNIT_OCCURENCES,
+                                             "Tasks which ran more than 100sec",
+                                             "/PDM/AsyncCompletion/File/%s/TaskRunSecGreater100Sec",
+                                             RTPathFilename(pEndpoint->pszUri));
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsPerSec, STAMTYPE_COUNTER,
+                                             STAMVISIBILITY_ALWAYS,
+                                             STAMUNIT_OCCURENCES,
+                                             "Processed I/O operations per second",
+                                             "/PDM/AsyncCompletion/File/%s/IoOpsPerSec",
+                                             RTPathFilename(pEndpoint->pszUri));
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsStarted, STAMTYPE_COUNTER,
+                                             STAMVISIBILITY_ALWAYS,
+                                             STAMUNIT_OCCURENCES,
+                                             "Started I/O operations for this endpoint",
+                                             "/PDM/AsyncCompletion/File/%s/IoOpsStarted",
+                                             RTPathFilename(pEndpoint->pszUri));
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsCompleted, STAMTYPE_COUNTER,
+                                             STAMVISIBILITY_ALWAYS,
+                                             STAMUNIT_OCCURENCES,
+                                             "Completed I/O operations for this endpoint",
+                                             "/PDM/AsyncCompletion/File/%s/IoOpsCompleted",
+                                             RTPathFilename(pEndpoint->pszUri));
+                    }
+
+                    pEndpoint->tsIntervalStartMs = RTTimeMilliTS();
+#endif
 
                     *ppEndpoint = pEndpoint;
 
