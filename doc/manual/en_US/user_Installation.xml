@@ -479,22 +479,15 @@
 
         <para>The installer must be executed as root with either
         <computeroutput>install</computeroutput> or
-        <computeroutput>uninstall</computeroutput> as the first parameter. If
-        you do not want the installer to ask you whether you wish to accept
-        the license agreement (for example, for performing unattended
-        installations), you can add the parameter
-        <computeroutput>license_accepted_unconditionally</computeroutput>.
-        Finally, if you want to use a directory other than the default
-        installation directory, add the desired path as an extra
-        parameter.</para>
+        <computeroutput>uninstall</computeroutput> as the first parameter.</para>
 
-        <screen>sudo ./VirtualBox.run install /opt/VirtualBox</screen>
+        <screen>sudo ./VirtualBox.run install</screen>
 
         <para>Or if you do not have the "sudo" command available, run the
-        following as root instead:<screen>./VirtualBox.run install /opt/VirtualBox</screen></para>
+        following as root instead:<screen>./VirtualBox.run install</screen></para>
 
         <para>After that you need to put every user which should be able to
-        use VirtualBox in the group
+        access USB devices from VirtualBox guests in the group
         <computeroutput>vboxusers</computeroutput>, either through the GUI
         user management tools or by running the following command as
         root:</para>
@@ -512,11 +505,7 @@
             <computeroutput>-G</computeroutput> option, e.g. like this:
             <computeroutput>usermod -G group1,group2,vboxusers
             username</computeroutput>.</para>
-          </note>If any users on your system should be able to access host USB
-        devices from within VirtualBox guests, you should also add them to the
-        appropriate user group that your distribution uses for USB access,
-        e.g. <computeroutput>usb</computeroutput> or
-        <computeroutput>usbusers</computeroutput>.</para>
+         </note></para>
       </sect3>
 
       <sect3>
@@ -655,7 +644,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
       <para>The Linux installers create the system user group
       <computeroutput>vboxusers</computeroutput> during installation. Any
-      system user who is going to run VirtualBox must be member of that group.
+      system user who is going to use USB devices from VirtualBox guests
+      must be member of that group.
       A user can be made member of the group
       <computeroutput>vboxusers</computeroutput> through the GUI user/group
       management or at the command line with</para>
