@@ -87,6 +87,8 @@
 # define FAKE_REFRESH_CLOCK
 #endif
 
+/** The effective counter mode - if bit 1 is set, bit 2 is ignored. */
+#define EFFECTIVE_MODE(x)   ((x) & ~(((x) & 2) << 1))
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -187,7 +189,7 @@ static int pit_get_count(PITChannelState *s)
     int counter;
     PTMTIMER pTimer = s->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer);
 
-    if (s->mode == 2)
+    if (EFFECTIVE_MODE(s->mode) == 2)
     {
         if (s->u64NextTS == UINT64_MAX)
         {
@@ -204,7 +206,7 @@ static int pit_get_count(PITChannelState *s)
         return s->count - d;
     }
     d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
-    switch(s->mode) {
+    switch(EFFECTIVE_MODE(s->mode)) {
     case 0:
     case 1:
     case 4:
@@ -231,7 +233,7 @@ static int pit_get_out1(PITChannelState *s, int64_t current_time)
     int out;
 
     d = ASMMultU64ByU32DivByU32(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
-    switch(s->mode) {
+    switch(EFFECTIVE_MODE(s->mode)) {
     default:
     case 0:
         out = (d >= s->count);
@@ -292,7 +294,7 @@ static void pit_set_gate(PITState *pit, int channel, int val)
     PTMTIMER pTimer = s->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer);
     Assert((val & 1) == val);
 
-    switch(s->mode) {
+    switch(EFFECTIVE_MODE(s->mode)) {
     default:
     case 0:
     case 4:
@@ -356,7 +358,7 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
     uint32_t period2;
 
     d = ASMMultU64ByU32DivByU32(current_time - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
-    switch(s->mode) {
+    switch(EFFECTIVE_MODE(s->mode)) {
     default:
     case 0:
     case 1:
@@ -435,7 +437,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
     {
         pDevIns = s->CTX_SUFF(pPit)->pDevIns;
 
-        if (s->mode == 2)
+        if (EFFECTIVE_MODE(s->mode) == 2)
         {
             /* We just flip-flop the irq level to save that extra timer call, which isn't generally required (we haven't served it for years). */
             PDMDevHlpISASetIrq(pDevIns, s->irq, PDM_IRQ_LEVEL_FLIP_FLOP);
