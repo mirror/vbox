@@ -184,10 +184,18 @@ typedef struct VBOXEXTPACKREG
      *
      * This is called in the context of the per-user service (VBoxSVC).
      *
+     * @returns VBox status code.
+     * @retval  VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL if the extension pack
+     *          requires some different host version or a prerequisite is
+     *          missing from the host.  Automatic uninstall will be attempted.
+     *          Must set error info.
+     *
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
+     * @param   pErrInfo    Where to return extended error information.
      */
-    DECLCALLBACKMEMBER(void, pfnInstalled)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+    DECLCALLBACKMEMBER(int, pfnInstalled)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                          PRTERRINFO pErrInfo);
 
     /**
      * Hook for cleaning up before the extension pack is uninstalled.
@@ -197,6 +205,7 @@ typedef struct VBOXEXTPACKREG
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
+     *
      * @todo    This is currently called holding locks making pVirtualBox
      *          relatively unusable.
      */
@@ -318,10 +327,9 @@ typedef struct VBOXEXTPACKREG
  *                          structure containing all the hooks.  This structure
  *                          be valid and unchanged until the module is unloaded
  *                          (i.e. use some static const data for it).
- * @param   pszErr          Error message buffer for explaining any failure.
- * @param   cbErr           The size of the error message buffer.
+ * @param   pErrInfo        Where to return extended error information.
  */
-typedef DECLCALLBACK(int) FNVBOXEXTPACKREGISTER(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKREG *ppReg, char *pszErr, size_t cbErr);
+typedef DECLCALLBACK(int) FNVBOXEXTPACKREGISTER(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKREG *ppReg, PRTERRINFO pErrInfo);
 /** Pointer to a FNVBOXEXTPACKREGISTER. */
 typedef FNVBOXEXTPACKREGISTER *PFNVBOXEXTPACKREGISTER;
 
@@ -338,7 +346,7 @@ typedef FNVBOXEXTPACKREGISTER *PFNVBOXEXTPACKREGISTER;
  */
 #define VBOXEXTPACK_IS_VER_COMPAT(u32Provider, u32User) \
     (    VBOXEXTPACK_IS_MAJOR_VER_EQUAL(u32Provider, u32User) \
-      && RT_LOWORD(u32Provider) >= RT_LOWORD(u32User) )
+      && (int32_t)RT_LOWORD(u32Provider) >= (int32_t)RT_LOWORD(u32User) ) /* stupid casts to shut up gcc */
 
 /**
  * Check if two extension pack interface versions has the same major version.

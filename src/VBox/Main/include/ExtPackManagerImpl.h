@@ -138,7 +138,7 @@ public:
 
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
-    bool        callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock);
+    bool        callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock, PRTERRINFO pErrInfo);
     HRESULT     callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval);
     bool        callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock);
     bool        callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock);

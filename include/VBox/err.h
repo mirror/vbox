@@ -1610,7 +1610,7 @@
 /** @name VBox CPU hotplug Status codes
  * @{
  */
-/** CPU hotplug events from VMMDev are not monitored by the guest */
+/** CPU hotplug events from VMMDev are not monitored by the guest. */
 #define VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST    (-4700)
 /** @} */
 
@@ -1624,29 +1624,37 @@
 /** @name VBox Virtual SCSI Status Codes
  * @{
  */
-/** LUN type is not supported */
+/** LUN type is not supported. */
 #define VERR_VSCSI_LUN_TYPE_NOT_SUPPORTED           (-4900)
-/** LUN is already/still attached to a device */
+/** LUN is already/still attached to a device. */
 #define VERR_VSCSI_LUN_ATTACHED_TO_DEVICE           (-4901)
-/** The specified LUN is invalid */
+/** The specified LUN is invalid. */
 #define VERR_VSCSI_LUN_INVALID                      (-4902)
-/** The LUN is not attached to the device */
+/** The LUN is not attached to the device. */
 #define VERR_VSCSI_LUN_NOT_ATTACHED                 (-4903)
 /** The LUN is still busy. */
 #define VERR_VSCSI_LUN_BUSY                         (-4904)
 /** @} */
 
-/** @name VBox FAM error codes
+/** @name VBox FAM Status Codes
  * @{
  */
-/** FAM failed to open a connection */
+/** FAM failed to open a connection. */
 #define VERR_FAM_OPEN_FAILED                        (-5000)
-/** FAM failed to add a file to the list to be monitored */
+/** FAM failed to add a file to the list to be monitored. */
 #define VERR_FAM_MONITOR_FILE_FAILED                (-5001)
-/** FAM failed to add a directory to the list to be monitored */
+/** FAM failed to add a directory to the list to be monitored. */
 #define VERR_FAM_MONITOR_DIRECTORY_FAILED           (-5002)
-/** The connection to the FAM daemon was lost */
+/** The connection to the FAM daemon was lost. */
 #define VERR_FAM_CONNECTION_LOST                    (-5003)
+/** @} */
+
+/** @name VBox Extension Pack Status Codes
+ * @{
+ */
+/** The host is not supported. Uninstall the extension pack.
+ * Returned by the VBOXEXTPACKREG::pfnInstalled. */
+#define VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL     (-5000)
 /** @} */
 
 /* SED-END */
