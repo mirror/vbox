@@ -222,10 +222,13 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
                       j, cmdHdr.x, cmdHdr.y, cmdHdr.w, cmdHdr.h);
 #endif
 
-            VBoxVBVABufferBeginUpdate(&pVBox->aVbvaCtx[j], &pVBox->guestCtx);
-            VBoxVBVAWrite(&pVBox->aVbvaCtx[j], &pVBox->guestCtx, &cmdHdr,
-                          sizeof(cmdHdr));
-            VBoxVBVABufferEndUpdate(&pVBox->aVbvaCtx[j]);
+            if (VBoxVBVABufferBeginUpdate(&pVBox->aVbvaCtx[j],
+                                          &pVBox->guestCtx))
+            {
+                VBoxVBVAWrite(&pVBox->aVbvaCtx[j], &pVBox->guestCtx, &cmdHdr,
+                              sizeof(cmdHdr));
+                VBoxVBVABufferEndUpdate(&pVBox->aVbvaCtx[j]);
+            }
         }
 }
 
