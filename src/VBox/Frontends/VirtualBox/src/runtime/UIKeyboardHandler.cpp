@@ -486,6 +486,19 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
             /* Remove the extended flag: */
             scan &= 0x7F;
 
+            /* Special Korean keys must send scancode 0xF1/0xF2 when pressed and nothing
+             * when released.
+             */
+            if (scan == 0x71 || scan == 0x72) 
+            {
+                if (pEvent->type == XKeyRelease)  /* Ignore. */
+                {
+                    fResult = true;
+                    break;
+                }
+                scan |= 0x80;   /* Re-create the bizarre scancode. */
+            }
+
             switch (ks)
             {
                 case XK_Print:
