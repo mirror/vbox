@@ -368,8 +368,8 @@
         <listitem>
           <para><computeroutput>VBoxHeadless</computeroutput>, a VM front end
           which does not directly provide any video output and keyboard/mouse
-          input, but allows redirection via VRDP; see <xref
-          linkend="vboxheadless" />.</para>
+          input, but allows redirection via VirtualBox Remote Desktop Extension;
+          see <xref linkend="vboxheadless" />.</para>
         </listitem>
 
         <listitem>

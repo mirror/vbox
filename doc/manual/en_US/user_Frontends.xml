@@ -5,7 +5,7 @@
   <title>Remote virtual machines</title>
 
   <sect1>
-    <title id="vrdp">Remote display (VRDP support)</title>
+    <title id="vrde">VirtualBox Remote Desktop Extension (VRDE)</title>
 
     <para>VirtualBox can display virtual machines remotely. This allows you to
     see the output of a virtual machine's window remotely on another computer
@@ -62,7 +62,7 @@
 
       <para>The port can be changed either in the "Display" settings of the
       graphical user interface or with
-      <computeroutput>--vrdpport</computeroutput> option of the
+      <computeroutput>--vrdeport</computeroutput> option of the
       <computeroutput>VBoxManage modifyvm</computeroutput> command. You can
       specify a comma-separated list of ports or ranges of ports. Use a dash
       between two port numbers to specify a range. The VRDP server will bind
@@ -134,14 +134,14 @@
     </sect2>
 
     <sect2 id="vboxheadless">
-      <title>VBoxHeadless, the VRDP-only server</title>
+      <title>VBoxHeadless, the remote desktop server</title>
 
       <para>While any VM started from the VirtualBox Manager is capable of
       running virtual machines remotely, it is not convenient to have to run
       the full-fledged GUI if you never want to have VMs displayed locally in
       the first place. In particular, if you are running servers whose only
       purpose is to host VMs, and all your VMs are supposed to run remotely
-      over VRDP, then it is pointless to have a graphical user interface on
+      over VRDE, then it is pointless to have a graphical user interface on
       the server at all -- especially since, on a Linux or Solaris host, the
       VirtualBox manager comes with dependencies on the Qt and SDL libraries,
       which is inconvenient if you would rather not have the X Window system
@@ -149,7 +149,7 @@
 
       <para>VirtualBox therefore comes with yet another front-end called
       <computeroutput>VBoxHeadless</computeroutput>, which produces no visible
-      output on the host at all, but instead only delivers VRDP data.<footnote>
+      output on the host at all, but instead only delivers VRDE data.<footnote>
           <para>Before VirtualBox 1.6, the headless server was called
           <computeroutput>VBoxVRDP</computeroutput>. For the sake of backwards
           compatibility, the VirtualBox installation still installs an
@@ -183,14 +183,14 @@
 
       <para>Note that when you use
       <computeroutput>VBoxHeadless</computeroutput> to start a VM, since the
-      headless server has no other means of output, the built-in RDP server
+      headless server has no other means of output, the VRDE server
       will <emphasis>always</emphasis> be enabled, regardless of whether you
-      have enabled the VRDP server in the VM's settings. If this is
+      have enabled the VRDE server in the VM's settings. If this is
       undesirable (for example because you want to access the VM via
       <computeroutput>ssh</computeroutput> only), start the VM like
-      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrdp=off</screen>To
-      have the VRDP server use the setting from the VM configuration, as the
-      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrdp=config</screen></para>
+      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>
+      To use the setting from the VM configuration, as the
+      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
     </sect2>
 
     <sect2>
@@ -201,7 +201,8 @@
       virtual machine on a headless server over a network connection. We will
       create a virtual machine, establish an RDP connection and install a
       guest operating system -- all without having to touch the headless
-      server. All you need is the following:</para>
+      server. VirtualBox extension packages with the VRDP server must be
+      installed. All you need is the following:</para>
 
       <para><orderedlist>
           <listitem>
@@ -335,10 +336,10 @@
     </sect2>
 
     <sect2 id="vbox-auth">
-      <title>RDP authentication</title>
+      <title>VRDE authentication</title>
 
-      <para>For each virtual machine that is remotely accessible via RDP, you
-      can individually determine if and how RDP connections are
+      <para>For each virtual machine that is remotely accessible via VRDE, you
+      can individually determine if and how client connections are
       authenticated.</para>
 
       <para>For this, use <computeroutput>VBoxManage modifyvm</computeroutput>
@@ -347,7 +348,7 @@
       Three methods of authentication are available:<itemizedlist>
           <listitem>
             <para>The "null" method means that there is no authentication at
-            all; any client can connect to the VRDP server and thus the
+            all; any client can connect to the VRDE server and thus the
             virtual machine. This is, of course, very insecure and only to be
             recommended for private networks.</para>
           </listitem>
@@ -421,11 +422,12 @@
       <para>In addition to the methods described above, you can replace the
       default "external authentication module with any other module. For this,
       VirtualBox provides a well-defined interface that allows you to write
-      your own authentication module; see <xref
-      linkend="vbox-authenticate-sdk" /> for details.</para>
+      your own authentication module. This is described in detail in the
+      VirtualBox Software Development Kit (SDK) reference; please see <xref
+      linkend="VirtualBoxAPI" /> for details.</para>
     </sect2>
 
-    <sect2 id="vrdp-crypt">
+    <sect2 id="vrde-crypt">
       <title>RDP encryption</title>
 
       <para>RDP features data stream encryption, which is based on the RC4
@@ -469,10 +471,10 @@
       <computeroutput>-5</computeroutput> options.</para>
     </sect2>
 
-    <sect2 id="vrdp-multiconnection">
-      <title>Multiple VRDP connections</title>
+    <sect2 id="vrde-multiconnection">
+      <title>Multiple connections to the VRDP server</title>
 
-      <para>The built-in RDP server of VirtualBox supports simultaneous
+      <para>The VRDP server of VirtualBox supports simultaneous
       connections to the same running VM from different clients. All connected
       clients see the same screen output and share a mouse pointer and
       keyboard focus. This is similar to several people using the same
@@ -481,18 +483,18 @@
       <para>The following command enables multiple connection mode: <screen>VBoxManage modifyvm "VM name" --vrdemulticon on</screen></para>
     </sect2>
 
-    <sect2 id="vrdp-multimonitor">
+    <sect2 id="vrde-multimonitor">
       <title>Multiple remote monitors</title>
 
       <para>To access two or more remote VM displays you have to enable the
-      RDP multiconnection mode (see <xref
-      linkend="vrdp-multiconnection" />).</para>
+      VRDP multiconnection mode (see <xref
+      linkend="vrde-multiconnection" />).</para>
 
       <para>The RDP client can select the virtual monitor number to connect to
       using the <computeroutput>domain</computeroutput> logon parameter
       (<computeroutput>-d</computeroutput>). If the parameter ends with
-      <computeroutput>@</computeroutput> followed by a number, the VirtualBox
-      RDP server interprets this number as the screen index. The primary guest
+      <computeroutput>@</computeroutput> followed by a number, VirtualBox
+      interprets this number as the screen index. The primary guest
       screen is selected with <computeroutput>@1</computeroutput>, the first
       secondary screen is <computeroutput>@2</computeroutput>, etc.</para>
 
@@ -505,16 +507,16 @@
       If it is not, you may use any text as the username.</para>
     </sect2>
 
-    <sect2 id="vrdp-videochannel">
+    <sect2 id="vrde-videochannel">
       <title>VRDP video redirection</title>
 
-      <para>Starting with VirtualBox 3.2, the RDP server can redirect video
+      <para>Starting with VirtualBox 3.2, the VRDP server can redirect video
       streams from the guest to the RDP client. Video frames are compressed
       using the JPEG algorithm allowing a higher compression ratio than
       standard RDP bitmap compression methods. It is possible to increase the
       compression ratio by lowering the video quality.</para>
 
-      <para>Video streams in a guest are detected by the RDP server
+      <para>Video streams in a guest are detected by the server
       automatically as frequently updated rectangular areas. Therefore, this
       method works with any guest operating system without having to install
       additional software in the guest.</para>
@@ -528,18 +530,30 @@
 
       <para>The quality of the video is defined as a value from 10 to 100
       percent, as is common with JPEG compression. The quality can be changed
-      using the following command: <screen>VBoxManage modifyvm "VM name" --vrdpvideochannelquality 75</screen></para>
+      using the following command: <screen>VBoxManage modifyvm "VM name" --vrdevideochannelquality 75</screen></para>
     </sect2>
 
-    <sect2 id="vrdp-customization">
+    <sect2 id="vrde-customization">
       <title>VRDP customization</title>
 
-      <para>Starting with VirtualBox 3.2.10, it is possible to disable display
+      <para>Starting with VirtualBox 4.0, it is possible to disable display
       output, mouse and keyboard input, audio, remote USB or clipboard in the
       VRDP server.</para>
 
-      <para>The following commands change corresponding server
-      settings:</para>
+      <para>The following commands change corresponding server settings:</para>
+
+      <screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=1
+VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableInput=1
+VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUSB=1
+VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableAudio=1
+VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableClipboard=1
+VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</screen>
+
+      <para>To reenable a feature use a similar command without the trailing
+      1. For example: <screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=</screen></para>
+
+      <para>Note that with earlier releases of VirtualBox (3.2.10 or more recent 3.2 versions),
+      the following commands change corresponding server settings:</para>
 
       <screen>VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableDisplay" 1
 VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableInput" 1

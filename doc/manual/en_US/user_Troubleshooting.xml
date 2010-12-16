@@ -878,7 +878,7 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
       (called Remote Desktop Connection), there can be large delays between
       input (moving the mouse over a menu is the most obvious situation) and
       output. This is because this RDP client collects input for a certain
-      time before sending it to the VRDP server built into VirtualBox.</para>
+      time before sending it to the RDP server.</para>
 
       <para>The interval can be decreased by setting a Windows registry key to
       smaller values than the default of 100. The key does not exist initially
