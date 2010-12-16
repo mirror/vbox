@@ -1,24 +1,38 @@
-The majority of code in VirtualBox Open Source Edition (OSE) is
-copyrighted by Oracle Corporation. This code is combined with
-third-party code that was originally released under the Apache
-License 2.0, the OpenSSL license, the Mozilla Public License (MPL)
-and the Slirp license, all of which the Free Software Foundation
-considers to be incompatible with the GPL, as well as the X11, zlib,
-liblzf and LGPL licenses. As a special exception to the terms and
-conditions of the GPL listed below, Sun gives you explicit
-permission to combine its GPL code contained in VirtualBox OSE with
-third-party code under the aforementioned licenses. You may copy
-and distribute such a combination provided that you adhere to the
-terms and conditions of all of the GPL and the licenses of the
-third-party code; in particular, you must include the source code of
-the entire combination insofar as the GPL requires distribution of
-source code.
+Preliminary notes:
 
-Note that whoever creates or distributes a derived work based on
-VirtualBox OSE is not obligated to grant this special exception for
-such a version. The GPL allows for releasing a modified version
-without the above exception; Sun also allows you to release a modified
-version which carries forward this exception.
+1) The majority of code in the VirtualBox Open Source Edition (OSE) is
+copyrighted by Oracle Corporation. This code is combined with third-party code
+that was originally released under licenses which the Free Software Foundation
+considers incompatible with the GPL, such as the Apache License 2.0, the OpenSSL
+license, the Mozilla Public License (MPL) and the Slirp license. (Please see the
+VirtualBox User Manual for a complete list of third-party code and their
+licenses.) As a special exception to the terms and conditions of the GPL listed
+below, Oracle gives you explicit permission to combine its GPL code contained in
+VirtualBox OSE with third-party code under the aforementioned licenses. You may
+copy and distribute such a combination provided that you adhere to the terms and
+conditions of all of the GPL and the licenses of the third-party code; in
+particular, you must include the source code of the entire combination insofar
+as the GPL requires distribution of source code.
+
+2) The GPL listed below does not bind software which uses VirtualBox services by
+merely linking to VirtualBox libraries so long as all VirtualBox interfaces used
+by that software are multi-licensed. A VirtualBox interface is deemed
+multi-licensed if it is declared in a VirtualBox header file that is licensed
+under both the GPL version 2 (below) *and* the Common Development and
+Distribution License Version 1.0 (CDDL), as it comes in the "COPYING.CDDL" file.
+In other words, calling such a multi-licensed interface is merely considered
+normal use of VirtualBox and does not turn the calling code into a derived work
+of VirtualBox. In particular, this applies to code that wants to extend
+VirtualBox by way of the Extension Pack mechanism declared in the ExtPack.h
+header file.
+
+3) Whoever creates or distributes a derived work based on VirtualBox OSE is not
+obligated to grant the above exceptions for such a version. The GPL allows for
+releasing a modified version without the above exception; in addition, Oracle
+hereby also allows you to release a modified version which carries forward these
+exceptions.
+
+Oracle Corporation
 
 ---
 
@@ -80,7 +94,7 @@ patent must be licensed for everyone's free use or not licensed at all.
 
   The precise terms and conditions for copying, distribution and
 modification follow.
-
+
 		    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
@@ -135,7 +149,7 @@ above, provided that you also meet all of these conditions:
     License.  (Exception: if the Program itself is interactive but
     does not normally print such an announcement, your work based on
     the Program is not required to print an announcement.)
-
+
 These requirements apply to the modified work as a whole.  If
 identifiable sections of that work are not derived from the Program,
 and can be reasonably considered independent and separate works in
@@ -193,7 +207,7 @@ access to copy from a designated place, then offering equivalent
 access to copy the source code from the same place counts as
 distribution of the source code, even though third parties are not
 compelled to copy the source along with the object code.
-
+
   4. You may not copy, modify, sublicense, or distribute the Program
 except as expressly provided under this License.  Any attempt
 otherwise to copy, modify, sublicense or distribute the Program is
@@ -250,7 +264,7 @@ impose that choice.
 
 This section is intended to make thoroughly clear what is believed to
 be a consequence of the rest of this License.
-
+
   8. If the distribution and/or use of the Program is restricted in
 certain countries either by patents or by copyrighted interfaces, the
 original copyright holder who places the Program under this License
@@ -303,7 +317,7 @@ PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
-
+
 	    How to Apply These Terms to Your New Programs
 
   If you develop a new program, and you want it to be of the greatest
@@ -330,7 +344,8 @@ the "copyright" line and a pointer to where the full notice is found.
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+USA
 
 
 Also add information on how to contact you by electronic and paper mail.
