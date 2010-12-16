@@ -652,6 +652,8 @@ private:
     bool mfSnapshotFolderSizeWarningShown : 1;
     /** true if we already showed the snapshot folder ext4/xfs bug warning. */
     bool mfSnapshotFolderExt4WarningShown : 1;
+    /** true if we already listed the disk type of the snapshot folder. */
+    bool mfSnapshotFolderDiskTypeShown : 1;
 
     /** Pointer to the VMM -> User (that's us) callbacks.
      * This structure is followed by a pointer to the Console object. */
