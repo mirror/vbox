@@ -5442,11 +5442,12 @@ int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
-                                    unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster,
-                                    unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave,
-                                    uint32_t *pcbSSMState, const char *szName, PPDMLED pLed,
-                                    PSTAMCOUNTER pStatBytesRead, PSTAMCOUNTER pStatBytesWritten)
+int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
+                      unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
+                      PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
+                      unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave, PPDMLED pLedSlave,
+                      PSTAMCOUNTER pStatBytesReadSlave, PSTAMCOUNTER pStatBytesWrittenSlave,
+                      uint32_t *pcbSSMState, const char *szName)
 {
     int      rc;
 
@@ -5469,9 +5470,9 @@ DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
         pCtl->aIfs[j].pControllerR3     = pCtl;
         pCtl->aIfs[j].pControllerR0     = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), pCtl);
         pCtl->aIfs[j].pControllerRC     = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), pCtl);
-        pCtl->aIfs[j].pLed              = pLed;
-        pCtl->aIfs[j].pStatBytesRead    = pStatBytesRead;
-        pCtl->aIfs[j].pStatBytesWritten = pStatBytesWritten;
+        pCtl->aIfs[j].pLed              = j == 0 ? pLedMaster : pLedSlave;
+        pCtl->aIfs[j].pStatBytesRead    = j == 0 ? pStatBytesReadMaster : pStatBytesReadSlave;
+        pCtl->aIfs[j].pStatBytesWritten = j == 0 ? pStatBytesWrittenMaster : pStatBytesWrittenSlave;
     }
 
     /* Initialize per-controller critical section */

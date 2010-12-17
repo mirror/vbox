@@ -8170,10 +8170,14 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
             rc = ataControllerInit(pDevIns, pCtl,
                                    iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
-                                   iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
-                                   &cbSSMState, szName, &pThis->ahciPort[iPortMaster].Led,
+                                   &pThis->ahciPort[iPortMaster].Led,
                                    &pThis->ahciPort[iPortMaster].StatBytesRead,
-                                   &pThis->ahciPort[iPortMaster].StatBytesWritten);
+                                   &pThis->ahciPort[iPortMaster].StatBytesWritten,
+                                   iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
+                                   &pThis->ahciPort[iPortSlave].Led,
+                                   &pThis->ahciPort[iPortSlave].StatBytesRead,
+                                   &pThis->ahciPort[iPortSlave].StatBytesWritten,
+                                   &cbSSMState, szName);
             if (RT_FAILURE(rc))
                 return rc;
 
