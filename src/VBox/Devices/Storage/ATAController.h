@@ -420,9 +420,11 @@ RT_C_DECLS_END
  * @param   szName         Name of the controller (Used to initialize the critical section).
  */
 int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
-                      unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster,
-                      unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave,
-                      uint32_t *pcbSSMState, const char *szName, PPDMLED pLed, PSTAMCOUNTER pStatBytesRead, PSTAMCOUNTER pStatBytesWritten);
+                      unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
+                      PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
+                      unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave, PPDMLED pLedSlave,
+                      PSTAMCOUNTER pStatBytesReadSlave, PSTAMCOUNTER pStatBytesWrittenSlave,
+                      uint32_t *pcbSSMState, const char *szName);
 
 /**
  * Free all allocated resources for one controller instance.
