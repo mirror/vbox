@@ -264,9 +264,9 @@ ifeq ($(ose),)
 	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
 	dh_installdocs \
 	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
-	    $(addprefix $(archdir)/, $(if $(HEADLESS),,License-*.html) LICENSE)
+	    $(addprefix $(archdir)/, LICENSE)
 	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm \
-	    LICENSE $(if $(HEADLESS),,License-*.html))
+	    LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp $(prefix)/usr/bin)

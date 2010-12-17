@@ -424,7 +424,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc LICENSE
-%doc %LICENSE%
 %doc UserManual*.pdf
 %doc VirtualBox*.chm
 %{_initrddir}/vboxdrv
