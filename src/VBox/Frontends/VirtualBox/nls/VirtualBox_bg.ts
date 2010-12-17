@@ -423,7 +423,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="unfinished">Авто-преоразмеряване на &amp;виртуалния изглед</translation>
+        <translation>Авто-преоразмеряване на &amp;виртуалния изглед</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -668,50 +668,50 @@
     </message>
     <message>
         <source>Switch to &amp;Fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване в режим на &amp;цял екран</translation>
     </message>
     <message>
         <source>Switch between normal and fullscreen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване между нормален режим и на цял екран</translation>
     </message>
     <message>
         <source>Switch to Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване в &amp;безрамков режим</translation>
     </message>
     <message>
         <source>Switch between normal and seamless desktop integration mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване между нормален режим и безрамкова интеграция с работния плот</translation>
     </message>
     <message>
         <source>Switch to &amp;Scale Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване в режим на &amp;наместване</translation>
     </message>
     <message>
         <source>Switch between normal and scale mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Превключване между нормален режим и на наместване</translation>
     </message>
     <message>
         <source>Session I&amp;nformation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ин&amp;формация за сесията</translation>
     </message>
     <message>
         <source>Enable R&amp;emote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяване на &amp;Отдалечен работен плот</translation>
     </message>
 </context>
 <context>
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation type="unfinished">Няма описание. Натиснете бутона Редактиране по-долу, за да добавите такова.</translation>
+        <translation>Няма описание. Натиснете бутона Редактиране по-долу, за да добавите такова.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished">Редактиране</translation>
+        <translation>Редактиране</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation type="unfinished">Редактиране (Ctrl+E)</translation>
+        <translation>Редактиране (Ctrl+E)</translation>
     </message>
 </context>
 <context>
@@ -719,275 +719,275 @@
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вид ОС</translation>
+        <translation>Вид ОС</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Оперативна памет</translation>
+        <translation>Оперативна памет</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Процесори</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ред на зареждане</translation>
+        <translation>Ред на зареждане</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished">ACPI</translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">IO APIC</translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>BIOS</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вместено страниране</translation>
+        <translation>Вместено страниране</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ускорение</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Видео памет</translation>
+        <translation>Видео памет</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished">Екрани</translation>
+        <translation>Екрани</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>2D видео</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт за Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранен</translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished">(CD/DVD)</translation>
+        <translation>(CD/DVD)</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="unfinished">Няма свързани</translation>
+        <translation>Няма свързани</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Реален драйвер</translation>
+        <translation>Реален драйвер</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Контролер</translation>
+        <translation>Контролер</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранен</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Мостов адаптер, %1</translation>
+        <translation>Мостов адаптер, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Вътрешна мрежа, &apos;%1&apos;</translation>
+        <translation>Вътрешна мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Адаптер само-хост, &apos;%1&apos;</translation>
+        <translation>Адаптер само-хост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">VDE мрежа, &apos;%1&apos;</translation>
+        <translation>VDE мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранена</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">Порт %1</translation>
+        <translation>Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранени</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Порт %1</translation>
+        <translation>Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранени</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">Филтри на устройствата</translation>
+        <translation>Филтри на устройствата</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">%1 (%2 активен)</translation>
+        <translation>%1 (%2 активен)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Споделени папки</translation>
+        <translation>Споделени папки</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Няма</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (description)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Няма</translation>
     </message>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation type="unfinished">Избраната виртуална машина е &lt;i&gt;недостъпна&lt;/i&gt;. Моля, изследвайте съобщението за грешка, което е показано по-долу, и натиснете бутона &lt;b&gt;Обновяване&lt;/b&gt;, ако искате да повторите проверката за достъпност:</translation>
+        <translation>Избраната виртуална машина е &lt;i&gt;недостъпна&lt;/i&gt;. Моля, изследвайте съобщението за грешка, което е показано по-долу, и натиснете бутона &lt;b&gt;Обновяване&lt;/b&gt;, ако искате да повторите проверката за достъпност:</translation>
     </message>
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Основни</translation>
+        <translation>Основни</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Преглед</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Показване</translation>
+        <translation>Възпроизвеждане</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation type="unfinished">Съхранение</translation>
+        <translation>Съхранение</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Звук</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation type="unfinished">Мрежа</translation>
+        <translation>Мрежа</translation>
     </message>
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Серийни портове</translation>
+        <translation>Серийни портове</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Паралелни портове</translation>
+        <translation>Паралелни портове</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Споделени папки</translation>
+        <translation>Споделени папки</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>details report</comment>
-        <translation type="unfinished">Описание</translation>
+        <translation>Описание</translation>
     </message>
 </context>
 <context>
@@ -1065,7 +1065,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Този помощник ще ви води през процеса на изнасяне на приспособление. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Използвайте бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Напред&lt;/span&gt;, за да отидете към следващата страница на помощника, и бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt;, за да се върнете към предишната страница.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Моля, изберете виртуалните машини, които ще бъдат изнесени към приспособлението. Можете да изберете и повече от една. Моля, имайте в предвид, че тези машини трябва да бъдат изключени преди да бъдат изнесени.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Този помощник ще ви води през процеса на изнасяне на приспособление. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Използвайте бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Напред&lt;/span&gt;, за да отидете към следващата страница на помощника, и бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt;, за да се върнете към предишната страница.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Моля, изберете виртуалните машини, които ще бъдат изнесени към приспособлението. Можете да изберете и повече от една. Моля, имайте предвид, че тези машини трябва да бъдат изключени преди да бъдат изнесени.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -1172,7 +1172,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Този помощник ще ви води през процеса на изнасяне на приспособление.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Моля, изберете виртуалните машини, които ще бъдат добавени към приспособлението. Можете да изберете повече от една. Имайте в предвид, че тези машини трябва да бъдат изключени преди да бъде възможно изнасянето им.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Този помощник ще ви води през процеса на изнасяне на приспособление.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Моля, изберете виртуалните машини, които ще бъдат добавени към приспособлението. Можете да изберете повече от една. Имайте предвид, че тези машини трябва да бъдат изключени преди да бъде възможно изнасянето им.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1187,19 +1187,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished">Моля, укажете местоположение за изнасяне към OVF. Имате избор между изнасяне към локалната файлова система, качване на OVF към услугата Sun Cloud или S3 сървър за съхранение.</translation>
+        <translation>Моля, укажете местоположение за изнасяне към OVF. Имате избор между изнасяне към локалната файлова система, качване на OVF към услугата Sun Cloud или S3 сървър за съхранение.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Локална файлова система</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">Sun &amp;Cloud</translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">&amp;Проста система за съхранение (S3)</translation>
+        <translation>&amp;Проста система за съхранение (S3)</translation>
     </message>
 </context>
 <context>
@@ -1226,67 +1226,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished">&amp;Потребител:</translation>
+        <translation>&amp;Потребител:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;арола:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished">&amp;Име на хоста:</translation>
+        <translation>&amp;Име на хоста:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished">&amp;Кошница:</translation>
+        <translation>&amp;Кошница:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished">&amp;Файл:</translation>
+        <translation>&amp;Файл:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished">Записване в остарелия формат OVF 0.9 за съвместимост с други виртуализационни продукти.</translation>
+        <translation>Записване в остарелия формат OVF 0.9 за съвместимост с други виртуализационни продукти.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">&amp;Запис в остарял OVF 0.9</translation>
+        <translation>&amp;Запис в остарял OVF 0.9</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на Manifest файл за автоматична проверка за съвместимост на данните при внасяне.</translation>
     </message>
     <message>
         <source>Write &amp;Manifest file</source>
-        <translation type="unfinished"></translation>
+        <translation>Запис на &amp;Manifest файл</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished">Приспособление</translation>
+        <translation>Приспособление</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished">Изберете файл, към който да се изнесе</translation>
+        <translation>Изберете файл, към който да се изнесе</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Архив в Отворен Виртуализационен Формат (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Отворен Виртуализационен Формат (%1)</translation>
+        <translation>Отворен Виртуализационен Формат (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, изберете име на файла за изнасяне на OVF/OVA. Ако използвате разширение на файла &lt;i&gt;ova&lt;/i&gt;, всички файлове ще бъдат събрани в един архив в Отворен Виртуализационен Формат. Ако използвате разширение &lt;i&gt;ovf&lt;/i&gt;, няколко файла ще бъдат записани отделно. Не са позволени други разширения.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, попълнете допълнителните полета като потребител, парола и кошница, и укажете име на OVF файла.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, попълнете допълнителните полета като потребител, парола, име на хоста и кошница, и укажете име на OVF файла.</translation>
     </message>
 </context>
 <context>
@@ -1361,7 +1361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished">Тук можете да промените допълнителните конфигурационни стойности на избраните виртуални машини. Можете да промените повечето от показаните опции чрез двойно щракване върху елементите.</translation>
+        <translation>Тук можете да промените допълнителните конфигурационни стойности на избраните виртуални машини. Можете да промените повечето от показаните опции чрез двойно щракване върху елементите.</translation>
     </message>
 </context>
 <context>
@@ -1436,7 +1436,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Стартирали сте новосъздадена виртуална машина за пръв път. Този помощник ще ви помогне да завършите стъпките, необходими за зареждането на операционна система според вашия избор на виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че няма да можете да инсталирате операционна система на тази виртуална машина в момента, тъй като не сте закачили твърд диск към нея. Ако това не е, което искате, можете да откажете изпълнението на този помощник, да изберете &lt;b&gt;Настройки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox, за да достъпите диалога с настройки на тази виртуална машина, и да промените конфигурацията на твърдия диск.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Напред&lt;/b&gt;, за да отидете към следващата страница на помощника, и бутона &lt;b&gt;Назад&lt;/b&gt;, за да се върнете към предишната страница. Също така, можете да натиснете бутона &lt;b&gt;Отказ&lt;/b&gt;, ако искате да откажете изпълнението на този помощник.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Стартирали сте новосъздадена виртуална машина за пръв път. Този помощник ще ви помогне да завършите стъпките, необходими за зареждането на операционна система според вашия избор на виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте предвид, че няма да можете да инсталирате операционна система на тази виртуална машина в момента, тъй като не сте закачили твърд диск към нея. Ако това не е, което искате, можете да откажете изпълнението на този помощник, да изберете &lt;b&gt;Настройки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox, за да достъпите диалога с настройки на тази виртуална машина, и да промените конфигурацията на твърдия диск.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Напред&lt;/b&gt;, за да отидете към следващата страница на помощника, и бутона &lt;b&gt;Назад&lt;/b&gt;, за да се върнете към предишната страница. Също така, можете да натиснете бутона &lt;b&gt;Отказ&lt;/b&gt;, ако искате да откажете изпълнението на този помощник.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -1492,7 +1492,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ако по-горното е вярно, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, избраният диск ще бъде временно монтиран във виртуалната машина и машината ще се включи.&lt;/p&gt;&lt;p&gt;Моля, имайте в предвид, че когато затворите виртуалната машина, избраният диск ще бъде демонтиран автоматично и зареждащото устройство ще бъде зададено отново към първия твърд диск.&lt;/p&gt;&lt;p&gt;В зависимост от вида на инсталиращата програма, може да се наложи ръчно да демонтирате (извадите) диска, след като инсталиращата програма рестартира виртуалната машина, за да избегнете ново стартиране на инсталиращата програма. Можете да направите това чрез избиране на съответното &lt;b&gt;Демонтиране...&lt;/b&gt; действие в менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ако по-горното е вярно, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, избраният диск ще бъде временно монтиран във виртуалната машина и машината ще се включи.&lt;/p&gt;&lt;p&gt;Моля, имайте предвид, че когато затворите виртуалната машина, избраният диск ще бъде демонтиран автоматично и зареждащото устройство ще бъде зададено отново към първия твърд диск.&lt;/p&gt;&lt;p&gt;В зависимост от вида на инсталиращата програма, може да се наложи ръчно да демонтирате (извадите) диска, след като инсталиращата програма рестартира виртуалната машина, за да избегнете ново стартиране на инсталиращата програма. Можете да направите това чрез избиране на съответното &lt;b&gt;Демонтиране...&lt;/b&gt; действие в менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1541,7 +1541,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ако по-горното е вярно, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, избраният диск ще бъде временно монтиран във виртуалната машина и машината ще се включи.&lt;/p&gt;&lt;p&gt;Моля, имайте в предвид, че когато затворите виртуалната машина, избраният диск ще бъде демонтиран автоматично и зареждащото устройство ще бъде зададено отново към първия твърд диск.&lt;/p&gt;&lt;p&gt;В зависимост от вида на инсталиращата програма, може да се наложи ръчно да демонтирате (извадите) диска, след като инсталиращата програма рестартира виртуалната машина, за да избегнете ново стартиране на инсталиращата програма. Можете да направите това чрез избиране на съответното &lt;b&gt;Демонтиране...&lt;/b&gt; действие в менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ако по-горното е вярно, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, избраният диск ще бъде временно монтиран във виртуалната машина и машината ще се включи.&lt;/p&gt;&lt;p&gt;Моля, имайте предвид, че когато затворите виртуалната машина, избраният диск ще бъде демонтиран автоматично и зареждащото устройство ще бъде зададено отново към първия твърд диск.&lt;/p&gt;&lt;p&gt;В зависимост от вида на инсталиращата програма, може да се наложи ръчно да демонтирате (извадите) диска, след като инсталиращата програма рестартира виртуалната машина, за да избегнете ново стартиране на инсталиращата програма. Можете да направите това чрез избиране на съответното &lt;b&gt;Демонтиране...&lt;/b&gt; действие в менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -1570,74 +1570,74 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <name>UIGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation type="unfinished">Основни</translation>
+        <translation>Основни</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation type="unfinished">Въвеждане</translation>
+        <translation>Въвеждане</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="unfinished">Обновяване</translation>
+        <translation>Обновяване</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">Език</translation>
+        <translation>Език</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Мрежа</translation>
+        <translation>Мрежа</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Разширения</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>&amp;Extension Packages:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пакети с &amp;разширения:</translation>
     </message>
     <message>
         <source>Lists all installed packages.</source>
-        <translation type="unfinished"></translation>
+        <translation>Списък с всички инсталирани пакети.</translation>
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished"></translation>
+        <translation>Активен</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished">Версия</translation>
+        <translation>Версия</translation>
     </message>
     <message>
         <source>Add package</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавяне на пакет</translation>
     </message>
     <message>
         <source>Remove package</source>
-        <translation type="unfinished"></translation>
+        <translation>Премахване на пакет</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файла на пакета с разширението</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Файлове на пакети с разширения (%1)</translation>
     </message>
 </context>
 <context>
@@ -1688,38 +1688,38 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, екранният предпазител на реалната машина ще бъде забранен, докато виртуалната машина е включена.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
-        <translation type="unfinished"></translation>
+        <translation>Забраняване на &amp;екранния предпазител</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished">&amp;Основен клавиш:</translation>
+        <translation>&amp;Основен клавиш:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation type="unfinished">Показва клавиша, който се използва като Основен в прозореца на ВМ. Активирайте полето за въвеждане и натиснете нов Основен клавиш. Имайте в предвид, че буквено-цифрени и редактиращи клавиши, а така също и движения на курсора, не могат да се използват за Основен клавиш.</translation>
+        <translation>Показва клавиша, който се използва като Основен в прозореца на ВМ. Активирайте полето за въвеждане и натиснете нов Основен клавиш. Имайте предвид, че не могат да се използват движения на курсора, буквено-цифрени и редактиращи клавиши.</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation type="unfinished">Нулиране на Основния клавиш</translation>
+        <translation>Нулиране на Основния клавиш</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished">Нулира настройката за Основен клавиш в прозореца на ВМ.</translation>
+        <translation>Нулира настройката за Основен клавиш в прозореца на ВМ.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Когато е избрано, клавиатурата ще бъде прихващана автоматично всеки път, когато прозорецът на ВМ бъде активиран. Когато клавиатурата е прихваната, всички клавишни комбинации (включително системните като Alt-Tab) ще бъдат препращани към ВМ.</translation>
+        <translation>Когато е избрано, клавиатурата ще бъде прихващана автоматично всеки път, когато прозорецът на ВМ бъде активиран. Когато клавиатурата е прихваната, всички клавишни комбинации (включително системните като Alt-Tab) ще бъдат препращани към ВМ.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">&amp;Авто прихващане на клавиатурата</translation>
+        <translation>&amp;Авто прихващане на клавиатурата</translation>
     </message>
 </context>
 <context>
@@ -1923,7 +1923,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>New Host-Only Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Нов интерфейс само-хост</translation>
     </message>
 </context>
 <context>
@@ -2037,7 +2037,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Указва колко често ще бъде извършвана проверката за нова версия. Имайте в предвид, че за да забраните напълно тази проверка, е достатъчно да махнете тази отметка.</translation>
+        <translation>Указва колко често ще бъде извършвана проверката за нова версия. Имайте предвид, че за да забраните напълно тази проверка, е достатъчно да махнете тази отметка.</translation>
     </message>
     <message>
         <source>Next Check:</source>
@@ -2076,7 +2076,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Помощ</translation>
+        <translation>&amp;Помощ</translation>
     </message>
 </context>
 <context>
@@ -2288,7 +2288,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показва дали показалецът на мишката от реалната машина е прихванат във виртуалната ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграцията на мишката (ИМ) е включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;Имайте в предвид, че функцията за интеграция на мишката изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
+        <translation>Показва дали показалецът на мишката от реалната машина е прихванат във виртуалната ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграцията на мишката (ИМ) е включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;Имайте предвид, че функцията за интеграция на мишката изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -2296,11 +2296,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Показва дали Отдалеченият работен плот е активиран (&lt;img src=:/vrdp_16px.png/&gt;) или не (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Отдалеченият работен плот слуша на порт %1</translation>
     </message>
 </context>
 <context>
@@ -2493,15 +2493,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Указва дали са позволени множество едновременни връзки към ВМ.</translation>
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяване на &amp;множество връзки</translation>
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Имате позволено 3D ускорение за операционна система, която използва WDDM видео драйвер. За максимална производителност задайте виртуалната VRAM да бъде поне &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -2512,7 +2512,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Показва пътя, където да се пазят снимките на тази виртуална машина. Имайте в предвид, че снимките могат да заемат много дисково пространство.</translation>
+        <translation>Показва пътя, където да се пазят снимките на тази виртуална машина. Имайте предвид, че снимките могат да заемат много дисково пространство.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -2800,7 +2800,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Показва MAC адреса на този адаптер. Той съдържа точно 12 знака, избрани между {0-9,A-F}. Имайте в предвид, че вторият знак трябва да бъде винаги цифра.</translation>
+        <translation>Показва MAC адреса на този адаптер. Той съдържа точно 12 знака, избрани между {0-9,A-F}. Имайте предвид, че вторият знак трябва да бъде винаги цифра.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
@@ -2816,11 +2816,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Opens dialog to manage port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отваря диалог за управление на правилата за пренасочване на портове.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Пренасочване на портове</translation>
     </message>
 </context>
 <context>
@@ -2925,31 +2925,31 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Правила за пренасочване на портове</translation>
     </message>
     <message>
         <source>This table contains a list of port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Тази таблица съдържа списък на правилата за пренасочване на портове.</translation>
     </message>
     <message>
         <source>Insert new rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Вмъкване на ново правило</translation>
     </message>
     <message>
         <source>Copy selected rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Копиране на избраното правило</translation>
     </message>
     <message>
         <source>Delete selected rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтриване на избраното правило</translation>
     </message>
     <message>
         <source>This button adds new port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този бутон добавя ново правило за пренасочване на портове.</translation>
     </message>
     <message>
         <source>This button deletes selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този бутон изтрива избраното правило за пренасочване на портове.</translation>
     </message>
 </context>
 <context>
@@ -3032,11 +3032,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Auto-Mount</source>
-        <translation type="unfinished"></translation>
+        <translation>Авто монтиране</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Да</translation>
+        <translation>Да</translation>
     </message>
 </context>
 <context>
@@ -3079,15 +3079,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, виртуалната OS ще опита да монтира автоматично споделената папка при стартиране.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Авто монтиране</translation>
     </message>
     <message>
         <source>If checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако е избрано, тази споделена папка ще бъде постоянна.</translation>
     </message>
 </context>
 <context>
@@ -3425,7 +3425,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Когато е избрано, позволява виртуалната машина да изпраща ATAPI команди директно към реалното устройство, което прави възможно използването на CD/DVD записвачки, свързани към реалната машина, във ВМ. Имайте в предвид, че записването на аудио CD във ВМ все още не се поддържа.</translation>
+        <translation>Когато е избрано, позволява виртуалната машина да изпраща ATAPI команди директно към реалното устройство, което прави възможно използването на CD/DVD записвачки, свързани към реалната машина, във ВМ. Имайте предвид, че записването на аудио CD във ВМ все още не се поддържа.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -3481,67 +3481,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип:</translation>
     </message>
     <message>
         <source>Host Drive</source>
-        <translation type="unfinished">Реално устройство</translation>
+        <translation>Реално устройство</translation>
     </message>
     <message>
         <source>Image</source>
-        <translation type="unfinished">Изображение</translation>
+        <translation>Изображение</translation>
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете или създайте файл за виртуален твърд диск. Виртуалната машина ще вижда данните в този файл като съдържание на виртуалния твърд диск.</translation>
     </message>
     <message>
         <source>Set up the virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройване на виртуалния твърд диск</translation>
     </message>
     <message>
         <source>CD/DVD &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD &amp;устройство:</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете виртуален CD/DVD диск или физическо устройство, което да се използва във виртуалното устройство. Виртуалната машина ще вижда диск, вкаран в устройството, със съдържание данните от файла или от диска във физическото устройство.</translation>
     </message>
     <message>
         <source>Set up the virtual CD/DVD drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройване на виртуалното CD/DVD устройство</translation>
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Флопи устройство:</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете виртуален флопи диск или физическо устройство, което да се използва във виртуалното устройство. Виртуалната машина ще вижда диск, вкаран в устройството, със съдържание данните от файла или от диска във физическото устройство.</translation>
     </message>
     <message>
         <source>Set up the virtual floppy drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройване на виртуалното флопи устройство</translation>
     </message>
     <message>
         <source>Create a new hard disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на нов твърд диск...</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален твърд диск...</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален CD/DVD диск...</translation>
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Премахване на диск от виртуалното устройство</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален флопи диск...</translation>
     </message>
 </context>
 <context>
@@ -3723,15 +3723,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Chipset:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Чипсет:</translation>
     </message>
     <message>
         <source>Defines chipset type used in this VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Указва тип на чипсета, който да се използва в тази ВМ.</translation>
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>избрали сте чипсет тип ICH9 за тази ВМ. Той няма да работи коректно, докато IO-APIC също е позволен. Това ще бъде променено автоматично, когато потвърдите настройките на ВМ с натискането на бутона Добре.</translation>
     </message>
 </context>
 <context>
@@ -3762,7 +3762,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Добавя нов USB филтър с начално зададени празни полета. Имайте в предвид, че такъв филтър ще съвпадне с всяко закачено USB устройство. </translation>
+        <translation>Добавя нов USB филтър с начално зададени празни полета. Имайте предвид, че такъв филтър ще съвпадне с всяко закачено USB устройство. </translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
@@ -3820,42 +3820,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Производител ID: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Производител ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Продукт ID: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Продукт ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Ревизия: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ревизия: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Фабрикант: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Фабрикант: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Сериен No.: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Сериен No.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Област: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Област: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4306,7 +4306,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ако настройките по-горе са верни, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, новата виртуална машина ще бъде създадена.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че можете да промените тези и всички останали настройки на създадената виртуална машина по всяко време като използвате диалога &lt;b&gt;Настройки&lt;/b&gt;, който е достъпен през менюто на основния прозорец.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ако настройките по-горе са верни, натиснете бутона &lt;b&gt;Край&lt;/b&gt;. След като го натиснете, новата виртуална машина ще бъде създадена.&lt;/p&gt;&lt;p&gt;Имайте предвид, че можете да промените тези и всички останали настройки на създадената виртуална машина по всяко време като използвате диалога &lt;b&gt;Настройки&lt;/b&gt;, който е достъпен през менюто на основния прозорец.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -4448,15 +4448,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Изберете виртуален твърд диск, който да се използва като зареждащ твърд диск във виртуалната машина. Можете или да създадете нов твърд диск, или да изберете вече съществуващ от падащия списък, с натискане на съответния бутон (за да извикате прозорец за отваряне на файл).&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-сложна настройка на твърдия диск, можете да пропуснете тази стъпка и да закачите твърд диск по-късно, като използвате диалога за нстройки на ВМ.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален твърд диск...</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Препоръчителният размер на зареждащия твърд диск е &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4503,27 +4503,27 @@ p, li { white-space: pre-wrap; }
     <name>UIPortForwardingModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="unfinished"></translation>
+        <translation>Протокол</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="unfinished"></translation>
+        <translation>IP на хоста</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Порт на хоста</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуално IP</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуален порт</translation>
     </message>
 </context>
 <context>
@@ -4615,88 +4615,88 @@ p, li { white-space: pre-wrap; }
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Инсталация</translation>
     </message>
 </context>
 <context>
     <name>UISettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Изберете категория с настройки от списъка вляво и придвижете мишката върху някоя настройка, за да получите повече информация.&lt;/i&gt;</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">На страница &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation>На страница &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">Засечени са невалидни настройки</translation>
+        <translation>Засечени са невалидни настройки</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished">Засечени са неоптимални настройки</translation>
+        <translation>Засечени са неоптимални настройки</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Настройки</translation>
+        <translation>Настройки</translation>
     </message>
 </context>
 <context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">Изход от виртуалната машина</translation>
+        <translation>Изход от виртуалната машина</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation type="unfinished">Изберете действие:</translation>
+        <translation>Искате да:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation type="unfinished">&amp;Запазване състоянието на машината</translation>
+        <translation>&amp;Запазване състоянието на машината</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Изпраща събитие натискане на ACPI бутона за включване към виртуалната машина.&lt;/p&gt;&lt;p&gt;Обикновено виртуалната операционна система, която е включена във виртуалната машина, ще разпознае това събитие и ще извърши процедура по стандартно изключване. Това е препоръчителният метод за изключване на виртуалната машина, тъй като всички приложения, които са включени в нея, ще имат възможността да запазят своите данни и състояние.&lt;/p&gt;&lt;p&gt;Ако машината не реагира на това действие, тогава виртуалната операционна система вероятно е лошо конфигурирана или не разбира събитието натискане на ACPI бутона за включване въобще. В този случай трябва да изберете действието &lt;b&gt;Изключване на машината&lt;/b&gt;, за да изключите машината.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Изпраща събитие натискане на ACPI бутона за включване към виртуалната машина.&lt;/p&gt;&lt;p&gt;Обикновено виртуалната операционна система, която е включена във виртуалната машина, ще разпознае това събитие и ще извърши процедура по стандартно изключване. Това е препоръчителният метод за изключване на виртуалната машина, тъй като всички приложения, които са включени в нея, ще имат възможността да запазят своите данни и състояние.&lt;/p&gt;&lt;p&gt;Ако машината не реагира на това действие, тогава виртуалната операционна система вероятно е лошо конфигурирана или не разбира събитието натискане на ACPI бутона за включване въобще. В този случай трябва да изберете действието &lt;b&gt;Изключване на машината&lt;/b&gt;, за да изключите виртуалната машина.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished">Из&amp;пращане на изключващ сигнал</translation>
+        <translation>Из&amp;пращане на изключващ сигнал</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Изключва виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че това действие ще спре внезапно виртуалната машина, така че виртуалната операционна система, която е включена в нея, няма да има възможност да изпълни процедура по стандартно изключване, което може да доведе до &lt;i&gt;загуба на данни&lt;/i&gt; във виртуалната машина. Избирането на тази опция се препоръчва само в случаите, когато виртуалната машина не реагира на действието &lt;b&gt;Изпращане на изключващ сигнал&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Изключва виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте предвид, че това действие ще спре внезапно виртуалната машина, така че виртуалната операционна система, която е включена в нея, няма да има възможност да изпълни процедура по стандартно изключване, което може да доведе до &lt;i&gt;загуба на данни&lt;/i&gt; във виртуалната машина. Избирането на тази опция се препоръчва само в случаите, когато виртуалната машина не реагира на действието &lt;b&gt;Изпращане на изключващ сигнал&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation type="unfinished">&amp;Изключване на машината</translation>
+        <translation>&amp;Изключване на машината</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="unfinished">Възстановяване сътоянието на машината до състоянието, запазено в настоящата снимка</translation>
+        <translation>Възстановяване сътоянието на машината до състоянието, запазено в настоящата снимка</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването й. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването й. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="unfinished">&amp;Възстановяване на настоящата снимка &apos;%1&apos;</translation>
+        <translation>&amp;Възстановяване на настоящата снимка &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>UIVMDesktop</name>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Детайли</translation>
+        <translation>&amp;Детайли</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">&amp;Снимки</translation>
+        <translation>&amp;Снимки</translation>
     </message>
 </context>
 <context>
@@ -4752,106 +4752,106 @@ p, li { white-space: pre-wrap; }
     <name>UIVMPreviewWindow</name>
     <message>
         <source>Update Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Забранено обновяване</translation>
     </message>
     <message>
         <source>Every 0.5 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Всеки 0.5 с</translation>
     </message>
     <message>
         <source>Every 1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Всеки 1 с</translation>
     </message>
     <message>
         <source>Every 2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Всеки 2 с</translation>
     </message>
     <message>
         <source>Every 5 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Всеки 5 с</translation>
     </message>
     <message>
         <source>Every 10 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Всеки 10 с</translation>
     </message>
     <message>
         <source>No Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Няма преглед</translation>
     </message>
 </context>
 <context>
     <name>UIVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation type="unfinished">Основни</translation>
+        <translation>Основни</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished">Показване</translation>
+        <translation>Възпроизвеждане</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Съхранение</translation>
+        <translation>Съхранение</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Звук</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Мрежа</translation>
+        <translation>Мрежа</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation type="unfinished">Портове</translation>
+        <translation>Портове</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Серийни портове</translation>
+        <translation>Серийни портове</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation type="unfinished">Паралелни портове</translation>
+        <translation>Паралелни портове</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="unfinished">Споделени папки</translation>
+        <translation>Споделени папки</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation>%1 - %2</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished">Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
+        <translation>Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">Имате позволено 2D видео ускорение. Тъй като 2D видео ускорението се поддържа само за виртуални машини с Windows, тази функция ще бъде забранена.</translation>
+        <translation>Имате позволено 2D видео ускорение. Тъй като 2D видео ускорението се поддържа само за виртуални машини с Windows, тази функция ще бъде забранена.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">позволили сте USB HID (Human Interface Device). Това няма да работи, докато не позволите и USB емулацията. Това ще бъде направено автоматично, когато потвърдите настройките на ВМ при натискането на бутона Добре.</translation>
+        <translation>позволили сте USB HID (Human Interface Device). Това няма да работи, докато не позволите и USB емулацията. Това ще бъде променено автоматично, когато потвърдите настройките на ВМ с натискане на бутона Добре.</translation>
     </message>
     <message>
         <source>at most one supported</source>
-        <translation type="unfinished"></translation>
+        <translation>поддържа се само един</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
-        <translation type="unfinished"></translation>
+        <translation>поддържат се до %1</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>текущо използвате повече контролери за съхранение, отколкото чипсетът %1 поддържа. Моля, променете типа на чипсета от страницата с настройки Система или намалете броя на следните контролери за съхранение от страницата с настройки Съхранение: %2.</translation>
     </message>
 </context>
 <context>
@@ -5026,7 +5026,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -5034,7 +5034,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Изключва виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че това действие ще спре внезапно виртуалната машина, така че виртуалната операционна система, която е включена в нея, няма да има възможност да изпълни процедура по стандартно изключване, което може да доведе до &lt;i&gt;загуба на данни&lt;/i&gt; във виртуалната машина. Избирането на тази опция се препоръчва само в случаите, когато виртуалната машина не реагира на действието &lt;b&gt;Изпращане на изключващ сигнал&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Изключва виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте предвид, че това действие ще спре внезапно виртуалната машина, така че виртуалната операционна система, която е включена в нея, няма да има възможност да изпълни процедура по стандартно изключване, което може да доведе до &lt;i&gt;загуба на данни&lt;/i&gt; във виртуалната машина. Избирането на тази опция се препоръчва само в случаите, когато виртуалната машина не реагира на действието &lt;b&gt;Изпращане на изключващ сигнал&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
@@ -5416,11 +5416,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Показва дали функцията за авто-преоразмеряване на виртуалния изглед е включена (&lt;img src=:/auto_resize_on_16px.png/&gt;) или изключена (&lt;img src=:/auto_resize_off_16px.png/&gt;). Имайте в предвид, че тази функция изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
+        <translation type="obsolete">Показва дали функцията за авто-преоразмеряване на виртуалния изглед е включена (&lt;img src=:/auto_resize_on_16px.png/&gt;) или изключена (&lt;img src=:/auto_resize_off_16px.png/&gt;). Имайте предвид, че тази функция изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Показва дали показалецът на мишката от реалната машина е прихванат във виртуалната ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграцията на мишката (ИМ) е включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;Имайте в предвид, че функцията за интеграция на мишката изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
+        <translation type="obsolete">Показва дали показалецът на мишката от реалната машина е прихванат във виртуалната ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграцията на мишката (ИМ) е включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът е прихванат&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ е изключена, показалецът не е прихванат&lt;/nobr&gt;&lt;br&gt;Имайте предвид, че функцията за интеграция на мишката изисква инсталирани Виртуални Добавки във виртуалната ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -5697,7 +5697,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation type="obsolete">Показва клавиша, който се използва като Основен в прозореца на ВМ. Активирайте полето за въвеждане и натиснете нов Основен клавиш. Имайте в предвид, че буквено-цифрени и редактиращи клавиши, а така също и движения на курсора, не могат да се използват за Основен клавиш.</translation>
+        <translation type="obsolete">Показва клавиша, който се използва като Основен в прозореца на ВМ. Активирайте полето за въвеждане и натиснете нов Основен клавиш. Имайте предвид, че буквено-цифрени и редактиращи клавиши, а така също и движения на курсора, не могат да се използват за Основен клавиш.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -6920,118 +6920,118 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт за отдалечен работен плот</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранен</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален твърд диск</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation type="unfinished">твърд диск</translation>
+        <translation>твърд диск</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален CD/DVD диск</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM диск</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуален флопи диск</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation type="unfinished"></translation>
+        <translation>флопи диск</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Всички %1 изображения (%2)</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished">Всички файлове (*)</translation>
+        <translation>Всички файлове (*)</translation>
     </message>
     <message>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Синхронизация срещу грешки</translation>
     </message>
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отключена</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Заключена</translation>
     </message>
     <message>
         <source>Unlocking</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отключване</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">Без</translation>
+        <translation>Без</translation>
     </message>
     <message>
         <source>External</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">Външен</translation>
+        <translation>Външен</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">Гост</translation>
+        <translation>Гост</translation>
     </message>
     <message>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel HD Audio</translation>
     </message>
     <message>
         <source>UDP</source>
         <comment>NATProtocolType</comment>
-        <translation type="unfinished"></translation>
+        <translation>UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocolType</comment>
-        <translation type="unfinished"></translation>
+        <translation>TCP</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>ChipsetType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>ICH9</source>
         <comment>ChipsetType</comment>
-        <translation type="unfinished">ICH9</translation>
+        <translation>ICH9</translation>
     </message>
     <message>
         <source>and</source>
-        <translation type="unfinished"></translation>
+        <translation>и</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
 </context>
 <context>
@@ -7295,19 +7295,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM диск</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation type="unfinished">твърд диск</translation>
+        <translation>твърд диск</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation type="unfinished"></translation>
+        <translation>флопи диск</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Всички %1 изображения (%2)</translation>
     </message>
 </context>
 <context>
@@ -7326,7 +7326,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Скриване на прозореца</translation>
     </message>
 </context>
 <context>
@@ -7796,11 +7796,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Прозорецът на виртуалната машина ще бъде превключен към режим &lt;b&gt;на цял екран&lt;/b&gt;. Можете да се върнете към прозоречен режим по всяко време чрез натискане на &lt;b&gt;%1&lt;/b&gt;. Имайте в предвид, че за &lt;i&gt;Основен&lt;/i&gt; клавиш в момента е зададен &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че лентата на основното меню е скрита в режим на цял екран. Можете да я достъпите чрез натискане на &lt;b&gt;Основен+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Прозорецът на виртуалната машина ще бъде превключен към режим &lt;b&gt;на цял екран&lt;/b&gt;. Можете да се върнете към прозоречен режим по всяко време чрез натискане на &lt;b&gt;%1&lt;/b&gt;. Имайте предвид, че за &lt;i&gt;Основен&lt;/i&gt; клавиш в момента е зададен &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имайте предвид, че лентата на основното меню е скрита в режим на цял екран. Можете да я достъпите чрез натискане на &lt;b&gt;Основен+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Прозорецът на виртуалната машина ще бъде превключен към &lt;b&gt;Безрамков&lt;/b&gt; режим. Можете да се върнете към прозоречен режим по всяко време чрез натискане на &lt;b&gt;%1&lt;/b&gt;. Имайте в предвид, че за &lt;i&gt;Основен&lt;/i&gt; клавиш в момента е зададен &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имайте в предвид, че лентата на основното меню е скрита в безрамковия режим. Можете да я достъпите чрез натискане на &lt;b&gt;Основен+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Прозорецът на виртуалната машина ще бъде превключен към &lt;b&gt;Безрамков&lt;/b&gt; режим. Можете да се върнете към прозоречен режим по всяко време чрез натискане на &lt;b&gt;%1&lt;/b&gt;. Имайте предвид, че за &lt;i&gt;Основен&lt;/i&gt; клавиш в момента е зададен &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имайте предвид, че лентата на основното меню е скрита в безрамковия режим. Можете да я достъпите чрез натискане на &lt;b&gt;Основен+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -7869,7 +7869,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Имайте в предвид, че този твърд диск е недостъпен, така че неговият файл не може да бъде изтрит в момента.</translation>
+        <translation>Имайте предвид, че този твърд диск е недостъпен, така че неговият файл не може да бъде изтрит в момента.</translation>
     </message>
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
@@ -7877,7 +7877,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Имайте в предвид, че файлът на този диск няма да бъде изтрит, така че след това ще имате възможност да го добавите отново в списъка.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Имайте предвид, че файлът на този диск няма да бъде изтрит, така че след това ще имате възможност да го добавите отново в списъка.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -7983,7 +7983,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Възникна критична грешка по време изпълнението на виртуалната машина и изпълнението на машината е спряно.&lt;/p&gt;&lt;p&gt;За помощ, моля, погледнете секцията Общност на адрес &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; или договора ви за поддръжка. Моля, представете съдържанието на файла със записки &lt;tt&gt;VBox.log&lt;/tt&gt; и картинката &lt;tt&gt;VBox.png&lt;/tt&gt;, които можете да намерите в папка &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, както и описание на това какво правехте, когато възникна тази грешка. Имайте в предвид, че също така можете да достъпите въпросните файлове чрез избиране на &lt;b&gt;Показване на записки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Добре&lt;/b&gt;, ако искате да изключите машината, или натиснете &lt;b&gt;Игнориране&lt;/b&gt;, ако искате да оставите това, както си е, за дебъгване. Моля, имайте в предвид, че дебъгването изисква специални знания и инструменти, така че е препоръчително сега да натиснете бутона &lt;b&gt;Добре&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Възникна критична грешка по време изпълнението на виртуалната машина и изпълнението на машината е спряно.&lt;/p&gt;&lt;p&gt;За помощ, моля, погледнете секцията Общност на адрес &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; или договора ви за поддръжка. Моля, представете съдържанието на файла със записки &lt;tt&gt;VBox.log&lt;/tt&gt; и картинката &lt;tt&gt;VBox.png&lt;/tt&gt;, които можете да намерите в папка &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, както и описание на това какво правехте, когато възникна тази грешка. Имайте предвид, че също така можете да достъпите въпросните файлове чрез избиране на &lt;b&gt;Показване на записки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Добре&lt;/b&gt;, ако искате да изключите машината, или натиснете &lt;b&gt;Игнориране&lt;/b&gt;, ако искате да оставите това, както си е, за дебъгване. Моля, имайте предвид, че дебъгването изисква специални знания и инструменти, така че е препоръчително сега да натиснете бутона &lt;b&gt;Добре&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -8319,134 +8319,134 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем с отварянето на виртуална машина, разположена в %1.</translation>
     </message>
     <message>
         <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се добави виртуалната машина &lt;b&gt;%1&lt;/b&gt;, разположена в &lt;i&gt;%2&lt;/i&gt;, тъй като вече съществува.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да премахнете виртуалната машина &lt;b&gt;%1&lt;/b&gt; от списъка с машини.&lt;/p&gt;&lt;p&gt;Искате ли да изтриете и файловете на вашия твърд диск, които съдържат виртуалната машина?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да премахнете виртуалната машина &lt;b&gt;%1&lt;/b&gt; от списъка с машини.&lt;/p&gt;&lt;p&gt;Искате ли да изтриете и файловете на вашия твърд диск, които съдържат виртуалната машина? С това ще се премахнат и файловете, съдържащи виртуалните твърди дискове на машината, ако не се използват от друга машина.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete all files</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтриване на всички файлове</translation>
     </message>
     <message>
         <source>Remove only</source>
-        <translation type="unfinished"></translation>
+        <translation>Само премахване</translation>
     </message>
     <message>
         <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation type="unfinished"></translation>
+        <translation>Предстои да премахнете недостъпната виртуална машина &lt;b&gt;%1&lt;/b&gt; от списъка с машини. Искате ли да продължите?</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Премахване</translation>
+        <translation>Премахване</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да добавите виртуален твърд диск към контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Искате ли да създадете нов празен файл, който да съдържа диска, или ще изберете вече съществуващ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на &amp;нов диск</translation>
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Избор на съществуващ диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да добавите ново CD/DVD устройство към контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Искате ли да изберете виртуален CD/DVD диск, който да се вкара в устройството, или ще го оставите празно засега?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Избор на диск</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Оставяне празно</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да добавите ново флопи устройство към контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Искате ли да изберете виртуален флопи диск, който да се вкара в устройството, или ще го оставите празно засега?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при разкачването на твърдия диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при разкачването на CD/DVD устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при разкачването на флопи устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Виртуалните Добавки на VirtualBox за тази виртуална машина изглежда не са достъпни, а споделените папки не могат да се използват без тях. За да използвате споделени папки във виртуалната машина, моля, инсталирайте Виртуалните Добавки, ако не са инсталирани, или ги преинсталирайте, ако не работят правилно, като изберете &lt;b&gt;Инсталиране на Виртуални Добавки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt;. Ако те са инсталирани, но машината все още не е заредила напълно, споделените папки ще станат достъпни, когато машината зареди.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;Виртуалната машина &lt;b&gt;%1&lt;/b&gt; текущо е в запомнено състояние.&lt;/p&gt;&lt;p&gt;Ако продължите, текущото състояние на изнесената машина ще бъде отхвърлено. Имайте предвид, че съществуващата машина не е променена.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Виртуалните машини &lt;b&gt;%1&lt;/b&gt; текущо са в запомнено състояние.&lt;/p&gt;&lt;p&gt;Ако продължите, текущото състояние на изнесените машини ще бъде отхвърлено. Имайте предвид, че съществуващите машини не са променени.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при обновяването на Виртуални Добавки. Инсталационното изображение на Виртуалните Добавки ще бъде монтирано, за да се осигури ръчна инсталация.</translation>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при инсталирането на пакета с разширения &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при деинсталирането на пакета с разширения &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="unfinished"></translation>
+        <translation>Предстои да премахнете пакета с разширения &lt;b&gt;%1&lt;/b&gt;. Сигурни ли сте, че искате да го направите?</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="unfinished">&amp;Премахване</translation>
+        <translation>&amp;Премахване</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущите правила за пренасочване на портове са невалидни. Никой от реалните или виртуалните портове не може да се задава нула.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Има незапазени промени в конфигурацията за пренасочване на портове.&lt;/p&gt;&lt;p&gt;Ако продължите, промените ще бъдат отхвърлени.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
+        <translation>Съжалявам, възникна някакъв основен проблем.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при закачането на твърдия диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) към слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при закачането на CD/DVD устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) към слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при закачането на флопи устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) към слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -8505,7 +8505,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Моля, попълнете тази регистрационна форма, за да ни информирате, че използвате VirtualBox и, евентуално, за да бъдете информирани за новини и обновления на VirtualBox.&lt;/p&gt;&lt;p&gt;Моля, използвайте само латински букви в полетата по-долу. Моля, имайте в предвид, че Sun Microsystems ще използва тази информация само за изготвяне на статистика за използваемостта на продукта и за изпращане на новинарски бюлетини за VirtualBox. Освен за тези цели, Sun Microsystems никога няма да споделя вашите данни с трети страни. Подробна информация относно това как използваме вашите лични данни може да бъде намерена в секцията &lt;b&gt;Конфиденциална политика&lt;/b&gt; от ръководството на VirtualBox или на страницата &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Конфиденциална политика&lt;/a&gt; на уеб страницата на VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Моля, попълнете тази регистрационна форма, за да ни информирате, че използвате VirtualBox и, евентуално, за да бъдете информирани за новини и обновления на VirtualBox.&lt;/p&gt;&lt;p&gt;Моля, използвайте само латински букви в полетата по-долу. Моля, имайте предвид, че Sun Microsystems ще използва тази информация само за изготвяне на статистика за използваемостта на продукта и за изпращане на новинарски бюлетини за VirtualBox. Освен за тези цели, Sun Microsystems никога няма да споделя вашите данни с трети страни. Подробна информация относно това как използваме вашите лични данни може да бъде намерена в секцията &lt;b&gt;Конфиденциална политика&lt;/b&gt; от ръководството на VirtualBox или на страницата &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Конфиденциална политика&lt;/a&gt; на уеб страницата на VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
@@ -8758,79 +8758,79 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a virtual machine file</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете файл с виртуална машина</translation>
     </message>
     <message>
         <source>Virtual machine files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Файлове с виртуални машини (%1)</translation>
     </message>
     <message>
         <source>Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Управление</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Добавяне...</translation>
+        <translation>&amp;Добавяне...</translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавяне на съществуваща виртуална машина</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="unfinished">&amp;Премахване</translation>
+        <translation>&amp;Премахване</translation>
     </message>
     <message>
         <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Премахване на избраната виртуална машина</translation>
     </message>
     <message>
         <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване в Търсачката</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване на описателния файл на VirtualBox за машината в Търсачката.</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на дубликат на работния плот</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Създава файл за дубликат до описателния файл на VirtualBox за машината на работния плот.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване в Explorer</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване на описателния файл на VirtualBox за машината в Explorer.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на пряк път на работния плот</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Създава файл за пряк път до описателния файл на VirtualBox за машината на работния плот.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване във файловия мениджър</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване на описателния файл на VirtualBox за машината във файловия мениджър</translation>
     </message>
     <message>
         <source>Show Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване на лента с инструменти</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показване на статус лента</translation>
     </message>
 </context>
 <context>
@@ -9392,7 +9392,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Не е достъпен</translation>
+        <translation>Не е достъпен</translation>
     </message>
 </context>
 <context>
