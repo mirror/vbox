@@ -1315,6 +1315,15 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
         RTMsgError("AuthorizationCreate failed: %d", orc);
 
 #else
+
+    /*
+     * Several of the alternatives below will require a command line.
+     */
+    char *pszCmdLine;
+    int rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvToString failed: %Rrc");
+
     /*
      * Look for various standard stuff for executing a program as root.
      *
@@ -1325,12 +1334,10 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
      */
     bool        fHaveDisplayVar = RTEnvExist("DISPLAY");
     int         iSuArg          = cSuArgs;
-    char       *pszCmdLine      = NULL;
     PRTHANDLE   pStdNull        = NULL;
     RTHANDLE    StdNull;
     char        szExecTool[260];
     char        szXterm[260];
-    int         rc;
 
     /*
      * kdesudo is available on KDE3/KDE4
@@ -1371,6 +1378,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
             StdNull.enmType = RTHANDLETYPE_FILE;
             pStdNull = &StdNull;
 
+#if 0 /* older gksu does not grok --description nor '--' and multiple args. */
             iSuArg = cSuArgs - 4;
             papszArgs[cSuArgs - 4] = szExecTool;
             papszArgs[cSuArgs - 3] = "--description";
@@ -1380,6 +1388,12 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                                    ? "VirtualBox extension pack uninstaller"
                                    : "VirtualBox extension pack maintainer";
             papszArgs[cSuArgs - 1] = "--";
+#else
+            iSuArg = cSuArgs - 2;
+            papszArgs[cSuArgs - 2] = szExecTool;
+            papszArgs[cSuArgs - 1] = pszCmdLine;
+            papszArgs[cSuArgs] = NULL;
+#endif
         }
         else
             RTMsgError("Failed to open /dev/null: %Rrc");
@@ -1402,27 +1416,21 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
              && FindExecTool(szExecTool, sizeof(szExecTool), "su")
              && FindExecTool(szXterm, sizeof(szXterm), "xterm"))
     {
-        rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-        if (RT_SUCCESS(rc))
-        {
-            iSuArg = cSuArgs - 9;
-            papszArgs[cSuArgs - 9] = szXterm;
-            papszArgs[cSuArgs - 8] = "-T";
-            papszArgs[cSuArgs - 7] = iCmd == CMD_INSTALL
-                                   ? "VirtualBox extension pack installer - su"
-                                   : iCmd == CMD_UNINSTALL
-                                   ? "VirtualBox extension pack uninstaller - su"
-                                   : "VirtualBox extension pack maintainer - su";
-            papszArgs[cSuArgs - 6] = "-e";
-            papszArgs[cSuArgs - 5] = szExecTool;
-            papszArgs[cSuArgs - 4] = "-";
-            papszArgs[cSuArgs - 3] = "root";
-            papszArgs[cSuArgs - 2] = "-c";
-            papszArgs[cSuArgs - 1] = pszCmdLine;
-            papszArgs[cSuArgs] = NULL;
-        }
-        else
-            RTMsgError("RTGetOptArgvToString failed: %Rrc");
+        iSuArg = cSuArgs - 9;
+        papszArgs[cSuArgs - 9] = szXterm;
+        papszArgs[cSuArgs - 8] = "-T";
+        papszArgs[cSuArgs - 7] = iCmd == CMD_INSTALL
+                               ? "VirtualBox extension pack installer - su"
+                               : iCmd == CMD_UNINSTALL
+                               ? "VirtualBox extension pack uninstaller - su"
+                               : "VirtualBox extension pack maintainer - su";
+        papszArgs[cSuArgs - 6] = "-e";
+        papszArgs[cSuArgs - 5] = szExecTool;
+        papszArgs[cSuArgs - 4] = "-";
+        papszArgs[cSuArgs - 3] = "root";
+        papszArgs[cSuArgs - 2] = "-c";
+        papszArgs[cSuArgs - 1] = pszCmdLine;
+        papszArgs[cSuArgs] = NULL;
     }
     else if (fHaveDisplayVar)
         RTMsgError("Unable to locate 'pkexec', 'pksu' or 'su+xterm'. Try perform the operation using VBoxManage running as root");
