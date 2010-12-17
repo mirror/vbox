@@ -38,6 +38,29 @@
 #include "internal/process.h"
 
 
+#ifdef RT_OS_SOLARIS
+/**
+ * Hack to strip of the architecture subdirectory from the exec dir.
+ *
+ * @returns See RTPathExecDir.
+ * @param   pszPath             See RTPathExecDir.
+ * @param   cchPath             See RTPathExecDir.
+ */
+static int rtPathSolarisArchHack(char *pszPath, size_t cchPath)
+{
+    int rc = RTPathExecDir(pszPath, cchPath);
+    if (RT_SUCCESS(rc))
+    {
+        const char *pszLast = RTPathFilename(pszPath);
+        if (   !strcmp(pszLast, "amd64")
+            || !strcmp(pszLast, "i386"))
+            RTPathStripFilename(pszPath);
+    }
+    return rc;
+}
+#endif
+
+
 RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath)
 {
     AssertReturn(g_szrtProcExePath[0], VERR_WRONG_ORDER);
@@ -58,37 +81,18 @@ RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath)
 }
 
 
-/**
- * Gets the directory for architecture-independent application data, for
- * example NLS files, module sources, ...
- *
- * Linux:    /usr/shared/@<application@>
- * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathExecDir()
- *
- */
 RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
     return RTStrCopy(pszPath, cchPath, RTPATH_APP_PRIVATE);
+#elif defined(RT_OS_SOLARIS) && 0 /// @todo fix this
+    return rtPathSolarisArchHack(pszPath, cchPath);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 
 
-/**
- * Gets the directory for architecture-dependent application data, for
- * example modules which can be loaded at runtime.
- *
- * Linux:    /usr/lib/@<application@>
- * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathExecDir()
- *
- * @returns iprt status code.
- * @param   pszPath     Buffer where to store the path.
- * @param   cchPath     Buffer size in bytes.
- */
 RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
@@ -99,19 +103,18 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
 }
 
 
-/**
- * Gets the directory of shared libraries. This is not the same as
- * RTPathAppPrivateArch() as Linux depends all shared libraries in
- * a common global directory where ld.so can found them.
- *
- * Linux:    /usr/lib
- * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathExecDir()
- *
- * @returns iprt status code.
- * @param   pszPath     Buffer where to store the path.
- * @param   cchPath     Buffer size in bytes.
- */
+RTDECL(int) RTPathAppPrivateArchTop(char *pszPath, size_t cchPath)
+{
+#if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
+    return RTStrCopy(pszPath, cchPath, RTPATH_APP_PRIVATE_ARCH);
+#elif defined(RT_OS_SOLARIS)
+    return rtPathSolarisArchHack(pszPath, cchPath);
+#else
+    return RTPathExecDir(pszPath, cchPath);
+#endif
+}
+
+
 RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
@@ -122,35 +125,18 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
 }
 
 
-/**
- * Gets the directory for documentation.
- *
- * Linux:    /usr/share/doc/@<application@>
- * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathExecDir()
- *
- * @returns iprt status code.
- * @param   pszPath     Buffer where to store the path.
- * @param   cchPath     Buffer size in bytes.
- */
 RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_DOCS)
     return RTStrCopy(pszPath, cchPath, RTPATH_APP_DOCS);
+#elif defined(RT_OS_SOLARIS)
+    return rtPathSolarisArchHack(pszPath, cchPath);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 
 
-/**
- * Gets the temporary directory path.
- *
- * @returns iprt status code.
- *
- * @param   pszPath     Buffer where to store the path.
- * @param   cchPath     Buffer size in bytes.
- */
 RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath)
 {
     /*

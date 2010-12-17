@@ -175,7 +175,7 @@ static bool IsValidBaseDir(const char *pszBaseDir)
      * Just be darn strict for now.
      */
     char szCorrect[RTPATH_MAX];
-    int rc = RTPathAppPrivateArch(szCorrect, sizeof(szCorrect));
+    int rc = RTPathAppPrivateArchTop(szCorrect, sizeof(szCorrect));
     if (RT_FAILURE(rc))
         return false;
     rc = RTPathAppend(szCorrect, sizeof(szCorrect), VBOX_EXTPACK_INSTALL_DIR);

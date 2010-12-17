@@ -1072,7 +1072,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         if (!pThis->pszEfiRomFile)
             return VERR_NO_MEMORY;
 
-        rc = RTPathAppPrivateArch(pThis->pszEfiRomFile, RTPATH_MAX);
+        rc = RTPathAppPrivateArchTop(pThis->pszEfiRomFile, RTPATH_MAX);
         AssertRCReturn(rc, rc);
         rc = RTPathAppend(pThis->pszEfiRomFile, RTPATH_MAX, "VBoxEFI32.fd");
         AssertRCReturn(rc, rc);
