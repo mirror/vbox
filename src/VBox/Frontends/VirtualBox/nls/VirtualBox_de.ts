@@ -6168,6 +6168,10 @@
         <source>&amp;Reinstall</source>
         <translation>&amp;Neu installieren</translation>
     </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
