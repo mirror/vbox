@@ -3695,6 +3695,76 @@ AuthResult AUTHCALL AuthEntry(
                 <para><computeroutput>IRemoteDisplayInfo</computeroutput> interface has been
                 renamed to <xref linkend="IVRDEServerInfo" xreflabel="IVRDEServerInfo" />.</para>
               </listitem>
+
+              <listitem>
+                <para><computeroutput>IMachine::VRDPServer</computeroutput> attribute has
+                been renamed to <xref linkend="IMachine__VRDEServer"
+                xreflabel="IMachine::VRDEServer" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>IConsole::RemoteDisplayInfo</computeroutput> attribute
+                has been renamed to <xref linkend="IConsole__VRDEServerInfo"
+                xreflabel="IConsole::VRDEServerInfo" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>ISystemProperties::RemoteDisplayAuthLibrary</computeroutput>
+                attribute has been renamed to <xref linkend="ISystemProperties__VRDEAuthLibrary"
+                xreflabel="ISystemProperties::VRDEAuthLibrary" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>Following methods has been implemented in <computeroutput>IVRDEServer</computeroutput>
+                to support generic VRDE properties:
+                  <itemizedlist>
+                    <listitem>
+                      <para><xref linkend="IVRDEServer__setVRDEProperty" xreflabel="IVRDEServer::SetVRDEProperty" />
+                      </para>
+                    </listitem>
+                    <listitem>
+                      <para><xref linkend="IVRDEServer__getVRDEProperty" xreflabel="IVRDEServer::GetVRDEProperty"/>
+                      </para>
+                    </listitem>
+                    <listitem>
+                      <para><xref linkend="IVRDEServer__VRDEProperties" xreflabel="IVRDEServer::VRDEProperties" />
+                      </para>
+                    </listitem>
+                  </itemizedlist>
+                </para>
+                <para>A few implementation specific attributes of the old <computeroutput>IVRDPServer</computeroutput>
+                interface have been removed and replaced with properties:
+                  <itemizedlist>
+                    <listitem>
+                      <para><computeroutput>IVRDPServer::Ports</computeroutput> -- replaced with
+                      <computeroutput>"TCP/Ports"</computeroutput> property. The property value is
+                      a string, which contains a comma-separated list of ports or ranges of ports.
+                      Use a dash between two port numbers to specify a range. Example:
+                      <computeroutput>"5000,5010-5012"</computeroutput>
+                      </para>
+                    </listitem>
+                    <listitem>
+                      <para><computeroutput>IVRDPServer::NetAddress</computeroutput> -- replaced with
+                      <computeroutput>"TCP/Address"</computeroutput> property. The property value is
+                      an IP address string. Example: <computeroutput>"127.0.0.1"</computeroutput>
+                      </para>
+                    </listitem>
+                    <listitem>
+                      <para><computeroutput>IVRDPServer::VideoChannel</computeroutput> -- replaced with
+                      <computeroutput>"VideoChannel/Enabled"</computeroutput> property. The property value
+                      is either <computeroutput>"true"</computeroutput> or <computeroutput>"false"</computeroutput>
+                      </para>
+                    </listitem>
+                    <listitem>
+                      <para><computeroutput>IVRDPServer::VideoChannelQuality</computeroutput> -- replaced with
+                      <computeroutput>"VideoChannel/Quality"</computeroutput> property. The property value is a
+                      string which contain a decimal number in range 10..100. Invalid values are ignored and
+                      the quality is set to the default value 75. Example: <computeroutput>"50"</computeroutput>
+                      </para>
+                    </listitem>
+                  </itemizedlist>
+                </para>
+              </listitem>
             </itemizedlist>
           </para>
         </listitem>
