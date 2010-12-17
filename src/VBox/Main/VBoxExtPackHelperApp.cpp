@@ -1333,13 +1333,37 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
     int         rc;
 
     /*
+     * kdesudo is available on KDE3/KDE4
+     */
+    if (fHaveDisplayVar && FindExecTool(szExecTool, sizeof(szExecTool), "kdesudo"))
+    {
+        rc = RTFileOpenBitBucket(&StdNull.u.hFile, RTFILE_O_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            StdNull.enmType = RTHANDLETYPE_FILE;
+            pStdNull = &StdNull;
+
+            iSuArg = cSuArgs - 4;
+            papszArgs[cSuArgs - 4] = szExecTool;
+            papszArgs[cSuArgs - 3] = "--comment";
+            papszArgs[cSuArgs - 2] = iCmd == CMD_INSTALL
+                                   ? "VirtualBox extension pack installer"
+                                   : iCmd == CMD_UNINSTALL
+                                   ? "VirtualBox extension pack uninstaller"
+                                   : "VirtualBox extension pack maintainer";
+            papszArgs[cSuArgs - 1] = "--";
+        }
+        else
+            RTMsgError("Failed to open /dev/null: %Rrc");
+    }
+    /*
      * gksu is our favorite as it is very well integrated.
      *
      * gksu is chatty, so we need to send stderr and stdout to /dev/null or the
      * error detection logic in Main will fail.  This is a bit unfortunate as
      * error messages gets lost, but wtf.
      */
-    if (fHaveDisplayVar && FindExecTool(szExecTool, sizeof(szExecTool), "gksu"))
+    else if (fHaveDisplayVar && FindExecTool(szExecTool, sizeof(szExecTool), "gksu"))
     {
         rc = RTFileOpenBitBucket(&StdNull.u.hFile, RTFILE_O_WRITE);
         if (RT_SUCCESS(rc))
