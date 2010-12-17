@@ -1084,6 +1084,7 @@ static bool FindExecTool(char *pszPath, size_t cbPath, const char *pszName)
         "/usr/gnu/bin",
         "/usr/xpg4/bin",
         "/usr/xpg6/bin",
+        "/usr/openwin/bin",
         "/usr/ucb"
 #endif
     };
