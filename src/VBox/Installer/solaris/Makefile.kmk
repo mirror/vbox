@@ -326,17 +326,17 @@ ifdef VBOX_WITH_QTGUI
 	  libQtXmlVBox.so.4 \
 	  libQtSqlVBox.so.4 \
 	  libQt3SupportVBox.so.4,)
-endif
 
-
-ifdef VBOX_WITH_QTGUI
  include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
- SOLARIS_NO_STRIP += $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+ SOLARIS_COMMON = $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+else
+ SOLARIS_QTLIBS =
+ SOLARIS_COMMON =
 endif
 
 # Documentation (packed as DOCS as they are arch. neutral)
 ifdef VBOX_WITH_DOCS_PACKING
- SOLARIS_COMMON = \
+ SOLARIS_COMMON += \
 	VirtualBox.chm \
 	UserManual.pdf \
 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
@@ -473,14 +473,13 @@ SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON))
 BLDDIRS += $(foreach d,\
 	additions \
 	rdesktop-vrdp-keymaps \
+	nls \
 	$(SOLARIS_DIR_NAME_64) \
 	$(SOLARIS_DIR_NAME_64)/components \
-	$(SOLARIS_DIR_NAME_64)/nls \
 	$(SOLARIS_DIR_NAME_64)/accessible \
 	$(VBOX_SOL_PYTHON_DIR_64) \
 	$(SOLARIS_DIR_NAME_32) \
 	$(SOLARIS_DIR_NAME_32)/components \
-	$(SOLARIS_DIR_NAME_32)/nls \
 	$(SOLARIS_DIR_NAME_32)/accessible \
 	$(if $(VBOX_WITH_PYTHON),\
 	 sdk/ \
@@ -507,7 +506,6 @@ BLDDIRS += $(foreach d,\
 	$(VBOX_SOL_PYTHON_DIR_64) \
 	$(SOLARIS_DIR_NAME_32) \
 	$(SOLARIS_DIR_NAME_32)/components \
-	$(SOLARIS_DIR_NAME_32)/nls \
 	$(SOLARIS_DIR_NAME_32)/accessible \
 ,$(SOLARIS_DBG_DIR)/$(d))
 
