@@ -85,7 +85,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
     return RTStrCopy(pszPath, cchPath, RTPATH_APP_PRIVATE);
-#elif defined(RT_OS_SOLARIS) && 0 /// @todo fix this
+#elif defined(RT_OS_SOLARIS)
     return rtPathSolarisArchHack(pszPath, cchPath);
 #else
     return RTPathExecDir(pszPath, cchPath);
