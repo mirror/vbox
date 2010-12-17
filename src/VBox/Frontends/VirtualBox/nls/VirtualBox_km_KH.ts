@@ -2312,19 +2312,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>រូបភាព​ស៊ីឌី/ឌីវីឌី​ផ្សេង​ទៀត...</translation>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​ផ្សេង​ទៀត...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>អាន់ម៉ោន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
+        <translation type="obsolete">អាន់ម៉ោន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>រូបភាព​ថាសទន់​ផ្សេង​ទៀត...</translation>
+        <translation type="obsolete">រូបភាព​ថាសទន់​ផ្សេង​ទៀត...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>អាន់ម៉ោន​ឧបករណ៍​ថាស​ទន់​</translation>
+        <translation type="obsolete">អាន់ម៉ោន​ឧបករណ៍​ថាស​ទន់​</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -6988,6 +6988,16 @@ medium</comment>
         <comment>size suffix MBytes=1024KBytes</comment>
         <translation type="unfinished">មេកាបៃ</translation>
     </message>
+    <message>
+        <source>Readonly</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -7732,11 +7742,11 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;ពេញអេក្រង់&lt;/b&gt; ឥឡូវ ។ អ្នក​អាច​ត្រឡប់ក្រោយ​​ទៅ​របៀប​បង្អួច​ នៅពេល​ណាមួយ ដោយ​ចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;ម៉ាស៊ីន&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា របារ​ម៉ឺនុយ​មេ​​ត្រូវ​បានលាក់​ក្នុង​របៀប​ពេញអេក្រង់ ។​ អ្នក​អាច​ចូលដំណើរការ​វា​ដោយ​ចុច &lt;b&gt;ម៉ាស៊ីន(Host)+ដើម(Home)&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;ពេញអេក្រង់&lt;/b&gt; ឥឡូវ ។ អ្នក​អាច​ត្រឡប់ក្រោយ​​ទៅ​របៀប​បង្អួច​ នៅពេល​ណាមួយ ដោយ​ចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;ម៉ាស៊ីន&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា របារ​ម៉ឺនុយ​មេ​​ត្រូវ​បានលាក់​ក្នុង​របៀប​ពេញអេក្រង់ ។​ អ្នក​អាច​ចូលដំណើរការ​វា​ដោយ​ចុច &lt;b&gt;ម៉ាស៊ីន(Host)+ដើម(Home)&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;គ្មាន​ថ្នេរ&lt;/b&gt; ឥឡូវ ។ អ្នកអាច​ត្រឡប់​ទៅ​​របៀប​បង្អួច​នៅ​ពេល​ណាមួយ​ដោយចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;Host&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំថា របារ​ម៉ឺនុយមេ​ត្រូវ​បានលាក់​នៅ​ក្នុង​របៀប​គ្មាន​ថ្នេរ ។ អ្នកអាច​ចូលដំណើរការ​វា ដោយ​ចុច​ &lt;b&gt;Host+ដើម(Home)&lt;/b&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;គ្មាន​ថ្នេរ&lt;/b&gt; ឥឡូវ ។ អ្នកអាច​ត្រឡប់​ទៅ​​របៀប​បង្អួច​នៅ​ពេល​ណាមួយ​ដោយចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;Host&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំថា របារ​ម៉ឺនុយមេ​ត្រូវ​បានលាក់​នៅ​ក្នុង​របៀប​គ្មាន​ថ្នេរ ។ អ្នកអាច​ចូលដំណើរការ​វា ដោយ​ចុច​ &lt;b&gt;Host+ដើម(Home)&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -7813,7 +7823,7 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ចំណាំ​ថា ឯកតា​ផ្ទុក​របស់​ឧបករណ៍​ផ្ទុក​នេះ​នឹង​មិន​ត្រូវ​បានលុប​ទេ ហើយ​ដូច្នេះ​វា​នឹង​អាច​បន្ថែម​ទៅ​កាន់​បញ្ជី​ពេល​ក្រោយ​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ចំណាំ​ថា ឯកតា​ផ្ទុក​របស់​ឧបករណ៍​ផ្ទុក​នេះ​នឹង​មិន​ត្រូវ​បានលុប​ទេ ហើយ​ដូច្នេះ​វា​នឹង​អាច​បន្ថែម​ទៅ​កាន់​បញ្ជី​ពេល​ក្រោយ​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -8382,10 +8392,6 @@ medium</comment>
         <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
@@ -8402,10 +8408,6 @@ medium</comment>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8434,6 +8436,79 @@ medium</comment>
     </message>
     <message>
         <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation type="unfinished">ប្ដូរ</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
