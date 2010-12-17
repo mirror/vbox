@@ -1381,19 +1381,20 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
         rc = RTGetOptArgvToString(&pszCmdLine, &papszArgs[cSuArgs], RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
         if (RT_SUCCESS(rc))
         {
-            iSuArg = cSuArgs - 8;
-            papszArgs[cSuArgs - 8] = szXterm;
-            papszArgs[cSuArgs - 7] = "-T";
-            papszArgs[cSuArgs - 6] = papszArgs[cSuArgs - 1] = iCmd == CMD_INSTALL
+            iSuArg = cSuArgs - 9;
+            papszArgs[cSuArgs - 9] = szXterm;
+            papszArgs[cSuArgs - 8] = "-T";
+            papszArgs[cSuArgs - 7] = iCmd == CMD_INSTALL
                                    ? "VirtualBox extension pack installer - su"
                                    : iCmd == CMD_UNINSTALL
                                    ? "VirtualBox extension pack uninstaller - su"
                                    : "VirtualBox extension pack maintainer - su";
-            papszArgs[cSuArgs - 5] = "-e";
-            papszArgs[cSuArgs - 4] = szExecTool;
-            papszArgs[cSuArgs - 3] = "-c";
-            papszArgs[cSuArgs - 2] = pszCmdLine;
-            papszArgs[cSuArgs - 1] = "-";
+            papszArgs[cSuArgs - 6] = "-e";
+            papszArgs[cSuArgs - 5] = szExecTool;
+            papszArgs[cSuArgs - 4] = "-";
+            papszArgs[cSuArgs - 3] = "root";
+            papszArgs[cSuArgs - 2] = "-c";
+            papszArgs[cSuArgs - 1] = pszCmdLine;
             papszArgs[cSuArgs] = NULL;
         }
         else
@@ -1494,7 +1495,7 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd)
                  * list.  Note that darwin skips the --stdout bit, so don't
                  * change the order here.
                  */
-                int const    cSuArgs   = 10;
+                int const    cSuArgs   = 12;
                 int          cArgs     = argc + 5 + 1;
                 char const **papszArgs = (char const **)RTMemTmpAllocZ((cSuArgs + cArgs + 1) * sizeof(const char *));
                 if (papszArgs)
