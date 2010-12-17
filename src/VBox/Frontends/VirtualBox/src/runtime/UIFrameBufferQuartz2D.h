@@ -51,6 +51,10 @@ public:
     void paintEvent(QPaintEvent *pEvent);
     void resizeEvent(UIResizeEvent *pEvent);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void setView(UIMachineView *pView);
+#endif
+
 private:
 
     void clean();
