@@ -1744,7 +1744,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
      * Figure some stuff out before creating the instance data.
      */
     char szBaseDir[RTPATH_MAX];
-    int rc = RTPathAppPrivateArch(szBaseDir, sizeof(szBaseDir));
+    int rc = RTPathAppPrivateArchTop(szBaseDir, sizeof(szBaseDir));
     AssertLogRelRCReturn(rc, E_FAIL);
     rc = RTPathAppend(szBaseDir, sizeof(szBaseDir), VBOX_EXTPACK_INSTALL_DIR);
     AssertLogRelRCReturn(rc, E_FAIL);

@@ -41,6 +41,13 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/**
+ * Host max path (the reasonable value).
+ * @remarks defined both by iprt/param.h and iprt/path.h.
+ */
+#if !defined(___iprt_param_h) || defined(DOXYGEN_RUNNING)
+# define RTPATH_MAX         (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
+#endif
 
 /** @def RTPATH_SLASH
  * The preferred slash character.
@@ -603,9 +610,10 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath);
  * Gets the directory of shared libraries.
  *
  * This is not the same as RTPathAppPrivateArch() as Linux depends all shared
- * libraries in a common global directory where ld.so can found them.
+ * libraries in a common global directory where ld.so can find them.
  *
  * Linux:    /usr/lib
+ * Solaris:  /opt/@<application@>/@<arch>@ or something
  * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathExecDir()
  *
@@ -620,6 +628,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath);
  * example NLS files, module sources, ...
  *
  * Linux:    /usr/shared/@<application@>
+ * Solaris:  /opt/@<application@>
  * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathExecDir()
  *
@@ -634,6 +643,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath);
  * example modules which can be loaded at runtime.
  *
  * Linux:    /usr/lib/@<application@>
+ * Solaris:  /opt/@<application@>/@<arch>@ or something
  * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathExecDir()
  *
@@ -644,9 +654,28 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath);
 RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath);
 
 /**
+ * Gets the toplevel directory for architecture-dependent application data.
+ *
+ * This differs from RTPathAppPrivateArch on Solaris only where it will work
+ * around the /opt/@<application@>/amd64 and /opt/@<application@>/i386 multi
+ * architecture installation style.
+ *
+ * Linux:    /usr/lib/@<application@>
+ * Solaris:  /opt/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
+ * Old path: same as RTPathExecDir()
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppPrivateArchTop(char *pszPath, size_t cchPath);
+
+/**
  * Gets the directory for documentation.
  *
  * Linux:    /usr/share/doc/@<application@>
+ * Solaris:  /opt/@<application@>
  * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathExecDir()
  *

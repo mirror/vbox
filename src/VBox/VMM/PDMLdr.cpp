@@ -1111,8 +1111,9 @@ static char *pdmR3File(const char *pszFile, const char *pszDefaultExt, const cha
     /*
      * Use the default location.
      */
-    rc = fShared ? RTPathSharedLibs(szPath, sizeof(szPath))
-                 : RTPathAppPrivateArch(szPath, sizeof(szPath));
+    rc = fShared
+       ? RTPathSharedLibs(    szPath, sizeof(szPath))
+       : RTPathAppPrivateArch(szPath, sizeof(szPath));
     if (!RT_SUCCESS(rc))
     {
         AssertMsgFailed(("RTPath[SharedLibs|AppPrivateArch](,%d) failed rc=%d!\n", sizeof(szPath), rc));
