@@ -8950,7 +8950,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="bfcf5b8c-5155-4f24-9414-9457054b16db"
+    uuid="9edda847-1279-4b0a-9af7-9d66251ccc18"
     wsmap="managed"
     >
     <desc>
@@ -9333,9 +9333,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="variant" type="MediumVariant" readonly="yes">
+    <attribute name="variant" type="unsigned long" readonly="yes">
       <desc>
-        Returns the storage format variant information for this medium.
+        Returns the storage format variant information for this medium
+        as a combination of the flags described at <link to="MediumVariant" />.
         Before <link to="#refreshState"/> is called this method returns
         an undefined value.
       </desc>
@@ -10036,8 +10037,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="logicalSize" type="long long" dir="in">
         <desc>Maximum logical size of the medium in bytes.</desc>
       </param>
-      <param name="variant" type="MediumVariant" dir="in">
-        <desc>Exact image variant which should be created.</desc>
+      <param name="variant" type="unsigned long" dir="in">
+        <desc>Exact image variant which should be created (as a combination of
+          <link to="MediumVariant" /> flags).</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -10118,8 +10120,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="target" type="IMedium" dir="in">
         <desc>Target medium.</desc>
       </param>
-      <param name="variant" type="MediumVariant" dir="in">
-        <desc>Exact image variant which should be created.</desc>
+      <param name="variant" type="unsigned long" dir="in">
+        <desc>Exact image variant which should be created (as a combination of
+          <link to="MediumVariant" /> flags).</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -10245,8 +10248,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="target" type="IMedium" dir="in">
         <desc>Target medium.</desc>
       </param>
-      <param name="variant" type="MediumVariant" dir="in">
-        <desc>Exact image variant which should be created.</desc>
+      <param name="variant" type="unsigned long" dir="in">
+        <desc>Exact image variant which should be created (as a combination of
+          <link to="MediumVariant" /> flags).</desc>
       </param>
       <param name="parent" type="IMedium" dir="in">
         <desc>Parent of the cloned medium.</desc>
