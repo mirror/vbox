@@ -482,6 +482,7 @@ vbox_output_set_property(xf86OutputPtr output, Atom property,
             || (unsigned) value->size > (sizeof(sz) - 1))
             return FALSE;
         strncpy(sz, value->data, value->size);
+        TRACE_LOG("screen=%u, property value=%s\n", cDisplay, sz);
         if (sscanf(sz, "%dx%d", &w, &h) != 2)
             return FALSE;
         pVBox->aPreferredSize[cDisplay].cx = w;

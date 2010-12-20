@@ -878,7 +878,7 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
     TRACE_ENTRY();
     if (!pVBox->useDevice)
         return FALSE;
-    int rc = VbglR3GetDisplayChangeRequest(pcx, pcy, pcBits, piDisplay, true);
+    int rc = VbglR3GetDisplayChangeRequest(pcx, pcy, pcBits, piDisplay, false);
     if (RT_SUCCESS(rc))
         return TRUE;
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to obtain the last resolution requested by the guest, rc=%d.\n", rc);
@@ -1085,10 +1085,10 @@ void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t iScreen, uint32_t *pcx,
                           uint32_t *pcy, uint32_t *pcBits)
 {
     /* Query the host for the preferred resolution and colour depth */
-    uint32_t cx = 0, cy = 0, iScreenIn = 0, cBits = 32;
+    uint32_t cx = 0, cy = 0, iScreenIn = iScreen, cBits = 32;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY();
+    TRACE_LOG("iScreen=%u\n", iScreen);
     bool found = false;
     if (   pVBox->aPreferredSize[iScreen].cx
         && pVBox->aPreferredSize[iScreen].cy)
@@ -1127,8 +1127,9 @@ void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t iScreen, uint32_t *pcx,
         *pcx = cx;
     if (pcy)
         *pcy = cy;
-    if (pcx)
+    if (pcBits)
         *pcBits = cBits;
+    TRACE_LOG("cx=%u, cy=%u, cBits=%u\n", cx, cy, cBits);
 }
 
 /* Move a screen mode found to the end of the list, so that RandR will give
