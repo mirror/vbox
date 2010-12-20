@@ -177,7 +177,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         (u64Cmd & USAGE_CREATERAWVMDK)
         ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
           "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
-          "                [-register] [-relative]\n"
+          "                [-relative]\n"
           "       Creates a new VMDK image which gives access to an entite host disk (if\n"
           "       the parameter -partitions is not specified) or some partitions of a\n"
           "       host disk. If access to individual partitions is granted, then the\n"
@@ -187,7 +187,6 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "       \\\\.\\PhysicalDrive0).\n"
           "       On Linux host the parameter -relative causes a VMDK file to be created\n"
           "       which refers to individual partitions instead to the entire disk.\n"
-          "       Optionally the created image can be immediately registered.\n"
           "       The necessary partition numbers can be queried with\n"
           "         VBoxManage internalcommands listpartitions\n"
           "\n"
@@ -917,7 +916,6 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     const char *pszMBRFilename = NULL;
     Utf8Str rawdisk;
     const char *pszPartitions = NULL;
-    bool fRegister = false;
     bool fRelative = false;
 
     uint64_t cbSize = 0;
@@ -963,10 +961,6 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             }
             i++;
             pszPartitions = argv[i];
-        }
-        else if (strcmp(argv[i], "-register") == 0)
-        {
-            fRegister = true;
         }
 #ifdef RT_OS_LINUX
         else if (strcmp(argv[i], "-relative") == 0)
@@ -1476,15 +1470,6 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         }
         if (RawDescriptor.pPartDescs)
             RTMemFree(RawDescriptor.pPartDescs);
-    }
-
-    if (fRegister)
-    {
-        ComPtr<IMedium> hardDisk;
-        CHECK_ERROR(aVirtualBox, OpenMedium(Bstr(filename).raw(),
-                                            DeviceType_HardDisk,
-                                            AccessMode_ReadWrite,
-                                            hardDisk.asOutParam()));
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
