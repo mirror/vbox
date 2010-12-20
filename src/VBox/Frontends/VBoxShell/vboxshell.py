@@ -1060,7 +1060,7 @@ def ginfoCmd(ctx,args):
     cmdExistingVm(ctx, mach, 'ginfo', '')
     return 0
 
-def execInGuest(ctx,console,args,env,user,passwd,tmo):
+def execInGuest(ctx,console,args,env,user,passwd,tmo,inputPipe=None,outputPipe=None):
     if len(args) < 1:
         print "exec in guest needs at least program name"
         return
@@ -1068,11 +1068,30 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo):
     # shall contain program name as argv[0]
     gargs = args
     print "executing %s with args %s as %s" %(args[0], gargs, user)
-    (progress, pid) = guest.executeProcess(args[0], 0, gargs, env, user, passwd, tmo)
+    flags = 0
+    if inputPipe is not None:
+        flags = 1 # set WaitForProcessStartOnly
+    print args[0]
+    (progress, pid) = guest.executeProcess(args[0], flags, gargs, env, user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
         try:
             while True:
+                if inputPipe is not None:
+                    indata = inputPipe(ctx)
+                    if indata is not None:
+                        write = len(indata)
+                        off = 0
+                        while write > 0:
+                            w = guest.setProcessInput(pid, 0, 10*1000, indata[off:])
+                            off = off + w
+                            write = write - w
+                    else:
+                        # EOF
+                        try:
+                            guest.setProcessInput(pid, 1, 10*1000, " ")
+                        except:
+                            pass
                 data = guest.getProcessOutput(pid, 0, 10000, 4096)
                 if data and len(data) > 0:
                     sys.stdout.write(data)
@@ -1081,7 +1100,10 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo):
                 ctx['global'].waitForEvents(0)
                 data = guest.getProcessOutput(pid, 0, 0, 4096)
                 if data and len(data) > 0:
-                    sys.stdout.write(data)
+                    if outputPipe is not None:
+                        outputPipe(ctx,data)
+                    else:
+                        sys.stdout.write(data)
                     continue
                 if progress.completed:
                     break
@@ -1154,18 +1176,33 @@ def gcopyCmd(ctx,args):
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
-def gcatCmd(ctx,args):
-    if (len(args) < 2):
-        print "usage: gcat [vmname|uuid] local_file | guestProgram, such as gcat linux /home/nike/.bashrc | sh -c 'cat >'"
+def readCmdPipe(ctx,hcmd):
+    try:
+        return ctx['process'].communicate()[0]
+    except:
+        return None
+
+def gpipeCmd(ctx,args):
+    if (len(args) < 4):
+        print "usage: gpipe [vmname|uuid] hostProgram guestProgram, such as gpipe linux  '/bin/uname -a' '/bin/sh -c \"/usr/bin/tee; /bin/uname -a\"'"
         return 0
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    gargs = args[2:]
-    env = []
+    hcmd = args[2]
+    gcmd = args[3]
     (user,passwd) = getCred(ctx)
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env, user, passwd, 0))
+    import subprocess
+    ctx['process'] = subprocess.Popen(split_no_quotes(hcmd), stdout=subprocess.PIPE)
+    gargs = split_no_quotes(gcmd)
+    env = []
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env,user,passwd, 10000,lambda ctx:readCmdPipe(ctx, hcmd)))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
+    try:
+        ctx['process'].terminate()
+    except:
+        pass
+    ctx['process'] = None
     return 0
 
 
@@ -3063,6 +3100,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'ginfo':['Shows info on guest', ginfoCmd, 0],
             'gexec':['Executes program in the guest', gexecCmd, 0],
             'gcopy':['Copy file to the guest', gcopyCmd, 0],
+            'gpipe':['Pipe between host and guest', gpipeCmd, 0],
             'alias':['Control aliases', aliasCmd, 0],
             'verbose':['Toggle verbosity', verboseCmd, 0],
             'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd, 0],
