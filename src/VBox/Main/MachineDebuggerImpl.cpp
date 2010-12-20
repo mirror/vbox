@@ -453,6 +453,21 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled) (BOOL aEnabled)
     return S_OK;
 }
 
+STDMETHODIMP MachineDebugger::COMGETTER(LogFlags)(BSTR *a_pbstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogGroups)(BSTR *a_pbstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogDestinations)(BSTR *a_pbstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
 /**
  * Returns the current hardware virtualization flag.
  *
@@ -526,6 +541,16 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
         *aEnabled = false;
 
     return S_OK;
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(OSName)(BSTR *a_pbstrName)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(OSVersion)(BSTR *a_pbstrVersion)
+{
+    ReturnComNotImplemented();
 }
 
 /**
@@ -710,6 +735,21 @@ STDMETHODIMP MachineDebugger::InjectNMI()
     return hrc;
 }
 
+STDMETHODIMP MachineDebugger::ModifyLogFlags(IN_BSTR a_bstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::ModifyLogGroups(IN_BSTR a_bstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::ModifyLogDestinations(IN_BSTR a_bstrSettings)
+{
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP MachineDebugger::ReadPhysicalMemory(LONG64 a_Address, ULONG a_cbRead, ComSafeArrayOut(BYTE, a_abData))
 {
     ReturnComNotImplemented();
@@ -730,6 +770,11 @@ STDMETHODIMP MachineDebugger::WriteVirtualMemory(ULONG a_idCpu, LONG64 a_Address
     ReturnComNotImplemented();
 }
 
+STDMETHODIMP MachineDebugger::DetectOS(BSTR *a_pbstrName)
+{
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BSTR *a_pbstrValue)
 {
     ReturnComNotImplemented();
@@ -746,6 +791,11 @@ STDMETHODIMP MachineDebugger::SetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, IN_
 }
 
 STDMETHODIMP MachineDebugger::SetRegisters(ULONG a_idCpu, ComSafeArrayIn(IN_BSTR, a_bstrNames), ComSafeArrayIn(IN_BSTR, a_bstrValues))
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP MachineDebugger::DumpGuestStack(ULONG a_idCpu, BSTR *a_pbstrStack)
 {
     ReturnComNotImplemented();
 }

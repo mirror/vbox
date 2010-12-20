@@ -11888,7 +11888,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="b1fd749c-e471-4ae3-863f-54b4f787cdef"
+    uuid="1bfd2fa9-0d91-44d3-9515-368dcbb3eb4d"
     wsmap="suppress"
     >
     <method name="dumpGuestCore">
@@ -11956,6 +11956,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Inject an NMI into a running VT-x/AMD-V VM.
       </desc>
+    </method>
+
+    <method name="modifyLogGroups">
+      <desc>
+        Modifies the group settings of the debug logger.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="settings" type="wstring" dir="in">
+        <desc>The group settings string. See iprt/log.h for details.</desc>
+      </param>
+    </method>
+
+    <method name="modifyLogFlags">
+      <desc>
+        Modifies the debug logger flags.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="settings" type="wstring" dir="in">
+        <desc>The flags settings string. See iprt/log.h for details.</desc>
+      </param>
+    </method>
+
+    <method name="modifyLogDestinations">
+      <desc>
+        Modifies the debug logger destinations.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="settings" type="wstring" dir="in">
+        <desc>The destination settings string. See iprt/log.h for details.</desc>
+      </param>
     </method>
 
     <method name="readPhysicalMemory">
@@ -12033,6 +12069,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="bytes" type="octet" safearray="yes" dir="in">
         <desc>The bytes to write.</desc>
+      </param>
+    </method>
+
+    <method name="detectOS">
+      <desc>
+        Tries to (re-)detect the guest OS kernel.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="os" type="wstring" dir="return">
+        <desc>
+          The detected OS kernel on success.
+        </desc>
       </param>
     </method>
 
@@ -12122,6 +12172,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="dumpGuestStack">
+      <desc>
+        Produce a simple stack dump using the current guest state.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="stack" type="wstring" dir="return">
+        <desc>String containing the formatted stack dump.</desc>
+      </param>
+    </method>
+
     <method name="resetStats">
       <desc>
         Reset VM statistics.
@@ -12176,7 +12241,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="logEnabled" type="boolean">
-      <desc>Switch for enabling and disabling logging.</desc>
+      <desc>Switch for enabling and disabling the debug logger.</desc>
+    </attribute>
+
+    <attribute name="logFlags" type="wstring" readonly="yes">
+      <desc>The debug logger flags.</desc>
+    </attribute>
+
+    <attribute name="logGroups" type="wstring" readonly="yes">
+      <desc>The debug logger's group settings.</desc>
+    </attribute>
+
+    <attribute name="logDestinations" type="wstring" readonly="yes">
+      <desc>The debug logger's destination settings.</desc>
     </attribute>
 
     <attribute name="HWVirtExEnabled" type="boolean" readonly="yes">
@@ -12200,6 +12277,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="OSName" type="wstring" readonly="yes">
+      <desc>
+        Query the guest OS kernel name as detected by the DBGF.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+    </attribute>
+
+    <attribute name="OSVersion" type="wstring" readonly="yes">
+      <desc>
+        Query the guest OS kernel version string as detected by the DBGF.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+    </attribute>
+
     <attribute name="PAEEnabled" type="boolean" readonly="yes">
       <desc>
         Flag indicating whether the VM is currently making use of the Physical
@@ -12213,8 +12308,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The accepted range is 2% to 20000%.
       </desc>
     </attribute>
-
-    <!-- @todo method for setting log flags, groups and destination! -->
 
     <attribute name="VM" type="long long" readonly="yes">
       <desc>
