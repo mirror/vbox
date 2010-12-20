@@ -275,7 +275,7 @@
       manager to configure virtual machines, but they will not start. In addition,
       there are the network kernel modules <computeroutput>vboxnetflt</computeroutput>
       and <computeroutput>vboxnetadp</computeroutput> which are required for
-      the move advanced networking features of VirtualBox.</para>
+      the more advanced networking features of VirtualBox.</para>
 
       <para>The VirtualBox kernel module is automatically installed on your
       system when you install VirtualBox. To maintain it with future kernel
