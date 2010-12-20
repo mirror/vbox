@@ -484,8 +484,11 @@ void UINewHDWzdPage4::initializePage()
 
 bool UINewHDWzdPage4::validatePage()
 {
+    startProcessing();
     /* Try to construct hard disk */
-    return createHardDisk();
+    bool fResult = createHardDisk();
+    endProcessing();
+    return fResult;
 }
 
 bool UINewHDWzdPage4::createHardDisk()

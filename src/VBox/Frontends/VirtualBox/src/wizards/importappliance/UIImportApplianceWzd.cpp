@@ -251,6 +251,14 @@ void UIImportApplianceWzdPage2::retranslateUi()
 
 bool UIImportApplianceWzdPage2::validatePage()
 {
+    startProcessing();
+    bool fResult = import();
+    endProcessing();
+    return fResult;
+}
+
+bool UIImportApplianceWzdPage2::import()
+{
     /* Make sure the final values are puted back */
     m_pSettingsCnt->prepareImport();
     /* Check if there are license agreements the user must confirm */

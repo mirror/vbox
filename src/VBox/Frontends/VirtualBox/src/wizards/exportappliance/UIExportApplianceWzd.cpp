@@ -516,7 +516,10 @@ void UIExportApplianceWzdPage4::cleanupPage()
 
 bool UIExportApplianceWzdPage4::validatePage()
 {
-    return exportAppliance();
+    startProcessing();
+    bool fResult = exportAppliance();
+    endProcessing();
+    return fResult;
 }
 
 bool UIExportApplianceWzdPage4::prepareSettingsWidget()

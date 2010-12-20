@@ -63,6 +63,7 @@ protected:
 
     bool isComplete() const;
     bool validatePage();
+    bool registration();
 
 private slots:
 
