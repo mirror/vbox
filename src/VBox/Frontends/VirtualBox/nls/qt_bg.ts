@@ -104,8 +104,8 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>Необходимият кодек липсва. Нужно е да инсталирате следния кодек, за да изпълните това съдържание: %0</numerusform>
-            <numerusform>Необходимият кодек липсва. Нужно е да инсталирате следните кодеци, за да изпълните това съдържание: %0</numerusform>
+            <numerusform>Липсва необходим кодек. Нужно е да инсталирате следния кодек, за да изпълните това съдържание: %0</numerusform>
+            <numerusform>Липсва необходим кодек. Нужно е да инсталирате следните кодеци, за да изпълните това съдържание: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -2711,7 +2711,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin was not loaded.</source>
-        <translation>Добавката не е заредена</translation>
+        <translation>Добавката не е заредена.</translation>
     </message>
 </context>
 <context>
@@ -3136,7 +3136,7 @@ Please choose a different file name.</source>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>не възникна грешка</translation>
     </message>
     <message>
         <source>disabled feature used</source>
@@ -4274,12 +4274,12 @@ Please choose a different file name.</source>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>ЛнД</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>ДнЛ</translation>
     </message>
     <message>
         <source>Inspect</source>
@@ -4440,7 +4440,7 @@ Please choose a different file name.</source>
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">не възникна грешка</translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
