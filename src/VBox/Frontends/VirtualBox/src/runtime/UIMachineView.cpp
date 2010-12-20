@@ -140,6 +140,11 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
     delete pMachineView;
 }
 
+double UIMachineView::aspectRatio() const
+{
+    return frameBuffer() ? (double)(frameBuffer()->width()) / frameBuffer()->height() : 0;
+}
+
 void UIMachineView::sltMachineStateChanged()
 {
     /* Get machine state: */
