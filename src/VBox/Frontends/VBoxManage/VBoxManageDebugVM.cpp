@@ -69,13 +69,15 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
     /*
      * Parse arguments.
      */
-    const char                 *pszFilename  = NULL;
+    const char                 *pszFilename = NULL;
+    const char                 *pszCompression = NULL;
 
     RTGETOPTSTATE               GetState;
     RTGETOPTUNION               ValueUnion;
     static const RTGETOPTDEF    s_aOptions[] =
     {
-        { "--filename", 'f', RTGETOPT_REQ_STRING }
+        { "--filename",     'f', RTGETOPT_REQ_STRING },
+        { "--compression",  'c', RTGETOPT_REQ_STRING }
     };
     int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
@@ -84,6 +86,11 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
     {
         switch (rc)
         {
+            case 'c':
+                if (pszCompression)
+                    return errorSyntax(USAGE_DEBUGVM, "The --compression option has already been given");
+                pszCompression = ValueUnion.psz;
+                break;
             case 'f':
                 if (pszFilename)
                     return errorSyntax(USAGE_DEBUGVM, "The --filename option has already been given");
@@ -106,7 +113,8 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed on '%s': %Rrc", pszFilename, rc);
 
     com::Bstr bstrFilename(szAbsFilename);
-    CHECK_ERROR2_RET(pDebugger, DumpGuestCore(bstrFilename.raw()), RTEXITCODE_FAILURE);
+    com::Bstr bstrCompression(pszCompression);
+    CHECK_ERROR2_RET(pDebugger, DumpGuestCore(bstrFilename.raw(), bstrCompression.raw()), RTEXITCODE_FAILURE);
     return RTEXITCODE_SUCCESS;
 }
 

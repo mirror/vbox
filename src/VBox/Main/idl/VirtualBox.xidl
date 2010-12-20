@@ -11888,9 +11888,240 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="373a5f51-67c1-4a31-be43-1e29ebe8ef85"
+    uuid="b1fd749c-e471-4ae3-863f-54b4f787cdef"
     wsmap="suppress"
     >
+    <method name="dumpGuestCore">
+      <desc>
+        Takes a core dump of the guest.
+
+        See include/VBox/dbgfcorefmt.h for details on the file format.
+      </desc>
+      <param name="filename" type="wstring" dir="in">
+        <desc>
+          The name of the output file.  The file must not exist.
+        </desc>
+      </param>
+      <param name="compression" type="wstring" dir="in">
+        <desc>
+          Reserved for future compression method indicator.
+        </desc>
+      </param>
+    </method>
+
+    <method name="dumpHostProcessCore">
+      <desc>
+        Takes a core dump of the VM process on the host.
+
+        This feature is not implemented in the 4.0.0 release but it may show up
+        in a dot release.
+      </desc>
+      <param name="filename" type="wstring" dir="in">
+        <desc>
+          The name of the output file.  The file must not exist.
+        </desc>
+      </param>
+      <param name="compression" type="wstring" dir="in">
+        <desc>
+          Reserved for future compression method indicator.
+        </desc>
+      </param>
+    </method>
+
+    <method name="info">
+      <desc>
+        Interfaces with the info dumpers (DBGFInfo).
+
+        This feature is not implemented in the 4.0.0 release but it may show up
+        in a dot release.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>
+          The name of the info item.
+        </desc>
+      </param>
+      <param name="args" type="wstring" dir="in">
+        <desc>
+          Arguments to the info dumper.
+        </desc>
+      </param>
+      <param name="info" type="wstring" dir="return">
+        <desc>
+          The into string.
+        </desc>
+      </param>
+    </method>
+
+    <method name="injectNMI">
+      <desc>
+        Inject an NMI into a running VT-x/AMD-V VM.
+      </desc>
+    </method>
+
+    <method name="readPhysicalMemory">
+      <desc>
+        Reads guest physical memory, no side effects (MMIO++).
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="address" type="long long" dir="in">
+        <desc>The guest physical address.</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>The number of bytes to read.</desc>
+      </param>
+      <param name="bytes" type="octet" safearray="yes" dir="return">
+        <desc>The bytes read.</desc>
+      </param>
+    </method>
+
+    <method name="writePhysicalMemory">
+      <desc>
+        Writes guest physical memory, access handles (MMIO++) are ignored.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="address" type="long long" dir="in">
+        <desc>The guest physical address.</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>The number of bytes to read.</desc>
+      </param>
+      <param name="bytes" type="octet" safearray="yes" dir="in">
+        <desc>The bytes to write.</desc>
+      </param>
+    </method>
+
+    <method name="readVirtualMemory">
+      <desc>
+        Reads guest virtual memory, no side effects (MMIO++).
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="address" type="long long" dir="in">
+        <desc>The guest virtual address.</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>The number of bytes to read.</desc>
+      </param>
+      <param name="bytes" type="octet" safearray="yes" dir="return">
+        <desc>The bytes read.</desc>
+      </param>
+    </method>
+
+    <method name="writeVirtualMemory">
+      <desc>
+        Writes guest virtual memory, access handles (MMIO++) are ignored.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="address" type="long long" dir="in">
+        <desc>The guest virtual address.</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>The number of bytes to read.</desc>
+      </param>
+      <param name="bytes" type="octet" safearray="yes" dir="in">
+        <desc>The bytes to write.</desc>
+      </param>
+    </method>
+
+    <method name="getRegister">
+      <desc>
+        Gets one register.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="name" type="wstring" dir="in">
+        <desc>The register name, case is ignored.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>
+          The register value.  This is usually a hex value (always 0x prefixed)
+          but other format may be used for floating point registers (TBD).
+        </desc>
+      </param>
+    </method>
+
+    <method name="getRegisters">
+      <desc>
+        Gets all the registers for the given CPU.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="names" type="wstring" dir="out" safearray="yes">
+        <desc>Array containing the lowercase register names.</desc>
+      </param>
+      <param name="values" type="wstring" dir="out" safearray="yes">
+        <desc>
+          Array paralell to the names holding the register values as if the
+          register was returned by <link name="IMachineDebugger::getRegister"/>.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setRegister">
+      <desc>
+        Gets one register.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="name" type="wstring" dir="in">
+        <desc>The register name, case is ignored.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>
+          The new register value.  Hexadecimal, decimal and octal formattings
+          are supported in addition to any special formattings returned by
+          the getters.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setRegisters">
+      <desc>
+        Sets zero or more registers atomically.
+
+        This feature is not implemented in the 4.0.0 release but may show up
+        in a dot release.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The identifier of the Virtual CPU.</desc>
+      </param>
+      <param name="names" type="wstring" dir="in" safearray="yes">
+        <desc>Array containing the register names, case ignored.</desc>
+      </param>
+      <param name="values" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Array paralell to the names holding the register values. See
+          <link name="IMachineDebugger::setRegister"/> for formatting
+          guidelines.
+        </desc>
+      </param>
+    </method>
+
     <method name="resetStats">
       <desc>
         Reset VM statistics.
@@ -11921,25 +12152,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="stats" type="wstring" dir="out">
         <desc>The XML document containing the statistics.</desc>
-      </param>
-    </method>
-
-    <method name="injectNMI">
-      <desc>
-        Inject an NMI into a running VT-x/AMD-V VM.
-      </desc>
-    </method>
-
-    <method name="dumpGuestCore">
-      <desc>
-        Takes a core dump of the guest.
-
-        See include/VBox/dbgfcorefmt.h for details on the file format.
-      </desc>
-      <param name="filename" type="wstring" dir="in">
-        <desc>
-          The name of the output file.  The file must not exist.
-        </desc>
       </param>
     </method>
 
