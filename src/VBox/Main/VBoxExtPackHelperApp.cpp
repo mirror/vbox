@@ -1433,7 +1433,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
         papszArgs[cSuArgs] = NULL;
     }
     else if (fHaveDisplayVar)
-        RTMsgError("Unable to locate 'pkexec', 'pksu' or 'su+xterm'. Try perform the operation using VBoxManage running as root");
+        RTMsgError("Unable to locate 'pkexec', 'gksu' or 'su+xterm'. Try perform the operation using VBoxManage running as root");
     else
         RTMsgError("Unable to locate 'pkexec'. Try perform the operation using VBoxManage running as root");
     if (iSuArg != cSuArgs)
