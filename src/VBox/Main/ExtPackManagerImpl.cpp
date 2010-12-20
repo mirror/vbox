@@ -2054,6 +2054,24 @@ STDMETHODIMP ExtPackManager::IsExtPackUsable(IN_BSTR a_bstrExtPack, BOOL *aUsabl
     return S_OK;
 }
 
+/**
+ * Finds the success indicator string in the stderr output ofr hte helper app.
+ *
+ * @returns Pointer to the indicator.
+ * @param   psz                 The stderr output string. Can be NULL.
+ * @param   cch                 The size of the string.
+ */
+static char *findSuccessIndicator(char *psz, size_t cch)
+{
+    static const char s_szSuccessInd[] = "rcExit=RTEXITCODE_SUCCESS";
+    Assert(!cch || strlen(psz) == cch);
+    if (cch < sizeof(s_szSuccessInd) - 1)
+        return NULL;
+    char *pszInd = &psz[cch - sizeof(s_szSuccessInd) + 1];
+    if (strcmp(s_szSuccessInd, pszInd))
+        return NULL;
+    return pszInd;
+}
 
 /**
  * Runs the helper application that does the privileged operations.
@@ -2208,22 +2226,21 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
             offStdErrBuf = strlen(pszStdErrBuf);
         }
 
-        if (    offStdErrBuf > 0
-             && !strcmp(pszStdErrBuf, "rcExit=RTEXITCODE_SUCCESS"))
+        char *pszSuccessInd = findSuccessIndicator(pszStdErrBuf, offStdErrBuf);
+        if (pszSuccessInd)
         {
-            *pszStdErrBuf = '\0';
-            offStdErrBuf  = 0;
+            *pszSuccessInd = '\0';
+            offStdErrBuf  = pszSuccessInd - pszStdErrBuf;
         }
         else if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
                  && ProcStatus.iStatus   == 0)
-            ProcStatus.iStatus = 666;
+            ProcStatus.iStatus = offStdErrBuf ? 667 : 666;
 
         /*
          * Compose the status code and, on failure, error message.
          */
         if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
-            && ProcStatus.iStatus   == 0
-            && offStdErrBuf         == 0)
+            && ProcStatus.iStatus   == 0)
             hrc = S_OK;
         else if (ProcStatus.enmReason == RTPROCEXITREASON_NORMAL)
         {
