@@ -687,8 +687,11 @@ void UINewVMWzdPage5::initializePage()
 
 bool UINewVMWzdPage5::validatePage()
 {
+    startProcessing();
     /* Try to construct machine */
-    return constructMachine();
+    bool fResult = constructMachine();
+    endProcessing();
+    return fResult;
 }
 
 bool UINewVMWzdPage5::constructMachine()

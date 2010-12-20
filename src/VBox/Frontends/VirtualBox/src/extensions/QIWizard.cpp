@@ -204,3 +204,15 @@ QString QIWizardPage::standardHelpText() const
 #endif /* Q_WS_MAC */
 }
 
+void QIWizardPage::startProcessing()
+{
+    if (isFinalPage())
+        wizard()->button(QWizard::FinishButton)->setEnabled(false);
+}
+
+void QIWizardPage::endProcessing()
+{
+    if (isFinalPage())
+        wizard()->button(QWizard::FinishButton)->setEnabled(true);
+}
+

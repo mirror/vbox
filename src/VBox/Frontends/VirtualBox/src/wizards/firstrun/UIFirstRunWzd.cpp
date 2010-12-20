@@ -304,7 +304,10 @@ void UIFirstRunWzdPage3::cleanupPage()
 
 bool UIFirstRunWzdPage3::validatePage()
 {
-    return insertDevice();
+    startProcessing();
+    bool fResult = insertDevice();
+    endProcessing();
+    return fResult;
 }
 
 bool UIFirstRunWzdPage3::insertDevice()

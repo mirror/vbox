@@ -68,6 +68,9 @@ protected:
 
     QString standardHelpText() const;
 
+    void startProcessing();
+    void endProcessing();
+
 private:
 
     QSize m_MinimumSizeHint;

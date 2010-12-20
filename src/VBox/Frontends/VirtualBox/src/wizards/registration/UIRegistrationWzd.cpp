@@ -568,6 +568,14 @@ bool UIRegistrationWzdPage1::isComplete() const
 
 bool UIRegistrationWzdPage1::validatePage()
 {
+    startProcessing();
+    bool fResult = registration();
+    endProcessing();
+    return fResult;
+}
+
+bool UIRegistrationWzdPage1::registration()
+{
     /* Create registration engine */
     RegistrationEngine engine(this);
 

@@ -117,6 +117,7 @@ protected:
     void retranslateUi();
 
     bool validatePage();
+    bool import();
 
 private:
 
