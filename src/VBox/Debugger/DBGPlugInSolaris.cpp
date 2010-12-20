@@ -165,8 +165,35 @@ typedef struct SOL64v9_modctl
 } SOL64v9_modctl_t;
 AssertCompileSize(SOL64v9_modctl_t, 0x80);
 
+typedef struct SOL32v4_modctl
+{
+    uint32_t    mod_next;               /**<  0 */
+    uint32_t    mod_prev;               /**<  4 */
+    int32_t     mod_id;                 /**<  8 */
+    uint32_t    mod_mp;                 /**<  c Pointer to the kernel runtime loader bits. */
+    uint32_t    mod_inprogress_thread;  /**< 10 */
+    uint32_t    mod_modinfo;            /**< 14 */
+    uint32_t    mod_linkage;            /**< 18 */
+    uint32_t    mod_filename;           /**< 1c */
+    uint32_t    mod_modname;            /**< 20 */
+    int32_t     mod_busy;               /**< 24 */
+    int32_t     mod_stub;               /**< 28 */
+    uint32_t    mod_loaded:1;           /**< 2c DIFF 1 */
+    uint32_t    mod_installed:1;        /**< 2c */
+    uint32_t    mod_uninstalled:1;      /**< 2c */
+    uint32_t    mod_noautounload:1;     /**< 2c */
+    int8_t      mod_want;               /**< 30 DIFF 2 */
+    char        mod_padding1[3];
+    uint32_t    mod_requisites;         /**< 34 */
+    uint32_t    mod_dependents;         /**< 38 */
+    int32_t     mod_loadcnt;            /**< 3c */
+                                             /* DIFF 3: 8 bytes added in v9 */
+} SOL32v4_modctl_t;
+AssertCompileSize(SOL32v4_modctl_t, 0x40);
+
 typedef union SOL_modctl
 {
+    SOL32v4_modctl_t    v4;
     SOL32v9_modctl_t    v9_32;
     SOL32v11_modctl_t   v11_32;
     SOL64v9_modctl_t    v9_64;
@@ -962,6 +989,41 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PVM pVM, void *pvData)
             }
         }
 
+        /* v4 - 32bit only */
+        {
+            DBGFR3AddrFromFlat(pVM, &ModCtlAddr, HitAddr.FlatPtr - RT_OFFSETOF(SOL32v4_modctl_t, mod_loadcnt));
+            SOL32v4_modctl_t ModCtlv4;
+            rc = DBGFR3MemRead(pVM, 0, &ModCtlAddr, &ModCtlv4, sizeof(ModCtlv4));
+            if (RT_SUCCESS(rc))
+            {
+                if (    SOL32_VALID_ADDRESS(ModCtlv4.mod_next)
+                    &&  SOL32_VALID_ADDRESS(ModCtlv4.mod_prev)
+                    &&  ModCtlv4.mod_id == 0
+                    &&  SOL32_VALID_ADDRESS(ModCtlv4.mod_mp)
+                    &&  SOL32_VALID_ADDRESS(ModCtlv4.mod_filename)
+                    &&  SOL32_VALID_ADDRESS(ModCtlv4.mod_modname)
+                    &&  ModCtlv4.mod_requisites == 0
+                    &&  (ModCtlv4.mod_loadcnt == 1   || ModCtlv4.mod_loadcnt == 0) )
+                {
+                    char szUnix[5];
+                    DBGFADDRESS NameAddr;
+                    DBGFR3AddrFromFlat(pVM, &NameAddr, ModCtlv4.mod_modname);
+                    rc = DBGFR3MemRead(pVM, 0, &NameAddr, &szUnix, sizeof(szUnix));
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!strcmp(szUnix, "unix"))
+                        {
+                            pThis->AddrUnixModCtl = ModCtlAddr;
+                            pThis->iModCtlVer = 4;
+                            cbModCtl = sizeof(ModCtlv4);
+                            break;
+                        }
+                        Log(("sol32 mod_name=%.*s v4\n", sizeof(szUnix), szUnix));
+                    }
+                }
+            }
+        }
+
         /* next */
         DBGFR3AddrFromFlat(pVM, &CurAddr, HitAddr.FlatPtr + cbExpr);
     }
@@ -1038,8 +1100,8 @@ static DECLCALLBACK(bool)  dbgDiggerSolarisProbe(PVM pVM, void *pvData)
     bool        f64Bit = false;
 
     /* 32-bit search range. */
-    DBGFR3AddrFromFlat(pVM, &Addr, 0xfe800000);
-    RTGCUINTPTR cbRange = 0xfec00000 - 0xfe800000;
+    DBGFR3AddrFromFlat(pVM, &Addr, 0xe0010000 /*0xfe800000*/);
+    RTGCUINTPTR cbRange = 4 * 1024 * 1024; // 0xfec00000 - 0xfe800000;
 
     DBGFADDRESS HitAddr;
     static const uint8_t s_abSunRelease[] = "SunOS Release ";
