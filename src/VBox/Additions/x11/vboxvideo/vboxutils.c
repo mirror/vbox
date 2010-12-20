@@ -243,7 +243,7 @@ vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
         pViews[i].u32ViewIndex = i;
         pViews[i].u32ViewOffset = 0;
         pViews[i].u32ViewSize = pVBox->cbView;
-        pViews[i].u32MaxScreenSize = pVBox->cbFramebuffer;
+        pViews[i].u32MaxScreenSize = pVBox->cbFBMax;
     }
     return VINF_SUCCESS;
 }
@@ -308,23 +308,23 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
         return FALSE;
     }
-    pVBox->cbView = pVBox->cbFramebuffer = offVRAMBaseMapping;
+    pVBox->cbView = pVBox->cbFBMax = offVRAMBaseMapping;
     pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Requested monitor count: %u\n",
                pVBox->cScreens);
     for (i = 0; i < pVBox->cScreens; ++i)
     {
-        pVBox->cbFramebuffer -= VBVA_MIN_BUFFER_SIZE;
-        pVBox->aoffVBVABuffer[i] = pVBox->cbFramebuffer;
+        pVBox->cbFBMax -= VBVA_MIN_BUFFER_SIZE;
+        pVBox->aoffVBVABuffer[i] = pVBox->cbFBMax;
         TRACE_LOG("VBVA buffer offset for screen %u: 0x%lx\n", i,
-                  (unsigned long) pVBox->cbFramebuffer);
+                  (unsigned long) pVBox->cbFBMax);
         VBoxVBVASetupBufferContext(&pVBox->aVbvaCtx[i],
                                    pVBox->aoffVBVABuffer[i], 
                                    VBVA_MIN_BUFFER_SIZE);
     }
     TRACE_LOG("Maximum framebuffer size: %lu (0x%lx)\n",
-              (unsigned long) pVBox->cbFramebuffer,
-              (unsigned long) pVBox->cbFramebuffer);
+              (unsigned long) pVBox->cbFBMax,
+              (unsigned long) pVBox->cbFBMax);
     rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
                                vboxFillViewInfo, (void *)pVBox);
     if (RT_FAILURE(rc))
