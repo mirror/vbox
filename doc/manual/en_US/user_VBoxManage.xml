@@ -200,17 +200,22 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
         </listitem>
 
         <listitem>
-          <para><computeroutput>hostusb</computeroutput> supplies information
-          about USB devices attached to the host, notably information useful
-          for constructing USB filters and whether they are currently in use
-          by the host.</para>
+          <para><computeroutput>hostinfo</computeroutput> displays information
+          about the host system, such as CPUs, memory size and operating system
+          version.</para>
         </listitem>
 
         <listitem>
-          <para><computeroutput>usbfilters</computeroutput> lists all global
-          USB filters registered with VirtualBox -- that is, filters for
-          devices which are accessible to all virtual machines -- and displays
-          the filter parameters.</para>
+          <para><computeroutput>hostcpuids</computeroutput> dumps the CPUID
+          parameters for the host CPUs. This can be used for a more fine
+          grained analyis of the host's virtualization capabilities.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>hddbackends</computeroutput> lists all known
+          virtual disk back-ends of VirtualBox. For each such format (such as
+          VDI, VMDK or RAW), this lists the back-end's capabilities and
+          configuration.</para>
         </listitem>
 
         <listitem>
@@ -225,10 +230,17 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
         </listitem>
 
         <listitem>
-          <para><computeroutput>hddbackends</computeroutput> lists all known
-          virtual disk back-ends of VirtualBox. For each such format (such as
-          VDI, VMDK or RAW), this lists the back-end's capabilities and
-          configuration.</para>
+          <para><computeroutput>usbhost</computeroutput> supplies information
+          about USB devices attached to the host, notably information useful
+          for constructing USB filters and whether they are currently in use
+          by the host.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>usbfilters</computeroutput> lists all global
+          USB filters registered with VirtualBox -- that is, filters for
+          devices which are accessible to all virtual machines -- and displays
+          the filter parameters.</para>
         </listitem>
 
         <listitem>
@@ -2397,7 +2409,7 @@ Value: 2006.01.01</screen>
     <computeroutput>&lt;vm&gt;</computeroutput>, in each case, can either be a
     VM name or a VM UUID, as with the other VBoxManage commands):<itemizedlist>
         <listitem>
-          <para><computeroutput>enumerate &lt;vm&gt; [-patterns
+          <para><computeroutput>enumerate &lt;vm&gt; [--patterns
           &lt;pattern&gt;]</computeroutput>: This lists all the guest
           properties that are available for the given VM, including the value.
           This list will be very limited if the guest's service process cannot
@@ -2440,7 +2452,7 @@ Value: 2006.01.01</screen>
 
         <listitem>
           <para><computeroutput>set &lt;vm&gt; &lt;property&gt; [&lt;value&gt;
-          [-flags &lt;flags&gt;]]</computeroutput>: This allows you to set a
+          [--flags &lt;flags&gt;]]</computeroutput>: This allows you to set a
           guest property by specifying the key and value. If
           <computeroutput>&lt;value&gt;</computeroutput> is omitted, the
           property is deleted. With <computeroutput>--flags</computeroutput>
