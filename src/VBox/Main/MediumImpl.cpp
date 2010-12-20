@@ -2437,7 +2437,7 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
-                                           aVariant);
+                                           (MediumVariant_T)aVariant);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -2522,8 +2522,9 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     ComObjPtr <Progress> pProgress;
 
-    rc = createDiffStorage(diff, aVariant, pMediumLockList, &pProgress,
-                           false /* aWait */, NULL /* pfNeedsGlobalSaveSettings*/);
+    rc = createDiffStorage(diff, (MediumVariant_T)aVariant, pMediumLockList,
+                           &pProgress, false /* aWait */,
+                           NULL /* pfNeedsGlobalSaveSettings*/);
     if (FAILED(rc))
         delete pMediumLockList;
     else
@@ -2656,7 +2657,8 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::CloneTask(this, pProgress, pTarget, aVariant,
+        pTask = new Medium::CloneTask(this, pProgress, pTarget,
+                                      (MediumVariant_T)aVariant,
                                       pParent, pSourceMediumLockList,
                                       pTargetMediumLockList);
         rc = pTask->rc();

@@ -997,7 +997,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
         Bstr format;
         hardDisk->COMGETTER(Format)(format.asOutParam());
         RTPrintf("Storage format:       %lS\n", format.raw());
-        MediumVariant_T variant;
+        ULONG variant;
         hardDisk->COMGETTER(Variant)(&variant);
         const char *variantStr = "unknown";
         switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
