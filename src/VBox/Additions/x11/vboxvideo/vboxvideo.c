@@ -57,6 +57,7 @@
 #include "version-generated.h"
 #include "product-generated.h"
 #include <xf86.h>
+#include <misc.h>
 
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
@@ -1287,7 +1288,8 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     /* Deactivate the screen if the mode - specifically the virtual width - is
      * too large for VRAM as we sometimes have to do this - see comments in
      * VBOXPreInit. */
-    if (offStart + pVBox->cbLine * cHeight > pVBox->cbFramebuffer)
+    if (   offStart + pVBox->cbLine * cHeight > pVBox->cbFramebuffer
+        || pVBox->cbLine * pScrn->virtualY > pVBox->cbFramebuffer)
         fActive = FALSE;
     /* Deactivate the screen if it is outside of the virtual framebuffer and
      * clamp it to lie inside if it is partly outside. */
@@ -1326,6 +1328,7 @@ static Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     PixmapPtr pPixmap = pScreen->GetScreenPixmap(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     uint64_t cbLine = vboxLineLength(pScrn, width);
+    uint32_t cbOldPixmap;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
     if (!pPixmap) {
@@ -1343,10 +1346,15 @@ static Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     pScreen->ModifyPixmapHeader(pPixmap, width, height,
                                 pScrn->depth, vboxBPP(pScrn), cbLine,
                                 pVBox->base);
+    cbOldPixmap = pVBox->cbLine * pScrn->virtualY;
+    if (cbOldPixmap > pVBox->cbFramebuffer)
+        cbOldPixmap = 0;
     pScrn->virtualX = width;
     pScrn->virtualY = height;
     pScrn->displayWidth = vboxDisplayPitch(pScrn, cbLine);
     pVBox->cbLine = cbLine;
+    /* Clear video RAM for esthetic reasons */
+    memset(pVBox->base, 0, max(cbLine * height, cbOldPixmap));
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
         VBOXDRIUpdateStride(pScrn, pVBox);
