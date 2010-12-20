@@ -725,6 +725,9 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
     CMachine m = session.GetMachine();
     AssertMsgReturn(!m.isNull(), ("Machine must not be null"), (void) 0);
 
+    /* Don't show the inaccessible warning if the user open the vm settings. */
+    mDoneInaccessibleWarningOnce = true;
+
     UISettingsDialog *dlg = new UIVMSettingsDlg(this, m, strCategory, strControl);
     dlg->getFrom();
 
