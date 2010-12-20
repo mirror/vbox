@@ -5,31 +5,31 @@
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Verberg %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation type="unfinished"></translation>
+        <translation>Overige verbergen</translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles weergeven</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Voorkeuren...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Stoppen %1</translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Over %1</translation>
     </message>
 </context>
 <context>
@@ -4380,7 +4380,7 @@ Kies een andere bestandsnaam.</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>Beenden</translation>
+        <translation>Stoppen</translation>
     </message>
     <message>
         <source>&amp;Next</source>
