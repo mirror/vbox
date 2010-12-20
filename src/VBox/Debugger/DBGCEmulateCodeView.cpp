@@ -3746,14 +3746,15 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
 static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    unsigned iArg;
 
     /*
      * Validate input.
      */
-    if (     cArgs >= 2
+    if (     cArgs < 2
         ||  !DBGCVAR_ISPOINTER(paArgs[0].enmType))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "internal error: The parser doesn't do its job properly yet... It might help to use the '%%' operator.\n");
-    for (unsigned iArg = 2; iArg < cArgs; iArg++)
+    for (iArg = 1; iArg < cArgs; iArg++)
         if (paArgs[iArg].enmType != DBGCVAR_TYPE_NUMBER)
             return DBGCCmdHlpFail(pCmdHlp, pCmd, "internal error: The parser doesn't do its job properly yet: Arg #%u is not a number.\n", iArg);
     if (!pVM)
@@ -3776,8 +3777,7 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
      * Do setting.
      */
     DBGCVAR Addr = paArgs[0];
-    unsigned iArg = 1;
-    for (;;)
+    for (iArg = 1;;)
     {
         size_t cbWritten;
         int rc = pCmdHlp->pfnMemWrite(pCmdHlp, pVM, &paArgs[iArg].u, cbElement, &Addr, &cbWritten);
