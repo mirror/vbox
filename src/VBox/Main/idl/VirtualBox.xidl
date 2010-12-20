@@ -12073,7 +12073,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="values" type="wstring" dir="out" safearray="yes">
         <desc>
           Array paralell to the names holding the register values as if the
-          register was returned by <link name="IMachineDebugger::getRegister"/>.
+          register was returned by <link to="IMachineDebugger::getRegister"/>.
         </desc>
       </param>
     </method>
@@ -12116,7 +12116,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="values" type="wstring" dir="in" safearray="yes">
         <desc>
           Array paralell to the names holding the register values. See
-          <link name="IMachineDebugger::setRegister"/> for formatting
+          <link to="IMachineDebugger::setRegister"/> for formatting
           guidelines.
         </desc>
       </param>
