@@ -1617,8 +1617,7 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
     {
         VBoxServiceError("ControlExec: Failed to retrieve exec input command! Error: %Rrc\n", rc);
     }
-    else if (   cbSize <= 0
-             || cbSize >  cbMaxBufSize)
+    else if (cbSize >  cbMaxBufSize)
     {
         VBoxServiceError("ControlExec: Input size is invalid! cbSize=%u\n", cbSize);
         rc = VERR_INVALID_PARAMETER;
@@ -1660,7 +1659,7 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
             uint32_t uStatus = INPUT_STS_UNDEFINED;
             if (RT_SUCCESS(rc))
             {
-                if (cbWritten) /* Did we write something? */
+                if (cbWritten || !cbSize) /* Did we write something or was there anything to write at all? */
                 {
                     uStatus = INPUT_STS_WRITTEN;
                     uFlags = 0;
