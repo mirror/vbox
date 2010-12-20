@@ -5,31 +5,31 @@
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation>Paslaugos</translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti %1</translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti kitką</translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti viską</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuostatos...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigti %1</translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Apie %1</translation>
     </message>
 </context>
 <context>
@@ -181,7 +181,7 @@ jo elementas libgstreamer-plugins-base.</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Ištrinti</translation>
+        <translation>Pašalinti</translation>
     </message>
 </context>
 <context>
@@ -366,15 +366,15 @@ jo elementas libgstreamer-plugins-base.</translation>
     </message>
     <message>
         <source>the file</source>
-        <translation type="unfinished">rinkmeną</translation>
+        <translation>rinkmeną</translation>
     </message>
     <message>
         <source>the directory</source>
-        <translation type="unfinished">aplanką</translation>
+        <translation>aplanką</translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation type="unfinished">simbolinę nuorodą</translation>
+        <translation>simbolinę nuorodą</translation>
     </message>
     <message>
         <source>Delete %1</source>
@@ -784,7 +784,7 @@ nepavyksta pervadinti į
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;lfa kanalas:</translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
@@ -1421,7 +1421,7 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation type="unfinished"></translation>
+        <translation>Devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
@@ -1429,7 +1429,7 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation type="unfinished"></translation>
+        <translation>Gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
@@ -1453,19 +1453,19 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation type="unfinished"></translation>
+        <translation>Malajalių</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinhala</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation type="unfinished"></translation>
+        <translation>Tajų</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation type="unfinished"></translation>
+        <translation>Laosiečių</translation>
     </message>
     <message>
         <source>Tibetan</source>
@@ -1473,7 +1473,7 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation>Mianmaro</translation>
     </message>
     <message>
         <source>Georgian</source>
@@ -1559,7 +1559,7 @@ Vis tiek norite ištrinti?</translation>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Neprisijungta</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
@@ -1567,7 +1567,7 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijungimas prie pagrindinio kompiuterio %1 atmestas</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
@@ -2358,8 +2358,7 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
-        <translatorcomment>Protocol non géré</translatorcomment>
-        <translation type="unfinished"></translation>
+        <translation>Nepalaikomas protokolo tipas</translation>
     </message>
     <message>
         <source>Invalid socket descriptor</source>
@@ -2377,7 +2376,6 @@ Vis tiek norite ištrinti?</translation>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translatorcomment>Connexion expirée</translatorcomment>
         <translation>Baigėsi ryšio laikas</translation>
     </message>
     <message>
@@ -2751,8 +2749,7 @@ Vis tiek norite ištrinti?</translation>
     <name>QPSQLResult</name>
     <message>
         <source>Unable to create query</source>
-        <translatorcomment>Impossible de créer la requête</translatorcomment>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyksta sukurti užklausos</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -4241,13 +4238,12 @@ Pasirinkite kitą rinkmenos pavadinimą.</translation>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translatorcomment>Requête annulée</translatorcomment>
-        <translation type="unfinished"></translation>
+        <translation>Atsisakyta užklausos</translation>
     </message>
     <message>
         <source>Request blocked</source>
         <translatorcomment>Requête bloquée</translatorcomment>
-        <translation type="unfinished"></translation>
+        <translation>Užklausa užblokuota</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
@@ -4273,7 +4269,7 @@ Pasirinkite kitą rinkmenos pavadinimą.</translation>
     <message>
         <source>Bad HTTP request</source>
         <translatorcomment>Requête HTTP erronée</translatorcomment>
-        <translation type="unfinished"></translation>
+        <translation>Bloga HTTP užklausa</translation>
     </message>
     <message>
         <source>Submit</source>
