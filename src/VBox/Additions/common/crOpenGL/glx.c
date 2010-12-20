@@ -399,7 +399,7 @@ VBOXGLXTAG(glXChooseVisual)( Display *dpy, int screen, int *attribList )
                 break;
 
             case GLX_DEPTH_SIZE:
-                if (attrib[1] > 16)
+                if (attrib[1] > 24)
                     goto err_exit;
                 attrib++;
                 break;

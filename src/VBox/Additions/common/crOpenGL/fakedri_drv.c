@@ -104,7 +104,14 @@ static const __DRIswrastExtension *gpSwDriSwrastExtension = NULL;
 
 extern const __DRIextension * __driDriverExtensions[];
 
-#define GLAPI_ENTRY(Func) SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("gl"#Func), cr_gl##Func);
+#define VBOX_SET_MESA_FUNC(table, name, func) \
+    if (_glapi_get_proc_offset(name)>=0) SET_by_offset(table, _glapi_get_proc_offset(name), func); \
+    else crWarning("%s not found in mesa table", name)
+
+#define GLAPI_ENTRY(Func) VBOX_SET_MESA_FUNC(vbox_glapi_table, "gl"#Func, cr_gl##Func);
+
+static void
+vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd);
 
 static void
 vboxPatchMesaGLAPITable()
@@ -121,25 +128,25 @@ vboxPatchMesaGLAPITable()
 
     #include "fakedri_glfuncsList.h"
 
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glBlendEquationSeparateEXT"), cr_glBlendEquationSeparate);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSampleMaskSGIS"), cr_glSampleMaskEXT);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glSamplePatternSGIS"), cr_glSamplePatternEXT);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2dMESA"), cr_glWindowPos2d);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2dvMESA"), cr_glWindowPos2dv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2fMESA"), cr_glWindowPos2f);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2fvMESA"), cr_glWindowPos2fv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2iMESA"), cr_glWindowPos2i);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2ivMESA"), cr_glWindowPos2iv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2sMESA"), cr_glWindowPos2s);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos2svMESA"), cr_glWindowPos2sv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3dMESA"), cr_glWindowPos3d);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3dvMESA"), cr_glWindowPos3dv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3fMESA"), cr_glWindowPos3f);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3fvMESA"), cr_glWindowPos3fv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3iMESA"), cr_glWindowPos3i);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3ivMESA"), cr_glWindowPos3iv);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3sMESA"), cr_glWindowPos3s);
-    SET_by_offset(vbox_glapi_table, _glapi_get_proc_offset("glWindowPos3svMESA"), cr_glWindowPos3sv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glBlendEquationSeparateEXT", cr_glBlendEquationSeparate);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glSampleMaskSGIS", cr_glSampleMaskEXT);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glSamplePatternSGIS", cr_glSamplePatternEXT);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2dMESA", cr_glWindowPos2d);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2dvMESA", cr_glWindowPos2dv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2fMESA", cr_glWindowPos2f);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2fvMESA", cr_glWindowPos2fv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2iMESA", cr_glWindowPos2i);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2ivMESA", cr_glWindowPos2iv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2sMESA", cr_glWindowPos2s);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos2svMESA", cr_glWindowPos2sv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3dMESA", cr_glWindowPos3d);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3dvMESA", cr_glWindowPos3dv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3fMESA", cr_glWindowPos3f);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3fvMESA", cr_glWindowPos3fv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3iMESA", cr_glWindowPos3i);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3ivMESA", cr_glWindowPos3iv);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3sMESA", cr_glWindowPos3s);
+    VBOX_SET_MESA_FUNC(vbox_glapi_table, "glWindowPos3svMESA", cr_glWindowPos3sv);
 
     _glapi_set_dispatch(vbox_glapi_table);
 };
@@ -229,7 +236,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         rv = dladdr1(pStart, &dlip1, (void**)&sym1, RTLD_DL_SYMENT);
         if (!rv || !sym1)
         {
-            crError("Failed to get size for %p", pStart);
+            crError("Failed to get size for vbox %p", pStart);
             return;
         }
 

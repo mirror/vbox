@@ -23,7 +23,8 @@ static GLboolean packspu_CheckTexImageFormat(GLenum format)
         && format!=GL_BGRA
         && format!=GL_LUMINANCE
         && format!=GL_LUMINANCE_ALPHA
-        && format!=GL_DEPTH_COMPONENT)
+        && format!=GL_DEPTH_COMPONENT
+        && format!=GL_DEPTH_STENCIL)
     {
         /*crWarning("crPackCheckTexImageFormat FAILED format 0x%x isn't valid", format);*/
         return GL_FALSE;
@@ -53,7 +54,8 @@ static GLboolean packspu_CheckTexImageType(GLenum type)
         && type!=GL_UNSIGNED_INT_8_8_8_8
         && type!=GL_UNSIGNED_INT_8_8_8_8_REV
         && type!=GL_UNSIGNED_INT_10_10_10_2
-        && type!=GL_UNSIGNED_INT_2_10_10_10_REV)
+        && type!=GL_UNSIGNED_INT_2_10_10_10_REV
+        && type!=GL_UNSIGNED_INT_24_8)
     {
         /*crWarning("crPackCheckTexImageType FAILED type 0x%x isn't valid", type);*/
         return GL_FALSE;
@@ -83,6 +85,7 @@ static GLboolean packspu_CheckTexImageInternalFormat(GLint internalformat)
         && internalformat!=GL_DEPTH_COMPONENT16
         && internalformat!=GL_DEPTH_COMPONENT24
         && internalformat!=GL_DEPTH_COMPONENT32
+        && internalformat!=GL_DEPTH24_STENCIL8
         && internalformat!=GL_LUMINANCE
         && internalformat!=GL_LUMINANCE4
         && internalformat!=GL_LUMINANCE8
