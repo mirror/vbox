@@ -48,6 +48,9 @@ static int crSizeOfType( GLenum type )
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
 #endif
+#ifdef CR_EXT_framebuffer_object
+        case GL_UNSIGNED_INT_24_8:
+#endif
         case GL_UNSIGNED_INT:
         case GL_INT:
         case GL_FLOAT:
@@ -99,6 +102,10 @@ int crPixelSize( GLenum format, GLenum type )
         case GL_UNSIGNED_INT_8_8_8_8_REV:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
+            return 4;
+#endif
+#ifdef CR_EXT_framebuffer_object
+        case GL_UNSIGNED_INT_24_8:
             return 4;
 #endif
         case GL_UNSIGNED_INT:
