@@ -394,9 +394,8 @@ int handleStorageAttach(HandlerArg *a)
                         mediumAttachment->COMGETTER(Type)(&deviceType);
 
                         ComPtr<IMedium> pExistingMedium;
-                        rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
-                                                       deviceType,
-                                                       pExistingMedium.asOutParam());
+                        rc = findMedium(a, pszMedium, deviceType, true /* fSilent */,
+                                        pExistingMedium);
                         if (pExistingMedium)
                         {
                             if (    (deviceType == DeviceType_DVD)
@@ -543,18 +542,8 @@ int handleStorageAttach(HandlerArg *a)
                 if (bstrMedium.isEmpty())
                     throw Utf8Str("Missing --medium argument");
 
-                rc = a->virtualBox->FindMedium(bstrMedium.raw(),
-                                               devTypeRequested,
-                                               pMedium2Mount.asOutParam());
-                if (FAILED(rc) || !pMedium2Mount)
-                {
-                    /* not registered, do that on the fly */
-                    CHECK_ERROR(a->virtualBox,
-                                OpenMedium(bstrMedium.raw(),
-                                           devTypeRequested,
-                                           AccessMode_ReadWrite,
-                                           pMedium2Mount.asOutParam()));
-                }
+                rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
+                                      pMedium2Mount, NULL);
                 if (!pMedium2Mount)
                     throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
             }
