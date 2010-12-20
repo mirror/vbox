@@ -1421,7 +1421,7 @@
       </listitem>
 
       <listitem>
-        <para>RDP video acceleration (see <xref linkend="vrdp-videochannel"/>)</para>
+        <para>RDP video acceleration (see <xref linkend="vrde-videochannel"/>)</para>
       </listitem>
 
       <listitem>
