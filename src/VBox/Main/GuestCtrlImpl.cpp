@@ -299,23 +299,29 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                         while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
-                            vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(), RT_MIN(cbToRead, _1M), &cbRead);
-                            /*
-                             * Some other error occured? There might be a chance that RTFileRead
-                             * could not resolve/map the native error code to an IPRT code, so just
-                             * print a generic error.
-                             */
-                            if (RT_FAILURE(vrc))
+                            if (!cbToRead)
+                                cbRead = 0;
+                            else
                             {
-                                rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                                     Guest::tr("Could not read from file \"%s\" (%Rrc)"),
-                                                                     aTask->strSource.c_str(), vrc);
-                                break;
+                                vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(),
+                                                 RT_MIN(cbToRead, _1M), &cbRead);
+                                /*
+                                 * Some other error occured? There might be a chance that RTFileRead
+                                 * could not resolve/map the native error code to an IPRT code, so just
+                                 * print a generic error.
+                                 */
+                                if (RT_FAILURE(vrc))
+                                {
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Could not read from file \"%s\" (%Rrc)"),
+                                                                         aTask->strSource.c_str(), vrc);
+                                    break;
+                                }
                             }
 
-                            /* Resize buffer to reflect amount we just have read. */
-                            if (cbRead > 0)
-                                aInputData.resize(cbRead);
+                            /* Resize buffer to reflect amount we just have read.
+                             * Size 0 is allowed! */
+                            aInputData.resize(cbRead);
 
                             ULONG uFlags = ProcessInputFlag_None;
                             /* Did we reach the end of the content we want to transfer (last chunk)? */
