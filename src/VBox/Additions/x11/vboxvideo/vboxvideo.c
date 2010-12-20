@@ -1158,6 +1158,8 @@ VBOXEnterVT(int scrnIndex, int flags)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
+    if (pVBox->fHaveHGSMI)
+        vboxEnableVbva(pScrn);
     pVBox->vtSwitch = FALSE;
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
@@ -1172,8 +1174,6 @@ VBOXEnterVT(int scrnIndex, int flags)
                      pScrn->frameY0))
         return FALSE;
 #endif
-    if (pVBox->fHaveHGSMI)
-        vboxEnableVbva(pScrn);
     return TRUE;
 }
 

@@ -194,7 +194,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
     unsigned j;
 
     pVBox = pScrn->driverPrivate;
-    if (pVBox->fHaveHGSMI == FALSE)
+    if (pVBox->fHaveHGSMI == FALSE || pVBox->vtSwitch)
         return;
 
     for (i = 0; i < iRects; ++i)
@@ -258,10 +258,6 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     int rc = VINF_SUCCESS;
-    unsigned i;
-    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory,
-             cScreens;
-    void *pvGuestHeapMemory;
 
     pVBox->cScreens = 1;
     if (!VBoxHGSMIIsSupported())
@@ -269,6 +265,33 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
         xf86DrvMsg(scrnIndex, X_ERROR, "The graphics device does not seem to support HGSMI.  Disableing video acceleration.\n");
         return FALSE;
     }
+
+    /* Set up the dirty rectangle handler.  It will be added into a function
+     * chain and gets removed when the screen is cleaned up. */
+    if (ShadowFBInit2(pScreen, NULL, vboxHandleDirtyRect) != TRUE)
+    {
+        xf86DrvMsg(scrnIndex, X_ERROR,
+                   "Unable to install dirty rectangle handler for VirtualBox graphics acceleration.\n");
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/**
+ * Initialise VirtualBox's accelerated video extensions.
+ *
+ * @returns TRUE on success, FALSE on failure
+ */
+static Bool
+vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
+{
+    int rc = VINF_SUCCESS;
+    unsigned i;
+    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory;
+    void *pvGuestHeapMemory;
+
+    if (!pVBox->fHaveHGSMI)
+        return FALSE;
     VBoxHGSMIGetBaseMappingInfo(pScrn->videoRam * 1024, &offVRAMBaseMapping,
                                 NULL, &offGuestHeapMemory, &cbGuestHeapMemory,
                                 NULL);
@@ -282,12 +305,12 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
                                     offVRAMBaseMapping + offGuestHeapMemory);
     if (RT_FAILURE(rc))
     {
-        xf86DrvMsg(scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
         return FALSE;
     }
     pVBox->cbView = pVBox->cbFramebuffer = offVRAMBaseMapping;
     pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
-    xf86DrvMsg(scrnIndex, X_INFO, "Requested monitor count: %u\n",
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Requested monitor count: %u\n",
                pVBox->cScreens);
     for (i = 0; i < pVBox->cScreens; ++i)
     {
@@ -304,13 +327,9 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
               (unsigned long) pVBox->cbFramebuffer);
     rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
                                vboxFillViewInfo, (void *)pVBox);
-
-    /* Set up the dirty rectangle handler.  It will be added into a function
-     * chain and gets removed when the screen is cleaned up. */
-    if (ShadowFBInit2(pScreen, NULL, vboxHandleDirtyRect) != TRUE)
+    if (RT_FAILURE(rc))
     {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Unable to install dirty rectangle handler for VirtualBox graphics acceleration.\n");
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to send the view information to the host, rc=%d\n", rc);
         return FALSE;
     }
     return TRUE;
@@ -766,7 +785,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    if (!pVBox->fHaveHGSMI)
+    if (!vboxSetupVRAMVbva(pScrn, pVBox))
         return FALSE;
     for (i = 0; i < pVBox->cScreens; ++i)
     {
