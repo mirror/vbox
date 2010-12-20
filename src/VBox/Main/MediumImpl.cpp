@@ -1470,7 +1470,7 @@ STDMETHODIMP Medium::COMGETTER(State)(MediumState_T *aState)
     return S_OK;
 }
 
-STDMETHODIMP Medium::COMGETTER(Variant)(MediumVariant_T *aVariant)
+STDMETHODIMP Medium::COMGETTER(Variant)(ULONG *aVariant)
 {
     CheckComArgOutPointerValid(aVariant);
 
@@ -2392,7 +2392,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
 }
 
 STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
-                                       MediumVariant_T aVariant,
+                                       ULONG aVariant,
                                        IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
@@ -2482,7 +2482,7 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
 }
 
 STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
-                                       MediumVariant_T aVariant,
+                                       ULONG aVariant,
                                        IProgress **aProgress)
 {
     CheckComArgNotNull(aTarget);
@@ -2568,7 +2568,7 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 }
 
 STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
-                             MediumVariant_T aVariant,
+                             ULONG aVariant,
                              IMedium *aParent,
                              IProgress **aProgress)
 {
