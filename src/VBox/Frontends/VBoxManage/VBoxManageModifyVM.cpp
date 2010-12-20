@@ -682,18 +682,10 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     ComPtr<IMedium> hardDisk;
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz).raw(),
-                                                   DeviceType_HardDisk,
-                                                   hardDisk.asOutParam());
+                    rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
+                                          hardDisk, NULL);
                     if (FAILED(rc))
-                    {
-                        /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenMedium(Bstr(ValueUnion.psz).raw(),
-                                               DeviceType_HardDisk,
-                                               AccessMode_ReadWrite,
-                                               hardDisk.asOutParam()));
-                    }
+                        break;
                     if (hardDisk)
                     {
                         CHECK_ERROR(machine, AttachDevice(bstrController.raw(),
@@ -784,21 +776,11 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    /* first guess is that it's a UUID */
                     ComPtr<IMedium> hardDisk;
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz).raw(),
-                                                   DeviceType_HardDisk,
-                                                   hardDisk.asOutParam());
-                    /* not successful? Then it must be a filename */
+                    rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
+                                          hardDisk, NULL);
                     if (FAILED(rc))
-                    {
-                        /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenMedium(Bstr(ValueUnion.psz).raw(),
-                                               DeviceType_HardDisk,
-                                               AccessMode_ReadWrite,
-                                               hardDisk.asOutParam()));
-                    }
+                        break;
                     if (hardDisk)
                     {
                         rc = machine->AttachDevice(Bstr("LsiLogic").raw(),
@@ -922,20 +904,10 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    /* first assume it's a UUID */
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz).raw(),
-                                                   DeviceType_DVD,
-                                                   dvdMedium.asOutParam());
-                    if (FAILED(rc) || !dvdMedium)
-                    {
-                        /* not registered, do that on the fly */
-                        Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenMedium(Bstr(ValueUnion.psz).raw(),
-                                               DeviceType_DVD,
-                                               AccessMode_ReadWrite,
-                                               dvdMedium.asOutParam()));
-                    }
+                    rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_DVD,
+                                          dvdMedium, NULL);
+                    if (FAILED(rc))
+                        break;
                     if (!dvdMedium)
                     {
                         rc = E_FAIL;
@@ -995,20 +967,10 @@ int handleModifyVM(HandlerArg *a)
                     }
                     else
                     {
-                        /* first assume it's a UUID */
-                        rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz).raw(),
-                                                       DeviceType_Floppy,
-                                                       floppyMedium.asOutParam());
-                        if (FAILED(rc) || !floppyMedium)
-                        {
-                            /* not registered, do that on the fly */
-                            Bstr emptyUUID;
-                            CHECK_ERROR(a->virtualBox,
-                                        OpenMedium(Bstr(ValueUnion.psz).raw(),
-                                                   DeviceType_Floppy,
-                                                   AccessMode_ReadWrite,
-                                                   floppyMedium.asOutParam()));
-                        }
+                        rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_Floppy,
+                                              floppyMedium, NULL);
+                        if (FAILED(rc))
+                            break;
                         if (!floppyMedium)
                         {
                             rc = E_FAIL;

@@ -148,6 +148,97 @@ static int parseBool(const char *psz, bool *pb)
     return rc;
 }
 
+HRESULT findMedium(HandlerArg *a, const char *pszFilenameOrUuid,
+                   DeviceType_T enmDevType, bool fSilent,
+                   ComPtr<IMedium> &pMedium)
+{
+    HRESULT rc;
+    Guid id(pszFilenameOrUuid);
+    char szFilenameAbs[RTPATH_MAX] = "";
+
+    /* If it is no UUID, convert the filename to an absolute one. */
+    if (id.isEmpty())
+    {
+        int irc = RTPathAbs(pszFilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+        if (RT_FAILURE(irc))
+        {
+            if (!fSilent)
+                RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilenameOrUuid);
+            return E_FAIL;
+        }
+        pszFilenameOrUuid = szFilenameAbs;
+    }
+
+    if (!fSilent)
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(pszFilenameOrUuid).raw(),
+                                              enmDevType, pMedium.asOutParam()));
+    else
+        rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(),
+                                       enmDevType, pMedium.asOutParam());
+    return rc;
+}
+
+HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
+                         DeviceType_T enmDevType, ComPtr<IMedium> &pMedium,
+                         bool *pfWasUnknown)
+{
+    HRESULT rc;
+    bool fWasUnknown = false;
+    Guid id(pszFilenameOrUuid);
+    char szFilenameAbs[RTPATH_MAX] = "";
+
+    /* If it is no UUID, convert the filename to an absolute one. */
+    if (id.isEmpty())
+    {
+        int irc = RTPathAbs(pszFilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+        if (RT_FAILURE(irc))
+        {
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilenameOrUuid);
+            return E_FAIL;
+        }
+        pszFilenameOrUuid = szFilenameAbs;
+    }
+
+    rc = a->virtualBox->FindMedium(Bstr(pszFilenameOrUuid).raw(), enmDevType,
+                                   pMedium.asOutParam());
+    /* If the medium is unknown try to open it. */
+    if (!pMedium)
+    {
+        CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilenameOrUuid).raw(),
+                                              enmDevType, AccessMode_ReadWrite,
+                                              pMedium.asOutParam()));
+        if (SUCCEEDED(rc))
+            fWasUnknown = true;
+    }
+    if (RT_VALID_PTR(pfWasUnknown))
+        *pfWasUnknown = fWasUnknown;
+    return rc;
+}
+
+static HRESULT createHardDisk(HandlerArg *a, const char *pszFormat,
+                              const char *pszFilename, ComPtr<IMedium> &pMedium)
+{
+    HRESULT rc;
+    char szFilenameAbs[RTPATH_MAX] = "";
+
+    /** @todo laziness shortcut. should really check the MediumFormatCapabilities */
+    if (RTStrICmp(pszFormat, "iSCSI"))
+    {
+        int irc = RTPathAbs(pszFilename, szFilenameAbs, sizeof(szFilenameAbs));
+        if (RT_FAILURE(irc))
+        {
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
+            return E_FAIL;
+        }
+        pszFilename = szFilenameAbs;
+    }
+
+    CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr(pszFormat).raw(),
+                                              Bstr(pszFilename).raw(),
+                                              pMedium.asOutParam()));
+    return rc;
+}
+
 static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
 {
     { "--filename",     'f', RTGETOPT_REQ_STRING },
@@ -167,9 +258,9 @@ int handleCreateHardDisk(HandlerArg *a)
 {
     HRESULT rc;
     int vrc;
-    Bstr filename;
+    const char *filename = NULL;
     uint64_t size = 0;
-    Bstr format = "VDI";
+    const char *format = "VDI";
     MediumVariant_T DiskVariant = MediumVariant_Standard;
 
     int c;
@@ -233,11 +324,13 @@ int handleCreateHardDisk(HandlerArg *a)
     }
 
     /* check the outcome */
-    if (   filename.isEmpty()
+    if (   !filename
+        || !*filename
         || size == 0)
         return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
 
     /* check for filename extension */
+    /** @todo use IMediumFormat to cover all extensions generically */
     Utf8Str strName(filename);
     if (!RTPathHaveExt(strName.c_str()))
     {
@@ -248,12 +341,11 @@ int handleCreateHardDisk(HandlerArg *a)
             strName.append(".vhd");
         else
             strName.append(".vdi");
-        filename = Bstr(strName);
+        filename = strName.c_str();
     }
 
     ComPtr<IMedium> hardDisk;
-    CHECK_ERROR(a->virtualBox, CreateHardDisk(format.raw(), filename.raw(),
-                                              hardDisk.asOutParam()));
+    rc = createHardDisk(a, format, filename, hardDisk);
     if (SUCCEEDED(rc) && hardDisk)
     {
         ComPtr<IProgress> progress;
@@ -380,40 +472,10 @@ int handleModifyHardDisk(HandlerArg *a)
     /* Depending on the operation the medium must be in the registry or
      * may be opened on demand. */
     if (fModifyDiskType || fModifyAutoReset)
-    {
-        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
-                                              DeviceType_HardDisk,
-                                              hardDisk.asOutParam()));
-    }
+        rc = findMedium(a, FilenameOrUuid, DeviceType_HardDisk, false /* fSilent */, hardDisk);
     else
-    {
-        rc = a->virtualBox->FindMedium(Bstr(FilenameOrUuid).raw(),
-                                       DeviceType_HardDisk,
-                                       hardDisk.asOutParam());
-        /* the hard disk image might not be registered */
-        if (!hardDisk)
-        {
-            unknown = true;
-            rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),
-                                           DeviceType_HardDisk,
-                                           AccessMode_ReadWrite,
-                                           hardDisk.asOutParam());
-            if (rc == VBOX_E_FILE_ERROR)
-            {
-                char szFilenameAbs[RTPATH_MAX] = "";
-                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-                if (RT_FAILURE(irc))
-                {
-                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
-                    return 1;
-                }
-                CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                      DeviceType_HardDisk,
-                                                      AccessMode_ReadWrite,
-                                                      hardDisk.asOutParam()));
-            }
-        }
-    }
+        rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk,
+                              hardDisk, &unknown);
     if (FAILED(rc))
         return 1;
     if (hardDisk.isNull())
@@ -491,7 +553,8 @@ int handleCloneHardDisk(HandlerArg *a)
 {
     HRESULT rc;
     int vrc;
-    Bstr src, dst;
+    const char *pszSrc = NULL;
+    const char *pszDst = NULL;
     Bstr format;
     MediumVariant_T DiskVariant = MediumVariant_Standard;
     bool fExisting = false;
@@ -529,10 +592,10 @@ int handleCloneHardDisk(HandlerArg *a)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (src.isEmpty())
-                    src = ValueUnion.psz;
-                else if (dst.isEmpty())
-                    dst = ValueUnion.psz;
+                if (!pszSrc)
+                    pszSrc = ValueUnion.psz;
+                else if (!pszDst)
+                    pszDst = ValueUnion.psz;
                 else
                     return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", ValueUnion.psz);
                 break;
@@ -554,9 +617,9 @@ int handleCloneHardDisk(HandlerArg *a)
         }
     }
 
-    if (src.isEmpty())
+    if (!pszSrc)
         return errorSyntax(USAGE_CLONEHD, "Mandatory UUID or input file parameter missing");
-    if (dst.isEmpty())
+    if (!pszDst)
         return errorSyntax(USAGE_CLONEHD, "Mandatory output file parameter missing");
     if (fExisting && (!format.isEmpty() || DiskVariant != MediumType_Normal))
         return errorSyntax(USAGE_CLONEHD, "Specified options which cannot be used with --existing");
@@ -566,90 +629,32 @@ int handleCloneHardDisk(HandlerArg *a)
     bool fSrcUnknown = false;
     bool fDstUnknown = false;
 
-    rc = a->virtualBox->FindMedium(src.raw(), DeviceType_HardDisk,
-                                   srcDisk.asOutParam());
-    /* no? well, then it's an unknown image */
-    if (FAILED (rc))
-    {
-        rc = a->virtualBox->OpenMedium(src.raw(), DeviceType_HardDisk,
-                                       AccessMode_ReadWrite,
-                                       srcDisk.asOutParam());
-        if (rc == VBOX_E_FILE_ERROR)
-        {
-            char szFilenameAbs[RTPATH_MAX] = "";
-            int irc = RTPathAbs(Utf8Str(src).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(irc))
-            {
-                RTMsgError("Cannot convert filename \"%s\" to absolute path", Utf8Str(src).c_str());
-                return 1;
-            }
-            CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                  DeviceType_HardDisk,
-                                                  AccessMode_ReadWrite,
-                                                  srcDisk.asOutParam()));
-        }
-        else if (SUCCEEDED(rc))
-            fSrcUnknown = true;
-        else
-        {
-            com::GluePrintRCMessage(rc);
-            return 1;
-        }
-    }
+    rc = findOrOpenMedium(a, pszSrc, DeviceType_HardDisk, srcDisk, &fSrcUnknown);
+    if (FAILED(rc))
+        return 1;
 
     do
     {
         /* open/create destination hard disk */
         if (fExisting)
         {
-            rc = a->virtualBox->FindMedium(dst.raw(), DeviceType_HardDisk,
-                                           dstDisk.asOutParam());
-            /* no? well, then it's an unknown image */
+            rc = findOrOpenMedium(a, pszDst, DeviceType_HardDisk, dstDisk, &fDstUnknown);
             if (FAILED(rc))
-            {
-                rc = a->virtualBox->OpenMedium(dst.raw(), DeviceType_HardDisk,
-                                               AccessMode_ReadWrite,
-                                               dstDisk.asOutParam());
-                if (rc == VBOX_E_FILE_ERROR)
-                {
-                    char szFilenameAbs[RTPATH_MAX] = "";
-                    int irc = RTPathAbs(Utf8Str(dst).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
-                    if (RT_FAILURE(irc))
-                    {
-                        RTMsgError("Cannot convert filename \"%s\" to absolute path", Utf8Str(dst).c_str());
-                        return 1;
-                    }
-                    CHECK_ERROR_BREAK(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                                DeviceType_HardDisk,
-                                                                AccessMode_ReadWrite,
-                                                                dstDisk.asOutParam()));
-                }
-                else if (FAILED(rc))
-                {
-                    com::GluePrintRCMessage(rc);
-                    break;
-                }
+                break;
 
-                /* If the image wasn't opened before, close it at the end. */
-                if (SUCCEEDED(rc))
-                    fDstUnknown = true;
-            }
-            if (SUCCEEDED(rc))
-            {
-                /* Perform accessibility check now. */
-                MediumState_T state;
-                CHECK_ERROR_BREAK(dstDisk, RefreshState(&state));
-                CHECK_ERROR_BREAK(dstDisk, COMGETTER(Format)(format.asOutParam()));
-            }
+            /* Perform accessibility check now. */
+            MediumState_T state;
+            CHECK_ERROR_BREAK(dstDisk, RefreshState(&state));
+            CHECK_ERROR_BREAK(dstDisk, COMGETTER(Format)(format.asOutParam()));
         }
         else
         {
             /* use the format of the source hard disk if unspecified */
             if (format.isEmpty())
                 CHECK_ERROR_BREAK(srcDisk, COMGETTER(Format)(format.asOutParam()));
-            CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(format.raw(),
-                                                            dst.raw(),
-                                                            dstDisk.asOutParam()));
+            rc = createHardDisk(a, Utf8Str(format).c_str(), pszDst, dstDisk);
+            if (FAILED(rc))
+                break;
         }
 
         ComPtr<IProgress> progress;
@@ -918,39 +923,10 @@ int handleShowHardDiskInfo(HandlerArg *a)
 
     ComPtr<IMedium> hardDisk;
     bool unknown = false;
-    /* first guess is that it's a UUID */
-    rc = a->virtualBox->FindMedium(Bstr(FilenameOrUuid).raw(),
-                                   DeviceType_HardDisk,
-                                   hardDisk.asOutParam());
-    /* no? well, then it's an unknown image */
+
+    rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, hardDisk, &unknown);
     if (FAILED(rc))
-    {
-        rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),
-                                       DeviceType_HardDisk,
-                                       AccessMode_ReadWrite,
-                                       hardDisk.asOutParam());
-        if (rc == VBOX_E_FILE_ERROR)
-        {
-            char szFilenameAbs[RTPATH_MAX] = "";
-            int vrc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
-                return 1;
-            }
-            CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs).raw(),
-                                                  DeviceType_HardDisk,
-                                                  AccessMode_ReadWrite,
-                                                  hardDisk.asOutParam()));
-        }
-        else if (SUCCEEDED(rc))
-            unknown = true;
-        else
-        {
-            com::GluePrintRCMessage(rc);
-            return 1;
-        }
-    }
+        return 1;
 
     do
     {
@@ -1176,17 +1152,11 @@ int handleCloseMedium(HandlerArg *a)
     ComPtr<IMedium> medium;
 
     if (cmd == CMD_DISK)
-        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
-                                              DeviceType_HardDisk,
-                                              medium.asOutParam()));
+        rc = findMedium(a, FilenameOrUuid, DeviceType_HardDisk, false /* fSilent */, medium);
     else if (cmd == CMD_DVD)
-        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
-                                              DeviceType_DVD,
-                                              medium.asOutParam()));
+        rc = findMedium(a, FilenameOrUuid, DeviceType_DVD, false /* fSilent */, medium);
     else if (cmd == CMD_FLOPPY)
-        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid).raw(),
-                                              DeviceType_Floppy,
-                                              medium.asOutParam()));
+        rc = findMedium(a, FilenameOrUuid, DeviceType_Floppy, false /* fSilent */, medium);
 
     if (SUCCEEDED(rc) && medium)
     {
