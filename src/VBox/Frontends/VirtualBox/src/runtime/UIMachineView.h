@@ -63,6 +63,9 @@ public:
     /* Public members: */
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
 
+    /* Framebuffer aspect ratio: */
+    double aspectRatio() const;
+
 signals:
 
     /* Utility signals: */
