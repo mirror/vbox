@@ -1094,6 +1094,14 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo):
     else:
         reportError(ctx, progress)
 
+def copyToGuest(ctx,console,args,user,passwd):
+    src = args[0]
+    dst = args[1]
+    flags = 0
+    print "Copying host %s to guest %s" %(src,dst)
+    progress = console.guest.copyToGuest(src, dst, user, passwd, flags)
+    progressBar(ctx, progress)
+
 def nh_raw_input(prompt=""):
     stream = sys.stdout
     prompt = str(prompt)
@@ -1128,6 +1136,19 @@ def gexecCmd(ctx,args):
     env = [] # ["DISPLAY=:0"]
     (user,passwd) = getCred(ctx)
     gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env,user,passwd,10000))
+    cmdExistingVm(ctx, mach, 'guestlambda', gargs)
+    return 0
+
+def gcopyCmd(ctx,args):
+    if (len(args) < 2):
+        print "usage: gcopy [vmname|uuid] host_path guest_path"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    gargs = args[2:]
+    (user,passwd) = getCred(ctx)
+    gargs.insert(0, lambda ctx,mach,console,args: copyToGuest(ctx,console,args,user,passwd))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
@@ -3039,6 +3060,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'info':['Shows info on machine', infoCmd, 0],
             'ginfo':['Shows info on guest', ginfoCmd, 0],
             'gexec':['Executes program in the guest', gexecCmd, 0],
+            'gcopy':['Copy file to the guest', gcopyCmd, 0],
             'alias':['Control aliases', aliasCmd, 0],
             'verbose':['Toggle verbosity', verboseCmd, 0],
             'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd, 0],
