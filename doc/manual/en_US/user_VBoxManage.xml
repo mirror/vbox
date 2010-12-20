@@ -1943,6 +1943,12 @@ Virtual system 0:
           Execute <computeroutput>sdelete -c</computeroutput> in the guest to
           zero the free disk space before compressing the virtual disk image.
           </para>
+          
+          <para>Please note that compacting is currently only available for
+          VDI images. A similar effect can be achieved by zeroing out free
+          blocks and then cloning the disk to any other dynamically expanding
+          format. You can use this workaround until compacting is also supported
+          for disk formats other than VDI.</para>
         </listitem>
 
         <listitem>

@@ -411,7 +411,7 @@
   <sect1 id="hdimagewrites">
     <title>Special image write modes</title>
 
-    <para>For each virtual disk image supported by VirtualBox, you can use
+    <para>For each virtual disk image supported by VirtualBox, you can
     determine separately how it should be affected by write operations from a
     virtual machine and snapshot operations. This applies to all of the
     aforementioned image formats (VDI, VMDK, VHD or HDD) and irrespective of
