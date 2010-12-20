@@ -584,7 +584,7 @@
       <para>It will list the required OpenGL extensions one by one and will
       show you which one failed the test. This usually means that you are
       running an outdated or misconfigured OpenGL driver on your host. It can
-      also mean that your video chip is lacking require functionality.</para>
+      also mean that your video chip is lacking required functionality.</para>
     </sect2>
   </sect1>
 

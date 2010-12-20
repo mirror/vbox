@@ -542,7 +542,7 @@
 
             <glossdef>
               <para>This enables Extensible Firmware Interface (EFI), which
-              replaces the legacy BIOS, which may be useful for certain
+              replaces the legacy BIOS and may be useful for certain
               advanced use cases. Please refer to <xref linkend="efi" /> for
               details.</para>
             </glossdef>
@@ -1262,8 +1262,8 @@
     line interface like this: <screen>VBoxManage modifyvm "VM name" --firmware efi</screen>
     To switch back to using the BIOS, use: <screen>VBoxManage modifyvm "VM name" --firmware bios</screen>One
     notable user of EFI is Apple's Mac OS X, but recent Linuxes (such as
-    Fedora 11) and Windows (starting with Vista) can be booted using EFI as
-    well.</para>
+    Fedora 11) and Windows (starting with Vista) offer special versions that can
+    be booted using EFI as well.</para>
 
     <para>Another possible use of EFI in VirtualBox is development and testing
     of EFI applications, without booting any OS.</para>
@@ -1271,7 +1271,7 @@
     <para>Note that the VirtualBox EFI support is experimental and will be
     enhanced as EFI matures and becomes more widespread. While Mac OS X and
     Linux guests are known to work fine, Windows guests are currently unable
-    to boot using EFI.</para>
+    to boot with the VirtualBox EFI implementation.</para>
 
     <sect2 id="efividmode">
       <title>Video modes in EFI</title>
