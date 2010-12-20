@@ -345,7 +345,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
 
                             cbTransfered += uBytesWritten;
                             Assert(cbTransfered <= cbSize);
-                            aTask->progress->SetCurrentOperationProgress(cbTransfered / (cbSize / 100));
+                            aTask->progress->SetCurrentOperationProgress(cbTransfered / (cbSize / 100.0));
 
                             /* End of file reached? */
                             if (cbToRead == 0)
