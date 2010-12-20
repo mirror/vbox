@@ -174,6 +174,8 @@ def progressBar(ctx,p,wait=1000):
             sys.stdout.flush()
             p.waitForCompletion(wait)
             ctx['global'].waitForEvents(0)
+        if int(p.resultCode) != 0:
+            reportError(ctx, p)
         return 1
     except KeyboardInterrupt:
         print "Interrupted."
