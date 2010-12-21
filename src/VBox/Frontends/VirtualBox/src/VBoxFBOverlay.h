@@ -232,9 +232,6 @@ public:
     uint32_t fourcc() const {return mDataFormat;}
     uint32_t bitsPerPixel() const { return mBitsPerPixel; }
     uint32_t bitsPerPixelTex() const { return mBitsPerPixelTex; }
-#ifdef VBOX_WITH_WDDM
-    uint32_t bitsPerPixelMem() const { return mBitsPerPixelMem; }
-#endif
     void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
     uint32_t widthCompression() const {return mWidthCompression;}
     uint32_t heightCompression() const {return mHeightCompression;}
@@ -270,9 +267,6 @@ private:
 
     uint32_t mBitsPerPixel;
     uint32_t mBitsPerPixelTex;
-#ifdef VBOX_WITH_WDDM
-    uint32_t mBitsPerPixelMem;
-#endif
     uint32_t mWidthCompression;
     uint32_t mHeightCompression;
     VBoxVHWAColorComponent mR;
@@ -292,7 +286,7 @@ public:
             mBytesPerLine(0),
             mScaleFuncttion(GL_NEAREST)
 {}
-    VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion);
+    VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion);
     virtual ~VBoxVHWATexture();
     virtual void init(uchar *pvMem);
     void setAddress(uchar *pvMem) {mAddress = pvMem;}
@@ -348,8 +342,8 @@ class VBoxVHWATextureNP2 : public VBoxVHWATexture
 {
 public:
     VBoxVHWATextureNP2() : VBoxVHWATexture() {}
-    VBoxVHWATextureNP2(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
-        VBoxVHWATexture(aRect, aFormat, scaleFuncttion){
+    VBoxVHWATextureNP2(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion) :
+        VBoxVHWATexture(aRect, aFormat, bytesPerLine, scaleFuncttion){
         mTexRect = QRect(0, 0, aRect.width()/aFormat.widthCompression(), aRect.height()/aFormat.heightCompression());
     }
 };
@@ -358,8 +352,8 @@ class VBoxVHWATextureNP2Rect : public VBoxVHWATextureNP2
 {
 public:
     VBoxVHWATextureNP2Rect() : VBoxVHWATextureNP2() {}
-    VBoxVHWATextureNP2Rect(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
-        VBoxVHWATextureNP2(aRect, aFormat, scaleFuncttion){}
+    VBoxVHWATextureNP2Rect(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion) :
+        VBoxVHWATextureNP2(aRect, aFormat, bytesPerLine, scaleFuncttion){}
 
     virtual void texCoord(int x, int y);
     virtual void multiTexCoord(GLenum texUnit, int x, int y);
@@ -374,8 +368,8 @@ public:
         VBoxVHWATextureNP2Rect(),
         mPBO(0)
     {}
-    VBoxVHWATextureNP2RectPBO(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
-        VBoxVHWATextureNP2Rect(aRect, aFormat, scaleFuncttion),
+    VBoxVHWATextureNP2RectPBO(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion) :
+        VBoxVHWATextureNP2Rect(aRect, aFormat, bytesPerLine, scaleFuncttion),
         mPBO(0)
     {}
 
@@ -397,8 +391,8 @@ public:
         mcbAllignedBufferSize(0),
         mcbOffset(0)
     {}
-    VBoxVHWATextureNP2RectPBOMapped(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
-            VBoxVHWATextureNP2RectPBO(aRect, aFormat, scaleFuncttion),
+    VBoxVHWATextureNP2RectPBOMapped(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion) :
+            VBoxVHWATextureNP2RectPBO(aRect, aFormat, bytesPerLine, scaleFuncttion),
             mpMappedAllignedBuffer(NULL),
             mcbOffset(0)
     {
@@ -528,6 +522,9 @@ public:
     const VBoxVHWAColorKey* dstCKey() { return mpDstCKey; }
     const VBoxVHWAColorKey* srcCKey() { return mpSrcCKey; }
     bool notIntersectedMode() { return mbNotIntersected; }
+
+    static uint32_t calcBytesPerLine(const VBoxVHWAColorFormat & format, int width);
+    static uint32_t calcMemSize(const VBoxVHWAColorFormat & format, int width, int height);
 
 #ifdef DEBUG_misha
     void dbgDump();
