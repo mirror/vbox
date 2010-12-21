@@ -88,6 +88,7 @@
 # define OPT_STDOUT         1091
 # define OPT_STDERR         1092
 #endif
+#define OPT_DISP_INFO_HACK  1093
 /** @}  */
 
 
@@ -1462,8 +1463,9 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
  * @param   argc                The number of arguments.
  * @param   argv                The arguments.
  * @param   iCmd                The command that is being executed.
+ * @param   pszDisplayInfoHack  Display information hack.  Platform specific++.
  */
-static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd)
+static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd, const char *pszDisplayInfoHack)
 {
     /*
      * We need the executable name later, so get it now when it's easy to quit.
@@ -1693,9 +1695,10 @@ int main(int argc, char **argv)
     /*
      * Elevation check.
      */
-    RTEXITCODE rcExit;
+    const char *pszDisplayInfoHack = NULL;
+    RTEXITCODE  rcExit;
 #ifdef WITH_ELEVATION
-    bool fElevated;
+    bool        fElevated;
     rcExit = ElevationCheck(&fElevated);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
@@ -1706,14 +1709,15 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "install",    CMD_INSTALL,    RTGETOPT_REQ_NOTHING },
-        { "uninstall",  CMD_UNINSTALL,  RTGETOPT_REQ_NOTHING },
-        { "cleanup",    CMD_CLEANUP,    RTGETOPT_REQ_NOTHING },
+        { "install",                CMD_INSTALL,        RTGETOPT_REQ_NOTHING },
+        { "uninstall",              CMD_UNINSTALL,      RTGETOPT_REQ_NOTHING },
+        { "cleanup",                CMD_CLEANUP,        RTGETOPT_REQ_NOTHING },
 #ifdef WITH_ELEVATION
-        { "--elevated", OPT_ELEVATED,   RTGETOPT_REQ_NOTHING },
-        { "--stdout",   OPT_STDOUT,     RTGETOPT_REQ_STRING  },
-        { "--stderr",   OPT_STDERR,     RTGETOPT_REQ_STRING  },
+        { "--elevated",             OPT_ELEVATED,       RTGETOPT_REQ_NOTHING },
+        { "--stdout",               OPT_STDOUT,         RTGETOPT_REQ_STRING  },
+        { "--stderr",               OPT_STDERR,         RTGETOPT_REQ_STRING  },
 #endif
+        { "--display-info-hack",    OPT_DISP_INFO_HACK, RTGETOPT_REQ_STRING  },
     };
     RTGETOPTSTATE GetState;
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
@@ -1734,7 +1738,7 @@ int main(int argc, char **argv)
             {
 #ifdef WITH_ELEVATION
                 if (!fElevated)
-                    return RelaunchElevated(argc, argv, ch);
+                    return RelaunchElevated(argc, argv, ch, pszDisplayInfoHack);
 #endif
                 int         cCmdargs     = argc - GetState.iNext;
                 char      **papszCmdArgs = argv + GetState.iNext;
@@ -1791,6 +1795,12 @@ int main(int argc, char **argv)
                 break;
             }
 #endif
+
+            case OPT_DISP_INFO_HACK:
+                if (pszDisplayInfoHack)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "--display-info-hack shall only occur once");
+                pszDisplayInfoHack = ValueUnion.psz;
+                break;
 
             case 'h':
             case 'V':

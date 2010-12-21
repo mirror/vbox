@@ -858,7 +858,10 @@ int handleExtPack(HandlerArg *a)
         ComPtr<IExtPackFile> ptrExtPackFile;
         CHECK_ERROR2_RET(ptrExtPackMgr, OpenExtPackFile(bstrTarball.raw(), ptrExtPackFile.asOutParam()), RTEXITCODE_FAILURE);
         CHECK_ERROR2_RET(ptrExtPackFile, COMGETTER(Name)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
-        CHECK_ERROR2_RET(ptrExtPackFile, Install(fReplace), RTEXITCODE_FAILURE);
+        ComPtr<IProgress> ptrProgress;
+        CHECK_ERROR2_RET(ptrExtPackFile, Install(fReplace, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
+        if (!ptrProgress.isNull())
+            CHECK_ERROR2_RET(ptrProgress, WaitForCompletion(-1), RTEXITCODE_FAILURE);
         RTPrintf("Successfully installed \"%lS\".\n", bstrName.raw());
     }
     else if (!strcmp(a->argv[0], "uninstall"))
@@ -894,7 +897,10 @@ int handleExtPack(HandlerArg *a)
             return errorSyntax(USAGE_EXTPACK, "No extension pack name was given to \"extpack uninstall\"");
 
         Bstr bstrName(pszName);
-        CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced), RTEXITCODE_FAILURE);
+        ComPtr<IProgress> ptrProgress;
+        CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
+        if (!ptrProgress.isNull())
+            CHECK_ERROR2_RET(ptrProgress, WaitForCompletion(-1), RTEXITCODE_FAILURE);
         RTPrintf("Successfully uninstalled \"%s\".\n", pszName);
     }
     else if (!strcmp(a->argv[0], "cleanup"))
