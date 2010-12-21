@@ -370,27 +370,27 @@ static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBox
     return new VBoxVHWATextureImage(aRect, aFormat, pMgr, flags);
 }
 
-static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, VBOXVHWAIMG_TYPE flags)
+static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, uint32_t bytesPerLine, VBOXVHWAIMG_TYPE flags)
 {
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(pContext);
     GLint scaleFunc = (flags & VBOXVHWAIMG_LINEAR) ? GL_LINEAR : GL_NEAREST;
     if((flags & VBOXVHWAIMG_PBO) && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2RectPBO\n"));
-        return new VBoxVHWATextureNP2RectPBO(aRect, aFormat, scaleFunc);
+        return new VBoxVHWATextureNP2RectPBO(aRect, aFormat, bytesPerLine, scaleFunc);
     }
     else if(info.getGlInfo().isTextureRectangleSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2Rect\n"));
-        return new VBoxVHWATextureNP2Rect(aRect, aFormat, scaleFunc);
+        return new VBoxVHWATextureNP2Rect(aRect, aFormat, bytesPerLine, scaleFunc);
     }
     else if(info.getGlInfo().isTextureNP2Supported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2\n"));
-        return new VBoxVHWATextureNP2(aRect, aFormat, scaleFunc);
+        return new VBoxVHWATextureNP2(aRect, aFormat, bytesPerLine, scaleFunc);
     }
     VBOXQGLLOG(("VBoxVHWATexture\n"));
-    return new VBoxVHWATexture(aRect, aFormat, scaleFunc);
+    return new VBoxVHWATexture(aRect, aFormat, bytesPerLine, scaleFunc);
 }
 
 class VBoxVHWAGlShaderComponent
@@ -1434,7 +1434,7 @@ void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
     uchar * address = pAddress + pointOffsetTex(x, y);
 
     VBOXQGL_CHECKERR(
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, mRect.width()/mColorFormat.widthCompression());
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, mBytesPerLine * 8 /mColorFormat.bitsPerPixelTex());
             );
 
     VBOXQGL_CHECKERR(
@@ -1444,6 +1444,10 @@ void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
                 mColorFormat.format(),
                 mColorFormat.type(),
                 address);
+            );
+
+    VBOXQGL_CHECKERR(
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             );
 }
 
@@ -1465,7 +1469,7 @@ void VBoxVHWATexture::uninit()
     }
 }
 
-VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
+VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, uint32_t bytesPerLine, GLint scaleFuncttion) :
             mAddress(NULL),
             mTexture(0),
             mBytesPerPixel(0),
@@ -1477,7 +1481,7 @@ VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat 
     mRect = aRect;
     mBytesPerPixel = mColorFormat.bitsPerPixel()/8;
     mBytesPerPixelTex = mColorFormat.bitsPerPixelTex()/8;
-    mBytesPerLine = mBytesPerPixel * mRect.width();
+    mBytesPerLine = bytesPerLine ? bytesPerLine : mBytesPerPixel * mRect.width();
     GLsizei wdt = VBoxVHWASurfaceBase::makePowerOf2(mRect.width()/mColorFormat.widthCompression());
     GLsizei hgt = VBoxVHWASurfaceBase::makePowerOf2(mRect.height()/mColorFormat.heightCompression());
     mTexRect = QRect(0,0,wdt,hgt);
@@ -2431,7 +2435,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct VBOXVHWACMD_SURF_CREATE *pCmd)
 
     if (!reportedFormat.isValid())
     {
-        pCmd->SurfInfo.pitch = surf->bitsPerPixel() * surf->width() / 8;
+        pCmd->SurfInfo.pitch = surf->bytesPerLine();
         pCmd->SurfInfo.sizeX = surf->memSize();
         pCmd->SurfInfo.sizeY = 1;
     }
@@ -2492,11 +2496,9 @@ int VBoxVHWAImage::vhwaSurfaceGetInfo(struct VBOXVHWACMD_SURF_GETINFO *pCmd)
     Assert(format.isValid());
     if (format.isValid())
     {
-        pCmd->SurfInfo.pitch = format.bitsPerPixel() * pCmd->SurfInfo.width / 8;
-//        pCmd->SurfInfo.pitch = ((pCmd->SurfInfo.pitch + 3) & (~3));
-        pCmd->SurfInfo.sizeX = format.bitsPerPixelMem() * pCmd->SurfInfo.width / 8;
-//        pCmd->SurfInfo.sizeX = ((pCmd->SurfInfo.sizeX + 3) & (~3));
-        pCmd->SurfInfo.sizeX *= pCmd->SurfInfo.height;
+        pCmd->SurfInfo.pitch = VBoxVHWATextureImage::calcBytesPerLine(format, pCmd->SurfInfo.width);
+        pCmd->SurfInfo.sizeX = VBoxVHWATextureImage::calcMemSize(format,
+                pCmd->SurfInfo.width, pCmd->SurfInfo.height);
         pCmd->SurfInfo.sizeY = 1;
         return VINF_SUCCESS;
     }
@@ -3969,33 +3971,21 @@ void VBoxVHWAColorFormat::init (uint32_t fourcc)
     {
         case FOURCC_AYUV:
             mBitsPerPixel = 32;
-#ifdef VBOX_WITH_WDDM
-            mBitsPerPixelMem = 32;
-#endif
             mWidthCompression = 1;
             break;
         case FOURCC_UYVY:
         case FOURCC_YUY2:
             mBitsPerPixel = 16;
-#ifdef VBOX_WITH_WDDM
-            mBitsPerPixelMem = 16;
-#endif
             mWidthCompression = 2;
             break;
         case FOURCC_YV12:
             mBitsPerPixel = 8;
-#ifdef VBOX_WITH_WDDM
-            mBitsPerPixelMem = 12;
-#endif
             mWidthCompression = 4;
             break;
         default:
             Assert(0);
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
-#ifdef VBOX_WITH_WDDM
-            mBitsPerPixelMem = 0;
-#endif
             mWidthCompression = 0;
             break;
     }
@@ -4005,9 +3995,6 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
 {
     mBitsPerPixel = bitsPerPixel;
     mBitsPerPixelTex = bitsPerPixel;
-#ifdef VBOX_WITH_WDDM
-    mBitsPerPixelMem = bitsPerPixel;
-#endif
     mDataFormat = 0;
     switch (bitsPerPixel)
     {
@@ -4065,9 +4052,6 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
 #endif
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
-#ifdef VBOX_WITH_WDDM
-            mBitsPerPixelMem = 0;
-#endif
             break;
     }
 }
@@ -5382,6 +5366,44 @@ void VBoxVHWACommandElementProcessor::enable()
     unlock();
 }
 
+/* static */
+uint32_t VBoxVHWATextureImage::calcBytesPerLine(const VBoxVHWAColorFormat & format, int width)
+{
+    uint32_t pitch = (format.bitsPerPixel() * width + 7)/8;
+    switch (format.fourcc())
+    {
+        case FOURCC_YV12:
+            /* make sure the color components pitch is multiple of 8
+             * where 8 is 2 (for color component width is Y width / 2) * 4 for 4byte texture format */
+            pitch = (pitch + 7) & ~7;
+            break;
+        default:
+            pitch = (pitch + 3) & ~3;
+            break;
+    }
+    return pitch;
+}
+
+/* static */
+uint32_t VBoxVHWATextureImage::calcMemSize(const VBoxVHWAColorFormat & format, int width, int height)
+{
+    uint32_t pitch = calcBytesPerLine(format, width);
+    switch (format.fourcc())
+    {
+        case FOURCC_YV12:
+            /* we have 3 separate planes here
+             * Y - pitch x height
+             * U - pitch/2 x height/2
+             * V - pitch/2 x height/2
+             * */
+            return 3 * pitch * height / 2;
+            break;
+        default:
+            return pitch * height;
+            break;
+    }
+}
+
 VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
         mVisibleDisplay(0),
         mpProgram(0),
@@ -5391,13 +5413,15 @@ VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColo
         mpSrcCKey(NULL),
         mbNotIntersected(false)
 {
-    mpTex[0] = vboxVHWATextureCreate(NULL, size, format, flags);
+    uint32_t pitch = calcBytesPerLine(format, size.width());
+
+    mpTex[0] = vboxVHWATextureCreate(NULL, size, format, pitch, flags);
     mColorFormat = format;
     if(mColorFormat.fourcc() == FOURCC_YV12)
     {
         QRect rect(size.x()/2,size.y()/2,size.width()/2,size.height()/2);
-        mpTex[1] = vboxVHWATextureCreate(NULL, rect, format, flags);
-        mpTex[2] = vboxVHWATextureCreate(NULL, rect, format, flags);
+        mpTex[1] = vboxVHWATextureCreate(NULL, rect, format, pitch/2, flags);
+        mpTex[2] = vboxVHWATextureCreate(NULL, rect, format, pitch/2, flags);
         mcTex = 3;
     }
     else
