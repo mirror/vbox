@@ -505,6 +505,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Enable the VNC server in VBoxHeadless (GPL only).
 #VBOX_WITH_VNC = 1
+# Enable S3 support (requires libcurl)
+VBOX_WITH_S3 = 1
 ## @}
 
 
@@ -2308,11 +2310,13 @@ SDK_VBOX_BLD_OPENSSL      = .
 SDK_VBOX_BLD_OPENSSL_EXTENDS = VBOX_OPENSSL
 SDK_VBOX_BLD_OPENSSL_LIBS ?= $(PATH_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
 
+ifdef VBOX_WITH_S3
 VBOX_WITH_LIBCURL = 1
 SDK_VBOX_LIBCURL       = .
 SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.19.4/include
 SDK_VBOX_LIBCURL_LIBS ?= $(PATH_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
 SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
+endif
 
 SDK_VBOX_FFMPEG       = .
 if1of ($(KBUILD_TARGET), darwin linux os2 solaris win)

@@ -931,21 +931,33 @@ DECLCALLBACK(int) Appliance::taskThreadImportOrExport(RTTHREAD /* aThread */, vo
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->readFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
+#ifdef VBOX_WITH_S3
                 taskrc = pAppliance->readS3(task.get());
+#else
+                taskrc = VERR_NOT_IMPLEMENTED;
+#endif
         break;
 
         case TaskOVF::Import:
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->importFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
+#ifdef VBOX_WITH_S3
                 taskrc = pAppliance->importS3(task.get());
+#else
+                taskrc = VERR_NOT_IMPLEMENTED;
+#endif
         break;
 
         case TaskOVF::Write:
             if (task->locInfo.storageType == VFSType_File)
                 taskrc = pAppliance->writeFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
+#ifdef VBOX_WITH_S3
                 taskrc = pAppliance->writeS3(task.get());
+#else
+                taskrc = VERR_NOT_IMPLEMENTED;
+#endif
         break;
     }
 
