@@ -92,6 +92,13 @@
 /** @}  */
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef RT_OS_WINDOWS
+static HINSTANCE g_hInstance;
+#endif
+
 #ifdef IN_RT_R3
 /* Override RTAssertShouldPanic to prevent gdb process creation. */
 RTDECL(bool) RTAssertShouldPanic(void)
@@ -1158,14 +1165,17 @@ static void CopyFileToStdXxx(RTFILE hSrc, PRTSTREAM pDst, bool fComplain)
  * @param   cMyArgs             The number of arguments following @a cSuArgs.
  * @param   iCmd                The command that is being executed. (For
  *                              selecting messages.)
+ * @param   pszDisplayInfoHack  Display information hack.  Platform specific++.
  */
 static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **papszArgs, int cSuArgs, int cMyArgs,
-                                         int iCmd)
+                                         int iCmd, const char *pszDisplayInfoHack)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
 #ifdef RT_OS_WINDOWS
     NOREF(iCmd);
 
+    MSG Msg;
+    PeekMessage(&Msg, NULL, 0, 0, PM_NOREMOVE);
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
     SHELLEXECUTEINFOW   Info;
@@ -1191,8 +1201,34 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                 Info.lpClass     = NULL;
                 Info.hkeyClass   = NULL;
                 Info.dwHotKey    = 0;
-                Info.hIcon       = INVALID_HANDLE_VALUE;
+                Info.hMonitor    = NULL;
                 Info.hProcess    = INVALID_HANDLE_VALUE;
+
+#if 0 /* This deadlocks with the GUI because the GUI thread is stuck in the API call :/ */
+                /* Apply display hacks. */
+                if (pszDisplayInfoHack)
+                {
+                    const char *pszArg = strstr(pszDisplayInfoHack, "hwnd=");
+                    if (pszArg)
+                    {
+                        uint64_t u64Hwnd;
+                        rc = RTStrToUInt64Ex(pszArg + sizeof("hwnd=") - 1, NULL, 0, &u64Hwnd);
+                        if (RT_SUCCESS(rc))
+                        {
+                            HWND hwnd = (HWND)(uintptr_t)u64Hwnd;
+                            Info.hwnd = hwnd;
+                            Info.hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+                        }
+                    }
+                }
+                if (Info.hMonitor == NULL)
+                {
+                    POINT Pt = {0,0};
+                    Info.hMonitor = MonitorFromPoint(Pt, MONITOR_DEFAULTTOPRIMARY);
+                }
+                if (Info.hMonitor != NULL)
+                    Info.fMask |= SEE_MASK_HMONITOR;
+ #endif
 
                 if (ShellExecuteExW(&Info))
                 {
@@ -1529,7 +1565,7 @@ static RTEXITCODE RelaunchElevated(int argc, char **argv, int iCmd, const char *
                     /*
                      * Do the platform specific process execution (waiting included).
                      */
-                    rcExit = RelaunchElevatedNative(szExecPath, papszArgs, cSuArgs, cArgs, iCmd);
+                    rcExit = RelaunchElevatedNative(szExecPath, papszArgs, cSuArgs, cArgs, iCmd, pszDisplayInfoHack);
 
                     /*
                      * Copy the standard files to our standard handles.
@@ -1818,7 +1854,8 @@ int main(int argc, char **argv)
 #ifdef RT_OS_WINDOWS
 extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine); NOREF(hInstance);
+    g_hInstance = hInstance;
+    NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine);
     return main(__argc, __argv);
 }
 #endif
