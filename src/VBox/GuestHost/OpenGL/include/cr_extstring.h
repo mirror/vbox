@@ -216,6 +216,12 @@ static const char *crExtensions =
 #ifdef CR_EXT_framebuffer_blit
     "GL_EXT_framebuffer_blit "
 #endif
+#ifdef CR_EXT_blend_equation_separate
+    "GL_EXT_blend_equation_separate "
+#endif
+#ifdef CR_EXT_stencil_two_side
+    "GL_EXT_stencil_two_side "
+#endif
 	"";
 
 /*

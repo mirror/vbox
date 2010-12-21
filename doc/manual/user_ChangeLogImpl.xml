@@ -188,6 +188,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed Unity/Compiz crashes on natty</para>
+      </listitem>
+
+      <listitem>
         <para>2D Video acceleration: multimonitor support</para>
       </listitem>
 

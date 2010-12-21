@@ -75,7 +75,17 @@ GetExtensions(void)
     extensions = return_value;
     ext = crStateMergeExtensions(1, &extensions);
 
+#ifdef Linux
+    /*@todo 
+     *That's a hack to allow running Unity, it uses libnux which is calling extension functions
+     *without checking if it's being supported/exported.
+     *glActiveStencilFaceEXT seems to be actually supported but the extension string isn't exported (for ex. on ATI HD4870),
+     *which leads to libglew setting function pointer to NULL and crashing Unity.
+     */
+    sprintf((char*)gpszExtensions, "%s GL_EXT_stencil_two_side", ext);
+#else
     sprintf((char*)gpszExtensions, "%s", ext);
+#endif
 
     return gpszExtensions;
 }
