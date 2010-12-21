@@ -6703,8 +6703,8 @@ name        ActiveStencilFaceEXT
 return      void
 param       face        GLenum
 paramprop   face        GL_FRONT GL_BACK
-category    EXT_stencil_two_side
-chromium    omit
+category    GL_EXT_stencil_two_side
+chromium    extpack
 
 
 # GL_NV_fence
@@ -10327,6 +10327,17 @@ param       filter      GLenum
 paramprop   filter      GL_LINEAR GL_NEAREST
 category    GL_EXT_framebuffer_blit
 chromium    extpack
+
+# GL_EXT_blend_equation_separate
+name        BlendEquationSeparateEXT
+alias       BlendEquationSeparate
+return      void
+param       modeRGB        GLenum
+paramprop   modeRGB        GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
+param       modeAlpha      GLenum
+paramprop   modeAlpha      GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
+category    GL_EXT_blend_equation_separate
+chromium    nopack
 
 # end of file sentinel
 
