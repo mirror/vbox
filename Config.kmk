@@ -4080,7 +4080,7 @@ TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
 TEMPLATE_VBOXBLDPROG_LIBS                =
  else if1of ($(KBUILD_HOST), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
-TEMPLATE_VBOXBLDPROG_LIBS                =
+TEMPLATE_VBOXBLDPROG_LIBS                = pthread
 TEMPLATE_VBOXBLDPROG_INCS               += \
 	/usr/include \
 	/usr/X11R6/include \
