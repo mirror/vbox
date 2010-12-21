@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2601,8 +2601,6 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   u32Percent  The new percentage. 100 means normal operation.
- *
- * @todo    Move to Ring-3!
  */
 VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
 {
@@ -2630,7 +2628,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
                     VERR_INVALID_PARAMETER);
 
 /** @todo This isn't a feature specific to virtual time, move the variables to
- * TM level and make it affect TMR3UCTNow as well! */
+ * TM level and make it affect TMR3UTCNow as well! */
 
     /*
      * If the time is running we'll have to pause it before we can change
