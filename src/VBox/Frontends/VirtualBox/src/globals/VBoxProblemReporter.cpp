@@ -2145,7 +2145,8 @@ void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const
 {
     if (!pParent)
         pParent = mainWindowShown();
-    QString strErrInfo = !extPackFile.isOk() ? formatErrorInfo(extPackFile) : formatErrorInfo(progress.GetErrorInfo());
+    QString strErrInfo = !extPackFile.isOk() || progress.isNull()
+                       ? formatErrorInfo(extPackFile) : formatErrorInfo(progress.GetErrorInfo());
     message (pParent,
              Error,
              tr("Failed to install the Extension Pack <b>%1</b>.").arg(strFilename),
@@ -2157,7 +2158,8 @@ void VBoxProblemReporter::cannotUninstallExtPack(const QString &strPackName, con
 {
     if (!pParent)
         pParent = mainWindowShown();
-    QString strErrInfo = !extPackManager.isOk() ? formatErrorInfo(extPackManager) : formatErrorInfo(progress.GetErrorInfo());
+    QString strErrInfo = !extPackManager.isOk() || progress.isNull()
+                       ? formatErrorInfo(extPackManager) : formatErrorInfo(progress.GetErrorInfo());
     message (pParent,
              Error,
              tr("Failed to uninstall the Extension Pack <b>%1</b>.").arg(strPackName),
