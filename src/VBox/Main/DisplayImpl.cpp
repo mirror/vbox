@@ -41,7 +41,7 @@
 # include <VBox/VBoxVideo.h>
 #endif
 
-#ifdef VBOX_WITH_CROGL
+#if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_CRHGSMI)
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 
