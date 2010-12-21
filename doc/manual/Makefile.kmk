@@ -131,6 +131,7 @@ ifdef VBOX_WITH_DOCS
  	user_Introduction.xml \
  	user_KnownIssues.xml \
  	user_PrivacyPolicy.xml \
+ 	user_Security.xml \
  	user_Technical.xml \
  	user_ThirdParty.xml \
  	user_Troubleshooting.xml \

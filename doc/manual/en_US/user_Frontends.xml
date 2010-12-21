@@ -5,12 +5,13 @@
   <title>Remote virtual machines</title>
 
   <sect1>
-    <title id="vrde">VirtualBox Remote Desktop Extension (VRDE)</title>
+    <title id="vrde">Remote display (VRDP support)</title>
 
-    <para>VirtualBox can display virtual machines remotely. This allows you to
-    see the output of a virtual machine's window remotely on another computer
-    and control the virtual machine from there, as if the virtual machine was
-    running on that computer.</para>
+    <para>VirtualBox can display virtual machines remotely, meaning that a
+    virtual machine can execute on one machine even though the machine will be
+    displayed on a second computer, and the machine will be controlled from
+    there as well, as if the virtual machine was running on that second
+    computer.</para>
 
     <para>For maximum flexibility, starting with VirtualBox 4.0, VirtualBox
     implements remote machine display through a generic extension interface,
@@ -18,12 +19,13 @@
     VirtualBox package only provides this interface, while implementations can
     be supplied by third parties with VirtualBox extension packages, which
     must be installed separately from the base package. See <xref
-    linkend="intro-installing" /> for more information. </para>
+    linkend="intro-installing" /> for more information.</para>
 
-    <para>Oracle provides support for the VirtualBox Remote Display Protocol
-    (VRDP) in such a VirtualBox extension package. When this package is
-    installed, VirtualBox versions 4.0 and later support VRDP the same way as
-    earlier versions.</para>
+    <para>Oracle provides support for the <emphasis role="bold">VirtualBox
+    Remote Display Protocol (VRDP)</emphasis> in such a VirtualBox extension
+    package. When this package is installed, VirtualBox versions 4.0 and later
+    support VRDP the same way as binary (non-open-source) versions of
+    VirtualBox before 4.0 did.</para>
 
     <para>VRDP is a backwards-compatible extension to Microsoft's Remote
     Desktop Protocol (RDP). Typically graphics updates and audio are sent from
@@ -139,32 +141,36 @@
       <para>While any VM started from the VirtualBox Manager is capable of
       running virtual machines remotely, it is not convenient to have to run
       the full-fledged GUI if you never want to have VMs displayed locally in
-      the first place. In particular, if you are running servers whose only
-      purpose is to host VMs, and all your VMs are supposed to run remotely
-      over VRDE, then it is pointless to have a graphical user interface on
-      the server at all -- especially since, on a Linux or Solaris host, the
-      VirtualBox manager comes with dependencies on the Qt and SDL libraries,
-      which is inconvenient if you would rather not have the X Window system
-      on your server at all.</para>
+      the first place. In particular, if you are running server hardware whose
+      only purpose is to host VMs, and all your VMs are supposed to run
+      remotely over VRDP, then it is pointless to have a graphical user
+      interface on the server at all -- especially since, on a Linux or
+      Solaris host, the VirtualBox manager comes with dependencies on the Qt
+      and SDL libraries. This is inconvenient if you would rather not have the
+      X Window system on your server at all.</para>
 
       <para>VirtualBox therefore comes with yet another front-end called
       <computeroutput>VBoxHeadless</computeroutput>, which produces no visible
-      output on the host at all, but instead only delivers VRDE data.<footnote>
+      output on the host at all, but instead only delivers VRDP data. This
+      front-end has no dependencies on the X Window system on Linux and
+      Solaris hosts.<footnote>
           <para>Before VirtualBox 1.6, the headless server was called
           <computeroutput>VBoxVRDP</computeroutput>. For the sake of backwards
           compatibility, the VirtualBox installation still installs an
           executable with that name as well.</para>
         </footnote></para>
 
-      <para>To start a virtual machine with VBoxHeadless, you have two
+      <para>To start a virtual machine with
+      <computeroutput>VBoxHeadless</computeroutput>, you have two
       options:</para>
 
       <itemizedlist>
         <listitem>
-          <para>You can use <screen>VBoxManage startvm "VM name" --type headless</screen>
-          The extra <computeroutput>--type</computeroutput> option causes the
-          VirtualBox core to use <computeroutput>VBoxHeadless</computeroutput>
-          as the front-end to the internal virtualization engine.</para>
+          <para>You can use <screen>VBoxManage startvm "VM name" --type headless</screen>The
+          extra <computeroutput>--type</computeroutput> option causes
+          VirtualBox to use <computeroutput>VBoxHeadless</computeroutput> as
+          the front-end to the internal virtualization engine instead of the
+          Qt front-end.</para>
         </listitem>
 
         <listitem>
@@ -172,7 +178,7 @@
           <computeroutput>VBoxHeadless</computeroutput> directly, as
           follows:<screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen></para>
 
-          <para>This way of starting the VM has the advantage that you can see
+          <para>This way of starting the VM is preferred because you can see
           more detailed error messages, especially for early failures before
           the VM execution is started. If you have trouble with
           <computeroutput>VBoxManage startvm</computeroutput>, it can help
@@ -183,13 +189,13 @@
 
       <para>Note that when you use
       <computeroutput>VBoxHeadless</computeroutput> to start a VM, since the
-      headless server has no other means of output, the VRDE server
-      will <emphasis>always</emphasis> be enabled, regardless of whether you
-      have enabled the VRDE server in the VM's settings. If this is
-      undesirable (for example because you want to access the VM via
+      headless server has no other means of output, the VRDP server will
+      <emphasis>always</emphasis> be enabled, regardless of whether you had
+      enabled the VRDP server in the VM's settings. If this is undesirable
+      (for example because you want to access the VM via
       <computeroutput>ssh</computeroutput> only), start the VM like
-      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>
-      To use the setting from the VM configuration, as the
+      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>To
+      have the VRDP server enabled depending on the VM configuration, as the
       other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
     </sect2>
 
@@ -201,30 +207,30 @@
       virtual machine on a headless server over a network connection. We will
       create a virtual machine, establish an RDP connection and install a
       guest operating system -- all without having to touch the headless
-      server. VirtualBox extension packages with the VRDP server must be
-      installed. All you need is the following:</para>
+      server. All you need is the following:</para>
 
       <para><orderedlist>
           <listitem>
             <para>VirtualBox on a server machine with a supported host
-            operating system; for the following example, we will assume a
-            Linux server;</para>
+            operating system. The VirtualBox extension pack for the VRDP
+            server must be installed (see the previous section). For the
+            following example, we will assume a Linux server.</para>
           </listitem>
 
           <listitem>
-            <para>an ISO file on the server, containing the installation data
-            for the guest operating system to install (we will assume Windows
-            XP in the following example);</para>
+            <para>An ISO file accessible from the server, containing the
+            installation data for the guest operating system to install (we
+            will assume Windows XP in the following example).</para>
           </listitem>
 
           <listitem>
-            <para>a terminal connection to that host over which you can access
-            a command line (e.g. via <computeroutput>telnet</computeroutput>
-            or <computeroutput>ssh</computeroutput>);</para>
+            <para>A terminal connection to that host through which you can
+            access a command line (e.g. via
+            <computeroutput>ssh</computeroutput>).</para>
           </listitem>
 
           <listitem>
-            <para>an RDP viewer on the remote client; see <xref
+            <para>An RDP viewer on the remote client; see <xref
             linkend="rdp-viewers" /> above for examples.</para>
           </listitem>
         </orderedlist>Note again that on the server machine, since we will
@@ -239,10 +245,11 @@
 
             <para>Note that if you do not specify
             <computeroutput>--register</computeroutput>, you will have to
-            manually use the registervm command later.</para>
+            manually use the <computeroutput>registervm</computeroutput>
+            command later.</para>
 
             <para>Note further that you do not need to specify
-            <computeroutput>--ostype</computeroutput> but doing so selects
+            <computeroutput>--ostype</computeroutput>, but doing so selects
             some sane default values for certain VM parameters, for example
             the RAM size and the type of the virtual network device. To get a
             complete list of supported operating systems you can use</para>
@@ -257,7 +264,7 @@
 
           <listitem>
             <para>Create a virtual hard disk for the VM (in this case, 10GB in
-            size) and register it with VirtualBox:<screen>VBoxManage createhd --filename "WinXP.vdi" --size 10000 --remember</screen></para>
+            size):<screen>VBoxManage createhd --filename "WinXP.vdi" --size 10000</screen></para>
           </listitem>
 
           <listitem>
@@ -266,7 +273,7 @@
           </listitem>
 
           <listitem>
-            <para>Set this newly created VDI file as the first virtual hard
+            <para>Set the VDI file created above as the first virtual hard
             disk of the new VM:<screen>VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
       --port 0 --device 0 --type hdd --medium "WinXP.vdi"</screen></para>
           </listitem>
@@ -292,7 +299,7 @@
             for how to use various common RDP viewers).</para>
 
             <para>You should now be seeing the installation routine of your
-            guest operating system in the RDP viewer.</para>
+            guest operating system remotely in the RDP viewer.</para>
           </listitem>
         </orderedlist></para>
     </sect2>
@@ -336,93 +343,139 @@
     </sect2>
 
     <sect2 id="vbox-auth">
-      <title>VRDE authentication</title>
+      <title>RDP authentication</title>
 
-      <para>For each virtual machine that is remotely accessible via VRDE, you
+      <para>For each virtual machine that is remotely accessible via RDP, you
       can individually determine if and how client connections are
-      authenticated.</para>
-
-      <para>For this, use <computeroutput>VBoxManage modifyvm</computeroutput>
-      command with the <computeroutput>--vrdeauthtype</computeroutput> option;
-      see <xref linkend="vboxmanage-modifyvm" /> for a general introduction.
-      Three methods of authentication are available:<itemizedlist>
+      authenticated. For this, use <computeroutput>VBoxManage
+      modifyvm</computeroutput> command with the
+      <computeroutput>--vrdeauthtype</computeroutput> option; see <xref
+      linkend="vboxmanage-modifyvm" /> for a general introduction. Three
+      methods of authentication are available:<itemizedlist>
           <listitem>
             <para>The "null" method means that there is no authentication at
-            all; any client can connect to the VRDE server and thus the
+            all; any client can connect to the VRDP server and thus the
             virtual machine. This is, of course, very insecure and only to be
             recommended for private networks.</para>
           </listitem>
 
           <listitem>
             <para>The "external" method provides external authentication
-            through a special authentication library.</para>
-
-            <para>VirtualBox comes with three default libraries for external
-            authentication:<itemizedlist>
+            through a special authentication library. VirtualBox ships with
+            two such authentication libraries:<orderedlist>
                 <listitem>
-                  <para>On Linux hosts,
-                  <computeroutput>VBoxAuth.so</computeroutput> authenticates
-                  users against the host's PAM system.</para>
+                  <para>The default authentication library,
+                  <computeroutput>VBoxAuth</computeroutput>, authenticates
+                  against user credentials of the hosts. Depending on the host
+                  platform, this means:<itemizedlist>
+                      <listitem>
+                        <para>On Linux hosts,
+                        <computeroutput>VBoxAuth.so</computeroutput>
+                        authenticates users against the host's PAM
+                        system.</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>On Windows hosts,
+                        <computeroutput>VBoxAuth.dll</computeroutput>
+                        authenticates users against the host's WinLogon
+                        system.</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>On Mac OS X hosts,
+                        <computeroutput>VBoxAuth.dylib</computeroutput>
+                        authenticates users against the host's directory
+                        service.<footnote>
+                            <para>Support for Mac OS X was added in version
+                            3.2.</para>
+                          </footnote></para>
+                      </listitem>
+                    </itemizedlist></para>
+
+                  <para>In other words, the "external" method per default
+                  performs authentication with the user accounts that exist on
+                  the host system. Any user with valid authentication
+                  credentials is accepted, i.e. the username does not have to
+                  correspond to the user running the VM.</para>
                 </listitem>
 
                 <listitem>
-                  <para>On Windows hosts,
-                  <computeroutput>VBoxAuth.dll</computeroutput> authenticates
-                  users against the host's WinLogon system.</para>
+                  <para>An additional library called
+                  <computeroutput>VBoxAuthSimple</computeroutput> performs
+                  authentication against credentials configured in the
+                  "extradata" section of a virtual machine's XML settings
+                  file. This is probably the simplest way to get
+                  authentication that does not depend on a running and
+                  supported guest (see below). The following steps are
+                  required:<orderedlist>
+                      <listitem>
+                        <para>Enable
+                        <computeroutput>VBoxAuthSimple</computeroutput> with
+                        the following command:</para>
+
+                        <para><screen>VBoxManage setproperty vrdeauthlibrary "VBoxAuthSimple"</screen></para>
+                      </listitem>
+
+                      <listitem>
+                        <para>To enable the library for a particular VM, you
+                        must then switch authentication to external:<screen>VBoxManage modifyvm &lt;vm&gt; --vrdeauthtype external</screen></para>
+
+                        <para>Replace
+                        <computeroutput>&lt;vm&gt;</computeroutput> with the
+                        VM name or UUID.</para>
+                      </listitem>
+
+                      <listitem>
+                        <para>You will then need to configure users and
+                        passwords by writing items into the machine's
+                        extradata. Since the XML machine settings file, into
+                        whose "extradata" section the password needs to be
+                        written, is a plain text file, VirtualBox uses hashes
+                        to encrypt passwords. The following command must be
+                        used:<screen>VBoxManage setextradata &lt;vm&gt; "VBoxAuthSimple/users/&lt;user&gt;" &lt;hash&gt;</screen></para>
+
+                        <para>Replace
+                        <computeroutput>&lt;vm&gt;</computeroutput> with the
+                        VM name or UUID,
+                        <computeroutput>&lt;user&gt;</computeroutput> with the
+                        user name who should be allowed to log in and
+                        <computeroutput>&lt;hash&gt;</computeroutput> with the
+                        encrypted password. As an example, to obtain the hash
+                        value for the password "secret", you can use the
+                        following command:<screen>VBoxManage internalcommands passwordhash "secret"</screen></para>
+
+                        <para>This will print
+                        "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b".
+                        You can then use VBoxManage setextradata to store this
+                        value in the machine's "extradata" section.</para>
+
+                        <para>As example, combined together, to set the
+                        password for the user "john" and the machine "My VM"
+                        to "secret", use this command:<screen>VBoxManage setextradata "My VM" "VBoxAuthSimple/users/john"
+    2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</screen></para>
+                      </listitem>
+                    </orderedlist></para>
                 </listitem>
-
-                <listitem>
-                  <para>On Mac OS X hosts,
-                  <computeroutput>VBoxAuth.dylib</computeroutput>
-                  authenticates users against the host's directory
-                  service.<footnote>
-                      <para>Support for Mac OS X was added in version
-                      3.2.</para>
-                    </footnote></para>
-                </listitem>
-              </itemizedlist></para>
-
-            <para>In other words, the "external" method per default performs
-            authentication with the user accounts that exist on the host
-            system. Any user with valid authentication credentials is
-            accepted, i.e. the username does not have to correspond to the
-            user running the VM.</para>
-          </listitem>
-
-          <listitem>
-            <para>An additional library called
-            <computeroutput>VBoxAuthSimple</computeroutput> performs
-            authentication against credentials configured in the VM's extra
-            data section. This is probably the simplest way to get
-            authentication that does not depend on a running and supported
-            guest (see below). In order to enable VBoxAuthSimple, issue
-            <computeroutput>VBoxManage setproperty vrdeauthlibrary
-            "VBoxAuthSimple"</computeroutput>. To enable the library for a VM,
-            switch authentication to external using <computeroutput>VBoxManage
-            modifyvm "VM name" --vrdeauthtype external</computeroutput>. Last
-            but not least, you have to configure users and passwords. Here is
-            an example for the user "john" with the password "secret":
-            <computeroutput>VBoxManage internalcommands passwordhash
-            "secret"</computeroutput> This will give you the hash value
-            "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
-            which you set using <computeroutput>VBoxManage setextradata "VM
-            name" "VBoxAuthSimple/users/john"
-            "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"</computeroutput>.</para>
+              </orderedlist></para>
           </listitem>
 
           <listitem>
             <para>Finally, the "guest" authentication method performs
             authentication with a special component that comes with the Guest
-            Additions; as a result, authentication is not performed with the
-            host users, but with the guest user accounts. This method is
-            currently still in testing and not yet supported.</para>
+            Additions; as a result, authentication is not performed on the
+            host, but with the <emphasis>guest</emphasis> user
+            accounts.</para>
+
+            <para>This method is currently still in testing and not yet
+            supported.</para>
           </listitem>
         </itemizedlist></para>
 
       <para>In addition to the methods described above, you can replace the
-      default "external authentication module with any other module. For this,
-      VirtualBox provides a well-defined interface that allows you to write
-      your own authentication module. This is described in detail in the
+      default "external" authentication module with any other module. For
+      this, VirtualBox provides a well-defined interface that allows you to
+      write your own authentication module. This is described in detail in the
       VirtualBox Software Development Kit (SDK) reference; please see <xref
       linkend="VirtualBoxAPI" /> for details.</para>
     </sect2>
@@ -439,7 +492,7 @@
             <para>Historically, RDP4 authentication was used, with which the
             RDP client does not perform any checks in order to verify the
             identity of the server it connects to. Since user credentials can
-            be obtained using a man in the middle (MITM) attack, RDP4
+            be obtained using a "man in the middle" (MITM) attack, RDP4
             authentication is insecure and should generally not be
             used.</para>
           </listitem>
@@ -474,7 +527,7 @@
     <sect2 id="vrde-multiconnection">
       <title>Multiple connections to the VRDP server</title>
 
-      <para>The VRDP server of VirtualBox supports simultaneous
+      <para>The VRDP server of VirtualBox supports multiple simultaneous
       connections to the same running VM from different clients. All connected
       clients see the same screen output and share a mouse pointer and
       keyboard focus. This is similar to several people using the same
@@ -494,13 +547,14 @@
       using the <computeroutput>domain</computeroutput> logon parameter
       (<computeroutput>-d</computeroutput>). If the parameter ends with
       <computeroutput>@</computeroutput> followed by a number, VirtualBox
-      interprets this number as the screen index. The primary guest
-      screen is selected with <computeroutput>@1</computeroutput>, the first
-      secondary screen is <computeroutput>@2</computeroutput>, etc.</para>
+      interprets this number as the screen index. The primary guest screen is
+      selected with <computeroutput>@1</computeroutput>, the first secondary
+      screen is <computeroutput>@2</computeroutput>, etc.</para>
 
-      <para>The MS RDP6 client does not let you specify a separate domain
-      name. Instead, use <computeroutput>domain\username</computeroutput> in
-      the <computeroutput>Username:</computeroutput> field -- for example,
+      <para>The Microsoft RDP6 client does not let you specify a separate
+      domain name. Instead, use
+      <computeroutput>domain\username</computeroutput> in the
+      <computeroutput>Username:</computeroutput> field -- for example,
       <computeroutput>@2\name</computeroutput>.
       <computeroutput>name</computeroutput> must be supplied, and must be the
       name used to log in if the VRDP server is set up to require credentials.
@@ -516,31 +570,34 @@
       standard RDP bitmap compression methods. It is possible to increase the
       compression ratio by lowering the video quality.</para>
 
-      <para>Video streams in a guest are detected by the server
-      automatically as frequently updated rectangular areas. Therefore, this
-      method works with any guest operating system without having to install
-      additional software in the guest.</para>
+      <para>The VRDP server automatically detects video streams in a guest as
+      frequently updated rectangular areas. As a result, this method works
+      with any guest operating system without having to install additional
+      software in the guest; in particular, the Guest Additions are not
+      required.</para>
 
       <para>On the client side, however, currently only the Windows 7 Remote
       Desktop Connection client supports this feature. If a client does not
-      support video redirection, the VRDP server uses regular bitmap
+      support video redirection, the VRDP server falls back to regular bitmap
       updates.</para>
 
       <para>The following command enables video redirection: <screen>VBoxManage modifyvm "VM name" --vrdevideochannel on</screen></para>
 
       <para>The quality of the video is defined as a value from 10 to 100
-      percent, as is common with JPEG compression. The quality can be changed
-      using the following command: <screen>VBoxManage modifyvm "VM name" --vrdevideochannelquality 75</screen></para>
+      percent, representing a JPEG compression level (where lower numbers mean
+      lower quality but higher compression). The quality can be changed using
+      the following command: <screen>VBoxManage modifyvm "VM name" --vrdevideochannelquality 75</screen></para>
     </sect2>
 
     <sect2 id="vrde-customization">
       <title>VRDP customization</title>
 
-      <para>Starting with VirtualBox 4.0, it is possible to disable display
-      output, mouse and keyboard input, audio, remote USB or clipboard in the
-      VRDP server.</para>
+      <para>With VirtualBox 4.0 it is possible to disable display output,
+      mouse and keyboard input, audio, remote USB or clipboard individually in
+      the VRDP server.</para>
 
-      <para>The following commands change corresponding server settings:</para>
+      <para>The following commands change corresponding server
+      settings:</para>
 
       <screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=1
 VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableInput=1
@@ -552,8 +609,9 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
       <para>To reenable a feature use a similar command without the trailing
       1. For example: <screen>VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableDisplay=</screen></para>
 
-      <para>Note that with earlier releases of VirtualBox (3.2.10 or more recent 3.2 versions),
-      the following commands change corresponding server settings:</para>
+      <para>These properties were introduced with VirtualBox 3.2.10. However,
+      in the 3.2.x series, it was necessary to use the following commands to
+      alter these settings instead:</para>
 
       <screen>VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableDisplay" 1
 VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableInput" 1

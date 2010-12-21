@@ -201,8 +201,8 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
 
         <listitem>
           <para><computeroutput>hostinfo</computeroutput> displays information
-          about the host system, such as CPUs, memory size and operating system
-          version.</para>
+          about the host system, such as CPUs, memory size and operating
+          system version.</para>
         </listitem>
 
         <listitem>
@@ -844,7 +844,8 @@ Statistics update:  disabled
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Serial port, audio, clipboard, remote desktop and USB settings</title>
+      <title>Serial port, audio, clipboard, remote desktop and USB
+      settings</title>
 
       <para>The following other hardware settings are available through
       <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
@@ -949,9 +950,10 @@ Statistics update:  disabled
           <listitem>
             <para><computeroutput>--vrde on|off</computeroutput>: With the
             VirtualBox graphical user interface, this enables or disables the
-            VirtualBox remote desktop extension (VRDE) server. Note that if you are using
-            <computeroutput>VBoxHeadless</computeroutput> (see <xref
-            linkend="vboxheadless" />), VRDE is enabled by default.</para>
+            VirtualBox remote desktop extension (VRDE) server. Note that if
+            you are using <computeroutput>VBoxHeadless</computeroutput> (see
+            <xref linkend="vboxheadless" />), VRDE is enabled by
+            default.</para>
           </listitem>
 
           <listitem>
@@ -971,8 +973,8 @@ Statistics update:  disabled
           <listitem>
             <para><computeroutput>--vrdeaddress &lt;IP
             address&gt;</computeroutput>: The IP address of the host network
-            interface the VRDE server will bind to. If specified, the
-            server will accept connections only on the specified host network
+            interface the VRDE server will bind to. If specified, the server
+            will accept connections only on the specified host network
             interface.</para>
           </listitem>
 
@@ -985,31 +987,31 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--vrdemulticon on|off</computeroutput>: This
-            enables multiple connections to the same VRDE server, if the server
-            supports this feature; see
-            <xref lang="" linkend="vrde-multiconnection" />.</para>
+            enables multiple connections to the same VRDE server, if the
+            server supports this feature; see <xref lang=""
+            linkend="vrde-multiconnection" />.</para>
           </listitem>
 
           <listitem>
             <para><computeroutput>--vrdereusecon on|off</computeroutput>: This
             specifies the VRDE server behavior when multiple connections are
-            disabled. When this option is enabled, the server will allow
-            a new client to connect and will drop the existing connection. When
-            this option is disabled (this is the default setting), a new
-            connection will not be accepted if there is already a client
-            connected to the server.</para>
+            disabled. When this option is enabled, the server will allow a new
+            client to connect and will drop the existing connection. When this
+            option is disabled (this is the default setting), a new connection
+            will not be accepted if there is already a client connected to the
+            server.</para>
           </listitem>
 
           <listitem>
             <para><computeroutput>--vrdevideochannel on|off</computeroutput>:
-            This enables video redirection, if it is supported by the VRDE server;
-            see <xref lang="" linkend="vrde-videochannel" />.</para>
+            This enables video redirection, if it is supported by the VRDE
+            server; see <xref lang="" linkend="vrde-videochannel" />.</para>
           </listitem>
 
           <listitem>
             <para><computeroutput>--vrdevideochannelquality
-            &lt;percent&gt;</computeroutput>: Sets the image quality for
-            video redirection; see <xref lang=""
+            &lt;percent&gt;</computeroutput>: Sets the image quality for video
+            redirection; see <xref lang=""
             linkend="vrde-videochannel" />.</para>
           </listitem>
         </itemizedlist></para>
@@ -1220,8 +1222,7 @@ Virtual system 0:
         <glossterm>headless</glossterm>
 
         <glossdef>
-          <para>Starts a VM without a window for remote display
-          only.</para>
+          <para>Starts a VM without a window for remote display only.</para>
         </glossdef>
       </glossentry>
     </glosslist>
@@ -1721,8 +1722,9 @@ Virtual system 0:
       </glosslist></para>
 
     <para>When "iscsi" is used with the
-    <computeroutput>--medium</computeroutput> parameter, additional parameters
-    must or can be used:<glosslist>
+    <computeroutput>--medium</computeroutput> parameter for iSCSI support --
+    see <xref linkend="storage-iscsi" /> --, additional parameters must or can
+    be used:<glosslist>
         <glossentry>
           <glossterm>server</glossterm>
 
@@ -1766,8 +1768,8 @@ Virtual system 0:
             <para>Username and password for target authentication, if required
             (optional).<note>
                 <para>Currently, username and password are stored without
-                encryption (i.e. in cleartext) in the machine configuration
-                file.</para>
+                encryption (i.e. in clear text) in the XML machine
+                configuration file.</para>
               </note></para>
           </glossdef>
         </glossentry>
@@ -1953,14 +1955,14 @@ Virtual system 0:
           software tool. For Windows guests, you can use the
           <computeroutput>sdelete</computeroutput> tool provided by Microsoft.
           Execute <computeroutput>sdelete -c</computeroutput> in the guest to
-          zero the free disk space before compressing the virtual disk image.
-          </para>
-          
+          zero the free disk space before compressing the virtual disk
+          image.</para>
+
           <para>Please note that compacting is currently only available for
           VDI images. A similar effect can be achieved by zeroing out free
           blocks and then cloning the disk to any other dynamically expanding
-          format. You can use this workaround until compacting is also supported
-          for disk formats other than VDI.</para>
+          format. You can use this workaround until compacting is also
+          supported for disk formats other than VDI.</para>
         </listitem>
 
         <listitem>
