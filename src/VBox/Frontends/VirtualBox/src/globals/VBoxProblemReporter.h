@@ -341,8 +341,8 @@ public:
 
     void cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent);
     void badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent);
-    void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent);
-    void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, QWidget *pParent);
+    void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, const CProgress &progress, QWidget *pParent);
+    void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, const CProgress &progress, QWidget *pParent);
     bool confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent);
     bool confirmReplacePackage(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
                                const QString &strPackDescription, QWidget *pParent);

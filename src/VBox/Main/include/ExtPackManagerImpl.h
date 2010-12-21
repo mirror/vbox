@@ -69,7 +69,7 @@ public:
     /** @name IExtPackFile interfaces
      * @{ */
     STDMETHOD(COMGETTER(FilePath))(BSTR *a_pbstrPath);
-    STDMETHOD(Install)(BOOL a_fReplace);
+    STDMETHOD(Install)(BOOL a_fReplace, IN_BSTR a_bstrDisplayInfo, IProgress **a_ppProgress);
     /** @}  */
 
 private:
@@ -210,7 +210,7 @@ class ATL_NO_VTABLE ExtPackManager :
     STDMETHOD(COMGETTER(InstalledExtPacks))(ComSafeArrayOut(IExtPack *, a_paExtPacks));
     STDMETHOD(Find)(IN_BSTR a_bstrName, IExtPack **a_pExtPack);
     STDMETHOD(OpenExtPackFile)(IN_BSTR a_bstrTarball, IExtPackFile **a_ppExtPackFile);
-    STDMETHOD(Uninstall)(IN_BSTR a_bstrName, BOOL a_fForcedRemoval);
+    STDMETHOD(Uninstall)(IN_BSTR a_bstrName, BOOL a_fForcedRemoval, IN_BSTR a_bstrDisplayInfo, IProgress **a_ppProgress);
     STDMETHOD(Cleanup)(void);
     STDMETHOD(QueryAllPlugInsForFrontend)(IN_BSTR a_bstrFrontend, ComSafeArrayOut(BSTR, a_pabstrPlugInModules));
     STDMETHOD(IsExtPackUsable(IN_BSTR a_bstrExtPack, BOOL *aUsable));
@@ -218,7 +218,8 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-    HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace);
+    HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo,
+                          IProgress **a_ppProgress);
     void        callAllVirtualBoxReadyHooks(void);
     void        callAllConsoleReadyHooks(IConsole *a_pConsole);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
@@ -232,7 +233,7 @@ class ATL_NO_VTABLE ExtPackManager :
     /** @}  */
 
 private:
-    HRESULT     runSetUidToRootHelper(const char *a_pszCommand, ...);
+    HRESULT     runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo, const char *a_pszCommand, ...);
     ExtPack    *findExtPack(const char *a_pszName);
     void        removeExtPack(const char *a_pszName);
     HRESULT     refreshExtPack(const char *a_pszName, bool a_fUnsuableIsError, ExtPack **a_ppExtPack);

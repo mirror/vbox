@@ -176,11 +176,26 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
      * Set the package name return value before doing this as the caller should
      * do a refresh even on failure.
      */
-    extPackFile.Install(fReplaceIt);
+    QString displayInfo;
+    CProgress progress = extPackFile.Install(fReplaceIt, displayInfo);
     if (extPackFile.isOk())
-        vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+    {
+        if (progress.isNull())
+            vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+        else
+        {
+            vboxProblem().showModalProgressDialog(progress, tr("Extensions"));
+            if (!progress.GetCanceled())
+            {
+                if (progress.isOk() && progress.GetResultCode() == 0)
+                    vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+                else
+                    vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
+            }
+        }
+    }
     else
-        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, pParent);
+        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
 
     if (pstrExtPackName)
         *pstrExtPackName = strPackName;
@@ -373,26 +388,41 @@ void UIGlobalSettingsExtension::sltRemovePackage()
         /* Ask the user about package removing: */
         if (vboxProblem().confirmRemovingPackage(strSelectedPackageName, this))
         {
-            /* Get package manager: */
+            /*
+             * Uninstall the package.
+             */
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
-            /* Uninstall package: */
             /** @todo Refuse this if any VMs are running. */
-            manager.Uninstall(strSelectedPackageName, false /* forced removal? */);
+            QString displayInfo;
+            CProgress progress = manager.Uninstall(strSelectedPackageName, false /* forced removal? */, displayInfo);
             if (manager.isOk())
             {
-                /* Remove selected package from cache: */
-                for (int i = 0; i < m_cache.m_items.size(); ++i)
+                bool fOk = true;
+                if (!progress.isNull())
                 {
-                    if (!strSelectedPackageName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
-                    {
-                        m_cache.m_items.removeAt(i);
-                        break;
-                    }
+                    vboxProblem().showModalProgressDialog(progress, tr("Extensions"));
+                    fOk = progress.isOk() && progress.GetResultCode() == 0;
                 }
-                /* Remove selected package from tree: */
-                delete pItem;
+                if (fOk)
+                {
+                    /* Remove selected package from cache: */
+                    for (int i = 0; i < m_cache.m_items.size(); ++i)
+                    {
+                        if (!strSelectedPackageName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
+                        {
+                            m_cache.m_items.removeAt(i);
+                            break;
+                        }
+                    }
+
+                    /* Remove selected package from tree: */
+                    delete pItem;
+                }
+                else
+                    vboxProblem().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
             }
-            else vboxProblem().cannotUninstallExtPack(strSelectedPackageName, manager, this);
+            else
+                vboxProblem().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
         }
     }
 }

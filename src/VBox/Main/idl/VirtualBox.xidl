@@ -14778,7 +14778,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackFile" extends="IExtPackBase"
-    uuid="64b65bda-eedf-442c-9fd2-d179a021031a"
+    uuid="b6b49f55-efcc-4f08-b486-56e8d8afb10b"
     wsmap="suppress"
     >
     <desc>
@@ -14803,12 +14803,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           the same name as the one being installed.
         </desc>
       </param>
+      <param name="displayInfo" type="wstring" dir="in">
+        <desc>
+          Platform specific display information.  Reserved for future hacks.
+        </desc>
+      </param>
+      <param name="progess" type="IProgress" dir="return">
+        <desc>
+          Progress object for the operation if it was decided that it should
+          be executed asynchronously - i.e. never in 4.0.0, but maybe in 4.0.x.
+        </desc>
+      </param>
     </method>
   </interface>
 
   <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="70d808a9-176f-4d45-adad-7c509b8309b3"
+    uuid="2451b1ba-ab1c-42fb-b453-c58433bea8c7"
     wsmap="suppress"
     >
     <desc>
@@ -14862,6 +14873,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           Forced removal of the extension pack.  This means that the uninstall
           hook will not be called.
+        </desc>
+      </param>
+      <param name="displayInfo" type="wstring" dir="in">
+        <desc>
+          Platform specific display information.  Reserved for future hacks.
+        </desc>
+      </param>
+      <param name="progess" type="IProgress" dir="return">
+        <desc>
+          Progress object for the operation if it was decided that it should
+          be executed asynchronously - i.e. never in 4.0.0, but maybe in 4.0.x.
         </desc>
       </param>
     </method>
