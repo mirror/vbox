@@ -3663,8 +3663,8 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>ISystemProperties::getMaxVDISize() is now <xref
-          linkend="ISystemProperties__getMaxVDSize"
-          xreflabel="ISystemProperties::getMaxVDSize()" /> and the returned
+          linkend="ISystemProperties__getInfoVDSize"
+          xreflabel="ISystemProperties::getInfoVDSize()" /> and the returned
           unit has changed from megabytes to bytes.</para>
         </listitem>
 
