@@ -1896,7 +1896,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         if (!gpMachineDebugger)
         {
-            RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR0 ? "" : "no");
+            RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR3 ? "" : "no");
             goto leave;
         }
         gpMachineDebugger->COMSETTER(RecompileUser)(!fRawR3);
@@ -1905,7 +1905,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         if (!gpMachineDebugger)
         {
-            RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fRawR0 ? "" : "no");
+            RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fPATM ? "" : "no");
             goto leave;
         }
         gpMachineDebugger->COMSETTER(PATMEnabled)(fPATM);
@@ -1914,7 +1914,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         if (!gpMachineDebugger)
         {
-            RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fRawR0 ? "" : "no");
+            RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fCSAM ? "" : "no");
             goto leave;
         }
         gpMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
