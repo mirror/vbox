@@ -254,7 +254,12 @@
       <listitem>
         <para>Linux host USB support: introduced a less invasive way of
            accessing raw USB devices (bugs #1093, #5345, #7759)</para>
-      </listitem>
+       </listitem>
+
+       <listitem>
+         <para>Linux hosts: support recent Linux kernels with
+           <emphasis>CONFIG_DEBUG_SET_MODULE_RONX</emphasis> set</para>
+       </listitem>
 
       <listitem>
         <para>Guest Additions: Shared Folders now can be marked as being auto-mounted
