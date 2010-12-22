@@ -251,7 +251,7 @@ static void vboxHwBufferFlush(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 
         VBoxHGSMIBufferSubmit(pCtx, p);
 
-        VBoxHGSMIBufferSubmit(pCtx, p);
+        VBoxHGSMIBufferFree(pCtx, p);
     }
 
     return;
