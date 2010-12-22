@@ -144,10 +144,9 @@ public:
     }
     void getFramebufferDimensions(int32_t *px1, int32_t *py1, int32_t *px2,
                                   int32_t *py2);
-#ifdef MMSEAMLESS
+
     int handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect);
-#endif
 
     int VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlush (void);

@@ -976,7 +976,6 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
     *py2 = y2;
 }
 
-#ifdef MMSEAMLESS
 static bool displayIntersectRect(RTRECT *prectResult,
                                  const RTRECT *prect1,
                                  const RTRECT *prect2)
@@ -1105,7 +1104,6 @@ int Display::handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect)
     // @todo Currently not used by the guest and is not implemented in framebuffers. Remove?
     return VERR_NOT_SUPPORTED;
 }
-#endif
 
 typedef struct _VBVADIRTYREGION
 {
