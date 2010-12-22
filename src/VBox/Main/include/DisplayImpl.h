@@ -271,7 +271,6 @@ private:
 
     void handleResizeCompletedEMT (void);
 
-#ifdef VBOX_WITH_OLD_VBVA_LOCK
     RTCRITSECT mVBVALock;
     volatile uint32_t mfu32PendingVideoAccelDisable;
 
@@ -290,7 +289,6 @@ private:
     /* Functions run under VBVA lock. */
     int videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
     void videoAccelFlush (void);
-#endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
 #ifdef VBOX_WITH_HGSMI
     volatile uint32_t mu32UpdateVBVAFlags;
