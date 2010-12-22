@@ -43,6 +43,26 @@
 
 
 /**
+ * Handles the info sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   a                   The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_Info(HandlerArg *a, IMachineDebugger *pDebugger)
+{
+    if (a->argc < 3 || a->argc > 4)
+        return errorSyntax(USAGE_DEBUGVM, "The inject sub-command takes at one or two arguments");
+
+    com::Bstr bstrName(a->argv[2]);
+    com::Bstr bstrArgs(a->argv[3]);
+    com::Bstr bstrInfo;
+    CHECK_ERROR2_RET(pDebugger, Info(bstrName.raw(), bstrArgs.raw(), bstrInfo.asOutParam()), RTEXITCODE_FAILURE);
+    RTPrintf("%ls", bstrInfo.raw());
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Handles the inject sub-command.
  *
  * @returns Suitable exit code.
@@ -115,6 +135,45 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
     com::Bstr bstrFilename(szAbsFilename);
     com::Bstr bstrCompression(pszCompression);
     CHECK_ERROR2_RET(pDebugger, DumpGuestCore(bstrFilename.raw(), bstrCompression.raw()), RTEXITCODE_FAILURE);
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handles the os sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   a                   The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_OSDetect(HandlerArg *a, IMachineDebugger *pDebugger)
+{
+    if (a->argc != 2)
+        return errorSyntax(USAGE_DEBUGVM, "The osdetect sub-command does not take any arguments");
+
+    com::Bstr bstrName;
+    CHECK_ERROR2_RET(pDebugger, DetectOS(bstrName.asOutParam()), RTEXITCODE_FAILURE);
+    RTPrintf("Detected: %ls\n", bstrName.raw());
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handles the os sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   a                   The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_OSInfo(HandlerArg *a, IMachineDebugger *pDebugger)
+{
+    if (a->argc != 2)
+        return errorSyntax(USAGE_DEBUGVM, "The osinfo sub-command does not take any arguments");
+
+    com::Bstr bstrName;
+    CHECK_ERROR2_RET(pDebugger, COMGETTER(OSName)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
+    com::Bstr bstrVersion;
+    CHECK_ERROR2_RET(pDebugger, COMGETTER(OSVersion)(bstrVersion.asOutParam()), RTEXITCODE_FAILURE);
+    RTPrintf("Name:    %ls\n", bstrName.raw());
+    RTPrintf("Version: %ls\n", bstrVersion.raw());
     return RTEXITCODE_SUCCESS;
 }
 
@@ -223,8 +282,14 @@ int handleDebugVM(HandlerArg *pArgs)
             const char *pszSubCmd = pArgs->argv[1];
             if (!strcmp(pszSubCmd, "dumpguestcore"))
                 rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "info"))
+                rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "injectnmi"))
                 rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "osdetect"))
+                rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "osinfo"))
+                rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "statistics"))
                 rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
             else
