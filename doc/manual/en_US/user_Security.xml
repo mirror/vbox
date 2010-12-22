@@ -56,7 +56,7 @@
         </listitem>
 
         <listitem>
-          <para>When using remote iSCSI storage and the storage server is
+          <para>When using remote iSCSI storage and the storage server
           requires authentication, a password can optionally be supplied with
           the <computeroutput>VBoxManage storageattach</computeroutput>
           command. Note however that this is stored <emphasis
