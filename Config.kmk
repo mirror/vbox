@@ -356,8 +356,6 @@ VBOX_WITH_WDDM = 1
 VBOXWDDM_WITH_VBVA = 1
 VBOX_WITH_VDMA = 1
 VBOX_WITH_CRHGSMI = 1
-# Enable VBVA lock
-VBOX_WITH_OLD_VBVA_LOCK = 1
 # Disable the Intel PXE ROM (uses Etherboot).
 VBOX_WITH_INTEL_PXE =
 # Enable EFI support
