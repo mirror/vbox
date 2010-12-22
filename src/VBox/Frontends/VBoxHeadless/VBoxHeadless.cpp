@@ -968,7 +968,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             if (!machineDebugger)
             {
-                RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR0 ? "" : "no");
+                RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR3 ? "" : "no");
                 break;
             }
             machineDebugger->COMSETTER(RecompileUser)(!fRawR3);
@@ -977,7 +977,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             if (!machineDebugger)
             {
-                RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fRawR0 ? "" : "no");
+                RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fPATM ? "" : "no");
                 break;
             }
             machineDebugger->COMSETTER(PATMEnabled)(fPATM);
@@ -986,7 +986,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             if (!machineDebugger)
             {
-                RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fRawR0 ? "" : "no");
+                RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fCSAM ? "" : "no");
                 break;
             }
             machineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
