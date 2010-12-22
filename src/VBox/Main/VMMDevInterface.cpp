@@ -465,37 +465,9 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
 
     if (!cRect)
         return VERR_INVALID_PARAMETER;
-#ifdef MMSEAMLESS
+
     /* Forward to Display, which calls corresponding framebuffers. */
     pConsole->getDisplay()->handleSetVisibleRegion(cRect, pRect);
-#else
-    IFramebuffer *framebuffer = pConsole->getDisplay()->getFramebuffer();
-    if (framebuffer)
-    {
-        framebuffer->SetVisibleRegion((BYTE *)pRect, cRect);
-#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-        {
-            BOOL is3denabled;
-
-            pConsole->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-            if (is3denabled)
-            {
-                VBOXHGCMSVCPARM parms[2];
-
-                parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-                parms[0].u.pointer.addr = pRect;
-                parms[0].u.pointer.size = 0;  /* We don't actually care. */
-                parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
-                parms[1].u.uint32 = cRect;
-
-                if (pDrv->pVMMDev)
-                    return pDrv->pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
-            }
-        }
-#endif
-    }
-#endif
 
     return VINF_SUCCESS;
 }
@@ -505,19 +477,8 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
-#ifdef MMSEAMLESS
     /* Forward to Display, which calls corresponding framebuffers. */
     pConsole->getDisplay()->handleQueryVisibleRegion(pcRect, pRect);
-#else
-    IFramebuffer *framebuffer = pConsole->getDisplay()->getFramebuffer();
-    if (framebuffer)
-    {
-        ULONG cRect = 0;
-        framebuffer->GetVisibleRegion((BYTE *)pRect, cRect, &cRect);
-
-        *pcRect = cRect;
-    }
-#endif
 
     return VINF_SUCCESS;
 }
