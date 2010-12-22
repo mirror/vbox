@@ -57,10 +57,19 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef RTMEMALLOC_EXEC_HEAP
+
+# ifdef CONFIG_DEBUG_SET_MODULE_RONX
+#  define RTMEMALLOC_EXEC_HEAP_VM_AREA  1
+# endif
 /** The heap. */
 static RTHEAPSIMPLE g_HeapExec = NIL_RTHEAPSIMPLE;
 /** Spinlock protecting the heap. */
 static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTSPINLOCK;
+# ifdef RTMEMALLOC_EXEC_HEAP_VM_AREA
+static struct page **g_apPages;
+static void *g_pvHeap;
+static size_t g_cPages;
+# endif
 
 
 /**
@@ -69,11 +78,24 @@ static RTSPINLOCK   g_HeapExecSpinlock = NIL_RTSPINLOCK;
  */
 void rtR0MemExecCleanup(void)
 {
+# ifdef RTMEMALLOC_EXEC_HEAP_VM_AREA
+    unsigned i;
+
+    /* according to linux/drivers/lguest/core.c this function undoes
+     * map_vm_area() as well as __get_vm_area(). */
+    if (g_pvHeap)
+        vunmap(g_pvHeap);
+    for (i = 0; i < g_cPages; i++)
+        __free_page(g_apPages[i]);
+    kfree(g_apPages);
+# endif
+
     RTSpinlockDestroy(g_HeapExecSpinlock);
     g_HeapExecSpinlock = NIL_RTSPINLOCK;
 }
 
 
+# ifndef RTMEMALLOC_EXEC_HEAP_VM_AREA
 /**
  * Donate read+write+execute memory to the exec heap.
  *
@@ -104,6 +126,76 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb)
     return rc;
 }
 RT_EXPORT_SYMBOL(RTR0MemExecDonate);
+
+# else /* !RTMEMALLOC_EXEC_HEAP_VM_AREA */
+
+/**
+ * RTR0MemExecDonate() does not work if CONFIG_DEBUG_SET_MODULE_RONX is enabled.
+ * In that case, allocate a VM area in the modules range and back it with kernel
+ * memory. Unfortunately __vmalloc_area() is not exported so we have to emulate
+ * it.
+ */
+RTR0DECL(int) RTR0MemExecInit(size_t cb)
+{
+    int rc;
+    struct vm_struct *area;
+    size_t cPages;
+    size_t cbPages;
+    unsigned i;
+    struct page **ppPages;
+
+    AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
+
+    rc = RTSpinlockCreate(&g_HeapExecSpinlock);
+    if (RT_SUCCESS(rc))
+    {
+        cb = RT_ALIGN(cb, PAGE_SIZE);
+        area = __get_vm_area(cb, VM_ALLOC, MODULES_VADDR, MODULES_END);
+        if (!area)
+        {
+            rtR0MemExecCleanup();
+            return VERR_NO_MEMORY;
+        }
+        g_pvHeap = area->addr;
+        cPages = cb >> PAGE_SHIFT;
+        area->nr_pages = 0;
+        cbPages = cPages * sizeof(struct page *);
+        g_apPages = kmalloc(cbPages, GFP_KERNEL);
+        area->pages = g_apPages;
+        if (!g_apPages)
+        {
+            rtR0MemExecCleanup();
+            return VERR_NO_MEMORY;
+        }
+        memset(area->pages, 0, cbPages);
+        for (i = 0; i < cPages; i++)
+        {
+            g_apPages[i] = alloc_page(GFP_KERNEL | __GFP_HIGHMEM);
+            if (!g_apPages[i])
+            {
+                area->nr_pages = i;
+                g_cPages = i;
+                rtR0MemExecCleanup();
+                return VERR_NO_MEMORY;
+            }
+        }
+        area->nr_pages = cPages;
+        g_cPages = i;
+        ppPages = g_apPages;
+        if (map_vm_area(area, PAGE_KERNEL_EXEC, &ppPages))
+        {
+            rtR0MemExecCleanup();
+            return VERR_NO_MEMORY;
+        }
+
+        rc = RTHeapSimpleInit(&g_HeapExec, g_pvHeap, cb);
+        if (RT_FAILURE(rc))
+            rtR0MemExecCleanup();
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTR0MemExecInit);
+# endif /* RTMEMALLOC_EXEC_HEAP_VM_AREA */
 #endif /* RTMEMALLOC_EXEC_HEAP */
 
 

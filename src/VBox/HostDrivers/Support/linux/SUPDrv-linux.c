@@ -136,7 +136,7 @@ static int force_async_tsc = 0;
 /** The module name. */
 #define DEVICE_NAME         "vboxdrv"
 
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) && !defined(CONFIG_DEBUG_SET_MODULE_RONX)
 /**
  * Memory for the executable memory heap (in IPRT).
  */
@@ -306,8 +306,12 @@ static int __init VBoxDrvLinuxInit(void)
         if (RT_SUCCESS(rc))
         {
 #ifdef RT_ARCH_AMD64
+# ifdef CONFIG_DEBUG_SET_MODULE_RONX
+            rc = RTR0MemExecInit(1572864 /* 1.5MB */);
+# else
             rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
             printk(KERN_DEBUG "VBoxDrv: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
+# endif
 #endif
             Log(("VBoxDrv::ModuleInit\n"));
 
