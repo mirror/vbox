@@ -769,7 +769,7 @@
       <para>Most Linux-based guests will fail with AMD Phenoms or
       Barcelona-level Opterons due to a bug in the Linux kernel. Enable the
       I/O-APIC to work around the problem (see <xref
-      linkend="settings-general-advanced" />).</para>
+      linkend="settings-system" />).</para>
     </sect2>
 
     <sect2 id="trouble-linux-buggy">
