@@ -1,4 +1,4 @@
-/* $Id$ *//* $Id$ */
+/* $Id$ */
 /** @file
  * kHlpAlloc - Memory Allocation, IPRT based implementation.
  */
