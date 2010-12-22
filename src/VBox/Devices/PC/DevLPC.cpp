@@ -262,7 +262,7 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->dev.config[0x41] = 0x80; /* base address / 128, see DevACPI.cpp */
 
     /* 44h       ACPI_CNTL    ACPI Control */
-    pThis->dev.config[0x40] = 0x00 | (1<<7); /* SCI is IRQ9, ACPI enabled */
+    pThis->dev.config[0x44] = 0x00 | (1<<7); /* SCI is IRQ9, ACPI enabled */
     /* 48h–4Bh   GPIOBASE     GPIO Base Address */
 
     /* 4C        GC           GPIO Control */
@@ -280,7 +280,7 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* 64h SIRQ_CNTL Serial IRQ Control 10h R/W, RO */
     pThis->dev.config[0x64] = 0x10;
 
-    /*68h-6Bh PIRQ[n]_ROUT PIRQ[E-H] Routing Control  */
+    /* 68h-6Bh PIRQ[n]_ROUT PIRQ[E-H] Routing Control  */
     pThis->dev.config[0x68] = 0x80;
     pThis->dev.config[0x69] = 0x80;
     pThis->dev.config[0x6A] = 0x80;
