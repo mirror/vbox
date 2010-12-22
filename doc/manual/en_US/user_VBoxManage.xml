@@ -1396,6 +1396,16 @@ Virtual system 0:
     next time you start it. This is the equivalent of pulling out the power
     cable on a physical machine, and should be avoided if possible.</para>
   </sect1>
+  
+  <sect1>
+    <title>VBoxManage adoptstate</title>
+    
+    <para>If you have a saved state file (<computeroutput>.sav</computeroutput>)
+    that is seperate from the VM configuration, you can use this command to
+    "adopt" the file. This will change the VM to saved state and when you
+    start it, VirtualBox will attempt to restore it from the saved state file
+    you indicated. This command should only be used in special setups.</para>
+  </sect1>
 
   <sect1>
     <title>VBoxManage snapshot</title>
@@ -1442,100 +1452,23 @@ Virtual system 0:
     snapshot.</para>
   </sect1>
 
-  <sect1 id="vboxmanage-storagectl">
-    <title>VBoxManage storagectl</title>
+  <sect1 id="vboxmanage-closemedium">
+    <title>VBoxManage closemedium</title>
 
-    <para>This command attaches/modifies/removes a storage controller. After
-    this, virtual media can be attached to the controller with the
-    <computeroutput>storageattach</computeroutput> command (see the next
-    section).</para>
+    <para>This commands removes a hard disk, DVD or floppy image from a
+    VirtualBox media registry.<footnote>
+        <para>Before VirtualBox 4.0, it was necessary to call VBoxManage
+        openmedium before a medium could be attached to a virtual machine;
+        that call "registered" the medium with the global VirtualBox media
+        registry. With VirtualBox 4.0 this is no longer necessary; media are
+        added to media registries automatically. The "closemedium" call has
+        been retained, however, to allow for explicitly removing a medium from
+        a registry.</para>
+      </footnote></para>
 
-    <para>The syntax is as follows:</para>
-
-    <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
-                            --name &lt;name&gt;
-                            [--add &lt;ide/sata/scsi/floppy&gt;]
-                            [--controller &lt;LsiLogic/BusLogic/IntelAhci/PIIX3/
-                                           PIIX4/ICH6/I8207&gt;]
-                            [--sataideemulation&lt;1-4&gt; &lt;1-30&gt;]
-                            [--sataportcount &lt;1-30&gt;]
-                            [--hostiocache on|off]
-                            [--remove]</screen>
-
-    <para>where the parameters mean: <glosslist>
-        <glossentry>
-          <glossterm>uuid|vmname</glossterm>
-
-          <glossdef>
-            <para>The VM UUID or VM Name. Mandatory.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>name</glossterm>
-
-          <glossdef>
-            <para>Name of the storage controller. Mandatory.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>add</glossterm>
-
-          <glossdef>
-            <para>Define the type of the system bus to which the storage
-            controller must be connected.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>controller</glossterm>
-
-          <glossdef>
-            <para>Allows to choose the type of chipset being emulated for the
-            given storage controller.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>sataideemulation</glossterm>
-
-          <glossdef>
-            <para>This specifies which SATA ports should operate in IDE
-            emulation mode. As explained in <xref
-            linkend="harddiskcontrollers" />, by default, this is the case for
-            SATA ports 1-4; with this command, you can map four IDE channels
-            to any of the 30 supported SATA ports.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>sataportcount</glossterm>
-
-          <glossdef>
-            <para>This determines how many ports the SATA controller should
-            support.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>hostiocache</glossterm>
-
-          <glossdef>
-            <para>Configures the use of the host I/O cache for all disk images
-            attached to this storage controller. For details, please see <xref
-            linkend="iocaching" />.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>remove</glossterm>
-
-          <glossdef>
-            <para>Removes the storage controller from the VM config.</para>
-          </glossdef>
-        </glossentry>
-      </glosslist></para>
+    <para>Optionally, you can request that the image be deleted. You will get
+    appropriate diagnostics that the deletion failed, however the image will
+    become unregistered in any case.</para>
   </sect1>
 
   <sect1>
@@ -1785,6 +1718,102 @@ Virtual system 0:
             <para>If specified, connect to the iSCSI target via Internal
             Networking. This needs further configuration which is described in
             <xref linkend="iscsi-intnet" />.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+  </sect1>
+  
+  <sect1 id="vboxmanage-storagectl">
+    <title>VBoxManage storagectl</title>
+
+    <para>This command attaches/modifies/removes a storage controller. After
+    this, virtual media can be attached to the controller with the
+    <computeroutput>storageattach</computeroutput> command (see the next
+    section).</para>
+
+    <para>The syntax is as follows:</para>
+
+    <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
+                            --name &lt;name&gt;
+                            [--add &lt;ide/sata/scsi/floppy&gt;]
+                            [--controller &lt;LsiLogic/BusLogic/IntelAhci/PIIX3/
+                                           PIIX4/ICH6/I8207&gt;]
+                            [--sataideemulation&lt;1-4&gt; &lt;1-30&gt;]
+                            [--sataportcount &lt;1-30&gt;]
+                            [--hostiocache on|off]
+                            [--remove]</screen>
+
+    <para>where the parameters mean: <glosslist>
+        <glossentry>
+          <glossterm>uuid|vmname</glossterm>
+
+          <glossdef>
+            <para>The VM UUID or VM Name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>name</glossterm>
+
+          <glossdef>
+            <para>Name of the storage controller. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>add</glossterm>
+
+          <glossdef>
+            <para>Define the type of the system bus to which the storage
+            controller must be connected.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>controller</glossterm>
+
+          <glossdef>
+            <para>Allows to choose the type of chipset being emulated for the
+            given storage controller.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>sataideemulation</glossterm>
+
+          <glossdef>
+            <para>This specifies which SATA ports should operate in IDE
+            emulation mode. As explained in <xref
+            linkend="harddiskcontrollers" />, by default, this is the case for
+            SATA ports 1-4; with this command, you can map four IDE channels
+            to any of the 30 supported SATA ports.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>sataportcount</glossterm>
+
+          <glossdef>
+            <para>This determines how many ports the SATA controller should
+            support.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>hostiocache</glossterm>
+
+          <glossdef>
+            <para>Configures the use of the host I/O cache for all disk images
+            attached to this storage controller. For details, please see <xref
+            linkend="iocaching" />.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>remove</glossterm>
+
+          <glossdef>
+            <para>Removes the storage controller from the VM config.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>
@@ -2082,25 +2111,6 @@ VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
       </note></para>
   </sect1>
 
-  <sect1 id="vboxmanage-closemedium">
-    <title>VBoxManage closemedium</title>
-
-    <para>This commands removes a hard disk, DVD or floppy image from a
-    VirtualBox media registry.<footnote>
-        <para>Before VirtualBox 4.0, it was necessary to call VBoxManage
-        openmedium before a medium could be attached to a virtual machine;
-        that call "registered" the medium with the global VirtualBox media
-        registry. With VirtualBox 4.0 this is no longer necessary; media are
-        added to media registries automatically. The "closemedium" call has
-        been retained, however, to allow for explicitly removing a medium from
-        a registry.</para>
-      </footnote></para>
-
-    <para>Optionally, you can request that the image be deleted. You will get
-    appropriate diagnostics that the deletion failed, however the image will
-    become unregistered in any case.</para>
-  </sect1>
-
   <sect1>
     <title>VBoxManage getextradata/setextradata</title>
 
@@ -2241,161 +2251,6 @@ Value: 2006.01.01</screen>
 
     <para>Shared folders are described in detail in <xref
     linkend="sharedfolders" />.</para>
-  </sect1>
-
-  <sect1>
-    <title id="metrics">VBoxManage metrics</title>
-
-    <para>This command supports monitoring the usage of system resources.
-    Resources are represented by various metrics associated with the host
-    system or a particular VM. For example, the host system has a
-    <computeroutput>CPU/Load/User</computeroutput> metric that shows the
-    percentage of time CPUs spend executing in user mode over a specific
-    sampling period.</para>
-
-    <para>Metric data is collected and retained internally; it may be
-    retrieved at any time with the <computeroutput>VBoxManage metrics
-    query</computeroutput> subcommand. The data is available as long as the
-    background <computeroutput>VBoxSVC</computeroutput> process is alive. That
-    process terminates shortly after all VMs and frontends have been
-    closed.</para>
-
-    <para>By default no metrics are collected at all. Metrics collection does
-    not start until <computeroutput>VBoxManage metrics setup</computeroutput>
-    is invoked with a proper sampling interval and the number of metrics to be
-    retained. The interval is measured in seconds. For example, to enable
-    collecting the host processor and memory usage metrics every second and
-    keeping the 5 most current samples, the following command can be
-    used:</para>
-
-    <screen>VBoxManage metrics setup --period 1 --samples 5 host CPU/Load,RAM/Usage</screen>
-
-    <para>Metric collection can only be enabled for started VMs. Collected
-    data and collection settings for a particular VM will disappear as soon as
-    it shuts down. Use <computeroutput>VBoxManage metrics list
-    </computeroutput> subcommand to see which metrics are currently available.
-    You can also use <computeroutput>--list</computeroutput> option with any
-    subcommand that modifies metric settings to find out which metrics were
-    affected.</para>
-
-    <para>Note that the <computeroutput>VBoxManage metrics
-    setup</computeroutput> subcommand discards all samples that may have been
-    previously collected for the specified set of objects and metrics.</para>
-
-    <para>To enable or disable metrics collection without discarding the data
-    <computeroutput>VBoxManage metrics enable</computeroutput> and
-    <computeroutput>VBoxManage metrics disable</computeroutput> subcommands
-    can be used. Note that these subcommands expect metrics, not submetrics,
-    like <code>CPU/Load</code> or <code>RAM/Usage</code> as parameters. In
-    other words enabling <code>CPU/Load/User</code> while disabling
-    <code>CPU/Load/Kernel</code> is not supported.</para>
-
-    <para>The host and VMs have different sets of associated metrics.
-    Available metrics can be listed with <computeroutput>VBoxManage metrics
-    list</computeroutput> subcommand.</para>
-
-    <para>A complete metric name may include an aggregate function. The name
-    has the following form:
-    <computeroutput>Category/Metric[/SubMetric][:aggregate]</computeroutput>.
-    For example, <computeroutput>RAM/Usage/Free:min</computeroutput> stands
-    for the minimum amount of available memory over all retained data if
-    applied to the host object.</para>
-
-    <para>Subcommands may apply to all objects and metrics or can be limited
-    to one object or/and a list of metrics. If no objects or metrics are given
-    in the parameters, the subcommands will apply to all available metrics of
-    all objects. You may use an asterisk
-    ("<computeroutput>*</computeroutput>") to explicitly specify that the
-    command should be applied to all objects or metrics. Use "host" as the
-    object name to limit the scope of the command to host-related metrics. To
-    limit the scope to a subset of metrics, use a metric list with names
-    separated by commas.</para>
-
-    <para>For example, to query metric data on the CPU time spent in user and
-    kernel modes by the virtual machine named "test", you can use the
-    following command:</para>
-
-    <screen>VBoxManage metrics query test CPU/Load/User,CPU/Load/Kernel</screen>
-
-    <para>The following list summarizes the available subcommands:</para>
-
-    <glosslist>
-      <glossentry>
-        <glossterm>list</glossterm>
-
-        <glossdef>
-          <para>This subcommand shows the parameters of the currently existing
-          metrics. Note that VM-specific metrics are only available when a
-          particular VM is running.</para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
-        <glossterm>setup</glossterm>
-
-        <glossdef>
-          <para>This subcommand sets the interval between taking two samples
-          of metric data and the number of samples retained internally. The
-          retained data is available for displaying with the
-          <code>query</code> subcommand. The <computeroutput>--list
-          </computeroutput> option shows which metrics have been modified as
-          the result of the command execution.</para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
-        <glossterm>enable</glossterm>
-
-        <glossdef>
-          <para>This subcommand "resumes" data collection after it has been
-          stopped with <code>disable</code> subcommand. Note that specifying
-          submetrics as parameters will not enable underlying metrics. Use
-          <computeroutput>--list</computeroutput> to find out if the command
-          did what was expected.</para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
-        <glossterm>disable</glossterm>
-
-        <glossdef>
-          <para>This subcommand "suspends" data collection without affecting
-          collection parameters or collected data. Note that specifying
-          submetrics as parameters will not disable underlying metrics. Use
-          <computeroutput>--list</computeroutput> to find out if the command
-          did what was expected.</para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
-        <glossterm>query</glossterm>
-
-        <glossdef>
-          <para>This subcommand retrieves and displays the currently retained
-          metric data.<note>
-              <para>The <code>query</code> subcommand does not remove or
-              "flush" retained data. If you query often enough you will see
-              how old samples are gradually being "phased out" by new
-              samples.</para>
-            </note></para>
-        </glossdef>
-      </glossentry>
-
-      <glossentry>
-        <glossterm>collect</glossterm>
-
-        <glossdef>
-          <para>This subcommand sets the interval between taking two samples
-          of metric data and the number of samples retained internally. The
-          collected data is displayed periodically until Ctrl-C is pressed
-          unless the <computeroutput>--detach</computeroutput> option is
-          specified. With the <computeroutput>--detach</computeroutput>
-          option, this subcommand operates the same way as <code>setup</code>
-          does. The <computeroutput>--list</computeroutput> option shows which
-          metrics match the specified filter.</para>
-        </glossdef>
-      </glossentry>
-    </glosslist>
   </sect1>
 
   <sect1 id="vboxmanage-guestproperty">
@@ -2942,6 +2797,171 @@ Value: 2006.01.01</screen>
           <computeroutput>*</computeroutput>).</para>
         </listitem>
       </itemizedlist></para>
+  </sect1>
+  
+  <sect1>
+    <title id="metrics">VBoxManage metrics</title>
+
+    <para>This command supports monitoring the usage of system resources.
+    Resources are represented by various metrics associated with the host
+    system or a particular VM. For example, the host system has a
+    <computeroutput>CPU/Load/User</computeroutput> metric that shows the
+    percentage of time CPUs spend executing in user mode over a specific
+    sampling period.</para>
+
+    <para>Metric data is collected and retained internally; it may be
+    retrieved at any time with the <computeroutput>VBoxManage metrics
+    query</computeroutput> subcommand. The data is available as long as the
+    background <computeroutput>VBoxSVC</computeroutput> process is alive. That
+    process terminates shortly after all VMs and frontends have been
+    closed.</para>
+
+    <para>By default no metrics are collected at all. Metrics collection does
+    not start until <computeroutput>VBoxManage metrics setup</computeroutput>
+    is invoked with a proper sampling interval and the number of metrics to be
+    retained. The interval is measured in seconds. For example, to enable
+    collecting the host processor and memory usage metrics every second and
+    keeping the 5 most current samples, the following command can be
+    used:</para>
+
+    <screen>VBoxManage metrics setup --period 1 --samples 5 host CPU/Load,RAM/Usage</screen>
+
+    <para>Metric collection can only be enabled for started VMs. Collected
+    data and collection settings for a particular VM will disappear as soon as
+    it shuts down. Use <computeroutput>VBoxManage metrics list
+    </computeroutput> subcommand to see which metrics are currently available.
+    You can also use <computeroutput>--list</computeroutput> option with any
+    subcommand that modifies metric settings to find out which metrics were
+    affected.</para>
+
+    <para>Note that the <computeroutput>VBoxManage metrics
+    setup</computeroutput> subcommand discards all samples that may have been
+    previously collected for the specified set of objects and metrics.</para>
+
+    <para>To enable or disable metrics collection without discarding the data
+    <computeroutput>VBoxManage metrics enable</computeroutput> and
+    <computeroutput>VBoxManage metrics disable</computeroutput> subcommands
+    can be used. Note that these subcommands expect metrics, not submetrics,
+    like <code>CPU/Load</code> or <code>RAM/Usage</code> as parameters. In
+    other words enabling <code>CPU/Load/User</code> while disabling
+    <code>CPU/Load/Kernel</code> is not supported.</para>
+
+    <para>The host and VMs have different sets of associated metrics.
+    Available metrics can be listed with <computeroutput>VBoxManage metrics
+    list</computeroutput> subcommand.</para>
+
+    <para>A complete metric name may include an aggregate function. The name
+    has the following form:
+    <computeroutput>Category/Metric[/SubMetric][:aggregate]</computeroutput>.
+    For example, <computeroutput>RAM/Usage/Free:min</computeroutput> stands
+    for the minimum amount of available memory over all retained data if
+    applied to the host object.</para>
+
+    <para>Subcommands may apply to all objects and metrics or can be limited
+    to one object or/and a list of metrics. If no objects or metrics are given
+    in the parameters, the subcommands will apply to all available metrics of
+    all objects. You may use an asterisk
+    ("<computeroutput>*</computeroutput>") to explicitly specify that the
+    command should be applied to all objects or metrics. Use "host" as the
+    object name to limit the scope of the command to host-related metrics. To
+    limit the scope to a subset of metrics, use a metric list with names
+    separated by commas.</para>
+
+    <para>For example, to query metric data on the CPU time spent in user and
+    kernel modes by the virtual machine named "test", you can use the
+    following command:</para>
+
+    <screen>VBoxManage metrics query test CPU/Load/User,CPU/Load/Kernel</screen>
+
+    <para>The following list summarizes the available subcommands:</para>
+
+    <glosslist>
+      <glossentry>
+        <glossterm>list</glossterm>
+
+        <glossdef>
+          <para>This subcommand shows the parameters of the currently existing
+          metrics. Note that VM-specific metrics are only available when a
+          particular VM is running.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>setup</glossterm>
+
+        <glossdef>
+          <para>This subcommand sets the interval between taking two samples
+          of metric data and the number of samples retained internally. The
+          retained data is available for displaying with the
+          <code>query</code> subcommand. The <computeroutput>--list
+          </computeroutput> option shows which metrics have been modified as
+          the result of the command execution.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>enable</glossterm>
+
+        <glossdef>
+          <para>This subcommand "resumes" data collection after it has been
+          stopped with <code>disable</code> subcommand. Note that specifying
+          submetrics as parameters will not enable underlying metrics. Use
+          <computeroutput>--list</computeroutput> to find out if the command
+          did what was expected.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>disable</glossterm>
+
+        <glossdef>
+          <para>This subcommand "suspends" data collection without affecting
+          collection parameters or collected data. Note that specifying
+          submetrics as parameters will not disable underlying metrics. Use
+          <computeroutput>--list</computeroutput> to find out if the command
+          did what was expected.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>query</glossterm>
+
+        <glossdef>
+          <para>This subcommand retrieves and displays the currently retained
+          metric data.<note>
+              <para>The <code>query</code> subcommand does not remove or
+              "flush" retained data. If you query often enough you will see
+              how old samples are gradually being "phased out" by new
+              samples.</para>
+            </note></para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>collect</glossterm>
+
+        <glossdef>
+          <para>This subcommand sets the interval between taking two samples
+          of metric data and the number of samples retained internally. The
+          collected data is displayed periodically until Ctrl-C is pressed
+          unless the <computeroutput>--detach</computeroutput> option is
+          specified. With the <computeroutput>--detach</computeroutput>
+          option, this subcommand operates the same way as <code>setup</code>
+          does. The <computeroutput>--list</computeroutput> option shows which
+          metrics match the specified filter.</para>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+  </sect1>
+  
+  <sect1>
+    <title>VBoxManage hostonlyif</title>
+    
+    <para>With "hostonlyif" you can change the IP configuration of a host-only
+    network interface. For a description of host-only networking, please
+    refer to <xref linkend="network_hostonly" />. Each host-only interface is
+    identified by a name and can either use the internal DHCP server or a
+    manual IP configuration (both IP4 and IP6).</para>
   </sect1>
 
   <sect1 id="vboxmanage-dhcpserver">
