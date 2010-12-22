@@ -1,12 +1,10 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox COM class implementation
+ * VBox IMachineDebugger COM class implementation.
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -545,12 +543,76 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
 
 STDMETHODIMP MachineDebugger::COMGETTER(OSName)(BSTR *a_pbstrName)
 {
-    ReturnComNotImplemented();
+    LogFlowThisFunc(("\n"));
+    CheckComArgNotNull(a_pbstrName);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Do the job and try convert the name.
+             */
+            char szName[64];
+            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.raw(), szName, sizeof(szName), NULL, 0);
+            if (RT_SUCCESS(vrc))
+            {
+                try
+                {
+                    Bstr bstrName(szName);
+                    bstrName.detachTo(a_pbstrName);
+                }
+                catch (std::bad_alloc)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+            else
+                hrc = setError(VBOX_E_VM_ERROR, tr("DBGFR3OSQueryNameAndVersion failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::COMGETTER(OSVersion)(BSTR *a_pbstrVersion)
 {
-    ReturnComNotImplemented();
+    LogFlowThisFunc(("\n"));
+    CheckComArgNotNull(a_pbstrVersion);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Do the job and try convert the name.
+             */
+            char szVersion[256];
+            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.raw(), NULL, 0, szVersion, sizeof(szVersion));
+            if (RT_SUCCESS(vrc))
+            {
+                try
+                {
+                    Bstr bstrVersion(szVersion);
+                    bstrVersion.detachTo(a_pbstrVersion);
+                }
+                catch (std::bad_alloc)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+            else
+                hrc = setError(VBOX_E_VM_ERROR, tr("DBGFR3OSQueryNameAndVersion failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 /**
@@ -707,9 +769,177 @@ STDMETHODIMP MachineDebugger::DumpHostProcessCore(IN_BSTR a_bstrFilename, IN_BST
     ReturnComNotImplemented();
 }
 
+/**
+ * Debug info string buffer formatter.
+ */
+typedef struct MACHINEDEBUGGERINOFHLP
+{
+    /** The core info helper structure. */
+    DBGFINFOHLP Core;
+    /** Pointer to the buffer. */
+    char       *pszBuf;
+    /** The size of the buffer. */
+    size_t      cbBuf;
+    /** The offset into the buffer */
+    size_t      offBuf;
+    /** Indicates an out-of-memory condition. */
+    bool        fOutOfMemory;
+} MACHINEDEBUGGERINOFHLP;
+/** Pointer to a Debug info string buffer formatter. */
+typedef MACHINEDEBUGGERINOFHLP *PMACHINEDEBUGGERINOFHLP;
+
+
+/**
+ * @callback_method_impl{FNRTSTROUTPUT}
+ */
+static DECLCALLBACK(size_t) MachineDebuggerInfoOutput(void *pvArg, const char *pachChars, size_t cbChars)
+{
+    PMACHINEDEBUGGERINOFHLP pHlp = (PMACHINEDEBUGGERINOFHLP)pvArg;
+
+    /*
+     * Grow the buffer if required.
+     */
+    size_t const cbRequired  = cbChars + pHlp->offBuf + 1;
+    if (cbRequired > pHlp->cbBuf)
+    {
+        if (RT_UNLIKELY(pHlp->fOutOfMemory))
+            return 0;
+
+        size_t cbBufNew = pHlp->cbBuf * 2;
+        if (cbRequired > cbBufNew)
+            cbBufNew = RT_ALIGN_Z(cbRequired, 256);
+        void *pvBufNew = RTMemRealloc(pHlp->pszBuf, cbBufNew);
+        if (RT_UNLIKELY(!pvBufNew))
+        {
+            pHlp->fOutOfMemory = true;
+            RTMemFree(pHlp->pszBuf);
+            pHlp->pszBuf = NULL;
+            pHlp->cbBuf  = 0;
+            pHlp->offBuf = 0;
+            return 0;
+        }
+
+        pHlp->pszBuf = (char *)pvBufNew;
+        pHlp->cbBuf  = cbBufNew;
+    }
+
+    /*
+     * Copy the bytes into the buffer and terminate it.
+     */
+    memcpy(&pHlp->pszBuf[pHlp->offBuf], pachChars, cbChars);
+    pHlp->offBuf += cbChars;
+    pHlp->pszBuf[pHlp->offBuf] = '\0';
+    Assert(pHlp->offBuf < pHlp->cbBuf);
+    return cbChars;
+}
+
+/**
+ * @interface_method_impl{DBGFINFOHLP, pfnPrintfV}
+ */
+static DECLCALLBACK(void) MachineDebuggerInfoPrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list va)
+{
+    RTStrFormatV(MachineDebuggerInfoOutput, (void *)pHlp, NULL,  NULL, pszFormat, va);
+}
+
+/**
+ * @interface_method_impl{DBGFINFOHLP, pfnPrintf}
+ */
+static DECLCALLBACK(void) MachineDebuggerInfoPrintf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    MachineDebuggerInfoPrintfV(pHlp, pszFormat, va);
+    va_end(va);
+}
+
+/**
+ * Initializes the debug info string buffer formatter
+ *
+ * @param   pHlp                The help structure to init.
+ */
+static void MachineDebuggerInfoInit(PMACHINEDEBUGGERINOFHLP pHlp)
+{
+    pHlp->Core.pfnPrintf    = MachineDebuggerInfoPrintf;
+    pHlp->Core.pfnPrintfV   = MachineDebuggerInfoPrintfV;
+    pHlp->pszBuf            = NULL;
+    pHlp->cbBuf             = 0;
+    pHlp->offBuf            = 0;
+    pHlp->fOutOfMemory      = false;
+}
+
+/**
+ * Deletes the debug info string buffer formatter.
+ * @param   pHlp                The helper structure to delete.
+ */
+static void MachineDebuggerInfoDelete(PMACHINEDEBUGGERINOFHLP pHlp)
+{
+    RTMemFree(pHlp->pszBuf);
+    pHlp->pszBuf = NULL;
+}
+
 STDMETHODIMP MachineDebugger::Info(IN_BSTR a_bstrName, IN_BSTR a_bstrArgs, BSTR *a_pbstrInfo)
 {
-    ReturnComNotImplemented();
+    LogFlowThisFunc(("\n"));
+
+    /*
+     * Validate and convert input.
+     */
+    CheckComArgStrNotEmptyOrNull(a_bstrName);
+    Utf8Str strName, strArgs;
+    try
+    {
+        strName = a_bstrName;
+        strArgs = a_bstrArgs;
+    }
+    catch (std::bad_alloc)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Do the autocaller and lock bits.
+     */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Create a helper and call DBGFR3Info.
+             */
+            MACHINEDEBUGGERINOFHLP Hlp;
+            MachineDebuggerInfoInit(&Hlp);
+            int vrc = DBGFR3Info(ptrVM.raw(),  strName.c_str(),  strArgs.c_str(), &Hlp.Core);
+            if (RT_SUCCESS(vrc))
+            {
+                if (!Hlp.fOutOfMemory)
+                {
+                    /*
+                     * Convert the info string, watching out for allocation errors.
+                     */
+                    try
+                    {
+                        Bstr bstrInfo(Hlp.pszBuf);
+                        bstrInfo.detachTo(a_pbstrInfo);
+                    }
+                    catch (std::bad_alloc)
+                    {
+                        hrc = E_OUTOFMEMORY;
+                    }
+                }
+                else
+                    hrc = E_OUTOFMEMORY;
+            }
+            else
+                hrc = setError(VBOX_E_VM_ERROR, tr("DBGFR3Info failed with %Rrc"), vrc);
+            MachineDebuggerInfoDelete(&Hlp);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::InjectNMI()
@@ -772,7 +1002,44 @@ STDMETHODIMP MachineDebugger::WriteVirtualMemory(ULONG a_idCpu, LONG64 a_Address
 
 STDMETHODIMP MachineDebugger::DetectOS(BSTR *a_pbstrName)
 {
-    ReturnComNotImplemented();
+    LogFlowThisFunc(("\n"));
+    CheckComArgNotNull(a_pbstrName);
+
+    /*
+     * Do the autocaller and lock bits.
+     */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Do the job and try convert the name.
+             */
+/** @todo automatically load the DBGC plugins or this is a waste of time. */
+            char szName[64];
+            int vrc = DBGFR3OSDetect(ptrVM.raw(), szName, sizeof(szName));
+            if (RT_SUCCESS(vrc) && vrc != VINF_DBGF_OS_NOT_DETCTED)
+            {
+                try
+                {
+                    Bstr bstrName(szName);
+                    bstrName.detachTo(a_pbstrName);
+                }
+                catch (std::bad_alloc)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+            else
+                hrc = setError(VBOX_E_VM_ERROR, tr("DBGFR3OSDetect failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BSTR *a_pbstrValue)

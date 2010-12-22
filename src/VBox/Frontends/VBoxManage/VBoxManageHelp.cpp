@@ -611,7 +611,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "VBoxManage debugvm          <uuid>|<name>\n"
                      "                            dumpguestcore --filename <name> |\n"
+                     "                            info <item> [args] |\n"
                      "                            injectnmi |\n"
+                     "                            osdetect |\n"
+                     "                            osinfo |\n"
                      "                            statistics [--reset] [--pattern <pattern>]\n"
                      "                            [--descriptions]\n"
                      "\n");
