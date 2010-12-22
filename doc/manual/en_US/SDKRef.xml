@@ -3565,11 +3565,10 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para><computeroutput>ISystemProperties::getMaxVDISize()</computeroutput>
-                has been replaced by the <xref
-                linkend="ISystemProperties__infoVDSize"
-                xreflabel="ISystemProperties::infoVDSize" /> attribute; this
-                now uses bytes instead of megabytes.</para>
+                <para>The <xref linkend="ISystemProperties__infoVDSize"
+                xreflabel="ISystemProperties::infoVDSize" /> attribute
+                replaces the <computeroutput>getMaxVDISize()</computeroutput>
+                API call; this now uses bytes instead of megabytes.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -3592,7 +3591,7 @@ AuthResult AUTHCALL AuthEntry(
 
               <listitem>
                 <para>To reduce code duplication and for consistency with the
-                aforementioned media API changes,
+                aforementioned media APIs,
                 <computeroutput>IVirtualBox::getMachine()</computeroutput> has
                 been merged with <xref linkend="IVirtualBox__findMachine"
                 xreflabel="IVirtualBox::findMachine()" />, and
@@ -3703,50 +3702,47 @@ AuthResult AUTHCALL AuthEntry(
           <para>The following API changes were made to support the VRDE
           interface: <itemizedlist>
               <listitem>
-                <para><computeroutput>IVRDPServer</computeroutput> interface
-                has been renamed to <xref linkend="IVRDEServer"
+                <para><computeroutput>IVRDPServer</computeroutput> has been
+                renamed to <xref linkend="IVRDEServer"
                 xreflabel="IVRDEServer" />.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IRemoteDisplayInfo</computeroutput>
-                interface has been renamed to <xref linkend="IVRDEServerInfo"
+                <para><computeroutput>IRemoteDisplayInfo</computeroutput> has
+                been renamed to <xref linkend="IVRDEServerInfo"
                 xreflabel="IVRDEServerInfo" />.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IMachine::VRDPServer</computeroutput>
-                attribute has been renamed to <xref
-                linkend="IMachine__VRDEServer"
-                xreflabel="IMachine::VRDEServer" />.</para>
+                <para><xref linkend="IMachine__VRDEServer"
+                xreflabel="IMachine::VRDEServer" /> replaces
+                <computeroutput>VRDPServer.</computeroutput></para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IConsole::RemoteDisplayInfo</computeroutput>
-                attribute has been renamed to <xref
-                linkend="IConsole__VRDEServerInfo"
-                xreflabel="IConsole::VRDEServerInfo" />.</para>
+                <para><xref linkend="IConsole__VRDEServerInfo"
+                xreflabel="IConsole::VRDEServerInfo" /> replaces
+                <computeroutput>RemoteDisplayInfo</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>ISystemProperties::RemoteDisplayAuthLibrary</computeroutput>
-                attribute has been renamed to <xref
-                linkend="ISystemProperties__VRDEAuthLibrary"
-                xreflabel="ISystemProperties::VRDEAuthLibrary" />.</para>
+                <para><xref linkend="ISystemProperties__VRDEAuthLibrary"
+                xreflabel="ISystemProperties::VRDEAuthLibrary" /> replaces
+                <computeroutput>RemoteDisplayAuthLibrary</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para>Following methods has been implemented in
+                <para>The following methods have been implemented in
                 <computeroutput>IVRDEServer</computeroutput> to support
                 generic VRDE properties: <itemizedlist>
                     <listitem>
                       <para><xref linkend="IVRDEServer__setVRDEProperty"
-                      xreflabel="IVRDEServer::SetVRDEProperty" /></para>
+                      xreflabel="IVRDEServer::setVRDEProperty" /></para>
                     </listitem>
 
                     <listitem>
                       <para><xref linkend="IVRDEServer__getVRDEProperty"
-                      xreflabel="IVRDEServer::GetVRDEProperty" /></para>
+                      xreflabel="IVRDEServer::getVRDEProperty" /></para>
                     </listitem>
 
                     <listitem>
@@ -3755,12 +3751,12 @@ AuthResult AUTHCALL AuthEntry(
                     </listitem>
                   </itemizedlist></para>
 
-                <para>A few implementation specific attributes of the old
+                <para>A few implementation-specific attributes of the old
                 <computeroutput>IVRDPServer</computeroutput> interface have
                 been removed and replaced with properties: <itemizedlist>
                     <listitem>
                       <para><computeroutput>IVRDPServer::Ports</computeroutput>
-                      -- replaced with
+                      has been replaced with the
                       <computeroutput>"TCP/Ports"</computeroutput> property.
                       The property value is a string, which contains a
                       comma-separated list of ports or ranges of ports. Use a
@@ -3771,7 +3767,7 @@ AuthResult AUTHCALL AuthEntry(
 
                     <listitem>
                       <para><computeroutput>IVRDPServer::NetAddress</computeroutput>
-                      -- replaced with
+                      has been replaced with the
                       <computeroutput>"TCP/Address"</computeroutput> property.
                       The property value is an IP address string. Example:
                       <computeroutput>"127.0.0.1"</computeroutput></para>
@@ -3779,7 +3775,7 @@ AuthResult AUTHCALL AuthEntry(
 
                     <listitem>
                       <para><computeroutput>IVRDPServer::VideoChannel</computeroutput>
-                      -- replaced with
+                      has been replaced with the
                       <computeroutput>"VideoChannel/Enabled"</computeroutput>
                       property. The property value is either
                       <computeroutput>"true"</computeroutput> or
@@ -3788,7 +3784,7 @@ AuthResult AUTHCALL AuthEntry(
 
                     <listitem>
                       <para><computeroutput>IVRDPServer::VideoChannelQuality</computeroutput>
-                      -- replaced with
+                      has been replaced with the
                       <computeroutput>"VideoChannel/Quality"</computeroutput>
                       property. The property value is a string which contain a
                       decimal number in range 10..100. Invalid values are
