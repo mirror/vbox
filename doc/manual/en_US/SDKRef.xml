@@ -422,11 +422,12 @@
         <para><screen>VBoxManage setproperty websrvauthlibrary default|null|&lt;library&gt;</screen></para>
 
         <para>This way you can specify any shared object/dynamic link module
-        that conforms with the specifications for VirtualBox external authentication
-        modules as laid out in section <emphasis role="bold">VRDE authentication</emphasis>
-        of the VirtualBox User Manual; the web service uses the same kind of modules as the
-        VirtualBox VRDE server. For technical details on VirtualBox external authentication
-        modules see <xref linkend="vbox-auth" /></para>
+        that conforms with the specifications for VirtualBox external
+        authentication modules as laid out in section <emphasis
+        role="bold">VRDE authentication</emphasis> of the VirtualBox User
+        Manual; the web service uses the same kind of modules as the
+        VirtualBox VRDE server. For technical details on VirtualBox external
+        authentication modules see <xref linkend="vbox-auth" /></para>
 
         <para>By default, after installation, the web service uses the
         VBoxAuth module that ships with VirtualBox. This module uses PAM on
@@ -3177,26 +3178,27 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
   <chapter id="vbox-auth">
     <title>VirtualBox external authentication modules</title>
 
-    <para>VirtualBox supports arbitrary external modules to perform authentication.
-    The module is used when the authentication method is set to "external" for a
-    particular VM VRDE access and the library was specified with
-    <computeroutput>VBoxManage setproperty vrdeauthlibrary</computeroutput>.
-    Web service also use the authentication module which was specified with
-    <computeroutput>VBoxManage setproperty websrvauthlibrary</computeroutput>.</para>
+    <para>VirtualBox supports arbitrary external modules to perform
+    authentication. The module is used when the authentication method is set
+    to "external" for a particular VM VRDE access and the library was
+    specified with <computeroutput>VBoxManage setproperty
+    vrdeauthlibrary</computeroutput>. Web service also use the authentication
+    module which was specified with <computeroutput>VBoxManage setproperty
+    websrvauthlibrary</computeroutput>.</para>
 
-    <para>This library will be loaded by the VM or web service process on demand, i.e.
-    when the first remote desktop connection is made by a client or when
-    a client that wants to use the web service logs on.</para>
+    <para>This library will be loaded by the VM or web service process on
+    demand, i.e. when the first remote desktop connection is made by a client
+    or when a client that wants to use the web service logs on.</para>
 
-    <para>External authentication is the most flexible as the external
-    handler can both choose to grant access to everyone (like the "null"
+    <para>External authentication is the most flexible as the external handler
+    can both choose to grant access to everyone (like the "null"
     authentication method would) and delegate the request to the guest
     authentication component. When delegating the request to the guest
     component, the handler will still be called afterwards with the option to
     override the result.</para>
 
-    <para>An authentication library is required to implement exactly one
-    entry point:</para>
+    <para>An authentication library is required to implement exactly one entry
+    point:</para>
 
     <screen>#include "VBoxAuth.h"
 
@@ -3246,14 +3248,13 @@ AuthResult AUTHCALL AuthEntry(
 }</screen>
 
     <para>A note regarding the UUID implementation of the
-    <computeroutput>pUuid</computeroutput> argument:
-    VirtualBox uses a consistent binary representation of UUIDs on all
-    platforms. For this reason the integer fields comprising the UUID are
-    stored as little endian values. If you want to pass such UUIDs to code
-    which assumes that the integer fields are big endian (often also called
-    network byte order), you need to adjust the contents of the UUID to e.g.
-    achieve the same string representation. The required changes
-    are:<itemizedlist>
+    <computeroutput>pUuid</computeroutput> argument: VirtualBox uses a
+    consistent binary representation of UUIDs on all platforms. For this
+    reason the integer fields comprising the UUID are stored as little endian
+    values. If you want to pass such UUIDs to code which assumes that the
+    integer fields are big endian (often also called network byte order), you
+    need to adjust the contents of the UUID to e.g. achieve the same string
+    representation. The required changes are:<itemizedlist>
         <listitem>
           <para>reverse the order of byte 0, 1, 2 and 3</para>
         </listitem>
@@ -3265,21 +3266,22 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>reverse the order of byte 6 and 7.</para>
         </listitem>
-      </itemizedlist>Using this conversion you will get identical results
-    when converting the binary UUID to the string representation.</para>
+      </itemizedlist>Using this conversion you will get identical results when
+    converting the binary UUID to the string representation.</para>
 
-    <para>The <computeroutput>guestJudgement</computeroutput> argument contains
-    information about the guest authentication status. For the first call, it is
-    always set to <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
+    <para>The <computeroutput>guestJudgement</computeroutput> argument
+    contains information about the guest authentication status. For the first
+    call, it is always set to
+    <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
     <computeroutput>AuthEntry</computeroutput> function returns
-    <computeroutput>AuthResultDelegateToGuest</computeroutput>, a
-    guest authentication will be attempted and another call to the
-    <computeroutput>AuthEntry</computeroutput> is made with its result.
-    This can be either granted / denied or no judgement (the guest component
-    chose for whatever reason to not make a decision). In case there is a problem
-    with the guest authentication module (e.g. the Additions are not installed or
-    not running or the guest did not respond within a timeout), the "not reacted"
-    status will be returned.</para>
+    <computeroutput>AuthResultDelegateToGuest</computeroutput>, a guest
+    authentication will be attempted and another call to the
+    <computeroutput>AuthEntry</computeroutput> is made with its result. This
+    can be either granted / denied or no judgement (the guest component chose
+    for whatever reason to not make a decision). In case there is a problem
+    with the guest authentication module (e.g. the Additions are not installed
+    or not running or the guest did not respond within a timeout), the "not
+    reacted" status will be returned.</para>
   </chapter>
 
   <chapter id="javaapi">
@@ -3447,6 +3449,16 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>A new Java glue layer replacing the previous OOWS JAX-WS
+          bindings was introduced. The new library allows for uniform code
+          targeting both local (COM/XPCOM) and remote (SOAP) transports. Now,
+          instead of <computeroutput>IWebsessionManager</computeroutput>, the
+          new class <computeroutput>VirtualBoxManager</computeroutput> must be
+          used. See <xref linkend="javaapi" xreflabel="Java API chapter" />
+          for details.</para>
+        </listitem>
+
+        <listitem>
           <para>The confusingly named and impractical session APIs were
           changed. In existing client code, the following changes need to be
           made:<itemizedlist>
@@ -3540,41 +3552,69 @@ AuthResult AUTHCALL AuthEntry(
 
               <listitem>
                 <para>The rare use case of changing the UUID and parent UUID
-                of a medium previously handled by openHardDisk() is now in a
+                of a medium previously handled by
+                <computeroutput>openHardDisk()</computeroutput> is now in a
                 separate <xref linkend="IMedium__setIDs"
                 xreflabel="IMedium::setIDs" /> method.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>ISystemProperties::get/setDefaultHardDiskFolder()</computeroutput>
+                have been removed since disk images are now by default placed
+                in each machine's folder.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>ISystemProperties::getMaxVDISize()</computeroutput>
+                has been replaced by the <xref
+                linkend="ISystemProperties__infoVDSize"
+                xreflabel="ISystemProperties::infoVDSize" /> attribute; this
+                now uses bytes instead of megabytes.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
 
         <listitem>
-          <para>To reduce code duplication and for consistency with the
-          aforementioned changes, IVirtualBox::getMachine() has been merged
-          with <xref linkend="IVirtualBox__findMachine"
-          xreflabel="IVirtualBox::findMachine()" />, and
-          IMachine::getSnapshot() has been merged with <xref
-          linkend="IMachine__findSnapshot"
-          xreflabel="IMachine::findSnapshot()" />.</para>
-        </listitem>
+          <para>Machine management APIs were enhanced as follows:<itemizedlist>
+              <listitem>
+                <para><xref linkend="IVirtualBox__createMachine"
+                xreflabel="IVirtualBox::createMachine()" /> is no longer
+                restricted to creating machines in the default "Machines"
+                folder, but can now create machines at arbitrary locations.
+                For this to work, the parameter list had to be changed.</para>
+              </listitem>
 
-        <listitem>
-          <para>IVirtualBox::unregisterMachine() was replaced with <xref
-          linkend="IMachine__unregister" xreflabel="IMachine::unregister()" />
-          with additional functionality.</para>
-        </listitem>
+              <listitem>
+                <para>The long-deprecated
+                <computeroutput>IVirtualBox::createLegacyMachine()</computeroutput>
+                API has been removed.</para>
+              </listitem>
 
-        <listitem>
-          <para><xref linkend="IVirtualBox__createMachine"
-          xreflabel="IVirtualBox::createMachine()" /> is no longer restricted
-          to creating machines in the default "Machines" folder, but can now
-          create machines at arbitrary locations. For this to work, the
-          parameter list had to be changed.</para>
-        </listitem>
+              <listitem>
+                <para>To reduce code duplication and for consistency with the
+                aforementioned media API changes,
+                <computeroutput>IVirtualBox::getMachine()</computeroutput> has
+                been merged with <xref linkend="IVirtualBox__findMachine"
+                xreflabel="IVirtualBox::findMachine()" />, and
+                <computeroutput>IMachine::getSnapshot()</computeroutput> has
+                been merged with <xref linkend="IMachine__findSnapshot"
+                xreflabel="IMachine::findSnapshot()" />.</para>
+              </listitem>
 
-        <listitem>
-          <para>IConsole::forgetSavedState has been renamed to <xref
-          linkend="IConsole__discardSavedState"
-          xreflabel="IConsole::discardSavedState()" />.</para>
+              <listitem>
+                <para><computeroutput>IVirtualBox::unregisterMachine()</computeroutput>
+                was replaced with <xref linkend="IMachine__unregister"
+                xreflabel="IMachine::unregister()" /> with additional
+                functionality for cleaning up machine files.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>IConsole::forgetSavedState</computeroutput>
+                has been renamed to <xref
+                linkend="IConsole__discardSavedState"
+                xreflabel="IConsole::discardSavedState()" />.</para>
+              </listitem>
+            </itemizedlist></para>
         </listitem>
 
         <listitem>
@@ -3587,21 +3627,17 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para><xref linkend="IGuest__additionsVersion"
-          xreflabel="IGuest::additionsVersion()" /> no longer returns the
-          Guest Additions interface version but the installed Guest Additions
-          version and revision in form of
-          <computeroutput>3.3.0r12345</computeroutput>.</para>
-        </listitem>
-
-        <listitem>
-          <para>additionsActive() was replaced with <xref
-          linkend="IGuest__additionsRunLevel"
+          <para><computeroutput>additionsActive()</computeroutput> was
+          replaced with <xref linkend="IGuest__additionsRunLevel"
           xreflabel="additionsRunLevel()" /> and <xref
           linkend="IGuest__getAdditionsStatus"
           xreflabel="getAdditionsStatus()" /> in order to support a more
           detailed status of the current Guest Additions loading/readiness
-          state.</para>
+          state. <xref linkend="IGuest__additionsVersion"
+          xreflabel="IGuest::additionsVersion()" /> no longer returns the
+          Guest Additions interface version but the installed Guest Additions
+          version and revision in form of
+          <computeroutput>3.3.0r12345</computeroutput>.</para>
         </listitem>
 
         <listitem>
@@ -3629,152 +3665,146 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para><xref linkend="IMachine__export"
-          xreflabel="IMachine::export()" /> received an extra parameter
-          <computeroutput>location</computeroutput>, which is used to decide
-          for the disk naming.</para>
-        </listitem>
-
-        <listitem>
-          <para><xref linkend="IAppliance__write"
-          xreflabel="IAppliance::write()" /> received an extra parameter
-          <computeroutput>manifest</computeroutput>, which can suppress
-          creating the manifest file on export.</para>
-        </listitem>
-
-        <listitem>
-          <para><xref linkend="IVFSExplorer__entryList"
-          xreflabel="IVFSExplorer::entryList()" /> received two extra
-          parameters <computeroutput>sizes</computeroutput> and
-          <computeroutput>modes</computeroutput>, which contains the sizes (in
-          bytes) and the file access modes (in octal form) of the returned
-          files.</para>
-        </listitem>
-
-        <listitem>
-          <para>The long-deprecated IVirtualBox::createLegacyMachine() API has
-          been removed.</para>
-        </listitem>
-
-        <listitem>
-          <para>ISystemProperties::get/setDefaultHardDiskFolder() have been
-          removed.</para>
-        </listitem>
-
-        <listitem>
-          <para>ISystemProperties::getMaxVDISize() is now <xref
-          linkend="ISystemProperties__getInfoVDSize"
-          xreflabel="ISystemProperties::getInfoVDSize()" /> and the returned
-          unit has changed from megabytes to bytes.</para>
-        </listitem>
-
-        <listitem>
-          <para>A new Java glue layer replacing the previous OOWS JAX-WS
-          bindings was introduced. The new library allows for uniform code
-          targeting both local (COM/XPCOM) and remote (SOAP) transports. Now,
-          instead of <computeroutput>IWebsessionManager</computeroutput>, the
-          new class <computeroutput>VirtualBoxManager</computeroutput> must be
-          used. See <xref linkend="javaapi" xreflabel="Java API chapter" />
-          for details.</para>
-        </listitem>
-
-        <listitem>
-          <para>Support for remote desktop access to virtual machines
-          has been cleaned up to allow third party implementations of
-          the remote desktop server. This is called VirtualBox Remote Desktop Extension
-          and can be added to VirtualBox by installing the corresponding
-          extension package.</para>
-          <para>The following API changes were made to support the VRDE interface:
-            <itemizedlist>
+          <para>The appliance (OVF) APIs were enhanced as
+          follows:<itemizedlist>
               <listitem>
-                <para><computeroutput>IVRDPServer</computeroutput> interface has been
-                renamed to <xref linkend="IVRDEServer" xreflabel="IVRDEServer" />.</para>
+                <para><xref linkend="IMachine__export"
+                xreflabel="IMachine::export()" /> received an extra parameter
+                <computeroutput>location</computeroutput>, which is used to
+                decide for the disk naming.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IRemoteDisplayInfo</computeroutput> interface has been
-                renamed to <xref linkend="IVRDEServerInfo" xreflabel="IVRDEServerInfo" />.</para>
+                <para><xref linkend="IAppliance__write"
+                xreflabel="IAppliance::write()" /> received an extra parameter
+                <computeroutput>manifest</computeroutput>, which can suppress
+                creating the manifest file on export.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IMachine::VRDPServer</computeroutput> attribute has
-                been renamed to <xref linkend="IMachine__VRDEServer"
+                <para><xref linkend="IVFSExplorer__entryList"
+                xreflabel="IVFSExplorer::entryList()" /> received two extra
+                parameters <computeroutput>sizes</computeroutput> and
+                <computeroutput>modes</computeroutput>, which contains the
+                sizes (in bytes) and the file access modes (in octal form) of
+                the returned files.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para>Support for remote desktop access to virtual machines has been
+          cleaned up to allow third party implementations of the remote
+          desktop server. This is called the VirtualBox Remote Desktop
+          Extension (VRDE) and can be added to VirtualBox by installing the
+          corresponding extension package; see the VirtualBox User Manual for
+          details.</para>
+
+          <para>The following API changes were made to support the VRDE
+          interface: <itemizedlist>
+              <listitem>
+                <para><computeroutput>IVRDPServer</computeroutput> interface
+                has been renamed to <xref linkend="IVRDEServer"
+                xreflabel="IVRDEServer" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>IRemoteDisplayInfo</computeroutput>
+                interface has been renamed to <xref linkend="IVRDEServerInfo"
+                xreflabel="IVRDEServerInfo" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>IMachine::VRDPServer</computeroutput>
+                attribute has been renamed to <xref
+                linkend="IMachine__VRDEServer"
                 xreflabel="IMachine::VRDEServer" />.</para>
               </listitem>
 
               <listitem>
-                <para><computeroutput>IConsole::RemoteDisplayInfo</computeroutput> attribute
-                has been renamed to <xref linkend="IConsole__VRDEServerInfo"
+                <para><computeroutput>IConsole::RemoteDisplayInfo</computeroutput>
+                attribute has been renamed to <xref
+                linkend="IConsole__VRDEServerInfo"
                 xreflabel="IConsole::VRDEServerInfo" />.</para>
               </listitem>
 
               <listitem>
                 <para><computeroutput>ISystemProperties::RemoteDisplayAuthLibrary</computeroutput>
-                attribute has been renamed to <xref linkend="ISystemProperties__VRDEAuthLibrary"
+                attribute has been renamed to <xref
+                linkend="ISystemProperties__VRDEAuthLibrary"
                 xreflabel="ISystemProperties::VRDEAuthLibrary" />.</para>
               </listitem>
 
               <listitem>
-                <para>Following methods has been implemented in <computeroutput>IVRDEServer</computeroutput>
-                to support generic VRDE properties:
-                  <itemizedlist>
+                <para>Following methods has been implemented in
+                <computeroutput>IVRDEServer</computeroutput> to support
+                generic VRDE properties: <itemizedlist>
                     <listitem>
-                      <para><xref linkend="IVRDEServer__setVRDEProperty" xreflabel="IVRDEServer::SetVRDEProperty" />
-                      </para>
+                      <para><xref linkend="IVRDEServer__setVRDEProperty"
+                      xreflabel="IVRDEServer::SetVRDEProperty" /></para>
                     </listitem>
+
                     <listitem>
-                      <para><xref linkend="IVRDEServer__getVRDEProperty" xreflabel="IVRDEServer::GetVRDEProperty"/>
-                      </para>
+                      <para><xref linkend="IVRDEServer__getVRDEProperty"
+                      xreflabel="IVRDEServer::GetVRDEProperty" /></para>
                     </listitem>
+
                     <listitem>
-                      <para><xref linkend="IVRDEServer__VRDEProperties" xreflabel="IVRDEServer::VRDEProperties" />
-                      </para>
+                      <para><xref linkend="IVRDEServer__VRDEProperties"
+                      xreflabel="IVRDEServer::VRDEProperties" /></para>
                     </listitem>
-                  </itemizedlist>
-                </para>
-                <para>A few implementation specific attributes of the old <computeroutput>IVRDPServer</computeroutput>
-                interface have been removed and replaced with properties:
-                  <itemizedlist>
+                  </itemizedlist></para>
+
+                <para>A few implementation specific attributes of the old
+                <computeroutput>IVRDPServer</computeroutput> interface have
+                been removed and replaced with properties: <itemizedlist>
                     <listitem>
-                      <para><computeroutput>IVRDPServer::Ports</computeroutput> -- replaced with
-                      <computeroutput>"TCP/Ports"</computeroutput> property. The property value is
-                      a string, which contains a comma-separated list of ports or ranges of ports.
-                      Use a dash between two port numbers to specify a range. Example:
-                      <computeroutput>"5000,5010-5012"</computeroutput>
-                      </para>
+                      <para><computeroutput>IVRDPServer::Ports</computeroutput>
+                      -- replaced with
+                      <computeroutput>"TCP/Ports"</computeroutput> property.
+                      The property value is a string, which contains a
+                      comma-separated list of ports or ranges of ports. Use a
+                      dash between two port numbers to specify a range.
+                      Example:
+                      <computeroutput>"5000,5010-5012"</computeroutput></para>
                     </listitem>
+
                     <listitem>
-                      <para><computeroutput>IVRDPServer::NetAddress</computeroutput> -- replaced with
-                      <computeroutput>"TCP/Address"</computeroutput> property. The property value is
-                      an IP address string. Example: <computeroutput>"127.0.0.1"</computeroutput>
-                      </para>
+                      <para><computeroutput>IVRDPServer::NetAddress</computeroutput>
+                      -- replaced with
+                      <computeroutput>"TCP/Address"</computeroutput> property.
+                      The property value is an IP address string. Example:
+                      <computeroutput>"127.0.0.1"</computeroutput></para>
                     </listitem>
+
                     <listitem>
-                      <para><computeroutput>IVRDPServer::VideoChannel</computeroutput> -- replaced with
-                      <computeroutput>"VideoChannel/Enabled"</computeroutput> property. The property value
-                      is either <computeroutput>"true"</computeroutput> or <computeroutput>"false"</computeroutput>
-                      </para>
+                      <para><computeroutput>IVRDPServer::VideoChannel</computeroutput>
+                      -- replaced with
+                      <computeroutput>"VideoChannel/Enabled"</computeroutput>
+                      property. The property value is either
+                      <computeroutput>"true"</computeroutput> or
+                      <computeroutput>"false"</computeroutput></para>
                     </listitem>
+
                     <listitem>
-                      <para><computeroutput>IVRDPServer::VideoChannelQuality</computeroutput> -- replaced with
-                      <computeroutput>"VideoChannel/Quality"</computeroutput> property. The property value is a
-                      string which contain a decimal number in range 10..100. Invalid values are ignored and
-                      the quality is set to the default value 75. Example: <computeroutput>"50"</computeroutput>
-                      </para>
+                      <para><computeroutput>IVRDPServer::VideoChannelQuality</computeroutput>
+                      -- replaced with
+                      <computeroutput>"VideoChannel/Quality"</computeroutput>
+                      property. The property value is a string which contain a
+                      decimal number in range 10..100. Invalid values are
+                      ignored and the quality is set to the default value 75.
+                      Example: <computeroutput>"50"</computeroutput></para>
                     </listitem>
-                  </itemizedlist>
-                </para>
+                  </itemizedlist></para>
               </listitem>
-            </itemizedlist>
-          </para>
+            </itemizedlist></para>
         </listitem>
 
         <listitem>
-          <para>VirtualBox external authentication module interface
-          has been updated and made more general.</para>
-          <para>Because of that, <computeroutput>VRDPAuthType</computeroutput> enumeration has been
-          renamed to <xref linkend="AuthType" xreflabel="AuthType" />.
-          </para>
+          <para>The VirtualBox external authentication module interface has
+          been updated and made more generic. Because of that,
+          <computeroutput>VRDPAuthType</computeroutput> enumeration has been
+          renamed to <xref linkend="AuthType" xreflabel="AuthType" />.</para>
         </listitem>
       </itemizedlist>
     </sect1>
