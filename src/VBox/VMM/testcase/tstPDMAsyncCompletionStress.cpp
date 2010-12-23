@@ -470,7 +470,7 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
                 {
                     RTFileClose(FileTmp);
 
-                    rc = PDMR3AsyncCompletionEpCreateForFile(&pTestFile->hEndpoint, szFile, PDMACEP_FILE_FLAGS_CACHING, pTestFile->pTemplate);
+                    rc = PDMR3AsyncCompletionEpCreateForFile(&pTestFile->hEndpoint, szFile, 0, pTestFile->pTemplate);
                     if (RT_SUCCESS(rc))
                     {
                         char szThreadDesc[256];

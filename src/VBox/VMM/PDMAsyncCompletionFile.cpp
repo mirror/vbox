@@ -824,25 +824,6 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
 
     /* Init critical section. */
     rc = RTCritSectInit(&pEpClassFile->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        /* Check if the cache was disabled by the user. */
-        rc = CFGMR3QueryBoolDef(pCfgNode, "CacheEnabled", &pEpClassFile->fCacheEnabled, true);
-        AssertLogRelRCReturn(rc, rc);
-
-        if (pEpClassFile->fCacheEnabled)
-        {
-            /* Init cache structure */
-            rc = pdmacFileCacheInit(pEpClassFile, pCfgNode);
-            if (RT_FAILURE(rc))
-            {
-                pEpClassFile->fCacheEnabled = false;
-                LogRel(("AIOMgr: Failed to initialise the cache (rc=%Rrc), disabled caching\n"));
-            }
-        }
-        else
-            LogRel(("AIOMgr: Cache was globally disabled\n"));
-    }
 
 #ifdef VBOX_WITH_DEBUGGER
     /* Install the error injection handler. */
@@ -867,10 +848,6 @@ static void pdmacFileTerminate(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals)
     while (pEpClassFile->pAioMgrHead)
         pdmacFileAioMgrDestroy(pEpClassFile, pEpClassFile->pAioMgrHead);
 
-    /* Destroy the cache. */
-    if (pEpClassFile->fCacheEnabled)
-        pdmacFileCacheDestroy(pEpClassFile);
-
     RTCritSectDelete(&pEpClassFile->CritSect);
 }
 
@@ -883,7 +860,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     PDMACEPFILEMGRTYPE enmMgrType = pEpClassFile->enmMgrTypeOverride;
     PDMACFILEEPBACKEND enmEpBackend = pEpClassFile->enmEpBackendDefault;
 
-    AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING | PDMACEP_FILE_FLAGS_DONT_LOCK)) == 0,
+    AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_DONT_LOCK)) == 0,
                     ("PDMAsyncCompletion: Invalid flag specified\n"), VERR_INVALID_PARAMETER);
 
     unsigned fFileFlags = RTFILE_O_OPEN;
@@ -900,12 +877,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * because this can lead to data corruption.
          */
         if (fFlags & PDMACEP_FILE_FLAGS_DONT_LOCK)
-        {
-            if (fFlags & PDMACEP_FILE_FLAGS_CACHING)
-                return VERR_NOT_SUPPORTED;
-            else
-                fFileFlags |= RTFILE_O_DENY_NONE;
-        }
+            fFileFlags |= RTFILE_O_DENY_NONE;
         else
             fFileFlags |= RTFILE_O_DENY_WRITE;
     }
@@ -1001,7 +973,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
             {
                 PPDMACEPFILEMGR pAioMgr = NULL;
 
-                pEpFile->cbEndpoint     = pEpFile->cbFile;
                 pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
                 pEpFile->cTasksCached   = 0;
                 pEpFile->enmBackendType = enmEpBackend;
@@ -1023,18 +994,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 }
                 else
                 {
-                    if (   (fFlags & PDMACEP_FILE_FLAGS_CACHING)
-                        && (pEpClassFile->fCacheEnabled))
-                    {
-                        pEpFile->fCaching = true;
-                        rc = pdmacFileEpCacheInit(pEpFile, pEpClassFile);
-                        if (RT_FAILURE(rc))
-                        {
-                            LogRel(("AIOMgr: Endpoint for \"%s\" was opened with caching but initializing cache failed. Disabled caching\n", pszUri));
-                            pEpFile->fCaching = false;
-                        }
-                    }
-
                     pAioMgr = pEpClassFile->pAioMgrHead;
 
                     /* Check for an idling manager of the same type */
@@ -1107,24 +1066,9 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
 
-    /* Free the cached data. */
-    if (pEpFile->fCaching)
-    {
-        rc = pdmacFileEpCacheFlush(pEpFile);
-        AssertRC(rc);
-    }
-
     /* Make sure that all tasks finished for this endpoint. */
     rc = pdmacFileAioMgrCloseEndpoint(pEpFile->pAioMgr, pEpFile);
     AssertRC(rc);
-
-    /* endpoint and real file size should better be equal now. */
-    AssertMsg(pEpFile->cbFile == pEpFile->cbEndpoint,
-              ("Endpoint and real file size should match now!\n"));
-
-    /* Destroy any per endpoint cache data */
-    if (pEpFile->fCaching)
-        pdmacFileEpCacheDestroy(pEpFile);
 
     /*
      * If the async I/O manager is in failsafe mode this is the only endpoint
@@ -1171,12 +1115,8 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
 
     pdmacFileEpTaskInit(pTask, cbRead);
 
-    if (pEpFile->fCaching)
-        rc = pdmacFileEpCacheRead(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
-                                  off, paSegments, cSegments, cbRead);
-    else
-        rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
-                                     PDMACTASKFILETRANSFER_READ);
+    rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
+                                 PDMACTASKFILETRANSFER_READ);
 
     STAM_PROFILE_ADV_STOP(&pEpFile->StatRead, Read);
 
@@ -1198,19 +1138,10 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
 
     pdmacFileEpTaskInit(pTask, cbWrite);
 
-    if (pEpFile->fCaching)
-        rc = pdmacFileEpCacheWrite(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
-                                   off, paSegments, cSegments, cbWrite);
-    else
-        rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
-                                     PDMACTASKFILETRANSFER_WRITE);
+    rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
+                                 PDMACTASKFILETRANSFER_WRITE);
 
     STAM_PROFILE_ADV_STOP(&pEpFile->StatWrite, Write);
-
-    /* Increase endpoint size. */
-    if (   RT_SUCCESS(rc)
-        && ((uint64_t)off + cbWrite) > pEpFile->cbEndpoint)
-        ASMAtomicWriteU64(&pEpFile->cbEndpoint, (uint64_t)off + cbWrite);
 
     return rc;
 }
@@ -1225,12 +1156,6 @@ static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
         return VERR_NOT_SUPPORTED;
 
     pdmacFileEpTaskInit(pTask, 0);
-
-    if (pEpFile->fCaching)
-    {
-        int rc = pdmacFileEpCacheFlush(pEpFile);
-        AssertRC(rc);
-    }
 
     PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
     if (RT_UNLIKELY(!pIoTask))
@@ -1249,7 +1174,7 @@ static int pdmacFileEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *p
 {
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
-    *pcbSize = ASMAtomicReadU64(&pEpFile->cbEndpoint);
+    *pcbSize = ASMAtomicReadU64(&pEpFile->cbFile);
 
     return VINF_SUCCESS;
 }
@@ -1258,7 +1183,7 @@ static int pdmacFileEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t cb
 {
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
-    ASMAtomicWriteU64(&pEpFile->cbEndpoint, cbSize);
+    ASMAtomicWriteU64(&pEpFile->cbFile, cbSize);
     return RTFileSetSize(pEpFile->File, cbSize);
 }
 
