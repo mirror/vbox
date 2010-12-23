@@ -655,28 +655,25 @@ static void supR3HardenedMainGrabCapabilites(void)
      */
     seteuid(g_uid);
     priv_set_t *pPrivEffective = priv_allocset();
-    priv_set_t *pPrivNewEffective = priv_allocset();
-    priv_set_t *pPrivNewPermitted = priv_allocset();
-    if (pPrivEffective && pPrivNewEffective && pPrivNewPermitted)
+    priv_set_t *pPrivNew = priv_allocset();
+    if (pPrivEffective && pPrivNew)
     {
         int rc = getppriv(PRIV_EFFECTIVE, pPrivEffective);
         seteuid(0);
         if (!rc)
         {
-            priv_copyset(pPrivEffective, pPrivNewEffective);
-            priv_copyset(pPrivEffective, pPrivNewPermitted);
-            rc = priv_addset(pPrivNewEffective, PRIV_NET_ICMPACCESS);
+            priv_copyset(pPrivEffective, pPrivNew);
+            rc = priv_addset(pPrivNew, PRIV_NET_ICMPACCESS);
             if (!rc)
             {
                 /* Order is important, as one can't set a privilege which is
-                 * not in the permitted privilege set. We limit ourselves as
-                 * much as possible after grabbing the extra privileges. */
-                rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivNewEffective);
+                 * not in the permitted privilege set. */
+                rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivNew);
                 if (rc)
                     supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effective privilege set.\n");
-                rc = setppriv(PRIV_SET, PRIV_PERMITTED, pPrivNewPermitted);
+                rc = setppriv(PRIV_SET, PRIV_PERMITTED, pPrivNew);
                 if (rc)
-                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effective privilege set.\n");
+                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");
             }
             else
                 supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to add NET_ICMPACCESS privilege.\n");
