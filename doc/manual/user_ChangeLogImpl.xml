@@ -9,7 +9,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>ICH9: fixed VM crash (software virtualization only; bug #7885</para>
       </listitem>
 
     </itemizedlist>
