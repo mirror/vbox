@@ -76,10 +76,10 @@
  *
  * I/O ports aren't really exposed in any other way, unless you count the
  * instruction interpreter in EM, but that's just what we're doing in the
- * raw-mode \#GP(0) case really. Now it's possible to call IOMIOPortRead and
+ * raw-mode \#GP(0) case really. Now, it's possible to call IOMIOPortRead and
  * IOMIOPortWrite directly to talk to a device, but this is really bad behavior
- * and should only be done as temporary hacks (the PC BIOS device used to
- * setup the CMOS this way back in the dark ages).
+ * and should only be done as temporary hacks (the PC BIOS device used to setup
+ * the CMOS this way back in the dark ages).
  *
  * MMIO has similar direct routes as the I/O ports and these shouldn't be used
  * for the same reasons and with the same restrictions. OTOH since MMIO is
