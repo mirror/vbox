@@ -433,6 +433,8 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         pVM->pdm.s.IoApic.pDevInsRC         += offDelta;
         pVM->pdm.s.IoApic.pfnSetIrqRC       += offDelta;
+        if (pVM->pdm.s.IoApic.pfnSendMsiRC)
+            pVM->pdm.s.IoApic.pfnSendMsiRC      += offDelta;
     }
 
     /*
