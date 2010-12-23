@@ -1861,6 +1861,8 @@ DECLINLINE(void) e1kAdvanceRDH(E1KSTATE *pState)
         E1K_INC_ISTAT_CNT(pState->uStatIntRXDMT0);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_RXDMT0);
     }
+    E1kLog2(("%s e1kAdvanceRDH: at exit RDH=%x RDT=%x len=%x\n",
+             INSTANCE(pState), RDH, RDT, uRQueueLen));
     //e1kCsLeave(pState);
 }
 
@@ -4649,7 +4651,17 @@ static int e1kCanReceive(E1KSTATE *pState)
     if (RT_UNLIKELY(e1kCsRxEnter(pState, VERR_SEM_BUSY) != VINF_SUCCESS))
         return VERR_NET_NO_BUFFER_SPACE;
 
-    if (RDH < RDT)
+    if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
+    {
+        E1KRXDESC desc;
+        PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
+                          &desc, sizeof(desc));
+        if (desc.status.fDD)
+            cb = 0;
+        else
+            cb = pState->u16RxBSize;
+    }
+    else if (RDH < RDT)
         cb = (RDT - RDH) * pState->u16RxBSize;
     else if (RDH > RDT)
         cb = (RDLEN/sizeof(E1KRXDESC) - RDH + RDT) * pState->u16RxBSize;
@@ -4658,6 +4670,8 @@ static int e1kCanReceive(E1KSTATE *pState)
         cb = 0;
         E1kLogRel(("E1000: OUT of RX descriptors!\n"));
     }
+    E1kLog2(("%s e1kCanReceive: at exit RDH=%d RDT=%d RDLEN=%d u16RxBSize=%d cb=%lu\n",
+             INSTANCE(pState), RDH, RDT, RDLEN, pState->u16RxBSize, cb));
 
     e1kCsRxLeave(pState);
     e1kMutexRelease(pState);
