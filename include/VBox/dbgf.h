@@ -1061,38 +1061,35 @@ typedef enum DBGFREG
     DBGFREG_R15W = DBGFREG_R15,
     DBGFREG_R15D = DBGFREG_R15,
 
-    DBGFREG_AH,
-    DBGFREG_CH,
-    DBGFREG_DH,
-    DBGFREG_BH,
-
     /* Segments and other special registers: */
     DBGFREG_CS,
-    DBGFREG_DS,
-    DBGFREG_ES,
-    DBGFREG_FS,
-    DBGFREG_GS,
-    DBGFREG_SS,
-
     DBGFREG_CS_ATTR,
-    DBGFREG_DS_ATTR,
-    DBGFREG_ES_ATTR,
-    DBGFREG_FS_ATTR,
-    DBGFREG_GS_ATTR,
-    DBGFREG_SS_ATTR,
-
     DBGFREG_CS_BASE,
-    DBGFREG_DS_BASE,
-    DBGFREG_ES_BASE,
-    DBGFREG_FS_BASE,
-    DBGFREG_GS_BASE,
-    DBGFREG_SS_BASE,
-
     DBGFREG_CS_LIMIT,
+
+    DBGFREG_DS,
+    DBGFREG_DS_ATTR,
+    DBGFREG_DS_BASE,
     DBGFREG_DS_LIMIT,
+
+    DBGFREG_ES,
+    DBGFREG_ES_ATTR,
+    DBGFREG_ES_BASE,
     DBGFREG_ES_LIMIT,
+
+    DBGFREG_FS,
+    DBGFREG_FS_ATTR,
+    DBGFREG_FS_BASE,
     DBGFREG_FS_LIMIT,
+
+    DBGFREG_GS,
+    DBGFREG_GS_ATTR,
+    DBGFREG_GS_BASE,
     DBGFREG_GS_LIMIT,
+
+    DBGFREG_SS,
+    DBGFREG_SS_ATTR,
+    DBGFREG_SS_BASE,
     DBGFREG_SS_LIMIT,
 
     DBGFREG_IP,
@@ -1104,6 +1101,17 @@ typedef enum DBGFREG
     DBGFREG_RFLAGS = DBGFREG_FLAGS,
 
     /* FPU: */
+    DBGFREG_FCW,
+    DBGFREG_FSW,
+    DBGFREG_FTW,
+    DBGFREG_FOP,
+    DBGFREG_FPUIP,
+    DBGFREG_FPUCS,
+    DBGFREG_FPUDP,
+    DBGFREG_FPUDS,
+    DBGFREG_MXCSR,
+    DBGFREG_MXCSR_MASK,
+
     DBGFREG_ST0,
     DBGFREG_ST1,
     DBGFREG_ST2,
@@ -1121,17 +1129,6 @@ typedef enum DBGFREG
     DBGFREG_MM5,
     DBGFREG_MM6,
     DBGFREG_MM7,
-
-    DBGFREG_FCW,
-    DBGFREG_FSW,
-    DBGFREG_FTW,
-    DBGFREG_FOP,
-    DBGFREG_FPUIP,
-    DBGFREG_FPUCS,
-    DBGFREG_FPUDP,
-    DBGFREG_FPUDS,
-    DBGFREG_MXCSR,
-    DBGFREG_MXCSR_MASK,
 
     /* SSE: */
     DBGFREG_XMM0,
@@ -1153,10 +1150,8 @@ typedef enum DBGFREG
     /** @todo add XMM aliases. */
 
     /* System registers: */
-    DBGFREG_GDTR,
     DBGFREG_GDTR_BASE,
     DBGFREG_GDTR_LIMIT,
-    DBGFREG_IDTR,
     DBGFREG_IDTR_BASE,
     DBGFREG_IDTR_LIMIT,
     DBGFREG_LDTR,
@@ -1199,11 +1194,94 @@ typedef enum DBGFREG
     DBGFREG_MSR_K8_SF_MASK,
     DBGFREG_MSR_K8_TSC_AUX,
 
+    /** The number of registers to pass to DBGFR3RegQueryAll. */
+    DBGFREG_ALL_COUNT,
+
+    /* Misc aliases that doesn't need be part of the 'all' query: */
+    DBGFREG_AH = DBGFREG_ALL_COUNT,
+    DBGFREG_CH,
+    DBGFREG_DH,
+    DBGFREG_BH,
+    DBGFREG_GDTR,
+    DBGFREG_IDTR,
+
     /** The end of the registers.  */
     DBGFREG_END,
     /** The usual 32-bit type hack. */
     DBGFREG_32BIT_HACK = 0x7fffffff
 } DBGFREG;
+/** Pointer to a register identifier. */
+typedef DBGFREG *PDBGFREG;
+/** Pointer to a const register identifier. */
+typedef DBGFREG const *PCDBGFREG;
+
+/**
+ * Register value type.
+ */
+typedef enum DBGFREGVALTYPE
+{
+    DBGFREGVALTYPE_INVALID = 0,
+    /** Unsigned 8-bit register value. */
+    DBGFREGVALTYPE_U8,
+    /** Unsigned 16-bit register value. */
+    DBGFREGVALTYPE_U16,
+    /** Unsigned 32-bit register value. */
+    DBGFREGVALTYPE_U32,
+    /** Unsigned 64-bit register value. */
+    DBGFREGVALTYPE_U64,
+    /** Unsigned 128-bit register value. */
+    DBGFREGVALTYPE_U128,
+    /** 80-bit register value. */
+    DBGFREGVALTYPE_80,
+    /** Long double register value. */
+    DBGFREGVALTYPE_LRD,
+    /** Descriptor table register value. */
+    DBGFREGVALTYPE_DTR,
+    /** End of the valid register value types. */
+    DBGFREGVALTYPE_END,
+    /** The usual 32-bit type hack. */
+    DBGFREGVALTYPE_32BIT_HACK = 0x7fffffff
+} DBGFREGVALTYPE;
+
+
+/**
+ * Entry in a batch query or set operation.
+ */
+typedef struct DBGFREGENTRY
+{
+    /** The register identifier. */
+    DBGFREG         enmReg;
+    /** The size of the value in bytes. */
+    DBGFREGVALTYPE  enmType;
+    /** The register value. The valid view is indicated by enmType. */
+    union DBGFREGVAL
+    {
+        uint8_t     u8;             /**< The 8-bit view. */
+        uint16_t    u16;            /**< The 16-bit view. */
+        uint32_t    u32;            /**< The 32-bit view. */
+        uint64_t    u64;            /**< The 64-bit view. */
+        uint128_t   u128;           /**< The 128-bit view. */
+        long double lrd;            /**< The long double view. */
+        /** GDTR or LDTR (DBGFREGVALTYPE_DTR). */
+        struct
+        {
+            /** The table address. */
+            uint64_t u64Base;
+            /** The table limit (length minus 1). */
+            uint32_t u32Limit;
+        }           dtr;
+
+        uint8_t     au8[16];        /**< The 8-bit array view.  */
+        uint16_t    au16[8];        /**< The 16-bit array view.  */
+        uint32_t    au32[4];        /**< The 32-bit array view.  */
+        uint64_t    au64[2];        /**< The 64-bit array view.  */
+        RTUINT128U  u;
+    } Val;
+} DBGFREGENTRY;
+/** Pointer to a register entry in a batch operation. */
+typedef DBGFREGENTRY *PDBGFREGENTRY;
+/** Pointer to a const register entry in a batch operation. */
+typedef DBGFREGENTRY const *PCDBGFREGENTRY;
 
 VMMR3DECL(int) DBGFR3RegQueryU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     *pu8);
 VMMR3DECL(int) DBGFR3RegQueryU16( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    *pu16);
@@ -1211,14 +1289,19 @@ VMMR3DECL(int) DBGFR3RegQueryU32( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32
 VMMR3DECL(int) DBGFR3RegQueryU64( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    *pu64);
 VMMR3DECL(int) DBGFR3RegQueryU128(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   *pu128);
 VMMR3DECL(int) DBGFR3RegQueryLrd( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double *plrd);
-VMMR3DECL(int) DBGFR3RegQueryXdtr( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64Base, uint16_t *pu16Limit);
+VMMR3DECL(int) DBGFR3RegQueryXdtr(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64Base, uint16_t *pu16Limit);
+VMMR3DECL(int) DBGFR3RegQueryBatch(PVM pVM,VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegQueryAll( PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs);
 
-VMMR3DECL(int) DBGFR3RegSetU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     u8);
-VMMR3DECL(int) DBGFR3RegSetU16( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    u16);
-VMMR3DECL(int) DBGFR3RegSetU32( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    u32);
-VMMR3DECL(int) DBGFR3RegSetU64( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    u64);
-VMMR3DECL(int) DBGFR3RegSetU128(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   u128);
-VMMR3DECL(int) DBGFR3RegSetLrd( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double lrd);
+VMMR3DECL(int) DBGFR3RegSetU8(    PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     u8);
+VMMR3DECL(int) DBGFR3RegSetU16(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    u16);
+VMMR3DECL(int) DBGFR3RegSetU32(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    u32);
+VMMR3DECL(int) DBGFR3RegSetU64(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    u64);
+VMMR3DECL(int) DBGFR3RegSetU128(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   u128);
+VMMR3DECL(int) DBGFR3RegSetLrd(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double lrd);
+VMMR3DECL(int) DBGFR3RegSetBatch( PVM pVM, VMCPUID idCpu, PCDBGFREGENTRY paRegs, size_t cbRegs);
+
+VMMR3DECL(const char *) DBGFR3RegName(DBGFREG enmReg, DBGFREGVALTYPE enmType);
 
 
 /**
