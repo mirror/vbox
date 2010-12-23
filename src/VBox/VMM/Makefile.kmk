@@ -178,11 +178,9 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	PDMAsyncCompletion.cpp \
  	PDMAsyncCompletionFile.cpp \
  	PDMAsyncCompletionFileFailsafe.cpp \
- 	PDMAsyncCompletionFileNormal.cpp \
- 	PDMAsyncCompletionFileCache.cpp
+ 	PDMAsyncCompletionFileNormal.cpp
 endif
 if defined(VBOX_WITH_WARNINGS_AS_ERRORS) && "$(KBUILD_TARGET)" == "win"
-PDMAsyncCompletionFileCache.cpp_CXXFLAGS = -WX-
 PDMBlkCache.cpp_CXXFLAGS = -WX-
 endif
 
