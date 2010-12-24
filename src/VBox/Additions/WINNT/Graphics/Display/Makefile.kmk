@@ -135,11 +135,13 @@ VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxUhgsmiKmt.cpp
 VBoxCrHgsmi_SDKS        = WINDDKWLH
 
-LIBRARIES.amd64 += VBoxCrHgsmi-x86
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+LIBRARIES += VBoxCrHgsmi-x86
 VBoxCrHgsmi-x86_TEMPLATE    = VBOXGUESTR3LIB
 VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
 VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
 VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
+  endif
  endif
 endif
 
