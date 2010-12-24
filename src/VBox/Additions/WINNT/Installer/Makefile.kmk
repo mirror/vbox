@@ -132,17 +132,34 @@ DRIVER_FILES += \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGL.dll
  endif
 endif
-if 0 #def VBOX_WITH_WDDM
- ifeq ($(KBUILD_TARGET_ARCH),x86)
+ifdef VBOX_WITH_WDDM_ENABLED
 DRIVER_FILES += \
 	$(PATH_BIN)/additions/VBoxVideoWddm.sys \
 	$(PATH_BIN)/additions/VBoxVideoWddm.inf \
-	$(PATH_BIN)/additions/VBoxDispD3D.dll \
+	$(PATH_BIN)/additions/VBoxDispD3D.dll
+ ifdef VBOX_WITH_CROGL
+DRIVER_FILES += \
 	$(PATH_BIN)/additions/wined3dwddm.dll \
 	$(PATH_BIN)/additions/VBoxD3D9wddm.dll
-  ifdef VBOX_SIGN_ADDITIONS
+ endif
+ ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
 	$(PATH_BIN)/additions/VBoxVideoWddm.cat
+ endif
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+DRIVER_FILES += \
+	$(PATH_BIN)/additions/VBoxDispD3D-x86.dll
+  ifdef VBOX_WITH_CROGL
+DRIVER_FILES += \
+	$(PATH_BIN)/additions/wined3dwddm-x86.dll \
+	$(PATH_BIN)/additions/VBoxD3D9wddm-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGL-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLarrayspu-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLcrutil-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLerrorspu-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLfeedbackspu-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLpackspu-x86.dll \
+	$(PATH_BIN)/additions/VBoxOGLpassthroughspu-x86.dll
   endif
  endif
 endif
@@ -165,7 +182,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_NSIS_ICON_FILE=$(subst /,\,$(VBOX_NSIS_ICON_FILE))' \
 	-E 'VBOX_WITH_CROGL=$(if $(VBOX_WITH_CROGL),1,0)' \
 	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
-	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),0,0)' \
+	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM_ENABLED),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \

@@ -5521,7 +5521,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                     pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
                     pAllocInfo->fFlags = pResource->Flags;
-                    pAllocInfo->hSharedHandle = pAllocation->hSharedHandle;
+                    pAllocInfo->hSharedHandle = (uint64_t)pAllocation->hSharedHandle;
                     pAllocInfo->SurfDesc.width = pSurf->Width;
                     pAllocInfo->SurfDesc.height = pSurf->Height;
                     pAllocInfo->SurfDesc.format = pResource->Format;
@@ -7483,7 +7483,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                     PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pOAI->pPrivateDriverData;
                     pAllocation->hAllocation = pOAI->hAllocation;
                     pAllocation->enmType = pAllocInfo->enmType;
-                    pAllocation->hSharedHandle = pAllocInfo->hSharedHandle;
+                    pAllocation->hSharedHandle = (HANDLE)pAllocInfo->hSharedHandle;
                     pAllocation->SurfDesc = pAllocInfo->SurfDesc;
                     Assert(pAllocation->hSharedHandle);
                 }

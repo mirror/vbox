@@ -118,15 +118,14 @@ VBoxDispD3D_SDKS     = WINDDKWLH
 #
 DLLS.amd64 += VBoxDispD3D-x86
 VBoxDispD3D-x86_EXTENDS = VBoxDispD3D
-VBoxDispD3D-x86_NAME = VBoxDispD3D32
 VBoxDispD3D-x86_BLD_TRG_ARCH = x86
 VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86)
-
+VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
  ifdef VBOX_WITH_CRHGSMI
 #
-# VBoxCrHgsmi
+# VBoxCrHgsmi - Chromium HGSMI API library
 #
 LIBRARIES += VBoxCrHgsmi
 VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
@@ -135,6 +134,11 @@ VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
 	wddm/VBoxUhgsmiKmt.cpp
 VBoxCrHgsmi_SDKS        = WINDDKWLH
+
+LIBRARIES.amd64 += VBoxCrHgsmi-x86
+VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
+VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
+VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
  endif
 endif
 

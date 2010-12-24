@@ -49,7 +49,11 @@ typedef struct _D3D9ExTag
     D3DPERF_SetRegionProc   pD3DPERF_SetRegion;
 } D3D9Export;
 
+#ifdef VBOX_WDDM_WOW64
+static D3D9Export g_swd3d9 = {0, "VBoxD3D9-x86.dll", "MSD3D9.dll",};
+#else
 static D3D9Export g_swd3d9 = {0, "VBoxD3D9.dll", "MSD3D9.dll",};
+#endif
 
 void FillD3DExports(HANDLE hDLL)
 {
