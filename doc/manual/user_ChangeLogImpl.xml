@@ -12,6 +12,10 @@
         <para>ICH9: fixed VM crash (software virtualization only; bug #7885</para>
       </listitem>
 
+      <listitem>
+        <para>E1000: Fixed PXE boot issues with WDS; bug #6330</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
