@@ -19,7 +19,11 @@
 #include <stdio.h>
 
 #ifdef WINDOWS
+#ifdef VBOX_WDDM_WOW64
+#define DLL_SUFFIX "-x86.dll"
+#else
 #define DLL_SUFFIX ".dll"
+#endif
 #define DLL_PREFIX "VBoxOGL"
 #define snprintf _snprintf
 #elif defined(DARWIN)

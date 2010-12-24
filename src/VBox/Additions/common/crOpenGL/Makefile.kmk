@@ -23,7 +23,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/
-
+	
 DLLS.win += \
     VBoxOGL \
     VBoxOGLarrayspu \
@@ -94,7 +94,7 @@ ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
  VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
-  VBoxOGL_NOINST.win.x86 = true
+  VBoxOGL_NOINST.win = true
  endif
 endif
 ifdef VBoxOGL_DRI
@@ -211,6 +211,22 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
  endif
 endif
 
+ifdef VBOX_WITH_WDDM
+#
+# VBoxOGL-x86 - x86 VBoxOGL version built for amd64 build 
+#
+DLLS.win.amd64 += VBoxOGL-x86
+VBoxOGL-x86_EXTENDS = VBoxOGL
+VBoxOGL-x86_BLD_TRG_ARCH = x86
+VBoxOGL-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+	$(VBOX_LIB_VBGL_R3_SHARED_X86) \
+	$(VBOX_LIB_OGL_CRUTIL_X86) \
+	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
+VBoxOGL-x86_SOURCES.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_SOURCES.win))
+VBoxOGL-x86_CLEAN.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_CLEAN.win))
+VBoxOGL-x86_DEFS = $(VBoxOGL_DEFS) VBOX_WDDM_WOW64
+endif
+
 #
 # Generate files for VBoxOGL.
 #
@@ -243,6 +259,13 @@ $(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+ ifdef VBOX_WITH_WDDM
+  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+$(VBOX_PATH_CROGL_GENFILES)/cropengl-x86.def: $(PATH_SUB_CURRENT)/defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+  endif #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+ endif #ifdef VBOX_WITH_WDDM
 else if1of ($(KBUILD_TARGET), linux solaris freebsd)
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
@@ -359,7 +382,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLarrayspu_NOINST.win.x86 = true
+ VBoxOGLarrayspu_NOINST.win = true
 endif
 VBoxOGLarrayspu_INCS.darwin  += $(PATH_OUT)/obj/VBoxOGL
 VBoxOGLarrayspu_INTERMEDIATES = \
@@ -377,6 +400,19 @@ VBoxOGLarrayspu_LIBS          = \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
 
+ifdef VBOX_WITH_WDDM
+#
+# VBoxOGLarrayspu-x86 - x86 version of VBoxOGLarrayspu built for amd64 build
+#
+DLLS.win.amd64 += VBoxOGLarrayspu-x86
+VBoxOGLarrayspu-x86_EXTENDS = VBoxOGLarrayspu
+VBoxOGLarrayspu-x86_BLD_TRG_ARCH = x86
+VBoxOGLarrayspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
+	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
+VBoxOGLarrayspu-x86_DEFS = $(VBoxOGLarrayspu_DEFS) VBOX_WDDM_WOW64
+endif
+
 #
 # VBoxOGLpassthroughspu
 #
@@ -388,7 +424,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLpassthroughspu_NOINST.win.x86 = true
+ VBoxOGLpassthroughspu_NOINST.win = true
 endif
 VBoxOGLpassthroughspu_SOURCES     = \
 	passthrough/passthroughspu_init.c \
@@ -400,6 +436,17 @@ VBoxOGLpassthroughspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
 VBoxOGLpassthroughspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL)
+	
+ifdef VBOX_WITH_WDDM
+#
+# VBoxOGLpassthroughspu-x86 - x86 version of VBoxOGLpassthroughspu built for amd64 build
+#
+DLLS.win.amd64 += VBoxOGLpassthroughspu-x86
+VBoxOGLpassthroughspu-x86_EXTENDS = VBoxOGLpassthroughspu
+VBoxOGLpassthroughspu-x86_BLD_TRG_ARCH = x86
+VBoxOGLpassthroughspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86)
+VBoxOGLpassthroughspu-x86_DEFS = $(VBoxOGLpassthroughspu_DEFS) VBOX_WDDM_WOW64
+endif
 
 #
 # Generate files for VBoxOGLpassthroughspu.
@@ -420,7 +467,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLpackspu_NOINST.win.x86 = true
+ VBoxOGLpackspu_NOINST.win = true
 endif
 VBoxOGLpackspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
@@ -459,6 +506,20 @@ VBoxOGLpackspu_LIBS        = \
 	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
 
+ifdef VBOX_WITH_WDDM
+#
+# VBoxOGLpackspu-x86 - x86 version of VBoxOGLpackspu built for amd64 build
+#
+DLLS.win.amd64 += VBoxOGLpackspu-x86
+VBoxOGLpackspu-x86_EXTENDS = VBoxOGLpackspu
+VBoxOGLpackspu-x86_BLD_TRG_ARCH = x86
+VBoxOGLpackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
+	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrpacker-x86$(VBOX_SUFF_LIB)
+VBoxOGLpackspu-x86_DEFS = $(VBoxOGLpackspu_DEFS) VBOX_WDDM_WOW64
+endif
+
 #
 # Generate files for VBoxOGLpackspu.
 #
@@ -493,7 +554,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLfeedbackspu_NOINST.win.x86 = true
+ VBoxOGLfeedbackspu_NOINST.win = true
 endif
 VBoxOGLarrayspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h
@@ -514,6 +575,19 @@ VBoxOGLfeedbackspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+	
+ifdef VBOX_WITH_WDDM
+#
+# VBoxOGLfeedbackspu-x86 - x86 version of VBoxOGLfeedbackspu built for amd64 build
+#
+DLLS.win.amd64 += VBoxOGLfeedbackspu-x86
+VBoxOGLfeedbackspu-x86_EXTENDS = VBoxOGLfeedbackspu
+VBoxOGLfeedbackspu-x86_BLD_TRG_ARCH = x86
+VBoxOGLfeedbackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
+	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
+VBoxOGLfeedbackspu-x86_DEFS = $(VBoxOGLfeedbackspu_DEFS) VBOX_WDDM_WOW64
+endif
 
 #
 # Generate files for VBoxOGLfeedbackspu.

@@ -98,6 +98,7 @@ DECLARE_API(ms)
     ULONG64 u64Width;
     ULONG64 u64Height;
     ULONG64 u64Bpp = 32;
+    ULONG64 u64NumColors = 3;
     ULONG64 u64Pitch;
     ULONG64 u64DefaultPitch;
     PCSTR pExpr = args;
@@ -113,6 +114,11 @@ DECLARE_API(ms)
     if (!pExpr) { dprintf("height not specified\n"); return; }
     if (!GetExpressionEx(pExpr, &u64Height, &pExpr)) { dprintf("error evaluating height\n"); return; }
     if (!u64Height) { dprintf("height value can not be NULL\n"); return; }
+
+    if (pExpr && GetExpressionEx(pExpr, &u64NumColors, &pExpr))
+    {
+        if (!u64NumColors) { dprintf("Num Colors value can not be NULL\n"); return; }
+    }
 
     if (pExpr && GetExpressionEx(pExpr, &u64Bpp, &pExpr))
     {
@@ -179,6 +185,51 @@ DECLARE_API(ms)
 
         if (uRc)
         {
+            switch (u64Bpp)
+            {
+                case 32:
+                case 24:
+                case 16:
+                    if (u64NumColors != 3)
+                    {
+                        dprintf("WARNING: unsupported number colors: (%d)\n", u64NumColors);
+                    }
+                    break;
+                case 8:
+                    {
+                        if (u64NumColors == 1)
+                        {
+                            ULONG64 cbSize32 = u64DefaultPitch * 4 * u64Height;
+                            PVOID pvBuf32 = malloc(cbSize32);
+                            if (pvBuf32)
+                            {
+                                byte* pByteBuf32 = (byte*)pvBuf32;
+                                byte* pByteBuf = (byte*)pvBuf;
+                                memset(pvBuf32, 0, cbSize32);
+                                for (UINT i = 0; i < u64Height; ++i)
+                                {
+                                    for (UINT j = 0; j < u64Width; ++j)
+                                    {
+                                        pByteBuf32[0] = pByteBuf[0];
+                                        pByteBuf32[1] = pByteBuf[0];
+                                        pByteBuf32[2] = pByteBuf[0];
+                                        pByteBuf32 += 4;
+                                        pByteBuf += 1;
+                                    }
+                                }
+                                free(pvBuf);
+                                pvBuf = pvBuf32;
+                                u64DefaultPitch *= 4;
+                                u64Bpp *= 4;
+                            }
+                        }
+                        else
+                        {
+                            dprintf("WARNING: unsupported number colors: (%d)\n", u64NumColors);
+                        }
+                    }
+                    break;
+            }
             BITMAP Bmp = {0};
             HBITMAP hBmp;
             dprintf("read memory succeeded..\n");

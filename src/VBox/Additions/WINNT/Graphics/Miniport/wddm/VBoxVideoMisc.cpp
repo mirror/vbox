@@ -964,13 +964,13 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
     switch (pUmAlloc->enmSynchType)
     {
         case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-            Status = ObReferenceObjectByHandle(pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
+            Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
                     (PVOID*)&pSynchEvent,
                     NULL);
             Assert(Status == STATUS_SUCCESS);
             break;
         case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-            Status = ObReferenceObjectByHandle(pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
+            Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
                     (PVOID*)&pSynchSemaphore,
                     NULL);
             Assert(Status == STATUS_SUCCESS);
@@ -1024,7 +1024,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
                     {
                         pUmAlloc->hAlloc = pAllocRef->hSessionHandle;
                         pUmAlloc->cbData = pAlloc->cbData;
-                        pUmAlloc->pvData = (uint8_t*)pvUm;
+                        pUmAlloc->pvData = (uint64_t)pvUm;
                         return STATUS_SUCCESS;
                     }
                 }
@@ -1138,7 +1138,7 @@ NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXD
     return Status;
 }
 
-#ifdef VBOX_WITH_VDMA
+#ifdef VBOX_WITH_CRHGSMI
 static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;

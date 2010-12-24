@@ -1646,13 +1646,13 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                     switch (pAllocInfo->enmSynchType)
                     {
                         case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
-                            Status = ObReferenceObjectByHandle(pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
+                            Status = ObReferenceObjectByHandle((HANDLE)pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
                                     (PVOID*)&pAllocation->pSynchEvent,
                                     NULL);
                             Assert(Status == STATUS_SUCCESS);
                             break;
                         case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
-                            Status = ObReferenceObjectByHandle(pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
+                            Status = ObReferenceObjectByHandle((HANDLE)pAllocInfo->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
                                     (PVOID*)&pAllocation->pSynchSemaphore,
                                     NULL);
                             Assert(Status == STATUS_SUCCESS);
@@ -2224,7 +2224,7 @@ static NTSTATUS vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, VBOXWDDM_CONTEXT
     return Status;
 }
 
-#ifdef VBOX_WITH_VDMA
+#ifdef VBOX_WITH_CRHGSMI
 DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;
@@ -2442,7 +2442,7 @@ DxgkDdiSubmitCommand(
         }
         case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
         {
-#ifdef VBOX_WITH_VDMA
+#ifdef VBOX_WITH_CRHGSMI
             VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD *pChromiumCmd = (VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD*)pPrivateDataBase;
             UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(RT_OFFSETOF(VBOXVDMACMD_CHROMIUM_CMD, aBuffers[pChromiumCmd->Base.u32CmdReserved]));
 
@@ -2796,7 +2796,7 @@ DxgkDdiBuildPagingBuffer(
                     }
                     else
                     {
-                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (cbTransfered>>12);
+                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (UINT)(cbTransfered>>12);
                         pBody->Src.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index] << 12;
                         PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index];
                         cSrcPages = 1;
@@ -2820,7 +2820,7 @@ DxgkDdiBuildPagingBuffer(
                     }
                     else
                     {
-                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (cbTransfered>>12);
+                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (UINT)(cbTransfered>>12);
                         pBody->Dst.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index] << 12;
                         PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index];
                         cDstPages = 1;
@@ -2839,7 +2839,7 @@ DxgkDdiBuildPagingBuffer(
                     cbCurTransfer = RT_MIN(cbTransferSize - cbTransfered, cSrcPages << 12);
                     cbCurTransfer = RT_MIN(cbCurTransfer, cDstPages << 12);
 
-                    pBody->cbTransferSize = cbCurTransfer;
+                    pBody->cbTransferSize = (UINT)cbCurTransfer;
                     Assert(!(cbCurTransfer & 0xfff));
 
                     int rc = vboxVdmaCBufDrSubmitSynch(pDevExt, &pDevExt->u.primary.Vdma, pDr);
@@ -3276,7 +3276,7 @@ DxgkDdiEscape(
         PVBOXDISPIFESCAPE pEscapeHdr = (PVBOXDISPIFESCAPE)pEscape->pPrivateDriverData;
         switch (pEscapeHdr->escapeCode)
         {
-#ifdef VBOX_WITH_VDMA
+#ifdef VBOX_WITH_CRHGSMI
             case VBOXESC_UHGSMI_SUBMIT:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;

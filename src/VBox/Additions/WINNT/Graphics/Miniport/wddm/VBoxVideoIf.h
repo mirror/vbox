@@ -29,7 +29,7 @@
 
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 8
+#define VBOXVIDEOIF_VERSION 9
 
 /* create allocation func */
 typedef enum
@@ -75,14 +75,14 @@ typedef struct VBOXWDDM_ALLOCINFO
         struct
         {
             D3DDDI_RESOURCEFLAGS fFlags;
-            HANDLE hSharedHandle;
+            uint64_t hSharedHandle;
             VBOXWDDM_SURFACE_DESC SurfDesc;
         };
 
         struct
         {
             uint32_t cbBuffer;
-            HANDLE hSynch;
+            uint64_t hSynch;
             VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
         };
     };
@@ -230,7 +230,7 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
     uint64_t u64UmInfo;
 } VBOXWDDM_CREATECONTEXT_INFO, *PVBOXWDDM_CREATECONTEXT_INFO;
 
-typedef void *VBOXDISP_UMHANDLE;
+typedef uint64_t VBOXDISP_UMHANDLE;
 typedef uint32_t VBOXDISP_KMHANDLE;
 
 typedef struct VBOXWDDM_RECTS_FLAFS
@@ -354,8 +354,8 @@ typedef struct VBOXVIDEOCM_UM_ALLOC
 {
     VBOXDISP_KMHANDLE hAlloc;
     uint32_t cbData;
-    uint8_t *pvData;
-    HANDLE hSynch;
+    uint64_t pvData;
+    uint64_t hSynch;
     VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
 } VBOXVIDEOCM_UM_ALLOC, *PVBOXVIDEOCM_UM_ALLOC;
 

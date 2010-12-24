@@ -142,7 +142,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
         Buf.DdiAllocInfo.PrivateDriverDataSize = sizeof (Buf.AllocInfo);
         Buf.AllocInfo.enmType = VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER;
         Buf.AllocInfo.cbBuffer = cbBuf;
-        Buf.AllocInfo.hSynch = hSynch;
+        Buf.AllocInfo.hSynch = (uint64_t)hSynch;
         Buf.AllocInfo.enmSynchType = enmSynchType;
 
         HRESULT hr = pPrivate->Callbacks.pfnD3DKMTCreateAllocation(&Buf.DdiAlloc);
@@ -225,7 +225,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSM
 DECLCALLBACK(int) vboxUhgsmiKmtEscBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock)
 {
     PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuffer = VBOXUHGSMIKMTESC_GET_BUFFER(pBuf);
-    *pvLock = pBuffer->Alloc.pvData + offLock;
+    *pvLock = (void*)(pBuffer->Alloc.pvData + offLock);
     return VINF_SUCCESS;
 }
 
@@ -305,7 +305,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBu
 
         Buf.AllocInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_ALLOCATE;
         Buf.AllocInfo.Alloc.cbData = cbBuf;
-        Buf.AllocInfo.Alloc.hSynch = hSynch;
+        Buf.AllocInfo.Alloc.hSynch = (uint64_t)hSynch;
         Buf.AllocInfo.Alloc.enmSynchType = enmSynchType;
 
         HRESULT hr = pPrivate->Callbacks.pfnD3DKMTEscape(&Buf.DdiEscape);
@@ -611,7 +611,10 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
         else
         {
             DWORD winEr = GetLastError();
+#ifdef DEBUG_misha
             Assert(0);
+#endif
+            Log((__FUNCTION__": EnumDisplayDevices failed, winEr (%d)\n", winEr));
             hr = HRESULT_FROM_WIN32(winEr);
             Assert(FAILED(hr));
             break;

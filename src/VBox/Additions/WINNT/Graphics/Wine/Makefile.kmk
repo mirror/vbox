@@ -22,9 +22,6 @@ include $(KBUILD_PATH)/subheader.kmk
 DLLS.x86 += libWine
 
 libWine_TEMPLATE     = VBOXGUESTR3NPDLL
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- libWine_NOINST.win.x86 = true
-endif
 libWine_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK USE_WIN32_OPENGL __i386__ \
     DLLDIR=\"\" \
     BINDIR=\"\" \
@@ -175,7 +172,7 @@ ifdef VBOX_WITH_WDDM
 DLLS += wined3dwddm
 wined3dwddm_EXTENDS  = wined3d
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- wined3dwddm_NOINST.win.x86 = true
+ wined3dwddm_NOINST.win = true
 endif
 wined3dwddm_INCS     = vbox/libWineStub/include
 wined3dwddm_LIBS     = $(NO_SUCH_VARIABLE)
@@ -186,11 +183,11 @@ wined3dwddm_SDKS     = WINDDKWLH
 
 DLLS.amd64 += wined3dwddm-x86
 wined3dwddm-x86_EXTENDS = wined3dwddm
-wined3dwddm-x86_NAME = wined3dwddm32
 wined3dwddm-x86_BLD_TRG_ARCH = x86
 #wined3dwddm-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86)
+wined3dwddm-x86_DEFS = $(wined3dwddm_DEFS) VBOX_WDDM_WOW64
 endif
 
 DLLS.x86 += VBoxD3D8
@@ -271,7 +268,7 @@ ifdef VBOX_WITH_WDDM
 DLLS += VBoxD3D9wddm
 VBoxD3D9wddm_EXTENDS  = VBoxD3D9
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxD3D9wddm_NOINST.win.x86 = true
+ VBoxD3D9wddm_NOINST.win = true
 endif
 
 VBoxD3D9wddm_INCS     = vbox/libWineStub/include
@@ -284,12 +281,12 @@ VBoxD3D9wddm_SDKS     = WINDDKWLH
 
 DLLS.amd64 += VBoxD3D9wddm-x86
 VBoxD3D9wddm-x86_EXTENDS = VBoxD3D9wddm
-VBoxD3D9wddm-x86_NAME = VBoxD3D9wddm32
 VBoxD3D9wddm-x86_BLD_TRG_ARCH = x86
-VBoxD3D9wddm-x86_LIBS = $(PATH_LIB)/wined3dwddm32$(VBOX_SUFF_LIB)
+VBoxD3D9wddm-x86_LIBS = $(PATH_LIB)/wined3dwddm-x86$(VBOX_SUFF_LIB)
 #VBoxD3D9wddm-x86_LIBS += \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86)
+VBoxD3D9wddm-x86_DEFS = $(VBoxD3D9wddm_DEFS) VBOX_WDDM_WOW64
 endif
 
 DLLS.x86 += d3d8

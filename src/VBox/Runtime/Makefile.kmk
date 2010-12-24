@@ -85,7 +85,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  endif
  ifdef VBOX_WITH_ADDITIONS
   LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
-  LIBRARIES.win.amd64 += RuntimeGuestR3-x86
+  LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
   ifdef VBOX_WITH_ADDITION_DRIVERS
    LIBRARIES += RuntimeGuestR0
   endif
@@ -1008,6 +1008,13 @@ RuntimeGuestR3-x86_BLD_TRG_ARCH         := x86
 RuntimeGuestR3Shared_TEMPLATE           := VBOXGUESTR3DLL
 RuntimeGuestR3Shared_EXTENDS            := RuntimeGuestR3
 RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
+
+
+#
+# RuntimeGuestR3Shared-x86 - Same as RuntimeGuestR3Shared, except that it's targeting x86.
+#
+RuntimeGuestR3Shared-x86_EXTENDS           	:= RuntimeGuestR3Shared
+RuntimeGuestR3Shared-x86_BLD_TRG_ARCH         := x86
 
 
 #

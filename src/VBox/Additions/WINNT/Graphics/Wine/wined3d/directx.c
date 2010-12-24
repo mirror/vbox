@@ -5102,7 +5102,11 @@ static BOOL InitAdapters(IWineD3DImpl *This)
 #define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
 #ifdef VBOX_WITH_WDDM
         BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
+#ifdef VBOX_WDDM_WOW64
+        mod_gl = LoadLibraryA("VBoxOGL-x86.dll");
+#else
         mod_gl = LoadLibraryA("VBoxOGL.dll");
+#endif
 #else
         mod_gl = LoadLibraryA("opengl32.dll");
 #endif
