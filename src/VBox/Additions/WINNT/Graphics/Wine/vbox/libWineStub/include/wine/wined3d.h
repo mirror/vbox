@@ -2141,9 +2141,9 @@ typedef struct _WINED3DMATRIX {
             float _42;
             float _43;
             float _44;
-        } DUMMYSTRUCTNAME;
+        } s;
         float m[4][4];
-    } DUMMYUNIONNAME;
+    } u;
 } WINED3DMATRIX;
 typedef struct _WINED3DRECT {
     LONG x1;
