@@ -22,6 +22,11 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: fixed segmentation fault when removing non-existent
+          host-only interface</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: Fixed possible crashes with VMDK/VHD images with snapshots and async I/O</para>
       </listitem>
 
