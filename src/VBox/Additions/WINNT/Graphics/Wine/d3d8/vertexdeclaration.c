@@ -85,6 +85,19 @@ static ULONG WINAPI IDirect3DVertexDeclaration8Impl_Release(IDirect3DVertexDecla
     return ref_count;
 }
 
+#ifdef VBOX_WINE_WITHOUT_LIBWINE
+/* wine defines D3DVSDT_TYPE enumeration while native win headers use D3DVSDT_Xxx defines
+ * and D3DVSDT_TYPE is not defined.
+ * Define it here:*/
+typedef UINT D3DVSDT_TYPE;
+
+/* wine defines D3DVSDE_REGISTER enumeration while native win headers use D3DVSDE_Xxx defines
+ * and D3DVSDE_REGISTER is not defined.
+ * Define it here:*/
+typedef UINT D3DVSDE_REGISTER;
+
+#endif
+
 static const char *debug_d3dvsdt_type(D3DVSDT_TYPE d3dvsdt_type)
 {
     switch (d3dvsdt_type)
