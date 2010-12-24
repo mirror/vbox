@@ -44,7 +44,7 @@
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT) && (defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
 static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 {
 //    if (a->argc - iStart < 1)
@@ -296,7 +296,7 @@ int handleHostonlyIf(HandlerArg *a)
 //            else
 //                break;
         }
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+#if defined(VBOX_WITH_NETFLT) && (defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
         else if (strcmp(a->argv[i], "create") == 0)
         {
             int cProcessed;
