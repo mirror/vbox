@@ -102,6 +102,7 @@ ifdef VBOX_WITH_WDDM
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build 
 #
 DLLS.win.amd64 += VBoxOGLcrutil-x86
+VBoxOGLcrutil-x86_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLcrutil-x86_EXTENDS = VBoxOGLcrutil
 VBoxOGLcrutil-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrutil-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
@@ -117,7 +118,6 @@ VBoxOGLcrutil-x86_DEFS = $(VBoxOGLcrutil_DEFS) VBOX_WDDM_WOW64
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
-VBoxOGLcrutil-x86_INCS = $(VBoxOGLcrutil_INCS) $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 endif
 
 #
@@ -246,10 +246,10 @@ ifdef VBOX_WITH_WDDM
 # VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build 
 #
 LIBRARIES.win.amd64 += VBoxOGLcrpacker-x86
+VBoxOGLcrpacker-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrpacker-x86_EXTENDS = VBoxOGLcrpacker
 VBoxOGLcrpacker-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrpacker-x86_DEFS = $(VBoxOGLcrpacker_DEFS) VBOX_WDDM_WOW64
-VBoxOGLcrpacker-x86_INCS = $(VBoxOGLcrpacker_INCS) $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 endif
 
 #
@@ -325,10 +325,10 @@ ifdef VBOX_WITH_WDDM
 # VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build 
 #
 LIBRARIES.win.amd64 += VBoxOGLspuload-x86
+VBoxOGLspuload-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLspuload-x86_EXTENDS = VBoxOGLspuload
 VBoxOGLspuload-x86_BLD_TRG_ARCH = x86
 VBoxOGLspuload-x86_DEFS = $(VBoxOGLspuload_DEFS) VBOX_WDDM_WOW64
-VBoxOGLspuload-x86_INCS = $(VBoxOGLspuload_INCS) $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 endif
 
 
@@ -454,10 +454,10 @@ ifdef VBOX_WITH_WDDM
 # VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build 
 #
 LIBRARIES.win.amd64 += VBoxOGLcrstate-x86
+VBoxOGLcrstate-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrstate-x86_EXTENDS = VBoxOGLcrstate
 VBoxOGLcrstate-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrstate-x86_DEFS = $(VBoxOGLcrstate_DEFS) VBOX_WDDM_WOW64
-VBoxOGLcrstate-x86_INCS = $(VBoxOGLcrstate_INCS) $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 endif
 
 
@@ -575,12 +575,12 @@ ifdef VBOX_WITH_WDDM
 # VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build 
 #
 DLLS.win.amd64 += VBoxOGLerrorspu-x86
+VBoxOGLerrorspu-x86_TEMPLATE = VBOXCROGLR3GUESTDLL
 VBoxOGLerrorspu-x86_EXTENDS = VBoxOGLerrorspu
 VBoxOGLerrorspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLerrorspu-x86_LIBS = \
 	$(VBOX_LIB_OGL_CRUTIL_X86)
 VBoxOGLerrorspu-x86_DEFS = $(VBoxOGLerrorspu_DEFS) VBOX_WDDM_WOW64
-VBoxOGLerrorspu-x86_INCS = $(VBoxOGLerrorspu_INCS) $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 endif
 
 #
