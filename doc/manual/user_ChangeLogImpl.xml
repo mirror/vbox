@@ -16,6 +16,11 @@
         <para>E1000: Fixed PXE boot issues with WDS; bug #6330</para>
       </listitem>
 
+      <listitem>
+        <para>VBoxManage: Host-only interface creation and removal is now
+          supported for all platforms except Solaris</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
