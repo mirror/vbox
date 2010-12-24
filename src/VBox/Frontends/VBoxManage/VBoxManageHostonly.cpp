@@ -96,16 +96,16 @@ static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
     index++;
 
     ComPtr<IHost> host;
-    CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
+    CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
 
     ComPtr<IHostNetworkInterface> hif;
-    CHECK_ERROR(host, FindHostNetworkInterfaceByName(name.raw(), hif.asOutParam()));
+    CHECK_ERROR_RET(host, FindHostNetworkInterfaceByName(name.raw(), hif.asOutParam()), 1);
 
     Bstr guid;
-    CHECK_ERROR(hif, COMGETTER(Id)(guid.asOutParam()));
+    CHECK_ERROR_RET(hif, COMGETTER(Id)(guid.asOutParam()), 1);
 
     ComPtr<IProgress> progress;
-    CHECK_ERROR(host, RemoveHostOnlyNetworkInterface(guid.raw(), progress.asOutParam()));
+    CHECK_ERROR_RET(host, RemoveHostOnlyNetworkInterface(guid.raw(), progress.asOutParam()), 1);
 
     rc = showProgress(progress);
     *pcProcessed = index - iStart;
