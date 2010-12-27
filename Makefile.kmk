@@ -565,25 +565,25 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/hwacc_svm.h \
 	$(PATH_ROOT)/include/VBox/hwacc_vmx.h \
 	\
-	$(PATH_ROOT)/src/VBox/VMM/CFGMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/CPUMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/DBGFInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/EMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/HWACCMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/IOMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/MMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/PDMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/PGMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/CFGMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/CPUMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/DBGFInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/EMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/HWACCMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/IOMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/MMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/PATM/CSAMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/PATM/PATMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/REMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/SELMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/SSMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/STAMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/TMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/TRPMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/VMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/VMMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/REMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/SELMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/SSMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/STAMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/TMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/TRPMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/VMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/VMMInternal.h \
 	\
 	$(PATH_ROOT)/include/VBox/vm.h \
 	\
