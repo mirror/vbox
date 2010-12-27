@@ -14,7 +14,7 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-%include "VMMGC.mac"
+%include "VMMRC.mac"
 
 
 ;;

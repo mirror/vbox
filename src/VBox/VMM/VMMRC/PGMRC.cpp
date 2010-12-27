@@ -54,14 +54,14 @@
  */
 #define PGM_SHW_TYPE                PGM_TYPE_32BIT
 #define PGM_SHW_NAME(name)          PGM_SHW_NAME_32BIT(name)
-#include "PGMGCShw.h"
+#include "PGMRCShw.h"
 
 /* Guest - real mode */
 #define PGM_GST_TYPE                PGM_TYPE_REAL
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_REAL(name)
-#include "PGMGCGst.h"
-#include "PGMGCBth.h"
+#include "PGMRCGst.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -70,8 +70,8 @@
 #define PGM_GST_TYPE                PGM_TYPE_PROT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
-#include "PGMGCGst.h"
-#include "PGMGCBth.h"
+#include "PGMRCGst.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -80,8 +80,8 @@
 #define PGM_GST_TYPE                PGM_TYPE_32BIT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_32BIT(name)
-#include "PGMGCGst.h"
-#include "PGMGCBth.h"
+#include "PGMRCGst.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -97,13 +97,13 @@
 #define PGM_SHW_TYPE                PGM_TYPE_PAE
 #define PGM_SHW_NAME(name)          PGM_SHW_NAME_PAE(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_REAL(name)
-#include "PGMGCShw.h"
+#include "PGMRCShw.h"
 
 /* Guest - real mode */
 #define PGM_GST_TYPE                PGM_TYPE_REAL
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_REAL(name)
-#include "PGMGCBth.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -112,7 +112,7 @@
 #define PGM_GST_TYPE                PGM_TYPE_PROT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_PROT(name)
-#include "PGMGCBth.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -121,7 +121,7 @@
 #define PGM_GST_TYPE                PGM_TYPE_32BIT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_32BIT(name)
-#include "PGMGCBth.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -130,8 +130,8 @@
 #define PGM_GST_TYPE                PGM_TYPE_PAE
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_PAE_PAE(name)
-#include "PGMGCGst.h"
-#include "PGMGCBth.h"
+#include "PGMRCGst.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -145,15 +145,15 @@
  */
 #define PGM_SHW_TYPE                PGM_TYPE_AMD64
 #define PGM_SHW_NAME(name)          PGM_SHW_NAME_AMD64(name)
-#include "PGMGCShw.h"
+#include "PGMRCShw.h"
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_AMD64(name)
-#include "PGMGCGst.h"
-#include "PGMGCBth.h"
+#include "PGMRCGst.h"
+#include "PGMRCBth.h"
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME

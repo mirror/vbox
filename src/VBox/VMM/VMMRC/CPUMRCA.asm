@@ -17,7 +17,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
-%include "VMMGC.mac"
+%include "VMMRC.mac"
 %include "VBox/vm.mac"
 %include "VBox/err.mac"
 %include "VBox/stam.mac"

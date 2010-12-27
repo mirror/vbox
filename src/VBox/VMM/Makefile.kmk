@@ -182,7 +182,8 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	VMMR3/PDMAsyncCompletionFileNormal.cpp
 endif
 if defined(VBOX_WITH_WARNINGS_AS_ERRORS) && "$(KBUILD_TARGET)" == "win"
-PDMBlkCache.cpp_CXXFLAGS = -WX-
+## @todo Alexander, please fix these warnings.
+VMMR3/PDMBlkCache.cpp_CXXFLAGS = -WX-
 endif
 
 ifdef VBOX_WITH_RAW_MODE
@@ -245,29 +246,29 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
 
  #
- # VMMGCBuiltin.lib
+ # VMMRCBuiltin.lib
  #
- LIBRARIES += VMMGCBuiltin
- VMMGCBuiltin_TEMPLATE = VBoxRc
+ LIBRARIES += VMMRCBuiltin
+ VMMRCBuiltin_TEMPLATE = VBoxRc
  ifeq ($(VBOX_LDR_FMT32),pe)
-  VMMGCBuiltin_SOURCES = VMMGC/VMMGCBuiltin.def
+  VMMRCBuiltin_SOURCES = VMMRC/VMMRCBuiltin.def
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
-  VMMGCBuiltin_SOURCES = $(PATH_VMMGCBuiltin)/VMMGCBuiltin.def
-  $$(PATH_VMMGCBuiltin)/VMMGCBuiltin.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGCBuiltin.def | $$(dir $$@)
+  VMMRCBuiltin_SOURCES = $(PATH_VMMRCBuiltin)/VMMRCBuiltin.def
+  $$(PATH_VMMRCBuiltin)/VMMRCBuiltin.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRCBuiltin.def | $$(dir $$@)
 	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' --output $@ $<
  endif
 
 
  #
- # VMMGCImp.lib
+ # VMMRCImp.lib
  #
- LIBRARIES += VMMGCImp
- VMMGCImp_TEMPLATE = VBoxRc
- VMMGCImp_SOURCES = $(PATH_VMMGCImp)/VMMGC.def
- VMMGCImp_CLEAN   = $(PATH_VMMGCImp)/VMMGC.def
+ LIBRARIES += VMMRCImp
+ VMMRCImp_TEMPLATE = VBoxRc
+ VMMRCImp_SOURCES = $(PATH_VMMRCImp)/VMMRC.def
+ VMMRCImp_CLEAN   = $(PATH_VMMRCImp)/VMMRC.def
 
- $$(PATH_VMMGCImp)/VMMGC.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGC.def | $$(dir $$@)
+ $$(PATH_VMMRCImp)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
  ifeq ($(VBOX_LDR_FMT32),lx)
 	$(SED) \
 		-e '/not-os2/d' \
@@ -324,51 +325,54 @@ $(call VBOX_GENERATE_IMPORT_TARGET_FN,VMMR3Imp,VBoxVMM,VMMR3/VMMR3.def)
 
 if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  #
- # VMMGC.gc
+ # VMMRC.gc
  #
- SYSMODS += VMMGC
- VMMGC_TEMPLATE  = VBoxRc
- VMMGC_SYSSUFF   = .gc
+ SYSMODS += VMMRC
+ VMMRC_TEMPLATE  = VBoxRc
+ VMMRC_NAME      = VMMGC
+ VMMRC_SYSSUFF   = .gc
 
- VMMGC_DEFS      = IN_VMM_RC IN_RT_RC IN_DIS DIS_CORE_ONLY VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
+ VMMRC_DEFS      = IN_VMM_RC IN_RT_RC IN_DIS DIS_CORE_ONLY VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VMMGC_DEFS.darwin = VMM_R0_SWITCH_STACK
-  VMMGC_DEFS.darwin = \
+  VMMRC_DEFS.darwin = VMM_R0_SWITCH_STACK
+  VMMRC_DEFS.darwin = \
   	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_RC \
   	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_RC
  endif
 
- VMMGC_INCS     := \
+ VMMRC_INCS     := \
  	include \
- 	VMMGC \
+ 	VMMRC \
  	PATM
 
- VMMGC_LIBS      = \
+ VMMRC_LIBS      = \
  	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
  	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
-  VMMGC_LIBS    += \
- 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+  VMMRC_LIBS    += \
+ 	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
  endif
 
- VMMGC_SOURCES   = \
- 	VMMGC/VMMGC0.asm \
- 	VMMGC/VMMGCDeps.cpp \
- 	VMMGC/CPUMGC.cpp \
- 	VMMGC/CPUMGCA.asm \
- 	VMMGC/EMGCA.asm \
- 	VMMGC/IOMGC.cpp \
- 	VMMGC/MMRamGC.cpp \
- 	VMMGC/MMRamGCA.asm \
- 	VMMGC/PDMGCDevice.cpp \
- 	VMMGC/PGMGC.cpp \
- 	VMMGC/SELMGC.cpp \
- 	VMMGC/TRPMGC.cpp \
- 	VMMGC/TRPMGCHandlers.cpp \
- 	VMMGC/TRPMGCHandlersA.asm \
- 	VMMGC/VMMGC.cpp \
- 	VMMGC/VMMGCA.asm \
- 	VMMGC/HWACCMGCA.asm \
+ VMMRC_SOURCES   = \
+ 	VMMRC/VMMRC0.asm \
+ 	VMMRC/VMMRCDeps.cpp \
+ 	VMMRC/CPUMRC.cpp \
+ 	VMMRC/CPUMRCA.asm \
+ 	VMMRC/EMRCA.asm \
+ 	VMMRC/IOMRC.cpp \
+ 	VMMRC/MMRamRC.cpp \
+ 	VMMRC/MMRamRCA.asm \
+ 	VMMRC/PDMRCDevice.cpp \
+ 	VMMRC/PGMRC.cpp \
+ 	VMMRC/SELMRC.cpp \
+ 	VMMRC/TRPMRC.cpp \
+ 	VMMRC/TRPMRCHandlers.cpp \
+ 	VMMRC/TRPMRCHandlersA.asm \
+ 	VMMRC/VMMRC.cpp \
+ 	VMMRC/VMMRCA.asm \
+ 	VMMRC/HWACCMRCA.asm \
+ 	VMMRC/CSAMRC.cpp \
+ 	VMMRC/PATMRC.cpp \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
@@ -400,22 +404,20 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm \
- 	PATM/VMMGC/CSAMGC.cpp \
  	PATM/VMMAll/CSAMAll.cpp \
- 	PATM/VMMGC/PATMGC.cpp \
  	PATM/VMMAll/PATMAll.cpp
  ifeq ($(VBOX_LDR_FMT32),pe)
-  VMMGC_SOURCES += VMMGC/VMMGC.def
+  VMMRC_SOURCES += VMMRC/VMMRC.def
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
-  VMMGC_SOURCES += $(PATH_VMMGCImp)/VMMGC.def
+  VMMRC_SOURCES += $(PATH_VMMRCImp)/VMMRC.def
  endif
 
 
  # the very last one.
- VMMGC_SOURCES += VMMGC/VMMGC99.asm
+ VMMRC_SOURCES += VMMRC/VMMRC99.asm
 
- VMMGC/VMMGCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMGCDeps.cpp to .c
+ VMMRC/VMMRCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMRCDeps.cpp to .c
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
@@ -553,8 +555,8 @@ PGMBth.obj 	PGMGst.obj 	PGMShw.obj: 	PGM.o
 PGMAllBth.o   	PGMAllGst.o   	PGMAllShw.o \
 PGMAllBth.obj 	PGMAllGst.obj 	PGMAllShw.obj: 	PGMAll.o
 
-PGMGCBth.o   	PGMGCGst.o   	PGMGCShw.o \
-PGMGCBth.obj 	PGMGCGst.obj 	PGMGCShw.obj: 	PGMGC.o
+PGMRCBth.o   	PGMRCGst.o   	PGMRCShw.o \
+PGMRCBth.obj 	PGMRCGst.obj 	PGMRCShw.obj: 	PGMRC.o
 
 PGMPhysRWTmpl.o PGMPhysRWTmpl.obj: 		PGMPhys.o
 
