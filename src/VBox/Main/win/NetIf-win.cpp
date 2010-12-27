@@ -61,7 +61,36 @@
 
 #define VBOX_APP_NAME L"VirtualBox"
 
-static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
+static int getDefaultInterfaceIndex()
+{
+    PMIB_IPFORWARDTABLE pIpTable;
+    DWORD dwSize = sizeof(MIB_IPFORWARDTABLE) * 20;
+    DWORD dwRC = NO_ERROR;
+    int iIndex = -1;
+
+    pIpTable = (MIB_IPFORWARDTABLE *)RTMemAlloc(dwSize);
+    if (GetIpForwardTable(pIpTable, &dwSize, 0) == ERROR_INSUFFICIENT_BUFFER)
+    {
+        RTMemFree(pIpTable);
+        pIpTable = (MIB_IPFORWARDTABLE *)RTMemAlloc(dwSize);
+        if (!pIpTable)
+            return -1;
+    }
+    dwRC = GetIpForwardTable(pIpTable, &dwSize, 0);
+    if (dwRC == NO_ERROR)
+    {
+        for (unsigned int i = 0; i < pIpTable->dwNumEntries; i++)
+            if (pIpTable->table[i].dwForwardDest == 0)
+            {
+                iIndex = pIpTable->table[i].dwForwardIfIndex;
+                break;
+            }
+    }
+    RTMemFree(pIpTable);
+    return iIndex;
+}
+
+static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDefault)
 {
     DWORD dwRc;
     int rc = VINF_SUCCESS;
@@ -162,6 +191,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
                         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
                     pInfo->enmMediumType = NETIF_T_ETHERNET;
                     pInfo->enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
+                    pInfo->bIsDefault = (pAdapter->IfIndex == iDefault);
                     RTStrFree(pszUuid);
                     break;
                 }
@@ -905,7 +935,8 @@ static BOOL IsUACEnabled()
 /* end */
 
 static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * pPist,
-                                  INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
+                                  INetCfgComponent * pncc, HostNetworkInterfaceType enmType,
+                                  int iDefaultInterface)
 {
     LPWSTR              lpszName;
     GUID                IfGuid;
@@ -925,7 +956,7 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             NETIFINFO Info;
             memset(&Info, 0, sizeof(Info));
             Info.Uuid = *(Guid(IfGuid).raw());
-            rc = collectNetIfInfo(name, Guid(IfGuid), &Info);
+            rc = collectNetIfInfo(name, Guid(IfGuid), &Info, iDefaultInterface);
             if (RT_FAILURE(rc))
             {
                 Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
@@ -936,7 +967,10 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             /* remove the curly bracket at the end */
             if (SUCCEEDED(iface->init(name, enmType, &Info)))
             {
-                pPist->push_back(iface);
+                if (Info.bIsDefault)
+                    pPist->push_front(iface);
+                else
+                    pPist->push_back(iface);
                 rc = VINF_SUCCESS;
             }
             else
@@ -991,7 +1025,7 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
                         {
                             if (!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                             {
-                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly);
+                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
                             }
                             CoTaskMemFree(pId);
                         }
@@ -1036,7 +1070,7 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
             Guid guid(IfGuid);
             pInfo->Uuid = *(guid.raw());
 
-            return collectNetIfInfo(name, guid, pInfo);
+            return collectNetIfInfo(name, guid, pInfo, getDefaultInterfaceIndex());
         }
     }
     return VERR_GENERAL_FAILURE;
@@ -1403,6 +1437,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     INetCfgBindingPath          *pBp;
     IEnumNetCfgBindingInterface *pEnumBi;
     INetCfgBindingInterface *pBi;
+    int                  iDefault = getDefaultInterfaceIndex();
 
     /* we are using the INetCfg API for getting the list of miniports */
     hr = VBoxNetCfgWinQueryINetCfg(FALSE,
@@ -1458,7 +1493,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                     {
                                         if (uComponentStatus == 0)
                                         {
-                                            vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged);
+                                            vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged, iDefault);
                                         }
                                     }
                                     VBoxNetCfgWinReleaseRef( pMpNcc );
