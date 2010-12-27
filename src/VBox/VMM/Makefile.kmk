@@ -133,6 +133,12 @@ VMMR3_SOURCES   = \
 	VMMR3/VMMSwitcher.cpp \
 	VMMR3/VMMTests.cpp \
 	VMMR3/HWACCM.cpp \
+	VMMR3/CSAM.cpp \
+	VMMR3/PATM.cpp \
+	VMMR3/PATMPatch.cpp \
+	VMMR3/PATMGuest.cpp \
+	VMMR3/PATMA.asm \
+	VMMR3/PATMSSM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
@@ -163,14 +169,8 @@ VMMR3_SOURCES   = \
 	VMMAll/VMAll.cpp \
 	VMMAll/VMMAll.cpp \
 	VMMAll/VMMAllA.asm \
-	PATM/CSAM.cpp \
-	PATM/VMMAll/CSAMAll.cpp \
-	PATM/PATM.cpp \
-	PATM/PATMPatch.cpp \
-	PATM/PATMGuest.cpp \
-	PATM/PATMA.asm \
-	PATM/PATMSSM.cpp \
-	PATM/VMMAll/PATMAll.cpp
+	VMMAll/CSAMAll.cpp \
+	VMMAll/PATMAll.cpp
 ifdef VBOX_WITH_VUSB
  VMMR3_SOURCES += VMMR3/PDMUsb.cpp
 endif
@@ -404,8 +404,8 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm \
- 	PATM/VMMAll/CSAMAll.cpp \
- 	PATM/VMMAll/PATMAll.cpp
+ 	VMMAll/CSAMAll.cpp \
+ 	VMMAll/PATMAll.cpp
  ifeq ($(VBOX_LDR_FMT32),pe)
   VMMRC_SOURCES += VMMRC/VMMRC.def
  endif
