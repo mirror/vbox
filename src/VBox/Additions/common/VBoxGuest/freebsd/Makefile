@@ -103,6 +103,10 @@ SRCS += \
 SRCS += \
 	avlpv.c
 
+.PATH:	${.CURDIR}/common/time
+SRCS += \
+	time.c
+
 .PATH:	${.CURDIR}/generic
 SRCS += \
 	uuid-generic.c \
