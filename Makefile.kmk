@@ -444,18 +444,17 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	include/iprt/cpp \
 	include/iprt/linux \
 	include/VBox \
+	include/VBox/vmm \
 	include/VBox/com \
+	include/VBox/ExtPack \
 	include/VBox/HostServices \
 	include/VBox/GuestHost \
 	include/VBox/HGSMI \
 	src/VBox/VMM \
 	src/VBox/VMM/VMMR0 \
-	src/VBox/VMM/VMMGC \
+	src/VBox/VMM/VMMRC \
+	src/VBox/VMM/VMMR3 \
 	src/VBox/VMM/VMMAll \
-	src/VBox/VMM/PATM \
-	src/VBox/VMM/PATM/VMMR0 \
-	src/VBox/VMM/PATM/VMMGC \
-	src/VBox/VMM/PATM/VMMAll \
 	src/VBox/VMM/VMMSwitcher \
 	src/VBox/Debugger \
 	src/VBox/Devices \
@@ -540,30 +539,30 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/doc/VBox-doc.c \
 	$(PATH_ROOT)/doc/VBox-CodingGuidelines.cpp \
 	$(PATH_ROOT)/doc/VBox-MakefileGuidelines.cpp \
-	$(PATH_ROOT)/src/VBox/VMM/VMMR3/VMMCodingGuidelines.cpp \
-	$(PATH_ROOT)/src/VBox/VMM/VMMR3/VMMDocsRawMode.cpp \
+	$(PATH_ROOT)/src/VBox/VMM/Docs-CodingGuidelines.cpp \
+	$(PATH_ROOT)/src/VBox/VMM/Docs-RawMode.cpp \
 	$(PATH_ROOT)/include/VBox/cdefs.h \
-	$(PATH_ROOT)/include/VBox/vmapi.h \
-	$(PATH_ROOT)/include/VBox/vmm.h \
-	$(PATH_ROOT)/include/VBox/cpum.h \
-	$(PATH_ROOT)/include/VBox/mm.h \
-	$(PATH_ROOT)/include/VBox/pgm.h \
-	$(PATH_ROOT)/include/VBox/selm.h \
-	$(PATH_ROOT)/include/VBox/trpm.h \
-	$(PATH_ROOT)/include/VBox/patm.h \
-	$(PATH_ROOT)/include/VBox/dbgf.h \
-	$(PATH_ROOT)/include/VBox/stam.h \
-	$(PATH_ROOT)/include/VBox/em.h \
-	$(PATH_ROOT)/include/VBox/pdm.h \
-	$(PATH_ROOT)/include/VBox/rem.h \
-	$(PATH_ROOT)/include/VBox/iom.h \
-	$(PATH_ROOT)/include/VBox/cfgm.h \
-	$(PATH_ROOT)/include/VBox/tm.h \
-	$(PATH_ROOT)/include/VBox/csam.h \
-	$(PATH_ROOT)/include/VBox/ssm.h \
-	$(PATH_ROOT)/include/VBox/hwaccm.h \
-	$(PATH_ROOT)/include/VBox/hwacc_svm.h \
-	$(PATH_ROOT)/include/VBox/hwacc_vmx.h \
+	$(PATH_ROOT)/include/VBox/vmm/vmapi.h \
+	$(PATH_ROOT)/include/VBox/vmm/vmm.h \
+	$(PATH_ROOT)/include/VBox/vmm/cpum.h \
+	$(PATH_ROOT)/include/VBox/vmm/mm.h \
+	$(PATH_ROOT)/include/VBox/vmm/pgm.h \
+	$(PATH_ROOT)/include/VBox/vmm/selm.h \
+	$(PATH_ROOT)/include/VBox/vmm/trpm.h \
+	$(PATH_ROOT)/include/VBox/vmm/patm.h \
+	$(PATH_ROOT)/include/VBox/vmm/dbgf.h \
+	$(PATH_ROOT)/include/VBox/vmm/stam.h \
+	$(PATH_ROOT)/include/VBox/vmm/em.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdm.h \
+	$(PATH_ROOT)/include/VBox/vmm/rem.h \
+	$(PATH_ROOT)/include/VBox/vmm/iom.h \
+	$(PATH_ROOT)/include/VBox/vmm/cfgm.h \
+	$(PATH_ROOT)/include/VBox/vmm/tm.h \
+	$(PATH_ROOT)/include/VBox/vmm/csam.h \
+	$(PATH_ROOT)/include/VBox/vmm/ssm.h \
+	$(PATH_ROOT)/include/VBox/vmm/hwaccm.h \
+	$(PATH_ROOT)/include/VBox/vmm/hwacc_svm.h \
+	$(PATH_ROOT)/include/VBox/vmm/hwacc_vmx.h \
 	\
 	$(PATH_ROOT)/src/VBox/VMM/include/CFGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/CPUMInternal.h \
@@ -574,8 +573,8 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/include/MMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/PATM/CSAMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/PATM/PATMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/CSAMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/PATMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/REMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SELMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SSMInternal.h \
@@ -585,14 +584,14 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/include/VMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/VMMInternal.h \
 	\
-	$(PATH_ROOT)/include/VBox/vm.h \
+	$(PATH_ROOT)/include/VBox/vmm/vm.h \
 	\
 	$(PATH_ROOT)/include/VBox/sup.h \
 	$(PATH_ROOT)/include/VBox/vd.h \
 	$(PATH_ROOT)/include/VBox/types.h \
 	$(PATH_ROOT)/include/VBox/err.h \
 	$(PATH_ROOT)/include/VBox/x86.h \
-	$(PATH_ROOT)/include/VBox/cpumdis.h \
+	$(PATH_ROOT)/include/VBox/vmm/cpumdis.h \
 	$(PATH_ROOT)/include/VBox/dbggui.h \
 	$(PATH_ROOT)/include/VBox/dis.h \
 	$(PATH_ROOT)/include/VBox/disopcode.h \
