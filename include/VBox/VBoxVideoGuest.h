@@ -46,7 +46,7 @@ RT_C_DECLS_BEGIN
 
 /**
  * Structure grouping the context needed for submitting commands to the host
- * via HGSMI 
+ * via HGSMI
  */
 typedef struct HGSMIGUESTCOMMANDCONTEXT
 {
@@ -61,7 +61,7 @@ typedef struct HGSMIGUESTCOMMANDCONTEXT
 
 /**
  * Structure grouping the context needed for receiving commands from the host
- * via HGSMI 
+ * via HGSMI
  */
 typedef struct HGSMIHOSTCOMMANDCONTEXT
 {

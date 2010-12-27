@@ -55,7 +55,7 @@ private:
     /* Event handlers: */
     bool event(QEvent *pEvent);
 #ifdef Q_WS_WIN
-    bool winEvent(MSG *pMessage, long *pResult); 
+    bool winEvent(MSG *pMessage, long *pResult);
 #endif
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);

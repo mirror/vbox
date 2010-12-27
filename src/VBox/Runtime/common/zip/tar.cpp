@@ -228,10 +228,11 @@ DECLINLINE(void) rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
 DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
 {
     int64_t cbSize = 0;
- 	if (pRecord->h.size[0] & 0x80)
+    if (pRecord->h.size[0] & 0x80)
     {
         size_t cchField = sizeof(pRecord->h.size);
         unsigned char const *puchField = (unsigned char const *)pRecord->h.size;
+
         /*
          * The first byte has the bit 7 set to indicate base-256, while bit 6
          * is the signed bit. Bits 5:0 are the most significant value bits.
@@ -240,6 +241,7 @@ DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
         cbSize = (cbSize << 6) | (*puchField & 0x3f);
         cchField--;
         puchField++;
+
         /*
          * The remaining bytes are used in full.
          */
@@ -253,7 +255,8 @@ DECLINLINE(uint64_t) rtTarRecToSize(PRTTARRECORD pRecord)
             }
             cbSize = (cbSize << 8) | *puchField++;
         }
-    }else
+    }
+    else
         RTStrToInt64Full(pRecord->h.size, 8, &cbSize);
 
     if (cbSize < 0)

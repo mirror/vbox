@@ -5573,9 +5573,9 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
         else
 #endif
         {
-          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);  
+          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);
           status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, segment, offset);
-          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);  
+          write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);
         }
       }
       else
@@ -5754,9 +5754,9 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
           if (lba + count >= 268435456)
             status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
           else {
-            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);  
+            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);
             status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, segment, offset);
-            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);  
+            write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);
           }
         }
       }

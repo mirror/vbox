@@ -590,7 +590,7 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
     {
         DISPDBG((0, " -> GUID_UserModeDriverPassword\n"));
     }
-#endif   
+#endif
 
     /* Always return this */
     return DDHAL_DRIVER_HANDLED;

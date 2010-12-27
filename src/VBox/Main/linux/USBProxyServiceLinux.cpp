@@ -210,7 +210,7 @@ int USBProxyServiceLinux::initSysfs(void)
     Assert(!mUsingUsbfsDevices);
 
 #ifdef VBOX_USB_WITH_SYSFS
-    try 
+    try
     {
         mpWaiter = new VBoxMainHotplugWaiter(mDevicesRoot.c_str());
     }

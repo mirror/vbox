@@ -64,7 +64,7 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 
 ifdef VBOX_WITH_WDDM
 VBOXWDDM_WITH_DISPD3D = 1
- ifdef VBOX_WITH_CROGL 
+ ifdef VBOX_WITH_CROGL
   VBOXWDDM_WITH_GL = 1
  endif
 

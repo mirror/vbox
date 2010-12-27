@@ -99,7 +99,7 @@ VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
 if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
 #
-# VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build 
+# VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
 #
 DLLS.win.amd64 += VBoxOGLcrutil-x86
 VBoxOGLcrutil-x86_TEMPLATE      = VBOXCROGLR3GUESTDLL
@@ -111,7 +111,7 @@ VBoxOGLcrutil-x86_LIBS.win = \
 	$(PATH_SDK_DXSDK_LIB.x86)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB.x86)/dxguid.lib
 ifdef VBOX_WITH_CRHGSMI
-# VBOX_WITH_CRHGSMI define is inherited from VBoxOGLcrutil 
+# VBOX_WITH_CRHGSMI define is inherited from VBoxOGLcrutil
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 endif
 VBoxOGLcrutil-x86_DEFS = $(VBoxOGLcrutil_DEFS) VBOX_WDDM_WOW64
@@ -240,10 +240,10 @@ VBoxOGLcrpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h
-	
+
 if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
 #
-# VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build 
+# VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build
 #
 LIBRARIES.win.amd64 += VBoxOGLcrpacker-x86
 VBoxOGLcrpacker-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
@@ -322,7 +322,7 @@ VBoxOGLspuload_CLEAN = \
 
 if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
 #
-# VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build 
+# VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build
 #
 LIBRARIES.win.amd64 += VBoxOGLspuload-x86
 VBoxOGLspuload-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
@@ -445,13 +445,13 @@ VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
 ifneq ($(KBUILD_TARGET),win)
 state_tracker/state_lists.c_CFLAGS += $(VBOX_GCC_Wno-pointer-sign)
-VBoxOGLcrstate_CFLAGS += 
+VBoxOGLcrstate_CFLAGS +=
 endif
 
 
 if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
 #
-# VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build 
+# VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build
 #
 LIBRARIES.win.amd64 += VBoxOGLcrstate-x86
 VBoxOGLcrstate-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
@@ -569,10 +569,10 @@ VBoxOGLerrorspu_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
 VBoxOGLerrorspu_LIBS = \
 	$(VBOX_LIB_OGL_CRUTIL)
-	
+
 if defined(VBOX_WITH_WDDM) && !defined(VBOX_WITHOUT_ADDITIONS)
 #
-# VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build 
+# VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build
 #
 DLLS.win.amd64 += VBoxOGLerrorspu-x86
 VBoxOGLerrorspu-x86_TEMPLATE = VBOXCROGLR3GUESTDLL

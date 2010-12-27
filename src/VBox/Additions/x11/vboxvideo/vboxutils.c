@@ -319,7 +319,7 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
         TRACE_LOG("VBVA buffer offset for screen %u: 0x%lx\n", i,
                   (unsigned long) pVBox->cbFBMax);
         VBoxVBVASetupBufferContext(&pVBox->aVbvaCtx[i],
-                                   pVBox->aoffVBVABuffer[i], 
+                                   pVBox->aoffVBVABuffer[i],
                                    VBVA_MIN_BUFFER_SIZE);
     }
     TRACE_LOG("Maximum framebuffer size: %lu (0x%lx)\n",

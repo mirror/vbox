@@ -141,7 +141,7 @@ HRESULT VBoxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage)
 VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
                                                TCHAR *variables, stack_t **stacktop)
 {
-	EXDLL_INIT();
+    EXDLL_INIT();
 
     VBOXTRAYIPCHEADER hdr;
     hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
@@ -177,6 +177,6 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
 {
     g_hInstance = (HINSTANCE)hInst;
-	return TRUE;
+    return TRUE;
 }
 

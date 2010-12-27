@@ -302,15 +302,15 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
  *  Print callback dumping TCP Control Block in terms of RFC 793.
  */
 static DECLCALLBACK(size_t)
-printTcpcbRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, 
+printTcpcbRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                  const char *pszType, void const *pvValue,
                  int cchWidth, int cchPrecision, unsigned fFlags,
                  void *pvUser)
 {
     size_t cb = 0;
-    const struct tcpcb *tp = (const struct tcpcb *)pvValue; 
+    const struct tcpcb *tp = (const struct tcpcb *)pvValue;
     AssertReturn(RTStrCmp(pszType, "tcpcb793") == 0 && tp, 0);
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "TCB793[ SND(UNA: %x, NXT: %x, UP: %x, WND: %x, WL1:%x, WL2:%x, ISS:%x), ", 
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "TCB793[ SND(UNA: %x, NXT: %x, UP: %x, WND: %x, WL1:%x, WL2:%x, ISS:%x), ",
                       tp->snd_una, tp->snd_nxt, tp->snd_up, tp->snd_wnd, tp->snd_wl1, tp->snd_wl2, tp->iss);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "RCV(WND: %x, NXT: %x, UP: %x, IRS:%x)]", tp->rcv_wnd, tp->rcv_nxt, tp->rcv_up, tp->irs);
     return cb;
@@ -319,15 +319,15 @@ printTcpcbRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
  * Prints TCP segment in terms of RFC 793.
  */
 static DECLCALLBACK(size_t)
-printTcpSegmentRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, 
+printTcpSegmentRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                  const char *pszType, void const *pvValue,
                  int cchWidth, int cchPrecision, unsigned fFlags,
                  void *pvUser)
 {
     size_t cb = 0;
-    const struct tcpiphdr *ti = (const struct tcpiphdr *)pvValue; 
+    const struct tcpiphdr *ti = (const struct tcpiphdr *)pvValue;
     AssertReturn(RTStrCmp(pszType, "tcpseg793") == 0 && ti, 0);
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SEG[ACK: %x, SEQ: %x, LEN: %x, WND: %x, UP: %x]", 
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SEG[ACK: %x, SEQ: %x, LEN: %x, WND: %x, UP: %x]",
                       ti->ti_ack, ti->ti_seq, ti->ti_len, ti->ti_win, ti->ti_urp);
     return cb;
 }
