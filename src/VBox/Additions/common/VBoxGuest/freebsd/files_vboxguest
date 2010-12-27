@@ -128,6 +128,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avl_RemoveBestFit.cpp.h=>common/table/avl_RemoveBestFit.cpp.h \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avl_DoWithAll.cpp.h=>common/table/avl_DoWithAll.cpp.h \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avl_Destroy.cpp.h=>common/table/avl_Destroy.cpp.h \
+    ${PATH_ROOT}/src/VBox/Runtime/common/time/time.cpp=>common/time/time.c \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/assert.h=>include/internal/assert.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
