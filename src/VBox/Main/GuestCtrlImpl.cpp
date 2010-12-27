@@ -205,7 +205,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
         if (!RTFileExists(aTask->strSource.c_str()))
         {
             rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                 Guest::tr("Source file \"%s\" does not exist"),
+                                                 Guest::tr("Source file \"%s\" does not exist, or is not a file"),
                                                  aTask->strSource.c_str());
         }
         else

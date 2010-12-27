@@ -25,6 +25,7 @@
 #include "VMMDev.h"
 #include "AudioSnifferInterface.h"
 #include "ConsoleImpl.h"
+#include "PciRawDevImpl.h"
 
 #include "Logging.h"
 
@@ -66,6 +67,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &Console::DrvStatusReg);
     if (RT_FAILURE(rc))
         return rc;
+
+    rc = pCallbacks->pfnRegister(pCallbacks, &PciRawDev::DrvReg);
+    if (RT_FAILURE(rc))
+        return rc;
+
     return VINF_SUCCESS;
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

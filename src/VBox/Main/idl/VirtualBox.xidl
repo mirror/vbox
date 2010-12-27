@@ -4704,9 +4704,6 @@
       <param name="desiredGuestAddress" type="long" dir="in">
         <desc>Desired position of this device on guest PCI bus.</desc>
       </param>
-      <param name="eventContext" type="IEventContext" dir="in">
-        <desc>Context passed into IHostPciDevicePlugEvent event.</desc>
-      </param>
       <param name="tryToUnbind" type="boolean" dir="in">
         <desc>If VMM shall try to unbind existing drivers from the
         device before attaching it to the guest.</desc>
@@ -4717,11 +4714,8 @@
       <desc>
         Detach host PCI device from the virtual machine.
         Also HostPciDevicePlugEvent on IVirtualBox event source
-        will be delivered.
-
-        <note>
-          Not yet implemented.
-        </note>
+        will be delivered. As currently we don't support hot device
+        unplug, IHostPciDevicePlugEvent event is delivered immediately.
 
         <see>IHostPciDevicePlugEvent</see>
 
@@ -16596,7 +16590,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
     >
     <desc>
-      Notification when host PCI device is plugged/unplugged.
+      Notification when host PCI device is plugged/unplugged. Plugging
+      usually takes place on VM startup, unplug - when
+      IMachine::DetachHostPciDevice is called.
+      <see>
+        IMachine::DetachHostPciDevice
+      </see>
     </desc>
 
     <attribute name="plugged" type="boolean" readonly="yes">
@@ -16615,13 +16614,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
       <desc>
         Attachment info for this device.
-      </desc>
-    </attribute>
-
-    <attribute name="eventContext" type="IEventContext" readonly="yes">
-      <desc>
-        Context object, passed into attachHostPciDevice() and
-        attachHostPciDevice().
       </desc>
     </attribute>
 
