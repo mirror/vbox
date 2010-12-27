@@ -24,11 +24,11 @@
 
 struct PciDeviceAttachment::Data
 {
-    Data(Machine      *aParent,
-         const Bstr   &aDevName,
-         LONG          aHostAddress,
-         LONG          aGuestAddress,
-         BOOL          afPhysical)
+    Data(Machine        *aParent,
+         const Bstr     &aDevName,
+         LONG           aHostAddress,
+         LONG           aGuestAddress,
+         BOOL           afPhysical)
         : pMachine(aParent),
           HostAddress(aHostAddress), GuestAddress(aGuestAddress),
           fPhysical(afPhysical)
@@ -60,11 +60,11 @@ void PciDeviceAttachment::FinalRelease()
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
-HRESULT PciDeviceAttachment::init(Machine      *aParent,
-                                  const Bstr   &aDevName,
-                                  LONG          aHostAddress,
-                                  LONG          aGuestAddress,
-                                  BOOL          fPhysical)
+HRESULT PciDeviceAttachment::init(Machine       *aParent,
+                                  const Bstr    &aDevName,
+                                  LONG           aHostAddress,
+                                  LONG           aGuestAddress,
+                                  BOOL           fPhysical)
 {
     m = new Data(aParent, aDevName, aHostAddress, aGuestAddress, fPhysical);
 

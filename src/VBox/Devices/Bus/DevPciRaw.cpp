@@ -19,11 +19,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCI
-#include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
+#define PCI_INCLUDE_PRIVATE
+#include <VBox/pci.h>
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmpci.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
+
 
 #include "VBoxDD.h"
 
@@ -36,77 +41,6 @@
 /*******************************************************************************
  *   Structures and Typedefs                                                    *
  *******************************************************************************/
-
-/* Temporary PDM stubs */
-typedef struct PDMPCIRAWREG
-{
-    /** Struct version+magic number (PDM_PCIRAWREG_VERSION). */
-    uint32_t            u32Version;
-
-} PDMPCIRAWREG;
-/** Pointer to a raw PCI registration structure. */
-typedef PDMPCIRAWREG *PPDMPCIRAWREG;
-
-/** Current PDMPCIRAWREG version number. */
-#define PDM_PCIRAWREG_VERSION                     PDM_VERSION_MAKE(0xffe3, 1, 0)
-
-struct PDMPCIRAWHLPRC
-{
-    uint32_t u32Version;
-};
-typedef RCPTRTYPE(PDMPCIRAWHLPRC *) PPDMPCIRAWHLPRC;
-typedef RCPTRTYPE(const PDMPCIRAWHLPRC *) PCPDMPCIRAWHLPRC;
-
-struct PDMPCIRAWHLPR0
-{
-    uint32_t u32Version;
-};
-typedef R0PTRTYPE(PDMPCIRAWHLPR0 *) PPDMPCIRAWHLPR0;
-typedef R0PTRTYPE(const PDMPCIRAWHLPR0 *) PCPDMPCIRAWHLPR0;
-
-struct PDMPCIRAWHLPR3
-{
-    uint32_t u32Version;
-    /**
-     * Gets the address of the RC PCI raw helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the RC helpers.
-     *
-     * @returns RC pointer to the PCI raw helpers.
-     * @param   pDevIns         Device instance of the raw PCI device.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPCIRAWHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the R0 PCI raw helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the R0 helpers.
-     *
-     * @returns R0 pointer to the PCI raw helpers.
-     * @param   pDevIns         Device instance of the raw PCI device.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPCIRAWHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
-
-    /** Just a safety precaution. */
-    uint32_t                u32TheEnd;
-};
-/** Pointer to raw PCI R3 helpers. */
-typedef R3PTRTYPE(PDMPCIRAWHLPR3 *) PPDMPCIRAWHLPR3;
-/** Pointer to const raw PCI R3 helpers. */
-typedef R3PTRTYPE(const PDMPCIRAWHLPR3 *) PCPDMPCIRAWHLPR3;
-
-/**
- * @copydoc PDMDEVHLPR3::pfnPciRawRegister
- */
-DECLINLINE(int) PDMDevHlpPciRawRegister(PPDMDEVINS pDevIns, PPDMPCIRAWREG pPciRawReg, PCPDMPCIRAWHLPR3 *ppPciRawHlpR3)
-{
-    //return pDevIns->pHlpR3->pfnPciRawRegister(pDevIns, pPciRawReg, ppPciRawHlpR3);
-    return VINF_SUCCESS;
-}
-
-/* End of PDM stubs */
 
 typedef struct PciRawState
 {
@@ -128,15 +62,38 @@ typedef struct PciRawState
     /* Virtual PCI device */
     PCIDEVICE            aPciDevice;
 
+    /* Device name, as provided by Main */
+    char                 szDeviceName[64];
     /* Address of device on the host */
-    PciBusAddress        aHostDeviceAddress;
+    int32_t              i32HostDeviceAddress;
     /* Address of device in the guest */
-    PciBusAddress        aGuestDeviceAddress;
+    int32_t              i32GuestDeviceAddress;
 
-    /* Global device lock */
+     /* Global device lock */
     PDMCRITSECT          csLock;
+
+    /**
+     * Device port - LUN#0.
+     *
+     * @implements  PDMIBASE
+     * @implements  PDMIPCIRAW
+     */
+    struct
+    {
+        /** The base interface for the PCI device port. */
+        PDMIBASE                            IBase;
+        /** The device port base interface. */
+        PDMIPCIRAW                          IDevice;
+
+        /** The base interface of the attached raw PCI driver. */
+        R3PTRTYPE(PPDMIBASE)                pDrvBase;
+        /** The device interface of the attached raw PCI driver. */
+        R3PTRTYPE(PPDMIPCIRAWCONNECTOR)     pDrv;
+    } Lun0;
 } PciRawState;
 
+/** Pointer to the raw PCI instance data. */
+typedef PciRawState *PPciRawState;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -149,9 +106,6 @@ PDMBOTHCBDECL(int) pcirawIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
                                      RTIOPORT Port, uint32_t *pu32, unsigned cb);
 RT_C_DECLS_END
 
-/*
- * Temporary control to disable locking if problems found
- */
 DECLINLINE(int) pcirawLock(PciRawState* pThis, int rcBusy)
 {
     return PDMCritSectEnter(&pThis->csLock, rcBusy);
@@ -161,7 +115,6 @@ DECLINLINE(void) pcirawUnlock(PciRawState* pThis)
 {
     PDMCritSectLeave(&pThis->csLock);
 }
-
 
 PDMBOTHCBDECL(int)  pcirawMMIORead(PPDMDEVINS pDevIns,
                                    void *     pvUser,
@@ -211,7 +164,6 @@ PDMBOTHCBDECL(int) pcirawMMIOWrite(PPDMDEVINS pDevIns,
              (uint64_t)GCPhysAddr, cb, *(uint32_t*)pv));
 
     rc = pcirawLock(pThis, VINF_IOM_HC_MMIO_WRITE);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
     switch (cb)
@@ -330,13 +282,31 @@ static DECLCALLBACK(void) pcirawReset(PPDMDEVINS pDevIns)
     LogFlow(("pcirawReset:\n"));
 }
 
+static DECLCALLBACK(int) pcirawAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PciRawState *pThis = PDMINS_2_DATA(pDevIns, PciRawState *);
+
+    LogFlow(("pcirawAttach: LUN%d\n", iLUN));
+    /* Not yet used */
+    return 0;
+}
+
+static DECLCALLBACK(void) pcirawDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PciRawState *pThis = PDMINS_2_DATA(pDevIns, PciRawState *);
+
+    LogFlow(("pcirawDetach: LUN%d\n", iLUN));
+    /* Not yet used */
+}
+
+
 /**
  * Initialization routine.
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
  */
-static int pcirawInit(PPDMDEVINS pDevIns, PciBusAddress hostAddress)
+static int pcirawInit(PPDMDEVINS pDevIns, PciBusAddress hostAddress, PciBusAddress guestAddress)
 {
     unsigned   i;
     int        rc;
@@ -348,11 +318,48 @@ static int pcirawInit(PPDMDEVINS pDevIns, PciBusAddress hostAddress)
     pThis->pDevInsR0  = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
 
-    pThis->aHostDeviceAddress.init(hostAddress);
+    pThis->i32HostDeviceAddress = hostAddress.asLong();
+    pThis->i32GuestDeviceAddress = guestAddress.asLong();
 
     pcirawReset(pDevIns);
 
     return VINF_SUCCESS;
+}
+
+
+static uint32_t pcirawConfigRead(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb)
+{
+    PPDMDEVINS pDevIns = pPciDev->pDevIns;
+    PciRawState*  pThis = PDMINS_2_DATA(pDevIns, PciRawState *);
+
+    Log2(("rawpci: PCI config read: 0x%x (%d)\n", Address, cb));
+
+    return 0;
+}
+
+static void pcirawConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb)
+{
+    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
+    PciRawState  *pThis = PDMINS_2_DATA(pDevIns, PciRawState *);
+
+    Log2(("rawpci: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
+}
+
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) pcirawQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PciRawState* pThis = RT_FROM_CPP_MEMBER(pInterface, PciRawState, Lun0.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,   &pThis->Lun0.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIPCIRAW, &pThis->Lun0.IDevice);
+    return NULL;
+}
+
+static DECLCALLBACK(int) pcirawFoo(PPDMIPCIRAW pInterface)
+{
+    return 0;
 }
 
 /**
@@ -372,6 +379,10 @@ static DECLCALLBACK(int) pcirawConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (!CFGMR3AreValuesValid(pCfg,
                               "GCEnabled\0"
                               "R0Enabled\0"
+                              "DeviceName\0"
+                              "GuestPCIBusNo\0"
+                              "GuestPCIDeviceNo\0"
+                              "GuestPCIFunctionNo\0"
                               "HostPCIBusNo\0"
                               "HostPCIDeviceNo\0"
                               "HostPCIFunctionNo\0"
@@ -389,84 +400,206 @@ static DECLCALLBACK(int) pcirawConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
-    /* Obtain host device address */
+    rc = CFGMR3QueryString(pCfg, "DeviceName", pThis->szDeviceName, sizeof(pThis->szDeviceName));
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: failed to read DeviceName as string"));
+
+    PciBusAddress hostAddress, guestAddress;
+
+    /* Obtain device address info */
     uint32_t u32Bus, u32Device, u32Fn;
-    rc = CFGMR3QueryU32(pCfg, "HostPCIBusNo", &u32Bus);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"HostPCIBusNo\" as a int failed"));
-    rc = CFGMR3QueryU32(pCfg, "HostPCIDeviceNo", &u32Device);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"HostPCIDeviceNo\" as a int failed"));
-    rc = CFGMR3QueryU32(pCfg, "HostPCIFunctionNo", &u32Fn);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"HostPCIFunctionNo\" as a int failed"));
 
+    do {
+        rc = CFGMR3QueryU32(pCfg, "HostPCIBusNo", &u32Bus);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"HostPCIBusNo\" as a int failed"));
+            break;
+        }
+        rc = CFGMR3QueryU32(pCfg, "HostPCIDeviceNo", &u32Device);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"HostPCIDeviceNo\" as a int failed"));
+            break;
+        }
+        rc = CFGMR3QueryU32(pCfg, "HostPCIFunctionNo", &u32Fn);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"HostPCIFunctionNo\" as a int failed"));
+            break;
+        }
+        hostAddress = PciBusAddress(u32Bus, u32Device, u32Fn);
 
-    /* Initialize the device state */
-    rc = pcirawInit(pDevIns, PciBusAddress(u32Bus, u32Device, u32Fn));
-    if (RT_FAILURE(rc))
-        return rc;
+        rc = CFGMR3QueryU32(pCfg, "GuestPCIBusNo", &u32Bus);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"GuestPCIBusNo\" as a int failed"));
+            break;
+        }
+        rc = CFGMR3QueryU32(pCfg, "GuestPCIDeviceNo", &u32Device);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"GuestPCIDeviceNo\" as a int failed"));
+            break;
+        }
+        rc = CFGMR3QueryU32(pCfg, "GuestPCIFunctionNo", &u32Fn);
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc,
+                             N_("Configuration error: Querying \"GuestPCIFunctionNo\" as a int failed"));
+            break;
+        }
+        guestAddress = PciBusAddress(u32Bus, u32Device, u32Fn);
 
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+        /* Initialize the device state */
+        rc = pcirawInit(pDevIns, hostAddress, guestAddress);
+        if (RT_FAILURE(rc))
+            break;
 
-    /*
-     * Register the raw device and get helpers.
-     */
-    PciRawReg.u32Version  = PDM_PCIRAWREG_VERSION;
-    rc = PDMDevHlpPciRawRegister(pDevIns, &PciRawReg, &pThis->pPciRawHlpR3);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgRC(rc, ("Cannot PciRawRegister: %Rrc\n", rc));
-        return rc;
-    }
+        pThis->pDevInsR3 = pDevIns;
+        pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+        pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
-    /*
-     * Initialize critical section.
-     */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "PCIRAW");
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Raw PCI device cannot initialize critical section"));
+        /*
+         * Register the raw device and get helpers.
+         */
+        PciRawReg.u32Version  = PDM_PCIRAWREG_VERSION;
+        rc = PDMDevHlpPciRawRegister(pDevIns, &PciRawReg, &pThis->pPciRawHlpR3);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgRC(rc, ("Cannot PciRawRegister: %Rrc\n", rc));
+            break;
+        }
 
-#if 0
-    /*
-     * Register IO/MMIO ranges for guest, basing on real device ranges.
-     */
-    for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
-    {
+        /*
+         * Initialize critical section.
+         */
+        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "PCIRAW");
+        if (RT_FAILURE(rc))
+        {
+            PDMDEV_SET_ERROR(pDevIns, rc, N_("Raw PCI device cannot initialize critical section"));
+            break;
+        }
 
-    }
+        /* Mark device as passthrough */
+        PCISetPassthrough(&pThis->aPciDevice);
+
+        /* IBase */
+        pThis->Lun0.IBase.pfnQueryInterface = pcirawQueryInterface;
+        pThis->Lun0.IDevice.pfnFoo          = pcirawFoo;
+
+        /*
+         * Attach to the Main driver.
+         */
+        rc = pDevIns->pHlpR3->pfnDriverAttach(pDevIns, 0 /*iLun*/, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "Device Port");
+        if (RT_FAILURE(rc))
+        {
+            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Raw PCI failed to attach Main driver"));
+            break;
+        }
+
+        pThis->Lun0.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIPCIRAWCONNECTOR);
+        if (!pThis->Lun0.pDrv)
+        {
+            rc = PDMDevHlpVMSetError(pDevIns, VERR_PDM_MISSING_INTERFACE, RT_SRC_POS, N_("Raw PCI failed to query interface"));
+            break;
+        }
+
+        /* Just a safety measure, this data shall never be reached */
+        PCIDevSetVendorId(&pThis->aPciDevice, 0xdead);
+        PCIDevSetDeviceId(&pThis->aPciDevice, 0xbeef);
+
+        rc = PDMDevHlpPCIRegister(pDevIns, &pThis->aPciDevice);
+        if (RT_FAILURE(rc))
+            break;
+
+        PDMDevHlpPCISetConfigCallbacks(pDevIns, &pThis->aPciDevice,
+                                       pcirawConfigRead,  NULL /* we don't care about old ones */,
+                                       pcirawConfigWrite, NULL /* we don't care about old ones */);
+
+#if 1
+        /*
+         * Register IO/MMIO ranges for the guest, basing on real device ranges.
+         */
+        for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+        {
+            RTHCPHYS RegStart;
+            uint64_t iRegSize;
+            bool     fMmio;
+
+            if (pThis->Lun0.pDrv->pfnGetRegionInfo(pThis->Lun0.pDrv, hostAddress.asLong(), iRegion,
+                                                   &RegStart, &iRegSize, &fMmio))
+            {
+                /* If region is present, register callbacks in guest.
+                   @todo: replace it with direct region access with remap */
+                // @todo: check if host's PA make sense for the guest
+                if (fMmio)
+                {
+                    rc = PDMDevHlpMMIORegister(pDevIns, RegStart, iRegSize, NULL,
+                                               pcirawMMIOWrite, pcirawMMIORead, NULL,
+                                               "Raw PCI MMIO regions");
+                    if (RT_FAILURE(rc))
+                    {
+                        AssertMsgRC(rc, ("Cannot register MMIO: %Rrc\n", rc));
+                        break;
+                    }
+                }
+                else
+                {
+                    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)RegStart, iRegSize, NULL,
+                                                 pcirawIOPortWrite, pcirawIOPortRead, NULL, NULL,
+                                                 "Raw PCI IO regions");
+                    if (RT_FAILURE(rc))
+                    {
+                        AssertMsgRC(rc, ("Cannot register IO: %Rrc\n", rc));
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            break;
 #endif
 
-    if (fRCEnabled)
-    {
-        pThis->pPciRawHlpRC = pThis->pPciRawHlpR3->pfnGetRCHelpers(pDevIns);
-        if (!pThis->pPciRawHlpRC)
+        if (fRCEnabled)
         {
-            AssertReleaseMsgFailed(("cannot get RC helper\n"));
-            return VERR_INTERNAL_ERROR;
+            pThis->pPciRawHlpRC = pThis->pPciRawHlpR3->pfnGetRCHelpers(pDevIns);
+            if (!pThis->pPciRawHlpRC)
+            {
+                AssertReleaseMsgFailed(("cannot get RC helper\n"));
+                rc = VERR_INTERNAL_ERROR;
+                break;
+                }
         }
-    }
-    if (fR0Enabled)
-    {
-        pThis->pPciRawHlpR0 = pThis->pPciRawHlpR3->pfnGetR0Helpers(pDevIns);
-        if (!pThis->pPciRawHlpR0)
+        if (fR0Enabled)
         {
-            AssertReleaseMsgFailed(("cannot get R0 helper\n"));
-            return VERR_INTERNAL_ERROR;
+            pThis->pPciRawHlpR0 = pThis->pPciRawHlpR3->pfnGetR0Helpers(pDevIns);
+            if (!pThis->pPciRawHlpR0)
+                {
+                    AssertReleaseMsgFailed(("cannot get R0 helper\n"));
+                    rc = VERR_INTERNAL_ERROR;
+                    break;
+                }
         }
-    }
 
-    /* Register SSM callbacks */
-    rc = PDMDevHlpSSMRegister3(pDevIns, PCIRAW_SAVED_STATE_VERSION, sizeof(*pThis), pcirawLiveExec, pcirawSaveExec, pcirawLoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+        /* Register SSM callbacks */
+        rc = PDMDevHlpSSMRegister3(pDevIns, PCIRAW_SAVED_STATE_VERSION, sizeof(*pThis), pcirawLiveExec, pcirawSaveExec, pcirawLoadExec);
+        if (RT_FAILURE(rc))
+            break;
+    } while (0);
+    /* Notify Main about result of PCI device  attach attempt */
+    if (pThis->Lun0.pDrv != NULL)
+        pThis->Lun0.pDrv->pfnPciDeviceConstructComplete(pThis->Lun0.pDrv, hostAddress.asLong(), guestAddress.asLong(),
+                                                        rc, pThis->szDeviceName);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -510,9 +643,9 @@ const PDMDEVREG g_DevicePciRaw =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    NULL , //pcirawAttach,
     /* pfnDetach */
-    NULL,
+    NULL, //pcirawDetach,
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete */
