@@ -23,7 +23,7 @@
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 extern "C" {
 #include "audio.h"
 }

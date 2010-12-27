@@ -36,7 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
-#include "../vl_vbox.h"
+#include "vl_vbox.h"
 
 extern "C" {
 #include "audio.h"

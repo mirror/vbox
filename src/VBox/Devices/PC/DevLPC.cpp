@@ -53,7 +53,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#include "../Builtins2.h"
+#include "VBoxDD2.h"
 
 #define RCBA_BASE                0xFED1C000
 

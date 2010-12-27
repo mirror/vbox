@@ -27,7 +27,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 extern "C" {
 #include "audio.h"

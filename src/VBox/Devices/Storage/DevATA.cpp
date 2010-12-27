@@ -59,7 +59,7 @@
 
 #include "PIIX3ATABmDma.h"
 #include "ide.h"
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *

@@ -34,8 +34,8 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 
-#include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "VBoxDD.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
 

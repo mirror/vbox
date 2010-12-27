@@ -31,7 +31,7 @@
 #include <iprt/alloc.h>
 #endif
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #include "MsiCommon.h"
 

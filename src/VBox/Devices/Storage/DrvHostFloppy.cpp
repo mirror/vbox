@@ -47,7 +47,7 @@
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 #include "DrvHostBase.h"
 
 

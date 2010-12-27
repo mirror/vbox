@@ -54,7 +54,7 @@
 #include <VBox/vmm/pdmnetifs.h>
 #include <VBox/vmm/pdmnetinline.h>
 #include <VBox/param.h>
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #include "DevEEPROM.h"
 #include "DevE1000Phy.h"

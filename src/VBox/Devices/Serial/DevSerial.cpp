@@ -54,7 +54,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #undef VBOX_SERIAL_PCI /* The PCI variant has lots of problems: wrong IRQ line and wrong IO base assigned. */
 

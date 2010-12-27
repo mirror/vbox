@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "VBoxDD.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #ifdef VBOX
 # include <iprt/asm-math.h>

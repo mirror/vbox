@@ -34,8 +34,8 @@
 #include <iprt/uuid.h>
 #include <iprt/system.h>
 
-#include "../Builtins.h"
-#include "../Builtins2.h"
+#include "VBoxDD.h"
+#include "VBoxDD2.h"
 #include "DevFwCommon.h"
 
 

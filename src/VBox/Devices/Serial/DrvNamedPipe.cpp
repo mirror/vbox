@@ -29,7 +29,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/uuid.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 #ifdef RT_OS_WINDOWS
 # include <windows.h>

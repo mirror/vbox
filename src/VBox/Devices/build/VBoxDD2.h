@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Builtins2_h
-#define ___Builtins2_h
+#ifndef ___build_VBoxDD2_h
+#define ___build_VBoxDD2_h
 
 #include <VBox/vmm/pdm.h>
 
@@ -51,3 +51,4 @@ extern const PDMDEVREG g_DeviceLPC;
 RT_C_DECLS_END
 
 #endif
+

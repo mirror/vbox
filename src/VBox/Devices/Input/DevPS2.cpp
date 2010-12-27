@@ -50,7 +50,7 @@
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #define PCKBD_SAVED_STATE_VERSION 5
 
