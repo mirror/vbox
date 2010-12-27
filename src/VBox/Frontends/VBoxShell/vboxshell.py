@@ -751,7 +751,7 @@ class XPathNode:
             return True
         if not subexp.startswith(self.type):
             return False
-        m = re.search(r"@(?P<a>\w+)=(?P<v>\w+)", subexp)
+        m = re.search(r"@(?P<a>\w+)=(?P<v>[^\'\[\]]+)", subexp)
         matches = False
         try:
             if m is not None:
