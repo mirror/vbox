@@ -3683,8 +3683,8 @@ ifdef VBOX_WITH_EXTPACK
  TEMPLATE_VBoxRcExtPack_DEFS = VBOX_IN_EXTPACK VBOX_IN_EXTPACK_RC
  if1of ($(VBOX_LDR_FMT32), pe lx)
   TEMPLATE_VBoxRcExtPack_LIBS = \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
  endif
 
  TEMPLATE_VBoxInsExtPack = For the install targets of an extension pack.
