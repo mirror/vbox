@@ -23,7 +23,7 @@
 # include <iprt/string.h>
 # include <iprt/assert.h>
 # include <iprt/stream.h>
-# include <VBox/ssm.h>
+# include <VBox/vmm/ssm.h>
 # include <VBox/hgcmsvc.h>
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 # include "cr_server.h"
