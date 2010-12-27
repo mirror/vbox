@@ -263,7 +263,7 @@ ifdef VBOX_WITH_RAW_MODE
  	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT32)),)
   tstMicroRC_LIBS        += \
-  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
+  	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
   	$(LIB_VMMGC)
  endif
  tstMicroRC_SOURCES.win = tstMicroRC.def
