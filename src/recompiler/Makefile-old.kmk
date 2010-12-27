@@ -124,7 +124,7 @@ $(REM_MOD)_INCS            = \
 	tcg \
 	fpu \
 	$(PATH_$(REM_MOD)) \
-	$(PATH_ROOT)/src/VBox/VMM \
+	$(PATH_ROOT)/src/VBox/VMM/include \
 	.
 ifn1of ($($(REM_MOD)_DEFS),DEBUG_TMP_LOGGING)
 $(REM_MOD)_DEFS           += LOG_USE_C99
