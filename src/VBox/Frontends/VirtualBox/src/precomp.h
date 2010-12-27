@@ -319,7 +319,7 @@ RT_C_DECLS_END                          /* rhel3 build hack */
 #include <VBox/VBoxGL2D.h>
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBox/VBoxVideo.h>
-# include <VBox/ssm.h>
+# include <VBox/vmm/ssm.h>
 #endif
 
 #ifdef Q_WS_MAC
