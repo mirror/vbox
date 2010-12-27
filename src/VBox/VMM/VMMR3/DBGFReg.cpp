@@ -1195,4 +1195,3 @@ VMMR3DECL(const char *) DBGFR3RegName(DBGFREG enmReg, DBGFREGVALTYPE enmType)
     return pDesc->pszName;
 }
 
-

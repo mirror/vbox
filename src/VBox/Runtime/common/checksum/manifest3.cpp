@@ -548,5 +548,3 @@ RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsI
     return rc;
 }
 
-
-

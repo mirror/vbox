@@ -1075,7 +1075,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Initial CRTC configuration failed!\n");
         return (FALSE);
     }
-    
+
     /* Initialise randr 1.2 mode-setting functions and set first mode.
      * Note that the mode won't be usable until the server has resized the
      * framebuffer to something reasonable. */
@@ -1094,7 +1094,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
                                    vboxAtomVBoxMode(), XA_STRING, 8,
                                    PropModeReplace, sizeof(csz), csz, TRUE,
                                    FALSE);
-            
+
         }
     }
 

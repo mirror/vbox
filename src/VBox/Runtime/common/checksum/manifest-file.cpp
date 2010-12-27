@@ -82,4 +82,3 @@ RTDECL(int) RTManifestWriteStandardToFile(RTMANIFEST hManifest, const char *pszF
     return rc;
 }
 
-

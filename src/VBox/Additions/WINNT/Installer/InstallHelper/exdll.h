@@ -86,7 +86,8 @@ __INST_LAST
 static int __stdcall popstring(char *str)
 {
   stack_t *th;
-  if (!g_stacktop || !*g_stacktop) return 1;
+  if (!g_stacktop || !*g_stacktop)
+      return 1;
   th=(*g_stacktop);
   lstrcpyA(str,th->text);
   *g_stacktop = th->next;
@@ -97,7 +98,8 @@ static int __stdcall popstring(char *str)
 static void __stdcall pushstring(const char *str)
 {
   stack_t *th;
-  if (!g_stacktop) return;
+  if (!g_stacktop)
+      return;
   th=(stack_t*)GlobalAlloc(GPTR,sizeof(stack_t)+g_stringsize);
   lstrcpynA(th->text,str,g_stringsize);
   th->next=*g_stacktop;
@@ -106,13 +108,14 @@ static void __stdcall pushstring(const char *str)
 
 static char * __stdcall getuservariable(const int varnum)
 {
-  if (varnum < 0 || varnum >= __INST_LAST) return NULL;
+  if (varnum < 0 || varnum >= __INST_LAST)
+      return NULL;
   return g_variables+varnum*g_stringsize;
 }
 
 static void __stdcall setuservariable(const int varnum, const char *var)
 {
-	if (var != NULL && varnum >= 0 && varnum < __INST_LAST)
-		lstrcpyA(g_variables + varnum*g_stringsize, var);
+    if (var != NULL && varnum >= 0 && varnum < __INST_LAST)
+        lstrcpyA(g_variables + varnum*g_stringsize, var);
 }
 #endif//_EXDLL_H_
