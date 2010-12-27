@@ -20,8 +20,8 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/stam.h>
-#include <VBox/gvmm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/gvmm.h>
 #include <iprt/semaphore.h>
 
 

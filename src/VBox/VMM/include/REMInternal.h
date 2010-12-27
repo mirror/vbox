@@ -18,12 +18,11 @@
 #ifndef ___REMInternal_h
 #define ___REMInternal_h
 
-#include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/cpum.h>
-#include <VBox/stam.h>
-#include <VBox/pgm.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/pdmcritsect.h>
 #ifdef REM_INCLUDE_CPU_H
 # include "target-i386/cpu.h"
 #endif

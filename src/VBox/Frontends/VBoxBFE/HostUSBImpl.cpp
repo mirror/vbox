@@ -42,7 +42,7 @@
 #include "USBProxyService.h"
 #include "Logging.h"
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/vusb.h>
 #include <VBox/usb.h>
 #include <VBox/err.h>

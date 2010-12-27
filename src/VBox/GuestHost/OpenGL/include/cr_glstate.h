@@ -48,7 +48,7 @@ typedef struct CRContext CRContext;
 #include <iprt/cdefs.h>
 
 #ifndef IN_GUEST
-#include <VBox/ssm.h>
+# include <VBox/vmm/ssm.h>
 #endif
 
 #define CR_MAX_EXTENTS 256

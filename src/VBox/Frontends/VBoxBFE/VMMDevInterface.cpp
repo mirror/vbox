@@ -23,9 +23,9 @@
 #else
 # include <VBox/com/defs.h>
 #endif
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/VMMDev.h>
-#include <VBox/cfgm.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>

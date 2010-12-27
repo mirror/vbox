@@ -19,7 +19,7 @@
 #ifndef ____H_VMMDEV
 #define ____H_VMMDEV
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 class VMMDev
 {

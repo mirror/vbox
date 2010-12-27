@@ -24,7 +24,7 @@
 #include <iprt/stream.h>
 #include <iprt/time.h>
 #include <iprt/err.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmnetinline.h>
 
 
 /*******************************************************************************

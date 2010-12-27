@@ -19,10 +19,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/cpum.h>
+#include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/mm.h>
 
 /** Disable stack frame pointer generation here. */
 #if defined(_MSC_VER) && !defined(DEBUG)

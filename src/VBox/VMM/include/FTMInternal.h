@@ -20,9 +20,9 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/ftm.h>
-#include <VBox/stam.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/ftm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <iprt/avl.h>
 
 /** @defgroup grp_ftm_int Internals.

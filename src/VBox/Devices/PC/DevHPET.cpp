@@ -19,9 +19,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_HPET
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include <iprt/assert.h>
 #include <iprt/asm-math.h>
 #include <iprt/string.h>

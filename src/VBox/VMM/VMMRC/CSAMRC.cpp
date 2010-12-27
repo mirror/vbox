@@ -20,19 +20,19 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_CSAM
-#include <VBox/cpum.h>
-#include <VBox/stam.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/pgm.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/sup.h>
-#include <VBox/mm.h>
-#include <VBox/rem.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/rem.h>
 #include <VBox/param.h>
 #include <iprt/avl.h>
 #include "CSAMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/dbg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

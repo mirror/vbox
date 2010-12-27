@@ -144,14 +144,14 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_MM
-#include <VBox/mm.h>
-#include <VBox/pgm.h>
-#include <VBox/cfgm.h>
-#include <VBox/ssm.h>
-#include <VBox/gmm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/gmm.h>
 #include "MMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 

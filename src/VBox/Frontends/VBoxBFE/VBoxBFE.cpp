@@ -36,7 +36,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/version.h>
 #ifdef VBOXBFE_WITH_USB
 # include <VBox/vusb.h>

@@ -19,14 +19,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SELM
-#include <VBox/selm.h>
-#include <VBox/mm.h>
-#include <VBox/em.h>
-#include <VBox/trpm.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/trpm.h>
 #include "SELMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/pgm.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>

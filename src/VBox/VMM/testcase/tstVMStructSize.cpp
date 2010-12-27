@@ -20,16 +20,16 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/cfgm.h>
-#include <VBox/cpum.h>
-#include <VBox/mm.h>
-#include <VBox/pgm.h>
-#include <VBox/selm.h>
-#include <VBox/trpm.h>
-#include <VBox/vmm.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/stam.h>
 #include "PDMInternal.h"
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include "CFGMInternal.h"
 #include "CPUMInternal.h"
 #include "MMInternal.h"
@@ -51,9 +51,9 @@
 #include "REMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
-#include <VBox/gvm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/gvm.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
 

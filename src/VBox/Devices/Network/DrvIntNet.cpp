@@ -19,13 +19,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_INTNET
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmnetinline.h>
-#include <VBox/pdmnetifs.h>
-#include <VBox/cfgm.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmnetinline.h>
+#include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
 

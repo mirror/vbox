@@ -21,8 +21,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_PARALLEL
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmthread.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmthread.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>

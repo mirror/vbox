@@ -31,7 +31,7 @@
 #ifdef __sun__
 #include <sys/filio.h>
 #endif
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #if defined (RT_OS_WINDOWS)
 #include <iphlpapi.h>
 #include <icmpapi.h>

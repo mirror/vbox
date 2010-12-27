@@ -1,9 +1,10 @@
+; $Id$
+;; @file
+; VBox disassembler: Assembler test routines
 ;
-; VBox disassembler:
-; Assembler test routines
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2010 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +19,9 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VBox/nasm.mac"
-%include "VBox/vm.mac"
+%include "VBox/vmm/vm.mac"
 %include "VBox/err.mac"
-%include "VBox/stam.mac"
+%include "VBox/vmm/stam.mac"
 %include "VBox/x86.mac"
 
 BITS 32

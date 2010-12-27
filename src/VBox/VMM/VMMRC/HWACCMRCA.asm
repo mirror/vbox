@@ -22,8 +22,8 @@
 %define RT_ARCH_AMD64
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
-%include "VBox/hwacc_vmx.mac"
-%include "VBox/cpum.mac"
+%include "VBox/vmm/hwacc_vmx.mac"
+%include "VBox/vmm/cpum.mac"
 %include "VBox/x86.mac"
 %include "HWACCMInternal.mac"
 
@@ -109,19 +109,19 @@ BEGINPROC VMXGCStartVM64
     jnc     .vmxon_success
     mov     rax, VERR_VMX_INVALID_VMXON_PTR
     jmp     .vmstart64_vmxon_failed
-    
+
 .vmxon_success:
     jnz     .vmxon_success2
     mov     rax, VERR_VMX_GENERIC
     jmp     .vmstart64_vmxon_failed
-    
-.vmxon_success2:    
+
+.vmxon_success2:
     ; Activate the VMCS pointer
     vmptrld [rbp + 16 + 8]
     jnc     .vmptrld_success
     mov     rax, VERR_VMX_INVALID_VMCS_PTR
     jmp     .vmstart64_vmxoff_end
-    
+
 .vmptrld_success:
     jnz     .vmptrld_success2
     mov     rax, VERR_VMX_GENERIC
@@ -158,8 +158,8 @@ BEGINPROC VMXGCStartVM64
     mov     rdx, rcx
     mov     rcx, 0
     jmp     .cached_write
-    
-ALIGN(16)    
+
+ALIGN(16)
 .cached_write:
     mov     eax, [rbx + VMCSCACHE.Write.aField + rcx*4]
     vmwrite rax, qword [rbx + VMCSCACHE.Write.aFieldVal + rcx*8]
@@ -176,7 +176,7 @@ ALIGN(16)
     ; Save the pCache pointer
     push    xBX
 %endif
- 
+
     ; Save the host state that's relevant in the temporary 64 bits mode
     mov     rdx, cr0
     mov     eax, VMX_VMCS_HOST_CR0
@@ -207,11 +207,11 @@ ALIGN(16)
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 4
 %endif
-    
+
     ; hopefully we can ignore TR (we restore it anyway on the way back to 32 bits mode)
-    
+
     ;/* First we have to save some final CPU context registers. */
-    lea     rdx, [.vmlaunch64_done wrt rip]    
+    lea     rdx, [.vmlaunch64_done wrt rip]
     mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite rax, rdx
     ;/* Note: assumes success... */
@@ -325,7 +325,7 @@ ALIGNCODE(16)
     mov     rax, cr8
     mov     [rdi + VMCSCACHE.TestOut.cr8], rax
  %endif
-    
+
     mov     ecx, [rdi + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
     je      .no_cached_reads
@@ -549,7 +549,7 @@ BEGINPROC HWACCMSaveGuestFPU64
     fxsave  [rsi + CPUMCTX.fpu]
 
     mov     cr0, rcx                    ; and restore old CR0 again
-    
+
     mov     eax, VINF_SUCCESS
     ret
 ENDPROC HWACCMSaveGuestFPU64

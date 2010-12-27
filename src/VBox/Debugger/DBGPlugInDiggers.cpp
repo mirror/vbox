@@ -21,7 +21,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 #include "DBGPlugIns.h"
 #include <VBox/version.h>
 #include <VBox/err.h>

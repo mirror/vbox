@@ -20,12 +20,12 @@
 
 #include <VBox/types.h>
 #include <VBox/param.h>
-#include <VBox/cfgm.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/vusb.h>
-#include <VBox/pdmasynccompletion.h>
-#include <VBox/pdmblkcache.h>
-#include <VBox/pdmcommon.h>
+#include <VBox/vmm/pdmasynccompletion.h>
+#include <VBox/vmm/pdmblkcache.h>
+#include <VBox/vmm/pdmcommon.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
@@ -340,10 +340,10 @@ typedef struct PDMTHREADINT
 #define PDMCRITSECTINT_DECLARED
 #define PDMTHREADINT_DECLARED
 #ifdef ___VBox_pdm_h
-# error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
+# error "Invalid header PDM order. Include PDMInternal.h before VBox/vmm/pdm.h!"
 #endif
 RT_C_DECLS_END
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 RT_C_DECLS_BEGIN
 
 /**

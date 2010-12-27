@@ -61,8 +61,8 @@
 # include <iprt/thread.h>
 # include <iprt/assert.h>
 # include <iprt/asm.h>
-# include <VBox/vmm.h>
-# include <VBox/stam.h>
+# include <VBox/vmm/vmm.h>
+# include <VBox/vmm/stam.h>
 #endif /* VBOX */
 
 #define R_EAX 0

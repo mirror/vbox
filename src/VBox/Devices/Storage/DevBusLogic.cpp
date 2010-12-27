@@ -22,9 +22,9 @@
 *******************************************************************************/
 //#define DEBUG
 #define LOG_GROUP LOG_GROUP_DEV_BUSLOGIC
-#include <VBox/pdmdev.h>
-#include <VBox/pdmifs.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <VBox/scsi.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

@@ -32,7 +32,7 @@
 
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 #include "DevE1000Phy.h"
 
 /* Little helpers ************************************************************/

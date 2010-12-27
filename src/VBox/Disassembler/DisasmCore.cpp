@@ -27,7 +27,6 @@
 
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <VBox/cpum.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

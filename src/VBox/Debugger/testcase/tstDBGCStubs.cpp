@@ -16,11 +16,11 @@
  */
 
 #include <VBox/err.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
 
 
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr)
 {
     return NULL;
@@ -246,7 +246,7 @@ VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszFilename, bool fReplaceFi
 // The rest should eventually be replaced by DBGF calls and eliminated. //
 /////////////////////////////////////////////////////////////////////////
 
-#include <VBox/cpum.h>
+#include <VBox/vmm/cpum.h>
 
 VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
 {
@@ -315,7 +315,7 @@ VMMDECL(int) CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx)
 
 
 
-#include <VBox/mm.h>
+#include <VBox/vmm/mm.h>
 
 VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
@@ -325,7 +325,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 
 
 
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
 {
@@ -348,7 +348,7 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
 }
 
 
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 
 VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
 {

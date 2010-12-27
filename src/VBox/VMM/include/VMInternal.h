@@ -19,7 +19,7 @@
 #define ___VMInternal_h
 
 #include <VBox/cdefs.h>
-#include <VBox/vmapi.h>
+#include <VBox/vmm/vmapi.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <setjmp.h>

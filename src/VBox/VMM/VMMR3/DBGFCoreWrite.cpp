@@ -53,15 +53,15 @@
 
 #include "DBGFInternal.h"
 
-#include <VBox/cpum.h>
+#include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/dbgf.h>
-#include <VBox/dbgfcorefmt.h>
-#include <VBox/vm.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgfcorefmt.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/version.h>
 
 #include "../../Runtime/include/internal/ldrELF64.h"

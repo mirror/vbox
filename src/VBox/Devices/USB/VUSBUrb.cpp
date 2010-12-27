@@ -19,8 +19,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_VUSB
-#include <VBox/pdm.h>
-#include <VBox/vmapi.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
 #include <iprt/alloc.h>
 #include <VBox/log.h>

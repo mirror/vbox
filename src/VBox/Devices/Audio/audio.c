@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  */
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/mm.h>
 
 #include <VBox/log.h>
 #include <iprt/asm-math.h>

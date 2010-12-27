@@ -44,7 +44,7 @@ class ExtPackManager;
 #endif
 
 #include <VBox/RemoteDesktop/VRDE.h>
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>  /* For the property notification callback */
 #endif

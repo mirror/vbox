@@ -20,11 +20,11 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/em.h>
-#include <VBox/stam.h>
-#include <VBox/patm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/patm.h>
 #include <VBox/dis.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <iprt/avl.h>
 #include <setjmp.h>
 

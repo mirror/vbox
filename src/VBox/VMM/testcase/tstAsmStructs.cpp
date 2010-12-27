@@ -18,14 +18,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/cpum.h>
+#include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/trpm.h>
+#include <VBox/vmm/trpm.h>
 #include "TRPMInternal.h"
 #include "HWACCMInternal.h"
 #include "VMMSwitcher.h"
 #include "VMMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
 #include "tstHelp.h"
 #include <stdio.h>

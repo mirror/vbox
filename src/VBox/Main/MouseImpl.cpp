@@ -24,7 +24,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/VMMDev.h>
 
 #include <iprt/asm.h>

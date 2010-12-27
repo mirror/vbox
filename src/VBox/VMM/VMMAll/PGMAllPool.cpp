@@ -20,18 +20,18 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_POOL
-#include <VBox/pgm.h>
-#include <VBox/mm.h>
-#include <VBox/em.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/cpum.h>
 #ifdef IN_RC
-# include <VBox/patm.h>
+# include <VBox/vmm/patm.h>
 #endif
 #include "PGMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include "PGMInline.h"
 #include <VBox/disopcode.h>
-#include <VBox/hwacc_vmx.h>
+#include <VBox/vmm/hwacc_vmx.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>

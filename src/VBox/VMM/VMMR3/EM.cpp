@@ -35,31 +35,31 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
-#include <VBox/em.h>
-#include <VBox/vmm.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/selm.h>
-#include <VBox/trpm.h>
-#include <VBox/iom.h>
-#include <VBox/dbgf.h>
-#include <VBox/pgm.h>
-#include <VBox/rem.h>
-#include <VBox/tm.h>
-#include <VBox/mm.h>
-#include <VBox/ssm.h>
-#include <VBox/pdmapi.h>
-#include <VBox/pdmcritsect.h>
-#include <VBox/pdmqueue.h>
-#include <VBox/hwaccm.h>
-#include <VBox/patm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/rem.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmqueue.h>
+#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/patm.h>
 #include "EMInternal.h"
 #include "internal/em.h"
-#include <VBox/vm.h>
-#include <VBox/cpumdis.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 #include <iprt/asm.h>
 #include <iprt/string.h>

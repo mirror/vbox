@@ -144,11 +144,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SSM
-#include <VBox/ssm.h>
-#include <VBox/dbgf.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/mm.h>
 #include "SSMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/version.h>

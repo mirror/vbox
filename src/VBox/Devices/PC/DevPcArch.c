@@ -19,8 +19,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PC_ARCH
-#include <VBox/pdmdev.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

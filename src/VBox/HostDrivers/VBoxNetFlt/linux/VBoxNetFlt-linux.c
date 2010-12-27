@@ -32,7 +32,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <VBox/param.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>

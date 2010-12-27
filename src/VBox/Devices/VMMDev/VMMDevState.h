@@ -19,8 +19,8 @@
 #define ___VMMDev_VMMDevState_h
 
 #include <VBox/VMMDev.h>
-#include <VBox/pdmdev.h>
-#include <VBox/pdmifs.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmifs.h>
 
 #define TIMESYNC_BACKDOOR
 

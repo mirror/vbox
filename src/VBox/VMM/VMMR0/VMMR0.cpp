@@ -19,21 +19,21 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
-#include <VBox/trpm.h>
-#include <VBox/cpum.h>
-#include <VBox/pdmapi.h>
-#include <VBox/pgm.h>
-#include <VBox/stam.h>
-#include <VBox/tm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
-#include <VBox/gvmm.h>
-#include <VBox/gmm.h>
+#include <VBox/vmm/gvmm.h>
+#include <VBox/vmm/gmm.h>
 #include <VBox/intnet.h>
-#include <VBox/hwaccm.h>
+#include <VBox/vmm/hwaccm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/version.h>

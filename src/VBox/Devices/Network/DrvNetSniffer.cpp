@@ -20,8 +20,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_NAT
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmnetifs.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmnetifs.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

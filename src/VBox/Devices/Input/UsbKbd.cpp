@@ -19,7 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP   LOG_GROUP_USB_KBD
-#include <VBox/pdmusb.h>
+#include <VBox/vmm/pdmusb.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

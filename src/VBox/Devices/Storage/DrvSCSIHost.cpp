@@ -20,9 +20,9 @@
 *******************************************************************************/
 //#define DEBUG
 #define LOG_GROUP LOG_GROUP_DRV_SCSIHOST
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmifs.h>
-#include <VBox/pdmthread.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmthread.h>
 #include <VBox/scsi.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>

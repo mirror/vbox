@@ -37,10 +37,10 @@
 *******************************************************************************/
 //#define DEBUG
 #define LOG_GROUP LOG_GROUP_DEV_AHCI
-#include <VBox/pdmdev.h>
-#include <VBox/pdmqueue.h>
-#include <VBox/pdmthread.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmqueue.h>
+#include <VBox/vmm/pdmthread.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <VBox/scsi.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>

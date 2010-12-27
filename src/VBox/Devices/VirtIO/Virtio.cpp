@@ -20,7 +20,7 @@
 
 #include <iprt/param.h>
 #include <iprt/uuid.h>
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include "Virtio.h"
 
 #define INSTANCE(pState) pState->szInstance

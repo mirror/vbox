@@ -28,7 +28,7 @@
 
 #define IN_VMM_R0
 #define IN_RING0 /* pretent we're in Ring-0 to get the prototypes. */
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include "VMMInternal.h"
 
 

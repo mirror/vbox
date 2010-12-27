@@ -22,18 +22,18 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/dbg.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/param.h>
-#include <VBox/vmm.h>
-#include <VBox/mm.h>
-#include <VBox/pdmcritsect.h>
-#include <VBox/pdmapi.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmapi.h>
 #include <VBox/dis.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/log.h>
-#include <VBox/gmm.h>
-#include <VBox/hwaccm.h>
-#include <VBox/hwacc_vmx.h>
+#include <VBox/vmm/gmm.h>
+#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hwacc_vmx.h>
 #include "internal/pgm.h"
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -184,7 +184,7 @@
 #ifndef PGM_PTFLAGS_CSAM_VALIDATED
 /** Scanned and approved by CSAM (tm).
  * NOTE: Must be identical to the one defined in CSAMInternal.h!!
- * @todo Move PGM_PTFLAGS_* and PGM_PDFLAGS_* to VBox/pgm.h. */
+ * @todo Move PGM_PTFLAGS_* and PGM_PDFLAGS_* to VBox/vmm/pgm.h. */
 #define PGM_PTFLAGS_CSAM_VALIDATED      RT_BIT_64(11)
 #endif
 

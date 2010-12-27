@@ -23,7 +23,7 @@
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
 #include <VBox/sup.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 

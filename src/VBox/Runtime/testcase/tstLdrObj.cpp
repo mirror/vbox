@@ -38,7 +38,7 @@
 # error "not IN_RC!"
 #endif
 #include <VBox/dis.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <iprt/string.h>
 
 

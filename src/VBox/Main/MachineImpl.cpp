@@ -72,7 +72,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/settings.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>

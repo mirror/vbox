@@ -17,7 +17,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_E1000   /// @todo Add a EEPROM logging group.
 #include <VBox/log.h>
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <iprt/string.h>
 #include "DevEEPROM.h"
 

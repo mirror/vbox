@@ -28,7 +28,7 @@
 
 #include "Logging.h"
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/version.h>
 
 /**

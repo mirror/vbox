@@ -19,7 +19,7 @@
 #define ___VMMInternal_h
 
 #include <VBox/cdefs.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/log.h>
 #include <iprt/critsect.h>
 

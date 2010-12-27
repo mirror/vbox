@@ -37,7 +37,7 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <iprt/path.h>

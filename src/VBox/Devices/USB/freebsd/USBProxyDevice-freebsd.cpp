@@ -39,7 +39,7 @@
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usb_ioctl.h>
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vusb.h>

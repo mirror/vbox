@@ -32,7 +32,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 #include <iprt/stdarg.h>
 #ifdef IN_RING3

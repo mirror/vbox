@@ -102,7 +102,7 @@
 #endif
 
 #include <iprt/asm.h>
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>

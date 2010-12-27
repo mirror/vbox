@@ -19,7 +19,7 @@
 #define ___tstHelp_h
 
 #include <VBox/cdefs.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/cpum.h>
 
 RT_C_DECLS_BEGIN
 void tstDumpCtx(PCPUMCTX pCtx, const char *pszComment);

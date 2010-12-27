@@ -36,7 +36,7 @@
 #include <iprt/isofs.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 
 #include <memory>
 

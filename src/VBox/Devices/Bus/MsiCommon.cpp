@@ -19,7 +19,7 @@
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
 #include <VBox/msi.h>
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
 
 #include "MsiCommon.h"

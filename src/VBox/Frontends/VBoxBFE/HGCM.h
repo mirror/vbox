@@ -20,7 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/hgcmsvc.h>
 
 /* HGCM saved state version */

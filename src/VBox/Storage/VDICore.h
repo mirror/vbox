@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VDICore_h__
+#ifndef ___VDICore_h___
 
 
 /*******************************************************************************
@@ -23,9 +23,8 @@
 *******************************************************************************/
 #include <VBox/vd.h>
 #ifndef VBOX_VDICORE_VD
-#include <VBox/pdm.h>
-#endif /* !VBOX_VDICORE_VD */
-#include <VBox/mm.h>
+# include <VBox/vmm/pdm.h>
+#endif
 #include <VBox/err.h>
 
 #include <VBox/log.h>

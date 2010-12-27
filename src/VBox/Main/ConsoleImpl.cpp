@@ -86,20 +86,21 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 
-#include <VBox/vmapi.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmasynccompletion.h>
+#include <VBox/vmm/pdmnetifs.h>
+#ifdef VBOX_WITH_USB
+# include <VBox/vmm/pdmusb.h>
+#endif
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/ftm.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/pdmnetifs.h>
 #include <VBox/vusb.h>
-#include <VBox/mm.h>
-#include <VBox/ftm.h>
-#include <VBox/ssm.h>
 #include <VBox/version.h>
-#include <VBox/pdmasynccompletion.h>
-#ifdef VBOX_WITH_USB
-# include <VBox/pdmusb.h>
-#endif
 
 #include <VBox/VMMDev.h>
 

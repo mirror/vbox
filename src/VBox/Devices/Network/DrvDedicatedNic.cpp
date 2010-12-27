@@ -20,10 +20,10 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEFAULT
 #include <VBox/log.h>
-#include <VBox/pdmcritsect.h>
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmnetifs.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
 

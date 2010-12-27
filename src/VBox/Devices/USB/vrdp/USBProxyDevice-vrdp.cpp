@@ -20,7 +20,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/vrdpusb.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 #include <iprt/assert.h>
 #include <iprt/alloc.h>

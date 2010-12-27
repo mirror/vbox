@@ -150,11 +150,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GMM
-#include <VBox/vm.h>
-#include <VBox/gmm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/gmm.h>
 #include "GMMR0Internal.h"
-#include <VBox/gvm.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/gvm.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

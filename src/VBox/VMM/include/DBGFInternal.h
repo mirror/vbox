@@ -24,7 +24,7 @@
 #include <iprt/critsect.h>
 #include <iprt/string.h>
 #include <iprt/avl.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 
 

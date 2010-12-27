@@ -20,9 +20,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
-#include <VBox/tm.h>
+#include <VBox/vmm/tm.h>
 #include "TMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <iprt/time.h>
 
 

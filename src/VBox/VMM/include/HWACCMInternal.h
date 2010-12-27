@@ -20,13 +20,13 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/em.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/dis.h>
-#include <VBox/hwaccm.h>
-#include <VBox/hwacc_vmx.h>
-#include <VBox/pgm.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hwacc_vmx.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/cpum.h>
 #include <iprt/memobj.h>
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>

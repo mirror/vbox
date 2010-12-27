@@ -35,7 +35,7 @@
 #  define LOG_GROUP LOG_GROUP_REM
 # endif
 # include <VBox/log.h>
-# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+# include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 #endif
 
 #if defined(__arm__) || defined(__sparc__)

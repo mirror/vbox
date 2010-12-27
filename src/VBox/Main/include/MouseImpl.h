@@ -24,7 +24,7 @@
 #ifndef VBOXBFE_WITHOUT_COM
 #include "EventImpl.h"
 #endif
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 
 /** Maximum number of devices supported */
 enum { MOUSE_MAX_DEVICES = 3 };

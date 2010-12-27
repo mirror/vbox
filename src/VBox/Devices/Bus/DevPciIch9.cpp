@@ -23,7 +23,7 @@
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
 #include <VBox/msi.h>
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -2357,7 +2357,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     /* capability */
     PCIDevSetWord(&pBus->aPciDev,  0x50, VBOX_PCI_CAP_ID_SSVID);
     PCIDevSetDWord(&pBus->aPciDev, 0x54, 0x00000000); /* Subsystem vendor ids */
-    
+
     pBus->aPciDev.pDevIns               = pDevIns;
     /* We register Host<->PCI controller on the bus */
     ich9pciRegisterInternal(pBus, -1, &pBus->aPciDev, "i82801");

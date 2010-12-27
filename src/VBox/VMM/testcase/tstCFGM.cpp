@@ -21,10 +21,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/sup.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>

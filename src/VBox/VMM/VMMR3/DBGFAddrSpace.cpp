@@ -37,11 +37,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
-#include <VBox/dbgf.h>
-#include <VBox/pdmapi.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/mm.h>
 #include "DBGFInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 

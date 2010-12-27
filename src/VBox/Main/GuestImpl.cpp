@@ -31,7 +31,7 @@
 # include <VBox/com/ErrorInfo.h>
 #endif
 #include <iprt/cpp/utils.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

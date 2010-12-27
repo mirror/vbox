@@ -19,9 +19,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <stdio.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
-#include <VBox/em.h>
+#include <VBox/vmm/em.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

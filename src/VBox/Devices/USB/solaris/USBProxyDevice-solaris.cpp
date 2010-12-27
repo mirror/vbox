@@ -27,7 +27,7 @@
 
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 #include <iprt/string.h>
 #include <iprt/critsect.h>

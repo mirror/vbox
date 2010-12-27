@@ -18,7 +18,7 @@
 #ifndef ___EM_include_internal_h
 #define ___EM_include_internal_h
 
-#include <VBox/em.h>
+#include <VBox/vmm/em.h>
 
 VMMR3DECL(int)  EMR3NotifyResume(PVM pVM);
 VMMR3DECL(int)  EMR3NotifySuspend(PVM pVM);

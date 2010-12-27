@@ -18,9 +18,9 @@
 #ifndef ___PDMAsyncCompletionFileInternal_h
 #define ___PDMAsyncCompletionFileInternal_h
 
-#include <VBox/cfgm.h>
-#include <VBox/stam.h>
-#include <VBox/tm.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/tm.h>
 #include <iprt/types.h>
 #include <iprt/file.h>
 #include <iprt/thread.h>

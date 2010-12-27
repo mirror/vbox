@@ -105,8 +105,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VGA
-#include <VBox/pdmdev.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pgm.h>
 #ifdef IN_RING3
 #include <iprt/alloc.h>
 #include <iprt/ctype.h>

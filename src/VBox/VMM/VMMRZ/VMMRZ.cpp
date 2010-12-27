@@ -19,9 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include "VMMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 
 #include <iprt/assert.h>

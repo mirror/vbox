@@ -19,41 +19,41 @@
 #define __STDC_CONSTANT_MACROS  /* needed for a definition in iprt/string.h */
 
 #ifdef RT_OS_WINDOWS
-#include <iprt/alloc.h>
-#include <iprt/string.h>
-#include <iprt/assert.h>
-#include <iprt/stream.h>
-#include <VBox/ssm.h>
-#include <VBox/hgcmsvc.h>
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-#include "cr_server.h"
-#define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
-#include <VBox/log.h>
+# include <iprt/alloc.h>
+# include <iprt/string.h>
+# include <iprt/assert.h>
+# include <iprt/stream.h>
+# include <VBox/ssm.h>
+# include <VBox/hgcmsvc.h>
+# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+# include "cr_server.h"
+# define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
+# include <VBox/log.h>
 
-#include <VBox/com/com.h>
-#include <VBox/com/string.h>
-#include <VBox/com/array.h>
-#include <VBox/com/Guid.h>
-#include <VBox/com/ErrorInfo.h>
-#include <VBox/com/EventQueue.h>
-#include <VBox/com/VirtualBox.h>
-#include <VBox/com/assert.h>
+# include <VBox/com/com.h>
+# include <VBox/com/string.h>
+# include <VBox/com/array.h>
+# include <VBox/com/Guid.h>
+# include <VBox/com/ErrorInfo.h>
+# include <VBox/com/EventQueue.h>
+# include <VBox/com/VirtualBox.h>
+# include <VBox/com/assert.h>
 
 #else
-#include <VBox/com/VirtualBox.h>
-#include <iprt/assert.h>
-#include <VBox/ssm.h>
-#include <VBox/hgcmsvc.h>
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+# include <VBox/com/VirtualBox.h>
+# include <iprt/assert.h>
+# include <VBox/vmm/ssm.h>
+# include <VBox/hgcmsvc.h>
+# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
-#include "cr_server.h"
-#define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
-#include <VBox/log.h>
-#include <VBox/com/ErrorInfo.h>
+# include "cr_server.h"
+# define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
+# include <VBox/log.h>
+# include <VBox/com/ErrorInfo.h>
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_CRHGSMI
-#include <VBox/VBoxVideo.h>
+# include <VBox/VBoxVideo.h>
 #endif
 
 #include <VBox/com/errorprint.h>
@@ -66,8 +66,8 @@ static uint8_t* g_pvVRamBase;
 #endif
 
 #ifndef RT_OS_WINDOWS
-#define DWORD int
-#define WINAPI
+# define DWORD int
+# define WINAPI
 #endif
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
@@ -727,7 +727,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
-               
+
                 uint8_t *pBuffer     = (uint8_t *)pSvcBuffer->pData;
                 uint32_t cbBuffer    = pSvcBuffer->uiSize;
 

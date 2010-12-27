@@ -21,13 +21,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #ifdef IN_RING3
 # include <iprt/semaphore.h>
 # include <iprt/thread.h>
 #endif /* IN_RING3 */
 #include <iprt/critsect.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 
 #include "PIIX3ATABmDma.h"
 #include "ide.h"

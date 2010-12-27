@@ -46,7 +46,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_FDC
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -2169,7 +2169,7 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
         }
     }
     else    /* New state - straightforward. */
-    {        
+    {
         Assert(uVersion == FDC_SAVESTATE_CURRENT);
         /* Load the FDC I/O registers... */
         SSMR3GetU8(pSSMHandle, &s->sra);

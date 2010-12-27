@@ -19,9 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/vmapi.h>
-#include <VBox/vmm.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

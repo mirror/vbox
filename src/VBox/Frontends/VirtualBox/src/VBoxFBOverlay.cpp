@@ -36,7 +36,7 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 #include <VBox/VBoxVideo.h>
 #include <VBox/types.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 #endif
 #include <iprt/semaphore.h>
 

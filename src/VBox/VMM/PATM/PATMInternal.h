@@ -20,10 +20,10 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/patm.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/dis.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 #include <iprt/avl.h>
 #include <iprt/param.h>
 #include <VBox/log.h>

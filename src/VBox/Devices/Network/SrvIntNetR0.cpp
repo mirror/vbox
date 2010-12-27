@@ -22,9 +22,9 @@
 #define LOG_GROUP LOG_GROUP_SRV_INTNET
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <VBox/sup.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/log.h>
 
 #include <iprt/asm.h>

@@ -20,10 +20,10 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/iom.h>
-#include <VBox/stam.h>
-#include <VBox/pgm.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>

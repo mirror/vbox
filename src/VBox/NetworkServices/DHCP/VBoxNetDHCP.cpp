@@ -39,7 +39,7 @@
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/version.h>
 
 #include "../NetLib/VBoxNetLib.h"

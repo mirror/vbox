@@ -26,8 +26,8 @@ BITS 64
 %include "HWACCMInternal.mac"
 %include "TRPMInternal.mac"
 %include "VMMInternal.mac"
-%include "VBox/cpum.mac"
-%include "VBox/vm.mac"
+%include "VBox/vmm/cpum.mac"
+%include "VBox/vmm/vm.mac"
 %include "VBox/sup.mac"
 %include "VMMSwitcher.mac"
 %ifdef DO_GLOBALS

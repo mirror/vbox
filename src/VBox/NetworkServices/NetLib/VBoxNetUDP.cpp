@@ -24,7 +24,7 @@
 #include <iprt/string.h>
 #include <iprt/rand.h>
 #include <VBox/log.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <VBox/intnetinline.h>
 
 

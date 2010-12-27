@@ -24,7 +24,7 @@
 # include <windows.h>
 #endif
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
