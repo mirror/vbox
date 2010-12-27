@@ -19,7 +19,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdmifs.h>
 
 #include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>

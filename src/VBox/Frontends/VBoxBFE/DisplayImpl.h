@@ -20,7 +20,7 @@
 #define ____H_DISPLAYIMPL
 
 #include <iprt/semaphore.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 #include "Framebuffer.h"
 struct VBVACMDHDR;

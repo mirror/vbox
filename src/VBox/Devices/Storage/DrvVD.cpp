@@ -21,9 +21,9 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_VD
 #include <VBox/vd.h>
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmasynccompletion.h>
-#include <VBox/pdmblkcache.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmasynccompletion.h>
+#include <VBox/vmm/pdmblkcache.h>
 #include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

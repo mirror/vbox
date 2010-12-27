@@ -18,10 +18,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/mm.h>
-#include <VBox/stam.h>
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

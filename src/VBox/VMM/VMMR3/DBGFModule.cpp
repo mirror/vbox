@@ -34,7 +34,7 @@
  */
 
 #if 0
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 
 /** Special segment number that indicates that the offset is a relative

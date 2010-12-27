@@ -17,7 +17,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #define AUDIO_CAP "sniffer"
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>

@@ -21,8 +21,8 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/sup.h>
-#include <VBox/stam.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>

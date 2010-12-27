@@ -31,7 +31,7 @@
 #include <QContextMenuEvent>
 
 #include <VBox/dbg.h>
-#include <VBox/cfgm.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 
 #include <iprt/thread.h>

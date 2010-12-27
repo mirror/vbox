@@ -19,9 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/cpum.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

@@ -64,7 +64,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 //#define DEBUG
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 
 typedef enum VBOXSCSISTATE
 {

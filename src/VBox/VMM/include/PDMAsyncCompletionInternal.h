@@ -22,9 +22,9 @@
 #include <iprt/memcache.h>
 #include <iprt/sg.h>
 #include <VBox/types.h>
-#include <VBox/cfgm.h>
-#include <VBox/stam.h>
-#include <VBox/pdmasynccompletion.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmasynccompletion.h>
 #include "PDMInternal.h"
 
 RT_C_DECLS_BEGIN

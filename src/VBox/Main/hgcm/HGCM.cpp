@@ -23,6 +23,8 @@
 
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/sup.h>
 
 #include <iprt/alloc.h>
 #include <iprt/alloca.h>

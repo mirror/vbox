@@ -14,7 +14,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 //#include <VBox/VMMDev.h>
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/VBoxVideo.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>

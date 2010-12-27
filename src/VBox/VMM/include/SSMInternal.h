@@ -20,7 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 #include <iprt/critsect.h>
 
 RT_C_DECLS_BEGIN

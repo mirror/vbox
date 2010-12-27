@@ -42,30 +42,30 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VM
-#include <VBox/cfgm.h>
-#include <VBox/vmm.h>
-#include <VBox/gvmm.h>
-#include <VBox/mm.h>
-#include <VBox/cpum.h>
-#include <VBox/selm.h>
-#include <VBox/trpm.h>
-#include <VBox/dbgf.h>
-#include <VBox/pgm.h>
-#include <VBox/pdmapi.h>
-#include <VBox/pdmcritsect.h>
-#include <VBox/em.h>
-#include <VBox/rem.h>
-#include <VBox/tm.h>
-#include <VBox/stam.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/iom.h>
-#include <VBox/ssm.h>
-#include <VBox/ftm.h>
-#include <VBox/hwaccm.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/gvmm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/rem.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/ftm.h>
+#include <VBox/vmm/hwaccm.h>
 #include "VMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 
 #include <VBox/sup.h>
 #include <VBox/dbg.h>

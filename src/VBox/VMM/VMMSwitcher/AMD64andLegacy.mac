@@ -24,9 +24,9 @@
 %include "VBox/asmdefs.mac"
 %include "VBox/apic.mac"
 %include "VBox/x86.mac"
-%include "VBox/cpum.mac"
-%include "VBox/stam.mac"
-%include "VBox/vm.mac"
+%include "VBox/vmm/cpum.mac"
+%include "VBox/vmm/stam.mac"
+%include "VBox/vmm/vm.mac"
 %include "CPUMInternal.mac"
 %include "VMMSwitcher.mac"
 

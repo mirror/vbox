@@ -21,11 +21,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_MM_POOL
-#include <VBox/mm.h>
-#include <VBox/pgm.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/stam.h>
 #include "MMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

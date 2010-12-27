@@ -18,7 +18,7 @@
 #ifndef ___VMMSwitcher_h
 #define ___VMMSwitcher_h
 
-#include <VBox/vmm.h>
+#include <VBox/vmm/vmm.h>
 
 /** @name   Fixup Types.
  * @{

@@ -15,10 +15,10 @@
  */
 
 #define LOG_GROUP LOG_GROUP_DEV_VGA
-#include <VBox/pdmifs.h>
-#include <VBox/pdmdev.h>
-#include <VBox/pgm.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxVideo.h>
 #include <iprt/alloc.h>

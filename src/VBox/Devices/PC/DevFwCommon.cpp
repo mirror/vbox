@@ -19,7 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV
-#include <VBox/pdmdev.h>
+#include <VBox/vmm/pdmdev.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>

@@ -132,12 +132,12 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
-#include <VBox/dbgf.h>
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
-#include <VBox/mm.h>
-#include <VBox/pgm.h>
-#include <VBox/selm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/selm.h>
 #include <VBox/dis.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

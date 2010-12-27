@@ -26,7 +26,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vusb.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include <iprt/assert.h>
 
 RT_C_DECLS_BEGIN

@@ -20,7 +20,7 @@
 #ifndef ___HGSMIHost_h
 #define ___HGSMIHost_h
 
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>

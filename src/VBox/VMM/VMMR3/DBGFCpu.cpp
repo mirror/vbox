@@ -20,10 +20,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
-#include <VBox/dbgf.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/cpum.h>
 #include "DBGFInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/param.h>

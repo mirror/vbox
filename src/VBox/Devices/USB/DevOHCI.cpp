@@ -82,8 +82,8 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_USB
 #include <VBox/pci.h>
-#include <VBox/pdm.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

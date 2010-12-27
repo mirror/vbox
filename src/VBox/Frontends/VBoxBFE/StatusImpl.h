@@ -19,7 +19,7 @@
 #ifndef ____H_STATUSIMPL
 #define ____H_STATUSIMPL
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 class VMStatus
 {

@@ -22,7 +22,7 @@
 #include "ConsoleEvents.h"
 #include "EventImpl.h"
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 
 /** Limit of simultaneously attached devices (just USB and/or PS/2). */
 enum { KEYBOARD_MAX_DEVICES = 2 };

@@ -27,7 +27,7 @@
 #define ___VBox_intnet_h
 
 #include <VBox/types.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/sup.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>

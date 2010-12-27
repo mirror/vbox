@@ -20,8 +20,8 @@
 #define ___Debugger_VBoxDbgBase_h
 
 
-#include <VBox/stam.h>
-#include <VBox/vmapi.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/vmapi.h>
 #include <VBox/dbg.h>
 #include <iprt/thread.h>
 #include <QString>

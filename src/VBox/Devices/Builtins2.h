@@ -20,7 +20,7 @@
 #ifndef ___Builtins2_h
 #define ___Builtins2_h
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 RT_C_DECLS_BEGIN
 

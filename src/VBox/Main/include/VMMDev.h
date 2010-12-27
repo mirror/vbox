@@ -18,7 +18,7 @@
 #define ____H_VMMDEV
 
 #include "VirtualBoxBase.h"
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <iprt/asm.h>
 
 class Console;

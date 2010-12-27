@@ -22,7 +22,7 @@
 #include "Logging.h"
 
 #include <VBox/com/array.h>
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>

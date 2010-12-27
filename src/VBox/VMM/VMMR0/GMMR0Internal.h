@@ -18,7 +18,7 @@
 #ifndef ___GMMR0Internal_h
 #define ___GMMR0Internal_h
 
-#include <VBox/gmm.h>
+#include <VBox/vmm/gmm.h>
 #include <iprt/avl.h>
 
 /**

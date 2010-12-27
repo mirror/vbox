@@ -24,8 +24,8 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
-#include <VBox/ssm.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/pdmifs.h>
 
 #define SHFL_SSM_VERSION        2
 

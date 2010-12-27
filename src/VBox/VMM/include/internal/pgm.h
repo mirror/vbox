@@ -18,7 +18,7 @@
 #ifndef ___PGM_include_internal_h
 #define ___PGM_include_internal_h
 
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 
 /** @defgroup grp_pgm_int   Internals
  * @ingroup grp_pgm

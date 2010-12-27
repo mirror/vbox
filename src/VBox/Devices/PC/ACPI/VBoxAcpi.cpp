@@ -20,12 +20,12 @@
 #endif
 
 #define LOG_GROUP LOG_GROUP_DEV_ACPI
-#include <VBox/pdmdev.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/mm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/string.h>

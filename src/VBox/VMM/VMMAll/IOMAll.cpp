@@ -19,17 +19,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_IOM
-#include <VBox/iom.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/param.h>
 #include "IOMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
-#include <VBox/selm.h>
-#include <VBox/trpm.h>
-#include <VBox/pdmdev.h>
-#include <VBox/pgm.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/cpum.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

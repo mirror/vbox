@@ -19,20 +19,20 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
-#include <VBox/em.h>
-#include <VBox/mm.h>
-#include <VBox/selm.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/pgm.h>
-#include <VBox/iom.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/stam.h>
 #include "EMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
-#include <VBox/hwaccm.h>
-#include <VBox/tm.h>
-#include <VBox/pdmapi.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/pdmapi.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/dis.h>

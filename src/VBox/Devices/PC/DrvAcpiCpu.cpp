@@ -20,7 +20,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_ACPI
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>

@@ -24,15 +24,15 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/VMMDev.h>
-#include <VBox/mm.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/err.h>
-#include <VBox/vm.h> /* for VM_IS_EMT */
+#include <VBox/vmm/vm.h> /* for VM_IS_EMT */
 #include <VBox/dbg.h>
 
 #include <iprt/asm.h>

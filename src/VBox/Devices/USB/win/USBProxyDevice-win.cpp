@@ -26,7 +26,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_USBPROXY
 #include <windows.h>
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 #include <VBox/usb.h>
 #include <VBox/log.h>

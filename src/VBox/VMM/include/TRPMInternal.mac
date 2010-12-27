@@ -16,7 +16,7 @@
 ;
 
 %include "VBox/asmdefs.mac"
-%include "VBox/stam.mac"
+%include "VBox/vmm/stam.mac"
 
 %define TRPM_TRAP_IN_OP_MASK    0xffff
 %define TRPM_TRAP_IN_MOV_GS     1

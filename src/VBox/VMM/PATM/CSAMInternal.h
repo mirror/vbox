@@ -20,7 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/csam.h>
+#include <VBox/vmm/csam.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
 

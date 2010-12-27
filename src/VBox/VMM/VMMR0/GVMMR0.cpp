@@ -50,12 +50,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GVMM
-#include <VBox/gvmm.h>
-#include <VBox/gmm.h>
+#include <VBox/vmm/gvmm.h>
+#include <VBox/vmm/gmm.h>
 #include "GVMMR0Internal.h"
-#include <VBox/gvm.h>
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/gvm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>

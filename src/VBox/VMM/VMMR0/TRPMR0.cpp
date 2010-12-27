@@ -20,10 +20,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TRPM
-#include <VBox/trpm.h>
+#include <VBox/vmm/trpm.h>
 #include "TRPMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

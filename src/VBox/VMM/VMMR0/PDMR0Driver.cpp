@@ -20,8 +20,8 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_DRIVER
 #include "PDMInternal.h"
-#include <VBox/pdm.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/vm.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>

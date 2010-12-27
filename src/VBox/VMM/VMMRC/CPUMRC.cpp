@@ -20,11 +20,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
-#include <VBox/cpum.h>
-#include <VBox/vmm.h>
-#include <VBox/trpm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/trpm.h>
 #include "CPUMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>

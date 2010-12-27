@@ -21,7 +21,7 @@
 #ifndef ___Debugger_DBGPlugIns_h
 #define ___Debugger_DBGPlugIns_h
 
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 RT_C_DECLS_BEGIN
 

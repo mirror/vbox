@@ -19,12 +19,12 @@
 ;*******************************************************************************
 %include "VMMRC.mac"
 %include "VBox/x86.mac"
-%include "VBox/cpum.mac"
-%include "VBox/stam.mac"
-%include "VBox/vm.mac"
+%include "VBox/vmm/cpum.mac"
+%include "VBox/vmm/stam.mac"
+%include "VBox/vmm/vm.mac"
 %include "TRPMInternal.mac"
 %include "VBox/err.mac"
-%include "VBox/trpm.mac"
+%include "VBox/vmm/trpm.mac"
 
 
 ;*******************************************************************************

@@ -33,14 +33,14 @@
 #endif
 
 #ifdef VBOX
-# include <VBox/tm.h>
-# include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+# include <VBox/vmm/tm.h>
+# include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 # ifndef LOG_GROUP
 #  define LOG_GROUP LOG_GROUP_REM
 # endif
 # include <VBox/log.h>
 # include "REMInternal.h"
-# include <VBox/vm.h>
+# include <VBox/vmm/vm.h>
 #endif /* VBOX */
 
 /* is_jmp field values */

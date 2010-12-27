@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF ///@todo add new log group.
 #include "DBGPlugIns.h"
 #include "DBGPlugInCommonELF.h"
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>

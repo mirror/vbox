@@ -27,8 +27,8 @@
 # error This device has no R0 or GC components
 #endif
 
-#include <VBox/pdmdev.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pgm.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/thread.h>

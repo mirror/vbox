@@ -47,7 +47,7 @@
 #endif
 
 #include <VBox/err.h>
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #ifndef RT_OS_WINDOWS

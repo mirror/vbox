@@ -20,8 +20,8 @@
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
-%include "VBox/hwacc_vmx.mac"
-%include "VBox/cpum.mac"
+%include "VBox/vmm/hwacc_vmx.mac"
+%include "VBox/vmm/cpum.mac"
 %include "VBox/x86.mac"
 %include "HWACCMInternal.mac"
 

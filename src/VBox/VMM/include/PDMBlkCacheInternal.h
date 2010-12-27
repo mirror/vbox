@@ -18,10 +18,10 @@
 #ifndef ___PDMBlkCacheInternal_h
 #define ___PDMBlkCacheInternal_h
 
-#include <VBox/cfgm.h>
-#include <VBox/stam.h>
-#include <VBox/tm.h>
-#include <VBox/pdmblkcache.h>
+#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/pdmblkcache.h>
 #include <iprt/types.h>
 #include <iprt/file.h>
 #include <iprt/thread.h>

@@ -20,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/version.h>
 #include <VBox/err.h>
 #include <VBox/usb.h>

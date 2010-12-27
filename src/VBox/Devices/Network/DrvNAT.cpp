@@ -24,9 +24,9 @@
 #define __STDC_CONSTANT_MACROS
 #include "slirp/libslirp.h"
 #include "slirp/ctl.h"
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmnetifs.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
@@ -1044,7 +1044,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
                     iInstance, szProtocol);
         }
         else
-            return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS, 
+            return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS,
                                        N_("NAT#%d: configuration query for \"Protocol\" failed"),
                                        iInstance);
         /* host port */

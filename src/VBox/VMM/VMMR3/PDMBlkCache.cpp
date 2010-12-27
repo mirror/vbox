@@ -29,9 +29,9 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
-#include <VBox/stam.h>
-#include <VBox/uvm.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vm.h>
 
 #include "PDMBlkCacheInternal.h"
 

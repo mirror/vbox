@@ -70,7 +70,7 @@
 #endif
 
 #ifndef RDESKTOP
-# include <VBox/pdm.h>
+# include <VBox/vmm/pdm.h>
 #else
 # define RTCRITSECT          void *
 static inline int rtcsNoop() { return VINF_SUCCESS; }

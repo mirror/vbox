@@ -48,10 +48,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_STAM
-#include <VBox/stam.h>
+#include <VBox/vmm/stam.h>
 #include "STAMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/dbg.h>
 #include <VBox/log.h>

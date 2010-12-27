@@ -33,8 +33,8 @@
 #include <iprt/tcp.h>
 #include <iprt/timer.h>
 
-#include <VBox/vmapi.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/com/string.h>

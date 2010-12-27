@@ -37,7 +37,7 @@
 # error "Unsupported Platform."
 #endif /* !RT_OS_WINDOWS nor RT_OS_LINUX nor RT_OS_L4 */
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/string.h>

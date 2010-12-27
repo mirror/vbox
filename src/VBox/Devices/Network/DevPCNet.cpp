@@ -51,9 +51,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCNET
-#include <VBox/pdmdev.h>
-#include <VBox/pdmnetifs.h>
-#include <VBox/pgm.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/DevPCNet.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

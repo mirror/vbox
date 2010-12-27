@@ -23,13 +23,13 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <VBox/em.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/vm.h>
-#include <VBox/tm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/hwaccm.h>
 #include <VBox/err.h>
-#include <VBox/hwaccm.h>
 #include <iprt/cpp/utils.h>
 
 // defines

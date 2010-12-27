@@ -21,11 +21,11 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_QUEUE
 #include "PDMInternal.h"
-#include <VBox/pdm.h>
-#include <VBox/mm.h>
-#include <VBox/rem.h>
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/rem.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>

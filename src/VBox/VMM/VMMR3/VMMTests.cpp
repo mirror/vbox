@@ -22,19 +22,19 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
 #include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP */
-#include <VBox/vmm.h>
-#include <VBox/pdmapi.h>
-#include <VBox/cpum.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/cpum.h>
 #include <VBox/dbg.h>
-#include <VBox/mm.h>
-#include <VBox/trpm.h>
-#include <VBox/selm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/selm.h>
 #include "VMMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
-#include <VBox/hwaccm.h>
+#include <VBox/vmm/hwaccm.h>
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>

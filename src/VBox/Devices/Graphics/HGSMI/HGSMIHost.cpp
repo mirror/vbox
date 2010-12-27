@@ -66,7 +66,7 @@
 #include <VBox/err.h>
 #define LOG_GROUP LOG_GROUP_DEV_VGA
 #include <VBox/log.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 
 #include "HGSMIHost.h"
 #include <VBox/HGSMI/HGSMIChannels.h>

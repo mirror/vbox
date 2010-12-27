@@ -19,12 +19,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 #include "VMInternal.h" /* createFakeVM */
-#include <VBox/vm.h>
-#include <VBox/uvm.h>
-#include <VBox/mm.h>
-#include <VBox/stam.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/stam.h>
 
 #include <VBox/log.h>
 #include <VBox/sup.h>

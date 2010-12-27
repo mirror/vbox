@@ -19,7 +19,7 @@
 #include <iprt/types.h>
 #include <iprt/err.h>
 
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +55,7 @@ typedef struct {
     GLuint width, height;
     GLint gX, gY;            /*guest coordinates*/
     GLint hX, hY;            /*host coordinates, screenID related*/
-    
+
     int spuWindow;           /*the SPU's corresponding window ID */
 
     int screenId;
@@ -210,7 +210,7 @@ typedef struct {
     /*@{*/
     GLfloat alignment_matrix[16], unnormalized_alignment_matrix[16];
     /*@}*/
-    
+
     /** tile overlap/blending info - this should probably be per-mural */
     /*@{*/
     CRPoly **overlap_geom;

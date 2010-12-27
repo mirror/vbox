@@ -37,7 +37,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #endif
 
 #include <VBox/types.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 
 typedef struct NATState *PNATState;
 struct mbuf;

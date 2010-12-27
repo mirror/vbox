@@ -20,16 +20,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM
-#include <VBox/pgm.h>
-#include <VBox/cpum.h>
-#include <VBox/mm.h>
-#include <VBox/em.h>
-#include <VBox/selm.h>
-#include <VBox/iom.h>
-#include <VBox/trpm.h>
-#include <VBox/rem.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/rem.h>
 #include "PGMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include "PGMInline.h"
 
 #include <iprt/asm.h>

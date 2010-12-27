@@ -19,12 +19,12 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
-%include "VBox/vm.mac"
+%include "VBox/vmm/vm.mac"
 %include "VBox/err.mac"
-%include "VBox/stam.mac"
+%include "VBox/vmm/stam.mac"
 %include "CPUMInternal.mac"
 %include "VBox/x86.mac"
-%include "VBox/cpum.mac"
+%include "VBox/vmm/cpum.mac"
 
 %ifdef IN_RING3
  %error "The jump table doesn't link on leopard."

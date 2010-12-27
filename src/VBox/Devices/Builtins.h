@@ -18,7 +18,7 @@
 #ifndef ___Builtins_h
 #define ___Builtins_h
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 RT_C_DECLS_BEGIN
 

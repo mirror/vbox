@@ -35,17 +35,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
-#include <VBox/cpum.h>
-#include <VBox/cpumdis.h>
-#include <VBox/pgm.h>
-#include <VBox/mm.h>
-#include <VBox/selm.h>
-#include <VBox/dbgf.h>
-#include <VBox/patm.h>
-#include <VBox/hwaccm.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/cpumdis.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
 #include <VBox/param.h>
 #include <VBox/dis.h>

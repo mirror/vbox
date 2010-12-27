@@ -20,14 +20,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
-#include <VBox/tm.h>
+#include <VBox/vmm/tm.h>
 #ifdef IN_RING3
-# include <VBox/rem.h>
+# include <VBox/vmm/rem.h>
 # include <iprt/thread.h>
 #endif
 #include "TMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/sup.h>

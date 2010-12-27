@@ -19,21 +19,21 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
-#include <VBox/vmm.h>
-#include <VBox/pdmapi.h>
-#include <VBox/pdmcritsect.h>
-#include <VBox/trpm.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/dbgf.h>
 #include "VMMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/mm.h>
-#include <VBox/iom.h>
-#include <VBox/em.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/em.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
-#include <VBox/hwaccm.h>
+#include <VBox/vmm/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>

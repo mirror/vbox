@@ -32,9 +32,9 @@
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #ifdef DEBUG /* for VM_ASSERT_EMT(). */
-# include <VBox/vm.h>
+# include <VBox/vmm/vm.h>
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

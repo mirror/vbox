@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard:
- * Host service entry points.
+ * Shared Clipboard: Host service entry points.
  */
 
 /*
@@ -77,7 +76,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
-#include <VBox/ssm.h>
+#include <VBox/vmm/ssm.h>
 
 #include "VBoxClipboard.h"
 

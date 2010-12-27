@@ -19,7 +19,7 @@
 #include <Windows.h>
 #include <mmsystem.h>
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 
 #define LOG_GROUP LOG_GROUP_DEV_AC97

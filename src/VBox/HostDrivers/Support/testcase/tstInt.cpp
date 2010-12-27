@@ -29,8 +29,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/sup.h>
-#include <VBox/vm.h>
-#include <VBox/vmm.h>
+#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/asm-amd64-x86.h>

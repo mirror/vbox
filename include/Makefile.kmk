@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 
 # Omit headers that are using C++ features and upsets gcc.
 cpp_features_hdrs := \
-	VBox/hwaccm.h \
-	VBox/hwacc_vmx.h \
+	VBox/vmm/hwaccm.h \
+	VBox/vmm/hwacc_vmx.h \
 	VBox/HostServices/GuestControlSvc.h
 
 # Omit headers that are C++ and ring-3.
@@ -41,7 +41,7 @@ r3_only_hdrs := \
 	VBox/VBoxHDD.h \
 	VBox/VBoxHDD-Plugin.h \
 	VBox/dbus.h \
-	VBox/uvm.h \
+	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
 	$(wildcard VBox/ExtPack/*.h ) \
 	iprt/alloca.h \
@@ -73,7 +73,7 @@ hdrs.r3 := $(filter-out , $(hdrs))
 hdrs.r0 := $(filter-out $(r3_cpp_hdrs) $(r3_only_hdrs), $(hdrs))
 hdrs.rc := $(filter-out \
 	VBox/VBoxGuestLib.h \
-	VBox/gvm.h \
+	VBox/vmm/gvm.h \
 	iprt/thread.h \
 	iprt/mem.h \
 	iprt/alloc.h \

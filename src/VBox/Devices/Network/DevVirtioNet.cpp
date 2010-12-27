@@ -21,8 +21,8 @@
 #define VNET_WITH_GSO
 #define VNET_WITH_MERGEABLE_RX_BUFS
 
-#include <VBox/pdmdev.h>
-#include <VBox/pdmnetifs.h>
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmnetifs.h>
 #include <iprt/asm.h>
 #include <iprt/net.h>
 #include <iprt/semaphore.h>

@@ -23,8 +23,8 @@
 #include <iprt/time.h>
 #include <iprt/timer.h>
 #include <iprt/assert.h>
-#include <VBox/stam.h>
-#include <VBox/pdmcritsect.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/pdmcritsect.h>
 
 RT_C_DECLS_BEGIN
 

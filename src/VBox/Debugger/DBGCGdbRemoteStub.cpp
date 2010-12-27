@@ -20,6 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/dbg.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/err.h>
 

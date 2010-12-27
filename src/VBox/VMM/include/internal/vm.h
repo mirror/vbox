@@ -18,7 +18,7 @@
 #ifndef ___VM_include_internal_h
 #define ___VM_include_internal_h
 
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 
 VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended, bool fSkipStateChanges);
 VMMR3DECL(int) VMR3LoadFromStreamFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser);

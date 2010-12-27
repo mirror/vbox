@@ -19,7 +19,7 @@
 #ifndef ____H_KEYBOARDIMPL
 #define ____H_KEYBOARDIMPL
 
-#include <VBox/pdm.h>
+#include <VBox/vmm/pdm.h>
 
 /** Simple keyboard event class. */
 class KeyboardEvent

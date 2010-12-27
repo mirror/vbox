@@ -21,7 +21,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
-#include <VBox/cfgm.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/com/array.h>
 
 

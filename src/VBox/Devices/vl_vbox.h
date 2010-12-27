@@ -26,9 +26,9 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/param.h>
-#include <VBox/ssm.h>
-#include <VBox/tm.h>
-#include <VBox/pdm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 #include <VBox/pci.h>
 

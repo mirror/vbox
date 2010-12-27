@@ -21,9 +21,9 @@
 
 #include "Logging.h"
 
-#include <VBox/pdmdrv.h>
+#include <VBox/vmm/pdmdrv.h>
 #include <VBox/RemoteDesktop/VRDE.h>
-#include <VBox/cfgm.h>
+#include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 
 //

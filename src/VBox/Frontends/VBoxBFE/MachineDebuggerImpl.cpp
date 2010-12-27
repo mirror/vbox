@@ -21,10 +21,10 @@
 #else
 # include <VBox/com/defs.h>
 #endif
-#include <VBox/em.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/vm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/patm.h>
+#include <VBox/vmm/csam.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/semaphore.h>

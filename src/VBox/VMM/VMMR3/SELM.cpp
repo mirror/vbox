@@ -59,16 +59,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SELM
-#include <VBox/selm.h>
-#include <VBox/cpum.h>
-#include <VBox/stam.h>
-#include <VBox/mm.h>
-#include <VBox/ssm.h>
-#include <VBox/pgm.h>
-#include <VBox/trpm.h>
-#include <VBox/dbgf.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/mm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/trpm.h>
+#include <VBox/vmm/dbgf.h>
 #include "SELMInternal.h"
-#include <VBox/vm.h>
+#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 

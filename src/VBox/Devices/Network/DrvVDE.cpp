@@ -21,9 +21,9 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_TUN
 #include <VBox/log.h>
-#include <VBox/pdmdrv.h>
-#include <VBox/pdmnetifs.h>
-#include <VBox/pdmnetinline.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmnetifs.h>
+#include <VBox/vmm/pdmnetinline.h>
 #include <VBox/VDEPlug.h>
 
 #include <iprt/asm.h>
