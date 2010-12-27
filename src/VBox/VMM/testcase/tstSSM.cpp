@@ -20,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/ssm.h>
-#include "../VMInternal.h" /* createFakeVM */
+#include "VMInternal.h" /* createFakeVM */
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
 #include <VBox/mm.h>

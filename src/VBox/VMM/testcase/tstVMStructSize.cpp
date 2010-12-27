@@ -49,8 +49,8 @@
 #include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "REMInternal.h"
-#include "VMMR0/GMMR0Internal.h"
-#include "VMMR0/GVMMR0Internal.h"
+#include "../VMMR0/GMMR0Internal.h"
+#include "../VMMR0/GVMMR0Internal.h"
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
 #include <VBox/gvm.h>

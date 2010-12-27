@@ -34,7 +34,7 @@
 #include <VBox/gmm.h>
 #include <VBox/hwaccm.h>
 #include <VBox/hwacc_vmx.h>
-#include <include/internal/pgm.h>
+#include "internal/pgm.h"
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>

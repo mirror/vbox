@@ -25,7 +25,7 @@
 #include <VBox/mm.h>
 #include <VBox/sup.h>
 #include "VMMInternal.h"
-#include "VMMSwitcher/VMMSwitcher.h"
+#include "VMMSwitcher.h"
 #include <VBox/vm.h>
 #include <VBox/dis.h>
 

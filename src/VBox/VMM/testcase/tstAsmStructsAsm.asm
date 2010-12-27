@@ -22,14 +22,14 @@
 BITS 64
 %endif
 
-%include "../CPUMInternal.mac"
-%include "../HWACCMInternal.mac"
-%include "../TRPMInternal.mac"
-%include "../VMMInternal.mac"
+%include "CPUMInternal.mac"
+%include "HWACCMInternal.mac"
+%include "TRPMInternal.mac"
+%include "VMMInternal.mac"
 %include "VBox/cpum.mac"
 %include "VBox/vm.mac"
 %include "VBox/sup.mac"
-%include "../VMMSwitcher/VMMSwitcher.mac"
+%include "VMMSwitcher.mac"
 %ifdef DO_GLOBALS
  %include "tstAsmStructsAsm.mac"
 %endif

@@ -54,7 +54,7 @@
 #include <VBox/hwaccm.h>
 #include <VBox/patm.h>
 #include "EMInternal.h"
-#include "include/internal/em.h"
+#include "internal/em.h"
 #include <VBox/vm.h>
 #include <VBox/cpumdis.h>
 #include <VBox/dis.h>
