@@ -29,7 +29,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 
 /*******************************************************************************

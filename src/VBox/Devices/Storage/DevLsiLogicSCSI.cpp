@@ -35,7 +35,7 @@
 #include "DevLsiLogicSCSI.h"
 #include "VBoxSCSI.h"
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 /** The current saved state version. */
 #define LSILOGIC_SAVED_STATE_VERSION          3

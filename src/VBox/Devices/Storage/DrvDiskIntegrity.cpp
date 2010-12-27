@@ -32,7 +32,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 
 /*******************************************************************************

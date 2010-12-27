@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "VBoxDD.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
 

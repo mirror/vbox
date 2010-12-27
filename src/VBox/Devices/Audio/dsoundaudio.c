@@ -32,8 +32,8 @@
 #include <objbase.h>
 #include <dsound.h>
 
-#include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "VBoxDD.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
 #include <VBox/log.h>

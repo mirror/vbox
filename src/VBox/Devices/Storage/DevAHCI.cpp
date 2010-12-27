@@ -56,7 +56,7 @@
 
 #include "ide.h"
 #include "ATAController.h"
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #define AHCI_MAX_NR_PORTS_IMPL 30
 #define AHCI_NR_COMMAND_SLOTS 32

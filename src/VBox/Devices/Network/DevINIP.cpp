@@ -47,7 +47,7 @@ RT_C_DECLS_END
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 
 /*******************************************************************************

@@ -33,7 +33,7 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024

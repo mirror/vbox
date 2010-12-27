@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __vl_vbox_h__
-#define __vl_vbox_h__
+#ifndef ___build_vl_vbox_h
+#define ___build_vl_vbox_h
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -34,7 +34,7 @@
 
 #include <iprt/string.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 RT_C_DECLS_BEGIN
 
@@ -369,4 +369,4 @@ CPU_CONVERT(le, 64, uint64_t)
 
 RT_C_DECLS_END
 
-#endif /* __vl_vbox_h__ */
+#endif

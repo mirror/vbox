@@ -65,7 +65,7 @@ ifdef VBOX_WITH_RAW_MODE
  tstDeviceStructSizeRC_DEFS      = $(VBOX_DEVICES_TESTS_FEATURES)
  tstDeviceStructSizeRC_SOURCES   = tstDeviceStructSizeRC.cpp
  tstDeviceStructSizeRC_INCS      = \
- 	$(VBOX_PATH_DEVICES_SRC) \
+ 	$(VBOX_PATH_DEVICES_SRC)/build \
  	$(VBOX_PATH_DEVICES_SRC)/Bus \
  	$(VBOX_DEVICES_TEST_OUT_DIR)
 endif # VBOX_WITH_RAW_MODE
@@ -77,7 +77,7 @@ PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
 tstDeviceStructSize_DEFS     = $(VBOX_DEVICES_TESTS_FEATURES)
 tstDeviceStructSize_INCS     = \
-	$(VBOX_PATH_DEVICES_SRC) \
+	$(VBOX_PATH_DEVICES_SRC)/build \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
 	$(VBOX_DEVICES_TEST_OUT_DIR)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp

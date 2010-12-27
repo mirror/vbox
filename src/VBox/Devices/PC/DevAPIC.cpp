@@ -34,7 +34,7 @@
 
 #include <VBox/msi.h>
 
-#include "Builtins2.h"
+#include "VBoxDD2.h"
 
 #define MSR_IA32_APICBASE               0x1b
 #define MSR_IA32_APICBASE_BSP           (1<<8)

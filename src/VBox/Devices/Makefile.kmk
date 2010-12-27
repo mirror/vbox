@@ -73,7 +73,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSISense.cpp \
  	Storage/VSCSI/VSCSISgBuf.cpp \
  	Storage/VSCSI/VSCSIIoReq.cpp \
- 	VBoxDDUDeps.cpp
+ 	build/VBoxDDUDeps.cpp
  ifdef VBOX_WITH_USB
   VBoxDDU_INCS.os2       += \
  	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
@@ -114,8 +114,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  VBoxDD_TEMPLATE         = VBOXR3
  VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
+ VBoxDD_INCS             = build
  VBoxDD_SOURCES          = \
- 	Builtins.cpp
+ 	build/VBoxDD.cpp
  VBoxDD_DEFS             = VBOX_ACPI
  ifdef VBOX_WITH_USB
   VBoxDD_DEFS           += VBOX_WITH_USB
@@ -224,9 +225,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_TEMPLATE        = VBOXR3
  VBoxDD2_DEFS            = IN_VBOXDD2
  VBoxDD2_INCS           := \
+	build \
  	$(PATH_SUB_CURRENT)
  VBoxDD2_SOURCES         = \
- 	Builtins2.cpp  \
+ 	build/VBoxDD2.cpp  \
  	PC/DevAPIC.cpp \
  	PC/DevSMC.cpp  \
  	PC/DevLPC.cpp
@@ -261,7 +263,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DevicesR3_DEFS.l4      += _GNU_SOURCE
 
  DevicesR3_INCS          = \
- 	.
+ 	build
 
  DevicesR3_SOURCES       = \
  	Input/DevPS2.cpp \
@@ -526,8 +528,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
   endif
   VBoxDDGC_DEFS           = VBOX_WITH_HGCM
-  VBoxDDGC_INCS          := \
-  	$(PATH_SUB_CURRENT)
+  VBoxDDGC_INCS           = build
   VBoxDDGC_SOURCES        = \
   	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
@@ -630,8 +631,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_TEMPLATE       = VBoxR0
  VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
  VBoxDDR0_DEFS           = IN_RT_R0 VBOX_WITH_HGCM # - WTF is IN_RT_R0 doing here?
- VBoxDDR0_INCS          := \
- 	$(PATH_SUB_CURRENT)
+ VBoxDDR0_INCS           = build
  VBoxDDR0_SOURCES        = \
  	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
@@ -664,8 +664,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VIRTIO
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO
   VBoxDDR0_SOURCES      += \
-         VirtIO/Virtio.cpp \
- 	Network/DevVirtioNet.cpp
+	VirtIO/Virtio.cpp \
+  	Network/DevVirtioNet.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI
@@ -737,8 +737,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   #
   VBoxDD2GC_TEMPLATE       = VBoxRc
   VBoxDD2GC_DEFS           =
-  VBoxDD2GC_INCS          := \
-  	$(PATH_SUB_CURRENT)
+  VBoxDD2GC_INCS           = build
   VBoxDD2GC_SOURCES        = \
  	PC/DevAPIC.cpp      \
  	PC/DevSMC.cpp
@@ -754,8 +753,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  VBoxDD2R0_TEMPLATE       = VBoxR0
  VBoxDD2R0_DEFS           = IN_RT_R0
- VBoxDD2R0_INCS          := \
- 	$(PATH_SUB_CURRENT)
+ VBoxDD2R0_INCS           = build
  VBoxDD2R0_SOURCES        = \
          PC/DevAPIC.cpp     \
          PC/DevSMC.cpp
@@ -786,7 +784,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,) \
 
  Drivers_INCS      := \
- 	$(PATH_SUB_CURRENT) \
+ 	build \
  	Network/slirp
  Drivers_SOURCES    = \
  	Audio/audio.c \

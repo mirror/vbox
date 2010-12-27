@@ -46,7 +46,7 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif /* VBOX_WITH_INIP */
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 #ifdef VBOX_WITH_INIP
 /* Small hack to get at lwIP initialized status */

@@ -26,7 +26,7 @@
 #include <pulse/pulseaudio.h>
 #include "pulse_stubs.h"
 
-#include "../../vl_vbox.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #define AUDIO_CAP "pulse"
 #include "audio_int.h"

@@ -26,7 +26,7 @@
 #include <iprt/asm-math.h>
 #include <iprt/string.h>
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 
 /*******************************************************************************

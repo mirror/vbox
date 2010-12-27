@@ -38,7 +38,7 @@
 #endif
 
 #include "VBoxSCSI.h"
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 /* Maximum number of attached devices the adapter can handle. */
 #define BUSLOGIC_MAX_DEVICES 16

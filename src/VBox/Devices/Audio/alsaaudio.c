@@ -31,8 +31,8 @@
 
 #include <alsa/asoundlib.h>
 
-#include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "VBoxDD.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #ifdef VBOX
 #include "alsa_stubs.h"

@@ -32,7 +32,7 @@
 # include <iprt/uuid.h>
 #endif /* IN_RING3 */
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 #ifdef LOG_ENABLED
 # define DEBUG_ACPI

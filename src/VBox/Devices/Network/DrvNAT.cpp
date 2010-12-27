@@ -36,7 +36,7 @@
 #include <iprt/stream.h>
 #include <iprt/uuid.h>
 
-#include "Builtins.h"
+#include "VBoxDD.h"
 
 #ifndef RT_OS_WINDOWS
 # include <unistd.h>

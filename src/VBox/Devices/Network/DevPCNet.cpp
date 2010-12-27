@@ -67,7 +67,7 @@
 # include <iprt/uuid.h>
 #endif
 
-#include "../Builtins.h"
+#include "VBoxDD.h"
 
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
 /* #define PCNET_NO_POLLING */

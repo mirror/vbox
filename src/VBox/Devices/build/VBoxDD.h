@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Builtins_h
-#define ___Builtins_h
+#ifndef ___build_VBoxDD_h
+#define ___build_VBoxDD_h
 
 #include <VBox/vmm/pdm.h>
 

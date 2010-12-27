@@ -34,8 +34,8 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 
-#include "../Builtins.h"
-#include "../Builtins2.h"
+#include "VBoxDD.h"
+#include "VBoxDD2.h"
 #include "DevPcBios.h"
 #include "DevFwCommon.h"
 

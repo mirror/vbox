@@ -43,8 +43,8 @@
 #endif
 
 #include "Firmware2/VBoxPkg/Include/DevEFI.h"
-#include "../Builtins.h"
-#include "../Builtins2.h"
+#include "VBoxDD.h"
+#include "VBoxDD2.h"
 #include "../PC/DevFwCommon.h"
 
 /* EFI includes */

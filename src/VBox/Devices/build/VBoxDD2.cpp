@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * Built-in drivers & devices part 2.
+ * VBoxDD2 - Built-in drivers & devices part 2.
  *
  * These drivers and devices are in separate modules because of LGPL.
  */
@@ -29,7 +29,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 
-#include "Builtins2.h"
+#include "VBoxDD2.h"
 
 
 /*******************************************************************************
