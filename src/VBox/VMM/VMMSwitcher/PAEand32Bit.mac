@@ -27,7 +27,7 @@
 %include "VBox/stam.mac"
 %include "VBox/vm.mac"
 %include "CPUMInternal.mac"
-%include "VMMSwitcher/VMMSwitcher.mac"
+%include "VMMSwitcher.mac"
 
 %undef NEED_ID
 %ifdef NEED_PAE_ON_32BIT_HOST

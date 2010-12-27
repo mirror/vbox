@@ -64,7 +64,7 @@
 #include <VBox/mm.h>
 #include <VBox/version.h>
 
-#include "../Runtime/include/internal/ldrELF64.h"
+#include "../../Runtime/include/internal/ldrELF64.h"
 
 
 /*******************************************************************************

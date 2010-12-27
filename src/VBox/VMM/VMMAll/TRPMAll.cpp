@@ -36,7 +36,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/param.h>
-#include <include/internal/pgm.h>
+#include "internal/pgm.h"
 
 
 

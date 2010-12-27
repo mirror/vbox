@@ -31,7 +31,7 @@
 %include "VBox/stam.mac"
 %include "VBox/vm.mac"
 %include "CPUMInternal.mac"
-%include "VMMSwitcher/VMMSwitcher.mac"
+%include "VMMSwitcher.mac"
 
 
 ;

@@ -70,67 +70,69 @@ VMMR3_DEFS.darwin.x86 = \
 	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R3
 
 VMMR3_INCS     = \
-	. \
+	include \
 	PATM
+VMMR3_ASINCS   = .
 
 VMMR3_SOURCES   = \
-	CFGM.cpp \
-	CPUM.cpp \
-	DBGF.cpp \
-	DBGFAddr.cpp \
-	DBGFAddrSpace.cpp \
-	DBGFBp.cpp \
-	DBGFCoreWrite.cpp \
-	DBGFCpu.cpp \
-	DBGFDisas.cpp \
-	DBGFInfo.cpp \
-	DBGFLog.cpp \
-	DBGFMem.cpp \
-	DBGFOS.cpp \
-	DBGFReg.cpp \
-	DBGFStack.cpp \
-	DBGFSym.cpp \
-	EM.cpp \
-	EMRaw.cpp \
-	EMHwaccm.cpp \
-	FTM.cpp \
-	IOM.cpp \
-	GMM.cpp \
-	MM.cpp \
-	MMHeap.cpp \
-	MMHyper.cpp \
-	MMPagePool.cpp \
-	MMUkHeap.cpp \
-	PDM.cpp \
-	PDMDevice.cpp \
-	PDMDevHlp.cpp \
-	PDMDevMiscHlp.cpp \
-	PDMDriver.cpp \
-	PDMLdr.cpp \
-	PDMCritSect.cpp \
-	PDMQueue.cpp \
-	PDMThread.cpp \
-	PGM.cpp \
-	PGMDbg.cpp \
-	PGMHandler.cpp \
-	PGMMap.cpp \
-	PGMPhys.cpp \
-	PGMPool.cpp \
-	PGMSavedState.cpp \
-	PGMSharedPage.cpp \
-	SELM.cpp \
-	SSM.cpp \
-	STAM.cpp \
-	TM.cpp \
-	TRPM.cpp \
-	VM.cpp \
-	VMEmt.cpp \
-	VMReq.cpp \
-	VMM.cpp \
-	VMMGuruMeditation.cpp \
-	VMMSwitcher.cpp \
-	VMMTests.cpp \
-	HWACCM.cpp \
+	VMMR3/CFGM.cpp \
+	VMMR3/CPUM.cpp \
+	VMMR3/DBGF.cpp \
+	VMMR3/DBGFAddr.cpp \
+	VMMR3/DBGFAddrSpace.cpp \
+	VMMR3/DBGFBp.cpp \
+	VMMR3/DBGFCoreWrite.cpp \
+	VMMR3/DBGFCpu.cpp \
+	VMMR3/DBGFDisas.cpp \
+	VMMR3/DBGFInfo.cpp \
+	VMMR3/DBGFLog.cpp \
+	VMMR3/DBGFMem.cpp \
+	VMMR3/DBGFOS.cpp \
+	VMMR3/DBGFReg.cpp \
+	VMMR3/DBGFStack.cpp \
+	VMMR3/DBGFSym.cpp \
+	VMMR3/EM.cpp \
+	VMMR3/EMRaw.cpp \
+	VMMR3/EMHwaccm.cpp \
+	VMMR3/FTM.cpp \
+	VMMR3/IOM.cpp \
+	VMMR3/GMM.cpp \
+	VMMR3/MM.cpp \
+	VMMR3/MMHeap.cpp \
+	VMMR3/MMHyper.cpp \
+	VMMR3/MMPagePool.cpp \
+	VMMR3/MMUkHeap.cpp \
+	VMMR3/PDM.cpp \
+	VMMR3/PDMBlkCache.cpp \
+	VMMR3/PDMDevice.cpp \
+	VMMR3/PDMDevHlp.cpp \
+	VMMR3/PDMDevMiscHlp.cpp \
+	VMMR3/PDMDriver.cpp \
+	VMMR3/PDMLdr.cpp \
+	VMMR3/PDMCritSect.cpp \
+	VMMR3/PDMQueue.cpp \
+	VMMR3/PDMThread.cpp \
+	VMMR3/PGM.cpp \
+	VMMR3/PGMDbg.cpp \
+	VMMR3/PGMHandler.cpp \
+	VMMR3/PGMMap.cpp \
+	VMMR3/PGMPhys.cpp \
+	VMMR3/PGMPool.cpp \
+	VMMR3/PGMSavedState.cpp \
+	VMMR3/PGMSharedPage.cpp \
+	VMMR3/SELM.cpp \
+	VMMR3/SSM.cpp \
+	VMMR3/STAM.cpp \
+	VMMR3/TM.cpp \
+	VMMR3/TRPM.cpp \
+	VMMR3/VM.cpp \
+	VMMR3/VMEmt.cpp \
+	VMMR3/VMReq.cpp \
+	VMMR3/VMM.cpp \
+	VMMR3/VMMGuruMeditation.cpp \
+	VMMR3/VMMSwitcher.cpp \
+	VMMR3/VMMTests.cpp \
+	VMMR3/HWACCM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
@@ -168,17 +170,16 @@ VMMR3_SOURCES   = \
 	PATM/PATMGuest.cpp \
 	PATM/PATMA.asm \
 	PATM/PATMSSM.cpp \
-	PATM/VMMAll/PATMAll.cpp \
-	PDMBlkCache.cpp
+	PATM/VMMAll/PATMAll.cpp
 ifdef VBOX_WITH_VUSB
- VMMR3_SOURCES += PDMUsb.cpp
+ VMMR3_SOURCES += VMMR3/PDMUsb.cpp
 endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VMMR3_SOURCES += \
- 	PDMAsyncCompletion.cpp \
- 	PDMAsyncCompletionFile.cpp \
- 	PDMAsyncCompletionFileFailsafe.cpp \
- 	PDMAsyncCompletionFileNormal.cpp
+ 	VMMR3/PDMAsyncCompletion.cpp \
+ 	VMMR3/PDMAsyncCompletionFile.cpp \
+ 	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
+ 	VMMR3/PDMAsyncCompletionFileNormal.cpp
 endif
 if defined(VBOX_WITH_WARNINGS_AS_ERRORS) && "$(KBUILD_TARGET)" == "win"
 PDMBlkCache.cpp_CXXFLAGS = -WX-
@@ -201,7 +202,7 @@ endif
 
 
 # SSM wish to know the build type, host os and arch.
-SSM.cpp_DEFS +=	\
+VMMR3/SSM.cpp_DEFS +=	\
 	KBUILD_TYPE=\"$(KBUILD_TYPE)\" \
 	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
@@ -215,7 +216,7 @@ endif
 VBoxVMM_TEMPLATE = VBoxR3Dll
 VBoxVMM_DEFS = $(VMMR3_DEFS)
 VBoxVMM_DEFS.$(KBUILD_TARGET) = $(VMMR3_DEFS.$(KBUILD_TARGET))
-VBoxVMM_SOURCES = VBoxVMMDeps.cpp
+VBoxVMM_SOURCES = VMMR3/VBoxVMMDeps.cpp
 VBoxVMM_SONAME.linux = VBoxVMM.so
 
 VBoxVMM_LIBS = \
@@ -338,7 +339,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  endif
 
  VMMGC_INCS     := \
- 	. \
+ 	include \
  	VMMGC \
  	PATM
 
@@ -442,7 +443,7 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_LDFLAGS  = -e VMMR0EntryEx
  endif
  VMMR0_INCS      = \
- 	. \
+ 	include \
  	PATM
 
  VMMR0_SOURCES   = \
@@ -525,7 +526,8 @@ ifndef VBOX_ONLY_EXTPACKS
  LIBRARIES += SSMStandalone
  SSMStandalone_TEMPLATE = VBOXR3EXE
  SSMStandalone_DEFS     = IN_VMM_R3 IN_VMM_STATIC SSM_STANDALONE
- SSMStandalone_SOURCES  = SSM.cpp
+ SSMStandalone_INCS     = include
+ SSMStandalone_SOURCES  = VMMR3/SSM.cpp
 endif # !VBOX_ONLY_EXTPACKS
 
 

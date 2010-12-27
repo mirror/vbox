@@ -22,7 +22,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
 
-#include "../VMInternal.h" /* UVM */
+#include "VMInternal.h" /* UVM */
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
 #include <VBox/pdmasynccompletion.h>

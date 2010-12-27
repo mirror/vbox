@@ -33,9 +33,9 @@
 #include <VBox/em.h>
 #include <VBox/hwaccm.h>
 #include <VBox/hwacc_vmx.h>
-#include "../PGMInternal.h"
+#include "PGMInternal.h"
 #include <VBox/vm.h>
-#include "../PGMInline.h"
+#include "PGMInline.h"
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>

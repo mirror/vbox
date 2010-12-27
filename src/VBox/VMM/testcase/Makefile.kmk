@@ -119,7 +119,9 @@ ifdef VBOX_WITH_RAW_MODE
   tstVMStructRC_DEFS    += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  endif
  tstVMStructRC_SOURCES   = tstVMStructRC.cpp
- tstVMStructRC_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM
+ tstVMStructRC_INCS      = \
+	$(VBOX_PATH_VMM_SRC)/include \
+	$(VBOX_PATH_VMM_SRC)/PATM
 endif
 
 tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
@@ -132,7 +134,10 @@ endif
 ifdef VBOX_WITH_RAW_MODE
  tstVMStructSize_DEFS  += VBOX_WITH_RAW_MODE
 endif
-tstVMStructSize_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM $(VBOX_VMM_TESTCASE_OUT_DIR)
+tstVMStructSize_INCS    = \
+	$(VBOX_PATH_VMM_SRC)/include \
+	$(VBOX_PATH_VMM_SRC)/PATM \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)
 tstVMStructSize_SOURCES = tstVMStructSize.cpp
 ifdef VBOX_WITH_RAW_MODE
  tstVMStructSize.cpp_DEPS= $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h
@@ -155,7 +160,9 @@ endif
 ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  tstAsmStructs_DEFS    += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 endif
-tstAsmStructs_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
+tstAsmStructs_INCS      = \
+	$(VBOX_PATH_VMM_SRC)/include \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)
 tstAsmStructs_SOURCES   = tstAsmStructs.cpp
 tstAsmStructs.cpp_DEPS  = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
 
@@ -168,7 +175,9 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
   tstAsmStructsRC_DEFS  += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  endif
- tstAsmStructsRC_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
+ tstAsmStructsRC_INCS    = \
+	$(VBOX_PATH_VMM_SRC)/include \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)
  tstAsmStructsRC_SOURCES = tstAsmStructs.cpp
  tstAsmStructs.cpp_DEPS += $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsRC.h
 endif # VBOX_WITH_RAW_MODE
@@ -183,6 +192,7 @@ tstMMHyperHeap_SOURCES  = tstMMHyperHeap.cpp
 tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstSSM_TEMPLATE         = VBOXR3TSTEXE
+tstSSM_INCS             = $(VBOX_PATH_VMM_SRC)/include
 tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -199,7 +209,7 @@ tstCompressionBenchmark_SOURCES  = tstCompressionBenchmark.cpp
 
 tstVMMR0CallHost-1_TEMPLATE = VBOXR3TSTEXE
 tstVMMR0CallHost-1_DEFS = VMM_R0_NO_SWITCH_STACK
-tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)
+tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)/include
 tstVMMR0CallHost-1_SOURCES = \
 	tstVMMR0CallHost-1.cpp
 tstVMMR0CallHost-1_SOURCES.amd64 = \
@@ -262,10 +272,12 @@ endif # VBOX_WITH_RAW_MODE
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  tstPDMAsyncCompletion_TEMPLATE         = VBOXR3EXE
+ tstPDMAsyncCompletion_INCS             = $(VBOX_PATH_VMM_SRC)/include
  tstPDMAsyncCompletion_SOURCES          = tstPDMAsyncCompletion.cpp
  tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
  tstPDMAsyncCompletionStress_TEMPLATE   = VBOXR3EXE
+ tstPDMAsyncCompletionStress_INCS       = $(VBOX_PATH_VMM_SRC)/include
  tstPDMAsyncCompletionStress_SOURCES    = tstPDMAsyncCompletionStress.cpp
  tstPDMAsyncCompletionStress_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 endif
@@ -309,7 +321,8 @@ MY_ASA_ASM_STUFF = \
 			$(if $(VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI),VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI,) \
 		) \
 		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_VMM_TESTCASE_OUT_DIR),-I$(inc)/)
+		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR)\
+			,-I$(inc)/)
 
 # 1a. make a header file which makes all the structures+members globals.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
@@ -319,10 +332,10 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(DEPTH)/include/VBox/cpum.mac \
 		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/VBox/vm.mac \
-		$(VBOX_PATH_VMM_SRC)/CPUMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/TRPMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/HWACCMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/VMMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/TRPMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/HWACCMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
 		$(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG) \
 		| $$(dir $$@)

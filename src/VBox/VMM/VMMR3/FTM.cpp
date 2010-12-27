@@ -39,9 +39,9 @@
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
-#include <include/internal/vm.h>
-#include <include/internal/em.h>
-#include <include/internal/pgm.h>
+#include "internal/vm.h"
+#include "internal/em.h"
+#include "internal/pgm.h"
 
 /*******************************************************************************
  * Structures and Typedefs                                                     *

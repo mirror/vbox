@@ -71,7 +71,7 @@
 #include <VBox/ssm.h>
 #include <VBox/tm.h>
 #include "VMMInternal.h"
-#include "VMMSwitcher/VMMSwitcher.h"
+#include "VMMSwitcher.h"
 #include <VBox/vm.h>
 #include <VBox/ftm.h>
 

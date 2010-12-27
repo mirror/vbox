@@ -47,7 +47,7 @@
 #include <iprt/string.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <include/internal/pgm.h>
+#include "internal/pgm.h"
 
 
 /* Enabled by default */

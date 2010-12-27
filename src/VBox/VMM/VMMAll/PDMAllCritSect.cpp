@@ -20,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
-#include "../PDMInternal.h"
+#include "PDMInternal.h"
 #include <VBox/pdmcritsect.h>
 #include <VBox/mm.h>
 #include <VBox/vmm.h>
