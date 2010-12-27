@@ -744,8 +744,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevSMC.cpp
   if1of ($(VBOX_LDR_FMT32), pe lx)
   VBoxDD2GC_LIBS           = \
-  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
-  	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
+  	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+  	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
  endif
 

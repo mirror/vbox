@@ -14,7 +14,7 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-LIBRARY VMMGCBuiltin.gc
+LIBRARY VMMRCBuiltin.rc
 EXPORTS
     ; data
     g_VM                            DATA
@@ -26,3 +26,4 @@ EXPORTS
     g_pSUPGlobalInfoPage            DATA
 
     ; code
+

@@ -344,7 +344,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
     /*
      * Builtin module.
      */
-    if (!pszModule || !strcmp(pszModule, "VMMGCBuiltin.gc"))
+    if (!pszModule || !strcmp(pszModule, "VMMRCBuiltin.rc"))
     {
         int rc = VINF_SUCCESS;
         if (!strcmp(pszSymbol, "g_VM"))
