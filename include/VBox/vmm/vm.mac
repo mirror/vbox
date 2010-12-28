@@ -1,0 +1,137 @@
+;; @file
+; VM - The Virtual Machine.
+;
+
+;
+; Copyright (C) 2006-2010 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+%ifndef ___VBox_vmm_vm_mac__
+%define ___VBox_vmm_vm_mac__
+
+%include "VBox/vmm/stam.mac"
+
+;/** This action forces the VM to service check and pending interrups on the APIC. */
+%define VMCPU_FF_INTERRUPT_APIC            (1 << 0)
+;/** This action forces the VM to service check and pending interrups on the PIC. */
+%define VMCPU_FF_INTERRUPT_PIC             (1 << 1)
+;/** This action forces the VM to schedule and run pending timer (TM). */
+%define VMCPU_FF_TIMER                     (1 << 2)
+;/** This action forces the VM to service pending requests from other
+; * thread or requests which must be executed in another context. */
+%define VMCPU_FF_REQUEST                   (1 << 9)
+
+;;
+; This is part of  the VM structure.
+struc VM
+    .enmVMState             resd 1
+    .fGlobalForcedActions   resd 1
+    .paVMPagesR3            RTR3PTR_RES 1
+    .pSession               RTR0PTR_RES 1
+    .pUVM                   RTR3PTR_RES 1
+    .pVMR3                  RTR3PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
+    .pVMRC                  RTRCPTR_RES 1
+    .hSelf                  resd 1
+    .cCpus                  resd 1
+    .uCpuExecutionCap       resd 1
+    .cbSelf                 resd 1
+    .offVMCPU               resd 1
+    .u32Reserved            resd 5
+
+    .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
+    .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1
+    .pfnVMMGCGuestToHostAsm         RTRCPTR_RES 1
+
+    .uPadding1              RTHCPTR_RES 1
+    .uPadding2              RTHCPTR_RES 1
+
+    .fRawR3Enabled          resb 1
+    .fRawR0Enabled          resb 1
+    .fPATMEnabled           resb 1
+    .fCSAMEnabled           resb 1
+    .fHWACCMEnabled         resb 1
+    .fHwVirtExtForced       resb 1
+    .fFaultTolerantMaster   resb 1
+    .fUseLargePages         resb 1
+
+    alignb 8
+
+    .StatTotalQemuToGC      resb STAMPROFILEADV_size
+    .StatTotalGCToQemu      resb STAMPROFILEADV_size
+    .StatTotalInGC          resb STAMPROFILEADV_size
+    .StatTotalInQemu        resb STAMPROFILEADV_size
+    .StatSwitcherToGC       resb STAMPROFILEADV_size
+    .StatSwitcherToHC       resb STAMPROFILEADV_size
+    .StatSwitcherSaveRegs   resb STAMPROFILEADV_size
+    .StatSwitcherSysEnter   resb STAMPROFILEADV_size
+    .StatSwitcherDebug      resb STAMPROFILEADV_size
+    .StatSwitcherCR0        resb STAMPROFILEADV_size
+    .StatSwitcherCR4        resb STAMPROFILEADV_size
+    .StatSwitcherJmpCR3     resb STAMPROFILEADV_size
+    .StatSwitcherRstrRegs   resb STAMPROFILEADV_size
+    .StatSwitcherLgdt       resb STAMPROFILEADV_size
+    .StatSwitcherLidt       resb STAMPROFILEADV_size
+    .StatSwitcherLldt       resb STAMPROFILEADV_size
+    .StatSwitcherTSS        resb STAMPROFILEADV_size
+
+%ifndef HC_ARCH_BITS
+ %error "Missing HC_ARCH_BITS"
+%endif
+%if HC_ARCH_BITS == 32
+    .abAlignment1           resb 48
+%else
+    .abAlignment1           resb 24
+%endif
+
+    alignb 64
+    .cpum                   resb 1472
+    .vmm                    resb 1536
+
+endstruc
+
+;;
+; This is part of  the VMCPU structure.
+struc VMCPU
+    .fLocalForcedActions    resd 1
+    .enmState               resd 1
+    .pUVCpu                 RTR3PTR_RES 1
+    .pVMR3                  RTR3PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
+    .pvR0Padding            RTR0PTR_RES 1
+    .pVMRC                  RTRCPTR_RES 1
+    .idCpu                  resd 1
+
+    .hNativeThread          RTR0PTR_RES 1
+    .hNativeThreadR0        RTR0PTR_RES 1
+    .idHostCpu              resd 1
+    .uAdHoc                 resd 1
+    .aStatAdHoc             resb STAMPROFILEADV_size * 8
+
+%if HC_ARCH_BITS == 32
+    .abAlignment1           resd 16+1
+%endif
+    alignb 64
+
+    .cpum                   resb 4096
+endstruc
+
+
+%endif
