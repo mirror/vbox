@@ -1084,7 +1084,6 @@ extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
 extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
 extern const PDMRTCHLP      g_pdmR3DevRtcHlp;
 extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;
-extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 #endif
 
 

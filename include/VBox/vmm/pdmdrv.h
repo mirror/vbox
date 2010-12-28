@@ -337,8 +337,6 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 #define PDM_DRVREG_CLASS_STREAM         RT_BIT(14)
 /** SCSI driver. */
 #define PDM_DRVREG_CLASS_SCSI           RT_BIT(15)
-/** Generic raw PCI device driver. */
-#define PDM_DRVREG_CLASS_PCIRAW         RT_BIT(16)
 /** @} */
 
 
