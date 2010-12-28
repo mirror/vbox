@@ -296,6 +296,12 @@ static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr,
 {
     int rc = VINF_SUCCESS;
 
+    if (pAddr->iRegister > 0xff)
+    {
+        LogRel(("PCI: attempt to write extended register: %x (%d) <- val\n", pAddr->iRegister, cb, val));
+        goto out;
+    }
+
     if (pAddr->iBus != 0)
     {
         if (pGlobals->aPciBus.cBridges)
@@ -926,7 +932,6 @@ static DECLCALLBACK(void) ich9pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVI
  */
 static DECLCALLBACK(int) ich9pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
-    Assert(!PCIIsPassthrough(pPciDev));
     return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1179,9 +1184,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
      * Loop thru the fields covering the 64 bytes of standard registers.
      */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
-    Assert(!PCIIsPassthrough(pDev));
     uint8_t *pbDstConfig = &pDev->config[0];
-
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
         if (s_aFields[i].fBridge & fBridge)
         {
@@ -1375,7 +1378,6 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
                                      i, pDev->name, PCIDevGetVendorId(&DevTmp), PCIDevGetVendorId(pDev));
 
         /* commit the loaded device config. */
-        Assert(!PCIIsPassthrough(pDev));
         pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
@@ -1407,7 +1409,6 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
  */
 static DECLCALLBACK(int) ich9pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
-    Assert(!PCIIsPassthrough(pPciDev));
     return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1623,16 +1624,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
             ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_PRIMARY_BUS, uBus, 1);
 
             AssertMsg(pGlobals->uBus < 255, ("Too many bridges on the bus\n"));
-#if 0
-            /* We assign bridges starting from 16, to allow real PCI
-               device assignment into lower slots */
-            if (pGlobals->uBus == 0)
-                pGlobals->uBus = 16;
-            else
-                pGlobals->uBus++;
-#else
             pGlobals->uBus++;
-#endif
             ich9pciBiosInitBridge(pGlobals, uBus, uDevFn, cBridgeDepth, paBridgePositions);
             break;
         default:
@@ -1742,10 +1734,6 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         AssertMsgReturn(false, ("Read from extended registers falled back to generic code\n"), 0);
     }
 
-    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
-                    0);
-
-
     if (   PCIIsMsiCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsiCapOffset)
         && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
@@ -1762,6 +1750,8 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         return MsixPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
     }
 
+    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
+                    0);
     switch (len)
     {
         case 1:
@@ -1817,13 +1807,10 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                                                 uint32_t val, unsigned len)
 {
     Assert(len <= 4);
-    Assert(!PCIIsPassthrough(aDev));
 
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        LogRel(("Write to extended registers falled back to the generic code: %s register %d len=%d\n",
-                aDev->name, u32Address, len));
-        return;
+        AssertMsgReturnVoid(false, ("Write to extended registers falled back to generic code\n"));
     }
 
     AssertMsgReturnVoid(u32Address + len <= 256, ("Write after end of PCI config space\n"));
@@ -2142,22 +2129,6 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool f
         PPCIDEVICE pPciDev = pBus->apDevices[iDev];
         if (pPciDev != NULL)
         {
-            if (PCIIsPassthrough(pPciDev))
-            {
-                printIndent(pHlp, iIndent);
-                /**
-                 * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
-                 * as host driver handles real devices interrupts.
-                 */
-                pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %s%s - PASSTHROUGH\n",
-                                pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
-                                pPciDev->name,
-                                PCIIsMsiCapable(pPciDev)  ? " MSI" : "",
-                                PCIIsMsixCapable(pPciDev) ? " MSI-X" : ""
-                                );
-                continue;
-            }
-
             printIndent(pHlp, iIndent);
             pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %04x-%04x%s%s",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
