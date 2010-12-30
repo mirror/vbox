@@ -481,15 +481,20 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Main/include/hgcm \
 	src/VBox/Main \
 	src/VBox/Main/glue \
-	src/VBox/Main/hgcm \
 	src/VBox/Main/webservice \
 	src/VBox/Main/xml \
-	src/VBox/Main/darwin \
-	src/VBox/Main/linux \
-	src/VBox/Main/os2 \
-	src/VBox/Main/solaris \
-	src/VBox/Main/win \
-	src/VBox/Main/xpcom \
+	src/VBox/Main/src-all \
+	src/VBox/Main/src-all/win \
+	src/VBox/Main/src-client \
+	src/VBox/Main/src-client/win \
+	src/VBox/Main/src-client/xpcom \
+	src/VBox/Main/src-server \
+	src/VBox/Main/src-server/darwin \
+	src/VBox/Main/src-server/linux \
+	src/VBox/Main/src-server/os2 \
+	src/VBox/Main/src-server/solaris \
+	src/VBox/Main/src-server/win \
+	src/VBox/Main/src-server/xpcom \
 	src/VBox/HostServices \
 	src/VBox/HostServices/SharedClipboard \
 	src/VBox/HostServices/SharedFolders \
