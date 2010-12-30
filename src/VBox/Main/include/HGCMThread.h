@@ -1,5 +1,4 @@
 /** @file
- *
  * HGCMThread - Host-Guest Communication Manager worker threads header.
  */
 
@@ -20,7 +19,7 @@
 
 #include <VBox/types.h>
 
-#include <hgcm/HGCMObjects.h>
+#include "HGCMObjects.h"
 
 /** A handle for HGCM message. */
 typedef uint32_t HGCMMSGHANDLE;

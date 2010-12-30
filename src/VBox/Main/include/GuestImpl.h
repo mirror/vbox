@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -24,7 +23,7 @@
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <VBox/HostServices/GuestControlSvc.h>
-# include <hgcm/HGCM.h>
+# include "HGCM.h"
 using namespace guestControl;
 #endif
 
