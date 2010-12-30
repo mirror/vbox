@@ -28,7 +28,7 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 os2.x86 s
  NetBiosBin_SOURCES  = $(NetBiosBin_0_OUTDIR)/NetBiosBin.c
  NetBiosBin_CLEAN    = $(NetBiosBin_0_OUTDIR)/NetBiosBin.c
 
- $$(NetBiosBin_0_OUTDIR)/NetBiosBin.c: $(PATH_SUB_CURRENT)/pcnet32.zrom $(VBOX_BIN2C)
+ $$(NetBiosBin_0_OUTDIR)/NetBiosBin.c: $(PATH_SUB_CURRENT)/pcnet32.zrom $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,NetBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 16 -max 24 -mask 0xfff -export NetBiosBinary $< $@
 
