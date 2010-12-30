@@ -34,10 +34,9 @@ include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 
 ifdef VBOX_ONLY_SDK
- # used by some rules
- PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
- BLDDIRS        += $(VBoxCOM_0_OUTDIR) $(PATH_BIN)/components
  # I'm Evil! Dr. Evil.
+ VBoxCOM_0_OUTDIR = $(PATH_TARGET)/VBoxCOM
+ BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_BIN)/components
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
 endif # !VBOX_ONLY_SDK
