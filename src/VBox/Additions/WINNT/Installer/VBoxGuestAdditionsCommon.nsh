@@ -31,16 +31,17 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
 
-  ; Do *not* install 64-bit d3d files - they don't work yet
+  SetOutPath "$0\VBoxVideo\OpenGL"
+  FILE "$%PATH_OUT%\bin\additions\d3d8.dll"
+  FILE "$%PATH_OUT%\bin\additions\d3d9.dll"
   !if $%BUILD_TARGET_ARCH% == "x86"
-    SetOutPath "$0\VBoxVideo\OpenGL"
-    FILE "$%PATH_OUT%\bin\additions\d3d8.dll"
-    FILE "$%PATH_OUT%\bin\additions\d3d9.dll"
+    ; libWine is used for 32bit d3d only
+    ; @todo: remove it for 32bit as well
     FILE "$%PATH_OUT%\bin\additions\libWine.dll"
-    FILE "$%PATH_OUT%\bin\additions\VBoxD3D8.dll"
-    FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
-    FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
   !endif
+  FILE "$%PATH_OUT%\bin\additions\VBoxD3D8.dll"
+  FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
+  FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target
