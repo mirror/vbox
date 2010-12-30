@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 VBOX_PATH_RDESKTOP_SRC := $(PATH_SUB_CURRENT)
 VBOX_PATH_DEVICES_USB  := $(PATH_ROOT)/src/VBox/Devices/USB
 VBOX_PATH_USB_LIB      := $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB
-VBOX_PATH_MAIN_LINUX   := $(PATH_ROOT)/src/VBox/Main/linux
+VBOX_PATH_MAIN_LINUX   := $(PATH_ROOT)/src/VBox/Main/src-server/linux
 VBOX_PATH_MAIN_INCLUDE := $(PATH_ROOT)/src/VBox/Main/include
 VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp
 

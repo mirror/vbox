@@ -135,7 +135,7 @@ tstVBoxAPIWin_DEPS     = \
 tstCollector_TEMPLATE = VBOXMAINCLIENTEXE
 tstCollector_SOURCES  = \
 	tstCollector.cpp \
-	../Performance.cpp
+	../src-server/Performance.cpp
 tstCollector_INCS     = ../include
 tstCollector_DEFS    += VBOX_COLLECTOR_TEST_CASE
 tstCollector_LDFLAGS.darwin  += -lproc
@@ -150,8 +150,8 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTNPEXE
 tstHostHardwareLinux_SOURCES   = \
 	tstHostHardwareLinux.cpp \
-	../linux/HostHardwareLinux.cpp \
-	../linux/USBGetDevices.cpp
+	../src-server/linux/HostHardwareLinux.cpp \
+	../src-server/linux/USBGetDevices.cpp
 tstHostHardwareLinux_INCS      = . ../include
 tstHostHardwareLinux_DEFS      = \
 	VBOX_TEST_USB_LINUX \

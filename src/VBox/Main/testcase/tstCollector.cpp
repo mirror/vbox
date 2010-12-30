@@ -18,25 +18,25 @@
  */
 
 #ifdef RT_OS_DARWIN
-#include "../darwin/PerformanceDarwin.cpp"
+# include "../src-server/darwin/PerformanceDarwin.cpp"
 #endif
 #ifdef RT_OS_FREEBSD
-#include "../freebsd/PerformanceFreeBSD.cpp"
+# include "../src-server/freebsd/PerformanceFreeBSD.cpp"
 #endif
 #ifdef RT_OS_LINUX
-#include "../linux/PerformanceLinux.cpp"
+# include "../src-server/linux/PerformanceLinux.cpp"
 #endif
 #ifdef RT_OS_OS2
-#include "../os2/PerformanceOS2.cpp"
+# include "../src-server/os2/PerformanceOS2.cpp"
 #endif
 #ifdef RT_OS_SOLARIS
-#include "../solaris/PerformanceSolaris.cpp"
+# include "../src-server/solaris/PerformanceSolaris.cpp"
 #endif
 #ifdef RT_OS_WINDOWS
-#define _WIN32_DCOM
-#include <objidl.h>
-#include <objbase.h>
-#include "../win/PerformanceWin.cpp"
+# define _WIN32_DCOM
+# include <objidl.h>
+# include <objbase.h>
+# include "../src-server/win/PerformanceWin.cpp"
 #endif
 
 #include <iprt/initterm.h>
