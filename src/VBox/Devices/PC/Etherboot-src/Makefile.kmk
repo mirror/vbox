@@ -152,7 +152,7 @@ EB_CFLAGS+=     -DVERSION_MAJOR=$(VERSION_MAJOR) \
 IDENT=          '$(@F) $(VERSION) (GPL) etherboot.org'
 
 # Rebuild everything whenever the Makefile etc. is changed. Must be LAST in the dependency list!
-MAKEDEPS=       $(PATH_SUB_CURRENT)/Makefile.kmk $(PATH_SUB_CURRENT)/Config $(PATH_SUB_CURRENT)/arch/$(ARCH)/Config | $(call DIRDEP,$(PATH_TARGET))
+MAKEDEPS=       $(PATH_SUB_CURRENT)/Makefile.kmk $(PATH_SUB_CURRENT)/Config $(PATH_SUB_CURRENT)/arch/$(ARCH)/Config | $(PATH_TARGET)/
 
 # The core (card-independent part) of Etherboot.
 BOBJS=          $(PATH_TARGET)/main.o $(PATH_TARGET)/osloader.o \

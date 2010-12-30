@@ -210,7 +210,7 @@ VBoxDrv-inf_SOURCES = \
 VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
 VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
@@ -219,7 +219,7 @@ VBoxDrv-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
