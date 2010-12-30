@@ -45,14 +45,14 @@ VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
 VBoxVideo-inf_BLDDIRS = \
 	$(PATH_TARGET)/VBoxVideoCat.dir
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(TARGET_VBoxVideo) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(TARGET_VBoxVideo) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(TARGET_VBoxDisp) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(TARGET_VBoxDisp) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
@@ -121,77 +121,77 @@ VBoxVideoWddm-inf_BLDDIRS = \
 VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDM_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
 VBOXWDDM_EDIT_INF_GL_FN_ARG      = $(if $(VBOXWDDM_WITH_GL),-e 's/^;gl  *//', -e '/^;gl /d')
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf: $(PATH_SUB_CURRENT)/Miniport/wddm/VBoxVideoWddm.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf: $(PATH_SUB_CURRENT)/Miniport/wddm/VBoxVideoWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxVideoWddm-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_GL_FN_ARG))
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys: $$(TARGET_VBoxVideoWddm) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys: $$(TARGET_VBoxVideoWddm) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 ifdef VBOXWDDM_WITH_DISPD3D
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll: $$(TARGET_VBoxDispD3D) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll: $$(TARGET_VBoxDispD3D) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D-x86.dll: $$(TARGET_VBoxDispD3D-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D-x86.dll: $$(TARGET_VBoxDispD3D-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
  endif
 endif
 
 ifdef VBOXWDDM_WITH_GL
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL.dll: $$(TARGET_VBoxOGL) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL.dll: $$(TARGET_VBoxOGL) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm.dll: $$(TARGET_VBoxD3D9wddm) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm.dll: $$(TARGET_VBoxD3D9wddm) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm.dll: $$(TARGET_wined3dwddm) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm.dll: $$(TARGET_wined3dwddm) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu.dll: $$(TARGET_VBoxOGLarrayspu) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu.dll: $$(TARGET_VBoxOGLarrayspu) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil.dll: $$(TARGET_VBoxOGLcrutil) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil.dll: $$(TARGET_VBoxOGLcrutil) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLerrorspu.dll: $$(TARGET_VBoxOGLerrorspu) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLerrorspu.dll: $$(TARGET_VBoxOGLerrorspu) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLfeedbackspu.dll: $$(TARGET_VBoxOGLfeedbackspu) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLfeedbackspu.dll: $$(TARGET_VBoxOGLfeedbackspu) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpackspu.dll: $$(TARGET_VBoxOGLpackspu) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpackspu.dll: $$(TARGET_VBoxOGLpackspu) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpassthroughspu.dll: $$(TARGET_VBoxOGLpassthroughspu) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpassthroughspu.dll: $$(TARGET_VBoxOGLpassthroughspu) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
  ifeq ($(KBUILD_TARGET_ARCH), amd64)
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL-x86.dll: $$(TARGET_VBoxOGL-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL-x86.dll: $$(TARGET_VBoxOGL-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm-x86.dll: $$(TARGET_VBoxD3D9wddm-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm-x86.dll: $$(TARGET_VBoxD3D9wddm-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm-x86.dll: $$(TARGET_wined3dwddm-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm-x86.dll: $$(TARGET_wined3dwddm-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu-x86.dll: $$(TARGET_VBoxOGLarrayspu-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu-x86.dll: $$(TARGET_VBoxOGLarrayspu-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil-x86.dll: $$(TARGET_VBoxOGLcrutil-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil-x86.dll: $$(TARGET_VBoxOGLcrutil-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLerrorspu-x86.dll: $$(TARGET_VBoxOGLerrorspu-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLerrorspu-x86.dll: $$(TARGET_VBoxOGLerrorspu-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLfeedbackspu-x86.dll: $$(TARGET_VBoxOGLfeedbackspu-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLfeedbackspu-x86.dll: $$(TARGET_VBoxOGLfeedbackspu-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpackspu-x86.dll: $$(TARGET_VBoxOGLpackspu-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpackspu-x86.dll: $$(TARGET_VBoxOGLpackspu-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpassthroughspu-x86.dll: $$(TARGET_VBoxOGLpassthroughspu-x86) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpassthroughspu-x86.dll: $$(TARGET_VBoxOGLpassthroughspu-x86) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
  endif
 endif

@@ -156,15 +156,15 @@ install-infs_BLDDIRS = \
 	$(PATH_TARGET)/VBoxUSBCat.dir \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf: $(PATH_SUB_CURRENT)/Device/VBoxUSB.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf: $(PATH_SUB_CURRENT)/Device/VBoxUSB.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,install-infs,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/Monitor/VBoxUSBMon.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/Monitor/VBoxUSBMon.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,install-infs,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxUSBFltCat.dir/VBoxUSBFlt.inf: $(PATH_SUB_CURRENT)/Filter/VBoxUSBFlt.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxUSBFltCat.dir/VBoxUSBFlt.inf: $(PATH_SUB_CURRENT)/Filter/VBoxUSBFlt.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,install-infs,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
@@ -175,7 +175,7 @@ install-infs_SOURCES += \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(TARGET_VBoxUSB) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(TARGET_VBoxUSB) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
@@ -184,7 +184,7 @@ $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
 	$(call MSG_TOOL,Inf2Cat,VBoxUSB-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(TARGET_VBoxUSBMon) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(TARGET_VBoxUSBMon) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat: \
