@@ -30,6 +30,11 @@
         <para>Storage: Fixed possible crashes with VMDK/VHD images with snapshots and async I/O</para>
       </listitem>
 
+      <listitem>
+        <para>Bridged networking: Fixed host kernel panic when bridging
+          to devices with no TX queue; bug #7908</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
