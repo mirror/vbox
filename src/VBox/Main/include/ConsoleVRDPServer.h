@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox Console VRDE Server Helper class and implementation of IVRDEServerInfo
  */
 
@@ -21,7 +19,7 @@
 #define ____H_CONSOLEVRDPSERVER
 
 #include "RemoteUSBBackend.h"
-#include <hgcm/HGCM.h>
+#include "HGCM.h"
 
 #include <VBox/VBoxAuth.h>
 

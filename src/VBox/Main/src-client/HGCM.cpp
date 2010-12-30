@@ -18,8 +18,8 @@
 #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
 #include "Logging.h"
 
-#include "hgcm/HGCM.h"
-#include "hgcm/HGCMThread.h"
+#include "HGCM.h"
+#include "HGCMThread.h"
 
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>

@@ -67,7 +67,7 @@
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
 # include <VBox/com/array.h>
-# include <hgcm/HGCM.h> /** @todo it should be possible to register a service
+# include "HGCM.h" /** @todo it should be possible to register a service
                           * extension using a VMMDev callback. */
 # include <vector>
 #endif /* VBOX_WITH_GUEST_PROPS */
