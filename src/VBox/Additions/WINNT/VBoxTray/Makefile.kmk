@@ -70,7 +70,7 @@ VBoxTray.rc_DEPS = $(VBoxTray_0_OUTDIR)/VBoxTray-icon.rc
 VBoxTray.rc_CLEAN = $(VBoxTray_0_OUTDIR)/VBoxTray-icon.rc
 
 # Icon include file.
-$$(VBoxTray_0_OUTDIR)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxTray_PATH)/Makefile.kmk | $$(dir $$@)
+$$(VBoxTray_0_OUTDIR)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxTray_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
