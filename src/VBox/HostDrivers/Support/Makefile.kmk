@@ -140,8 +140,8 @@ ifeq ($(VBOX_LDR_FMT),pe)
  SUPR0_SOURCES     += SUPR0.def
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
-SUPR0_SOURCES      += $$(PATH_SUPR0)/SUPR0.def
-$$(PATH_SUPR0)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $$(dir $$@)
+SUPR0_SOURCES      += $$(SUPR0_0_OUTDIR)/SUPR0.def
+$$(SUPR0_0_OUTDIR)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $$(dir $$@)
 	$(SED) \
 		-e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /' \
@@ -263,23 +263,23 @@ vboxdrv-mod_INST    = bin/src/vboxdrv/
 vboxdrv-mod_MODE    = a+r,u+w
 vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 vboxdrv-mod_SOURCES += \
-	$(PATH_vboxdrv-mod)/Makefile
+	$(vboxdrv-mod_0_OUTDIR)/Makefile
 vboxdrv-mod_CLEAN   = \
-	$(PATH_vboxdrv-mod)/Makefile
+	$(vboxdrv-mod_0_OUTDIR)/Makefile
 
 vboxdrv-sh_INST     = bin/src/vboxdrv
 vboxdrv-sh_MODE     = a+rx,u+w
 vboxdrv-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
 vboxdrv-sh_SOURCES += \
-	$(PATH_vboxdrv-sh)/build_in_tmp \
+	$(vboxdrv-sh_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
 vboxdrv-sh_CLEAN    = \
 	$(PATH_TARGET)/vboxdrv-sh-1.dep \
-	$(PATH_vboxdrv-sh)/build_in_tmp
+	$(vboxdrv-sh_0_OUTDIR)/build_in_tmp
 
 # Scripts needed for building the kernel modules
 
-$$(PATH_vboxdrv-sh)/build_in_tmp: \
+$$(vboxdrv-sh_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
@@ -291,7 +291,7 @@ $$(PATH_vboxdrv-sh)/build_in_tmp: \
 	$(QUIET)chmod 0755 $@
 
 includedep $(PATH_TARGET)/vboxdrv-sh-1.dep
-$$(PATH_vboxdrv-mod)/Makefile: \
+$$(vboxdrv-mod_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(Support/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
@@ -338,10 +338,10 @@ endif
 
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
-VBoxDrv.kext_SOURCES  =	$(PATH_VBoxDrv.kext)/Info.plist
-VBoxDrv.kext_CLEAN    =	$(PATH_VBoxDrv.kext)/Info.plist
+VBoxDrv.kext_SOURCES  =	$(VBoxDrv.kext_0_OUTDIR)/Info.plist
+VBoxDrv.kext_CLEAN    =	$(VBoxDrv.kext_0_OUTDIR)/Info.plist
 
-$$(PATH_VBoxDrv.kext)/Info.plist: \
+$$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
 		$(PATH_SUB_CURRENT)/darwin/Info.plist \
 		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
@@ -419,11 +419,11 @@ vboxdrv-mod_INST    = bin/src/vboxdrv/
 vboxdrv-mod_MODE    = a+r,u+w
 vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 vboxdrv-mod_SOURCES += \
-	$(PATH_vboxdrv-mod)/Makefile
+	$(vboxdrv-mod_0_OUTDIR)/Makefile
 vboxdrv-mod_CLEAN   = \
-	$(PATH_vboxdrv-mod)/Makefile
+	$(vboxdrv-mod_0_OUTDIR)/Makefile
 
-$$(PATH_vboxdrv-mod)/Makefile: \
+$$(vboxdrv-mod_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/freebsd/Makefile \
 		$$(if $$(eq $$(Support/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)

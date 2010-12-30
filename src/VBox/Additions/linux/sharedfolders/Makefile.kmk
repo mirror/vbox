@@ -37,9 +37,9 @@ vboxsf-sh_INST        = $(INST_ADDITIONS)src/vboxsf/
 vboxsf-sh_MODE        = a+rx,u+w
 vboxsf-sh_SOURCES     = $(subst ",,$(FILES_VBOXSF_BIN))
 vboxsf-sh_SOURCES    += \
-	$(PATH_vboxsf-sh)/build_in_tmp \
+	$(vboxsf-sh_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
-vboxsf-sh_CLEAN      += $(PATH_vboxsf-sh)/build_in_tmp
+vboxsf-sh_CLEAN      += $(vboxsf-sh_0_OUTDIR)/build_in_tmp
 
 
 #
@@ -89,7 +89,7 @@ mount.vboxsf_SOURCES     = \
 
 ## Scripts needed for building kernel modules
 
-$$(PATH_vboxsf-sh)/build_in_tmp: \
+$$(vboxsf-sh_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)

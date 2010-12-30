@@ -114,7 +114,7 @@ VBoxBFE_SOURCES.linux += \
 endif
 
 VBoxBFE_INCS = \
-	$(PATH_VBoxBFE) \
+	$(VBoxBFE_0_OUTDIR) \
 	$(VBOX_PATH_SDK)/include \
 	$(PATH_ROOT)/src/VBox/Frontends/VBoxBFE
 ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
@@ -157,11 +157,11 @@ VBoxBFE_DEFS.linux = \
 VBoxBFE_CXXFLAGS.linux =  \
 	-fno-rtti -fno-exceptions -fshort-wchar -pthread
 
-VBoxBFE_CLEAN = $(PATH_VBoxBFE)/Ico64x01.h
-VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
+VBoxBFE_CLEAN = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
+VBoxBFE_SDLConsole.cpp_DEPS = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
 
 # Convert the pnm-file to a byte array.
-$$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
+$$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 

@@ -79,7 +79,7 @@ VBoxRemPrimary_INCS            = \
 	target-i386 \
 	tcg \
 	fpu \
-	$(PATH_VBoxRemPrimary) \
+	$(VBoxRemPrimary_0_OUTDIR) \
 	$(PATH_ROOT)/src/VBox/VMM/include \
 	.
 VBoxRemPrimary_INCS.amd64     += tcg/x86_64
@@ -106,7 +106,7 @@ VBoxRemPrimary_SOURCES         = \
 	target-i386/translate.c
 VBoxRemPrimary_SOURCES.debug  += \
 	Sun/testmath.c
-VBoxRemPrimary_SOURCES.win.x86 = $(PATH_VBoxREMImp)/VBoxREMWin.def
+VBoxRemPrimary_SOURCES.win.x86 = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
 
 VBoxRemPrimary_LIBS            = \
 	$(LIB_VMM) \
@@ -217,13 +217,13 @@ VBoxREMImp_TEMPLATE        = VBOXR3
 VBoxREMImp_NAME            = VBoxREM
  endif
 VBoxREMImp_INST            = $(INST_LIB)
-VBoxREMImp_SOURCES.win     = $(PATH_VBoxREMImp)/VBoxREMWin.def
-VBoxREMImp_CLEAN.win       = $(PATH_VBoxREMImp)/VBoxREMWin.def
-VBoxREMImp_SOURCES.os2     = $(PATH_VBoxREMImp)/VBoxREMOS2.def
-VBoxREMImp_CLEAN.os2       = $(PATH_VBoxREMImp)/VBoxREMOS2.def
+VBoxREMImp_SOURCES.win     = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
+VBoxREMImp_CLEAN.win       = $(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def
+VBoxREMImp_SOURCES.os2     = $(VBoxREMImp_0_OUTDIR)/VBoxREMOS2.def
+VBoxREMImp_CLEAN.os2       = $(VBoxREMImp_0_OUTDIR)/VBoxREMOS2.def
  ifn1of ($(KBUILD_TARGET), os2 win)
-VBoxREMImp_SOURCES         = $(PATH_VBoxREMImp)/VBoxREMImp.c
-VBoxREMImp_CLEAN           = $(PATH_VBoxREMImp)/VBoxREMImp.c
+VBoxREMImp_SOURCES         = $(VBoxREMImp_0_OUTDIR)/VBoxREMImp.c
+VBoxREMImp_CLEAN           = $(VBoxREMImp_0_OUTDIR)/VBoxREMImp.c
  endif
  ifn1of ($(KBUILD_TARGET), darwin os2 win)
 VBoxREMImp_SONAME          = VBoxREM$(SUFF_DLL)
@@ -235,7 +235,7 @@ else
 endif
 VBoxREMImp_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
-$$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
+$$(VBoxREMImp_0_OUTDIR)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(APPEND) -t $@ '#ifdef VBOX_HAVE_VISIBILITY_HIDDEN'
 	$(QUIET)$(APPEND)    $@ '# define EXPORT __attribute__((visibility("default")))'
@@ -245,7 +245,7 @@ $$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX
 	$(QUIET)$(APPEND)    $@ ''
 	$(QUIET)$(SED) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed --append $@ $<
 
-$$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
+$$(VBoxREMImp_0_OUTDIR)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(SED) \
 		-e 's/^[ \t][ \t]*REMR3/    _REMR3/' \
 		-e 's/\.[Dd][Ll][Ll]//' \
@@ -253,7 +253,7 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 		--output $@ \
 		$<
 
-$$(PATH_VBoxREMImp)/VBoxREMWin.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
+$$(VBoxREMImp_0_OUTDIR)/VBoxREMWin.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(CP) -f $< $@
 
 

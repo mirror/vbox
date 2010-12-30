@@ -73,7 +73,7 @@ VBoxSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
 
 VBoxSDL_INCS = \
-	$(PATH_VBoxSDL)
+	$(VBoxSDL_0_OUTDIR)
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VBoxSDL_INCS += \
 	$(VBOX_XCURSOR_INCS)
@@ -98,17 +98,17 @@ endif
 VBoxSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 
-VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
-VBoxSDL_INTERMEDIATES = $(PATH_VBoxSDL)/Ico64x01.h
+VBoxSDL_CLEAN = $(VBoxSDL_0_OUTDIR)/Ico64x01.h
+VBoxSDL_INTERMEDIATES = $(VBoxSDL_0_OUTDIR)/Ico64x01.h
 
 
 # Convert the pnm-file to a byte array.
-$$(PATH_VBoxSDL)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
+$$(VBoxSDL_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
 # Icon include file.
-$$(PATH_VBoxSDL)/VBoxSDL-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxSDL_PATH)/Makefile.kmk | $$(dir $$@)
+$$(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxSDL_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
@@ -129,8 +129,6 @@ tstSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 ifdef VBOX_OPENGL
 tstSDL_DEFS.linux = VBOX_OPENGL
 endif
-tstSDL_INCS = \
-	$(PATH_tstSDL)
 
 tstSDL_LIBS = \
 	$(LIB_RUNTIME)

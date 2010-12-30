@@ -193,7 +193,7 @@ endif
 
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
-	$(PATH_VirtualBox)/include
+	$(VirtualBox_0_OUTDIR)/include
 
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)
@@ -658,18 +658,18 @@ endif
 #
 ## @todo This needs some cleaning up perhaps...
 ## @todo kBuild: Non-existing +| targets should be tried remade or what?
-VirtualBox_BLDDIRS       += $(PATH_VirtualBox)/include
-VirtualBox_INTERMEDIATES += $(PATH_VirtualBox)/include/COMWrappers.h
+VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
+VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers.h
 VirtualBox_CLEAN         += \
-	$(PATH_VirtualBox)/include/COMWrappers \
-	$(PATH_VirtualBox)/include/COMWrappers.tmp \
-	$(PATH_VirtualBox)/include/COMWrappers.h \
-	$(PATH_VirtualBox)/include/COMWrappers.cpp
-VirtualBox_SOURCES       += $(PATH_VirtualBox)/include/COMWrappers.cpp
+	$(VirtualBox_0_OUTDIR)/include/COMWrappers \
+	$(VirtualBox_0_OUTDIR)/include/COMWrappers.tmp \
+	$(VirtualBox_0_OUTDIR)/include/COMWrappers.h \
+	$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
+VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 
-$$(PATH_VirtualBox)/include/COMWrappers \
-+| $$(PATH_VirtualBox)/include/COMWrappers.h \
-+| $$(PATH_VirtualBox)/include/COMWrappers.cpp: \
+$$(VirtualBox_0_OUTDIR)/include/COMWrappers \
++| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.h \
++| $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl \
 		| $$(dir $$@)
@@ -696,7 +696,7 @@ $$(PATH_VirtualBox)/include/COMWrappers \
 
 
 # alias for generating the COM Wrappers file.
-testwrappers:: $$(PATH_VirtualBox)/include/COMWrappers.h
+testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers.h
 
 
 #
@@ -817,11 +817,11 @@ ifeq ($(KBUILD_TARGET),win)
 # On Windows we'll have to generate/edit part of the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-src/platform/win/VirtualBox.rc_INCS  = $(PATH_VirtualBox)
-src/platform/win/VirtualBox.rc_DEPS  = $(PATH_VirtualBox)/VirtualBox-icon.rc
-src/platform/win/VirtualBox.rc_CLEAN = $(PATH_VirtualBox)/VirtualBox-icon.rc
+src/platform/win/VirtualBox.rc_INCS  = $(VirtualBox_0_OUTDIR)
+src/platform/win/VirtualBox.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+src/platform/win/VirtualBox.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 
-$$(PATH_VirtualBox)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+$$(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(APPEND) -t $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 endif # win
@@ -846,7 +846,7 @@ VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/platform/darwin/PkgInfo \
-	$(PATH_VirtualBox.app)/Info.plist \
+	$(VirtualBox_0_OUTDIR.app)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
@@ -854,7 +854,7 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
 
-$$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(VirtualBox_0_OUTDIR.app)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -872,12 +872,12 @@ VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Content
 VirtualBoxVM.app_MODE = 644
 VirtualBoxVM.app_SOURCES = \
 	src/platform/darwin/VM-PkgInfo=>PkgInfo \
-	$(PATH_VirtualBoxVM.app)/VM-Info.plist=>Info.plist
+	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist
 VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/ \
 	Resources=>../../../Resources/
 
-$$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -901,12 +901,12 @@ vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents
 vmstarter.app_MODE = 644
 vmstarter.app_SOURCES = \
 	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
-	$(PATH_vmstarter.app)/vmstarter-Info.plist=>Info.plist
+	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist
 vmstarter.app_SYMLINKS = \
     MacOS=>../../../MacOS \
     Resources=>../../../Resources
 
-$$(PATH_vmstarter.app)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,vmstarter.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \

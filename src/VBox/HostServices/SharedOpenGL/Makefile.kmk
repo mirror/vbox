@@ -56,9 +56,10 @@ VBoxSharedCrOpenGL_INTERMEDIATES = \
 VBoxSharedCrOpenGL_INCS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include \
+## @todo r=bird: This does NOT work when running make from HostService or any of its subdirectories!
 VBoxSharedCrOpenGL_INCS = \
-	$(PATH_VBoxSVC) \
-	$(PATH_VBoxCOM)
+	$(VBoxSVC_0_OUTDIR) \
+	$(VBoxCOM_0_OUTDIR)
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_INCS += \
  	$(VBOX_XPCOM_INCS)
@@ -147,8 +148,8 @@ VBoxOGLcrserverlib_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/server_simpleget.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h
 ifdef VBOXCR_LOGFPS
-VBoxOGLcrserverlib_DEFS += VBOXCR_LOGFPS 
-endif	
+VBoxOGLcrserverlib_DEFS += VBOXCR_LOGFPS
+endif
 
 #
 # Generate files for VBoxOGLcrserverlib
