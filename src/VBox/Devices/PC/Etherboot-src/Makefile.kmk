@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,26 @@
 
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
+
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win.x86 win.amd64 linux.amd64 freebsd.amd64)
+ #
+ # Build it from a precompiled binary.
+ # See notes about the binary load address and size way below.
+ #
+ LIBRARIES += NetBiosBin
+ NetBiosBin_TEMPLATE = VBOXR3
+ NetBiosBin_SOURCES  = $(NetBiosBin_0_OUTDIR)/NetBiosBin.c
+ NetBiosBin_CLEAN    = $(NetBiosBin_0_OUTDIR)/NetBiosBin.c
+
+ $$(NetBiosBin_0_OUTDIR)/NetBiosBin.c: $(PATH_SUB_CURRENT)/pcnet32.zrom $(VBOX_BIN2C)
+	$(call MSG_TOOL,bin2c,NetBiosBin,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -min 16 -max 24 -mask 0xfff -export NetBiosBinary $< $@
+
+else
+#
+# Build it from scratch.
+# TODO: Stop using $(PATH_TARGET)!
+#
 
 BLDPROGS  += nrv2b makerom
 LIBRARIES += NetBiosBin
@@ -288,10 +308,6 @@ $(PATH_TARGET)/pcnet32.rom.prf: $(PCIENTRY) $(PCNET32_RUNTIME) $(PREFIXOBJS) $(P
 # are not up to compiling Etherboot (the linker messes up big time, shifting
 # the final binary to 0xffc00000 and filling out relocations incorrectly
 # (first occurrence is the call to prelocate in the pciprefix.o file).
-ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win.x86 win.amd64 linux.amd64 freebsd.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
-$(PATH_TARGET)/pcnet32.zrom: $(PATH_SUB_CURRENT)/pcnet32.zrom | $(call DIRDEP,$(PATH_TARGET))
-	$(CP) -f $< $@
-else
 $(PATH_TARGET)/pcnet32.zrom: $(PATH_TARGET)/pcnet32.rom.zprf $(MAKEROM) $(MAKEDEPS)
 	$(call MSG_TOOL,makerom,NetBiosBin,$<,$@)
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
@@ -312,7 +328,6 @@ $(PATH_TARGET)/pcnet32.rom: $(PATH_TARGET)/pcnet32.rom.prf $(MAKEROM) $(MAKEDEPS
 	$(QUIET)$(EB_OBJCOPY) -O binary $< $@.tmp
 	$(QUIET)$(MAKEROM) -p 0x1022,0x2000 -i $(IDENT) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
-endif
 
 
 # Manually created dependencies.
@@ -790,5 +805,6 @@ include/pxe_export.h:
 
 include/mii.h:
 
+endif # build it
 include $(KBUILD_PATH)/subfooter.kmk
 
