@@ -755,8 +755,7 @@ endif # !VBOX_ONLY_SDK (the ifndef is far above)
 #
 INSTALLS.win += VBoxMain-com-inst
 VBoxMain-com-inst_INST = $(INST_BIN)
-VBoxMain-com-inst_SOURCES = \
-	win/comregister.cmd
+VBoxMain-com-inst_SOURCES = src-all/win/comregister.cmd
 
 
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
