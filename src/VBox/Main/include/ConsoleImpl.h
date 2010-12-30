@@ -50,7 +50,7 @@ class ExtPackManager;
 #endif
 
 #ifdef RT_OS_WINDOWS
-# include "win/VBoxComEvents.h"
+# include "../src-server/win/VBoxComEvents.h"
 #endif
 
 struct VUSBIRHCONFIG;
