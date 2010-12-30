@@ -36,7 +36,7 @@ VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 ifdef VBOX_ONLY_SDK
  # used by some rules
  PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
- BLDDIRS        += $(PATH_VBoxCOM) $(PATH_BIN)/components
+ BLDDIRS        += $(VBoxCOM_0_OUTDIR) $(PATH_BIN)/components
  # I'm Evil! Dr. Evil.
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
@@ -86,11 +86,11 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
-	$(PATH_VBoxCOM)/VirtualBox.h   \
-	$(PATH_VBoxCOM)/VirtualBox_i.c \
-	$(PATH_VBoxCOM)/VirtualBox.tlb
+	$(VBoxCOM_0_OUTDIR)/VirtualBox.h   \
+	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+	$(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
 
- VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
+ VBOX_MAIN_PREREQS += $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 endif
 
@@ -251,11 +251,11 @@ VBoxSVC_CXXFLAGS.freebsd = -O0
 
 VBoxSVC_INCS = \
 	include \
-	$(PATH_VBoxSVC) \
+	$(VBoxSVC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
 	.
 VBoxSVC_INCS.win = \
-	$(PATH_VBoxCOM)
+	$(VBoxCOM_0_OUTDIR)
 ifdef VBOX_WITH_USB
  VBoxSVC_INCS.os2 = \
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
@@ -426,14 +426,14 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
-src-server/win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
-src-server/win/VBoxSVC.rc_DEPS  = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
-src-server/win/VBoxSVC.rc_CLEAN = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
+src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)
+src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
+src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
 
-$$(PATH_VBoxSVC)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
+$$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-$$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
+$$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 
 
@@ -450,15 +450,15 @@ VBOX_XML_SCHEMA.solaris       = $(VBOX_PATH_MAIN_SRC)/xml/VirtualBox-settings-so
 
 VBOX_XML_CONVERTER_TEMPLATE   = $(VBOX_PATH_MAIN_SRC)/xml/SettingsConverter.xsl
 
-$$(PATH_VBoxSVC)/xml_VirtualBox_settings_xsd.h: $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_BIN2C)
+$$(VBoxSVC_0_OUTDIR)/xml_VirtualBox_settings_xsd.h: $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) _xml_VirtualBox_settings_xsd $< $@
 
-$$(PATH_VBoxSVC)/xml_VirtualBox_settings_common_xsd.h: $(VBOX_XML_SCHEMA_COMMON) $(VBOX_BIN2C)
+$$(VBoxSVC_0_OUTDIR)/xml_VirtualBox_settings_common_xsd.h: $(VBOX_XML_SCHEMA_COMMON) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) _xml_VirtualBox_settings_common_xsd $< $@
 
-$$(PATH_VBoxSVC)/xml_SettingsConverter_xsl.h: $(VBOX_XML_CONVERTER_TEMPLATE) $(VBOX_BIN2C)
+$$(VBoxSVC_0_OUTDIR)/xml_SettingsConverter_xsl.h: $(VBOX_XML_CONVERTER_TEMPLATE) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) _xml_SettingsConverter_xsl $< $@
 
@@ -538,18 +538,18 @@ ifdef VBOX_WITH_HARDENING
 endif
 VBoxSVCM_INCS           = \
 	include \
-	$(PATH_VBoxC) \
+	$(VBoxC_0_OUTDIR) \
 	.
 VBoxSVCM_INTERMEDIATES  = $(VBOX_MAIN_PREREQS)
 VBoxSVCM_SOURCES        = \
 	src-server/xpcom/server_module.cpp
 VBoxSVCM_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxSVCM.dylib \
-	-exported_symbols_list $(PATH_VBoxSVCM)/VBoxSVCM.def
+	-exported_symbols_list $(VBoxSVCM_0_OUTDIR)/VBoxSVCM.def
  ifeq ($(KBUILD_TARGET),darwin)
-VBoxSVCM_ORDERDEPS     += $(PATH_VBoxSVCM)/VBoxSVCM.def
-VBoxSVCM_CLEAN         += $(PATH_VBoxSVCM)/VBoxSVCM.def
-$$(PATH_VBoxSVCM)/VBoxSVCM.def:
+VBoxSVCM_ORDERDEPS     += $(VBoxSVCM_0_OUTDIR)/VBoxSVCM.def
+VBoxSVCM_CLEAN         += $(VBoxSVCM_0_OUTDIR)/VBoxSVCM.def
+$$(VBoxSVCM_0_OUTDIR)/VBoxSVCM.def:
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
  endif
@@ -593,15 +593,15 @@ VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 
 VBoxC_INCS          = \
 	include \
-	$(PATH_VBoxC) \
+	$(VBoxC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H))
 VBoxC_INCS.win      = \
-	$(PATH_VBoxCOM) \
+	$(VBoxCOM_0_OUTDIR) \
 	.
 
 VBoxC_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
-	-exported_symbols_list $(PATH_VBoxC)/VBoxC.def \
+	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
 ifdef VBOX_USE_VCC80
  VBoxC_LDFLAGS.win = /MANIFEST
@@ -683,9 +683,9 @@ VBoxC_SOURCES += \
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
-VBoxC_ORDERDEPS += $(PATH_VBoxC)/VBoxC.def
-VBoxC_CLEAN     += $(PATH_VBoxC)/VBoxC.def
-$$(PATH_VBoxC)/VBoxC.def: $(MAKEFILE_CURRENT)
+VBoxC_ORDERDEPS += $(VBoxC_0_OUTDIR)/VBoxC.def
+VBoxC_CLEAN     += $(VBoxC_0_OUTDIR)/VBoxC.def
+$$(VBoxC_0_OUTDIR)/VBoxC.def: $(MAKEFILE_CURRENT)
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
 	$(APPEND) $@ _VBoxDriversRegister
@@ -696,10 +696,10 @@ src-client/ConsoleImpl.cpp_DEFS = \
 	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
 
 
-src-client/win/VBoxC.rc_DEPS = $(PATH_VBoxC)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
-VBoxC_CLEAN.win  += $(PATH_VBoxC)/VBoxC.rgs
+src-client/win/VBoxC.rc_DEPS = $(VBoxC_0_OUTDIR)/VBoxC.rgs $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+VBoxC_CLEAN.win  += $(VBoxC_0_OUTDIR)/VBoxC.rgs
 
-$$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
+$$(VBoxC_0_OUTDIR)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
 
@@ -724,7 +724,7 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxCOM_DEFS.x86      += _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64    += _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \
-	$(PATH_VBoxCOM)/VirtualBox_i.c
+	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
 else # !win
  VBoxCOM_SOURCES       += \
 	glue/xpcom/helpers.cpp
@@ -816,7 +816,7 @@ ifdef VBOX_WITH_XPCOM
 testidl:    $(VBOX_IDL_FILE.XPCOM) $(VBOX_IDL_TYPELIB.XPCOM)
 testidlhdr: $(VBOX_IDL_HEADER.XPCOM)
 else
-testidl:    $(VBOX_IDL_FILE.MSCOM) $(PATH_VBoxCOM)/VirtualBox_i.c
+testidl:    $(VBOX_IDL_FILE.MSCOM) $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
 endif
 
 
@@ -825,23 +825,23 @@ endif
 # and (b) generating more stuff *after* the main target has been completed.
 #
 # What needs to be done is to not depend on _i.c in the object subdir, but on all the final outputs.
-$(PATH_VBoxCOM)/VirtualBox_i.c \
+$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 + $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
-+ $(PATH_VBoxCOM)/VirtualBox.h \
++ $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
 + $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
-+ $(PATH_VBoxCOM)/VirtualBox.tlb \
-+ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $(call DIRDEP,$(PATH_VBoxCOM))
++ $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb \
++ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $(call DIRDEP,$(VBoxCOM_0_OUTDIR))
 	$(VBOX_MAIN_IDL) $(IDL_DEFS) \
-		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxCOM)) \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/include
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
+	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
+	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
+	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
 
 #
 # Translation stuff

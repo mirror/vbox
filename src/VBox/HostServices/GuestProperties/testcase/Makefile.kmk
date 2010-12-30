@@ -22,11 +22,11 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 
  # Set this in LocalConfig.kmk if you are working on the guest property
  # service to automatically run the testcase at build time.
- #    OTHERS += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+ #    OTHERS += $(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run
  #
 
  PROGRAMS += tstGuestPropSvc
- TESTING  += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+ TESTING  += $(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run
  tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
  # The second define here is to ensure that the testcase will run fast,
  # without waiting for any thread synchronisation.
@@ -34,7 +34,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
  tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
 
-$$(PATH_tstGuestPropSvc)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
+$$(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstGuestPropSvc) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 

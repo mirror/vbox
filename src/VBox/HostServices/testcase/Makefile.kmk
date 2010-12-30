@@ -23,16 +23,16 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   #
   # Set this in LocalConfig.kmk if you are working on HGCM service internals
   # to automatically run the unit test at build time:
-  #    OTHERS += $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+  #    OTHERS += $(tstHGCMSvc_0_OUTDIR)/tstHGCMSvc.run
   #
   PROGRAMS += tstHGCMSvc
-  TESTING  += $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+  TESTING  += $(tstHGCMSvc_0_OUTDIR)/tstHGCMSvc.run
   tstHGCMSvc_TEMPLATE = VBOXR3TSTEXE
   tstHGCMSvc_DEFS     = VBOX_WITH_HGCM VBOX_TEST_HGCM_PARMS
   tstHGCMSvc_SOURCES  = tstHGCMSvc.cpp
-  tstHGCMSvc_CLEAN    = $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+  tstHGCMSvc_CLEAN    = $(tstHGCMSvc_0_OUTDIR)/tstHGCMSvc.run
 
-$$(PATH_tstHGCMSvc)/tstHGCMSvc.run: $$(INSTARGET_tstHGCMSvc)
+$$(tstHGCMSvc_0_OUTDIR)/tstHGCMSvc.run: $$(INSTARGET_tstHGCMSvc)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstHGCMSvc) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 

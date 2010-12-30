@@ -440,47 +440,47 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_DTRACE_R3
-  DevicesR3_DEFS        += VBOX_WITH_DTRACE
-  DevicesR3_INCS        += $(DevicesR3_0_OUTDIR)
+  DevicesR3_DEFS          += VBOX_WITH_DTRACE
+  DevicesR3_INCS          += $(DevicesR3_0_OUTDIR)
   DevicesR3_INTERMEDIATES += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h
   $$(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h: $(PATH_SUB_CURRENT)/build/VBoxDD-dtrace.d | $$(dir $$@)
 	dtrace -C -h -o $@ -s $<
  endif
 
  ifdef VBOX_WITH_DYNAMIC_DSDT
-  DevicesR3_CLEAN       += $(PATH_DevicesR3)/vboxdsl.hex
-  PC/ACPI/VBoxAcpi.cpp_DEPS = $(PATH_DevicesR3)/vboxdsl.hex
+  DevicesR3_CLEAN          += $(DevicesR3_0_OUTDIR)/vboxdsl.hex
+  PC/ACPI/VBoxAcpi.cpp_DEPS = $(DevicesR3_0_OUTDIR)/vboxdsl.hex
 
-  $$(PATH_DevicesR3)/vboxdsl.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
+  $$(DevicesR3_0_OUTDIR)/vboxdsl.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,DevicesR3,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -export VboxDslSource $< $@
 
-  vboxdsl.hex:: $$(PATH_DevicesR3)/vboxdsl.hex
+  vboxdsl.hex:: $$(DevicesR3_0_OUTDIR)/vboxdsl.hex
 
  else  # !VBOX_WITH_DYNAMIC_DSDT
   # VBoxAcpi.cpp needs vboxaml.hex which we generate from PC/vbox.dsl
   DevicesR3_CLEAN       += \
- 	$(PATH_DevicesR3)/vboxaml.hex \
- 	$(PATH_DevicesR3)/vboxaml.aml \
- 	$(PATH_DevicesR3)/vboxssdt-standard.hex \
- 	$(PATH_DevicesR3)/vboxssdt-standard.aml \
- 	$(PATH_DevicesR3)/vboxssdt-standard.aml.tmp \
- 	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex \
- 	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.aml \
- 	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.aml.tmp \
- 	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.aml.pre
+ 	$(DevicesR3_0_OUTDIR)/vboxaml.hex \
+ 	$(DevicesR3_0_OUTDIR)/vboxaml.aml \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-standard.hex \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-standard.aml \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-standard.aml.tmp \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.hex \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.aml \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.aml.tmp \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.aml.pre
   PC/ACPI/VBoxAcpi.cpp_DEPS = \
- 	$(PATH_DevicesR3)/vboxaml.hex \
- 	$(PATH_DevicesR3)/vboxssdt-standard.hex \
- 	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex
+ 	$(DevicesR3_0_OUTDIR)/vboxaml.hex \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-standard.hex \
+ 	$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.hex
 
-  $$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
+  $$(DevicesR3_0_OUTDIR)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 
-  vboxaml.hex:: $$(PATH_DevicesR3)/vboxaml.hex
+  vboxaml.hex:: $$(DevicesR3_0_OUTDIR)/vboxaml.hex
 
-  $$(PATH_DevicesR3)/vboxssdt-standard.hex: $(PATH_SUB_CURRENT)/PC/vbox-standard.dsl | $$(dir $$@)
+  $$(DevicesR3_0_OUTDIR)/vboxssdt-standard.hex: $(PATH_SUB_CURRENT)/PC/vbox-standard.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
@@ -490,9 +490,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(QUIET)$(RM) -f $@.tmp
 
 
-  vboxssdt-standard.hex:: $$(PATH_DevicesR3)/vboxssdt-standard.hex
+  vboxssdt-standard.hex:: $$(DevicesR3_0_OUTDIR)/vboxssdt-standard.hex
 
-  $$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
+  $$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.pre
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -x c -o $@.pre $<
@@ -503,10 +503,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(QUIET)$(RM) -f $@.tmp $@.pre
 
 
-  vboxssdt-cpuhotplug.hex:: $$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex
+  vboxssdt-cpuhotplug.hex:: $$(DevicesR3_0_OUTDIR)/vboxssdt-cpuhotplug.hex
 
  endif # !VBOX_WITH_DYNAMIC_DSDT
- PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
+ PC/ACPI/VBoxAcpi.cpp_INCS = $(DevicesR3_0_OUTDIR)
 
  # For finding PCIInternal.h from VBox/pci.h.
  Bus/DevPCI.cpp_INCS      = Bus
@@ -515,8 +515,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  Bus/MsixCommon.cpp_INCS  = Bus
 
  # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
- Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
- Graphics/DevVGA.cpp_DEPS = $(PATH_VgaBiosBin)/vbetables.h
+ Graphics/DevVGA.cpp_INCS = $(VgaBiosBin_0_OUTDIR)
+ Graphics/DevVGA.cpp_DEPS = $(VgaBiosBin_0_OUTDIR)/vbetables.h
 
 
  ifdef VBOX_WITH_RAW_MODE

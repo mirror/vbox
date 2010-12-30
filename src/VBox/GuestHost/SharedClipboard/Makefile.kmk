@@ -23,28 +23,30 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   #
   # Set these in LocalConfig.kmk if you are working on the X11 clipboard service
   # to automatically run the unit tests at build time:
-  #    OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
-  #    OTHERS += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  #    OTHERS += $(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run
+  #    OTHERS += $(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
   #
   PROGRAMS += tstClipboardX11 tstClipboardX11Smoke
-  TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  TESTING  += \
+  	$(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run \
+  	$(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
   tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
   tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
   tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
-  tstClipboardX11_CLEAN    = $(PATH_tstClipboardX11)/tstClipboardX11.run
+  tstClipboardX11_CLEAN    = $(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run
 
   tstClipboardX11Smoke_TEMPLATE = VBOXR3TSTEXE
   tstClipboardX11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
   tstClipboardX11Smoke_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
   tstClipboardX11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
   tstClipboardX11Smoke_LIBS     = X11 Xt
-  tstClipboardX11Smoke_CLEAN    = $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  tstClipboardX11Smoke_CLEAN    = $(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
 
-$$(PATH_tstClipboardX11)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
+$$(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-$$(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run:	$$(INSTARGET_tstClipboardX11)
+$$(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run:	$$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11Smoke) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif

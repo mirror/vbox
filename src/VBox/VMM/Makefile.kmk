@@ -254,8 +254,8 @@ if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
   VMMRCBuiltin_SOURCES = VMMRC/VMMRCBuiltin.def
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
-  VMMRCBuiltin_SOURCES = $(PATH_VMMRCBuiltin)/VMMRCBuiltin.def
-  $$(PATH_VMMRCBuiltin)/VMMRCBuiltin.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRCBuiltin.def | $$(dir $$@)
+  VMMRCBuiltin_SOURCES = $(VMMRCBuiltin_0_OUTDIR)/VMMRCBuiltin.def
+  $$(VMMRCBuiltin_0_OUTDIR)/VMMRCBuiltin.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRCBuiltin.def | $$(dir $$@)
 	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' --output $@ $<
  endif
 
@@ -265,10 +265,10 @@ if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
  #
  LIBRARIES += VMMRCImp
  VMMRCImp_TEMPLATE = VBoxRc
- VMMRCImp_SOURCES = $(PATH_VMMRCImp)/VMMRC.def
- VMMRCImp_CLEAN   = $(PATH_VMMRCImp)/VMMRC.def
+ VMMRCImp_SOURCES = $(VMMRCImp_0_OUTDIR)/VMMRC.def
+ VMMRCImp_CLEAN   = $(VMMRCImp_0_OUTDIR)/VMMRC.def
 
- $$(PATH_VMMRCImp)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
+ $$(VMMRCImp_0_OUTDIR)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
  ifeq ($(VBOX_LDR_FMT32),lx)
 	$(SED) \
 		-e '/not-os2/d' \
@@ -294,10 +294,10 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  #
  LIBRARIES += VMMR0Imp
  VMMR0Imp_TEMPLATE = VBoxR0
- VMMR0Imp_SOURCES  = $(PATH_VMMR0Imp)/VMMR0.def
- VMMR0Imp_CLEAN    = $(PATH_VMMR0Imp)/VMMR0.def
+ VMMR0Imp_SOURCES  = $(VMMR0Imp_0_OUTDIR)/VMMR0.def
+ VMMR0Imp_CLEAN    = $(VMMR0Imp_0_OUTDIR)/VMMR0.def
 
- $$(PATH_VMMR0Imp)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
+ $$(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
  ifeq ($(VBOX_LDR_FMT),lx)
 	$(SED) \
 		-e '/not-os2/d' \
@@ -410,7 +410,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   VMMRC_SOURCES += VMMRC/VMMRC.def
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
-  VMMRC_SOURCES += $(PATH_VMMRCImp)/VMMRC.def
+  VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
  endif
 
 
@@ -501,7 +501,7 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_SOURCES += VMMR0/VMMR0.def
  endif
  ifeq ($(VBOX_LDR_FMT),lx)
-  VMMR0_SOURCES += $(PATH_VMMR0Imp)/VMMR0.def
+  VMMR0_SOURCES += $(VMMR0Imp_0_OUTDIR)/VMMR0.def
  endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm

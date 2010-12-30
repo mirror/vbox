@@ -53,7 +53,7 @@ LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86 VBoxGuestR3LibShared-x86
 VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
 VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM
 VBoxGuestR0Lib_INCS         = \
-	$(PATH_VBoxGuestR0Lib)
+	$(VBoxGuestR0Lib_0_OUTDIR)
 VBoxGuestR0Lib_SOURCES      = \
 	GenericRequest.cpp \
 	SysHlp.cpp \

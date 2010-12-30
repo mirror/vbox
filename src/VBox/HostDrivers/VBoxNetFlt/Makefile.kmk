@@ -72,11 +72,11 @@ ifeq ($(KBUILD_TARGET),darwin)
 INSTALLS += VBoxNetFlt.kext
 VBoxNetFlt.kext_INST     = $(INST_VBOXNETFLT)Contents/
 VBoxNetFlt.kext_SOURCES  = \
-	$(PATH_VBoxNetFlt.kext)/Info.plist
+	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
 VBoxNetFlt.kext_CLEAN    = \
-	$(PATH_VBoxNetFlt.kext)/Info.plist
+	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
 
-$$(PATH_VBoxNetFlt.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -208,7 +208,7 @@ VBoxNetFltNotify_TEMPLATE   = VBOXR3STATIC
 VBoxNetFltNotify_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
 VBoxNetFltNotify_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
 VBoxNetFltNotify_INCS       = \
-	$(PATH_VBoxNetFltNotify)
+	$(VBoxNetFltNotify_0_OUTDIR)
 VBoxNetFltNotify_SOURCES    = \
 	win/notifyobj/VBoxNetFltNotify.cpp \
 	win/notifyobj/VBoxNetFltNotify.def \
@@ -217,11 +217,11 @@ VBoxNetFltNotify_LIBS       = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
 #VBoxNetFltNotify_INTERMEDIATES =
 VBoxNetFltNotify_DEPS       = \
-	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
-	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_p.c \
-	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.h \
-	$(PATH_VBoxNetFltNotify)/dlldata.c \
-	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.tlb
+	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_i.c \
+	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_p.c \
+	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.h \
+	$(VBoxNetFltNotify_0_OUTDIR)/dlldata.c \
+	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.tlb
 VBoxNetFltNotify_CLEAN      = $(VBoxNetFltNotify_DEPS)
 
 VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
@@ -230,15 +230,15 @@ VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(f
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
-$$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
-+ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_p.c \
-+ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.h \
-+ $$(PATH_VBoxNetFltNotify)/dlldata.c \
-+ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.tlb: \
+$$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_i.c \
++ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_p.c \
++ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.h \
++ $$(VBoxNetFltNotify_0_OUTDIR)/dlldata.c \
++ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.tlb: \
 		$(PATH_SUB_CURRENT)/win/notifyobj/VBoxNetFltNotifyn.idl \
 		| $$(dir $$@)
 	$(VBOXNETFLT_NOTIFY_IDL) /nologo \
-		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxNetFltNotify)) \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNotify_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
@@ -362,21 +362,21 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-src_MODE    = a+r,u+w
  VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
  VBoxNetFlt-src_SOURCES+= \
-	$(PATH_VBoxNetFlt-src)/Makefile
+	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
  VBoxNetFlt-src_CLEAN   = \
-	$(PATH_VBoxNetFlt-src)/Makefile	\
+	$(VBoxNetFlt-src_0_OUTDIR)/Makefile	\
 	$(PATH_TARGET)/VBoxNetFlt-src-1.dep
 
  VBoxNetFlt-sh_INST    = bin/src/vboxnetflt/
  VBoxNetFlt-sh_MODE    = a+rx,u+w
  VBoxNetFlt-sh_SOURCES = \
-	$(PATH_VBoxNetFlt-sh)/build_in_tmp \
+	$(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
- VBoxNetFlt-sh_CLEAN   = $(PATH_VBoxNetFlt-sh)/build_in_tmp
+ VBoxNetFlt-sh_CLEAN   = $(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp
 
 
  includedep $(PATH_TARGET)/VBoxNetFlt-src-1.dep
- $$(PATH_VBoxNetFlt-src)/Makefile: \
+ $$(VBoxNetFlt-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(VBoxNetFlt/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
@@ -389,7 +389,7 @@ ifeq ($(KBUILD_TARGET),linux)
 	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
  # Script needed for building the kernel module
- $$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
+ $$(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
@@ -416,11 +416,11 @@ $(PATH_OUT)/opt_netgraph.h:
  VBoxNetFlt-src_MODE    = a+r,u+w
  VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
  VBoxNetFlt-src_SOURCES+= \
-	$(PATH_VBoxNetFlt-src)/Makefile
+	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
  VBoxNetFlt-src_CLEAN   = \
-	$(PATH_VBoxNetFlt-src)/Makefile	\
+	$(VBoxNetFlt-src_0_OUTDIR)/Makefile	\
 
- $$(PATH_VBoxNetFlt-src)/Makefile: \
+ $$(VBoxNetFlt-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/freebsd/Makefile \
 		$$(if $$(eq $$(VBoxNetFlt/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)

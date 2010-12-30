@@ -37,10 +37,10 @@ VBoxUSB_INST          = $(INST_VBOXUSB)Contents/MacOS/
 
 INSTALLS += VBoxUSB.kext
 VBoxUSB.kext_INST     = $(INST_VBOXUSB)Contents/
-VBoxUSB.kext_SOURCES  =	$(PATH_VBoxUSB.kext)/Info.plist
-VBoxUSB.kext_CLEAN    = $(PATH_VBoxUSB.kext)/Info.plist
+VBoxUSB.kext_SOURCES  =	$(VBoxUSB.kext_0_OUTDIR)/Info.plist
+VBoxUSB.kext_CLEAN    = $(VBoxUSB.kext_0_OUTDIR)/Info.plist
 
-$$(PATH_VBoxUSB.kext)/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(VBoxUSB.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxUSB,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \

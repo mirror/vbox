@@ -75,10 +75,10 @@ endif
 #
 # Actually, this is darn annoying and will *NOT* be tolerated for any new code!
 #
-VBoxClient_LIBPATH  += $(PATH_VBoxClient)
-VBoxClient_ORDERDEPS = $(PATH_VBoxClient)/libstdc++.a
-VBoxClient_CLEAN     = $(PATH_VBoxClient)/libstdc++.a
-$$(PATH_VBoxClient)/libstdc++.a:
+VBoxClient_LIBPATH  += $(VBoxClient_0_OUTDIR)
+VBoxClient_ORDERDEPS = $(VBoxClient_0_OUTDIR)/libstdc++.a
+VBoxClient_CLEAN     = $(VBoxClient_0_OUTDIR)/libstdc++.a
+$$(VBoxClient_0_OUTDIR)/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@ \
@@ -90,7 +90,7 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 
 # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
 # to automatically run the unit test at build time.
-#       OTHERS += $(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto.run
+#       OTHERS += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run
 
    PROGRAMS += tstSeamlessX11-auto
    tstSeamlessX11-auto_TEMPLATE = VBOXR3TSTEXE
@@ -101,8 +101,8 @@ ifdef VBOX_X11_SEAMLESS_GUEST
    tstSeamlessX11-auto_LIBS = \
            $(LIB_RUNTIME)
 
-   TESTING  += $(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto
-$$(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto.run: \
+   TESTING  += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto
+$$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
         $$(INSTARGET_tstSeamlessX11-auto)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstSeamlessX11-auto) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
