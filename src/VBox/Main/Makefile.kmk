@@ -278,99 +278,99 @@ VBoxSVC_INTERMEDIATES = \
 	$(VBOX_AUTOGEN_EVENT_H)
 
 VBoxSVC_SOURCES = \
-	Global.cpp \
-	Logging.cpp \
-	Matching.cpp \
-	xml/Settings.cpp \
-	VirtualBoxBase.cpp \
-	VirtualBoxErrorInfoImpl.cpp \
-	VirtualBoxImpl.cpp \
-	ApplianceImpl.cpp \
-	ApplianceImplIO.cpp \
-	ApplianceImplExport.cpp \
-	ApplianceImplImport.cpp \
+	src-all/DisplayPNGUtil.cpp \
+	src-all/DisplayResampleImage.cpp \
+	src-all/DisplayUtils.cpp \
+	src-all/EventImpl.cpp \
+	src-all/Global.cpp \
+	src-all/Logging.cpp \
+	src-all/PciDeviceAttachmentImpl.cpp \
+	src-all/ProgressImpl.cpp \
+	src-all/SharedFolderImpl.cpp \
+	src-all/VirtualBoxBase.cpp \
+	src-all/VirtualBoxErrorInfoImpl.cpp \
+	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
+	src-server/ApplianceImpl.cpp \
+	src-server/ApplianceImplExport.cpp \
+	src-server/ApplianceImplImport.cpp \
+	src-server/ApplianceImplIO.cpp \
+	src-server/AudioAdapterImpl.cpp \
+	src-server/BandwidthControlImpl.cpp \
+	src-server/BandwidthGroupImpl.cpp \
+	src-server/BIOSSettingsImpl.cpp \
+	src-server/DHCPServerImpl.cpp \
+	src-server/DHCPServerRunner.cpp \
+	src-server/GuestOSTypeImpl.cpp \
+	src-server/HostImpl.cpp \
+	src-server/HostNetworkInterfaceImpl.cpp \
+	src-server/HostPower.cpp \
+	src-server/MachineImpl.cpp \
+	src-server/Matching.cpp \
+	src-server/MediumAttachmentImpl.cpp \
+	src-server/MediumFormatImpl.cpp \
+	src-server/MediumImpl.cpp \
+	src-server/MediumLock.cpp \
+	src-server/NATEngineImpl.cpp \
+	src-server/NetworkAdapterImpl.cpp \
+	src-server/ParallelPortImpl.cpp \
+	src-server/ProgressProxyImpl.cpp \
+	src-server/SerialPortImpl.cpp \
+	src-server/SnapshotImpl.cpp \
+	src-server/StorageControllerImpl.cpp \
+	src-server/SystemPropertiesImpl.cpp \
+	src-server/USBControllerImpl.cpp \
+	src-server/VFSExplorerImpl.cpp \
+	src-server/VirtualBoxImpl.cpp \
+	src-server/VRDEServerImpl.cpp \
 	xml/ovfreader.cpp \
-	VFSExplorerImpl.cpp \
-	MachineImpl.cpp \
-	PciDeviceAttachmentImpl.cpp \
-	SnapshotImpl.cpp \
-	MediumImpl.cpp \
-	MediumLock.cpp \
-	MediumAttachmentImpl.cpp \
-	MediumFormatImpl.cpp \
-	ProgressImpl.cpp \
-	ProgressProxyImpl.cpp \
-	HostImpl.cpp \
-	HostNetworkInterfaceImpl.cpp \
-	DHCPServerImpl.cpp \
-	DHCPServerRunner.cpp \
-	GuestOSTypeImpl.cpp \
-	NATEngineImpl.cpp \
-	NetworkAdapterImpl.cpp \
-	SerialPortImpl.cpp \
-	ParallelPortImpl.cpp \
-	USBControllerImpl.cpp \
-	StorageControllerImpl.cpp \
-	AudioAdapterImpl.cpp \
-	SharedFolderImpl.cpp \
-	SystemPropertiesImpl.cpp \
-	BIOSSettingsImpl.cpp \
-	HostPower.cpp \
-	EventImpl.cpp \
-	DisplayUtils.cpp \
-	DisplayPNGUtil.cpp \
-	DisplayResampleImage.cpp \
-	BandwidthControlImpl.cpp \
-	BandwidthGroupImpl.cpp \
-	$(VBOX_AUTOGEN_EVENT_CPP) \
-	VRDEServerImpl.cpp \
-	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
+	xml/Settings.cpp \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
-	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)
+	$(VBOX_AUTOGEN_EVENT_CPP) \
+	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
 
 VBoxSVC_SOURCES.darwin = \
-	darwin/iokit.cpp \
-	darwin/HostPowerDarwin.cpp
+	src-server/darwin/iokit.cpp \
+	src-server/darwin/HostPowerDarwin.cpp
 
 ifdef VBOX_WITH_CROGL
   ifneq ($(KBUILD_TARGET),darwin)
-    VBoxSVC_SOURCES += generic/OpenGLTest.cpp
+    VBoxSVC_SOURCES += src-server/generic/OpenGLTest.cpp
   endif
- VBoxSVC_SOURCES.darwin += darwin/OpenGLTestDarwin.cpp
+ VBoxSVC_SOURCES.darwin += src-server/darwin/OpenGLTestDarwin.cpp
 endif
 
 VBoxSVC_SOURCES.win = \
-	win/svcmain.cpp \
-	win/svchlp.cpp \
-	win/HostPowerWin.cpp \
-	win/VBoxSVC.rc \
-        win/VBoxComEvents.cpp
+	src-server/win/svcmain.cpp \
+	src-server/win/svchlp.cpp \
+	src-server/win/HostPowerWin.cpp \
+	src-server/win/VBoxSVC.rc \
+        src-server/win/VBoxComEvents.cpp
 
 VBoxSVC_SOURCES.linux = \
-	linux/HostHardwareLinux.cpp
+	src-server/linux/HostHardwareLinux.cpp
 
 VBoxSVC_SOURCES.solaris = \
-	linux/vbox-libhal.cpp \
-	solaris/DynLoadLibSolaris.cpp
+	src-server/linux/vbox-libhal.cpp \
+	src-server/solaris/DynLoadLibSolaris.cpp
 
 VBoxSVC_SOURCES.freebsd = \
-	freebsd/HostHardwareFreeBSD.cpp
+	src-server/freebsd/HostHardwareFreeBSD.cpp
 
 ifdef VBOX_WITH_USB
  ifdef VBOX_WITH_SYSFS_BY_DEFAULT
-  linux/USBProxyServiceLinux.cpp_DEFS += VBOX_WITH_SYSFS_BY_DEFAULT
+  src-server/linux/USBProxyServiceLinux.cpp_DEFS += VBOX_WITH_SYSFS_BY_DEFAULT
  endif
  VBoxSVC_SOURCES  += \
-	USBDeviceFilterImpl.cpp \
-	USBProxyService.cpp \
-	HostUSBDeviceImpl.cpp
- VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
- VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
- VBoxSVC_SOURCES.linux   +=   linux/USBGetDevices.cpp
- VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
- VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
- VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWindows.cpp
- VBoxSVC_SOURCES.freebsd += freebsd/USBProxyServiceFreeBSD.cpp
+	src-server/USBDeviceFilterImpl.cpp \
+	src-server/USBProxyService.cpp \
+	src-server/HostUSBDeviceImpl.cpp
+ VBoxSVC_SOURCES.darwin  +=  src-server/darwin/USBProxyServiceDarwin.cpp
+ VBoxSVC_SOURCES.linux   +=   src-server/linux/USBProxyServiceLinux.cpp
+ VBoxSVC_SOURCES.linux   +=   src-server/linux/USBGetDevices.cpp
+ VBoxSVC_SOURCES.os2     +=     src-server/os2/USBProxyServiceOs2.cpp
+ VBoxSVC_SOURCES.solaris += src-server/solaris/USBProxyServiceSolaris.cpp
+ VBoxSVC_SOURCES.win     +=     src-server/win/USBProxyServiceWindows.cpp
+ VBoxSVC_SOURCES.freebsd += src-server/freebsd/USBProxyServiceFreeBSD.cpp
 endif
 
 ifdef VBOX_WITH_NETFLT
@@ -379,7 +379,7 @@ ifdef VBOX_WITH_NETFLT
  #       we're using the VCC since we're not using the DDK compiler/crt.
  #       Since this is potentially risky, restrict it to the source file
  #       needing it.
- win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ src-server/win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
 	$(PATH_LIB)/WinNetConfig.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
@@ -400,40 +400,40 @@ endif
 
 ifdef VBOX_WITH_RESOURCE_USAGE_API
  VBoxSVC_SOURCES += \
-	PerformanceImpl.cpp \
-	Performance.cpp
- VBoxSVC_SOURCES.darwin  +=  darwin/PerformanceDarwin.cpp
- VBoxSVC_SOURCES.freebsd += freebsd/PerformanceFreeBSD.cpp
- VBoxSVC_SOURCES.linux   +=   linux/PerformanceLinux.cpp
- VBoxSVC_SOURCES.os2     +=     os2/PerformanceOs2.cpp
- VBoxSVC_SOURCES.solaris += solaris/PerformanceSolaris.cpp
- VBoxSVC_SOURCES.win     +=     win/PerformanceWin.cpp
+	src-server/PerformanceImpl.cpp \
+	src-server/Performance.cpp
+ VBoxSVC_SOURCES.darwin  +=  src-server/darwin/PerformanceDarwin.cpp
+ VBoxSVC_SOURCES.freebsd += src-server/freebsd/PerformanceFreeBSD.cpp
+ VBoxSVC_SOURCES.linux   +=   src-server/linux/PerformanceLinux.cpp
+ VBoxSVC_SOURCES.os2     +=     src-server/os2/PerformanceOs2.cpp
+ VBoxSVC_SOURCES.solaris += src-server/solaris/PerformanceSolaris.cpp
+ VBoxSVC_SOURCES.win     +=     src-server/win/PerformanceWin.cpp
  VBoxSVC_LDFLAGS.darwin  += -lproc
  VBoxSVC_LDFLAGS.solaris += -lkstat
  VBoxSVC_LDFLAGS.win     += psapi.lib powrprof.lib
 endif
 
 ifdef VBOX_WITH_HOSTNETIF_API
- VBoxSVC_SOURCES.win     +=     win/NetIf-win.cpp
- VBoxSVC_SOURCES.linux   +=   linux/NetIf-linux.cpp
- VBoxSVC_SOURCES.os2     +=     os2/NetIf-os2.cpp
- VBoxSVC_SOURCES.darwin  +=  darwin/NetIf-darwin.cpp
- VBoxSVC_SOURCES.solaris += solaris/NetIf-solaris.cpp
- VBoxSVC_SOURCES.freebsd += freebsd/NetIf-freebsd.cpp
+ VBoxSVC_SOURCES.win     +=     src-server/win/NetIf-win.cpp
+ VBoxSVC_SOURCES.linux   +=   src-server/linux/NetIf-linux.cpp
+ VBoxSVC_SOURCES.os2     +=     src-server/os2/NetIf-os2.cpp
+ VBoxSVC_SOURCES.darwin  +=  src-server/darwin/NetIf-darwin.cpp
+ VBoxSVC_SOURCES.solaris += src-server/solaris/NetIf-solaris.cpp
+ VBoxSVC_SOURCES.freebsd += src-server/freebsd/sNetIf-freebsd.cpp
  VBoxSVC_DEFS            += VBOX_WITH_HOSTNETIF_API
  if1of ($(KBUILD_TARGET), linux darwin solaris freebsd)
-  VBoxSVC_SOURCES        += generic/NetIf-generic.cpp
+  VBoxSVC_SOURCES        += src-server/generic/NetIf-generic.cpp
  endif
 endif
 
-win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
-win/VBoxSVC.rc_DEPS  = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
-win/VBoxSVC.rc_CLEAN = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
+src-server/win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
+src-server/win/VBoxSVC.rc_DEPS  = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
+src-server/win/VBoxSVC.rc_CLEAN = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc
 
 $$(PATH_VBoxSVC)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-$$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
+$$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-server/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 
 
@@ -500,7 +500,7 @@ if (   defined(VBOX_WITH_QTGUI) \
   endif
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE),VBOXMAINEXE)
-  VBoxTestOGL_SOURCES = generic/OpenGLTestApp.cpp
+  VBoxTestOGL_SOURCES = src-server/generic/OpenGLTestApp.cpp
   VBoxTestOGL_LIBS = \
 	$(if $(VBOX_WITH_CROGL), \
 	  $(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
@@ -515,7 +515,7 @@ if (   defined(VBOX_WITH_QTGUI) \
   ifdef VBOX_WITH_VIDEOHWACCEL
    VBoxTestOGL_QT_MODULES += Core Gui OpenGL
    VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
-   VBoxTestOGL_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
+   VBoxTestOGL_LIBS.win += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
    if1of ($(KBUILD_TARGET), solaris linux freebsd)
     # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
     VBoxTestOGL_LIBS += GL
@@ -542,7 +542,7 @@ VBoxSVCM_INCS           = \
 	.
 VBoxSVCM_INTERMEDIATES  = $(VBOX_MAIN_PREREQS)
 VBoxSVCM_SOURCES        = \
-	xpcom/server_module.cpp
+	src-server/xpcom/server_module.cpp
 VBoxSVCM_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_VBoxSVCM)/VBoxSVCM.def
@@ -623,54 +623,54 @@ VBoxC_INTERMEDIATES =            \
 	$(VBOX_AUTOGEN_EVENT_H)
 
 VBoxC_SOURCES = \
-	Global.cpp \
-	Logging.cpp \
-	USBDeviceImpl.cpp \
-	RemoteUSBDeviceImpl.cpp \
-	VirtualBoxBase.cpp \
-	VirtualBoxErrorInfoImpl.cpp \
-	VirtualBoxClientImpl.cpp \
-	ProgressImpl.cpp \
-	SharedFolderImpl.cpp \
-	SessionImpl.cpp \
-	ConsoleImpl.cpp \
-	ConsoleImpl2.cpp \
-	ConsoleImplTeleporter.cpp \
-	ConsoleVRDPServer.cpp \
-	GuestImpl.cpp \
-	GuestCtrlImpl.cpp \
-	KeyboardImpl.cpp \
-	MouseImpl.cpp \
-	DisplayImpl.cpp \
-	DisplayUtils.cpp \
-	DisplayPNGUtil.cpp \
-	DisplayResampleImage.cpp \
-	MachineDebuggerImpl.cpp \
-	VBoxDriversRegister.cpp \
-	AudioSnifferInterface.cpp \
-	VMMDevInterface.cpp \
-	EventImpl.cpp \
-	BusAssignmentManager.cpp \
-	PciDeviceAttachmentImpl.cpp \
+	src-all/DisplayPNGUtil.cpp \
+	src-all/DisplayResampleImage.cpp \
+	src-all/DisplayUtils.cpp \
+	src-all/EventImpl.cpp \
+	src-all/Global.cpp \
+	src-all/Logging.cpp \
+	src-all/PciDeviceAttachmentImpl.cpp \
+	src-all/ProgressImpl.cpp \
+	src-all/SharedFolderImpl.cpp \
+	src-all/VirtualBoxBase.cpp \
+	src-all/VirtualBoxErrorInfoImpl.cpp \
+	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
+	src-client/AudioSnifferInterface.cpp \
+	src-client/BusAssignmentManager.cpp \
+	src-client/ConsoleImpl.cpp \
+	src-client/ConsoleImpl2.cpp \
+	src-client/ConsoleImplTeleporter.cpp \
+	src-client/ConsoleVRDPServer.cpp \
+	src-client/DisplayImpl.cpp \
+	src-client/GuestCtrlImpl.cpp \
+	src-client/GuestImpl.cpp \
+	src-client/KeyboardImpl.cpp \
+	src-client/MachineDebuggerImpl.cpp \
+	src-client/MouseImpl.cpp \
+	src-client/RemoteUSBDeviceImpl.cpp \
+	src-client/SessionImpl.cpp \
+	src-client/USBDeviceImpl.cpp \
+	src-client/VBoxDriversRegister.cpp \
+	src-client/VirtualBoxClientImpl.cpp \
+	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
-	$(VBOX_XML_SCHEMADEFS_CPP) \
-	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)
+	$(VBOX_XML_SCHEMADEFS_CPP)
 VBoxC_SOURCES.win = \
-	win/dllmain.cpp \
-	win/VBoxC.def \
-	win/VBoxC.rc
+	src-client/win/dllmain.cpp \
+	src-client/win/VBoxC.def \
+	src-client/win/VBoxC.rc
 
 
 ifdef VBOX_WITH_XPCOM
 VBoxC_SOURCES += \
-	xpcom/module.cpp
+	src-client/xpcom/module.cpp
 endif
 
 ifdef VBOX_WITH_HGCM
 VBoxC_SOURCES += \
-	hgcm/HGCMObjects.cpp \
-	hgcm/HGCMThread.cpp \
-	hgcm/HGCM.cpp
+	src-client/HGCMObjects.cpp \
+	src-client/HGCMThread.cpp \
+	src-client/HGCM.cpp
 endif
 
 ifdef VBOX_WITH_CRHGSMI
@@ -679,7 +679,7 @@ endif
 
 ifdef VBOX_WITH_USB
 VBoxC_SOURCES += \
-	RemoteUSBBackend.cpp
+	src-client/RemoteUSBBackend.cpp
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -691,15 +691,15 @@ $$(PATH_VBoxC)/VBoxC.def: $(MAKEFILE_CURRENT)
 	$(APPEND) $@ _VBoxDriversRegister
 endif
 
-ConsoleImpl.cpp_DEFS = \
+src-client/ConsoleImpl.cpp_DEFS = \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
 	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
 
 
-win/VBoxC.rc_DEPS = $(PATH_VBoxC)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
+src-client/win/VBoxC.rc_DEPS = $(PATH_VBoxC)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 VBoxC_CLEAN.win  += $(PATH_VBoxC)/VBoxC.rgs
 
-$$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
+$$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-client/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
 
@@ -727,7 +727,7 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_VBoxCOM)/VirtualBox_i.c
 else # !win
  VBoxCOM_SOURCES       += \
-	xpcom/helpers.cpp
+	glue/xpcom/helpers.cpp
 endif # !win
 
 
@@ -740,8 +740,8 @@ ifdef VBOX_WITH_EXTPACK
  VBoxExtPackHelperApp_LDFLAGS.darwin = -framework Security
  VBoxExtPackHelperApp_LDFLAGS.win = /SUBSYSTEM:windows
  VBoxExtPackHelperApp_SOURCES = \
-	VBoxExtPackHelperApp.cpp \
-	ExtPackUtil.cpp
+	src-helper-apps/VBoxExtPackHelperApp.cpp \
+	src-all/ExtPackUtil.cpp
  VBoxExtPackHelperApp_LIBS = \
         $(LIB_RUNTIME)
 endif # VBOX_WITH_EXTPACK
@@ -784,7 +784,7 @@ include $(KBUILD_PATH)/subfooter.kmk
 #
 
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
-xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)
+glue/xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)
 
 $(VBOX_IDL_FILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)

@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "include/ExtPackUtil.h"
+#include "../include/ExtPackUtil.h"
 
 #include <iprt/ctype.h>
 #include <iprt/dir.h>

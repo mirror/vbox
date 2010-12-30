@@ -22,8 +22,8 @@ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardene
 #
 # Files from Main needed for building VBoxBFE
 #
-VBOXBFE_MAIN_CPP = MouseImpl.cpp
-VBOXBFE_MAIN_H   = MouseImpl.h ConsoleEvents.h
+VBOXBFE_MAIN_SRCS = src-client/MouseImpl.cpp
+VBOXBFE_MAIN_HDRS = MouseImpl.h ConsoleEvents.h
 
 #
 # Targets.
@@ -68,11 +68,11 @@ VBoxBFE_SOURCES = \
 	VBoxBFE.cpp \
 	VMMDevInterface.cpp \
 	DisplayImpl.cpp \
-	$(PATH_VBoxBFE)/MouseImpl.cpp \
 	KeyboardImpl.cpp \
 	StatusImpl.cpp \
 	MachineDebuggerImpl.cpp \
-	VMControl.cpp
+	VMControl.cpp \
+	$(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))
 
 ifdef VBOX_WITH_HGCM
 VBoxBFE_DEFS += VBOX_WITH_HGCM
@@ -165,22 +165,18 @@ $$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pn
 	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
-VBoxBFE_DEPS += $(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP) $(VBOXBFE_MAIN_H))
+# Files we share with Main needs to be copied into the output dir.
+VBoxBFE_INTERMEDIATES += $(addprefix $(VBoxBFE_0_OUTDIR)/,$(VBOXBFE_MAIN_HDRS))
+VBoxBFE_CLEAN         += $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS) $(VBOXBFE_MAIN_SRCS))
 
-# Pattern rules for copying needed files from Main
-$(addprefix $$(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP)): \
-		$$(PATH_VBoxBFE)/% : $(PATH_ROOT)/src/VBox/Main/% | $$(dir $$@)
+define def_copy_main_file
+$$(VBoxBFE_0_OUTDIR)/$(notdir $(file)): $(PATH_ROOT)/src/VBox/Main/$(file) | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(CP_EXT) $< $@
+	$(QUIET)$(CP_EXT) -f $< $@
+endef
+$(foreach file,$(addprefix include/,$(VBOXBFE_MAIN_HDRS)), $(evalval def_copy_main_file))
+$(foreach file,$(VBOXBFE_MAIN_SRCS), $(evalval def_copy_main_file))
 
-$(addprefix $$(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_H)): \
-		$$(PATH_VBoxBFE)/% : $(PATH_ROOT)/src/VBox/Main/include/% | $$(dir $$@)
-	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(CP_EXT) $< $@
-
-OTHER_CLEAN += \
-	$(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP)) \
-	$(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_H))
 
 
 endif # !VBOX_WITH_HARDENING || !darwin

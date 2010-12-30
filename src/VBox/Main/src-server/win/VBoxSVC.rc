@@ -18,7 +18,7 @@
 #include <windows.h>
 #include <VBox/version.h>
 
-#include "resource.h"
+#include "win/resource.h"
 
 VS_VERSION_INFO    VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0

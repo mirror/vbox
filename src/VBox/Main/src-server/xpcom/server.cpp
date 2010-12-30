@@ -30,7 +30,7 @@
 #include "prio.h"
 #include "prproces.h"
 
-#include "xpcom/server.h"
+#include "server.h"
 
 #include "Logging.h"
 
