@@ -106,7 +106,7 @@ rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
 for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
-for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl VBoxExtPackHelperApp; do
+for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 for d in /lib/modules/*; do
