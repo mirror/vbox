@@ -583,6 +583,9 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
     PVBOXNETQDISCPRIV pPriv;
 
     struct Qdisc *pExisting = QDISC_GET(pDev);
+    /* Do not install our qdisc for devices with no TX queues */
+    if (!pExisting->enqueue)
+        return;
     if (strcmp(pExisting->ops->id, "vboxnetflt"))
     {
         /* The existing qdisc is different from ours, let's create new one. */
@@ -668,9 +671,12 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
     pQdisc = QDISC_GET(pDev);
     if (strcmp(pQdisc->ops->id, "vboxnetflt"))
     {
-        /* Looks like the user has replaced our qdisc manually. */
-        printk("VBoxNetFlt: Failed to detach qdisc, wrong qdisc: %s\n",
-               pQdisc->ops->id);
+        if (pQdisc->enqueue)
+        {
+            /* Looks like the user has replaced our qdisc manually. */
+            printk("VBoxNetFlt: Failed to detach qdisc, wrong qdisc: %s\n",
+                   pQdisc->ops->id);
+        }
         return; // TODO: Consider returing an error
     }
 
