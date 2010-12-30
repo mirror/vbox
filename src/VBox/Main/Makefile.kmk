@@ -433,7 +433,7 @@ src-server/win/VBoxSVC.rc_CLEAN = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VB
 $$(PATH_VBoxSVC)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-$$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-server/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
+$$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 
 
@@ -699,7 +699,7 @@ src-client/ConsoleImpl.cpp_DEFS = \
 src-client/win/VBoxC.rc_DEPS = $(PATH_VBoxC)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 VBoxC_CLEAN.win  += $(PATH_VBoxC)/VBoxC.rgs
 
-$$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-client/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
+$$(PATH_VBoxC)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(PATH_VBoxC)/
 	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
 
