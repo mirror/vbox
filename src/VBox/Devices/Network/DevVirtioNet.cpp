@@ -761,7 +761,7 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb,
     else
         uHdrLen = sizeof(VNETHDR);
 
-    //vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+    vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
 
     unsigned int uOffset = 0;
     unsigned int nElem;
@@ -1111,13 +1111,18 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                         uOffset += elem.aSegsOut[i].cb;
                     }
                     pSgBuf->cbUsed = uSize;
-                    //vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
+                    vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
                     if (pGso)
                     {
                         /* Some guests (RHEL) may report HdrLen excluding transport layer header! */
-                        if (pGso->cbHdrs < Hdr.u16CSumStart + Hdr.u16CSumOffset + 2)
+                        /*
+                         * We cannot use cdHdrs provided by the guest because of different ways
+                         * it gets filled out by different versions of kernels.
+                         */
+                        //if (pGso->cbHdrs < Hdr.u16CSumStart + Hdr.u16CSumOffset + 2)
                         {
-                            Log4(("%s vnetTransmitPendingPackets: HdrLen before adjustment %d.\n", pGso->cbHdrs));
+                            Log4(("%s vnetTransmitPendingPackets: HdrLen before adjustment %d.\n",
+                                  INSTANCE(pState), pGso->cbHdrs));
                             switch (pGso->u8Type)
                             {
                                 case PDMNETWORKGSOTYPE_IPV4_TCP:
