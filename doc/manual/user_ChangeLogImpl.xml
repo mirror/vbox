@@ -35,6 +35,11 @@
           to devices with no TX queue; bug #7908</para>
       </listitem>
 
+      <listitem>
+        <para>Virtio-net: fixed the issue with TX performance in some Linux
+          guests</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
