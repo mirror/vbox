@@ -24,7 +24,8 @@
 
 #include <iprt/asm.h>
 #include <iprt/log.h>
-#include <iprt/string.h>
+
+#include <string.h>
 
 /** Send completion notification to the host for the command located at offset
  * @a offt into the host command buffer. */

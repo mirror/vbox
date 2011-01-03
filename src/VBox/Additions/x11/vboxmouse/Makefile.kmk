@@ -37,7 +37,7 @@ if1of ($(KBUILD_TARGET), linux)
 	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
-	IN_MODULE XFree86Module PNP_MOUSE IN_XF86_MODULE
+	IN_MODULE XFree86Module PNP_MOUSE
  vboxmouse_drv_INCS := \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/extensions \
@@ -62,7 +62,7 @@ endif
 DLLS += vboxmouse_drv_70
 vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxmouse_drv_70_DEFS += _XPG6 __EXTENSIONS__
 endif

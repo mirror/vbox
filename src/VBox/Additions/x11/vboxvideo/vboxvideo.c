@@ -1159,7 +1159,7 @@ static void
 vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    uint64_t cbOldFB, cbNewFB;
+    int64_t cbOldFB, cbNewFB;
 
     cbOldFB = pVBox->cbLine * pScrn->virtualX;
     cbNewFB = vboxLineLength(pScrn, cNewX) * cNewY;

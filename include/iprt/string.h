@@ -33,10 +33,6 @@
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
-#elif defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
-RT_C_DECLS_BEGIN
-# include "xf86_ansic.h"
-RT_C_DECLS_END
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
 /** @todo
  * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
