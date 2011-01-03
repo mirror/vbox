@@ -717,6 +717,40 @@ DECLINLINE(uint32_t) ich9pciGetRegionReg(int iRegion)
 
 #define INVALID_PCI_ADDRESS ~0U
 
+static int  ich9pciUnmapRegion(PPCIDEVICE pDev, int iRegion)
+{
+    PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
+    int rc = VINF_SUCCESS;
+    PPCIBUS pBus = pDev->Int.s.CTX_SUFF(pBus);
+
+    Assert (pRegion->size != 0);
+
+    if (pRegion->addr != INVALID_PCI_ADDRESS)
+    {
+        if (pRegion->type & PCI_ADDRESS_SPACE_IO)
+        {
+            /* Port IO */
+            rc = PDMDevHlpIOPortDeregister(pDev->pDevIns, pRegion->addr, pRegion->size);
+            AssertRC(rc);
+        }
+        else
+        {
+            RTGCPHYS GCPhysBase = pRegion->addr;
+            if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsR3, pDev->pDevIns, GCPhysBase))
+            {
+                /* unmap it. */
+                rc = pRegion->map_func(pDev, iRegion, NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
+                AssertRC(rc);
+                rc = PDMDevHlpMMIO2Unmap(pDev->pDevIns, iRegion, GCPhysBase);
+            }
+            else
+                rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);          
+        }
+    }
+
+    return rc;
+}
+
 static void ich9pciUpdateMappings(PCIDevice* pDev)
 {
     PPCIBUS pBus = pDev->Int.s.CTX_SUFF(pBus);
@@ -777,28 +811,8 @@ static void ich9pciUpdateMappings(PCIDevice* pDev)
         if (uNew != pRegion->addr)
         {
             if (pRegion->addr != INVALID_PCI_ADDRESS)
-            {
-                if (pRegion->type & PCI_ADDRESS_SPACE_IO)
-                {
-                    /* Port IO */
-                    rc = PDMDevHlpIOPortDeregister(pDev->pDevIns, pRegion->addr, pRegion->size);
-                    AssertRC(rc);
-                }
-                else
-                {
-                    RTGCPHYS GCPhysBase = pRegion->addr;
-                    if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsR3, pDev->pDevIns, GCPhysBase))
-                    {
-                        /* unmap it. */
-                        rc = pRegion->map_func(pDev, iRegion, NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
-                        AssertRC(rc);
-                        rc = PDMDevHlpMMIO2Unmap(pDev->pDevIns, iRegion, GCPhysBase);
-                    }
-                    else
-                        rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);
-                    AssertMsgRC(rc, ("rc=%Rrc d=%s i=%d GCPhysBase=%RGp size=%#x\n", rc, pDev->name, iRegion, GCPhysBase, pRegion->size));
-                }
-            }
+                ich9pciUnmapRegion(pDev, iRegion);
+
             pRegion->addr = uNew;
             if (pRegion->addr != INVALID_PCI_ADDRESS)
             {
@@ -2461,8 +2475,18 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
 static void ich9pciResetDevice(PPCIDEVICE pDev)
 {
+    PPCIBUS pBus = pDev->Int.s.CTX_SUFF(pBus);
+    int rc;
+
     /* Clear regions */
-    memset(&pDev->Int.s.aIORegions, 0, sizeof(pDev->Int.s.aIORegions));
+    for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+    {
+        PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
+        if (pRegion->size == 0)
+            continue;
+
+        ich9pciUnmapRegion(pDev, iRegion);
+    }
 
     PCIDevSetCommand(pDev,
                      PCIDevGetCommand(pDev)
