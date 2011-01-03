@@ -744,7 +744,7 @@ static int  ich9pciUnmapRegion(PPCIDEVICE pDev, int iRegion)
                 rc = PDMDevHlpMMIO2Unmap(pDev->pDevIns, iRegion, GCPhysBase);
             }
             else
-                rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);          
+                rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);
         }
     }
 
