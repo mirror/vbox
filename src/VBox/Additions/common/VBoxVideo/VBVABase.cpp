@@ -21,7 +21,8 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
+
+#include <string.h>
 
 /*
  * There is a hardware ring buffer in the graphics device video RAM, formerly

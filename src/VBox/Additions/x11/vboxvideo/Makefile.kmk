@@ -37,7 +37,7 @@ vboxvideo_drv_DEFS = \
 	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
-	IN_MODULE XFree86Module IN_XF86_MODULE
+	IN_MODULE XFree86Module
 vboxvideo_drv_DEFS += memset=xf86memset memcpy=xf86memcpy
 vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
@@ -74,11 +74,11 @@ vboxvideo_drv_SOURCES = \
 	vboxvideo.c \
 	vboxutils.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
-	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp
+	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
 
 #
@@ -96,7 +96,7 @@ if1of ($(KBUILD_TARGET), linux)
 	-Wno-conversion -Wno-unused-parameter $(VBOX_GCC_Wno-variadic-macros) # template?
 endif
 vboxvideo_drv_70_DEFS := \
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1 IN_XF86_MODULE
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_drv_70_DEFS += __EXTENSIONS__
  vboxvideo_drv_70_CFLAGS += -D_XPG6 # Until we have moved the C++ bits into a library
