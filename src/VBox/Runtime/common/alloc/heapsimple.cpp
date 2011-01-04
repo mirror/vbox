@@ -29,12 +29,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
+/* XXX this header must be included first as it re-defines some symbols
+ * (e.g size_t) if IN_XF86_MODULE is defined. */
+#include <iprt/string.h>
 #include <iprt/heap.h>
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/param.h>

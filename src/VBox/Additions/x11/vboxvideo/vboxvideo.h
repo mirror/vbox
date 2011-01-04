@@ -106,11 +106,7 @@ if (!(expr)) \
 # include "xf86Resources.h"
 #endif
 
-#ifndef NO_ANSIC
-/* All drivers need this */
-# include "xf86_ansic.h"
-#endif
-
+#include <iprt/string.h>
 #include "compiler.h"
 
 #ifndef PCIACCESS

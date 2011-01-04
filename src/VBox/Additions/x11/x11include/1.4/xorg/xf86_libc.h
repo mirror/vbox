@@ -85,7 +85,7 @@ typedef unsigned int xf86mode_t;
 typedef unsigned int xf86uid_t;
 typedef unsigned int xf86gid_t;
 
-struct xf86stat {
+struct xf86stat_s {
     xf86dev_t st_rdev;	/* This is incomplete, and makes assumptions */
 };
 
@@ -548,7 +548,7 @@ typedef int xf86jmp_buf[1024];
 #undef gid_t
 #define gid_t                   xf86gid_t
 #undef stat_t
-#define stat_t			struct xf86stat
+#define stat_t			struct xf86stat_s
 
 #undef ulong
 #define ulong			unsigned long
