@@ -18,7 +18,7 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win.x86 win.amd64 linux.amd64 freebsd.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 os2.x86 solaris.x86 solaris.amd64 win.x86 win.amd64 linux.amd64 freebsd.amd64)
  #
  # Build it from a precompiled binary.
  # See notes about the binary load address and size way below.
