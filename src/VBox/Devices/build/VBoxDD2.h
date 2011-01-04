@@ -29,19 +29,19 @@ extern DECLEXPORT(const unsigned char)  g_abPcBiosBinary[];
 extern DECLEXPORT(const unsigned)       g_cbPcBiosBinary;
 extern DECLEXPORT(const unsigned char)  g_abVgaBiosBinary[];
 extern DECLEXPORT(const unsigned)       g_cbVgaBiosBinary;
+# ifdef VBOX_WITH_PXE_ROM
 extern DECLEXPORT(const unsigned char)  g_abNetBiosBinary[];
 extern DECLEXPORT(const unsigned)       g_cbNetBiosBinary;
-extern DECLEXPORT(const unsigned char)  g_abVmiBiosBinary[];
-extern DECLEXPORT(const unsigned)       g_cbVmiBiosBinary;
+# endif
 #else  /* !IN_VBOXDD2 */
 extern DECLIMPORT(const unsigned char)  g_abPcBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbPcBiosBinary;
 extern DECLIMPORT(const unsigned char)  g_abVgaBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbVgaBiosBinary;
+# ifdef VBOX_WITH_PXE_ROM
 extern DECLIMPORT(const unsigned char)  g_abNetBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbNetBiosBinary;
-extern DECLIMPORT(const unsigned char)  g_abVmiBiosBinary[];
-extern DECLIMPORT(const unsigned)       g_cbVmiBiosBinary;
+# endif
 #endif /* !IN_VBOXDD2 */
 extern const PDMDEVREG g_DeviceAPIC;
 extern const PDMDEVREG g_DeviceIOAPIC;

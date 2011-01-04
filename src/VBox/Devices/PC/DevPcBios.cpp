@@ -1351,8 +1351,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (pThis->pu8LanBoot == NULL)
     {
+#ifdef VBOX_WITH_PXE_ROM
         pu8LanBootBinary = g_abNetBiosBinary;
         cbLanBootBinary  = g_cbNetBiosBinary;
+#endif
     }
     else
     {
