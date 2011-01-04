@@ -39,7 +39,9 @@ const void *g_apvVBoxDDDependencies2[] =
 {
     (void *)&g_abPcBiosBinary,
     (void *)&g_abVgaBiosBinary,
+#ifdef VBOX_WITH_PXE_ROM
     (void *)&g_abNetBiosBinary,
+#endif
 };
 
 
