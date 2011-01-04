@@ -24,11 +24,7 @@
 
 #include "xf86.h"
 #define NEED_XF86_TYPES
-#ifdef NO_ANSIC
-# include <string.h>
-#else
-# include "xf86_ansic.h"
-#endif
+#include <iprt/string.h>
 #include "compiler.h"
 #include "cursorstr.h"
 
