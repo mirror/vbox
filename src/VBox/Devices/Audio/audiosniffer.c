@@ -140,7 +140,71 @@ typedef struct SnifferInputCtx
     /* If the actual format frequence differs from the requested format, this is not NULL. */
     void *rate;
 
+    /* Temporary buffer for st_sample_t representation of the input audio data. */
+    void *pvSamplesBuffer;
+    uint32_t cbSamplesBufferAllocated;
+
+    /* Temporary buffer for frequency conversion. */
+    void *pvRateBuffer;
+    uint32_t cbRateBufferAllocated;
+
 } SnifferInputCtx;
+
+static void ictxDelete(SnifferInputCtx *pCtx)
+{
+    /* The caller will not use this context anymore. */
+    if (pCtx->rate)
+    {
+        st_rate_stop (pCtx->rate);
+    }
+
+    RTMemFree(pCtx->pvSamplesBuffer);
+    RTMemFree(pCtx->pvRateBuffer);
+
+    memset(pCtx, 0, sizeof(*pCtx));
+    RTMemFree(pCtx);
+}
+
+static void ictxReallocSamplesBuffer(SnifferInputCtx *pCtx, uint32_t cs)
+{
+    uint32_t cbBuffer = cs * sizeof(st_sample_t);
+
+    if (cbBuffer > pCtx->cbSamplesBufferAllocated)
+    {
+        RTMemFree(pCtx->pvSamplesBuffer);
+
+        pCtx->pvSamplesBuffer = RTMemAlloc(cbBuffer);
+        if (pCtx->pvSamplesBuffer)
+        {
+            pCtx->cbSamplesBufferAllocated = cbBuffer;
+        }
+        else
+        {
+            pCtx->cbSamplesBufferAllocated = 0;
+        }
+    }
+}
+
+static void ictxReallocRateBuffer(SnifferInputCtx *pCtx, uint32_t cs)
+{
+    uint32_t cbBuffer = cs * sizeof(st_sample_t);
+
+    if (cbBuffer > pCtx->cbRateBufferAllocated)
+    {
+        RTMemFree(pCtx->pvRateBuffer);
+
+        pCtx->pvRateBuffer = RTMemAlloc(cbBuffer);
+        if (pCtx->pvRateBuffer)
+        {
+            pCtx->cbRateBufferAllocated = cbBuffer;
+        }
+        else
+        {
+            pCtx->cbRateBufferAllocated = 0;
+        }
+    }
+}
+
 
 /*
  * Filter audio output.
@@ -208,6 +272,10 @@ int filter_input_begin (void **ppvInputCtx, PFNAUDIOINPUTCALLBACK pfnCallback, v
     pCtx->iFreq = 0;
     pCtx->conv = NULL;
     pCtx->rate = NULL;
+    pCtx->pvSamplesBuffer = NULL;
+    pCtx->cbSamplesBufferAllocated = 0;
+    pCtx->pvRateBuffer = NULL;
+    pCtx->cbRateBufferAllocated = 0;
 
     rc = g_pData->pDrv->pfnAudioInputBegin (g_pData->pDrv,
                                             &pCtx->pvUserCtx,      /* Returned by the pDrv. */
@@ -246,12 +314,7 @@ void filter_input_end(void *pvCtx)
 
     if (c == 0)
     {
-        /* The caller will not use this context anymore. */
-        if (pCtx->rate)
-        {
-            st_rate_stop (pCtx->rate);
-        }
-        RTMemFree(pCtx);
+        ictxDelete(pCtx);
         pCtx = NULL;
     }
 
@@ -351,36 +414,48 @@ static DECLCALLBACK(int) iface_AudioInputEventData (PPDMIAUDIOSNIFFERPORT pInter
         && pCtx->conv)
     {
         /* Convert PCM samples to st_sample_t.
-         * And then apply rate convertion if necessary.
+         * And then apply rate conversion if necessary.
          */
-        /* @todo Optimization: allocate ps buffer once per context and reallocate if cbData changes. */
-        uint32_t cs = cbData / pCtx->cBytesPerFrame;
-        st_sample_t *ps = (st_sample_t *)RTMemAlloc(cs * sizeof(st_sample_t));
+
+        /* Optimization: allocate 'ps' buffer once per context and reallocate if cbData changes.
+         * Usually size of packets is constant.
+         */
+        st_sample_t *ps;
+        uint32_t cs = cbData / pCtx->cBytesPerFrame; /* How many samples. */
+
+        ictxReallocSamplesBuffer(pCtx, cs);
+
+        ps = (st_sample_t *)pCtx->pvSamplesBuffer;
         if (ps)
         {
-            void *pvSamplesRateDst = NULL;
-
             void *pvSamples = NULL;
             uint32_t cbSamples = 0;
+
+            Assert(pCtx->cbSamplesBufferAllocated >= cs * sizeof(st_sample_t));
 
             pCtx->conv(ps, pvData, cs, &nominal_volume);
 
             if (pCtx->rate)
             {
+                st_sample_t *psConverted;
                 uint32_t csConverted = (cs * pCtx->phw->info.freq) / pCtx->iFreq;
-                pvSamplesRateDst = RTMemAlloc(csConverted * sizeof(st_sample_t));
 
-                if (pvSamplesRateDst)
+                ictxReallocRateBuffer(pCtx, csConverted);
+
+                psConverted = (st_sample_t *)pCtx->pvRateBuffer;
+                if (psConverted)
                 {
                     int csSrc = cs;
                     int csDst = csConverted;
 
+                    Assert(pCtx->cbRateBufferAllocated >= csConverted * sizeof(st_sample_t));
+
                     st_rate_flow (pCtx->rate,
-                                  ps, (st_sample_t *)pvSamplesRateDst,
+                                  ps, psConverted,
                                   &csSrc, &csDst);
 
-                    pvSamples = pvSamplesRateDst;
-                    cbSamples = csDst * sizeof(st_sample_t);
+                    pvSamples = psConverted;
+                    cbSamples = csDst * sizeof(st_sample_t); /* Use csDst as it may be != csConverted */
                 }
                 else
                 {
@@ -397,9 +472,6 @@ static DECLCALLBACK(int) iface_AudioInputEventData (PPDMIAUDIOSNIFFERPORT pInter
             {
                 rc = pCtx->pfnFilterCallback(pCtx->pvFilterCallback, cbSamples, pvSamples);
             }
-
-            RTMemFree(pvSamplesRateDst);
-            RTMemFree(ps);
         }
         else
         {
@@ -427,15 +499,10 @@ static DECLCALLBACK(void) iface_AudioInputEventEnd (PPDMIAUDIOSNIFFERPORT pInter
 
     if (c == 0)
     {
-        /* The caller will not use this context anymore. */
-        if (pCtx->rate)
-        {
-            st_rate_stop (pCtx->rate);
-        }
-        RTMemFree(pCtx);
+        ictxDelete(pCtx);
+        pCtx = NULL;
     }
 }
-
 
 static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio)
 {
