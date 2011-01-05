@@ -3517,6 +3517,7 @@ static bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
  *      - ensure new line at end of file.
  *      - Indentation of precompiler statements (#ifdef, #defines).
  *      - space between functions.
+ *      - string.h -> iprt/string.h, stdarg.h -> iprt/stdarg.h, etc.
  */
 static bool rewrite_C_and_CPP(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
