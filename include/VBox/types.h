@@ -1020,6 +1020,9 @@ typedef struct DBGFINFOHLP *PDBGFINFOHLP;
 /** Pointer to a const info helper callback structure. */
 typedef const struct DBGFINFOHLP *PCDBGFINFOHLP;
 
+/** Pointer to a const register descriptor. */
+typedef struct DBGFREGDESC const *PCDBGFREGDESC;
+
 
 /** Configuration manager tree node - A key. */
 typedef struct CFGMNODE *PCFGMNODE;

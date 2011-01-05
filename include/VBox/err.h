@@ -276,6 +276,8 @@
  * For queries this means that the register is narrower than the queried value.
  * For setters this means that the value is narrower than the register. */
 #define VINF_DBGF_ZERO_EXTENDED_REGISTER    1212
+/** The requested type conversion was not supported. */
+#define VERR_DBGF_UNSUPPORTED_CAST          (-1213)
 /** @} */
 
 
