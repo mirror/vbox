@@ -1150,6 +1150,28 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         return supR3HardenedSetError3(VERR_SUPLIB_OWNER_NOT_ROOT, pErrInfo, "The owner is not root: '", pszPath, "'");
 
     /*
+     * The object type must be directory or file, no symbolic links or other
+     * risky stuff (sorry dude, but we're paranoid on purpose here).
+     */
+    if (   !S_ISDIR(pFsObjState->Stat.st_mode)
+        && !S_ISREG(pFsObjState->Stat.st_mode))
+    {
+        if (S_ISLNK(pFsObjState->Stat.st_mode))
+            return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pErrInfo,
+                                          "Symlinks are not permitted: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pErrInfo,
+                                      "Not regular file or directory: '", pszPath, "'");
+    }
+    if (fDir != !!S_ISDIR(pFsObjState->Stat.st_mode))
+    {
+        if (S_ISDIR(pFsObjState->Stat.st_mode))
+            return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
+                                          "Expected file but found directory: '", pszPath, "'");
+        return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pErrInfo,
+                                      "Expected directory but found file: '", pszPath, "'");
+    }
+
+    /*
      * The group does not matter if it does not have write access, if it has
      * write access it must be group 0 (root/wheel/whatever).
      *
@@ -1180,27 +1202,6 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
      * Check the ACLs.
      */
     /** @todo */
-
-    /*
-     * Check the object type.
-     */
-    if (   !S_ISDIR(pFsObjState->Stat.st_mode)
-        && !S_ISREG(pFsObjState->Stat.st_mode))
-    {
-        if (S_ISLNK(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pErrInfo,
-                                          "Symlinks are not permitted: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pErrInfo,
-                                      "Not regular file or directory: '", pszPath, "'");
-    }
-    if (fDir != !!S_ISDIR(pFsObjState->Stat.st_mode))
-    {
-        if (S_ISDIR(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
-                                          "Expected file but found directory: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pErrInfo,
-                                      "Expected directory but found file: '", pszPath, "'");
-    }
 
     return VINF_SUCCESS;
 #endif
