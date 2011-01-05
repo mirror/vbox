@@ -575,6 +575,7 @@ const char *mmGetTagName(MMTAG enmTag)
         TAG2STR(DBGF_LINE_DUP);
         TAG2STR(DBGF_MODULE);
         TAG2STR(DBGF_OS);
+        TAG2STR(DBGF_REG);
         TAG2STR(DBGF_STACK);
         TAG2STR(DBGF_SYMBOL);
         TAG2STR(DBGF_SYMBOL_DUP);

@@ -193,31 +193,31 @@ typedef DBGFOS const *PCDBGFOS;
 typedef struct DBGF
 {
     /** Offset to the VM structure. */
-    RTINT                   offVM;
+    int32_t                     offVM;
 
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
      */
-    bool volatile           fAttached;
+    bool volatile               fAttached;
 
     /** Stopped in the Hypervisor.
      * Set if we're stopped on a trace, breakpoint or assertion inside
      * the hypervisor and have to restrict the available operations.
      */
-    bool volatile           fStoppedInHyper;
+    bool volatile               fStoppedInHyper;
 
     /**
      * Ping-Pong construct where the Ping side is the VMM and the Pong side
      * the Debugger.
      */
-    RTPINGPONG              PingPong;
+    RTPINGPONG                  PingPong;
 
     /** The Event to the debugger.
      * The VMM will ping the debugger when the event is ready. The event is
      * either a response to a command or to a break/watch point issued
      * previously.
      */
-    DBGFEVENT               DbgEvent;
+    DBGFEVENT                   DbgEvent;
 
     /** The Command to the VMM.
      * Operated in an atomic fashion since the VMM will poll on this.
@@ -225,57 +225,62 @@ typedef struct DBGF
      * is set. The VMM will reset this member to the no-command state
      * when it have processed it.
      */
-    DBGFCMD volatile        enmVMMCmd;
+    DBGFCMD volatile            enmVMMCmd;
     /** The Command data.
      * Not all commands take data. */
-    DBGFCMDDATA             VMMCmdData;
+    DBGFCMDDATA                 VMMCmdData;
 
     /** List of registered info handlers. */
-    R3PTRTYPE(PDBGFINFO)    pInfoFirst;
+    R3PTRTYPE(PDBGFINFO)        pInfoFirst;
     /** Critical section protecting the above list. */
-    RTCRITSECT              InfoCritSect;
+    RTCRITSECT                  InfoCritSect;
 
     /** Range tree containing the loaded symbols of the a VM.
      * This tree will never have blind spots. */
-    R3PTRTYPE(AVLRGCPTRTREE) SymbolTree;
+    R3PTRTYPE(AVLRGCPTRTREE)    SymbolTree;
     /** Symbol name space. */
-    R3PTRTYPE(PRTSTRSPACE)  pSymbolSpace;
+    R3PTRTYPE(PRTSTRSPACE)      pSymbolSpace;
     /** Indicates whether DBGFSym.cpp is initialized or not.
      * This part is initialized in a lazy manner for performance reasons. */
-    bool                    fSymInited;
+    bool                        fSymInited;
     /** Alignment padding. */
-    RTUINT                  uAlignment0;
+    RTUINT                      uAlignment0;
 
     /** The number of hardware breakpoints. */
-    RTUINT                  cHwBreakpoints;
+    RTUINT                      cHwBreakpoints;
     /** The number of active breakpoints. */
-    RTUINT                  cBreakpoints;
+    RTUINT                      cBreakpoints;
     /** Array of hardware breakpoints. (0..3)
      * This is shared among all the CPUs because life is much simpler that way. */
-    DBGFBP                  aHwBreakpoints[4];
+    DBGFBP                      aHwBreakpoints[4];
     /** Array of int 3 and REM breakpoints. (4..)
      * @remark This is currently a fixed size array for reasons of simplicity. */
-    DBGFBP                  aBreakpoints[32];
+    DBGFBP                      aBreakpoints[32];
 
     /** The address space database lock. */
-    RTSEMRW                 hAsDbLock;
+    RTSEMRW                     hAsDbLock;
     /** The address space handle database.      (Protected by hAsDbLock.) */
-    R3PTRTYPE(AVLPVTREE)    AsHandleTree;
+    R3PTRTYPE(AVLPVTREE)        AsHandleTree;
     /** The address space process id database.  (Protected by hAsDbLock.) */
-    R3PTRTYPE(AVLU32TREE)   AsPidTree;
+    R3PTRTYPE(AVLU32TREE)       AsPidTree;
     /** The address space name database.        (Protected by hAsDbLock.) */
-    R3PTRTYPE(RTSTRSPACE)   AsNameSpace;
+    R3PTRTYPE(RTSTRSPACE)       AsNameSpace;
     /** Special address space aliases.          (Protected by hAsDbLock.) */
-    RTDBGAS volatile        ahAsAliases[DBGF_AS_COUNT];
+    RTDBGAS volatile            ahAsAliases[DBGF_AS_COUNT];
     /** For lazily populating the aliased address spaces. */
-    bool volatile           afAsAliasPopuplated[DBGF_AS_COUNT];
+    bool volatile               afAsAliasPopuplated[DBGF_AS_COUNT];
     /** Alignment padding. */
-    bool                    afAlignment[2];
+    bool                        afAlignment[2];
+
+    /** The register database lock. */
+    RTSEMRW                     hRegDbLock;
+    /** String space holding the register sets. (Protected by hRegDbLock.)  */
+    R3PTRTYPE(RTSTRSPACE)       RegSetSpace;
 
     /** The current Guest OS digger. */
-    R3PTRTYPE(PDBGFOS)      pCurOS;
+    R3PTRTYPE(PDBGFOS)          pCurOS;
     /** The head of the Guest OS digger instances. */
-    R3PTRTYPE(PDBGFOS)      pOSHead;
+    R3PTRTYPE(PDBGFOS)          pOSHead;
 } DBGF;
 /** Pointer to DBGF Data. */
 typedef DBGF *PDBGF;

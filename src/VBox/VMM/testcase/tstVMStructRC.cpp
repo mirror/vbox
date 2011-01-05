@@ -124,6 +124,10 @@ int main()
     GEN_CHECK_OFF(DBGF, cBreakpoints);
     GEN_CHECK_OFF(DBGF, aHwBreakpoints);
     GEN_CHECK_OFF(DBGF, aBreakpoints);
+    GEN_CHECK_OFF(DBGF, hAsDbLock);
+    GEN_CHECK_OFF(DBGF, hRegDbLock);
+    GEN_CHECK_OFF(DBGF, RegSetSpace);
+    GEN_CHECK_OFF(DBGF, pCurOS);
     GEN_CHECK_SIZE(DBGFEVENT);
 
     GEN_CHECK_SIZE(DBGFCPU);

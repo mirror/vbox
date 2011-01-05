@@ -44,7 +44,7 @@ PFNRT g_apfnDeps[] =
     (PFNRT)DBGFR3CpuGetMode,
     (PFNRT)DBGFR3CoreWrite,
     (PFNRT)DBGFR3MemScan,
-    (PFNRT)DBGFR3RegQueryU8,
+    (PFNRT)DBGFR3RegCpuQueryU8,
     (PFNRT)EMInterpretInstruction,
     (PFNRT)IOMIOPortRead,
     (PFNRT)PDMQueueInsert,

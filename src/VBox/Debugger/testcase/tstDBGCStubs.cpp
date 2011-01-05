@@ -189,19 +189,19 @@ VMMDECL(int) DBGFR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3RegQueryU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     *pu8)
+VMMR3DECL(int) DBGFR3RegCpuQueryU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     *pu8)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3RegQueryU16( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    *pu16)
+VMMR3DECL(int) DBGFR3RegCpuQueryU16( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    *pu16)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3RegQueryU32( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    *pu32)
+VMMR3DECL(int) DBGFR3RegCpuQueryU32( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    *pu32)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3RegQueryU64( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    *pu64)
+VMMR3DECL(int) DBGFR3RegCpuQueryU64( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    *pu64)
 {
     return VERR_INTERNAL_ERROR;
 }

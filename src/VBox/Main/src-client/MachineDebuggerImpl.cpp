@@ -1066,7 +1066,7 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
              * Real work.
              */
             DBGFREGENTRY aRegs[DBGFREG_ALL_COUNT];
-            int vrc = DBGFR3RegQueryAll(ptrVM.raw(), a_idCpu, aRegs, RT_ELEMENTS(aRegs));
+            int vrc = DBGFR3RegCpuQueryAll(ptrVM.raw(), a_idCpu, aRegs, RT_ELEMENTS(aRegs));
             if (RT_SUCCESS(vrc))
             {
                 try
@@ -1118,7 +1118,7 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
                         Bstr bstrValue(szHex);
                         bstrValue.detachTo(&abstrValues[iReg]);
 
-                        Bstr bstrName(DBGFR3RegName(aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
+                        Bstr bstrName(DBGFR3RegCpuName(aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
                         bstrName.detachTo(&abstrNames[iReg]);
                     }
 
