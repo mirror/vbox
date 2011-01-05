@@ -1038,6 +1038,11 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                     return VINF_SUCCESS; /* Note: silent failure like before */
                 }
 
+                /* When VBE interface is enabled, it is reset. */
+                s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
+                s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
+                fRecalculate = true;
+
                 /* clear the screen (should be done in BIOS) */
                 if (!(val & VBE_DISPI_NOCLEARMEM)) {
                     uint16_t cY = RT_MIN(s->vbe_regs[VBE_DISPI_INDEX_YRES],
