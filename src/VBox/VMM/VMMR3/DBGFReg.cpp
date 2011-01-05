@@ -403,13 +403,13 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
         case DBGFREGVALTYPE_LRD:
             switch (enmToType)
             {
-                case DBGFREGVALTYPE_U8:     pValue->u8        = InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
-                case DBGFREGVALTYPE_U16:    pValue->u16       = InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
-                case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
-                case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U8:     pValue->u8        = (uint8_t)InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U16:    pValue->u16       = (uint16_t)InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U32:    pValue->u32       = (uint32_t)InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U64:    pValue->u64       = (uint64_t)InVal.lrd;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U128:
                     pValue->u128.s.Lo = (uint64_t)InVal.lrd;
-                    pValue->u128.s.Hi = InVal.lrd / _4G / _4G;
+                    pValue->u128.s.Hi = (uint64_t)InVal.lrd / _4G / _4G;
                     return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_80:                                     return VERR_DBGF_UNSUPPORTED_CAST;
                 case DBGFREGVALTYPE_LRD:    pValue->lrd       = InVal.lrd;  return VINF_SUCCESS;
