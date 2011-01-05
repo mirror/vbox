@@ -455,7 +455,12 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
         if (fSucceeded)
             pReqInt->Rc = VINF_SUCCESS;
         else
-            pReqInt->Rc = RTErrConvertFromWin32(GetLastError());
+        {
+            DWORD errCode = GetLastError();
+            pReqInt->Rc = RTErrConvertFromWin32(errCode);
+            if (pReqInt->Rc == VERR_UNRESOLVED_ERROR)
+                LogRel(("AIO/win: Request %#p returned rc=%Rrc (native %u\n)", pReqInt, pReqInt->Rc, errCode));
+        }
 
         pahReqs[cRequestsCompleted++] = (RTFILEAIOREQ)pReqInt;
 
