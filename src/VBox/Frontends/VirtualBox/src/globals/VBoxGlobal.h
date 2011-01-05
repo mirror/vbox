@@ -180,9 +180,9 @@ public:
 
     bool isStartPausedEnabled() const { return mStartPaused; }
 #else
-    bool isDebuggerAutoShowEnabled() const { return false; }
-    bool isDebuggerAutoShowCommandLineEnabled() const { return false; }
-    bool isDebuggerAutoShowStatisticsEnabled() const { return false; }
+    bool isDebuggerAutoShowEnabled(CMachine & /*aMachine*/) const { return false; }
+    bool isDebuggerAutoShowCommandLineEnabled(CMachine & /*aMachine*/) const { return false; }
+    bool isDebuggerAutoShowStatisticsEnabled(CMachine & /*aMachine*/) const { return false; }
 
     bool isStartPausedEnabled() const { return false; }
 #endif
