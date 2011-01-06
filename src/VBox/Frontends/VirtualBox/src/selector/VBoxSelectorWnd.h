@@ -35,7 +35,7 @@
 
 /* Local forward declarations */
 class QISplitter;
-class UIBar;
+class UIMainBar;
 class UIVMDesktop;
 class UIVMItem;
 class UIVMItemModel;
@@ -148,7 +148,7 @@ private:
 
     /* Main toolbar */
 #ifndef Q_WS_MAC
-    UIBar *m_pBar;
+    UIMainBar *m_pBar;
 #endif /* !Q_WS_MAC */
     UIToolBar *mVMToolBar;
 

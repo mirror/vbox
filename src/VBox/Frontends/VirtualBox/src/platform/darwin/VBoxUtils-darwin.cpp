@@ -66,6 +66,11 @@ void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled)
         ::darwinSetShowsToolbarButtonImpl(::darwinToNativeWindow(parent), fEnabled);
 }
 
+void darwinLabelToolbar(QWidget *pWidget, QPixmap *pPixmap)
+{
+    ::darwinLabelToolbar(::darwinToNativeWindow(pWidget), ::darwinToNSImageRef(pPixmap));
+}
+
 void darwinSetHidesAllTitleButtons(QWidget *pWidget)
 {
 #ifdef QT_MAC_USE_COCOA

@@ -127,7 +127,8 @@ public:
     static QString qtCTVersionString();
     static uint qtCTVersion();
 
-    QString versionString() { return mVerString; }
+    QString versionString() const { return mVerString; }
+    bool isBeta() const;
 
     CVirtualBox virtualBox() const { return mVBox; }
 

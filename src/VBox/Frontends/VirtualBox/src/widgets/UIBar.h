@@ -50,5 +50,23 @@ private:
     QWidget *m_pContentWidget;
 };
 
+class UIMainBar: public UIBar
+{
+    Q_OBJECT;
+
+public:
+
+    UIMainBar(QWidget *pParent = 0);
+
+protected:
+
+    void paintEvent(QPaintEvent *pEvent);
+
+private:
+
+    /* Private member vars */
+    bool m_fShowBetaLabel;
+};
+
 #endif /* !__UIBar_h__ */
 

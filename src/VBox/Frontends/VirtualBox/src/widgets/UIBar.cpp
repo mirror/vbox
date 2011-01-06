@@ -19,11 +19,14 @@
 
 /* Local includes */
 #include "UIBar.h"
+#include "UIImageTools.h"
+#include "VBoxGlobal.h"
 
 /* Global includes */
 #include <QPaintEvent>
 #include <QPainter>
 #include <QVBoxLayout>
+#include <QPixmapCache>
 
 UIBar::UIBar(QWidget *pParent /* = 0 */)
   : QWidget(pParent)
@@ -105,4 +108,33 @@ void UIBar::paintContent(QPainter *pPainter)
 }
 
 #endif /* !Q_WS_MAC */
+
+UIMainBar::UIMainBar(QWidget *pParent /* = 0 */)
+  : UIBar(pParent)
+  , m_fShowBetaLabel(false)
+{
+    /* Check for beta versions */
+    if (vboxGlobal().isBeta())
+        m_fShowBetaLabel = true;
+}
+
+void UIMainBar::paintEvent(QPaintEvent *pEvent)
+{
+    UIBar::paintEvent(pEvent);
+    QPainter painter(this);
+    painter.setClipRect(pEvent->rect());
+
+    if (m_fShowBetaLabel)
+    {
+        QPixmap betaLabel;
+        const QString key("vbox:betaLabel");
+        if (!QPixmapCache::find(key, &betaLabel))
+        {
+            betaLabel = ::betaLabel();
+            QPixmapCache::insert(key, betaLabel);
+        }
+        QSize s = size();
+        painter.drawPixmap(s.width() - betaLabel.width(), s.height() - betaLabel.height() - 1, betaLabel);
+    }
+}
 

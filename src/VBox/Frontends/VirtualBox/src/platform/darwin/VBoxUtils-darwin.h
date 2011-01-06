@@ -58,6 +58,7 @@ NativeNSStringRef darwinToNativeString(const char* pcszString);
 void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow);
+void darwinLabelToolbar(NativeNSWindowRef pWindow, NativeNSImageRef pImage);
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetMouseCoalescingEnabled(bool fEnabled);
 
@@ -173,6 +174,7 @@ NativeNSImageRef darwinToNSImageRef(const char *pczSource);
  *
  ********************************************************************************/
 void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled);
+void darwinLabelToolbar(QWidget *pWidget, QPixmap *pPixmap);
 void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled);
 void darwinSetHidesAllTitleButtons(QWidget *pWidget);
 void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);

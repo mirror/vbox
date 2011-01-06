@@ -48,6 +48,7 @@
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 # include "UIWindowMenuManager.h"
+# include "UIImageTools.h"
 #endif
 
 /* Global includes */
@@ -220,7 +221,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     pLeftVLayout->setContentsMargins(0, 0, 0, 0);
     pLeftVLayout->setSpacing(0);
 # ifdef BIG_TOOLBAR
-    m_pBar = new UIBar(this);
+    m_pBar = new UIMainBar(this);
     m_pBar->setContentWidget(mVMToolBar);
     pLeftVLayout->addWidget(m_pBar);
     pLeftVLayout->addWidget(m_pSplitter);
@@ -487,6 +488,12 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
 #ifdef Q_WS_MAC
     UIWindowMenuManager::instance()->addWindow(this);
+    /* Beta label? */
+    if (vboxGlobal().isBeta())
+    {
+        QPixmap betaLabel = ::betaLabel();
+        ::darwinLabelToolbar(this, &betaLabel);
+    }
 #endif /* Q_WS_MAC */
 }
 

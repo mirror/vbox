@@ -363,6 +363,11 @@ uint VBoxGlobal::qtCTVersion()
            ct_ver_str.section ('.', 2, 2).toInt();
 }
 
+bool VBoxGlobal::isBeta() const
+{
+    return mVBox.GetVersion().contains("BETA", Qt::CaseInsensitive);
+}
+
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */
