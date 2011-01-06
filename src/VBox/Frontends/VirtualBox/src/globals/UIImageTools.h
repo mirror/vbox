@@ -28,5 +28,7 @@ void blurImage(const QImage &source, QImage &dest, int r);
 void blurImageHorizontal(const QImage &source, QImage &dest, int r);
 void blurImageVertical(const QImage &source, QImage &dest, int r);
 
+QPixmap betaLabel();
+
 #endif /* !__UIImageTools_h__ */
 

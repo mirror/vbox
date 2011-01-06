@@ -95,6 +95,25 @@ void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
     [pWindow setShowsToolbarButton:fEnabled];
 }
 
+void darwinLabelToolbar(NativeNSWindowRef pWindow, NativeNSImageRef pImage)
+{
+    NSToolbar *tb = [pWindow toolbar];
+    if ([tb respondsToSelector:@selector(_toolbarView)])
+    {
+        NSView *tbv = [tb performSelector:@selector(_toolbarView)];
+        if (tbv)
+        {
+            NSSize s = [pImage size];
+            NSSize s1 = [tbv frame].size;
+            NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(s1.width - s.width, s1.height - s.height - 1, s.width, s.height)];
+            [iv setImage:pImage];
+            [iv setAutoresizesSubviews:true];
+            [iv setAutoresizingMask:NSViewMinXMargin | NSViewMaxYMargin];
+            [tbv addSubview:iv positioned:NSWindowBelow relativeTo:nil];
+        }
+    }
+}
+
 void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
     [pWindow setShowsResizeIndicator:fEnabled];
