@@ -846,7 +846,7 @@ VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/platform/darwin/PkgInfo \
-	$(VirtualBox_0_OUTDIR.app)/Info.plist \
+	$(VirtualBox.app_0_OUTDIR)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(VBOX_BRAND_GUI_VBOX_64PX_PNG)=>Resources/virtualbox.png \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
@@ -854,7 +854,7 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
 
-$$(VirtualBox_0_OUTDIR.app)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
