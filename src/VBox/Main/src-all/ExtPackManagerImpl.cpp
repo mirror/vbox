@@ -1184,7 +1184,7 @@ void ExtPack::probeAndLoad(void)
         if (RT_FAILURE(vrc))
         {
             m->hMainMod = NIL_RTLDRMOD;
-            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%s'): %Rrc - %s"),
+            m->strWhyUnusable.printf(tr("Failed to load the main module ('%s'): %Rrc - %s"),
                                      m->strMainModPath.c_str(), vrc, ErrInfo.Core.pszMsg);
             return;
         }
