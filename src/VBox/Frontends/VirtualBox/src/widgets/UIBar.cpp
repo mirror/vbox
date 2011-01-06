@@ -128,7 +128,7 @@ void UIMainBar::paintEvent(QPaintEvent *pEvent)
     {
         QPixmap betaLabel;
         const QString key("vbox:betaLabel");
-        if (!QPixmapCache::find(key, &betaLabel))
+        if (!QPixmapCache::find(key, betaLabel))
         {
             betaLabel = ::betaLabel();
             QPixmapCache::insert(key, betaLabel);
