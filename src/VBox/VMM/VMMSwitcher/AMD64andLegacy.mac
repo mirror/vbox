@@ -267,7 +267,6 @@ BEGINPROC vmmR0HostToGuestAsm
     rdmsr
     mov     [rbx + r8 + CPUMCPU.Host.efer], eax
     mov     [rbx + r8 + CPUMCPU.Host.efer + 4], edx
-    mov     ecx, MSR_K6_EFER
     mov     rdx, rbx
     ; special registers.
     sldt    [rdx + r8 + CPUMCPU.Host.ldtr]
