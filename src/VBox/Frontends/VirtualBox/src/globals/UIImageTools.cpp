@@ -239,7 +239,7 @@ QPixmap betaLabel()
     p.drawPath(tp);
     p.end();
     /* Create a secondary image which will contain the rotated banner. */
-    int w = sqrt(pow(ls.width(), 2) / 2);
+    int w = sqrtf(powf(ls.width(), 2) / 2);
     QImage i1(w, w, QImage::Format_ARGB32);
     i1.fill(Qt::transparent);
     QPainter p1(&i1);
