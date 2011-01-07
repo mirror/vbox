@@ -24,9 +24,13 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIExtraDataEventHandler.h"
+#include "UIImageTools.h"
 
 /* Global includes */
 #include <QMenuBar>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QPixmapCache>
 
 /* Helper QMenu reimplementation which allows
  * to highlight first menu item for popped up menu: */
@@ -47,6 +51,46 @@ private slots:
 #endif
         QMenu::focusNextChild();
     }
+};
+
+class UIMenuBar: public QMenuBar
+{
+public:
+
+    UIMenuBar(QWidget *pParent = 0)
+      : QMenuBar(pParent)
+      , m_fShowBetaLabel(false)
+    {
+        /* Check for beta versions */
+        if (vboxGlobal().isBeta())
+            m_fShowBetaLabel = true;
+    }
+
+protected:
+
+    void paintEvent(QPaintEvent *pEvent)
+    {
+        QMenuBar::paintEvent(pEvent);
+        if (m_fShowBetaLabel)
+        {
+            QPixmap betaLabel;
+            const QString key("vbox:betaLabel");
+            if (!QPixmapCache::find(key, betaLabel))
+            {
+                betaLabel = ::betaLabel();
+                QPixmapCache::insert(key, betaLabel);
+            }
+            QSize s = size();
+            QPainter painter(this);
+            painter.setClipRect(pEvent->rect());
+            painter.drawPixmap(s.width() - betaLabel.width() - 10, (height() - betaLabel.height()) / 2, betaLabel);
+        }
+    }
+
+private:
+
+    /* Private member vars */
+    bool m_fShowBetaLabel;
 };
 
 UIMachineMenuBar::UIMachineMenuBar()
@@ -72,7 +116,7 @@ QMenu* UIMachineMenuBar::createMenu(UIActionsPool *pActionsPool, UIMainMenuType 
 QMenuBar* UIMachineMenuBar::createMenuBar(UIActionsPool *pActionsPool, UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty menubar: */
-    QMenuBar *pMenuBar = new QMenuBar;
+    QMenuBar *pMenuBar = new UIMenuBar;
 
     /* Fill menubar with prepared items: */
     foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool, fOptions))
