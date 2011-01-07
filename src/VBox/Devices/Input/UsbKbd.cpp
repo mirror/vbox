@@ -578,8 +578,8 @@ static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, cons
         pEp->fHalted = true;
     else
     {
+        pThis->aEps[0].fHalted = true;
         pThis->aEps[1].fHalted = true;
-        pThis->aEps[2].fHalted = true;
     }
 
     usbHidLinkDone(pThis, pUrb);
