@@ -202,7 +202,7 @@ public:
         if (RT_UNLIKELY(!(expr))) \
             setError(E_FAIL, \
                      "Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
-                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .c_str()); \
     } while (0)
 #endif
 
