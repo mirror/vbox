@@ -3502,7 +3502,6 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                 const char *pszAdapterName = networkAdapterTypeToName(adapterType);
                 PPDMIBASE pBase;
                 int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
-                ComAssertRC(vrc);
                 if (RT_SUCCESS(vrc))
                 {
                     Assert(pBase);
@@ -3535,10 +3534,17 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                             {
                                 vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
                                 ComAssertRC(vrc);
-                    }
+                            }
                         }
                     }
                 }
+                else if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
+                {
+                    return setError(E_FAIL,
+                            tr("The network adapter #%u is not enabled"), ulInstance);
+                }
+                else
+                    ComAssertRC(vrc);
 
                 if (RT_FAILURE(vrc))
                     rc = E_FAIL;
