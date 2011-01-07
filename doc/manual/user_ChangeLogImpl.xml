@@ -9,16 +9,16 @@
     <itemizedlist>
 
       <listitem>
-        <para>ICH9: fixed VM crash (software virtualization only; bug #7885</para>
+        <para>ICH9: fixed VM crash (software virtualization only; bug #7885)</para>
       </listitem>
 
       <listitem>
-        <para>E1000: Fixed PXE boot issues with WDS; bug #6330</para>
+        <para>E1000: Fixed PXE boot issues with WDS (bug #6330)</para>
       </listitem>
 
       <listitem>
         <para>VBoxManage: Host-only interface creation and removal is now
-          supported for all platforms except Solaris; bug #7741</para>
+          supported for all platforms except Solaris (bug #7741)</para>
       </listitem>
 
       <listitem>
@@ -32,7 +32,7 @@
 
       <listitem>
         <para>Bridged networking: Fixed host kernel panic when bridging
-          to devices with no TX queue (Linux hosts only; bug #7908)</para>
+          to devices with no TX queue (4.0 regression; Linux hosts only; bug #7908)</para>
       </listitem>
 
       <listitem>
@@ -42,11 +42,12 @@
 
       <listitem>
         <para>Main: fixed crash under rare circumstances due to an invalid
-          logging string</para>
+          logging string (4.0 regression)</para>
       </listitem>
 
       <listitem>
-        <para>Settings: fixed loading of removeable drives to which a host drive was attached</para>
+        <para>Settings: fixed loading of removeable drives to which a host drive
+          was attached (4.0 regression)</para>
       </listitem>
 
     </itemizedlist>
