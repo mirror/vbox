@@ -1433,7 +1433,14 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         mVmShowLogsAction->setEnabled(true);
         /* Enable the shell interaction features. */
         mVmOpenInFileManagerAction->setEnabled(true);
+#ifdef Q_WS_MAC
+        /* On Mac OS X this are real alias files, which don't work with the old
+         * legacy xml files. On the other OS's some kind of start up script is
+         * used. */
+        mVmCreateShortcut->setEnabled(item->settingsFile().endsWith(".vbox", Qt::CaseInsensitive));
+#else /* Q_WS_MAC */
         mVmCreateShortcut->setEnabled(true);
+#endif /* Q_WS_MAC */
     }
     else
     {
