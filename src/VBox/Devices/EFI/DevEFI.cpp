@@ -612,7 +612,8 @@ static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfs
         EFI_IMAGE_NT_HEADERS32  Nt32;
         EFI_IMAGE_NT_HEADERS64  Nt64;
         EFI_TE_IMAGE_HEADER     Te;
-    } const *pHdr = (EfiHdrUnion const *)pbImage;
+    };
+    EfiHdrUnion const *pHdr = (EfiHdrUnion const *)pbImage;
 
     /* Skip MZ if found. */
     if (pHdr->Dos.e_magic == RT_MAKE_U16('M',  'Z'))
