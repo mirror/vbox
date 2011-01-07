@@ -1450,7 +1450,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
         /* Prepare arguments. */
         char **papszArgv = NULL;
         uint32_t uNumArgs = 0;
-        if (aArguments > 0)
+        if (aArguments)
         {
             com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
             uNumArgs = args.size();
@@ -1478,7 +1478,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                 void *pvEnv = NULL;
                 uint32_t uNumEnv = 0;
                 uint32_t cbEnv = 0;
-                if (aEnvironment > 0)
+                if (aEnvironment)
                 {
                     com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
 
