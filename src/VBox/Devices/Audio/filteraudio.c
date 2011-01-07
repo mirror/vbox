@@ -333,7 +333,9 @@ static int filteraudio_run_out(HWVoiceOut *phw)
     filterVoiceOut *pVoice = (filterVoiceOut *)((uint8_t *)phw + filter_conf.pDrv->voice_size_out);
 
     if (!pVoice->fIntercepted)
+    {
         return filter_conf.pDrv->pcm_ops->run_out(phw);
+    }
 
     /* We return the live count in the case we are not initialized. This should
      * prevent any under runs. */
@@ -408,7 +410,7 @@ static int filteraudio_ctl_out(HWVoiceOut *phw, int cmd, ...)
     }
 
     status = ASMAtomicReadU32(&pVoice->status);
-    if (status != CA_STATUS_INIT)
+    if (!(status == CA_STATUS_INIT))
         return 0;
 
     switch (cmd)
@@ -548,7 +550,7 @@ static DECLCALLBACK(int) fltRecordingCallback(void* pvCallback,
     CA_EXT_DEBUG_LOG(("FilterAudio: [Input] Start writing buffer with %RU32 samples (%RU32 bytes)\n", csAvail, csAvail * sizeof(st_sample_t)));
 
     /* Iterate as long as data is available */
-    while (csWritten < csAvail)
+    while(csWritten < csAvail)
     {
         /* How much is left? */
         csToWrite = csAvail - csWritten;
@@ -663,7 +665,6 @@ static int filteraudio_ctl_in(HWVoiceIn *phw, int cmd, ...)
 {
     int rc = VINF_SUCCESS;
     filterVoiceIn *pVoice;
-    int rcHost = 0;
 
     if (!filter_conf.pDrv)
     {
@@ -687,9 +688,7 @@ static int filteraudio_ctl_in(HWVoiceIn *phw, int cmd, ...)
 
             /* Note: audio.c does not use variable parameters '...', so ok to forward only 'phw' and 'cmd'. */
             Log(("FilterAudio: [Input]: forwarding ctl_in ENABLE for voice %p (hw %p)\n", pVoice, pVoice->phw));
-            if (pVoice->fHostOK)
-                rcHost = filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
-            return rcHost;
+            return filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
         }
 
         /* The filter will use this voice. */
@@ -729,11 +728,18 @@ static int filteraudio_ctl_in(HWVoiceIn *phw, int cmd, ...)
         /* Check if the voice has been intercepted. */
         if (!pVoice->fIntercepted)
         {
+            if (!pVoice->fHostOK)
+            {
+                /* Host did not initialize the voice. Theoretically should not happen, because
+                 * audio.c should not disable a voice which has not been enabled at all.
+                 */
+                Log(("FilterAudio: [Input]: ctl_in DISABLE voice %p (hw %p) not available on host\n", pVoice, pVoice->phw));
+                return -1;
+            }
+
             /* Note: audio.c does not use variable parameters '...', so ok to forward only 'phw' and 'cmd'. */
             Log(("FilterAudio: [Input]: forwarding ctl_in DISABLE for voice %p (hw %p)\n", pVoice, pVoice->phw));
-            if (pVoice->fHostOK)
-                rcHost = filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
-            return rcHost;
+            return filter_conf.pDrv->pcm_ops->ctl_in(phw, cmd);
         }
 
         /* The filter used this voice. */
@@ -772,9 +778,12 @@ static void filteraudio_fini_in(HWVoiceIn *phw)
     pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
 
     /* Uninitialize both host and filter parts of the voice. */
-    Log(("FilterAudio: [Input]: forwarding fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
     if (pVoice->fHostOK)
+    {
+        /* Uninit host part only if it was initialized by host. */
+        Log(("FilterAudio: [Input]: forwarding fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
         filter_conf.pDrv->pcm_ops->fini_in(phw);
+    }
 
     Log(("FilterAudio: [Input]: fini_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
 
