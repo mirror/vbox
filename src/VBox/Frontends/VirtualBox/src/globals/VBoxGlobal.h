@@ -595,7 +595,7 @@ public:
 
     QString openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
-    QString openMedium(VBoxDefs::MediumType mediumType, QString strMediumLocation);
+    QString openMedium(VBoxDefs::MediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
 
     /* Returns the number of current running Fe/Qt4 main windows. */
     int mainWindowCount();

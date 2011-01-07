@@ -1930,7 +1930,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
                 vboxProblem().cannotAttachDevice(m_machine, VBoxDefs::MediumType_HardDisk, vboxMedium.location(),
                                                  StorageSlot(controllerData.m_controllerBus,
                                                              attachmentData.m_iAttachmentPort,
-                                                             attachmentData.m_iAttachmentDevice));
+                                                             attachmentData.m_iAttachmentDevice), this);
             }
         }
         if (!failed() && controllerData.m_controllerBus == KStorageBus_SATA)
@@ -2487,7 +2487,7 @@ void UIMachineSettingsStorage::sltChooseRecentMedium()
         QStringList mediumInfoList = pChooseRecentMediumAction->data().toString().split(',');
         VBoxDefs::MediumType mediumType = (VBoxDefs::MediumType)mediumInfoList[0].toUInt();
         QString strMediumLocation = mediumInfoList[1];
-        QString strMediumId = vboxGlobal().openMedium(mediumType, strMediumLocation);
+        QString strMediumId = vboxGlobal().openMedium(mediumType, strMediumLocation, this);
         if (!strMediumId.isNull())
             m_pMediumIdHolder->setId(strMediumId);
     }
