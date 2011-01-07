@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
- 
+
   <sect1>
     <title>Version 4.0.2 (2011-xx-xx)</title>
 
@@ -43,6 +43,10 @@
       <listitem>
         <para>Main: fixed crash under rare circumstances due to an invalid
           logging string</para>
+      </listitem>
+
+      <listitem>
+        <para>Settings: fixed loading of removeable drives to which a host drive was attached</para>
       </listitem>
 
     </itemizedlist>
