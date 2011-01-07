@@ -2842,10 +2842,10 @@ HRESULT VirtualBox::findRemoveableMedium(DeviceType_T mediumType,
     }
 
     // first search for host drive with that UUID
-    HRESULT rc = m->pHost->findHostDrive(mediumType,
-                                         uuid,
-                                         fRefresh,
-                                         pMedium);
+    HRESULT rc = m->pHost->findHostDriveById(mediumType,
+                                             uuid,
+                                             fRefresh,
+                                             pMedium);
     if (rc == VBOX_E_OBJECT_NOT_FOUND)
                 // then search for an image with that UUID
         rc = findDVDOrFloppyImage(mediumType, &uuid, Utf8Str::Empty, true /* aSetError */, &pMedium);

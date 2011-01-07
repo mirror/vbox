@@ -108,7 +108,8 @@ public:
     HRESULT saveSettings(settings::Host &data);
 
     HRESULT getDrives(DeviceType_T mediumType, bool fRefresh, MediaList *&pll);
-    HRESULT findHostDrive(DeviceType_T mediumType, const Guid &uuid, bool fRefresh, ComObjPtr<Medium> &pMedium);
+    HRESULT findHostDriveById(DeviceType_T mediumType, const Guid &uuid, bool fRefresh, ComObjPtr<Medium> &pMedium);
+    HRESULT findHostDriveByName(DeviceType_T mediumType, const Utf8Str &strLocationFull, bool fRefresh, ComObjPtr<Medium> &pMedium);
 
 #ifdef VBOX_WITH_USB
     typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
