@@ -95,22 +95,26 @@ void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
     [pWindow setShowsToolbarButton:fEnabled];
 }
 
-void darwinLabelToolbar(NativeNSWindowRef pWindow, NativeNSImageRef pImage)
+void darwinLabelWindow(NativeNSWindowRef pWindow, NativeNSImageRef pImage, bool fCenter)
 {
-    NSToolbar *tb = [pWindow toolbar];
-    if ([tb respondsToSelector:@selector(_toolbarView)])
+    /* Get the parent view of the close button. */
+    NSView *wv = [[pWindow standardWindowButton:NSWindowCloseButton] superview];
+    if (wv)
     {
-        NSView *tbv = [tb performSelector:@selector(_toolbarView)];
-        if (tbv)
-        {
-            NSSize s = [pImage size];
-            NSSize s1 = [tbv frame].size;
-            NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(s1.width - s.width, s1.height - s.height - 1, s.width, s.height)];
-            [iv setImage:pImage];
-            [iv setAutoresizesSubviews:true];
-            [iv setAutoresizingMask:NSViewMinXMargin | NSViewMaxYMargin];
-            [tbv addSubview:iv positioned:NSWindowBelow relativeTo:nil];
-        }
+        /* We have to calculate the size of the title bar for the center case. */
+        NSSize s = [pImage size];
+        NSSize s1 = [wv frame].size;
+        NSSize s2 = [[pWindow contentView] frame].size;
+        /* Correctly position the label. */
+        NSImageView *iv = [[NSImageView alloc] initWithFrame:NSMakeRect(s1.width - s.width - (fCenter ? 10 : 0),
+                                                                        fCenter ? s2.height + (s1.height - s2.height - s.height) / 2 : s1.height - s.height - 1,
+                                                                        s.width, s.height)];
+        /* Configure the NSImageView for auto moving. */
+        [iv setImage:pImage];
+        [iv setAutoresizesSubviews:true];
+        [iv setAutoresizingMask:NSViewMinXMargin | NSViewMinYMargin];
+        /* Add it to the parent of the close button. */
+        [wv addSubview:iv positioned:NSWindowBelow relativeTo:nil];
     }
 }
 

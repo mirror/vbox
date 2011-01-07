@@ -38,6 +38,9 @@
 #include "UIMachineView.h"
 #include "UIDownloaderAdditions.h"
 #include "UIDownloaderUserManual.h"
+#ifdef Q_WS_MAC
+# include "UIImageTools.h"
+#endif /* Q_WS_MAC */
 
 #include "QIStatusBar.h"
 #include "QIStateIndicator.h"
@@ -88,6 +91,15 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulon
 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
+
+#ifdef Q_WS_MAC
+    /* Beta label? */
+    if (vboxGlobal().isBeta())
+    {
+        QPixmap betaLabel = ::betaLabel(QSize(100, 16));
+        ::darwinLabelWindow(this, &betaLabel, true);
+    }
+#endif /* Q_WS_MAC */
 
     /* Show window: */
     showSimple();

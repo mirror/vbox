@@ -121,20 +121,19 @@ UIMainBar::UIMainBar(QWidget *pParent /* = 0 */)
 void UIMainBar::paintEvent(QPaintEvent *pEvent)
 {
     UIBar::paintEvent(pEvent);
-    QPainter painter(this);
-    painter.setClipRect(pEvent->rect());
-
     if (m_fShowBetaLabel)
     {
         QPixmap betaLabel;
-        const QString key("vbox:betaLabel");
+        const QString key("vbox:betaLabelSleeve");
         if (!QPixmapCache::find(key, betaLabel))
         {
-            betaLabel = ::betaLabel();
+            betaLabel = ::betaLabelSleeve();
             QPixmapCache::insert(key, betaLabel);
         }
         QSize s = size();
-        painter.drawPixmap(s.width() - betaLabel.width(), s.height() - betaLabel.height() - 1, betaLabel);
+        QPainter painter(this);
+        painter.setClipRect(pEvent->rect());
+        painter.drawPixmap(s.width() - betaLabel.width(), 0, betaLabel);
     }
 }
 

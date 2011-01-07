@@ -66,9 +66,9 @@ void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled)
         ::darwinSetShowsToolbarButtonImpl(::darwinToNativeWindow(parent), fEnabled);
 }
 
-void darwinLabelToolbar(QWidget *pWidget, QPixmap *pPixmap)
+void darwinLabelWindow(QWidget *pWidget, QPixmap *pPixmap, bool fCenter)
 {
-    ::darwinLabelToolbar(::darwinToNativeWindow(pWidget), ::darwinToNSImageRef(pPixmap));
+    ::darwinLabelWindow(::darwinToNativeWindow(pWidget), ::darwinToNSImageRef(pPixmap), fCenter);
 }
 
 void darwinSetHidesAllTitleButtons(QWidget *pWidget)
