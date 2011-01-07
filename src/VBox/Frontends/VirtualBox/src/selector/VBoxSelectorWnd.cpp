@@ -491,8 +491,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* Beta label? */
     if (vboxGlobal().isBeta())
     {
-        QPixmap betaLabel = ::betaLabel();
-        ::darwinLabelToolbar(this, &betaLabel);
+        QPixmap betaLabel = ::betaLabelSleeve(QSize(107, 16));
+        ::darwinLabelWindow(this, &betaLabel, false);
     }
 #endif /* Q_WS_MAC */
 }
