@@ -1683,10 +1683,10 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
  * @param pMedium Medium object, if found…
  * @return VBOX_E_OBJECT_NOT_FOUND if not found, or S_OK if found, or errors from getDrives().
  */
-HRESULT Host::findHostDrive(DeviceType_T mediumType,
-                            const Guid &uuid,
-                            bool fRefresh,
-                            ComObjPtr<Medium> &pMedium)
+HRESULT Host::findHostDriveById(DeviceType_T mediumType,
+                                const Guid &uuid,
+                                bool fRefresh,
+                                ComObjPtr<Medium> &pMedium)
 {
     MediaList *pllMedia;
 
@@ -1700,6 +1700,44 @@ HRESULT Host::findHostDrive(DeviceType_T mediumType,
         {
             Medium *pThis = *it;
             if (pThis->getId() == uuid)
+            {
+                pMedium = pThis;
+                return S_OK;
+            }
+        }
+    }
+
+    return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Goes through the list of host drives that would be returned by getDrives()
+ * and looks for a host drive with the given name. If found, it sets pMedium
+ * to that drive; otherwise returns VBOX_E_OBJECT_NOT_FOUND.
+ *
+ * @param mediumType Must be DeviceType_DVD or DeviceType_Floppy.
+ * @param strLocationFull Name (path) of host drive to look for.
+ * @param fRefresh Whether to refresh the host drives list (see getDrives())
+ * @param pMedium Medium object, if found…
+ * @return VBOX_E_OBJECT_NOT_FOUND if not found, or S_OK if found, or errors from getDrives().
+ */
+HRESULT Host::findHostDriveByName(DeviceType_T mediumType,
+                                  const Utf8Str &strLocationFull,
+                                  bool fRefresh,
+                                  ComObjPtr<Medium> &pMedium)
+{
+    MediaList *pllMedia;
+
+    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = getDrives(mediumType, fRefresh, pllMedia);
+    if (SUCCEEDED(rc))
+    {
+        for (MediaList::iterator it = pllMedia->begin();
+             it != pllMedia->end();
+             ++it)
+        {
+            Medium *pThis = *it;
+            if (pThis->getLocationFull() == strLocationFull)
             {
                 pMedium = pThis;
                 return S_OK;
