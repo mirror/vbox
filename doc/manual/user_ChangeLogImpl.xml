@@ -32,12 +32,17 @@
 
       <listitem>
         <para>Bridged networking: Fixed host kernel panic when bridging
-          to devices with no TX queue; bug #7908</para>
+          to devices with no TX queue (Linux hosts only; bug #7908)</para>
       </listitem>
 
       <listitem>
         <para>Virtio-net: fixed the issue with TX performance in some Linux
           guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed crash under rare circumstances due to an invalid
+          logging string</para>
       </listitem>
 
     </itemizedlist>
