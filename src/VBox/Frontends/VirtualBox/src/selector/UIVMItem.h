@@ -55,6 +55,8 @@ public:
     KMachineState machineState() const { return m_machineState; }
     KSessionState sessionState() const { return m_sessionState; }
 
+    QString settingsFile() const { return m_strSettingsFile; }
+
     bool recache();
 
     bool canSwitchTo() const;
