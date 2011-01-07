@@ -1114,7 +1114,7 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    const char * url = NULL;
+    const char *url;
 
     NOREF(aVersion);
 
@@ -1122,7 +1122,9 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
         FirmwareType_T type;
         const char*    fileName;
         const char*    url;
-    } firmwareDesc[] = {
+    }
+    firmwareDesc[] =
+    {
         {
             /* compiled-in firmware */
             FirmwareType_BIOS,    NULL,             NULL
