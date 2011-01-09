@@ -130,7 +130,7 @@ TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
                                      # -Wl,--whole-archive,--no-allow-shlib-undefined
 TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOM_LIBS.solaris        = sendfile
-TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
+TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET)) \
                                      $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 ifeq ($(KBUILD_TARGET),os2)
  ifndef USE_OS2_TOOLKIT_HEADERS
@@ -161,8 +161,8 @@ TEMPLATE_XPCOMEXE_INCS             = ipc/ipcd/shared/src \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
                                      .
 TEMPLATE_XPCOMEXE_LIBS             = \
-	$(TARGET_VBox-xpcom-ipcshared) \
-	$(TARGET_VBoxXPCOM) \
+	$(VBox-xpcom-ipcshared_1_TARGET) \
+	$(VBoxXPCOM_1_TARGET) \
 	$(TEMPLATE_XPCOM_LIBS)
 TEMPLATE_XPCOMEXE_LIBS.freebsd     = $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.linux       = dl $(LIB_PTHREAD)
@@ -210,7 +210,7 @@ TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TE
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.solaris   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
-TEMPLATE_XPCOMBLDPROG_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
+TEMPLATE_XPCOMBLDPROG_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET))
 
 
 ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)

@@ -59,7 +59,7 @@ tstUSBFilter_DEFS = IN_USBLIB
 tstUSBFilter_SOURCES  = \
 	testcase/tstUSBFilter.cpp
 tstUSBFilter_LIBS  = \
-        $(TARGET_USBLib)
+        $(USBLib_1_TARGET)
 endif
 
 

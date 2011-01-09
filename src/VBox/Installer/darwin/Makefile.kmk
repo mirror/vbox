@@ -188,7 +188,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
-		$$(TARGET_RegistrationPane) \
+		$$(RegistrationPane_1_TARGET) \
 		$(if $(VBOX_OSE), , \
     		$(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist \
 	    	$$(wildcard $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/*.strings \
@@ -292,7 +292,7 @@ endif
 	@# Copy the Registration Pane plugin.
 	$(MKDIR) -p $@/Contents/Plugins/RegistrationPane.bundle/Contents/MacOS/
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist                                                     $@/Contents/Plugins/RegistrationPane.bundle/Contents/
-	$(INSTALL) -m 0644 $(TARGET_RegistrationPane)                                                                                           $@/Contents/Plugins/RegistrationPane.bundle/Contents/MacOS/
+	$(INSTALL) -m 0644 $(RegistrationPane_1_TARGET)                                                                                           $@/Contents/Plugins/RegistrationPane.bundle/Contents/MacOS/
 	$(MKDIR) -p $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/English.lproj/RegistrationPane.nib
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/English.lproj/InfoPlist.strings                      $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/English.lproj/
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/English.lproj/Localizable.strings                    $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/English.lproj/

@@ -78,7 +78,7 @@ tstDBGCParser_SOURCES = \
 	testcase/tstDBGCParser.cpp \
 	testcase/tstDBGCStubs.cpp
 tstDBGCParser_LIBS = \
-	$(TARGET_Debugger) \
+	$(Debugger_1_TARGET) \
 	$(LIB_RUNTIME)
 
 

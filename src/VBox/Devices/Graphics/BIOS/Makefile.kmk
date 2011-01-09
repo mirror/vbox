@@ -69,8 +69,8 @@ $$(VgaBiosBin_0_OUTDIR)/VgaBiosBin.c: $$(VgaBiosBin_0_OUTDIR)/vgabios.bin $(VBOX
 #
 
 # 1. create vbetables.h
-$$(VgaBiosBin_0_OUTDIR)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen) | $$(dir $$@)
-	$(QUIET)$(REDIRECT) -wo $@ -- $(TARGET_vbetables-gen)
+$$(VgaBiosBin_0_OUTDIR)/vbetables.h: $(MAKEFILE_CURRENT) $$(vbetables-gen_1_TARGET) | $$(dir $$@)
+	$(QUIET)$(REDIRECT) -wo $@ -- $(vbetables-gen_1_TARGET)
 
 # 2. precompile
 # WARNING! DEBUG is undefined here to keep the image size stable between debug and release builds.
