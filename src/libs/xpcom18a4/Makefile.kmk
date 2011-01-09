@@ -458,7 +458,7 @@ ifeq ($(KBUILD_TARGET),os2)
 	$(VBOX_PATH_LIBIDL)/lib/glib.lib
  # install necessary DLLs to the same place where xpidl goes
  INSTALLS += xpidl-DLLS
- xpidl_ORDERDEPS = $(TARGET_xpidl-DLLS)
+ xpidl_ORDERDEPS = $(xpidl-DLLS_1_TARGET)
  xpidl-DLLS_INST = $(xpidl_INST)
  # static libraries of these may be provided instead,
  # so copy DLLs only when they are present
@@ -946,7 +946,7 @@ VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
                          xpcom/glue/standalone/nsXPCOMGlue.cpp \
                          xpcom/glue/standalone/nsGREDirServiceProvider.cpp
 VBoxXPCOMGlue_SOURCES += \
-	$(TARGET_VBox-xpcom-string)
+	$(VBox-xpcom-string_1_TARGET)
 #VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)lib/
 
 
@@ -972,51 +972,51 @@ VBoxXPCOM_SOURCES.os2 = \
 VBoxXPCOM_SOURCES.solaris = \
 	vboxdeps.cpp
 VBoxXPCOM_LIBS = \
-	$(TARGET_VBox-xpcom-typelib) \
-	$(TARGET_VBox-xpcom-string) \
-	$(TARGET_VBox-xpcom-base) \
-	$(TARGET_VBox-xpcom-ds) \
-	$(TARGET_VBox-xpcom-io) \
-	$(TARGET_VBox-xpcom-components) \
-	$(TARGET_VBox-xpcom-threads) \
-	$(TARGET_VBox-xpcom-xptinfo) \
-	$(TARGET_VBox-xpcom-xptcall) \
-	$(TARGET_VBox-xpcom-proxy) \
-	$(TARGET_VBox-xpcom-nspr) \
-	$(TARGET_VBoxXPCOMGlue_s)
+	$(VBox-xpcom-typelib_1_TARGET) \
+	$(VBox-xpcom-string_1_TARGET) \
+	$(VBox-xpcom-base_1_TARGET) \
+	$(VBox-xpcom-ds_1_TARGET) \
+	$(VBox-xpcom-io_1_TARGET) \
+	$(VBox-xpcom-components_1_TARGET) \
+	$(VBox-xpcom-threads_1_TARGET) \
+	$(VBox-xpcom-xptinfo_1_TARGET) \
+	$(VBox-xpcom-xptcall_1_TARGET) \
+	$(VBox-xpcom-proxy_1_TARGET) \
+	$(VBox-xpcom-nspr_1_TARGET) \
+	$(VBoxXPCOMGlue_s_1_TARGET)
 VBoxXPCOM_LIBS.linux = \
 	pthread dl
 
 ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
-	$(TARGET_VBox-xpcom-typelib) \
-	$(TARGET_VBox-xpcom-string) \
-	$(TARGET_VBox-xpcom-base) \
-	$(TARGET_VBox-xpcom-ds) \
-	$(TARGET_VBox-xpcom-io) \
-	$(TARGET_VBox-xpcom-components) \
-	$(TARGET_VBox-xpcom-threads) \
-	$(TARGET_VBox-xpcom-xptinfo) \
-	$(TARGET_VBox-xpcom-xptcall) \
-	$(TARGET_VBox-xpcom-proxy) \
-	$(TARGET_VBox-xpcom-nspr) \
-	$(TARGET_VBoxXPCOMGlue_s) \
+	$(VBox-xpcom-typelib_1_TARGET) \
+	$(VBox-xpcom-string_1_TARGET) \
+	$(VBox-xpcom-base_1_TARGET) \
+	$(VBox-xpcom-ds_1_TARGET) \
+	$(VBox-xpcom-io_1_TARGET) \
+	$(VBox-xpcom-components_1_TARGET) \
+	$(VBox-xpcom-threads_1_TARGET) \
+	$(VBox-xpcom-xptinfo_1_TARGET) \
+	$(VBox-xpcom-xptcall_1_TARGET) \
+	$(VBox-xpcom-proxy_1_TARGET) \
+	$(VBox-xpcom-nspr_1_TARGET) \
+	$(VBoxXPCOMGlue_s_1_TARGET) \
 	-Wl,--no-whole-archive
 endif
 
 VBoxXPCOM_LDFLAGS.solaris += -Wl,-z,allextract \
-	$(TARGET_VBox-xpcom-typelib) \
-	$(TARGET_VBox-xpcom-string) \
-	$(TARGET_VBox-xpcom-base) \
-	$(TARGET_VBox-xpcom-ds) \
-	$(TARGET_VBox-xpcom-io) \
-	$(TARGET_VBox-xpcom-components) \
-	$(TARGET_VBox-xpcom-threads) \
-	$(TARGET_VBox-xpcom-xptinfo) \
-	$(TARGET_VBox-xpcom-xptcall) \
-	$(TARGET_VBox-xpcom-proxy) \
-	$(TARGET_VBox-xpcom-nspr) \
-	$(TARGET_VBoxXPCOMGlue_s) \
+	$(VBox-xpcom-typelib_1_TARGET) \
+	$(VBox-xpcom-string_1_TARGET) \
+	$(VBox-xpcom-base_1_TARGET) \
+	$(VBox-xpcom-ds_1_TARGET) \
+	$(VBox-xpcom-io_1_TARGET) \
+	$(VBox-xpcom-components_1_TARGET) \
+	$(VBox-xpcom-threads_1_TARGET) \
+	$(VBox-xpcom-xptinfo_1_TARGET) \
+	$(VBox-xpcom-xptcall_1_TARGET) \
+	$(VBox-xpcom-proxy_1_TARGET) \
+	$(VBox-xpcom-nspr_1_TARGET) \
+	$(VBoxXPCOMGlue_s_1_TARGET) \
 	-Wl,-z,defaultextract
 
 #VBoxXPCOM_LIBS.l4 = $(L4_LIBDIR)/libxpcomstubs.a $(L4_LIBDIR)/../libuc_c++.a \
@@ -1041,7 +1041,7 @@ ifdef IPC_LOGGING
  TEMPLATE_XPCOMIPC_DEFS           += IPC_LOGGING
 endif
 
-TEMPLATE_XPCOMIPC_LIBS             = $(TARGET_VBoxXPCOM) $(TEMPLATE_XPCOM_LIBS)
+TEMPLATE_XPCOMIPC_LIBS             = $(VBoxXPCOM_1_TARGET) $(TEMPLATE_XPCOM_LIBS)
 
 TEMPLATE_XPCOMIPCEXE               = XPCOM IPC executables
 TEMPLATE_XPCOMIPCEXE_EXTENDS       = XPCOMEXE
@@ -1106,11 +1106,11 @@ VBoxXPCOMIPCC_SOURCES += \
 endif
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
-	$(TARGET_VBox-xpcom-ipcutils) \
-	$(TARGET_VBox-xpcom-ipcshared) \
-	$(TARGET_VBox-xpcom-ipcdlock) \
-	$(TARGET_VBox-xpcom-ipctransmgr) \
-	$(TARGET_VBox-xpcom-ipctmgrcom)
+	$(VBox-xpcom-ipcutils_1_TARGET) \
+	$(VBox-xpcom-ipcshared_1_TARGET) \
+	$(VBox-xpcom-ipcdlock_1_TARGET) \
+	$(VBox-xpcom-ipctransmgr_1_TARGET) \
+	$(VBox-xpcom-ipctmgrcom_1_TARGET)
 # EF
 #VBoxXPCOMIPCC_LIBS += $(LIB_RUNTIME)
 
@@ -1309,10 +1309,10 @@ VBoxXPCOMBase-xpt-inst_CLEAN = \
 	$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt
 
 # combined typelib library
-$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $$(VBOX_XPTFILES) | $$(TARGET_xpt_link) $(PATH_TARGET)/VBox-xpcom-xpt-files/
+$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $$(VBOX_XPTFILES) | $$(xpt_link_1_TARGET) $(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
-	$(QUIET)$(TARGET_xpt_link) $@ $^
+	$(QUIET)$(xpt_link_1_TARGET) $@ $^
 
 
 
@@ -1332,12 +1332,12 @@ define def_IDL
 $(VBOX_PATH_SDK)/bindings/xpcom/include/$(notdir $(subst .idl,.h,$(idl))) \
 + $(PATH_TARGET)/VBox-xpcom-xpt-files/$(notdir $(subst .idl,.xpt,$(idl))): \
 		$(VBOX_PATH_XPCOM_SRC)/$(idl) \
-		| $$$$(TARGET_xpidl) \
+		| $$$$(xpidl_1_TARGET) \
 		$(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/xpcom/include $(VBOX_PATH_SDK)/bindings/xpcom/idl
-	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
-	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
+	$$(QUIET)$$(xpidl_1_TARGET) -m header $(XPIDL_INCS) -e $$@ $$<
+	$$(QUIET)$$(xpidl_1_TARGET) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
 	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/bindings/xpcom/idl
 endef
 
