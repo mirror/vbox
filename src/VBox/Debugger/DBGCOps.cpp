@@ -52,6 +52,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
 static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 
 static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult);
@@ -179,6 +180,7 @@ const DBGCOP g_aOps[] =
     { {'#'},            1,       false,      3,              dbgcOpAddrHost,     NULL,                       "Flat host address." },
     { {'#','%','%'},    3,       false,      3,              dbgcOpAddrHostPhys, NULL,                       "Physical host address." },
     { {'$'},            1,       false,      3,              dbgcOpVar,          NULL,                       "Reference a variable." },
+    { {'@'},            1,       false,      3,              dbgcOpRegister,     NULL,                       "Reference a register." },
     { {'*'},            1,       true,       10,             NULL,               dbgcOpMult,                 "Multiplication." },
     { {'/'},            1,       true,       11,             NULL,               dbgcOpDiv,                  "Division." },
     { {'%'},            1,       true,       12,             NULL,               dbgcOpMod,                  "Modulus." },
@@ -465,6 +467,35 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult
     }
 
     return VERR_PARSE_VARIABLE_NOT_FOUND;
+}
+
+
+/**
+ * Reference register (unary).
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VBox evaluation / parsing error code on failure.
+ *          The caller does the bitching.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pArg        The argument.
+ * @param   pResult     Where to store the result.
+ */
+static DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
+{
+    LogFlow(("dbgcOpRegister: %s\n", pArg->u.pszString));
+
+    /*
+     * Parse sanity.
+     */
+    if (pArg->enmType != DBGCVAR_TYPE_STRING)
+        return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+    /*
+     * Get the register.
+     */
+    /// @todo DBGFR3RegByName();
+    return VERR_NOT_IMPLEMENTED;
+
 }
 
 
