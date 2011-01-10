@@ -41,6 +41,10 @@
       </listitem>
 
       <listitem>
+        <para>VGA: fixed VESA screen issue (4.0 regression; bug #7986)</para>
+      </listitem>
+
+      <listitem>
         <para>Main: fixed crash under rare circumstances due to an invalid
           logging string (4.0 regression)</para>
       </listitem>
