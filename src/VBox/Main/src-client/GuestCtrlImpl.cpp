@@ -295,7 +295,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                         size_t cbToRead = cbSize;
                         size_t cbTransfered = 0;
                         size_t cbRead;
-                        SafeArray<BYTE> aInputData(_1M);
+                        SafeArray<BYTE> aInputData(_64K);
                         while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
@@ -304,7 +304,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             else
                             {
                                 vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(),
-                                                 RT_MIN(cbToRead, _1M), &cbRead);
+                                                 RT_MIN(cbToRead, _64K), &cbRead);
                                 /*
                                  * Some other error occured? There might be a chance that RTFileRead
                                  * could not resolve/map the native error code to an IPRT code, so just
@@ -325,7 +325,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
 
                             ULONG uFlags = ProcessInputFlag_None;
                             /* Did we reach the end of the content we want to transfer (last chunk)? */
-                            if (   (cbRead < _1M)
+                            if (   (cbRead < _64K)
                                 /* ... or does the user want to cancel? */
                                 || (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
                                     && fCanceled)
@@ -357,6 +357,10 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             if (cbToRead == 0)
                                 break;
 
+                            /* Did the user cancel the operation above? */
+                            if (fCanceled)
+                                break;
+
                             /* Progress canceled by Main API? */
                             if (   SUCCEEDED(execProgress->COMGETTER(Canceled(&fCanceled)))
                                 && fCanceled)
@@ -369,7 +373,67 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                         }
 
                         if (SUCCEEDED(rc))
-                            aTask->progress->notifyComplete(S_OK);
+                        {
+                            /*
+                             * If we got here this means the started process either was completed,
+                             * canceled or we simply got all stuff transferred.
+                             */
+                            ULONG uRetStatus, uRetExitCode;
+                            rc = pGuest->waitForProcessStatusChange(uPID, &uRetStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
+                            if (FAILED(rc))
+                            {
+                                rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
+                            }
+                            else
+                            {
+                                if (   uRetExitCode != 0
+                                    || uRetStatus   != PROC_STS_TEN)
+                                {
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Guest reported error %u while copying file \"%s\" to \"%s\""),
+                                                                         uRetExitCode, aTask->strSource.c_str(), aTask->strDest.c_str());
+                                }
+                            }
+                        }
+
+                        if (SUCCEEDED(rc))
+                        {
+                            if (fCanceled)
+                            {
+                                /*
+                                 * In order to make the progress object to behave nicely, we also have to
+                                 * notify the object with a complete event when it's canceled.
+                                 */
+                                aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                                COM_IIDOF(IGuest),
+                                                                Guest::getStaticComponentName(),
+                                                                Guest::tr("Copying file \"%s\" canceled"), aTask->strSource.c_str());
+                            }
+                            else
+                            {
+                                /*
+                                 * Even if we succeeded until here make sure to check whether we really transfered
+                                 * everything.
+                                 */
+                                if (!cbTransfered)
+                                {
+                                    /* If nothing was transfered this means "vbox_cat" wasn't able to write
+                                     * to the destination -> access denied. */
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Access denied when copying file \"%s\" to \"%s\""),
+                                                                         aTask->strSource.c_str(), aTask->strDest.c_str());
+                                }
+                                else if (cbTransfered < cbSize)
+                                {
+                                    /* If we did not copy all let the user know. */
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Copying file \"%s\" failed (%u/%u bytes transfered)"),
+                                                                         aTask->strSource.c_str(), cbTransfered, cbSize);
+                                }
+                                else /* Yay, all went fine! */
+                                    aTask->progress->notifyComplete(S_OK);
+                            }
+                        }
                     }
                 }
                 RTFileClose(fileSource);
@@ -1079,10 +1143,22 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                          * in order to not block the caller. */
                         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
                         {
-                            PCALLBACKDATAEXECOUT pItData = (CALLBACKDATAEXECOUT*)it2->second.pvData;
+                            PCALLBACKDATAEXECOUT pItData = (PCALLBACKDATAEXECOUT)it2->second.pvData;
                             AssertPtr(pItData);
                             if (pItData->u32PID == pCBData->u32PID)
-                                destroyCtrlCallbackContext(it2);
+                                notifyCtrlCallbackContext(it2, errMsg.c_str());
+                            break;
+                        }
+
+                        /* When waiting for injecting process input while the process is destroyed,
+                         * make sure we also destroy the actual waiting operation (internal progress object)
+                         * in order to not block the caller. */
+                        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
+                        {
+                            PCALLBACKDATAEXECINSTATUS pItData = (PCALLBACKDATAEXECINSTATUS)it2->second.pvData;
+                            AssertPtr(pItData);
+                            if (pItData->u32PID == pCBData->u32PID)
+                                notifyCtrlCallbackContext(it2, errMsg.c_str());
                             break;
                         }
 
@@ -1092,11 +1168,9 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                     }
                 }
 
-                HRESULT hr2 = it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
-                                                                   COM_IIDOF(IGuest),
-                                                                   Guest::getStaticComponentName(),
-                                                                   "%s", errMsg.c_str());
-                AssertComRC(hr2);
+                /* Let the caller know what went wrong ... */
+                notifyCtrlCallbackContext(it, errMsg.c_str());
+
                 LogFlowFunc(("Process (CID=%u, status=%u) reported error: %s\n",
                              pData->hdr.u32ContextID, pData->u32Status, errMsg.c_str()));
             }
@@ -1188,25 +1262,12 @@ int Guest::notifyCtrlExecInStatus(uint32_t                  u32Function,
         /* Save bytes processed. */
         pCBData->cbProcessed = pData->cbProcessed;
 
-        /* Was progress canceled before? */
-        BOOL fCanceled;
-        ComAssert(!it->second.pProgress.isNull());
-        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled)) && fCanceled)
+        /* Only trigger completion once. */
+        BOOL fCompleted;
+        if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
+            && !fCompleted)
         {
-            it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
-                                                 COM_IIDOF(IGuest),
-                                                 Guest::getStaticComponentName(),
-                                                 Guest::tr("The input operation was canceled"));
-        }
-        else
-        {
-            BOOL fCompleted;
-            if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
-                && !fCompleted)
-            {
-                    /* If we previously got completed notification, don't trigger again. */
-                it->second.pProgress->notifyComplete(S_OK);
-            }
+            it->second.pProgress->notifyComplete(S_OK);
         }
     }
     else
@@ -1224,7 +1285,7 @@ int Guest::notifyCtrlClientDisconnected(uint32_t                        u32Funct
     if (it != mCallbackMap.end())
     {
         LogFlowFunc(("Client with CID=%u disconnected\n", it->first));
-        destroyCtrlCallbackContext(it);
+        notifyCtrlCallbackContext(it, Guest::tr("Client disconnected"));
     }
     return rc;
 }
@@ -1253,11 +1314,22 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
         it->second.cbData = 0;
     }
 
+    /* Remove callback context (not used anymore). */
+    mCallbackMap.erase(it);
+}
+
+/* No locking here; */
+void Guest::notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText)
+{
+    AssertPtr(pszText);
+    LogFlowFunc(("Handling callback with CID=%u ...\n", it->first));
+
     /* Notify outstanding waits for progress ... */
     if (    it->second.pProgress
          && !it->second.pProgress.isNull())
     {
-        LogFlowFunc(("Handling progress for CID=%u ...\n", it->first));
+        LogFlowFunc(("Notifying progress for CID=%u (Reason: %s) ...\n",
+                     it->first, pszText));
 
         /*
          * Assume we didn't complete to make sure we clean up even if the
@@ -1267,13 +1339,6 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
         it->second.pProgress->COMGETTER(Completed)(&fCompleted);
         if (!fCompleted)
         {
-            LogFlowFunc(("Progress of CID=%u *not* completed, cancelling ...\n", it->first));
-
-            /* Only cancel if not canceled before! */
-            BOOL fCanceled;
-            if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled)) && !fCanceled)
-                it->second.pProgress->Cancel();
-
             /*
              * To get waitForCompletion completed (unblocked) we have to notify it if necessary (only
              * cancel won't work!). This could happen if the client thread (e.g. VBoxService, thread of a spawned process)
@@ -1284,7 +1349,7 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                  COM_IIDOF(IGuest),
                                                  Guest::getStaticComponentName(),
-                                                 Guest::tr("The operation was canceled because client is shutting down"));
+                                                 pszText);
         }
         /*
          * Do *not* NULL pProgress here, because waiting function like executeProcess()
@@ -1351,6 +1416,39 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     }
 #endif
     return uNewContext;
+}
+
+HRESULT Guest::waitForProcessStatusChange(ULONG uPID, PULONG puRetStatus, PULONG puRetExitCode, ULONG uTimeoutMS)
+{
+    AssertPtr(puRetStatus);
+    AssertPtr(puRetExitCode);
+
+    if (uTimeoutMS == 0)
+        uTimeoutMS = UINT32_MAX;
+
+    uint64_t u64StartMS = RTTimeMilliTS();
+
+    HRESULT hRC;
+    ULONG uRetFlagsIgnored;
+    do
+    {
+        /*
+         * Do some busy waiting within the specified time period (if any).
+         */
+        if (   uTimeoutMS != UINT32_MAX
+            && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
+        {
+            hRC = setError(VBOX_E_IPRT_ERROR,
+                           tr("The process (PID %u) did not change its status within time (%ums)"),
+                           uPID, uTimeoutMS);
+            break;
+        }
+        hRC = GetProcessStatus(uPID, puRetExitCode, &uRetFlagsIgnored, puRetStatus);
+        if (FAILED(hRC))
+            break;
+        RTThreadSleep(100);
+    } while(*puRetStatus == PROC_STS_STARTED && SUCCEEDED(hRC));
+    return hRC;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
@@ -1735,53 +1833,59 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
         /* Init. */
         *aBytesWritten = 0;
 
-        /* Search for existing PID. */
-        GuestProcessMapIterConst itProc = getProcessByPID(aPID);
-        if (itProc != mGuestProcessMap.end())
         {
-            /* PID exists; check if process is still running. */
-            if (itProc->second.mStatus != PROC_STS_STARTED)
+            /* Take read lock to prevent races. */
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+            /* Search for existing PID. */
+            GuestProcessMapIterConst itProc = getProcessByPID(aPID);
+            if (itProc != mGuestProcessMap.end())
             {
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Process (PID %u) does not run anymore! Status: %ld, Flags: %u, Exit Code: %u"),
-                              aPID, itProc->second.mStatus, itProc->second.mFlags, itProc->second.mExitCode);
+                /* PID exists; check if process is still running. */
+                if (itProc->second.mStatus != PROC_STS_STARTED)
+                    rc = setError(VBOX_E_IPRT_ERROR,
+                                  Guest::tr("Cannot inject input to not running process (PID %u)"), aPID);
             }
+            else
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Cannot inject input to non-existent process (PID %u)"), aPID);
         }
-        else
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Process (PID %u) not found!"), aPID);
 
         if (SUCCEEDED(rc))
         {
             /*
              * Create progress object.
-             * This progress object, compared to the one in executeProgress() above
-             * is only local and is used to determine whether the operation finished
-             * or got canceled.
+             * This progress object, compared to the one in executeProgress() above,
+             * is only single-stage local and is used to determine whether the operation
+             * finished or got canceled.
              */
-            ComObjPtr <Progress> progress;
-            rc = progress.createObject();
+            ComObjPtr <Progress> pProgress;
+            rc = pProgress.createObject();
             if (SUCCEEDED(rc))
             {
-                rc = progress->init(static_cast<IGuest*>(this),
-                                    Bstr(tr("Setting input for process")).raw(),
-                                    TRUE /* Cancelable */);
+                rc = pProgress->init(static_cast<IGuest*>(this),
+                                     Bstr(tr("Setting input for process")).raw(),
+                                     TRUE /* Cancelable */);
             }
-            if (FAILED(rc)) return rc;
+            if (FAILED(rc)) throw rc;
+            ComAssert(!pProgress.isNull());
 
             /* Adjust timeout. */
             if (aTimeoutMS == 0)
                 aTimeoutMS = UINT32_MAX;
 
             PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
+            if (NULL == pData) throw rc;
             AssertReturn(pData, VBOX_E_IPRT_ERROR);
             RT_ZERO(*pData);
+
             /* Save PID + output flags for later use. */
             pData->u32PID = aPID;
             pData->u32Flags = aFlags;
+
             /* Add job to callback contexts. */
             uint32_t uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS,
-                                                         pData, sizeof(CALLBACKDATAEXECINSTATUS), progress);
+                                                         pData, sizeof(CALLBACKDATAEXECINSTATUS), pProgress);
             Assert(uContextID > 0);
 
             com::SafeArray<BYTE> sfaData(ComSafeArrayInArg(aData));
@@ -1837,62 +1941,45 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                     rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);
                     if (FAILED(rc)) throw rc;
 
-                    /* Was the operation canceled by one of the parties? */
-                    rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
-                    if (FAILED(rc)) throw rc;
-
-                    if (!fCanceled)
+                    /* Was the call completed within time? */
+                    LONG uResult;
+                    if (   SUCCEEDED(it->second.pProgress->COMGETTER(ResultCode)(&uResult))
+                        && uResult == S_OK)
                     {
-                        BOOL fCompleted;
-                        if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
-                            && fCompleted)
-                        {
-                            PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
-                            Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
-                            AssertPtr(pStatusData);
+                        PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
+                        AssertPtr(pStatusData);
+                        Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
 
-                            *aBytesWritten = pStatusData->cbProcessed;
-                        }
+                        *aBytesWritten = pStatusData->cbProcessed;
                     }
-                    else /* Operation was canceled. */
-                        vrc = VERR_CANCELLED;
-
-                    if (RT_FAILURE(vrc))
+                    else if (   SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled))
+                             && fCanceled)
                     {
-                        if (vrc == VERR_CANCELLED)
-                        {
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The input operation was canceled"));
-                        }
-                        else
-                        {
-                            rc = setError(E_UNEXPECTED,
-                                          tr("The service call failed with error %Rrc"), vrc);
-                        }
+                        rc = setError(VBOX_E_IPRT_ERROR,
+                                      tr("The input operation was canceled by the guest"));
                     }
+                    else
+                        rc = setError(VBOX_E_IPRT_ERROR,
+                                      tr("The input operation was not acknowledged from guest within time (%ums)"), aTimeoutMS);
 
                     {
                         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                        /*
-                         * Destroy locally used progress object.
-                         */
+                        /* Destroy locally used progress object. */
                         destroyCtrlCallbackContext(it);
                     }
-
-                    /* Remove callback context (not used anymore). */
-                    mCallbackMap.erase(it);
                 }
                 else /* PID lookup failed. */
                     rc = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Process (PID %u) not found!"), aPID);
+                                  tr("Process (PID %u) not found"), aPID);
             }
             else /* HGCM operation failed. */
                 rc = setError(E_UNEXPECTED,
-                              tr("The HGCM call failed with error %Rrc"), vrc);
+                              tr("The HGCM call failed (%Rrc)"), vrc);
 
             /* Cleanup. */
-            progress->uninit();
-            progress.setNull();
+            if (!pProgress.isNull())
+                pProgress->uninit();
+            pProgress.setNull();
         }
     }
     catch (std::bad_alloc &)
@@ -1937,7 +2024,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         {
             rc = progress->init(static_cast<IGuest*>(this),
                                 Bstr(tr("Getting output of process")).raw(),
-                                TRUE);
+                                TRUE /* Cancelable */);
         }
         if (FAILED(rc)) return rc;
 
@@ -2071,14 +2158,9 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
                 {
                     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                    /*
-                     * Destroy locally used progress object.
-                     */
+                    /* Destroy locally used progress object. */
                     destroyCtrlCallbackContext(it);
                 }
-
-                /* Remove callback context (not used anymore). */
-                mCallbackMap.erase(it);
             }
             else /* PID lookup failed. */
                 rc = setError(VBOX_E_IPRT_ERROR,
