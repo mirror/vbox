@@ -59,6 +59,11 @@
           was attached (4.0 regression)</para>
       </listitem>
 
+      <listitem>
+        <para>Guest Additions: fixed parsing of parameters for guest control in
+          VBoxService (4.0 regression; bug #8010)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
