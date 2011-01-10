@@ -1280,7 +1280,7 @@ VBoxRTDummy_LIBS = $(PATH_BIN)/VBoxRT.so
 VBoxRTDummy_CLEAN= $(PATH_BIN)/VBoxRT.so
 BLDDIRS += $(PATH_BIN)
 
-$(PATH_BIN)/VBoxRT.so: $$(TARGET_VBoxRT) | $$(dir $$@)
+$(PATH_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)
 	$(INSTALL) $< $@
 	chcon -t texrel_shlib_t $@ || true
 
