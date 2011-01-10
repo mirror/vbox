@@ -764,6 +764,7 @@ StorageModel::StorageModel (QObject *aParent)
     : QAbstractItemModel (aParent)
     , mRootItem (new RootItem)
     , mToolTipType (DefaultToolTip)
+    , m_chipsetType(KChipsetType_PIIX3)
 {
 }
 
