@@ -492,11 +492,8 @@
             <para>Change to the directory where your CD-ROM drive is mounted
             and execute as root:</para>
 
-            <screen>sh ./VBoxLinuxAdditions-x86.run</screen>
+            <screen>sh ./VBoxLinuxAdditions.run</screen>
 
-            <para>In a 64-bit Linux guest, use
-            <computeroutput>VBoxLinuxAdditions-amd64.run</computeroutput>
-            instead.</para>
           </listitem>
         </orderedlist>
 
@@ -732,10 +729,7 @@
         drivers. If for any reason you do not wish to set them all up, you can
         install the Guest Additions using the following command:</para>
 
-        <screen>  sh ./VBoxLinuxAdditions-x86.run no_setup</screen>
-
-        <para>(substituting <computeroutput>VBoxLinuxAdditions-amd64
-        </computeroutput> on a 64-bit guest).</para>
+        <screen>  sh ./VBoxLinuxAdditions.run no_setup</screen>
 
         <para>After this, you will need to at least compile the kernel modules
         by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
@@ -820,11 +814,9 @@ EndSection</screen>
         can do so by inserting the Guest Additions CD image into the virtual
         CD-ROM drive as described above and running the installer for the
         current Guest Additions with the "uninstall" parameter from the path
-        that the CD image is mounted on in the guest: <screen>sh ./VBoxLinuxAdditions-x86.run uninstall</screen></para>
+        that the CD image is mounted on in the guest: <screen>sh ./VBoxLinuxAdditions.run uninstall</screen></para>
 
-        <para>With a 64-bit guest, use
-        <computeroutput>VBoxLinuxAdditions-amd64</computeroutput> instead.
-        While this will normally work without issues, you may need to do some
+        <para>While this will normally work without issues, you may need to do some
         manual cleanup of the guest (particularly of the XFree86Config or
         xorg.conf file) in some cases, particularly if the Additions version
         installed or the guest operating system were very old, or if you made
