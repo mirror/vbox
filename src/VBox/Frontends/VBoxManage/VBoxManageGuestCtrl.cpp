@@ -41,6 +41,7 @@
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
+#include <iprt/thread.h>
 
 #ifdef USE_XPCOM_QUEUE
 # include <sys/select.h>
