@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -141,9 +141,14 @@
  */
 struct VMTask
 {
-    VMTask(Console *aConsole, bool aUsesVMPtr)
+    VMTask(Console *aConsole,
+           Progress *aProgress,
+           const ComPtr<IProgress> &aServerProgress,
+           bool aUsesVMPtr)
         : mConsole(aConsole),
           mConsoleCaller(aConsole),
+          mProgress(aProgress),
+          mServerProgress(aServerProgress),
           mVMCallerAdded(false)
     {
         AssertReturnVoid(aConsole);
@@ -177,6 +182,9 @@ struct VMTask
 
     const ComObjPtr<Console> mConsole;
     AutoCaller mConsoleCaller;
+    const ComObjPtr<Progress> mProgress;
+    Utf8Str mErrorMsg;
+    const ComPtr<IProgress> mServerProgress;
 
 private:
 
@@ -184,27 +192,14 @@ private:
     bool mVMCallerAdded : 1;
 };
 
-struct VMProgressTask : public VMTask
-{
-    VMProgressTask(Console *aConsole,
-                   Progress *aProgress,
-                   bool aUsesVMPtr)
-        : VMTask(aConsole, aUsesVMPtr),
-          mProgress(aProgress)
-    {}
-
-    const ComObjPtr<Progress> mProgress;
-
-    Utf8Str mErrorMsg;
-};
-
-struct VMTakeSnapshotTask : public VMProgressTask
+struct VMTakeSnapshotTask : public VMTask
 {
     VMTakeSnapshotTask(Console *aConsole,
                        Progress *aProgress,
                        IN_BSTR aName,
                        IN_BSTR aDescription)
-        : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
+        : VMTask(aConsole, aProgress, NULL /* aServerProgress */,
+                 false /* aUsesVMPtr */),
           bstrName(aName),
           bstrDescription(aDescription),
           lastMachineState(MachineState_Null)
@@ -218,11 +213,12 @@ struct VMTakeSnapshotTask : public VMProgressTask
     ULONG                   ulMemSize;
 };
 
-struct VMPowerUpTask : public VMProgressTask
+struct VMPowerUpTask : public VMTask
 {
     VMPowerUpTask(Console *aConsole,
                   Progress *aProgress)
-        : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
+        : VMTask(aConsole, aProgress, NULL /* aServerProgress */,
+                 false /* aUsesVMPtr */),
           mConfigConstructor(NULL),
           mStartPaused(false),
           mTeleporterEnabled(FALSE),
@@ -241,17 +237,33 @@ struct VMPowerUpTask : public VMProgressTask
     ProgressList hardDiskProgresses;
 };
 
-struct VMSaveTask : public VMProgressTask
+struct VMPowerDownTask : public VMTask
 {
-    VMSaveTask(Console *aConsole, Progress *aProgress, const ComPtr<IProgress> &aServerProgress)
-        : VMProgressTask(aConsole, aProgress, true /* aUsesVMPtr */),
-          mLastMachineState(MachineState_Null),
-          mServerProgress(aServerProgress)
+    VMPowerDownTask(Console *aConsole,
+                    const ComPtr<IProgress> &aServerProgress,
+                    MachineState_T aLastMachineState)
+        : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
+                 true /* aUsesVMPtr */),
+          mLastMachineState(aLastMachineState)
+    {}
+
+    MachineState_T mLastMachineState;
+};
+
+struct VMSaveTask : public VMTask
+{
+    VMSaveTask(Console *aConsole,
+               const ComPtr<IProgress> &aServerProgress,
+               const Utf8Str &aSavedStateFile,
+               MachineState_T aLastMachineState)
+        : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
+                 true /* aUsesVMPtr */),
+          mSavedStateFile(aSavedStateFile),
+          mLastMachineState(aLastMachineState)
     {}
 
     Utf8Str mSavedStateFile;
     MachineState_T mLastMachineState;
-    ComPtr<IProgress> mServerProgress;
 };
 
 // Handler for global events
@@ -1397,7 +1409,7 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
     else
     {
         LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
-                 pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+                 hrc, pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
         rc = Global::vboxStatusCodeFromCOM(hrc);
     }
     return rc;
@@ -1722,11 +1734,10 @@ STDMETHODIMP Console::PowerUpPaused(IProgress **aProgress)
 
 STDMETHODIMP Console::PowerDown(IProgress **aProgress)
 {
-    if (aProgress == NULL)
-        return E_POINTER;
-
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
+
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1784,36 +1795,74 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
 
     LogFlowThisFunc(("Initiating SHUTDOWN request...\n"));
 
-    /* create an IProgress object to track progress of this operation */
-    ComObjPtr<Progress> pProgress;
-    pProgress.createObject();
-    pProgress->init(static_cast<IConsole *>(this),
-                    Bstr(tr("Stopping virtual machine")).raw(),
-                    FALSE /* aCancelable */);
+    /* memorize the current machine state */
+    MachineState_T lastMachineState = mMachineState;
 
-    /* setup task object and thread to carry out the operation asynchronously */
-    std::auto_ptr<VMProgressTask> task(new VMProgressTask(this, pProgress, true /* aUsesVMPtr */));
-    AssertReturn(task->isOk(), E_FAIL);
+    HRESULT rc = S_OK;
+    bool fBeganPowerDown = false;
 
-    int vrc = RTThreadCreate(NULL, Console::powerDownThread,
-                             (void *) task.get(), 0,
-                             RTTHREADTYPE_MAIN_WORKER, 0,
-                             "VMPowerDown");
-    if (RT_FAILURE(vrc))
-        return setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
+    do
+    {
+        ComPtr<IProgress> pProgress;
 
-    /* task is now owned by powerDownThread(), so release it */
-    task.release();
+        /*
+         * request a progress object from the server
+         * (this will set the machine state to Stopping on the server to block
+         * others from accessing this machine)
+         */
+        rc = mControl->BeginPoweringDown(pProgress.asOutParam());
+        if (FAILED(rc))
+            break;
 
-    /* go to Stopping state to forbid state-dependent operations */
-    setMachineState(MachineState_Stopping);
+        fBeganPowerDown = true;
 
-    /* pass the progress to the caller */
-    pProgress.queryInterfaceTo(aProgress);
+        /* sync the state with the server */
+        setMachineStateLocally(MachineState_Stopping);
 
+        /* setup task object and thread to carry out the operation asynchronously */
+        std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(this, pProgress,
+                                                                lastMachineState));
+        AssertBreakStmt(task->isOk(), rc = E_FAIL);
+
+        int vrc = RTThreadCreate(NULL, Console::powerDownThread,
+                                 (void *) task.get(), 0,
+                                 RTTHREADTYPE_MAIN_WORKER, 0,
+                                 "VMPowerDown");
+        if (RT_FAILURE(vrc))
+        {
+            rc = setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
+            break;
+        }
+
+        /* task is now owned by powerDownThread(), so release it */
+        task.release();
+
+        /* pass the progress to the caller */
+        pProgress.queryInterfaceTo(aProgress);
+    }
+    while (0);
+
+    if (FAILED(rc))
+    {
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
+
+        if (fBeganPowerDown)
+        {
+            /*
+             * cancel the requested power down procedure.
+             * This will reset the machine state to the state it had right
+             * before calling mControl->BeginPoweringDown().
+             */
+            mControl->EndPoweringDown(eik.getResultCode(), eik.getText().raw());        }
+
+        setMachineStateLocally(lastMachineState);
+    }
+
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Console::Reset()
@@ -1847,7 +1896,7 @@ STDMETHODIMP Console::Reset()
                  tr("Could not reset the machine (%Rrc)"),
                  vrc);
 
-    LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
+    LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -1977,7 +2026,7 @@ HRESULT Console::doCPURemove(ULONG aCpu)
         rc = setError(VBOX_E_VM_ERROR,
                       tr("Hot-Remove was aborted because the CPU may still be used by the guest"), VERR_RESOURCE_BUSY);
 
-    LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
+    LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2094,7 +2143,7 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
         /** @todo warning if the guest doesn't support it */
     }
 
-    LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
+    LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2185,7 +2234,7 @@ STDMETHODIMP Console::Resume()
                  tr("Could not resume the machine execution (%Rrc)"),
                  vrc);
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2223,7 +2272,7 @@ STDMETHODIMP Console::PowerButton()
                  tr("Controlled power off failed (%Rrc)"),
                  vrc);
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2267,7 +2316,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     *aHandled = handled;
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2342,7 +2391,7 @@ STDMETHODIMP Console::SleepButton()
             tr("Sending sleep button event failed (%Rrc)"),
             vrc);
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2399,21 +2448,6 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         /* sync the state with the server */
         setMachineStateLocally(MachineState_Saving);
 
-        /* create a task object early to ensure mpVM protection is successful */
-        std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, NULL, pProgress));
-        rc = task->rc();
-        /*
-         * If we fail here it means a PowerDown() call happened on another
-         * thread while we were doing Pause() (which leaves the Console lock).
-         * We assign PowerDown() a higher precedence than SaveState(),
-         * therefore just return the error to the caller.
-         */
-        if (FAILED(rc))
-        {
-            fTaskCreationFailed = true;
-            break;
-        }
-
         /* ensure the directory for the saved state file exists */
         {
             Utf8Str dir = stateFilePath;
@@ -2431,10 +2465,22 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             }
         }
 
-        /* setup task object and thread to carry out the operation asynchronously */
-        task->mSavedStateFile = stateFilePath;
-        /* set the state the operation thread will restore when it is finished */
-        task->mLastMachineState = lastMachineState;
+        /* create a task object early to ensure mpVM protection is successful */
+        std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, pProgress,
+                                                      stateFilePath,
+                                                      lastMachineState));
+        rc = task->rc();
+        /*
+         * If we fail here it means a PowerDown() call happened on another
+         * thread while we were doing Pause() (which leaves the Console lock).
+         * We assign PowerDown() a higher precedence than SaveState(),
+         * therefore just return the error to the caller.
+         */
+        if (FAILED(rc))
+        {
+            fTaskCreationFailed = true;
+            break;
+        }
 
         /* create a thread to wait until the VM state is saved */
         int vrc = RTThreadCreate(NULL, Console::saveStateThread, (void *) task.get(),
@@ -2479,7 +2525,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             setMachineStateLocally(lastMachineState);
     }
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -2916,7 +2962,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
                                    IProgress **aProgress)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aName='%ls' mMachineState=%08X\n", aName, mMachineState));
+    LogFlowThisFunc(("aName='%ls' mMachineState=%d\n", aName, mMachineState));
 
     CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aProgress);
@@ -3036,7 +3082,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     catch (HRESULT erc)
     {
         delete pTask;
-        NOREF(erc);
+        rc = erc;
         mptrCancelableProgress.setNull();
     }
 
@@ -5306,16 +5352,13 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
  *
  * @param   aProgress       Where to return the progress object.
  * @param   aPaused         true if PowerUpPaused called.
- *
- * @todo move down to powerDown();
  */
 HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 {
-    if (aProgress == NULL)
-        return E_POINTER;
-
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
+
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -5704,7 +5747,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
  *       instantiated an AutoVMCaller object; first call releaseVMCaller() or
  *       release(). Otherwise it will deadlock.
  */
-HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
+HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 {
     LogFlowThisFuncEnter();
 
@@ -5847,13 +5890,6 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 #endif
         alock.enter();
     }
-    else
-    {
-        /** @todo r=bird: Doesn't make sense. Please remove after 3.1 has been branched
-         *        off. */
-        /* reset the flag for future re-use */
-        mVMPoweredOff = false;
-    }
 
     /* advance percent count */
     if (aProgress)
@@ -5969,10 +6005,6 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (SUCCEEDED(rc))
         mCallbackData.clear();
 
-    /* complete the progress */
-    if (aProgress)
-        aProgress->notifyComplete(rc);
-
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -6024,7 +6056,7 @@ HRESULT Console::setMachineState(MachineState_T aMachineState,
              */
             LogFlowThisFunc(("Doing mControl->UpdateState()...\n"));
             rc = mControl->UpdateState(aMachineState);
-            LogFlowThisFunc(("mControl->UpdateState()=%08X\n", rc));
+            LogFlowThisFunc(("mControl->UpdateState()=%Rhrc\n", rc));
         }
     }
 
@@ -6421,8 +6453,9 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                  * is one or more mpVM callers (added with addVMCaller()) we'll
                  * deadlock).
                  */
-                std::auto_ptr<VMProgressTask> task(new VMProgressTask(that, NULL /* aProgress */,
-                                                                      true /* aUsesVMPtr */));
+                std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that,
+                                                                        NULL /* aServerProgress */,
+                                                                        MachineState_Null));
 
                  /* If creating a task failed, this can currently mean one of
                   * two: either Console::uninit() has been called just a ms
@@ -6658,7 +6691,6 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 }
 
 #ifdef VBOX_WITH_USB
-
 /**
  * Sends a request to VMM to attach the given host device.
  * After this method succeeds, the attached device will appear in the
@@ -6891,10 +6923,9 @@ Console::usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID
     LogFlowFuncLeave();
     return vrc;
 }
-
 #endif /* VBOX_WITH_USB */
-#if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))
 
+#if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
 /**
  * Helper function to handle host interface device creation and attachment.
  *
@@ -7129,7 +7160,6 @@ HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
 }
-
 #endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
 
 /**
@@ -7163,11 +7193,11 @@ HRESULT Console::powerDownHostInterfaces()
         pNetworkAdapter->COMGETTER(AttachmentType)(&attachment);
         if (attachment == NetworkAttachmentType_Bridged)
         {
-#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
+#if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
             HRESULT rc2 = detachFromTapInterface(pNetworkAdapter);
             if (FAILED(rc2) && SUCCEEDED(rc))
                 rc = rc2;
-#endif
+#endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
         }
     }
 
@@ -7519,7 +7549,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         HRESULT hrc = CoInitializeEx(NULL,
                                      COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE |
                                      COINIT_SPEED_OVER_MEMORY);
-        LogFlowFunc(("CoInitializeEx()=%08X\n", hrc));
+        LogFlowFunc(("CoInitializeEx()=%Rhrc\n", hrc));
     }
 #endif
 
@@ -8437,10 +8467,12 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr<VMProgressTask> task(static_cast<VMProgressTask *>(pvUser));
+    std::auto_ptr<VMPowerDownTask> task(static_cast<VMPowerDownTask *>(pvUser));
     AssertReturn(task.get(), VERR_INVALID_PARAMETER);
 
     AssertReturn(task->isOk(), VERR_GENERAL_FAILURE);
+
+    Assert(task->mProgress.isNull());
 
     const ComObjPtr<Console> &that = task->mConsole;
 
@@ -8453,7 +8485,10 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
     /* release VM caller to avoid the powerDown() deadlock */
     task->releaseVMCaller();
 
-    that->powerDown(task->mProgress);
+    that->powerDown(task->mServerProgress);
+
+    /* complete the operation */
+    that->mControl->EndPoweringDown(S_OK, Bstr().raw());
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;

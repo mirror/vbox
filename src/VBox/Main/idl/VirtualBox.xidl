@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2010 Oracle Corporation
+    Copyright (C) 2006-2011 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -2906,7 +2906,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="476126af-e223-4490-a8a0-b1f1575be013"
+    uuid="8e723ab0-812c-5662-dd8e-7ebc89637acf"
     internal="yes"
     wsmap="suppress"
     >
@@ -2956,6 +2956,44 @@
         call in order to complete that progress object.
       </desc>
       <param name="result" type="long" dir="in"/>
+    </method>
+
+    <method name="beginPoweringDown">
+      <desc>
+        Called by the VM process to inform the server it wants to
+        stop the VM execution and power down.
+      </desc>
+      <param name="progress" type="IProgress" dir="out">
+        <desc>
+          Progress object created by VBoxSVC to wait until
+          the VM is powered down.
+        </desc>
+      </param>
+    </method>
+
+    <method name="endPoweringDown">
+      <desc>
+        Called by the VM process to inform the server that powering
+        down previously requested by #beginPoweringDown is either
+        successfully finished or there was a failure.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
+      </desc>
+
+      <param name="result" type="long" dir="in">
+        <desc>@c S_OK to indicate success.
+        </desc>
+      </param>
+      <param name="errMsg" type="wstring" dir="in">
+        <desc>@c human readable error message in case of failure.
+        </desc>
+      </param>
     </method>
 
     <method name="runUSBDeviceFilters">

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -434,7 +434,7 @@ private:
     HRESULT consoleInitReleaseLog(const ComPtr<IMachine> aMachine);
 
     HRESULT powerUp(IProgress **aProgress, bool aPaused);
-    HRESULT powerDown(Progress *aProgress = NULL);
+    HRESULT powerDown(IProgress *aProgress = NULL);
 
     HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
                                     Bstr &tapSetupApplication);

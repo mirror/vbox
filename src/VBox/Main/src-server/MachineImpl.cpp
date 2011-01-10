@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -10478,7 +10478,6 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
     return S_OK;
 }
 
-
 /**
  *  @note Locks this object for writing.
  */
@@ -10512,6 +10511,94 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
 
     return S_OK;
 }
+
+/**
+ *  @note Locks this object for writing.
+ */
+STDMETHODIMP SessionMachine::BeginPoweringDown(IProgress **aProgress)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    AssertReturn(mConsoleTaskData.mLastState == MachineState_Null,
+                 E_FAIL);
+
+    /* create a progress object to track operation completion */
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    pProgress->init(getVirtualBox(),
+                    static_cast<IMachine *>(this) /* aInitiator */,
+                    Bstr(tr("Stopping the virtual machine")).raw(),
+                    FALSE /* aCancelable */);
+
+    /* fill in the console task data */
+    mConsoleTaskData.mLastState = mData->mMachineState;
+    mConsoleTaskData.mProgress = pProgress;
+
+    /* set the state to Stopping (this is expected by Console::PowerDown()) */
+    setMachineState(MachineState_Stopping);
+
+    pProgress.queryInterfaceTo(aProgress);
+
+    return S_OK;
+}
+
+/**
+ *  @note Locks this object for writing.
+ */
+STDMETHODIMP SessionMachine::EndPoweringDown(LONG iResult, IN_BSTR aErrMsg)
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_PoweredOff)
+                      || (FAILED(iResult) && mData->mMachineState == MachineState_Stopping))
+                  && mConsoleTaskData.mLastState != MachineState_Null,
+                 E_FAIL);
+
+    /*
+     * On failure, set the state to the state we had when BeginPoweringDown()
+     * was called (this is expected by Console::PowerDown() and the associated
+     * task). On success the VM process already changed the state to
+     * MachineState_PoweredOff, so no need to do anything.
+     */
+    if (FAILED(iResult))
+        setMachineState(mConsoleTaskData.mLastState);
+
+    /* notify the progress object about operation completion */
+    Assert(mConsoleTaskData.mProgress);
+    if (SUCCEEDED(iResult))
+        mConsoleTaskData.mProgress->notifyComplete(S_OK);
+    else
+    {
+        Utf8Str strErrMsg(aErrMsg);
+        if (strErrMsg.length())
+            mConsoleTaskData.mProgress->notifyComplete(iResult,
+                                                       COM_IIDOF(ISession),
+                                                       getComponentName(),
+                                                       strErrMsg.c_str());
+        else
+            mConsoleTaskData.mProgress->notifyComplete(iResult);
+    }
+
+    /* clear out the temporary saved state data */
+    mConsoleTaskData.mLastState = MachineState_Null;
+    mConsoleTaskData.mProgress.setNull();
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 
 /**
  *  Goes through the USB filters of the given machine to see if the given
@@ -10778,7 +10865,7 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
                                    mData->mUuid.raw());
     }
 
-    /* fill in the snapshot data */
+    /* fill in the console task data */
     mConsoleTaskData.mLastState = mData->mMachineState;
     mConsoleTaskData.mStateFilePath = stateFilePath;
     mConsoleTaskData.mProgress = pProgress;
@@ -11540,9 +11627,9 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
     {
         if (aErrMsg.length())
             mConsoleTaskData.mProgress->notifyComplete(aRc,
-                                                    COM_IIDOF(ISession),
-                                                    getComponentName(),
-                                                    aErrMsg.c_str());
+                                                       COM_IIDOF(ISession),
+                                                       getComponentName(),
+                                                       aErrMsg.c_str());
         else
             mConsoleTaskData.mProgress->notifyComplete(aRc);
     }
