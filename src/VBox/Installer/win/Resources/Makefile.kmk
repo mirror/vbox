@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010 Oracle Corporation
+# Copyright (C) 2010-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@ DLLS += VBoxRes
 VBoxRes_TEMPLATE = VBOXR3STATIC
 VBoxRes_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxRes_SOURCES = \
+	dummy.cpp \
 	VBoxRes.rc
 
 # The icon location is configurable.
