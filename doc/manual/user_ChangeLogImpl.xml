@@ -50,6 +50,11 @@
       </listitem>
 
       <listitem>
+        <para>Webservice: now listens to localhost by default as documented
+          (bug #6067)</para>
+      </listitem>
+
+      <listitem>
         <para>Settings: fixed loading of removeable drives to which a host drive
           was attached (4.0 regression)</para>
       </listitem>
