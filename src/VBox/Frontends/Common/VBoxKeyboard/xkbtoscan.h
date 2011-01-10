@@ -37,6 +37,9 @@ enum { XKB_NAME_SIZE = 4 };
 
 /**
  * This table contains a list of mappings of XKB key names to XT scan codes.
+ * We only use XKB to look up layout-dependent keys (mainly the alpha-numeric
+ * ones), so that user re-mappings will work at least for the remaining keys.
+ * This is the reason for the commented out entries in the table.
  */
 struct
 {
