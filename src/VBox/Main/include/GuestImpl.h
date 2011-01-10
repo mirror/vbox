@@ -181,7 +181,7 @@ private:
     void notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText);
     void destroyCtrlCallbackContext(CallbackMapIter it);
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
-    HRESULT waitForProcessStatusChange(ULONG uPID, PULONG puRetStatus, PULONG puRetExitCode, ULONG uTimeoutMS);
+    HRESULT waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
 # endif
 
     struct Data
