@@ -54,7 +54,6 @@ typedef std::string vbox__uuid;
  *
  ****************************************************************************/
 
-extern ComPtr<IVirtualBox> g_pVirtualBox;
 extern bool g_fVerbose;
 
 extern PRTSTREAM g_pstrLog;

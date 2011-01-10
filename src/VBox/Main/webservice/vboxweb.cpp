@@ -87,8 +87,7 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser);
  *
  ****************************************************************************/
 
-ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
-ComPtr<IVirtualBox>     g_pVirtualBox = NULL;
+static ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
 
 // generated strings in methodmaps.cpp
 extern const char       *g_pcszISession,
@@ -128,8 +127,10 @@ SoapQ               *g_pSoapQ = NULL;
 // this mutex protects the auth lib and authentication
 util::WriteLockHandle  *g_pAuthLibLockHandle;
 
-// this mutex protects the global VirtualBox reference
-util::RWLockHandle  *g_pVirtualBoxLockHandle;
+// this mutex protects the global VirtualBox reference below
+static util::RWLockHandle *g_pVirtualBoxLockHandle;
+
+static ComPtr<IVirtualBox> g_pVirtualBox = NULL;
 
 // this mutex protects all of the below
 util::WriteLockHandle  *g_pSessionsLockHandle;
