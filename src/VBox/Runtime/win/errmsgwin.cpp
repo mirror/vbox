@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -79,6 +79,19 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
     for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
         if (g_aStatusMsgs[i].iCode == rc)
             return &g_aStatusMsgs[i];
+
+    /* The g_aStatusMsgs table contains a wild mix of error codes with and
+     * without included facility and severity. So the chance is high that there
+     * was no exact match. Try to find a non-exact match, and include the
+     * actual value in case we pick the wrong entry. Better than always using
+     * the "Unknown Status" case. */
+    for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+        if (g_aStatusMsgs[i].iCode == HRESULT_CODE(rc))
+        {
+            int32_t iMsg = (ASMAtomicIncU32(&g_iUnknownMsgs) - 1) % RT_ELEMENTS(g_aUnknownMsgs);
+            RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "%s 0x%X", g_aStatusMsgs[i].pszDefine, rc);
+            return &g_aUnknownMsgs[iMsg];
+        }
 
     /*
      * Need to use the temporary stuff.
