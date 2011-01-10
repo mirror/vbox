@@ -567,6 +567,9 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     {
                         break;
                     }
+
+                    /* Make sure the loop is not too tight. */
+                    RTThreadYield();
                 }
 
                 /* Undo signal handling */
