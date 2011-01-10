@@ -178,8 +178,10 @@ private:
     int notifyCtrlExecInStatus(uint32_t u32Function, PCALLBACKDATAEXECINSTATUS pData);
     CallbackMapIter getCtrlCallbackContextByID(uint32_t u32ContextID);
     GuestProcessMapIter getProcessByPID(uint32_t u32PID);
+    void notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText);
     void destroyCtrlCallbackContext(CallbackMapIter it);
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
+    HRESULT waitForProcessStatusChange(ULONG uPID, PULONG puRetStatus, PULONG puRetExitCode, ULONG uTimeoutMS);
 # endif
 
     struct Data
