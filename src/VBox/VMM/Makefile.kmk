@@ -77,6 +77,7 @@ VMMR3_ASINCS   = .
 VMMR3_SOURCES   = \
 	VMMR3/CFGM.cpp \
 	VMMR3/CPUM.cpp \
+	VMMR3/CPUMDbg.cpp \
 	VMMR3/DBGF.cpp \
 	VMMR3/DBGFAddr.cpp \
 	VMMR3/DBGFAddrSpace.cpp \
