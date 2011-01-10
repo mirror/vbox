@@ -432,7 +432,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVmNewAction, SIGNAL(triggered()), this, SLOT(vmNew()));
     connect(mVmAddAction, SIGNAL(triggered()), this, SLOT(vmAdd()));
 
-    connect(mVmConfigAction, SIGNAL(triggered()), this, SLOT(vmSettings()), Qt::QueuedConnection);
+    connect(mVmConfigAction, SIGNAL(triggered()), this, SLOT(vmSettings()));
     connect(mVmDeleteAction, SIGNAL(triggered()), this, SLOT(vmDelete()));
     connect(mVmStartAction, SIGNAL(triggered()), this, SLOT(vmStart()));
     connect(mVmDiscardAction, SIGNAL(triggered()), this, SLOT(vmDiscard()));
