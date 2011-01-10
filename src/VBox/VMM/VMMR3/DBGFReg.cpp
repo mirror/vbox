@@ -109,7 +109,7 @@ typedef struct DBGFREGSET
     /** The register descriptors. */
     PCDBGFREGDESC           paDescs;
     /** The number of register descriptors. */
-    size_t                  cDescs;
+    uint32_t                cDescs;
 
     /** Array of lookup records. */
     struct DBGFREGLOOKUP   *paLookupRecs;
