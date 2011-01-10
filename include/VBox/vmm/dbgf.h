@@ -1304,6 +1304,15 @@ typedef DBGFREGSUBFIELD const *PCDBGFREGSUBFIELD;
 #define DBGFREGSUBFIELD_FLAGS_READ_ONLY     UINT8_C(0x01)
 /** @} */
 
+/** Macro for creating a read-write sub-field entry without getters. */
+#define DBGFREGSUBFIELD_RW(a_szName, a_iFirstBit, a_cBits, a_cShift) \
+    { a_szName, a_iFirstBit, a_cBits, a_cShift, 0 /*fFlags*/, NULL /*pfnGet*/, NULL /*pfnSet*/ }
+/** Macro for creating a read-write sub-field entry with getters. */
+#define DBGFREGSUBFIELD_RW_SG(a_szName, a_cBits, a_cShift, a_pfnGet, a_pfnSet) \
+    { a_szName, 0 /*iFirstBit*/, a_cBits, a_cShift, 0 /*fFlags*/, a_pfnGet, a_pfnSet }
+/** Macro for creating a terminator sub-field entry.  */
+#define DBGFREGSUBFIELD_TERMINATOR() \
+    { NULL, 0, 0, 0, 0, NULL, NULL }
 
 /**
  * Register alias descriptor.
@@ -1336,9 +1345,9 @@ typedef struct DBGFREGDESC
      * thuse the 'off' prefix. */
     uint32_t                offRegister;
     /** Getter. */
-    DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGDESC const *pDesc, PDBGFREGVAL puValue);
+    DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGDESC const *pDesc, PDBGFREGVAL pValue);
     /** Setter. */
-    DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGDESC const *pDesc, PCDBGFREGVAL puValue, PCDBGFREGVAL pfMask);
+    DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGDESC const *pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask);
     /** Aliases (optional). */
     PCDBGFREGALIAS          paAliases;
     /** Sub fields (optional). */
