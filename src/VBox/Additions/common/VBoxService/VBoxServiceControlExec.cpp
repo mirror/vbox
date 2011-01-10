@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1107,12 +1107,10 @@ int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
     if (RTStrStr(papszArgs[0], "vbox_") == papszArgs[0])
         fUseToolbox = true;
 
-    /* Skip argv[0] (= file name) if we run an internal VBoxService
-     * toolbox ("vbox_*") command - we already have a resolved one
-     * (e.g. "vbox_cat" -> "C:\Windows\system32\VBoxService vbox_cat") in pszFileName. */
+    /* Skip argv[0] (= file name) if we don't run an internal
+     * VBoxService toolbox command - we already have a resolved one in pszFileName. */
     char *pszArgs;
-    int rc = RTGetOptArgvToString(&pszArgs,
-                                  fUseToolbox ? &papszArgs[1] : papszArgs,
+    int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
     if (   RT_SUCCESS(rc)
         && pszArgs)
