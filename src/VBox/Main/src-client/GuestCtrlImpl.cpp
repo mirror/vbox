@@ -1418,7 +1418,7 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     return uNewContext;
 }
 
-HRESULT Guest::waitForProcessStatusChange(ULONG uPID, PULONG puRetStatus, PULONG puRetExitCode, ULONG uTimeoutMS)
+HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
 {
     AssertPtr(puRetStatus);
     AssertPtr(puRetExitCode);
