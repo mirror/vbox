@@ -2860,6 +2860,19 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszS
 RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszString);
 
 /**
+ * Gets a string from a unique string space.
+ *
+ * @returns Pointer to the string node.
+ * @returns NULL if the string was not found in the string space.
+ * @param   pStrSpace       The space to insert it into.
+ * @param   pszString       The string to get.
+ * @param   cchMax          The max string length to evaluate.  Passing
+ *                          RTSTR_MAX is ok and makes it behave just like
+ *                          RTStrSpaceGet.
+ */
+RTDECL(PRTSTRSPACECORE) RTStrSpaceGetN(PRTSTRSPACE pStrSpace, const char *pszString, size_t cchMax);
+
+/**
  * Callback function for RTStrSpaceEnumerate() and RTStrSpaceDestroy().
  *
  * @returns 0 on continue.

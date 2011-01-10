@@ -96,6 +96,19 @@ DECLINLINE(uint32_t) sdbm(const char *str, size_t *pcch)
     return hash;
 }
 
+DECLINLINE(uint32_t) sdbmN(const char *str, size_t cchMax, size_t *pcch)
+{
+    uint8_t *pu8 = (uint8_t *)str;
+    uint32_t hash = 0;
+    int c;
+
+    while ((c = *pu8++) && cchMax-- > 0)
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
+    *pcch = (uintptr_t)pu8 - (uintptr_t)str - 1;
+    return hash;
+}
+
 
 /**
  * Inserts a string into a unique string space.
@@ -198,6 +211,34 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszStri
 }
 RT_EXPORT_SYMBOL(RTStrSpaceGet);
 
+
+/**
+ * Gets a string from a unique string space.
+ *
+ * @returns Pointer to the string node.
+ * @returns NULL if the string was not found in the string space.
+ * @param   pStrSpace       The space to insert it into.
+ * @param   pszString       The string to get.
+ * @param   cchMax          The max string length to evaluate.  Passing
+ *                          RTSTR_MAX is ok and makes it behave just like
+ *                          RTStrSpaceGet.
+ */
+RTDECL(PRTSTRSPACECORE) RTStrSpaceGetN(PRTSTRSPACE pStrSpace, const char *pszString, size_t cchMax)
+{
+    size_t  cchString;
+    KAVLKEY Key = sdbmN(pszString, cchMax, &cchString);
+    PRTSTRSPACECORE pCur = KAVL_FN(Get)(pStrSpace, Key);
+    if (!pCur)
+        return NULL;
+
+    /* Linear search. */
+    for (; pCur; pCur = pCur->pList)
+        if (    pCur->cchString == cchString
+            && !memcmp(pCur->pszString, pszString, cchString))
+            return pCur;
+    return NULL;
+}
+RT_EXPORT_SYMBOL(RTStrSpaceGetN);
 
 
 /**
