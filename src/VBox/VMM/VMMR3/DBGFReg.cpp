@@ -114,7 +114,7 @@ typedef struct DBGFREGSET
     /** Array of lookup records. */
     struct DBGFREGLOOKUP   *paLookupRecs;
     /** The number of lookup records. */
-    size_t                  cLookupRecs;
+    uint32_t                cLookupRecs;
 
     /** The register name prefix. */
     char                    szPrefix[1];
