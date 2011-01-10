@@ -274,8 +274,14 @@ typedef struct DBGF
 
     /** The register database lock. */
     RTSEMRW                     hRegDbLock;
+    /** String space for looking up registers.  (Protected by hRegDbLock.) */
+    R3PTRTYPE(RTSTRSPACE)       RegSpace;
     /** String space holding the register sets. (Protected by hRegDbLock.)  */
     R3PTRTYPE(RTSTRSPACE)       RegSetSpace;
+    /** The number of registers (aliases and sub-fields not counted). */
+    uint32_t                    cRegs;
+    /** Alignment padding. */
+    uint32_t                    Alignment2;
 
     /** The current Guest OS digger. */
     R3PTRTYPE(PDBGFOS)          pCurOS;
@@ -309,7 +315,10 @@ typedef struct DBGFCPU
     bool                    fSingleSteppingRaw;
 
     /** Padding the structure to 16 bytes. */
-    uint8_t                 abReserved[3];
+    bool                    afReserved[7];
+
+    /** The register set for this CPU.  Can be NULL. */
+    R3PTRTYPE(struct DBGFREGSET *) pRegSet;
 } DBGFCPU;
 /** Pointer to DBGFCPU data. */
 typedef DBGFCPU *PDBGFCPU;
@@ -321,6 +330,8 @@ void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta);
 int  dbgfR3InfoInit(PVM pVM);
 int  dbgfR3InfoTerm(PVM pVM);
 void dbgfR3OSTerm(PVM pVM);
+int  dbgfR3RegInit(PVM pVM);
+void dbgfR3RegTerm(PVM pVM);
 int  dbgfR3SymInit(PVM pVM);
 int  dbgfR3SymTerm(PVM pVM);
 int  dbgfR3BpInit(PVM pVM);
