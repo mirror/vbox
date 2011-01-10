@@ -15,7 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../../..
+SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -33,12 +33,13 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img tstVDIo
  tstVD_TEMPLATE = VBOXR3TSTEXE
  tstVD-2_TEMPLATE = VBOXR3TSTEXE
  tstVDCopy_TEMPLATE = VBOXR3TSTEXE
  tstVDSnap_TEMPLATE = VBOXR3TSTEXE
  tstVDShareable_TEMPLATE = VBOXR3TSTEXE
+ tstVDIo_TEMPLATE = VBOXR3TSTEXE
  vbox-img_TEMPLATE = VBOXR3STATIC
  tstVD_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
  tstVD-2_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
@@ -46,6 +47,7 @@ ifdef VBOX_WITH_TESTCASES
  tstVDSnap_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
+ tstVDIo_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  vbox-img_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
@@ -82,6 +84,10 @@ ifdef VBOX_WITH_TESTCASES
 	$(VBOX_PATH_STORAGE_SRC)/RAW.cpp \
 	$(VBOX_PATH_STORAGE_SRC)/VCICache.cpp
  vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS IN_RT_R3
+
+ tstVDIo_SOURCES  = tstVDIo.cpp \
+	VDIoBackendMem.cpp \
+	VDMemDisk.cpp
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

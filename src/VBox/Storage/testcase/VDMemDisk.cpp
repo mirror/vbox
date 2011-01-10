@@ -1,0 +1,337 @@
+/** $Id$ */
+/** @file
+ *
+ * VBox HDD container test utility, memory disk/file.
+ */
+
+/*
+ * Copyright (C) 2011 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+#define LOGGROUP LOGGROUP_DEFAULT /** @todo: Log group */
+#include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/assert.h>
+#include <iprt/avl.h>
+#include <iprt/mem.h>
+#include <iprt/file.h>
+
+#include "VDMemDisk.h"
+
+/**
+ * Memory disk/file.
+ */
+typedef struct VDMEMDISK
+{
+    /** Current size of the disk. */
+    uint64_t     cbDisk;
+    /** Flag whether the disk can grow. */
+    bool         fGrowable;
+    /** Pointer to the AVL tree holding the segments. */
+    PAVLRU64TREE pTreeSegments;
+} VDMEMDISK;
+
+/**
+ * A disk segment.
+ */
+typedef struct VDMEMDISKSEG
+{
+    /** AVL tree core. */
+    AVLRU64NODECORE  Core;
+    /** Pointer to the data. */
+    void            *pvSeg;
+} VDMEMDISKSEG, *PVDMEMDISKSEG;
+
+
+int VDMemDiskCreate(PPVDMEMDISK ppMemDisk, uint64_t cbSize)
+{
+    AssertPtrReturn(ppMemDisk, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    PVDMEMDISK pMemDisk = (PVDMEMDISK)RTMemAllocZ(sizeof(VDMEMDISK));
+    if (pMemDisk)
+    {
+        pMemDisk->fGrowable = cbSize ? false : true;
+        pMemDisk->cbDisk = cbSize;
+        pMemDisk->pTreeSegments = (PAVLRU64TREE)RTMemAllocZ(sizeof(AVLRU64TREE));
+        if (pMemDisk->pTreeSegments)
+            *ppMemDisk = pMemDisk;
+        else
+        {
+            RTMemFree(pMemDisk);
+            rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+static int vdMemDiskDestroy(PAVLRU64NODECORE pNode, void *pvUser)
+{
+    PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)pNode;
+    RTMemFree(pSeg->pvSeg);
+    RTMemFree(pSeg);
+    return VINF_SUCCESS;
+}
+
+void VDMemDiskDestroy(PVDMEMDISK pMemDisk)
+{
+    AssertPtrReturnVoid(pMemDisk);
+
+    RTAvlrU64Destroy(pMemDisk->pTreeSegments, vdMemDiskDestroy, NULL);
+    RTMemFree(pMemDisk);
+}
+
+int VDMemDiskWrite(PVDMEMDISK pMemDisk, uint64_t off, size_t cbWrite, PRTSGBUF pSgBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pMemDisk=%#p off=%llu cbWrite=%zu pSgBuf=%#p\n",
+                 pMemDisk, off, cbWrite, pSgBuf));
+
+    AssertPtrReturn(pMemDisk, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_POINTER);
+
+    /* Check for a write beyond the end of a disk. */
+    if (   !pMemDisk->fGrowable
+        && (off + cbWrite) > pMemDisk->cbDisk)
+        return VERR_INVALID_PARAMETER;
+
+    /* Update the segments */
+    size_t cbLeft    = cbWrite;
+    uint64_t offCurr = off;
+
+    while (   cbLeft
+           && RT_SUCCESS(rc))
+    {
+        PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)RTAvlrU64RangeGet(pMemDisk->pTreeSegments, offCurr);
+        size_t cbRange  = 0;
+        unsigned offSeg = 0;
+
+        if (!pSeg)
+        {
+            /* Get next segment */
+            pSeg = (PVDMEMDISKSEG)RTAvlrU64GetBestFit(pMemDisk->pTreeSegments, offCurr, true);
+            if (   !pSeg
+                || offCurr + cbLeft <= pSeg->Core.Key)
+                cbRange = cbLeft;
+            else
+                cbRange = pSeg->Core.Key - offCurr;
+
+            /* Create new segment */
+            pSeg = (PVDMEMDISKSEG)RTMemAllocZ(sizeof(VDMEMDISKSEG));
+            if (pSeg)
+            {
+                pSeg->Core.Key      = offCurr;
+                pSeg->Core.KeyLast  = offCurr + cbRange - 1;
+                pSeg->pvSeg         = RTMemAllocZ(cbRange);
+
+                if (!pSeg->pvSeg)
+                {
+                    RTMemFree(pSeg);
+                    rc = VERR_NO_MEMORY;
+                }
+                else
+                {
+                    bool fInserted = RTAvlrU64Insert(pMemDisk->pTreeSegments, &pSeg->Core);
+                    AssertMsg(fInserted, ("Bug!\n"));
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+        {
+            offSeg  = offCurr - pSeg->Core.Key;
+            cbRange = RT_MIN(cbLeft, (size_t)(pSeg->Core.KeyLast + 1 - offCurr));
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtr(pSeg);
+            size_t cbCopied = RTSgBufCopyToBuf(pSgBuf, (uint8_t *)pSeg->pvSeg + offSeg, cbRange);
+            Assert(cbCopied == cbRange);
+        }
+
+        offCurr += cbRange;
+        cbLeft  -= cbRange;
+    }
+
+    /* Update size of the disk. */
+    if (   RT_SUCCESS(rc)
+        && pMemDisk->fGrowable
+        && (off + cbWrite) > pMemDisk->cbDisk)
+    {
+        pMemDisk->cbDisk = off + cbWrite;
+    }
+
+    return rc;
+}
+
+
+int VDMemDiskRead(PVDMEMDISK pMemDisk, uint64_t off, size_t cbRead, PRTSGBUF pSgBuf)
+{
+    LogFlowFunc(("pMemDisk=%#p off=%llu cbRead=%zu pSgBuf=%#p\n",
+                 pMemDisk, off, cbRead, pSgBuf));
+
+    AssertPtrReturn(pMemDisk, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_POINTER);
+
+    /* Check for a read beyond the end of a disk. */
+    if ((off + cbRead) > pMemDisk->cbDisk)
+        return VERR_INVALID_PARAMETER;
+
+    /* Compare read data */
+    size_t cbLeft    = cbRead;
+    uint64_t offCurr = off;
+
+    while (cbLeft)
+    {
+        PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)RTAvlrU64RangeGet(pMemDisk->pTreeSegments, offCurr);
+        size_t cbRange  = 0;
+        unsigned offSeg = 0;
+
+        if (!pSeg)
+        {
+            /* Get next segment */
+            pSeg = (PVDMEMDISKSEG)RTAvlrU64GetBestFit(pMemDisk->pTreeSegments, offCurr, true);
+            if (   !pSeg
+                || offCurr + cbLeft <= pSeg->Core.Key)
+            {
+                /* No data in the tree for this read. Fill with 0. */
+                cbRange = cbLeft;
+            }
+            else
+                cbRange = pSeg->Core.Key - offCurr;
+
+            RTSgBufSet(pSgBuf, 0, cbRange);
+        }
+        else
+        {
+            offSeg  = offCurr - pSeg->Core.Key;
+            cbRange = RT_MIN(cbLeft, (size_t)(pSeg->Core.KeyLast + 1 - offCurr));
+
+            RTSgBufCopyFromBuf(pSgBuf, (uint8_t *)pSeg->pvSeg + offSeg, cbRange);
+        }
+
+        offCurr += cbRange;
+        cbLeft  -= cbRange;
+    }
+
+    return VINF_SUCCESS;
+}
+
+int VDMemDiskSetSize(PVDMEMDISK pMemDisk, uint64_t cbSize)
+{
+    AssertPtrReturn(pMemDisk, VERR_INVALID_POINTER);
+
+    if (!pMemDisk->fGrowable)
+        return VERR_NOT_SUPPORTED;
+
+    if (pMemDisk->cbDisk <= cbSize)
+    {
+        /* Increase. */
+        pMemDisk->cbDisk = cbSize;
+    }
+    else
+    {
+        /* We have to delete all parts beyond the new end. */
+        PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)RTAvlrU64Get(pMemDisk->pTreeSegments, cbSize);
+        if (pSeg)
+        {
+            if (pSeg->Core.Key < cbSize)
+            {
+                /* Cut off the part which is not in the file anymore. */
+                pSeg->pvSeg = RTMemRealloc(pSeg->pvSeg, pSeg->Core.KeyLast - cbSize + 1);
+            }
+            else
+            {
+                /* Free the whole block. */
+                RTMemFree(pSeg->pvSeg);
+                RTMemFree(pSeg);
+            }
+        }
+
+        /* Kill a blocks coming after. */
+        do
+        {
+            pSeg = (PVDMEMDISKSEG)RTAvlrU64GetBestFit(pMemDisk->pTreeSegments, cbSize, true);
+            if (pSeg)
+            {
+                RTMemFree(pSeg->pvSeg);
+                RTMemFree(pSeg);
+            }
+            else
+                break;
+        } while (true);
+
+        pMemDisk->cbDisk = cbSize;
+    }
+
+    return VINF_SUCCESS;
+}
+
+int VDMemDiskGetSize(PVDMEMDISK pMemDisk, uint64_t *pcbSize)
+{
+    AssertPtrReturn(pMemDisk, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+
+    *pcbSize = pMemDisk->cbDisk;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Writes a segment to the given file.
+ *
+ * @returns IPRT status code.
+ *
+ * @param pNode    The disk segment to write to the file.
+ * @param pvParam  Opaque user data containing the pointer to
+ *                 the file handle.
+ */
+static int vdMemDiskSegmentWriteToFile(PAVLRU64NODECORE pNode, void *pvParam)
+{
+    PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)pNode;
+    RTFILE hFile = *(PRTFILE)pvParam;
+
+    return RTFileWriteAt(hFile, pSeg->Core.Key, pSeg->pvSeg, pSeg->Core.KeyLast - pSeg->Core.Key + 1, NULL);
+}
+
+int VDMemDiskWriteToFile(PVDMEMDISK pMemDisk, const char *pcszFilename)
+{
+    int rc = VINF_SUCCESS;
+    RTFILE hFile = NIL_RTFILE;
+
+    LogFlowFunc(("pMemDisk=%#p pcszFilename=%s\n", pMemDisk, pcszFilename));
+    AssertPtrReturn(pMemDisk, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszFilename, VERR_INVALID_POINTER);
+
+    rc = RTFileOpen(&hFile, pcszFilename, RTFILE_O_DENY_NONE | RTFILE_O_CREATE | RTFILE_O_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTAvlrU64DoWithAll(pMemDisk->pTreeSegments, true, vdMemDiskSegmentWriteToFile, &hFile);
+
+        RTFileClose(hFile);
+        if (RT_FAILURE(rc))
+            RTFileDelete(pcszFilename);
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+int VDMemDiskReadFromFile(PVDMEMDISK pMemDisk, const char *pcszFilename)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
