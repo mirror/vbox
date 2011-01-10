@@ -1097,7 +1097,8 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
                                 RTStrFormatNumber(szHex, aRegs[iReg].Val.au64[1], 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
                                 RTStrFormatNumber(&szHex[2+16], aRegs[iReg].Val.au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
                                 break;
-                            case DBGFREGVALTYPE_80:
+                            case DBGFREGVALTYPE_LRD:
+                                /** @todo long double -> string conversion. */
                                 RTStrFormatNumber(szHex, aRegs[iReg].Val.au16[5], 16, 2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
                                 RTStrFormatNumber(&szHex[2+4], aRegs[iReg].Val.au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
                                 break;
@@ -1107,7 +1108,6 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
                                 RTStrFormatNumber(&szHex[2+16+1], aRegs[iReg].Val.dtr.u32Limit, 16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
                                 break;
 
-                            case DBGFREGVALTYPE_LRD:
                             case DBGFREGVALTYPE_END:
                             case DBGFREGVALTYPE_INVALID:
                             case DBGFREGVALTYPE_32BIT_HACK:
@@ -1118,7 +1118,7 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
                         Bstr bstrValue(szHex);
                         bstrValue.detachTo(&abstrValues[iReg]);
 
-                        Bstr bstrName(DBGFR3RegCpuName(aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
+                        Bstr bstrName(DBGFR3RegCpuName(ptrVM.raw(), aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
                         bstrName.detachTo(&abstrNames[iReg]);
                     }
 

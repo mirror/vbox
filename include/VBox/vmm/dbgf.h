@@ -1230,8 +1230,6 @@ typedef enum DBGFREGVALTYPE
     DBGFREGVALTYPE_U64,
     /** Unsigned 128-bit register value. */
     DBGFREGVALTYPE_U128,
-    /** 80-bit register value. */
-    DBGFREGVALTYPE_80,
     /** Long double register value. */
     DBGFREGVALTYPE_LRD,
     /** Descriptor table register value. */
@@ -1241,6 +1239,8 @@ typedef enum DBGFREGVALTYPE
     /** The usual 32-bit type hack. */
     DBGFREGVALTYPE_32BIT_HACK = 0x7fffffff
 } DBGFREGVALTYPE;
+/** Pointer to a register value type. */
+typedef DBGFREGVALTYPE *PDBGFREGVALTYPE;
 
 /**
  * A generic register value type.
@@ -1281,11 +1281,12 @@ typedef struct DBGFREGSUBFIELD
 {
     /** The name of the sub-field.  NULL is used to terminate the array. */
     const char     *pszName;
-    /** The index of the first bit. */
+    /** The index of the first bit.  Ignored if pfnGet is set. */
     uint8_t         iFirstBit;
-    /** The number of bits. */
+    /** The number of bits.  Mandatory. */
     uint8_t         cBits;
-    /** The shift count. */
+    /** The shift count.  Not applied when pfnGet is set, but used to
+     * calculate the minimum type. */
     int8_t          cShift;
     /** Sub-field flags, DBGFREGSUBFIELD_FLAGS_XXX.  */
     uint8_t         fFlags;
@@ -1388,7 +1389,7 @@ VMMR3DECL(int) DBGFR3RegCpuSetU128(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uin
 VMMR3DECL(int) DBGFR3RegCpuSetLrd(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double lrd);
 VMMR3DECL(int) DBGFR3RegCpuSetBatch( PVM pVM, VMCPUID idCpu, PCDBGFREGENTRY paRegs, size_t cRegs);
 
-VMMR3DECL(const char *) DBGFR3RegCpuName(DBGFREG enmReg, DBGFREGVALTYPE enmType);
+VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE enmType);
 
 /**
  * Entry in a named batch query or set operation.
@@ -1407,25 +1408,27 @@ typedef DBGFREGENTRYNM *PDBGFREGENTRYNM;
 /** Pointer to a const named register entry in a batch operation. */
 typedef DBGFREGENTRYNM const *PCDBGFREGENTRYNM;
 
-VMMR3DECL(int) DBGFR3RegNmQueryU8(  PVM pVM, VMCPUID idCpu, const char *pszReg, uint8_t     *pu8);
-VMMR3DECL(int) DBGFR3RegNmQueryU16( PVM pVM, VMCPUID idCpu, const char *pszReg, uint16_t    *pu16);
-VMMR3DECL(int) DBGFR3RegNmQueryU32( PVM pVM, VMCPUID idCpu, const char *pszReg, uint32_t    *pu32);
-VMMR3DECL(int) DBGFR3RegNmQueryU64( PVM pVM, VMCPUID idCpu, const char *pszReg, uint64_t    *pu64);
-VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idCpu, const char *pszReg, uint128_t   *pu128);
-VMMR3DECL(int) DBGFR3RegNmQueryLrd( PVM pVM, VMCPUID idCpu, const char *pszReg, long double *plrd);
-VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit);
-VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
-/** @todo VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM, VMCPUID idCpu, DBGFREGENTRYNM paRegs, size_t cRegs)? */
-VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
-VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
+VMMR3DECL(int) DBGFR3RegNmQuery(    PVM pVM, VMCPUID idDefCpu, const char *pszReg, PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType);
+VMMR3DECL(int) DBGFR3RegNmQueryU8(  PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t     *pu8);
+VMMR3DECL(int) DBGFR3RegNmQueryU16( PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint16_t    *pu16);
+VMMR3DECL(int) DBGFR3RegNmQueryU32( PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint32_t    *pu32);
+VMMR3DECL(int) DBGFR3RegNmQueryU64( PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t    *pu64);
+VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U  pu128);
+VMMR3DECL(int) DBGFR3RegNmQueryLrd( PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd);
+VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit);
+VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs);
+VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM,                   DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
+VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
 
-VMMR3DECL(int) DBGFR3RegNmSetU8(    PVM pVM, VMCPUID idCpu, const char *pszReg, uint8_t     u8);
-VMMR3DECL(int) DBGFR3RegNmSetU16(   PVM pVM, VMCPUID idCpu, const char *pszReg, uint16_t    u16);
-VMMR3DECL(int) DBGFR3RegNmSetU32(   PVM pVM, VMCPUID idCpu, const char *pszReg, uint32_t    u32);
-VMMR3DECL(int) DBGFR3RegNmSetU64(   PVM pVM, VMCPUID idCpu, const char *pszReg, uint64_t    u64);
-VMMR3DECL(int) DBGFR3RegNmSetU128(  PVM pVM, VMCPUID idCpu, const char *pszReg, uint128_t   u128);
-VMMR3DECL(int) DBGFR3RegNmSetLrd(   PVM pVM, VMCPUID idCpu, const char *pszReg, long double lrd);
-VMMR3DECL(int) DBGFR3RegNmSetBatch( PVM pVM, VMCPUID idCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmSetU8(    PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t     u8);
+VMMR3DECL(int) DBGFR3RegNmSetU16(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint16_t    u16);
+VMMR3DECL(int) DBGFR3RegNmSetU32(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint32_t    u32);
+VMMR3DECL(int) DBGFR3RegNmSetU64(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t    u64);
+VMMR3DECL(int) DBGFR3RegNmSetU128(  PVM pVM, VMCPUID idDefCpu, const char *pszReg, RTUINT128U  u128);
+VMMR3DECL(int) DBGFR3RegNmSetLrd(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double lrd);
+VMMR3DECL(int) DBGFR3RegNmSetBatch( PVM pVM, VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
 
 /** @todo add enumeration methods.  */
 
