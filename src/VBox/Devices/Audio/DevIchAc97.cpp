@@ -1633,14 +1633,16 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
 
     ac97Reset (pDevIns);
 
-    if (!s->voice_pi)
+    if (!AUD_is_host_voice_in_ok(s->voice_pi))
         LogRel (("AC97: WARNING: Unable to open PCM IN!\n"));
-    if (!s->voice_mc)
+    if (!AUD_is_host_voice_in_ok(s->voice_mc))
         LogRel (("AC97: WARNING: Unable to open PCM MC!\n"));
-    if (!s->voice_po)
+    if (!AUD_is_host_voice_out_ok(s->voice_po))
         LogRel (("AC97: WARNING: Unable to open PCM OUT!\n"));
 
-    if (!s->voice_pi && !s->voice_po && !s->voice_mc)
+    if (   !AUD_is_host_voice_in_ok(s->voice_pi)
+        && !AUD_is_host_voice_out_ok(s->voice_po)
+        && !AUD_is_host_voice_in_ok(s->voice_mc))
     {
         /* Was not able initialize *any* voice. Select the NULL audio driver instead */
         AUD_close_in  (&s->card, s->voice_pi);
@@ -1656,15 +1658,17 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
             N_ ("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible"));
     }
-    else if (!s->voice_pi || !s->voice_po || !s->voice_mc)
+    else if (   !AUD_is_host_voice_in_ok(s->voice_pi)
+             || !AUD_is_host_voice_out_ok(s->voice_po)
+             || !AUD_is_host_voice_in_ok(s->voice_mc))
     {
         char   szMissingVoices[128];
         size_t len = 0;
-        if (!s->voice_pi)
+        if (!AUD_is_host_voice_in_ok(s->voice_pi))
             len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
-        if (!s->voice_po)
+        if (!AUD_is_host_voice_out_ok(s->voice_po))
             len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
-        if (!s->voice_mc)
+        if (!AUD_is_host_voice_in_ok(s->voice_mc))
             len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
 
         PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",

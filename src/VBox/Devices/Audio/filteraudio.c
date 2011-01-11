@@ -890,6 +890,7 @@ static void filteraudio_audio_fini(void *opaque)
     {
         filter_conf.pDrv->fini(opaque);
         filter_conf.pDrv = NULL;
+        filter_conf.pDrvOpaque = NULL;
     }
 }
 
@@ -942,4 +943,40 @@ struct audio_driver *filteraudio_install(struct audio_driver *pDrv, void *pDrvOp
     filter_conf.pDrvOpaque = pDrvOpaque;
 
     return &filteraudio_audio_driver;
+}
+
+int filteraudio_is_host_voice_in_ok(struct audio_driver *pDrv, HWVoiceIn *phw)
+{
+    filterVoiceIn *pVoice;
+
+    if (pDrv != &filteraudio_audio_driver)
+    {
+        /* This is not the driver for which the filter was installed.
+         * The filter has no idea and assumes that if the voice
+         * is not NULL then it is a valid host voice.
+         */
+        return (phw != NULL);
+    }
+
+    if (!filter_conf.pDrv)
+    {
+        AssertFailed();
+        return (phw != NULL);
+    }
+
+    pVoice = (filterVoiceIn *)((uint8_t *)phw + filter_conf.pDrv->voice_size_in);
+
+    return pVoice->fHostOK;
+}
+
+int filteraudio_is_host_voice_out_ok(struct audio_driver *pDrv, HWVoiceOut *phw)
+{
+    /* Output is not yet implemented and there are no filter voices.
+     * The filter has no idea and assumes that if the voice
+     * is not NULL then it is a valid host voice.
+     *
+     * @todo: similar to filteraudio_is_host_voice_in_ok
+     */
+    NOREF(pDrv);
+    return (phw != NULL);
 }

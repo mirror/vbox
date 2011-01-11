@@ -332,5 +332,7 @@ int filter_input_begin(void **ppvInputCtx, PFNAUDIOINPUTCALLBACK pfnCallback, vo
 void filter_input_end(void *pvInputCtx);
 
 struct audio_driver *filteraudio_install(struct audio_driver *pDrv, void *pDrvOpaque);
+int filteraudio_is_host_voice_in_ok(struct audio_driver *pDrv, HWVoiceIn *phw);
+int filteraudio_is_host_voice_out_ok(struct audio_driver *pDrv, HWVoiceOut *phw);
 
 #endif /* audio_int.h */
