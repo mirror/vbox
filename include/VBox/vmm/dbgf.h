@@ -1354,14 +1354,34 @@ typedef struct DBGFREGDESC
     PCDBGFREGSUBFIELD       paSubFields;
 } DBGFREGDESC;
 
+/** @name Macros for constructing DBGFREGDESC arrays.
+ * @{ */
+#define DBGFREGDESC_RW(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            a_offRegister, a_pfnGet, a_pfnSet, NULL /*paAlises*/, NULL /*paSubFields*/ }
+#define DBGFREGDESC_RO(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, a_offRegister, a_pfnGet, a_pfnSet, NULL /*paAlises*/, NULL /*paSubFields*/ }
+#define DBGFREGDESC_RW_A(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, NULL /*paSubFields*/ }
+#define DBGFREGDESC_RO_A(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, NULL /*paSubFields*/ }
+#define DBGFREGDESC_RW_S(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paSubFields) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            a_offRegister, a_pfnGet, a_pfnSet, /*paAliases*/, a_paSubFields }
+#define DBGFREGDESC_RO_S(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paSubFields) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, a_offRegister, a_pfnGet, a_pfnSet, /*paAliases*/, a_paSubFields }
+#define DBGFREGDESC_RW_AS(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+#define DBGFREGDESC_RO_AS(a_szName, a_TypeSuff, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
+    { a_szName, DBGFREG_END, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, a_offRegister, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
+#define DBGFREGDESC_TERMINATOR() \
+    { NULL, DBGFREG_END, DBGFREGVALTYPE_INVALID, 0, 0, NULL, NULL, NULL, NULL }
+/** @} */
+
+
 /** @name DBGFREG_FLAGS_XXX
  * @{ */
 /** The register is read-only. */
 #define DBGFREG_FLAGS_READ_ONLY         RT_BIT_32(0)
 /** @} */
-
-
-
 
 /**
  * Entry in a batch query or set operation.
@@ -1399,6 +1419,9 @@ VMMR3DECL(int) DBGFR3RegCpuSetLrd(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, lon
 VMMR3DECL(int) DBGFR3RegCpuSetBatch( PVM pVM, VMCPUID idCpu, PCDBGFREGENTRY paRegs, size_t cRegs);
 
 VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE enmType);
+
+VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters);
+VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance);
 
 /**
  * Entry in a named batch query or set operation.

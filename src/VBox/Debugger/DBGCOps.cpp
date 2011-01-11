@@ -493,9 +493,49 @@ static DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
     /*
      * Get the register.
      */
-    /// @todo DBGFR3RegByName();
-    return VERR_NOT_IMPLEMENTED;
+    DBGFREGVALTYPE  enmType;
+    DBGFREGVAL      Value;
+    int rc = DBGFR3RegNmQuery(pDbgc->pVM, pDbgc->idCpu, pArg->u.pszString, &Value, &enmType);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_INTERNAL_ERROR_5;
+        switch (enmType)
+        {
+            case DBGFREGVALTYPE_U8:
+                DBGCVAR_INIT_NUMBER(pResult, Value.u8);
+                return VINF_SUCCESS;
 
+            case DBGFREGVALTYPE_U16:
+                DBGCVAR_INIT_NUMBER(pResult, Value.u16);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_U32:
+                DBGCVAR_INIT_NUMBER(pResult, Value.u32);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_U64:
+                DBGCVAR_INIT_NUMBER(pResult, Value.u64);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_U128:
+                DBGCVAR_INIT_NUMBER(pResult, Value.u128.s.Lo);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_LRD:
+                DBGCVAR_INIT_NUMBER(pResult, (uint64_t)Value.lrd);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_DTR:
+                DBGCVAR_INIT_NUMBER(pResult, Value.dtr.u64Base);
+                return VINF_SUCCESS;
+
+            case DBGFREGVALTYPE_INVALID:
+            case DBGFREGVALTYPE_END:
+            case DBGFREGVALTYPE_32BIT_HACK:
+                break;
+        }
+    }
+    return rc;
 }
 
 

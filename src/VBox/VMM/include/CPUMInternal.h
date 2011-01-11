@@ -403,23 +403,27 @@ typedef CPUMCPU *PCPUMCPU;
 
 RT_C_DECLS_BEGIN
 
-DECLASM(int)      cpumHandleLazyFPUAsm(PCPUMCPU pCPUM);
+#ifdef IN_RING3
+int                 cpumR3DbgInit(PVM pVM);
+#endif
+
+DECLASM(int)        cpumHandleLazyFPUAsm(PCPUMCPU pCPUM);
 
 #ifdef IN_RING0
-DECLASM(int)      cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
-DECLASM(int)      cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
-DECLASM(int)      cpumR0SaveHostFPUState(PCPUMCPU pCPUM);
-DECLASM(int)      cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
-DECLASM(void)     cpumR0LoadFPU(PCPUMCTX pCtx);
-DECLASM(void)     cpumR0SaveFPU(PCPUMCTX pCtx);
-DECLASM(void)     cpumR0LoadXMM(PCPUMCTX pCtx);
-DECLASM(void)     cpumR0SaveXMM(PCPUMCTX pCtx);
-DECLASM(void)     cpumR0SetFCW(uint16_t u16FCW);
-DECLASM(uint16_t) cpumR0GetFCW(void);
-DECLASM(void)     cpumR0SetMXCSR(uint32_t u32MXCSR);
-DECLASM(uint32_t) cpumR0GetMXCSR(void);
-DECLASM(void)     cpumR0LoadDRx(uint64_t const *pa4Regs);
-DECLASM(void)     cpumR0SaveDRx(uint64_t *pa4Regs);
+DECLASM(int)        cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
+DECLASM(int)        cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
+DECLASM(int)        cpumR0SaveHostFPUState(PCPUMCPU pCPUM);
+DECLASM(int)        cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
+DECLASM(void)       cpumR0LoadFPU(PCPUMCTX pCtx);
+DECLASM(void)       cpumR0SaveFPU(PCPUMCTX pCtx);
+DECLASM(void)       cpumR0LoadXMM(PCPUMCTX pCtx);
+DECLASM(void)       cpumR0SaveXMM(PCPUMCTX pCtx);
+DECLASM(void)       cpumR0SetFCW(uint16_t u16FCW);
+DECLASM(uint16_t)   cpumR0GetFCW(void);
+DECLASM(void)       cpumR0SetMXCSR(uint32_t u32MXCSR);
+DECLASM(uint32_t)   cpumR0GetMXCSR(void);
+DECLASM(void)       cpumR0LoadDRx(uint64_t const *pa4Regs);
+DECLASM(void)       cpumR0SaveDRx(uint64_t *pa4Regs);
 #endif
 
 RT_C_DECLS_END
