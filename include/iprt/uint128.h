@@ -447,7 +447,7 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignBooleanNot(PRTUINT128U pValueResult)
  * @param   pValue1             The first value.
  * @param   pValue2             The second value.
  */
-DECLINLINE(bool) RTUInt128Compare(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+DECLINLINE(int) RTUInt128Compare(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
 {
 #if ARCH_BITS >= 64
     if (pValue1->s.Hi != pValue2->s.Hi)
