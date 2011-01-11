@@ -240,30 +240,23 @@ struct VMPowerUpTask : public VMTask
 struct VMPowerDownTask : public VMTask
 {
     VMPowerDownTask(Console *aConsole,
-                    const ComPtr<IProgress> &aServerProgress,
-                    MachineState_T aLastMachineState)
+                    const ComPtr<IProgress> &aServerProgress)
         : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
-                 true /* aUsesVMPtr */),
-          mLastMachineState(aLastMachineState)
+                 true /* aUsesVMPtr */)
     {}
-
-    MachineState_T mLastMachineState;
 };
 
 struct VMSaveTask : public VMTask
 {
     VMSaveTask(Console *aConsole,
                const ComPtr<IProgress> &aServerProgress,
-               const Utf8Str &aSavedStateFile,
-               MachineState_T aLastMachineState)
+               const Utf8Str &aSavedStateFile)
         : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
                  true /* aUsesVMPtr */),
-          mSavedStateFile(aSavedStateFile),
-          mLastMachineState(aLastMachineState)
+          mSavedStateFile(aSavedStateFile)
     {}
 
     Utf8Str mSavedStateFile;
-    MachineState_T mLastMachineState;
 };
 
 // Handler for global events
@@ -1820,8 +1813,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
         setMachineStateLocally(MachineState_Stopping);
 
         /* setup task object and thread to carry out the operation asynchronously */
-        std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(this, pProgress,
-                                                                lastMachineState));
+        std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(this, pProgress));
         AssertBreakStmt(task->isOk(), rc = E_FAIL);
 
         int vrc = RTThreadCreate(NULL, Console::powerDownThread,
@@ -2467,8 +2459,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
 
         /* create a task object early to ensure mpVM protection is successful */
         std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, pProgress,
-                                                      stateFilePath,
-                                                      lastMachineState));
+                                                      stateFilePath));
         rc = task->rc();
         /*
          * If we fail here it means a PowerDown() call happened on another
@@ -6445,8 +6436,17 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 Assert(that->mVMPoweredOff == false);
                 that->mVMPoweredOff = true;
 
-                /* we are stopping now */
-                that->setMachineState(MachineState_Stopping);
+                /*
+                 * request a progress object from the server
+                 * (this will set the machine state to Stopping on the server
+                 * to block others from accessing this machine)
+                 */
+                ComPtr<IProgress> pProgress;
+                HRESULT rc = that->mControl->BeginPoweringDown(pProgress.asOutParam());
+                AssertComRC(rc);
+
+                /* sync the state with the server */
+                that->setMachineStateLocally(MachineState_Stopping);
 
                 /* Setup task object and thread to carry out the operation
                  * asynchronously (if we call powerDown() right here but there
@@ -6454,8 +6454,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                  * deadlock).
                  */
                 std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that,
-                                                                        NULL /* aServerProgress */,
-                                                                        MachineState_Null));
+                                                                        pProgress));
 
                  /* If creating a task failed, this can currently mean one of
                   * two: either Console::uninit() has been called just a ms
