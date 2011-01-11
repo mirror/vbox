@@ -69,6 +69,11 @@
           VBoxService (4.0 regression; bug #8010)</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: fixed a crash when using the KDE4 Oxygen theme and clicked
+         on the settings button (bug #7875)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
