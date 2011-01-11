@@ -81,8 +81,6 @@ protected:
 
 private:
 
-    void showEvent (QShowEvent *aEvent);
-
     QIWidgetValidator *mValidator;
 
     /* Cache: */

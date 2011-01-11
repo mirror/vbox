@@ -191,9 +191,3 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbClipboard->setItemText (3, vboxGlobal().toString (KClipboardMode_Bidirectional));
 }
 
-void UIMachineSettingsGeneral::showEvent (QShowEvent *aEvent)
-{
-    QCoreApplication::sendPostedEvents();
-    UISettingsPage::showEvent (aEvent);
-}
-
