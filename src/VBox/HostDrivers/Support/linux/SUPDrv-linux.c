@@ -60,8 +60,6 @@
 # include <linux/platform_device.h>
 #endif
 
-#include <iprt/mem.h>
-
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
