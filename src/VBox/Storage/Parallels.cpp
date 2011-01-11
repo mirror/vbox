@@ -967,7 +967,7 @@ static int parallelsSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     }
 
     /* Implement this operation via reopening the image. */
-    parallelsFreeImage(pImage, true);
+    parallelsFreeImage(pImage, false);
     rc = parallelsOpenImage(pImage, uOpenFlags);
 
 out:
