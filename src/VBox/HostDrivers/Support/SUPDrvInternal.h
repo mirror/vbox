@@ -219,7 +219,7 @@ typedef enum
     /** Locked memory (r3 mapping only) allocated by the support driver. */
     MEMREF_TYPE_PAGE,
     /** Blow the type up to 32-bit and mark the end. */
-    MEMREG_TYPE_32BIT_HACK = 0x7fffffff
+    MEMREF_TYPE_32BIT_HACK = 0x7fffffff
 } SUPDRVMEMREFTYPE, *PSUPDRVMEMREFTYPE;
 
 
