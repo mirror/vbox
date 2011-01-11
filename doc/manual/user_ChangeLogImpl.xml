@@ -31,6 +31,10 @@
       </listitem>
 
       <listitem>
+        <para>Parallels: Fixed deletion of the image during suspend, pause or power off</para>
+      </listitem>
+
+      <listitem>
         <para>Bridged networking: Fixed host kernel panic when bridging
           to devices with no TX queue (4.0 regression; Linux hosts only; bug #7908)</para>
       </listitem>
