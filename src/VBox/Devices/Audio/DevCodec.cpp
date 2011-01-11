@@ -2136,7 +2136,7 @@ static void mc_callback (void *opaque, int avail)
     pState->pfnTransfer(pState, MC_INDEX, avail);
 }
 
-int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
+int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
 {
     audsettings_t as;
     int rc;
@@ -2227,6 +2227,55 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
 
     codecToAudVolume(&pState->pNodes[pState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pState->pNodes[pState->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
+
+#ifdef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
+    /* @todo If no host voices were created, then fallback to nul audio. */
+#else
+    /* If no host voices were created, then fallback to nul audio. */
+    if (!AUD_is_host_voice_in_ok(pState->SwVoiceIn))
+        LogRel (("HDA: WARNING: Unable to open PCM IN!\n"));
+    if (!AUD_is_host_voice_in_ok(pState->voice_mc))
+        LogRel (("HDA: WARNING: Unable to open PCM MC!\n"));
+    if (!AUD_is_host_voice_out_ok(pState->SwVoiceOut))
+        LogRel (("HDA: WARNING: Unable to open PCM OUT!\n"));
+
+    if (   !AUD_is_host_voice_in_ok(pState->SwVoiceIn)
+        && !AUD_is_host_voice_out_ok(pState->SwVoiceOut)
+        && !AUD_is_host_voice_in_ok(pState->voice_mc))
+    {
+        /* Was not able initialize *any* voice. Select the NULL audio driver instead */
+        AUD_close_in  (&pState->card, pState->SwVoiceIn);
+        AUD_close_out (&pState->card, pState->SwVoiceOut);
+        AUD_close_in  (&pState->card, pState->voice_mc);
+        pState->SwVoiceOut = NULL;
+        pState->SwVoiceIn = NULL;
+        pState->voice_mc = NULL;
+        AUD_init_null ();
+
+        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+            N_ ("No audio devices could be opened. Selecting the NULL audio backend "
+                "with the consequence that no sound is audible"));
+    }
+    else if (   !AUD_is_host_voice_in_ok(pState->SwVoiceIn)
+             || !AUD_is_host_voice_out_ok(pState->SwVoiceOut)
+             || !AUD_is_host_voice_in_ok(pState->voice_mc))
+    {
+        char   szMissingVoices[128];
+        size_t len = 0;
+        if (!AUD_is_host_voice_in_ok(pState->SwVoiceIn))
+            len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
+        if (!AUD_is_host_voice_out_ok(pState->SwVoiceOut))
+            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
+        if (!AUD_is_host_voice_in_ok(pState->voice_mc))
+            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
+
+        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+            N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
+                "output or depending on audio input may hang. Make sure your host audio device "
+                "is working properly. Check the logfile for error messages of the audio "
+                "subsystem"), szMissingVoices);
+    }
+#endif /* VBOX_WITH_AUDIO_FLEXIBLE_FORMAT */
 
     return VINF_SUCCESS;
 }

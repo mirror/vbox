@@ -1899,8 +1899,9 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     AUD_register_card("sb16", &s->card);
     legacy_reset(s);
 
-    if (!s->voice)
+    if (!AUD_is_host_voice_out_ok(s->voice))
     {
+        LogRel (("SB16: WARNING: Unable to open PCM OUT!\n"));
         AUD_close_out(&s->card, s->voice);
         s->voice = NULL;
         AUD_init_null();

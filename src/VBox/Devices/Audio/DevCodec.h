@@ -489,7 +489,7 @@ typedef struct CODECState
 
 } CODECState;
 
-int codecConstruct(CODECState *pCodecState, ENMCODEC enmCodec);
+int codecConstruct(PPDMDEVINS pDevIns, CODECState *pCodecState, ENMCODEC enmCodec);
 int codecDestruct(CODECState *pCodecState);
 int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);

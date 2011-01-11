@@ -1949,6 +1949,28 @@ void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als)
     LogRel(("Audio: set_record_source ars=%d als=%d (not implemented)\n", *ars, *als));
 }
 
+int AUD_is_host_voice_in_ok(SWVoiceIn *sw)
+{
+    AudioState *s = &glob_audio_state;
+
+    if (sw == NULL) {
+        return 0;
+    }
+
+    return filteraudio_is_host_voice_in_ok(s->drv, sw->hw);
+}
+
+int AUD_is_host_voice_out_ok(SWVoiceOut *sw)
+{
+    AudioState *s = &glob_audio_state;
+
+    if (sw == NULL) {
+        return 0;
+    }
+
+    return filteraudio_is_host_voice_out_ok(s->drv, sw->hw);
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

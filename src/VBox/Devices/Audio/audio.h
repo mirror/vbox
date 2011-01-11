@@ -199,4 +199,7 @@ uint32_t lsbindex (uint32_t u);
 const char *audio_get_stream_name(void);
 #endif
 
+int AUD_is_host_voice_in_ok(SWVoiceIn *hw);
+int AUD_is_host_voice_out_ok(SWVoiceOut *hw);
+
 #endif  /* audio.h */
