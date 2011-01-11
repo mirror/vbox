@@ -549,8 +549,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                             rc = RTPathQueryInfoEx(src, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
                             Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                         }
-                        else
-                        if (end == src)
+                        else if (end == src)
                             rc = VINF_SUCCESS;  /* trailing delimiter */
                         else
                             rc = VERR_FILE_NOT_FOUND;
@@ -2146,7 +2145,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     return rc;
 }
 
-int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, RTFSOBJINFO *pInfo)
+int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, SHFLFSOBJINFO *pInfo)
 {
     int rc = VINF_SUCCESS;
 
@@ -2163,7 +2162,12 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
 
     rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8, RTSYMLINKTYPE_UNKNOWN);
     if (RT_SUCCESS (rc))
-        rc = RTPathQueryInfoEx(pszFullNewPath, pInfo, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+    {
+        RTFSOBJINFO info;
+        rc = RTPathQueryInfoEx(pszFullNewPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+        if (RT_SUCCESS(rc))
+            vbfsCopyFsObjInfoFromIprt(pInfo, &info);
+    }
 
     vbsfFreeFullPath(pszFullNewPath);
 

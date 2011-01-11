@@ -1168,11 +1168,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else
-            if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
-                || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* newPath */
-                || paParms[2].type != VBOX_HGCM_SVC_PARM_PTR     /* oldPath */
-                || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR     /* info */
+            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
+                     || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* newPath */
+                     || paParms[2].type != VBOX_HGCM_SVC_PARM_PTR     /* oldPath */
+                     || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR     /* info */
                     )
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -1183,13 +1182,13 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 SHFLROOT     root     = (SHFLROOT)paParms[0].u.uint32;
                 SHFLSTRING  *pNewPath = (SHFLSTRING *)paParms[1].u.pointer.addr;
                 SHFLSTRING  *pOldPath = (SHFLSTRING *)paParms[2].u.pointer.addr;
-                RTFSOBJINFO *pInfo    = (RTFSOBJINFO *)paParms[3].u.pointer.addr;
+                SHFLFSOBJINFO *pInfo  = (SHFLFSOBJINFO *)paParms[3].u.pointer.addr;
                 uint32_t     cbInfo   = paParms[3].u.pointer.size;
 
                 /* Verify parameters values. */
                 if (    !ShflStringIsValid(pNewPath, paParms[1].u.pointer.size)
                     ||  !ShflStringIsValid(pOldPath, paParms[2].u.pointer.size)
-                    ||  (cbInfo != sizeof(RTFSOBJINFO))
+                    ||  (cbInfo != sizeof(SHFLFSOBJINFO))
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
