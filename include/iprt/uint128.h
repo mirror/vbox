@@ -268,6 +268,30 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignAnd(PRTUINT128U pValue1Result, PCRTUINT12
 
 
 /**
+ * Performs a bitwise AND of a 128-bit unsigned integer value and a mask made
+ * up of the first N bits, assigning the result to the the 128-bit value.
+ *
+ * @returns pValueResult.
+ * @param   pValueResult    The value and result.
+ * @param   cBits           The number of bits to AND (counting from the first
+ *                          bit).
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignAndNFirstBits(PRTUINT128U pValueResult, unsigned cBits)
+{
+    if (cBits <= 64)
+    {
+        if (cBits != 64)
+            pValueResult->s.Lo &= (RT_BIT_64(cBits) - 1);
+        pValueResult->s.Hi = 0;
+    }
+    else if (cBits < 128)
+        pValueResult->s.Hi &= (RT_BIT_64(cBits - 64) - 1);
+/** @todo #if ARCH_BITS >= 64 */
+    return pValueResult;
+}
+
+
+/**
  * Performs a bitwise OR of two 128-bit unsigned integer values and assigned
  * the result to the first one.
  *

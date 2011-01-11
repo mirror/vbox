@@ -270,7 +270,7 @@ typedef struct DBGF
     /** For lazily populating the aliased address spaces. */
     bool volatile               afAsAliasPopuplated[DBGF_AS_COUNT];
     /** Alignment padding. */
-    bool                        afAlignment[2];
+    bool                        afAlignment1[2];
 
     /** The register database lock. */
     RTSEMRW                     hRegDbLock;
@@ -280,8 +280,10 @@ typedef struct DBGF
     R3PTRTYPE(RTSTRSPACE)       RegSetSpace;
     /** The number of registers (aliases and sub-fields not counted). */
     uint32_t                    cRegs;
+    /** For early initialization by . */
+    bool volatile               fRegDbInitialized;
     /** Alignment padding. */
-    uint32_t                    Alignment2;
+    bool                        afAlignment2[3];
 
     /** The current Guest OS digger. */
     R3PTRTYPE(PDBGFOS)          pCurOS;

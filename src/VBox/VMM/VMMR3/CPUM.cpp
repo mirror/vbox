@@ -219,7 +219,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Register info handlers.
+     * Register info handlers and registers with the debugger facility.
      */
     DBGFR3InfoRegisterInternal(pVM, "cpum",             "Displays the all the cpu states.",         &cpumR3InfoAll);
     DBGFR3InfoRegisterInternal(pVM, "cpumguest",        "Displays the guest cpu state.",            &cpumR3InfoGuest);
@@ -227,6 +227,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternal(pVM, "cpumhost",         "Displays the host cpu state.",             &cpumR3InfoHost);
     DBGFR3InfoRegisterInternal(pVM, "cpuid",            "Displays the guest cpuid leaves.",         &cpumR3CpuIdInfo);
     DBGFR3InfoRegisterInternal(pVM, "cpumguestinstr",   "Displays the current guest instruction.",  &cpumR3InfoGuestInstr);
+
+    rc = cpumR3DbgInit(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Initialize the Guest CPUID state.

@@ -29,6 +29,7 @@
 #include <VBox/log.h>
 #include <iprt/ctype.h>
 #include <iprt/string.h>
+#include <iprt/uint128.h>
 
 
 /*******************************************************************************
@@ -155,7 +156,13 @@ typedef DBGFREGLOOKUP const *PCDBGFREGLOOKUP;
  */
 int dbgfR3RegInit(PVM pVM)
 {
-    return RTSemRWCreate(&pVM->dbgf.s.hRegDbLock);
+    int rc = VINF_SUCCESS;
+    if (!pVM->dbgf.s.fRegDbInitialized)
+    {
+        rc = RTSemRWCreate(&pVM->dbgf.s.hRegDbLock);
+        pVM->dbgf.s.fRegDbInitialized = RT_SUCCESS(rc);
+    }
+    return rc;
 }
 
 
@@ -168,6 +175,7 @@ void dbgfR3RegTerm(PVM pVM)
 {
     RTSemRWDestroy(pVM->dbgf.s.hRegDbLock);
     pVM->dbgf.s.hRegDbLock = NIL_RTSEMRW;
+    pVM->dbgf.s.fRegDbInitialized = false;
 }
 
 
@@ -178,8 +186,9 @@ void dbgfR3RegTerm(PVM pVM)
  *
  * @returns true if valid, false if not.
  * @param   pszName             The register name to validate.
+ * @param   chDot               Set to '.' if accepted, otherwise 0.
  */
-static bool dbgfR3RegIsNameValid(const char *pszName)
+static bool dbgfR3RegIsNameValid(const char *pszName, char chDot)
 {
     const char *psz = pszName;
     if (!RT_C_IS_ALPHA(*psz))
@@ -188,7 +197,8 @@ static bool dbgfR3RegIsNameValid(const char *pszName)
     while ((ch = *++psz))
         if (   !RT_C_IS_LOWER(ch)
             && !RT_C_IS_DIGIT(ch)
-            && ch != '_')
+            && ch != '_'
+            && ch != chDot)
             return false;
     if (psz - pszName > DBGF_REG_MAX_NAME)
         return false;
@@ -214,7 +224,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
      * Validate input.
      */
     /* The name components. */
-    AssertMsgReturn(dbgfR3RegIsNameValid(pszPrefix), ("%s\n", pszPrefix), VERR_INVALID_NAME);
+    AssertMsgReturn(dbgfR3RegIsNameValid(pszPrefix, 0), ("%s\n", pszPrefix), VERR_INVALID_NAME);
     const char  *psz             = RTStrEnd(pszPrefix, RTSTR_MAX);
     bool const   fNeedUnderscore = RT_C_IS_DIGIT(psz[-1]);
     size_t const cchPrefix       = psz - pszPrefix + fNeedUnderscore;
@@ -227,7 +237,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
     uint32_t iDesc;
     for (iDesc = 0; paRegisters[iDesc].pszName != NULL; iDesc++)
     {
-        AssertMsgReturn(dbgfR3RegIsNameValid(paRegisters[iDesc].pszName), ("%s (#%u)\n", paRegisters[iDesc].pszName, iDesc), VERR_INVALID_NAME);
+        AssertMsgReturn(dbgfR3RegIsNameValid(paRegisters[iDesc].pszName, 0), ("%s (#%u)\n", paRegisters[iDesc].pszName, iDesc), VERR_INVALID_NAME);
 
         if (enmType == DBGFREGSETTYPE_CPU)
             AssertMsgReturn((unsigned)paRegisters[iDesc].enmReg == iDesc && iDesc < (unsigned)DBGFREG_END,
@@ -237,7 +247,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             AssertReturn(paRegisters[iDesc].enmReg == DBGFREG_END, VERR_INVALID_PARAMETER);
         AssertReturn(   paRegisters[iDesc].enmType > DBGFREGVALTYPE_INVALID
                      && paRegisters[iDesc].enmType < DBGFREGVALTYPE_END, VERR_INVALID_PARAMETER);
-        AssertMsgReturn(paRegisters[iDesc].fFlags & ~DBGFREG_FLAGS_READ_ONLY,
+        AssertMsgReturn(!(paRegisters[iDesc].fFlags & ~DBGFREG_FLAGS_READ_ONLY),
                         ("%#x (#%u)\n", paRegisters[iDesc].fFlags, iDesc),
                         VERR_INVALID_PARAMETER);
         AssertPtrReturn(paRegisters[iDesc].pfnGet, VERR_INVALID_PARAMETER);
@@ -250,7 +260,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             AssertPtrReturn(paAliases, VERR_INVALID_PARAMETER);
             for (; paAliases[iAlias].pszName; iAlias++)
             {
-                AssertMsgReturn(dbgfR3RegIsNameValid(paAliases[iAlias].pszName), ("%s (%s)\n", paAliases[iAlias].pszName, paRegisters[iDesc].pszName), VERR_INVALID_NAME);
+                AssertMsgReturn(dbgfR3RegIsNameValid(paAliases[iAlias].pszName, 0), ("%s (%s)\n", paAliases[iAlias].pszName, paRegisters[iDesc].pszName), VERR_INVALID_NAME);
                 AssertReturn(   paAliases[iAlias].enmType > DBGFREGVALTYPE_INVALID
                              && paAliases[iAlias].enmType < DBGFREGVALTYPE_END, VERR_INVALID_PARAMETER);
             }
@@ -263,7 +273,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             AssertPtrReturn(paSubFields, VERR_INVALID_PARAMETER);
             for (; paSubFields[iSubField].pszName; iSubField++)
             {
-                AssertMsgReturn(dbgfR3RegIsNameValid(paSubFields[iSubField].pszName), ("%s (%s)\n", paSubFields[iSubField].pszName, paRegisters[iDesc].pszName), VERR_INVALID_NAME);
+                AssertMsgReturn(dbgfR3RegIsNameValid(paSubFields[iSubField].pszName, '.'), ("%s (%s)\n", paSubFields[iSubField].pszName, paRegisters[iDesc].pszName), VERR_INVALID_NAME);
                 AssertReturn(paSubFields[iSubField].iFirstBit + paSubFields[iSubField].cBits <= 128, VERR_INVALID_PARAMETER);
                 AssertReturn(paSubFields[iSubField].cBits + paSubFields[iSubField].cShift <= 128, VERR_INVALID_PARAMETER);
                 AssertPtrNullReturn(paSubFields[iSubField].pfnGet, VERR_INVALID_POINTER);
@@ -322,8 +332,8 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
         const char     *pszRegName = paRegisters[iDesc].pszName;
         while (RT_SUCCESS(rc))
         {
-            size_t cchReg = strlen(paRegisters[iDesc].pszName);
-            memcpy(pszReg, paRegisters[iDesc].pszName, cchReg + 1);
+            size_t cchReg = strlen(pszRegName);
+            memcpy(pszReg, pszRegName, cchReg + 1);
             pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
             if (!pLookupRec->Core.pszString)
                 rc = VERR_NO_STR_MEMORY;
@@ -331,6 +341,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             pLookupRec->pDesc     = &paRegisters[iDesc];
             pLookupRec->pAlias    = pCurAlias;
             pLookupRec->pSubField = NULL;
+            pLookupRec++;
 
             PCDBGFREGSUBFIELD paSubFields = paRegisters[iDesc].paSubFields;
             if (paSubFields)
@@ -347,17 +358,20 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
                     pLookupRec->pDesc     = &paRegisters[iDesc];
                     pLookupRec->pAlias    = pCurAlias;
                     pLookupRec->pSubField = &paSubFields[iSubField];
+                    pLookupRec++;
                 }
             }
 
             /* next */
             pCurAlias = pNextAlias++;
-            if (   !pCurAlias
-                || !pCurAlias->pszName)
+            if (!pCurAlias)
                 break;
             pszRegName = pCurAlias->pszName;
+            if (!pszRegName)
+                break;
         }
     }
+    Assert(pLookupRec == &pRegSet->paLookupRecs[pRegSet->cLookupRecs]);
 
     if (RT_SUCCESS(rc))
     {
@@ -405,12 +419,20 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
  * Registers a set of registers for a CPU.
  *
  * @returns VBox status code.
+ * @param   pVM             The VM handle.
  * @param   pVCpu           The virtual CPU handle.
  * @param   paRegisters     The register descriptors.
  */
-VMMR3_INT_DECL(int) DBGFR3RegRegisterDevice(PVMCPU pVCpu, PCDBGFREGDESC paRegisters)
+VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters)
 {
-    return dbgfR3RegRegisterCommon(pVCpu->pVMR3, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, "cpu", pVCpu->idCpu);
+    if (!pVM->dbgf.s.fRegDbInitialized)
+    {
+        int rc = dbgfR3RegInit(pVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return dbgfR3RegRegisterCommon(pVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, "cpu", pVCpu->idCpu);
 }
 
 
@@ -1064,77 +1086,6 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
 
 
 /**
- * Performs a left shift on a RTUINT128U value.
- *
- * @returns pVal.
- * @param   pVal                The value to shift (input/output).
- * @param   cBits               The number of bits to shift it.  Negative
- *                              numbers are treated as right shifts.
- */
-static PRTUINT128U dbgfR3RegU128_ShiftLeft(PRTUINT128U pVal, int cBits)
-{
-    RTUINT128U const InVal = *pVal;
-
-    if (cBits >= 0)
-    {
-        if (cBits >= 128)
-            pVal->s.Lo  = pVal->s.Hi = 0;
-        else if (cBits >= 64)
-        {
-            pVal->s.Lo  = 0;
-            pVal->s.Hi  = InVal.s.Lo << (cBits - 64);
-        }
-        else
-        {
-            pVal->s.Hi  = InVal.s.Hi << cBits;
-            pVal->s.Hi |= InVal.s.Lo >> (64 - cBits);
-            pVal->s.Lo  = InVal.s.Lo << cBits;
-        }
-    }
-    else
-    {
-        /* (right shift) */
-        cBits = -cBits;
-        if (cBits >= 128)
-            pVal->s.Lo  = pVal->s.Hi = 0;
-        else if (cBits >= 64)
-        {
-            pVal->s.Hi  = 0;
-            pVal->s.Lo  = InVal.s.Hi >> (cBits - 64);
-        }
-        else
-        {
-            pVal->s.Lo  = InVal.s.Lo >> cBits;
-            pVal->s.Lo |= InVal.s.Hi << (64 - cBits);
-            pVal->s.Hi  = InVal.s.Hi >> cBits;
-        }
-    }
-    return pVal;
-}
-
-
-/**
- * ANDs the RTUINT128U value against a bitmask made up of the first @a cBits
- * bits.
- *
- * @returns pVal.
- * @param   pVal                The value to shift (input/output).
- * @param   cBits               The number of bits in the AND mask.
- */
-static PRTUINT128U dbgfR3RegU128_AndNFirstBits(PRTUINT128U pVal, unsigned cBits)
-{
-    if (cBits <= 64)
-    {
-        pVal->s.Hi  = 0;
-        pVal->s.Lo &= RT_BIT_64(cBits) - 1;
-    }
-    else if (cBits < 128)
-        pVal->s.Hi &= RT_BIT_64(cBits - 64) - 1;
-    return pVal;
-}
-
-
-/**
  * On CPU worker for the register queries, used by dbgfR3RegNmQueryWorker.
  *
  * @returns VBox status code.
@@ -1176,10 +1127,10 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
                 rc = dbgfR3RegValCast(pValue, enmValueType, DBGFREGVALTYPE_U128);
                 if (RT_SUCCESS(rc))
                 {
-                    dbgfR3RegU128_ShiftLeft(&pValue->u128, -pSubField->iFirstBit);
-                    dbgfR3RegU128_AndNFirstBits(&pValue->u128, pSubField->cBits);
+                    RTUInt128AssignShiftLeft(&pValue->u128, -pSubField->iFirstBit);
+                    RTUInt128AssignAndNFirstBits(&pValue->u128, pSubField->cBits);
                     if (pSubField->cShift)
-                        dbgfR3RegU128_ShiftLeft(&pValue->u128, pSubField->cShift);
+                        RTUInt128AssignShiftLeft(&pValue->u128, pSubField->cShift);
                 }
             }
         }
