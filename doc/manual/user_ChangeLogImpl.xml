@@ -45,6 +45,11 @@
       </listitem>
 
       <listitem>
+        <para>Shared Folders: fixed parameter parsing when creating symbolic
+          links, fixes 32-bit/64-bit bitness issue (bug #818)</para>
+      </listitem>
+
+      <listitem>
         <para>Main: fixed crash under rare circumstances due to an invalid
           logging string (4.0 regression)</para>
       </listitem>
