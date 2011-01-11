@@ -555,6 +555,8 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             else
                 rc = VERR_VD_RAW_INVALID_HEADER;
         }
+        else
+            rc = VERR_VD_RAW_INVALID_HEADER;
     }
     else
         rc = VERR_VD_RAW_INVALID_HEADER;
