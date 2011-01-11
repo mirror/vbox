@@ -640,7 +640,7 @@ void UIMachineSettingsSF::adjustFields()
 
 void UIMachineSettingsSF::showEvent (QShowEvent *aEvent)
 {
-    QWidget::showEvent (aEvent);
+    UISettingsPageMachine::showEvent (aEvent);
 
     /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized. */
     connect (mTwFolders->header(), SIGNAL (sectionResized (int, int, int)), this, SLOT (adjustFields()));

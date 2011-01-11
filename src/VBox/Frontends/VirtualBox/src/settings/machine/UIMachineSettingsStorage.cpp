@@ -2055,7 +2055,7 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
         mLtAttachment->setColumnMinimumWidth (1, maxWidth);
 #endif
     }
-    UISettingsPage::showEvent (aEvent);
+    UISettingsPageMachine::showEvent (aEvent);
 }
 
 void UIMachineSettingsStorage::mediumUpdated (const VBoxMedium &aMedium)
