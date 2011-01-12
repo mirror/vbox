@@ -29,7 +29,6 @@
 
 #include <iprt/types.h>
 #include <iprt/lockvalidator.h>
-#include "internal/lockvalidator.h"
 
 RT_C_DECLS_BEGIN
 
