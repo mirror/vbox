@@ -120,5 +120,5 @@ private:
     bool mFlushMode;
 };
 
-#endif /* ____H_MACHINEDEBUGGER */
+#endif /* !____H_MACHINEDEBUGGER */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
