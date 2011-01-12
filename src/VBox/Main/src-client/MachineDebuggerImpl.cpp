@@ -1084,14 +1084,53 @@ static HRESULT formatRegisterValue(Bstr *a_pbstr, PCDBGFREGVAL a_pValue, DBGFREG
             *a_pbstr = szHex;
             return S_OK;
 
-        case DBGFREGVALTYPE_LRD:
-            /** @todo long double -> string conversion. */
-            /** @todo long double == double on MSC. Stupid, stupid,
-             *        microsoft! */
-            RTStrFormatNumber(szHex, a_pValue->au16[5], 16, 2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
-            RTStrFormatNumber(&szHex[2+4], a_pValue->au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+        case DBGFREGVALTYPE_R80:
+        {
+            char *pszHex = szHex;
+            if (a_pValue->r80.s.fSign)
+                *pszHex++ = '-';
+
+            if (a_pValue->r80.s.uExponent == 0)
+            {
+                if (   !a_pValue->r80.sj64.u63Fraction
+                    && a_pValue->r80.sj64.fInteger)
+                    *pszHex++ = '0';
+                /* else: Denormal, handled way below. */
+            }
+            else if (a_pValue->r80.sj64.uExponent == UINT16_C(0x7fff))
+            {
+                /** @todo Figure out Pseudo inf/nan... */
+                if (a_pValue->r80.sj64.fInteger)
+                    *pszHex++ = 'P';
+                if (a_pValue->r80.sj64.u63Fraction == 0)
+                {
+                    *pszHex++ = 'I';
+                    *pszHex++ = 'n';
+                    *pszHex++ = 'f';
+                }
+                else
+                {
+                    *pszHex++ = 'N';
+                    *pszHex++ = 'a';
+                    *pszHex++ = 'N';
+                }
+            }
+            if (pszHex != &szHex[1])
+                *pszHex = '\0';
+            else
+            {
+                *pszHex++ = a_pValue->r80.sj64.fInteger ? '1' : '0';
+                *pszHex++ = 'm';
+                pszHex += RTStrFormatNumber(pszHex, a_pValue->r80.sj64.u63Fraction, 16, 2+16, 0,
+                                            RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+
+                *pszHex++ = 'e';
+                pszHex += RTStrFormatNumber(pszHex, (int32_t)a_pValue->r80.sj64.uExponent - 16383, 10, 0, 0,
+                                            RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
+            }
             *a_pbstr = szHex;
             return S_OK;
+        }
 
         case DBGFREGVALTYPE_DTR:
             RTStrFormatNumber(szHex, a_pValue->dtr.u64Base, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
