@@ -20,7 +20,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # The plugin.
 ifndef VBOX_ONLY_SDK
- DLLS += VBoxAuth
+ if ("$(KBUILD_TARGET)" != "linux" && "$(KBUILD_TARGET)" != "solaris") || defined(VBOX_WITH_PAM)
+  DLLS += VBoxAuth
+ endif
 endif
 VBoxAuth_TEMPLATE = VBOXR3
 VBoxAuth_SOURCES.linux = pam/VBoxAuthPAM.c
