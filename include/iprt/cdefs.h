@@ -66,28 +66,30 @@
  * Shut up DOXYGEN warnings and guide it properly thru the code.
  */
 #ifdef DOXYGEN_RUNNING
-#define __AMD64__
-#define __X86__
-#define RT_ARCH_AMD64
-#define RT_ARCH_X86
-#define IN_RING0
-#define IN_RING3
-#define IN_RC
-#define IN_RC
-#define IN_RT_RC
-#define IN_RT_R0
-#define IN_RT_R3
-#define IN_RT_STATIC
-#define RT_STRICT
-#define RT_LOCK_STRICT
-#define RT_LOCK_NO_STRICT
-#define RT_LOCK_STRICT_ORDER
-#define RT_LOCK_NO_STRICT_ORDER
-#define Breakpoint
-#define RT_NO_DEPRECATED_MACROS
-#define RT_EXCEPTIONS_ENABLED
-#define RT_BIG_ENDIAN
-#define RT_LITTLE_ENDIAN
+# define __AMD64__
+# define __X86__
+# define RT_ARCH_AMD64
+# define RT_ARCH_X86
+# define IN_RING0
+# define IN_RING3
+# define IN_RC
+# define IN_RC
+# define IN_RT_RC
+# define IN_RT_R0
+# define IN_RT_R3
+# define IN_RT_STATIC
+# define RT_STRICT
+# define RT_LOCK_STRICT
+# define RT_LOCK_NO_STRICT
+# define RT_LOCK_STRICT_ORDER
+# define RT_LOCK_NO_STRICT_ORDER
+# define Breakpoint
+# define RT_NO_DEPRECATED_MACROS
+# define RT_EXCEPTIONS_ENABLED
+# define RT_BIG_ENDIAN
+# define RT_LITTLE_ENDIAN
+# define RT_COMPILER_GROKS_64BIT_BITFIELDS
+# define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -522,6 +524,28 @@
  * gcc v4.4 warns about it).
  */
 #define RT_NOTHING
+
+/** @def RT_GCC_EXTENSION
+ * Macro for shutting up GCC warnings about using language extensions. */
+#ifdef __GNUC__
+# define RT_GCC_EXTENSION       __extension__
+#else
+# define RT_GCC_EXTENSION
+#endif
+
+/** @def RT_COMPILER_GROKS_64BIT_BITFIELDS
+ * Macro that is defined if the compiler understands 64-bit bitfields. */
+#if !defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__))
+# define RT_COMPILER_GROKS_64BIT_BITFIELDS
+#endif
+
+/** @def RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+ * Macro that is defined if the compiler implements long double as the
+ * IEEE extended precision floating. */
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(RT_OS_WINDOWS)
+# define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#endif
+
 
 /** @def RT_EXCEPTIONS_ENABLED
  * Defined when C++ exceptions are enabled.
