@@ -184,6 +184,22 @@ BOOL APIENTRY DrvBitBlt(
     return bRc;
 }
 
+ULONG DrvDitherColor(
+    DHPDEV dhpdev,
+    ULONG iMode,
+    ULONG rgb,
+    ULONG *pul)
+{
+    ULONG rc;
+
+    DISPDBG((1, "%s\n", __FUNCTION__));
+
+    /* Just forward this to the software engine. */
+    rc = EngDitherColor(((PPDEV)dhpdev)->hdevEng, iMode, rgb, pul);
+
+    return rc;
+}
+
 BOOL APIENTRY DrvTextOut(
     SURFOBJ  *pso,
     STROBJ   *pstro,
