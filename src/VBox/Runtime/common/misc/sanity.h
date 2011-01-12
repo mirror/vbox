@@ -208,4 +208,8 @@ AssertCompileSize(RTUINT16U,  2);
 AssertCompileSize(RTUINT32U,  4);
 AssertCompileSize(RTUINT64U,  8);
 AssertCompileSize(RTUINT128U, 16);
+/*AssertCompileSize(RTFLOAT32U, 8);*/
+AssertCompileSize(RTFLOAT64U, 8);
+AssertCompileSize(RTFLOAT80U, 10);
+/*AssertCompileSize(RTFLOAT128U, 16);*/
 
