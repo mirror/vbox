@@ -615,6 +615,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            injectnmi |\n"
                      "                            osdetect |\n"
                      "                            osinfo |\n"
+                     "                            getregisters [--cpu <id>] <reg>|all ... |\n"
+                     "                            setregisters [--cpu <id>] <reg>=<value> ... |\n"
                      "                            statistics [--reset] [--pattern <pattern>]\n"
                      "                            [--descriptions]\n"
                      "\n");

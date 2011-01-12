@@ -1396,10 +1396,10 @@ Virtual system 0:
     next time you start it. This is the equivalent of pulling out the power
     cable on a physical machine, and should be avoided if possible.</para>
   </sect1>
-  
+
   <sect1>
     <title>VBoxManage adoptstate</title>
-    
+
     <para>If you have a saved state file (<computeroutput>.sav</computeroutput>)
     that is seperate from the VM configuration, you can use this command to
     "adopt" the file. This will change the VM to saved state and when you
@@ -1722,7 +1722,7 @@ Virtual system 0:
         </glossentry>
       </glosslist></para>
   </sect1>
-  
+
   <sect1 id="vboxmanage-storagectl">
     <title>VBoxManage storagectl</title>
 
@@ -2776,6 +2776,24 @@ Value: 2006.01.01</screen>
           running VM, which will be written into the given file. This file
           will have the standard ELF core format (with custom sections); see
           <xref linkend="guestcoreformat" />.</para>
+
+          <para>This corresponds to the
+          <computeroutput>writecore</computeroutput> command in the debugger.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>info</computeroutput> command is used to
+          display info items relating to the VMM, device emulations and
+          associated drivers.  This command takes one or two arguments: the
+          name of the info item, optionally followed by a string containing
+          arguments specific to the info item.
+          The <computeroutput>help</computeroutput> info item provides a
+          listning of the available items and hints about any optional
+          arguments.</para>
+
+          <para>This corresponds to the <computeroutput>info</computeroutput>
+          command in the debugger.</para>
         </listitem>
 
         <listitem>
@@ -2785,6 +2803,58 @@ Value: 2006.01.01</screen>
           on the guest operating system, but an NMI can crash the whole guest
           operating system. Do not use unless you know what you're
           doing.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>osdetect</computeroutput> command makes the
+          VMM's debugger facility (re-)detection the guest operation
+          system.</para>
+
+          <para>This corresponds to the <computeroutput>detect</computeroutput>
+          command in the debugger.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>osinfo</computeroutput> command is used to
+          display info about the operating system (OS) detected by the VMM's
+          debugger facility.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>getregisters</computeroutput> command is
+          used to display CPU and device registers.  The command takes a list
+          of registers, each having one of the following forms:
+          <itemizedlist>
+            <listitem><computeroutput>register-set.register-name.sub-field</computeroutput></listitem>
+            <listitem><computeroutput>register-set.register-name</computeroutput></listitem>
+            <listitem><computeroutput>cpu-register-name.sub-field</computeroutput></listitem>
+            <listitem><computeroutput>cpu-register-name</computeroutput></listitem>
+            <listitem><computeroutput>all</computeroutput></listitem>
+          </itemizedlist>
+          The <computeroutput>all</computeroutput> form will cause all
+          registers to be shown (no sub-fields).  The registers names are
+          case-insensitive.  When requesting a CPU register the register set
+          can be omitted, it will be selected using the value of the
+          <computeroutput>--cpu</computeroutput> option (defaulting to 0).
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>The <computeroutput>setregisters</computeroutput> command is
+          used to change CPU and device registers.  The command takes a list
+          of register assignments, each having one of the following forms:
+          <itemizedlist>
+            <listitem><computeroutput>register-set.register-name.sub-field=value</computeroutput></listitem>
+            <listitem><computeroutput>register-set.register-name=value</computeroutput></listitem>
+            <listitem><computeroutput>cpu-register-name.sub-field=value</computeroutput></listitem>
+            <listitem><computeroutput>cpu-register-name=value</computeroutput></listitem>
+          </itemizedlist>
+          The value format should be in the same style as what
+          <computeroutput>getregisters</computeroutput> displays, with the
+          exception that both octal and decimal can be used instead of
+          hexadecimal.  The register naming and the default CPU register set
+          are handled the same way as with the
+          <computeroutput>getregisters</computeroutput> command.</para>
         </listitem>
 
         <listitem>
@@ -2798,7 +2868,7 @@ Value: 2006.01.01</screen>
         </listitem>
       </itemizedlist></para>
   </sect1>
-  
+
   <sect1>
     <title id="metrics">VBoxManage metrics</title>
 
@@ -2953,10 +3023,10 @@ Value: 2006.01.01</screen>
       </glossentry>
     </glosslist>
   </sect1>
-  
+
   <sect1>
     <title>VBoxManage hostonlyif</title>
-    
+
     <para>With "hostonlyif" you can change the IP configuration of a host-only
     network interface. For a description of host-only networking, please
     refer to <xref linkend="network_hostonly" />. Each host-only interface is
