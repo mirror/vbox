@@ -426,6 +426,221 @@ typedef RTUINT128U *PRTUINT128U;
 typedef const RTUINT128U *PCRTUINT128U;
 
 
+/**
+ * Double precision floating point format (64-bit).
+ */
+typedef union RTFLOAT64U
+{
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    /** Double view. */
+    double      rd;
+#endif
+    /** Format using regular bitfields.  */
+    struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        uint32_t    fSign : 1;
+        /** The exponent (offseted by 1023). */
+        uint32_t    uExponent : 11;
+        /** The fraction, bits 32 thru 51. */
+        uint32_t    u20FractionHigh : 20;
+        /** The fraction, bits 0 thru 31. */
+        uint32_t    u32FractionLow;
+# else
+        /** The fraction, bits 0 thru 31. */
+        uint32_t    u32FractionLow;
+        /** The fraction, bits 32 thru 51. */
+        uint32_t    u20FractionHigh : 20;
+        /** The exponent (offseted by 1023). */
+        uint32_t    uExponent : 11;
+        /** The sign indicator. */
+        uint32_t    fSign : 1;
+# endif
+    } s;
+
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
+    /** Format using 64-bit bitfields.  */
+    struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint64_t    fSign : 1;
+        /** The exponent (offseted by 1023). */
+        RT_GCC_EXTENSION uint64_t    uExponent : 11;
+        /** The fraction. */
+        RT_GCC_EXTENSION uint64_t    uFraction : 52;
+# else
+        /** The fraction. */
+        RT_GCC_EXTENSION uint64_t    uFraction : 52;
+        /** The exponent (offseted by 1023). */
+        RT_GCC_EXTENSION uint64_t    uExponent : 11;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint64_t    fSign : 1;
+# endif
+    } s64;
+#endif
+
+    /** 64-bit view. */
+    uint64_t    au64[1];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+    /** 16-bit view. */
+    uint16_t    au16[4];
+    /** 8-bit view. */
+    uint8_t     au8[8];
+} RTFLOAT64U;
+/** Pointer to a double precision floating point format union. */
+typedef RTFLOAT64U *PRTFLOAT64U;
+/** Pointer to a const double precision floating point format union. */
+typedef const RTFLOAT64U *PCRTFLOAT64U;
+
+
+/**
+ * Extended Double precision floating point format (80-bit).
+ */
+#pragma pack(1)
+typedef union RTFLOAT80U
+{
+    /** Format using bitfields.  */
+    struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The fraction. */
+        uint64_t                    u64Fraction;
+# else
+        /** The fraction. */
+        uint64_t                    u64Fraction;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+# endif
+    } s;
+
+    /** 64-bit view. */
+    uint64_t    au64[1];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+    /** 16-bit view. */
+    uint16_t    au16[5];
+    /** 8-bit view. */
+    uint8_t     au8[10];
+} RTFLOAT80U;
+#pragma pack()
+/** Pointer to a extended precision floating point format union. */
+typedef RTFLOAT80U *PRTFLOAT80U;
+/** Pointer to a const extended precision floating point format union. */
+typedef const RTFLOAT80U *PCRTFLOAT80U;
+
+
+/**
+ * A variant of RTFLOAT80U that may be larger than 80-bits depending on how the
+ * compiler implements long double.
+ */
+#pragma pack(1)
+typedef union RTFLOAT80U2
+{
+#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+    /** Long double view. */
+    long double     lrd;
+#endif
+    /** Format using bitfields.  */
+    struct
+    {
+#ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The fraction. */
+        uint64_t                    u64Mantissa;
+#else
+        /** The fraction. */
+        uint64_t                    u64Mantissa;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+#endif
+    } s;
+
+    /** Bitfield exposing the J bit and the fraction.  */
+    struct
+    {
+#ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The J bit, aka the integer bit. */
+        uint32_t                    fInteger;
+        /** The fraction, bits 32 thru 62. */
+        uint32_t                    u31FractionHigh : 31;
+        /** The fraction, bits 0 thru 31. */
+        uint32_t                    u32FractionLow : 32;
+#else
+        /** The fraction, bits 0 thru 31. */
+        uint32_t                    u32FractionLow : 32;
+        /** The fraction, bits 32 thru 62. */
+        uint32_t                    u31FractionHigh : 31;
+        /** The J bit, aka the integer bit. */
+        uint32_t                    fInteger;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+#endif
+    } sj;
+
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
+    /** 64-bit bitfields exposing the J bit and the fraction.  */
+    struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The J bit, aka the integer bit. */
+        RT_GCC_EXTENSION uint64_t   fInteger : 1;
+        /** The fraction. */
+        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+# else
+        /** The fraction. */
+        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+        /** The J bit, aka the integer bit. */
+        RT_GCC_EXTENSION uint64_t   fInteger : 1;
+        /** The exponent (offseted by 16383). */
+        RT_GCC_EXTENSION uint16_t   uExponent : 15;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint16_t   fSign : 1;
+# endif
+    } sj64;
+#endif
+
+    /** 64-bit view. */
+    uint64_t    au64[1];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+    /** 16-bit view. */
+    uint16_t    au16[5];
+    /** 8-bit view. */
+    uint8_t     au8[10];
+} RTFLOAT80U2;
+#pragma pack()
+/** Pointer to a extended precision floating point format union, 2nd
+ * variant. */
+typedef RTFLOAT80U2 *PRTFLOAT80U2;
+/** Pointer to a const extended precision floating point format union, 2nd
+ * variant. */
+typedef const RTFLOAT80U2 *PCRTFLOAT80U2;
+
+
 /** Generic function type.
  * @see PFNRT
  */
