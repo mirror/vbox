@@ -461,7 +461,7 @@ typedef union RTFLOAT64U
 
 #ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
     /** Format using 64-bit bitfields.  */
-    struct
+    RT_GCC_EXTENSION struct 
     {
 # ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
@@ -503,7 +503,7 @@ typedef const RTFLOAT64U *PCRTFLOAT64U;
 typedef union RTFLOAT80U
 {
     /** Format using bitfields.  */
-    struct
+    RT_GCC_EXTENSION struct
     {
 # ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
@@ -550,7 +550,7 @@ typedef union RTFLOAT80U2
     long double     lrd;
 #endif
     /** Format using bitfields.  */
-    struct
+    RT_GCC_EXTENSION struct
     {
 #ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
@@ -570,7 +570,7 @@ typedef union RTFLOAT80U2
     } s;
 
     /** Bitfield exposing the J bit and the fraction.  */
-    struct
+    RT_GCC_EXTENSION struct
     {
 #ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
@@ -599,7 +599,7 @@ typedef union RTFLOAT80U2
 
 #ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
     /** 64-bit bitfields exposing the J bit and the fraction.  */
-    struct
+    RT_GCC_EXTENSION struct
     {
 # ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
