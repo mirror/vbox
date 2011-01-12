@@ -33,7 +33,6 @@ VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
 #VBoxDisp_DEFS        += STAT_sunlover
 VBoxDisp_SOURCES     = \
-	color.c \
 	debug.c \
 	enable.c \
 	palette.c \
