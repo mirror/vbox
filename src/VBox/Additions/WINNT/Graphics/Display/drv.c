@@ -194,8 +194,10 @@ ULONG DrvDitherColor(
 
     DISPDBG((1, "%s\n", __FUNCTION__));
 
-    /* Just forward this to the software engine. */
-    rc = EngDitherColor(((PPDEV)dhpdev)->hdevEng, iMode, rgb, pul);
+    /* There is no EngDitherColor on NT4, so take the easy path and tell the graphics
+     * engine to create a halftone approximation.
+     */
+    rc = DCR_HALFTONE;
 
     return rc;
 }
