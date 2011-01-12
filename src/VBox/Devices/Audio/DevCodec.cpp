@@ -2234,22 +2234,17 @@ int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
     /* If no host voices were created, then fallback to nul audio. */
     if (!AUD_is_host_voice_in_ok(pState->SwVoiceIn))
         LogRel (("HDA: WARNING: Unable to open PCM IN!\n"));
-    if (!AUD_is_host_voice_in_ok(pState->voice_mc))
-        LogRel (("HDA: WARNING: Unable to open PCM MC!\n"));
     if (!AUD_is_host_voice_out_ok(pState->SwVoiceOut))
         LogRel (("HDA: WARNING: Unable to open PCM OUT!\n"));
 
     if (   !AUD_is_host_voice_in_ok(pState->SwVoiceIn)
-        && !AUD_is_host_voice_out_ok(pState->SwVoiceOut)
-        && !AUD_is_host_voice_in_ok(pState->voice_mc))
+        && !AUD_is_host_voice_out_ok(pState->SwVoiceOut))
     {
         /* Was not able initialize *any* voice. Select the NULL audio driver instead */
         AUD_close_in  (&pState->card, pState->SwVoiceIn);
         AUD_close_out (&pState->card, pState->SwVoiceOut);
-        AUD_close_in  (&pState->card, pState->voice_mc);
         pState->SwVoiceOut = NULL;
         pState->SwVoiceIn = NULL;
-        pState->voice_mc = NULL;
         AUD_init_null ();
 
         PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
@@ -2257,8 +2252,7 @@ int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
                 "with the consequence that no sound is audible"));
     }
     else if (   !AUD_is_host_voice_in_ok(pState->SwVoiceIn)
-             || !AUD_is_host_voice_out_ok(pState->SwVoiceOut)
-             || !AUD_is_host_voice_in_ok(pState->voice_mc))
+             || !AUD_is_host_voice_out_ok(pState->SwVoiceOut))
     {
         char   szMissingVoices[128];
         size_t len = 0;
@@ -2266,8 +2260,6 @@ int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
             len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
         if (!AUD_is_host_voice_out_ok(pState->SwVoiceOut))
             len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
-        if (!AUD_is_host_voice_in_ok(pState->voice_mc))
-            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
 
         PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "

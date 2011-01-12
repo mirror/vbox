@@ -456,8 +456,6 @@ typedef struct CODECState
     SWVoiceIn               *SwVoiceIn;
     /** PCM out */
     SWVoiceOut              *SwVoiceOut;
-    /** Mic in */
-    SWVoiceIn               *voice_mc;
 #else
     CODECAUDIOOUTFORMAT        aSwVoiceOut;
     CODECAUDIOINFORMAT        aSwVoiceIn;
