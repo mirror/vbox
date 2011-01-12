@@ -1160,6 +1160,14 @@ STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BST
                     hrc = E_OUTOFMEMORY;
                 }
             }
+            else if (vrc == VERR_DBGF_REGISTER_NOT_FOUND)
+                hrc = setError(E_FAIL, tr("Register '%s' was not found"), strName.c_str());
+            else if (vrc == VERR_INVALID_CPU_ID)
+                hrc = setError(E_FAIL, tr("Invalid CPU ID: %u"), a_idCpu);
+            else
+                hrc = setError(VBOX_E_VM_ERROR,
+                               tr("DBGFR3RegNmQuery failed with rc=%Rrc querying register '%s' with default cpu set to %u"),
+                               vrc, strName.c_str(), a_idCpu);
         }
     }
 
