@@ -1641,7 +1641,7 @@ void VBoxVHWATextureNP2RectPBO::doUpdate(uchar * pAddress, const QRect * pRect)
                 unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
                 );
 
-        Assert(unmapped);
+        Assert(unmapped); NOREF(unmapped);
 
         VBoxVHWATextureNP2Rect::doUpdate(0, &mRect);
 
@@ -1730,7 +1730,7 @@ void VBoxVHWATextureNP2RectPBOMapped::unmapBuffer()
                 unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
                 );
 
-        Assert(unmapped);
+        Assert(unmapped); NOREF(unmapped);
 
         VBOXQGL_CHECKERR(
                 vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -1771,7 +1771,7 @@ void VBoxVHWATextureNP2RectPBOMapped::doUpdate(uchar * pAddress, const QRect * p
                 unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
                 );
 
-        Assert(unmapped);
+        Assert(unmapped); NOREF(unmapped);
 
         mpMappedAllignedBuffer = NULL;
     }

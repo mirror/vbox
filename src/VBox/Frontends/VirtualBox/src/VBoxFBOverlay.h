@@ -692,7 +692,7 @@ public:
                     unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
                     );
 
-            Assert(unmapped);
+            Assert(unmapped); NOREF(unmapped);
 
             VBoxVHWATextureImage::setAddress(0);
 
