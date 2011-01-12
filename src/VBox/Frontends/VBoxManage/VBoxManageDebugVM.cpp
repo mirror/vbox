@@ -43,6 +43,71 @@
 
 
 /**
+ * Handles the getregisters sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    /*
+     * We take a list of register names (case insensitive).  If 'all' is
+     * encountered we'll dump all registers.
+     */
+    ULONG                       idCpu = 0;
+    unsigned                    cRegisters = 0;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                idCpu = ValueUnion.u32;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!RTStrICmp(ValueUnion.psz, "all"))
+                {
+                    com::SafeArray<BSTR> aBstrNames;
+                    com::SafeArray<BSTR> aBstrValues;
+                    CHECK_ERROR2_RET(pDebugger, GetRegisters(idCpu, ComSafeArrayAsOutParam(aBstrNames), ComSafeArrayAsOutParam(aBstrValues)),
+                                     RTEXITCODE_FAILURE);
+                    Assert(aBstrNames.size() == aBstrValues.size());
+
+                    for (size_t i = 0; i < aBstrNames.size(); i++)
+                        RTPrintf("%ls = %ls\n", aBstrNames[i], aBstrValues[i]);
+                }
+                else
+                {
+                    com::Bstr bstrName = ValueUnion.psz;
+                    com::Bstr bstrValue;
+                    CHECK_ERROR2_RET(pDebugger, GetRegister(idCpu, bstrName.raw(), bstrValue.asOutParam()), RTEXITCODE_FAILURE);
+                    RTPrintf("%s = %ls\n", ValueUnion.psz, bstrValue.raw());
+                }
+                cRegisters++;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+        }
+    }
+
+    if (!cRegisters)
+        return errorSyntax(USAGE_DEBUGVM, "The getregisters sub-command takes at least one register name");
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Handles the info sub-command.
  *
  * @returns Suitable exit code.
@@ -178,6 +243,86 @@ static RTEXITCODE handleDebugVM_OSInfo(HandlerArg *a, IMachineDebugger *pDebugge
 }
 
 /**
+ * Handles the setregisters sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    /*
+     * We take a list of register assignments, that is register=value.
+     */
+    ULONG                       idCpu = 0;
+    com::SafeArray<IN_BSTR>     aBstrNames;
+    com::SafeArray<IN_BSTR>     aBstrValues;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                idCpu = ValueUnion.u32;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                const char *pszEqual = strchr(ValueUnion.psz, '=');
+                if (!pszEqual)
+                    return errorSyntax(USAGE_DEBUGVM, "setregisters expects input on the form 'register=value' got '%s'", ValueUnion.psz);
+                try
+                {
+                    com::Bstr bstrName(ValueUnion.psz, pszEqual - ValueUnion.psz);
+                    com::Bstr bstrValue(pszEqual + 1);
+                    if (   !aBstrNames.push_back(bstrName.raw())
+                        || !aBstrValues.push_back(bstrValue.raw()))
+                        throw std::bad_alloc();
+                }
+                catch (std::bad_alloc)
+                {
+                    RTMsgError("Out of memory\n");
+                    return RTEXITCODE_FAILURE;
+                }
+                break;
+            }
+
+            default:
+                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+        }
+    }
+
+    if (!aBstrNames.size())
+        return errorSyntax(USAGE_DEBUGVM, "The setregisters sub-command takes at least one register name");
+
+    /*
+     * If it is only one register, use the single register method just so
+     * we expose it and can test it from the command line.
+     */
+    if (aBstrNames.size() == 1)
+    {
+        CHECK_ERROR2_RET(pDebugger, SetRegister(idCpu, aBstrNames[0], aBstrValues[0]), RTEXITCODE_FAILURE);
+        RTPrintf("Successfully set %ls\n", aBstrNames[0]);
+    }
+    else
+    {
+        CHECK_ERROR2_RET(pDebugger, SetRegisters(idCpu, ComSafeArrayAsInParam(aBstrNames), ComSafeArrayAsInParam(aBstrValues)), RTEXITCODE_FAILURE);
+        RTPrintf("Successfully set %u registers\n", aBstrNames.size());
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Handles the statistics sub-command.
  *
  * @returns Suitable exit code.
@@ -282,6 +427,8 @@ int handleDebugVM(HandlerArg *pArgs)
             const char *pszSubCmd = pArgs->argv[1];
             if (!strcmp(pszSubCmd, "dumpguestcore"))
                 rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "getregisters"))
+                rcExit = handleDebugVM_GetRegisters(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "info"))
                 rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "injectnmi"))
@@ -290,6 +437,8 @@ int handleDebugVM(HandlerArg *pArgs)
                 rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "osinfo"))
                 rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "setregisters"))
+                rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "statistics"))
                 rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
             else
