@@ -305,6 +305,9 @@ void UIMouseHandler::sltMachineStateChanged()
         default:
             break;
     }
+
+    /* Notify all listeners: */
+    emit mouseStateChanged(mouseState());
 }
 
 /* Mouse capability-change handler: */
@@ -379,8 +382,9 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     else
 
     /* Otherwise we should show host pointer with guest shape assigned to it if:
-     * mouse is 'integrated', 'absolute', valid pointer shape is present. */
-    if (uisession()->isMouseIntegrated() &&
+     * machine is NOT 'paused', mouse is 'integrated', 'absolute', valid pointer shape is present. */
+    if (!uisession()->isPaused() &&
+        uisession()->isMouseIntegrated() &&
         uisession()->isMouseSupportsAbsolute() &&
         uisession()->isValidPointerShapePresent())
     {
@@ -392,8 +396,9 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     else
 
     /* There could be other states covering such situations as:
-     * 1. mouse is 'not captured', 'integrated', 'not absolute' or
-     * 2. mouse is 'not captured', 'not integrated', 'absolute'.
+     * 1. machine is 'paused' or
+     * 2. mouse is 'not captured', 'integrated', 'not absolute' or
+     * 3. mouse is 'not captured', 'not integrated', 'absolute'.
      * We have nothing to do with that except just unset the cursor. */
     {
         QList<ulong> screenIds = m_viewports.keys();
