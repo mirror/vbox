@@ -2130,12 +2130,6 @@ static void po_callback (void *opaque, int avail)
     pState->pfnTransfer(pState, PO_INDEX, avail);
 }
 
-static void mc_callback (void *opaque, int avail)
-{
-    CODECState *pState = (CODECState *)opaque;
-    pState->pfnTransfer(pState, MC_INDEX, avail);
-}
-
 int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
 {
     audsettings_t as;
