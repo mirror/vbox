@@ -1934,6 +1934,8 @@ typedef struct X86FPUSTATE
         uint64_t    mmx;
         /** FPU view - todo. */
         X86FPUMMX   fpu;
+        /** Extended precision floating point view. */
+        RTFLOAT80U2 r80;
         /** 8-bit view. */
         uint8_t     au8[16];
         /** 16-bit view. */
@@ -1986,6 +1988,8 @@ typedef struct X86FXSTATE
         uint64_t    mmx;
         /** FPU view - todo. */
         X86FPUMMX   fpu;
+        /** Extended precision floating point view. */
+        RTFLOAT80U2 r80;
         /** 8-bit view. */
         uint8_t     au8[16];
         /** 16-bit view. */

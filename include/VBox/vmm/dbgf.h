@@ -1231,7 +1231,7 @@ typedef enum DBGFREGVALTYPE
     /** Unsigned 128-bit register value. */
     DBGFREGVALTYPE_U128,
     /** Long double register value. */
-    DBGFREGVALTYPE_LRD,
+    DBGFREGVALTYPE_R80,
     /** Descriptor table register value. */
     DBGFREGVALTYPE_DTR,
     /** End of the valid register value types. */
@@ -1252,7 +1252,7 @@ typedef union DBGFREGVAL
     uint32_t    u32;            /**< The 32-bit view. */
     uint64_t    u64;            /**< The 64-bit view. */
     RTUINT128U  u128;           /**< The 128-bit view. */
-    long double lrd;            /**< The long double view. */
+    RTFLOAT80U2 r80;            /**< The 80-bit floating point view. */
     /** GDTR or LDTR (DBGFREGVALTYPE_DTR). */
     struct
     {
@@ -1446,7 +1446,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU16( PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmQueryU32( PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint32_t    *pu32);
 VMMR3DECL(int) DBGFR3RegNmQueryU64( PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t    *pu64);
 VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U  pu128);
-VMMR3DECL(int) DBGFR3RegNmQueryLrd( PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd);
+/*VMMR3DECL(int) DBGFR3RegNmQueryLrd( PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd);*/
 VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit);
 VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs);

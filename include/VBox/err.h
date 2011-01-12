@@ -278,6 +278,8 @@
 #define VINF_DBGF_ZERO_EXTENDED_REGISTER    1212
 /** The requested type conversion was not supported. */
 #define VERR_DBGF_UNSUPPORTED_CAST          (-1213)
+/** The register is read-only and cannot be modified. */
+#define VERR_DBGF_READ_ONLY_REGISTER        (-1214)
 /** @} */
 
 
