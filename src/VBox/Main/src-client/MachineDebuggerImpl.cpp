@@ -1042,9 +1042,128 @@ STDMETHODIMP MachineDebugger::DetectOS(BSTR *a_pbstrName)
     return hrc;
 }
 
+/**
+ * Formats a register value.
+ *
+ * This is used by both register getter methods.
+ *
+ * @returns
+ * @param   a_pbstr             The output Bstr variable.
+ * @param   a_pValue            The value to format.
+ * @param   a_enmType           The type of the value.
+ */
+static HRESULT formatRegisterValue(Bstr *a_pbstr, PCDBGFREGVAL a_pValue, DBGFREGVALTYPE a_enmType)
+{
+    char szHex[128]; /* Must be big because RTStrFormatNumber is unsafe. */
+
+    switch (a_enmType)
+    {
+        case DBGFREGVALTYPE_U8:
+            RTStrFormatNumber(szHex, a_pValue->u8,  16,  2+2, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_8BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_U16:
+            RTStrFormatNumber(szHex, a_pValue->u16, 16,  2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_U32:
+            RTStrFormatNumber(szHex, a_pValue->u32, 16,  2+8, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_U64:
+            RTStrFormatNumber(szHex, a_pValue->u64, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_U128:
+            RTStrFormatNumber(szHex, a_pValue->au64[1], 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+            RTStrFormatNumber(&szHex[2+16], a_pValue->au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_LRD:
+            /** @todo long double -> string conversion. */
+            /** @todo long double == double on MSC. Stupid, stupid,
+             *        microsoft! */
+            RTStrFormatNumber(szHex, a_pValue->au16[5], 16, 2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
+            RTStrFormatNumber(&szHex[2+4], a_pValue->au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_DTR:
+            RTStrFormatNumber(szHex, a_pValue->dtr.u64Base, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+            szHex[2+16] = ':';
+            RTStrFormatNumber(&szHex[2+16+1], a_pValue->dtr.u32Limit, 16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
+            *a_pbstr = szHex;
+            return S_OK;
+
+        case DBGFREGVALTYPE_INVALID:
+        case DBGFREGVALTYPE_END:
+        case DBGFREGVALTYPE_32BIT_HACK:
+            break;
+        /* no default */
+    }
+
+    return E_UNEXPECTED;
+}
+
 STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BSTR *a_pbstrValue)
 {
-    ReturnComNotImplemented();
+    /*
+     * Validate and convert input.
+     */
+    CheckComArgStrNotEmptyOrNull(a_bstrName);
+    CheckComArgNotNull(a_pbstrValue);
+    Utf8Str strName;
+    try
+    {
+        strName = a_bstrName;
+    }
+    catch (std::bad_alloc)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * The prologue.
+     */
+    LogFlowThisFunc(("\n"));
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * Real work.
+             */
+            DBGFREGVAL      Value;
+            DBGFREGVALTYPE  enmType;
+            int vrc = DBGFR3RegNmQuery(ptrVM.raw(), a_idCpu, strName.c_str(), &Value, &enmType);
+            if (RT_SUCCESS(vrc))
+            {
+                try
+                {
+                    Bstr bstrValue;
+                    hrc = formatRegisterValue(&bstrValue, &Value, enmType);
+                    if (SUCCEEDED(hrc))
+                        bstrValue.detachTo(a_pbstrValue);
+                }
+                catch (std::bad_alloc)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+        }
+    }
+
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, a_bstrNames), ComSafeArrayOut(BSTR, a_bstrValues))
@@ -1065,6 +1184,7 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
             /*
              * Real work.
              */
+            /** @todo query all registers. */
             DBGFREGENTRY aRegs[DBGFREG_ALL_COUNT];
             int vrc = DBGFR3RegCpuQueryAll(ptrVM.raw(), a_idCpu, aRegs, RT_ELEMENTS(aRegs));
             if (RT_SUCCESS(vrc))
@@ -1077,45 +1197,10 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
                     for (uint32_t iReg = 0; iReg < RT_ELEMENTS(aRegs); iReg++)
                     {
                         char szHex[128];
+                        Bstr bstrValue;
 
-                        szHex[0] = '\0';
-                        switch (aRegs[iReg].enmType)
-                        {
-                            case DBGFREGVALTYPE_U8:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.u8,  16,  2+2, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_8BIT);
-                                break;
-                            case DBGFREGVALTYPE_U16:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.u16, 16,  2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
-                                break;
-                            case DBGFREGVALTYPE_U32:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.u32, 16,  2+8, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
-                                break;
-                            case DBGFREGVALTYPE_U64:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.u64, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-                                break;
-                            case DBGFREGVALTYPE_U128:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.au64[1], 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-                                RTStrFormatNumber(&szHex[2+16], aRegs[iReg].Val.au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-                                break;
-                            case DBGFREGVALTYPE_LRD:
-                                /** @todo long double -> string conversion. */
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.au16[5], 16, 2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
-                                RTStrFormatNumber(&szHex[2+4], aRegs[iReg].Val.au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-                                break;
-                            case DBGFREGVALTYPE_DTR:
-                                RTStrFormatNumber(szHex, aRegs[iReg].Val.dtr.u64Base, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-                                szHex[2+16] = ':';
-                                RTStrFormatNumber(&szHex[2+16+1], aRegs[iReg].Val.dtr.u32Limit, 16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
-                                break;
-
-                            case DBGFREGVALTYPE_END:
-                            case DBGFREGVALTYPE_INVALID:
-                            case DBGFREGVALTYPE_32BIT_HACK:
-                                break;
-                        }
-                        Assert(szHex[0]);
-
-                        Bstr bstrValue(szHex);
+                        hrc = formatRegisterValue(&bstrValue, &aRegs[iReg].Val, aRegs[iReg].enmType);
+                        AssertComRC(hrc);
                         bstrValue.detachTo(&abstrValues[iReg]);
 
                         Bstr bstrName(DBGFR3RegCpuName(ptrVM.raw(), aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
