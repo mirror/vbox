@@ -1111,7 +1111,16 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
      */
     dbgfR3RegValClear(pValue);
     if (!pSubField)
+    {
         rc = pDesc->pfnGet(pSet->uUserArg.pv, pDesc, pValue);
+        if (   pLookupRec->pAlias
+            && pLookupRec->pAlias->enmType != enmValueType
+            && RT_SUCCESS(rc))
+        {
+            rc = dbgfR3RegValCast(pValue, enmValueType, pLookupRec->pAlias->enmType);
+            enmValueType = pLookupRec->pAlias->enmType;
+        }
+    }
     else
     {
         if (pSubField->pfnGet)
@@ -1122,6 +1131,13 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
         else
         {
             rc = pDesc->pfnGet(pSet->uUserArg.pv, pDesc, pValue);
+            if (   pLookupRec->pAlias
+                && pLookupRec->pAlias->enmType != enmValueType
+                && RT_SUCCESS(rc))
+            {
+                rc = dbgfR3RegValCast(pValue, enmValueType, pLookupRec->pAlias->enmType);
+                enmValueType = pLookupRec->pAlias->enmType;
+            }
             if (RT_SUCCESS(rc))
             {
                 rc = dbgfR3RegValCast(pValue, enmValueType, DBGFREGVALTYPE_U128);
