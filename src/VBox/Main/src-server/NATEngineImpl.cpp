@@ -288,11 +288,11 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
         r = it->second;
         if (it->first == name)
             return setError(E_INVALIDARG,
-                            tr("A NAT rule of this name does already exist"));
+                            tr("A NAT rule of this name already exists"));
         if (   r.strHostIP == Utf8Str(aBindIp)
             && r.u16HostPort == aHostPort)
             return setError(E_INVALIDARG,
-                            tr("A NAT rule for this host port and this host IP does already exist"));
+                            tr("A NAT rule for this host port and this host IP already exists"));
     }
 
     r.strName = name.c_str();
