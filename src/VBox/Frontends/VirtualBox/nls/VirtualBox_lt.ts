@@ -2934,11 +2934,11 @@
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>Pasirinkite virtualaus standžiojo disko rinkmeną...</translation>
+        <translation>Pasirinkti virtualaus standžiojo disko rinkmeną...</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file...</source>
-        <translation>Pasirinkite virtualaus CD/DVD disko rinkmeną...</translation>
+        <translation>Pasirinkti virtualaus CD/DVD disko rinkmeną...</translation>
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
@@ -2946,7 +2946,7 @@
     </message>
     <message>
         <source>Choose a virtual floppy disk file...</source>
-        <translation>Pasirinkite virtualaus diskelio rinkmeną....</translation>
+        <translation>Pasirinkti virtualaus diskelio rinkmeną....</translation>
     </message>
 </context>
 <context>
@@ -3626,7 +3626,7 @@
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation>Pasirinkite virtualaus standžiojo disko rinkmeną...</translation>
+        <translation>Pasirinkti virtualaus standžiojo disko rinkmeną...</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6358,7 +6358,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation>standusis diskas</translation>
+        <translation>standžiųjų diskų</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
@@ -6366,7 +6366,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation>CD/DVD diskas</translation>
+        <translation>CD/DVD diskų</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -6374,7 +6374,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>diskelis</translation>
+        <translation>diskelių</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
@@ -9055,7 +9055,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation>Pasirinkite atvertiną rinkmeną...</translation>
+        <translation>Pasirinkti atvertiną rinkmeną...</translation>
     </message>
 </context>
 <context>
