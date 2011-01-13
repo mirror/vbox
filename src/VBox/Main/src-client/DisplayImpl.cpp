@@ -778,7 +778,7 @@ void Display::handleResizeCompletedEMT (void)
         LogFlowFunc (("Calling VRDP\n"));
         mParent->consoleVRDPServer()->SendResize();
 
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) && 0
         {
             BOOL is3denabled;
             mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
@@ -2592,6 +2592,9 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
+
+    /* Leave lock because the call scheduled on EMT may also try to take it. */
+    alock.leave();
 
     /*
      * Again we're lazy and make the graphics device do all the
