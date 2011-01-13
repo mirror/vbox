@@ -778,7 +778,7 @@ void Display::handleResizeCompletedEMT (void)
         LogFlowFunc (("Calling VRDP\n"));
         mParent->consoleVRDPServer()->SendResize();
 
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL) && 0
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         {
             BOOL is3denabled;
             mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
