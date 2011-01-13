@@ -1854,7 +1854,35 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPST
 {
     g_hInstance = hInstance;
     NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine);
-    return main(__argc, __argv);
+
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    LPWSTR pwszCmdLine = GetCommandLineW();
+    if (!pwszCmdLine)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "GetCommandLineW failed");
+
+    char *pszCmdLine;
+    rc = RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine); /* leaked */
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to convert the command line: %Rrc", rc);
+
+    int    cArgs;
+    char **papszArgs;
+    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, NULL);
+    if (RT_SUCCESS(rc))
+    {
+
+        rc = main(cArgs, papszArgs);
+
+        RTGetOptArgvFree(papszArgs);
+    }
+    else
+        rc = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptArgvFromString failed: %Rrc", rc);
+    RTStrFree(pszCmdLine);
+
+    return rc;
 }
 #endif
 
