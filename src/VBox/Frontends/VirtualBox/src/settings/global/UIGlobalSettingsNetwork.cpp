@@ -417,7 +417,7 @@ void UIGlobalSettingsNetwork::sltAddInterface()
     CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
     if (host.isOk())
     {
-        vboxProblem().showModalProgressDialog(progress, tr("Creating host-only interface..."),
+        vboxProblem().showModalProgressDialog(progress, tr("Networking"),
                                               ":/nw_32px.png", this, true, 0);
         if (progress.GetResultCode() == 0)
         {
@@ -470,7 +470,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
     if (host.isOk())
     {
-        vboxProblem().showModalProgressDialog(progress, tr("Removing host-only interface..."),
+        vboxProblem().showModalProgressDialog(progress, tr("Networking"),
                                               ":/nw_32px.png", this, true, 0);
         if (progress.GetResultCode() == 0)
         {
