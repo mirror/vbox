@@ -41,6 +41,7 @@
 
 #ifdef VBOX
 # include <VBox/version.h>
+# include <iprt/log.h>
 #endif
 
 #ifdef HAVE_LOCALE_H
@@ -431,6 +432,14 @@ parse_server_and_port(char *server)
 #endif /* IPv6 */
 
 }
+
+#ifdef VBOX
+/* This disables iprt logging */
+DECLEXPORT(PRTLOGGER) RTLogDefaultInit(void)
+{
+    return NULL;
+}
+#endif
 
 /* Client program */
 int
