@@ -3779,7 +3779,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
             PX86PDPE        pPdpeDst;
             RTGCPHYS        GCPhysPdeSrc;
             X86PDPE         PdpeSrc;
-            PdpeSrc.u = 0;
+            PdpeSrc.u = 0;                      /* initialized to shut up gcc 4.5 */
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(pVCpu, GCPtr, &iPDSrc, &PdpeSrc);
             PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
