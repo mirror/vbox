@@ -89,7 +89,7 @@
       </listitem>
 
       <listitem>
-        <para>OVF/OVA: fixed import of files created by other ovftools (bug
+        <para>OVF/OVA: fixed import of files created by other ovf tools (bug
          #7983)</para>
       </listitem>
 
