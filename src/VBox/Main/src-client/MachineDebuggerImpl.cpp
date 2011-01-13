@@ -1089,6 +1089,8 @@ static HRESULT formatRegisterValue(Bstr *a_pbstr, PCDBGFREGVAL a_pValue, DBGFREG
             char *pszHex = szHex;
             if (a_pValue->r80.s.fSign)
                 *pszHex++ = '-';
+            else
+                *pszHex++ = '+';
 
             if (a_pValue->r80.s.uExponent == 0)
             {
