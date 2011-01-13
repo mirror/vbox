@@ -281,6 +281,10 @@ void UISession::powerUp()
                  : "disabled"));
 #endif
 
+#ifdef VBOX_WITH_PIDFILE
+    vboxGlobal().createPidfile();
+#endif
+
     /* Warn listeners about machine was started: */
     emit sigMachineStarted();
 }
