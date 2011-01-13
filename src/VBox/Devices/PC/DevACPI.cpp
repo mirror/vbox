@@ -1281,11 +1281,21 @@ static int acpiPM1aCtlWritew(ACPIState *s, uint32_t addr, uint32_t val)
             case 0x00:                  /* S0 */
                 break;
             case 0x01:                  /* S1 */
-                LogRel(("Entering S1 power state (powered-on suspend)\n"));
-                return acpiSleep(s);
+                if (s->fS1Enabled)
+                {
+                    LogRel(("Entering S1 power state (powered-on suspend)\n"));
+                    return acpiSleep(s);
+                }
+                else
+                    LogRel(("Ignoring guest attempt to enter S1 power state (powered-on suspend)!\n"));
             case 0x04:                  /* S4 */
-                LogRel(("Entering S4 power state (suspend to disk)\n"));
-                return acpiPowerDown(s);/* Same behavior as S5 */
+                if (s->fS4Enabled)
+                {
+                    LogRel(("Entering S4 power state (suspend to disk)\n"));
+                    return acpiPowerDown(s);/* Same behavior as S5 */
+                }
+                else
+                    LogRel(("Ignoring guest attempt to enter S4 power state (suspend to disk)!\n"));
             case 0x05:                  /* S5 */
                 LogRel(("Entering S5 power state (power down)\n"));
                 return acpiPowerDown(s);
@@ -2686,7 +2696,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = CFGMR3QueryBoolDef(pCfg, "PowerS4Enabled", &s->fS4Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PowerS1Enabled\""));
+                                N_("Configuration error: Failed to read \"PowerS4Enabled\""));
 
     /* query whether S1 power state should save the VM state */
     rc = CFGMR3QueryBoolDef(pCfg, "EnableSuspendToDisk", &s->fSuspendToSavedState, false);
