@@ -112,7 +112,10 @@ typedef struct DBGFREGSET
     /** The number of register descriptors. */
     uint32_t                cDescs;
 
-    /** Array of lookup records. */
+    /** Array of lookup records.
+     * The first part of the array runs parallel to paDescs, the rest are
+     * covering for aliases and bitfield variations.  It's done this way to
+     * simplify the query all operations. */
     struct DBGFREGLOOKUP   *paLookupRecs;
     /** The number of lookup records. */
     uint32_t                cLookupRecs;
@@ -316,36 +319,43 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
 
 
     /*
-     * Initialize the lookup records.
+     * Initialize the lookup records. See DBGFREGSET::paLookupRecs.
      */
     char szName[DBGF_REG_MAX_NAME * 3 + 16];
     strcpy(szName, pRegSet->szPrefix);
     char *pszReg = strchr(szName, '\0');
     *pszReg++ = '.';
 
+    /* Array parallel to the descriptors. */
     int             rc = VINF_SUCCESS;
     PDBGFREGLOOKUP  pLookupRec = &pRegSet->paLookupRecs[0];
     for (iDesc = 0; paRegisters[iDesc].pszName != NULL && RT_SUCCESS(rc); iDesc++)
     {
-        PCDBGFREGALIAS  pCurAlias  = NULL;
+        strcpy(pszReg, paRegisters[iDesc].pszName);
+        pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
+        if (!pLookupRec->Core.pszString)
+            rc = VERR_NO_STR_MEMORY;
+        pLookupRec->pSet      = pRegSet;
+        pLookupRec->pDesc     = &paRegisters[iDesc];
+        pLookupRec->pAlias    = NULL;
+        pLookupRec->pSubField = NULL;
+        pLookupRec++;
+    }
+
+    /* Aliases and sub-fields. */
+    for (iDesc = 0; paRegisters[iDesc].pszName != NULL && RT_SUCCESS(rc); iDesc++)
+    {
+        PCDBGFREGALIAS  pCurAlias  = NULL; /* first time we add sub-fields for the real name. */
         PCDBGFREGALIAS  pNextAlias = paRegisters[iDesc].paAliases;
         const char     *pszRegName = paRegisters[iDesc].pszName;
         while (RT_SUCCESS(rc))
         {
-            size_t cchReg = strlen(pszRegName);
-            memcpy(pszReg, pszRegName, cchReg + 1);
-            pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
-            if (!pLookupRec->Core.pszString)
-                rc = VERR_NO_STR_MEMORY;
-            pLookupRec->pSet      = pRegSet;
-            pLookupRec->pDesc     = &paRegisters[iDesc];
-            pLookupRec->pAlias    = pCurAlias;
-            pLookupRec->pSubField = NULL;
-            pLookupRec++;
-
+            /* Add sub-field records. */
             PCDBGFREGSUBFIELD paSubFields = paRegisters[iDesc].paSubFields;
             if (paSubFields)
             {
+                size_t cchReg = strlen(pszRegName);
+                memcpy(pszReg, pszRegName, cchReg);
                 char *pszSub = &pszReg[cchReg];
                 *pszSub++ = '.';
                 for (uint32_t iSubField = 0; paSubFields[iSubField].pszName && RT_SUCCESS(rc); iSubField++)
@@ -362,13 +372,24 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
                 }
             }
 
-            /* next */
+            /* Advance to the next alias. */
             pCurAlias = pNextAlias++;
             if (!pCurAlias)
                 break;
             pszRegName = pCurAlias->pszName;
             if (!pszRegName)
                 break;
+
+            /* The alias record. */
+            strcpy(pszReg, pszRegName);
+            pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
+            if (!pLookupRec->Core.pszString)
+                rc = VERR_NO_STR_MEMORY;
+            pLookupRec->pSet      = pRegSet;
+            pLookupRec->pDesc     = &paRegisters[iDesc];
+            pLookupRec->pAlias    = pCurAlias;
+            pLookupRec->pSubField = NULL;
+            pLookupRec++;
         }
     }
     Assert(pLookupRec == &pRegSet->paLookupRecs[pRegSet->cLookupRecs]);
@@ -384,9 +405,13 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
         bool fInserted = RTStrSpaceInsert(&pVM->dbgf.s.RegSetSpace, &pRegSet->Core);
         if (fInserted)
         {
-            if (enmType == DBGFREGSETTYPE_CPU)
-                pVM->aCpus[iInstance].dbgf.s.pRegSet = pRegSet;
             pVM->dbgf.s.cRegs += pRegSet->cDescs;
+            if (enmType == DBGFREGSETTYPE_CPU)
+            {
+                if (pRegSet->cDescs > DBGFREG_ALL_COUNT)
+                    pVM->dbgf.s.cRegs -= pRegSet->cDescs - DBGFREG_ALL_COUNT;
+                pVM->aCpus[iInstance].dbgf.s.pRegSet = pRegSet;
+            }
 
             PDBGFREGLOOKUP  paLookupRecs = pRegSet->paLookupRecs;
             uint32_t        iLookupRec   = pRegSet->cLookupRecs;
@@ -1273,8 +1298,8 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
  * @param   penmType            Where to store the register value type.
  *                              Optional.
  */
-static DECLCALLBACK(int) dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg, DBGFREGVALTYPE enmType,
-                                                PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
+static int dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg, DBGFREGVALTYPE enmType,
+                                  PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
 {
     /*
      * Validate input.
@@ -1565,10 +1590,155 @@ VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs)
     return VINF_SUCCESS;
 }
 
-
-VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, DBGFREGENTRYNM paRegs, size_t cRegs)
+/**
+ * Argument packet from DBGFR3RegNmQueryAll to dbgfR3RegNmQueryAllWorker.
+ */
+typedef struct DBGFR3REGNMQUERYALLARGS
 {
-    return VERR_NOT_IMPLEMENTED;
+    /** The output register array. */
+    PDBGFREGENTRYNM paRegs;
+    /** The number of entries in the output array. */
+    size_t          cRegs;
+    /** The current register number when enumerating the string space. */
+    size_t          iReg;
+} DBGFR3REGNMQUERYALLARGS;
+/** Pointer to a dbgfR3RegNmQueryAllWorker argument packet. */
+typedef DBGFR3REGNMQUERYALLARGS *PDBGFR3REGNMQUERYALLARGS;
+
+
+/**
+ * Pad register entries.
+ *
+ * @param   paRegs          The output array.
+ * @param   cRegs           The size of the output array.
+ * @param   iReg            The first register to pad.
+ * @param   cRegsToPad      The number of registers to pad.
+ */
+static void dbgfR3RegNmQueryAllPadEntries(PDBGFREGENTRYNM paRegs, size_t cRegs, size_t iReg, size_t cRegsToPad)
+{
+    if (iReg < cRegs)
+    {
+        size_t iEndReg = iReg + cRegsToPad;
+        if (iEndReg > cRegs)
+            iEndReg = cRegs;
+        while (iReg < iEndReg)
+        {
+            paRegs[iReg].pszName = NULL;
+            paRegs[iReg].enmType = DBGFREGVALTYPE_END;
+            dbgfR3RegValClear(&paRegs[iReg].Val);
+            iReg++;
+        }
+    }
+}
+
+
+/**
+ * Query all registers in a set.
+ *
+ * @param   pSet            The set.
+ * @param   cRegsToQuery    The number of registers to query.
+ * @param   paRegs          The output array.
+ * @param   cRegs           The size of the output array.
+ */
+static void dbgfR3RegNmQueryAllInSet(PCDBGFREGSET pSet, size_t cRegsToQuery, PDBGFREGENTRYNM paRegs, size_t cRegs)
+{
+    int rc = VINF_SUCCESS;
+
+    if (cRegsToQuery > pSet->cDescs)
+        cRegsToQuery = pSet->cDescs;
+    if (cRegsToQuery > cRegs)
+        cRegsToQuery = cRegs;
+
+    for (size_t iReg = 0; iReg < cRegsToQuery; iReg++)
+    {
+        paRegs[iReg].enmType = pSet->paDescs[iReg].enmType;
+        paRegs[iReg].pszName = pSet->paLookupRecs[iReg].Core.pszString;
+        dbgfR3RegValClear(&paRegs[iReg].Val);
+        int rc2 = pSet->paDescs[iReg].pfnGet(pSet->uUserArg.pv, &pSet->paDescs[iReg], &paRegs[iReg].Val);
+        AssertRCSuccess(rc2);
+        if (RT_FAILURE(rc2))
+            dbgfR3RegValClear(&paRegs[iReg].Val);
+    }
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Worker used by
+ *                      dbgfR3RegNmQueryAllWorker}
+ */
+static DECLCALLBACK(int)  dbgfR3RegNmQueryAllEnum(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PCDBGFREGSET pSet = (PCDBGFREGSET)pStr;
+    if (pSet->enmType != DBGFREGSETTYPE_CPU)
+    {
+        PDBGFR3REGNMQUERYALLARGS pArgs  = (PDBGFR3REGNMQUERYALLARGS)pvUser;
+        if (pArgs->iReg < pArgs->cRegs)
+            dbgfR3RegNmQueryAllInSet(pSet, pSet->cDescs, &pArgs->paRegs[pArgs->iReg], pArgs->cRegs - pArgs->iReg);
+        pArgs->iReg += pSet->cDescs;
+    }
+
+    return 0;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS, Worker used by DBGFR3RegNmQueryAll}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    PDBGFR3REGNMQUERYALLARGS    pArgs  = (PDBGFR3REGNMQUERYALLARGS)pvUser;
+    PDBGFREGENTRYNM             paRegs = pArgs->paRegs;
+    size_t const                cRegs  = pArgs->cRegs;
+
+    /*
+     * My CPU registers.
+     */
+    size_t iCpuReg = pVCpu->idCpu * DBGFREG_ALL_COUNT;
+    if (pVCpu->dbgf.s.pRegSet)
+    {
+        if (iCpuReg < cRegs)
+            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+    }
+    else
+        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
+
+    /*
+     * The primary CPU does all the other registers.
+     */
+    if (pVCpu->idCpu == 0)
+    {
+        pArgs->iReg = pVM->cCpus * DBGFREG_ALL_COUNT;
+        RTStrSpaceEnumerate(&pVM->dbgf.s.RegSetSpace, dbgfR3RegNmQueryAllEnum, pArgs);
+        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, pArgs->iReg, cRegs);
+    }
+
+    return VINF_SUCCESS; /* Ignore errors. */
+}
+
+
+/**
+ * Queries all register.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   paRegs              The output register value array.  The register
+ *                              name string is read only and shall not be freed
+ *                              or modified.
+ * @param   cRegs               The number of entries in @a paRegs.  The
+ *                              correct size can be obtained by calling
+ *                              DBGFR3RegNmQueryAllCount.
+ */
+VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(paRegs, VERR_INVALID_POINTER);
+    AssertReturn(cRegs > 0, VERR_OUT_OF_RANGE);
+
+    DBGFR3REGNMQUERYALLARGS Args;
+    Args.paRegs = paRegs;
+    Args.cRegs  = cRegs;
+
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3RegNmQueryAllWorker, &Args);
 }
 
 

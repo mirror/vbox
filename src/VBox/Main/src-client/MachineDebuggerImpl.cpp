@@ -1231,39 +1231,52 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
             /*
              * Real work.
              */
-            /** @todo query all registers. */
-            DBGFREGENTRY aRegs[DBGFREG_ALL_COUNT];
-            int vrc = DBGFR3RegCpuQueryAll(ptrVM.raw(), a_idCpu, aRegs, RT_ELEMENTS(aRegs));
+            size_t cRegs;
+            int vrc = DBGFR3RegNmQueryAllCount(ptrVM.raw(), &cRegs);
             if (RT_SUCCESS(vrc))
             {
-                try
+                PDBGFREGENTRYNM paRegs = (PDBGFREGENTRYNM)RTMemAllocZ(sizeof(paRegs[0]) * cRegs);
+                if (paRegs)
                 {
-                    com::SafeArray<BSTR> abstrNames(RT_ELEMENTS(aRegs));
-                    com::SafeArray<BSTR> abstrValues(RT_ELEMENTS(aRegs));
-
-                    for (uint32_t iReg = 0; iReg < RT_ELEMENTS(aRegs); iReg++)
+                    vrc = DBGFR3RegNmQueryAll(ptrVM.raw(), paRegs, cRegs);
+                    if (RT_SUCCESS(vrc))
                     {
-                        char szHex[128];
-                        Bstr bstrValue;
+                        try
+                        {
+                            com::SafeArray<BSTR> abstrNames(cRegs);
+                            com::SafeArray<BSTR> abstrValues(cRegs);
 
-                        hrc = formatRegisterValue(&bstrValue, &aRegs[iReg].Val, aRegs[iReg].enmType);
-                        AssertComRC(hrc);
-                        bstrValue.detachTo(&abstrValues[iReg]);
+                            for (uint32_t iReg = 0; iReg < cRegs; iReg++)
+                            {
+                                char szHex[128];
+                                Bstr bstrValue;
 
-                        Bstr bstrName(DBGFR3RegCpuName(ptrVM.raw(), aRegs[iReg].enmReg, DBGFREGVALTYPE_INVALID));
-                        bstrName.detachTo(&abstrNames[iReg]);
+                                hrc = formatRegisterValue(&bstrValue, &paRegs[iReg].Val, paRegs[iReg].enmType);
+                                AssertComRC(hrc);
+                                bstrValue.detachTo(&abstrValues[iReg]);
+
+                                Bstr bstrName(paRegs[iReg].pszName);
+                                bstrName.detachTo(&abstrNames[iReg]);
+                            }
+
+                            abstrNames.detachTo(ComSafeArrayOutArg(a_bstrNames));
+                            abstrValues.detachTo(ComSafeArrayOutArg(a_bstrValues));
+                        }
+                        catch (std::bad_alloc)
+                        {
+                            hrc = E_OUTOFMEMORY;
+                        }
                     }
+                    else
+                        hrc = setError(E_FAIL, tr("DBGFR3RegNmQueryAll failed with %Rrc"), vrc);
 
-                    abstrValues.detachTo(ComSafeArrayOutArg(a_bstrNames));
-                    abstrValues.detachTo(ComSafeArrayOutArg(a_bstrValues));
+                    RTMemFree(paRegs);
                 }
-                catch (std::bad_alloc)
-                {
+                else
                     hrc = E_OUTOFMEMORY;
-                }
             }
             else
-                hrc = setError(E_FAIL, tr("DBGFR3RegQueryAll failed with %Rrc"), vrc);
+                hrc = setError(E_FAIL, tr("DBGFR3RegNmQueryAllCount failed with %Rrc"), vrc);
         }
     }
     return hrc;
