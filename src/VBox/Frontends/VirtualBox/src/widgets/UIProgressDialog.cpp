@@ -50,7 +50,6 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
                                    bool fSheetOnDarwin /* = false */,
                                    int cMinDuration /* = 2000 */,
                                    QWidget *pParent /* = 0 */)
-//  : QIDialog(aParent, Qt::Sheet | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
   : QIDialog(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
   , m_progress(progress)
   , m_pImageLbl(0)
@@ -151,8 +150,16 @@ int UIProgressDialog::run(int cRefreshInterval)
         /* Start refresh timer */
         int id = startTimer(cRefreshInterval);
 
-        /* Set busy cursor */
-        QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+        /* Set busy cursor.
+         * We don't do this on the Mac, cause regarding the design rules of
+         * Apple there is no busy window behavior. A window should always be
+         * responsive and is it in our case (We show the progress dialog bar). */
+#ifndef Q_WS_MAC
+        if (m_fCancelEnabled)
+            QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
+        else
+            QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+#endif /* Q_WS_MAC */
 
         /* Enter the modal loop, but don't show the window immediately */
         exec(false);
@@ -160,7 +167,10 @@ int UIProgressDialog::run(int cRefreshInterval)
         /* Kill refresh timer */
         killTimer(id);
 
+#ifndef Q_WS_MAC
+        /* Reset the busy cursor */
         QApplication::restoreOverrideCursor();
+#endif /* Q_WS_MAC */
 
         return result();
     }
