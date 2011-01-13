@@ -34,7 +34,15 @@
  */
 #ifndef IPRT_NO_CRT
 
-# if defined(RT_OS_DARWIN) && defined(KERNEL)
+# if defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
+    /*
+     * Kludge for xfree86 modules: size_t and other types are redefined.
+     */
+RT_C_DECLS_BEGIN
+#  include "xf86_ansic.h"
+RT_C_DECLS_END
+
+# elif defined(RT_OS_DARWIN) && defined(KERNEL)
     /*
      * Kludge for the darwin kernel:
      *  stddef.h is missing IIRC.
@@ -461,7 +469,7 @@ typedef union RTFLOAT64U
 
 #ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
     /** Format using 64-bit bitfields.  */
-    RT_GCC_EXTENSION struct 
+    RT_GCC_EXTENSION struct
     {
 # ifdef RT_BIG_ENDIAN
         /** The sign indicator. */
