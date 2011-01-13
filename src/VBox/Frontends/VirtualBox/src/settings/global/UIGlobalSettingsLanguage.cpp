@@ -232,10 +232,7 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
 
     /* Save from cache: */
     if (m_fIsLanguageChanged)
-    {
         m_settings.setLanguageId(m_cache.m_strLanguageId);
-        VBoxGlobal::loadLanguage(m_cache.m_strLanguageId);
-    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -343,7 +340,7 @@ void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QP
     }
 }
 
-/* Slot to handle currentl language change fact: */
+/* Slot to handle currently language change fact: */
 void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
 {
     if (!pItem) return;
