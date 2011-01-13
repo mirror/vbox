@@ -34,6 +34,16 @@ struct UIHostInterfaceData
     bool m_fIpv6Supported;
     QString m_strInterfaceAddress6;
     QString m_strInterfaceMaskLength6;
+    bool operator==(const UIHostInterfaceData &other) const
+    {
+        return m_strName == other.m_strName &&
+               m_fDhcpClientEnabled == other.m_fDhcpClientEnabled &&
+               m_strInterfaceAddress == other.m_strInterfaceAddress &&
+               m_strInterfaceMask == other.m_strInterfaceMask &&
+               m_fIpv6Supported == other.m_fIpv6Supported &&
+               m_strInterfaceAddress6 == other.m_strInterfaceAddress6 &&
+               m_strInterfaceMaskLength6 == other.m_strInterfaceMaskLength6;
+    }
 };
 
 /* Global settings / Network page / DHCP server data: */
@@ -45,6 +55,14 @@ struct UIDHCPServerData
     QString m_strDhcpServerMask;
     QString m_strDhcpLowerAddress;
     QString m_strDhcpUpperAddress;
+    bool operator==(const UIDHCPServerData &other) const
+    {
+        return m_fDhcpServerEnabled == other.m_fDhcpServerEnabled &&
+               m_strDhcpServerAddress == other.m_strDhcpServerAddress &&
+               m_strDhcpServerMask == other.m_strDhcpServerMask &&
+               m_strDhcpLowerAddress == other.m_strDhcpLowerAddress &&
+               m_strDhcpUpperAddress == other.m_strDhcpUpperAddress;
+    }
 };
 
 /* Global settings / Network page / Full network data: */
@@ -52,6 +70,11 @@ struct UIHostNetworkData
 {
     UIHostInterfaceData m_interface;
     UIDHCPServerData m_dhcpserver;
+    bool operator==(const UIHostNetworkData &other) const
+    {
+        return m_interface == other.m_interface &&
+               m_dhcpserver == other.m_dhcpserver;
+    }
 };
 
 /* Global settings / Network page / Cache: */
@@ -159,6 +182,12 @@ private slots:
     void sltChowContextMenu(const QPoint &pos);
 
 private:
+
+    /* Helper members: */
+    void appendCacheItem(const CHostNetworkInterface &iface);
+    void removeCacheItem(const QString &strInterfaceName);
+    void appendListItem(const UIHostNetworkData &data);
+    void removeListItem(UIHostInterfaceItem *pItem);
 
     /* Validator: */
     QIWidgetValidator *m_pValidator;

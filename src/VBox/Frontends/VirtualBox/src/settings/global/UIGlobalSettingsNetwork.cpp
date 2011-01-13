@@ -256,30 +256,7 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     {
         const CHostNetworkInterface &iface = interfaces[iNetworkIndex];
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-        {
-            /* Initialization: */
-            CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
-            if (dhcp.isNull()) vboxGlobal().virtualBox().CreateDHCPServer(iface.GetNetworkName());
-            dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
-            AssertMsg(!dhcp.isNull(), ("DHCP Server creation failed!\n"));
-            UIHostNetworkData data;
-            /* Host-only interface settings */
-            data.m_interface.m_strName = iface.GetName();
-            data.m_interface.m_fDhcpClientEnabled = iface.GetDhcpEnabled();
-            data.m_interface.m_strInterfaceAddress = iface.GetIPAddress();
-            data.m_interface.m_strInterfaceMask = iface.GetNetworkMask();
-            data.m_interface.m_fIpv6Supported = iface.GetIPV6Supported();
-            data.m_interface.m_strInterfaceAddress6 = iface.GetIPV6Address();
-            data.m_interface.m_strInterfaceMaskLength6 = QString::number(iface.GetIPV6NetworkMaskPrefixLength());
-            /* DHCP server settings: */
-            data.m_dhcpserver.m_fDhcpServerEnabled = dhcp.GetEnabled();
-            data.m_dhcpserver.m_strDhcpServerAddress = dhcp.GetIPAddress();
-            data.m_dhcpserver.m_strDhcpServerMask = dhcp.GetNetworkMask();
-            data.m_dhcpserver.m_strDhcpLowerAddress = dhcp.GetLowerIP();
-            data.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
-            /* Cache: */
-            m_cache.m_items << data;
-        }
+            appendCacheItem(iface);
     }
 
     /* Upload properties & settings to data: */
@@ -292,12 +269,8 @@ void UIGlobalSettingsNetwork::getFromCache()
 {
     /* Fetch from cache: */
     for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
-    {
-        const UIHostNetworkData &data = m_cache.m_items[iNetworkIndex];
-        UIHostInterfaceItem *pItem = new UIHostInterfaceItem;
-        pItem->fetchNetworkData(data);
-        m_pInterfacesTree->addTopLevelItem(pItem);
-    }
+        appendListItem(m_cache.m_items[iNetworkIndex]);
+    /* Set first list item as current: */
     m_pInterfacesTree->setCurrentItem(m_pInterfacesTree->topLevelItem(0));
     sltUpdateCurrentItem();
 }
@@ -306,8 +279,9 @@ void UIGlobalSettingsNetwork::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsNetwork::putToCache()
 {
-    /* Upload to cache: */
+    /* Eraze cache: */
     m_cache.m_items.clear();
+    /* Upload to cache: */
     for (int iNetworkIndex = 0; iNetworkIndex < m_pInterfacesTree->topLevelItemCount(); ++iNetworkIndex)
     {
         UIHostNetworkData data;
@@ -328,94 +302,56 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
+    /* Prepare useful variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     CHost host = vbox.GetHost();
-    const CHostNetworkInterfaceVector &interfaces = host.GetNetworkInterfaces();
-    /* Remove all the old interfaces first: */
-    for (int iNetworkIndex = 0; iNetworkIndex < interfaces.size() && !failed(); ++iNetworkIndex)
-    {
-        /* Get iterated interface: */
-        const CHostNetworkInterface &iface = interfaces[iNetworkIndex];
-        if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-        {
-            /* Search for this interface's dhcp sserver: */
-            CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
-            /* Delete it if its present: */
-            if (!dhcp.isNull())
-                vbox.RemoveDHCPServer(dhcp);
-            /* Delete interface finally: */
-            CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
-            if (host.isOk())
-            {
-                progress.WaitForCompletion(-1);
-                if (progress.GetResultCode() != 0)
-                {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    vboxProblem().cannotRemoveHostInterface(progress, iface);
-                }
-            }
-            else
-            {
-                /* Mark the page as failed: */
-                setFailed(true);
-                /* Show error message: */
-                vboxProblem().cannotRemoveHostInterface(host, iface);
-            }
-        }
-    }
-    /* Add all the new interfaces finally: */
-    for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size() && !failed(); ++iNetworkIndex)
+
+    /* Update all the host-only interfaces: */
+    for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
     {
         /* Get iterated data: */
         const UIHostNetworkData &data = m_cache.m_items[iNetworkIndex];
-        CHostNetworkInterface iface;
-        /* Create interface: */
-        CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
-        if (host.isOk())
+        /* Find corresponding interface: */
+        CHostNetworkInterface iface = host.FindHostNetworkInterfaceByName(data.m_interface.m_strName);
+        if (!iface.isNull())
         {
-            progress.WaitForCompletion(-1);
-            if (progress.GetResultCode() == 0)
+            /* Host-only interface configuring: */
+            if (data.m_interface.m_fDhcpClientEnabled)
             {
-                /* Create DHCP server: */
-                CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
-                if (dhcp.isNull()) vbox.CreateDHCPServer(iface.GetNetworkName());
-                dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
-                AssertMsg(!dhcp.isNull(), ("DHCP Server creation failed!\n"));
-                /* Host-only Interface configuring: */
-                if (data.m_interface.m_fDhcpClientEnabled)
+                iface.EnableDynamicIpConfig();
+            }
+            else
+            {
+                AssertMsg(data.m_interface.m_strInterfaceAddress.isEmpty() ||
+                          QHostAddress(data.m_interface.m_strInterfaceAddress).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("Interface IPv4 address must be empty or IPv4-valid!\n"));
+                AssertMsg(data.m_interface.m_strInterfaceMask.isEmpty() ||
+                          QHostAddress(data.m_interface.m_strInterfaceMask).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
+                iface.EnableStaticIpConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
+                if (iface.GetIPV6Supported())
                 {
-                    iface.EnableDynamicIpConfig();
+                    AssertMsg(data.m_interface.m_strInterfaceAddress6.isEmpty() ||
+                              QHostAddress(data.m_interface.m_strInterfaceAddress6).protocol() == QAbstractSocket::IPv6Protocol,
+                              ("Interface IPv6 address must be empty or IPv6-valid!\n"));
+                    iface.EnableStaticIpConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
                 }
-                else
-                {
-                    AssertMsg(data.m_interface.m_strInterfaceAddress.isEmpty() ||
-                              QHostAddress(data.m_interface.m_strInterfaceAddress).protocol() == QAbstractSocket::IPv4Protocol,
-                              ("Interface IPv4 address must be empty or IPv4-valid!\n"));
-                    AssertMsg(data.m_interface.m_strInterfaceMask.isEmpty() ||
-                              QHostAddress(data.m_interface.m_strInterfaceMask).protocol() == QAbstractSocket::IPv4Protocol,
-                              ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
-                    iface.EnableStaticIpConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
-                    if (iface.GetIPV6Supported())
-                    {
-                        AssertMsg(data.m_interface.m_strInterfaceAddress6.isEmpty() ||
-                                  QHostAddress(data.m_interface.m_strInterfaceAddress6).protocol() == QAbstractSocket::IPv6Protocol,
-                                  ("Interface IPv6 address must be empty or IPv6-valid!\n"));
-                        iface.EnableStaticIpConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
-                    }
-                }
-                /* DHCP Server configuring: */
+            }
+
+            /* Find corresponding DHCP server: */
+            CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
+            if (!dhcp.isNull())
+            {
+                /* DHCP server configuring: */
                 dhcp.SetEnabled(data.m_dhcpserver.m_fDhcpServerEnabled);
-//                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerAddress).protocol() == QAbstractSocket::IPv4Protocol,
-//                          ("DHCP Server IPv4 address must be IPv4-valid!\n"));
-//                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerMask).protocol() == QAbstractSocket::IPv4Protocol,
-//                          ("DHCP Server IPv4 network mask must be IPv4-valid!\n"));
-//                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpLowerAddress).protocol() == QAbstractSocket::IPv4Protocol,
-//                          ("DHCP Server IPv4 lower bound must be IPv4-valid!\n"));
-//                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpUpperAddress).protocol() == QAbstractSocket::IPv4Protocol,
-//                          ("DHCP Server IPv4 upper bound must be IPv4-valid!\n"));
+                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerAddress).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("DHCP server IPv4 address must be IPv4-valid!\n"));
+                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpServerMask).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
+                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpLowerAddress).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
+                AssertMsg(QHostAddress(data.m_dhcpserver.m_strDhcpUpperAddress).protocol() == QAbstractSocket::IPv4Protocol,
+                          ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
                 if (QHostAddress(data.m_dhcpserver.m_strDhcpServerAddress).protocol() == QAbstractSocket::IPv4Protocol &&
                     QHostAddress(data.m_dhcpserver.m_strDhcpServerMask).protocol() == QAbstractSocket::IPv4Protocol &&
                     QHostAddress(data.m_dhcpserver.m_strDhcpLowerAddress).protocol() == QAbstractSocket::IPv4Protocol &&
@@ -423,20 +359,6 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
                     dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
                                           data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
             }
-            else
-            {
-                /* Mark the page as failed: */
-                setFailed(true);
-                /* Show error message: */
-                vboxProblem().cannotCreateHostInterface(progress);
-            }
-        }
-        else
-        {
-            /* Mark the page as failed: */
-            setFailed(true);
-            /* Show error message: */
-            vboxProblem().cannotCreateHostInterface(host);
         }
     }
 
@@ -486,25 +408,38 @@ void UIGlobalSettingsNetwork::retranslateUi()
 /* Adds new network interface: */
 void UIGlobalSettingsNetwork::sltAddInterface()
 {
-    /* Creating interface item: */
-    UIHostInterfaceItem *pItem = new UIHostInterfaceItem;
-    /* Fill item's data: */
-    UIHostNetworkData data;
-    /* Interface data: */
-    // TODO: Make unique name!
-    data.m_interface.m_strName = tr("New Host-Only Interface");
-    data.m_interface.m_fDhcpClientEnabled = true;
-    data.m_interface.m_fIpv6Supported = false;
-    /* DHCP data: */
-    data.m_dhcpserver.m_fDhcpServerEnabled = false;
-    /* Fetch item with data: */
-    pItem->fetchNetworkData(data);
-    /* Add new top-level item: */
-    m_pInterfacesTree->addTopLevelItem(pItem);
-    m_pInterfacesTree->sortItems(0, Qt::AscendingOrder);
-    m_pInterfacesTree->setCurrentItem(pItem);
-    /* Mark dialog as edited: */
-    m_fChanged = true;
+    /* Prepare useful variables: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CHost host = vbox.GetHost();
+
+    /* Create new host-only interface: */
+    CHostNetworkInterface iface;
+    CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
+    if (host.isOk())
+    {
+        vboxProblem().showModalProgressDialog(progress, tr("Creating host-only interface..."),
+                                              ":/nw_32px.png", this, true, 0);
+        if (progress.GetResultCode() == 0)
+        {
+            /* Create DHCP server: */
+            CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
+            if (dhcp.isNull())
+            {
+                vbox.CreateDHCPServer(iface.GetNetworkName());
+                dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
+            }
+            AssertMsg(!dhcp.isNull(), ("DHCP server creation failed!\n"));
+
+            /* Append cache with new item: */
+            appendCacheItem(iface);
+            /* Append list with new item: */
+            appendListItem(m_cache.m_items.last());
+        }
+        else
+            vboxProblem().cannotCreateHostInterface(progress);
+    }
+    else
+        vboxProblem().cannotRemoveHostInterface(host, iface);
 }
 
 /* Removes selected network interface: */
@@ -518,10 +453,37 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     /* Asking user about deleting selected network interface: */
     if (vboxProblem().confirmDeletingHostInterface(strInterfaceName, this) == QIMessageBox::Cancel)
         return;
-    /* Removing interface: */
-    delete pItem;
-    /* Mark dialog as edited: */
-    m_fChanged = true;
+
+    /* Prepare useful variables: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CHost host = vbox.GetHost();
+
+    /* Find corresponding interface: */
+    const CHostNetworkInterface &iface = host.FindHostNetworkInterfaceByName(strInterfaceName);
+
+    /* Remove DHCP server first: */
+    CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
+    if (!dhcp.isNull())
+        vbox.RemoveDHCPServer(dhcp);
+
+    /* Remove interface finally: */
+    CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
+    if (host.isOk())
+    {
+        vboxProblem().showModalProgressDialog(progress, tr("Removing host-only interface..."),
+                                              ":/nw_32px.png", this, true, 0);
+        if (progress.GetResultCode() == 0)
+        {
+            /* Remove list item: */
+            removeListItem(pItem);
+            /* Remove cache item: */
+            removeCacheItem(strInterfaceName);
+        }
+        else
+            vboxProblem().cannotRemoveHostInterface(progress, iface);
+    }
+    else
+        vboxProblem().cannotRemoveHostInterface(host, iface);
 }
 
 /* Edits selected network interface: */
@@ -537,11 +499,10 @@ void UIGlobalSettingsNetwork::sltEditInterface()
     {
         details.putBackToItem();
         pItem->updateInfo();
+        sltUpdateCurrentItem();
+        m_pValidator->revalidate();
+        m_fChanged = true;
     }
-    sltUpdateCurrentItem();
-    m_pValidator->revalidate();
-    /* Mark dialog as edited: */
-    m_fChanged = true;
 }
 
 /* Update current network interface data relations: */
@@ -569,7 +530,69 @@ void UIGlobalSettingsNetwork::sltChowContextMenu(const QPoint &pos)
     {
         menu.addAction(m_pAddAction);
     }
-
     menu.exec(m_pInterfacesTree->mapToGlobal(pos));
+}
+
+void UIGlobalSettingsNetwork::appendCacheItem(const CHostNetworkInterface &iface)
+{
+    /* Get DHCP server (create if necessary): */
+    CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
+    if (dhcp.isNull())
+    {
+        vboxGlobal().virtualBox().CreateDHCPServer(iface.GetNetworkName());
+        dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
+    }
+    AssertMsg(!dhcp.isNull(), ("DHCP server creation failed!\n"));
+
+    /* Prepare cache item: */
+    UIHostNetworkData data;
+
+    /* Host-only interface settings */
+    data.m_interface.m_strName = iface.GetName();
+    data.m_interface.m_fDhcpClientEnabled = iface.GetDhcpEnabled();
+    data.m_interface.m_strInterfaceAddress = iface.GetIPAddress();
+    data.m_interface.m_strInterfaceMask = iface.GetNetworkMask();
+    data.m_interface.m_fIpv6Supported = iface.GetIPV6Supported();
+    data.m_interface.m_strInterfaceAddress6 = iface.GetIPV6Address();
+    data.m_interface.m_strInterfaceMaskLength6 = QString::number(iface.GetIPV6NetworkMaskPrefixLength());
+
+    /* DHCP server settings: */
+    data.m_dhcpserver.m_fDhcpServerEnabled = dhcp.GetEnabled();
+    data.m_dhcpserver.m_strDhcpServerAddress = dhcp.GetIPAddress();
+    data.m_dhcpserver.m_strDhcpServerMask = dhcp.GetNetworkMask();
+    data.m_dhcpserver.m_strDhcpLowerAddress = dhcp.GetLowerIP();
+    data.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
+
+    /* Append cache item: */
+    m_cache.m_items << data;
+}
+
+void UIGlobalSettingsNetwork::removeCacheItem(const QString &strInterfaceName)
+{
+    /* Search for invalidated cache item: */
+    for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
+    {
+        /* Get iterated data: */
+        const UIHostNetworkData &data = m_cache.m_items[iNetworkIndex];
+        if (data.m_interface.m_strName == strInterfaceName)
+        {
+            m_cache.m_items.removeAll(data);
+            break;
+        }
+    }
+}
+
+void UIGlobalSettingsNetwork::appendListItem(const UIHostNetworkData &data)
+{
+    /* Add new item to the list: */
+    UIHostInterfaceItem *pItem = new UIHostInterfaceItem;
+    pItem->fetchNetworkData(data);
+    m_pInterfacesTree->addTopLevelItem(pItem);
+}
+
+void UIGlobalSettingsNetwork::removeListItem(UIHostInterfaceItem *pItem)
+{
+    /* Delete passed item: */
+    delete pItem;
 }
 
