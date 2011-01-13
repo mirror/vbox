@@ -146,6 +146,11 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
+#ifdef VBOX_WITH_PIDFILE
+    void createPidfile();
+    void deletePidfile();
+#endif
+
     /* branding */
     bool brandingIsActive (bool aForce = false);
     QString brandingGetKey (QString aKey);
@@ -861,6 +866,10 @@ private:
     QPixmap mWarningIcon, mErrorIcon;
 
     QFileIconProvider m_globalIconProvider;
+
+#ifdef VBOX_WITH_PIDFILE
+    QString m_strPidfile;
+#endif
 
     friend VBoxGlobal &vboxGlobal();
 };

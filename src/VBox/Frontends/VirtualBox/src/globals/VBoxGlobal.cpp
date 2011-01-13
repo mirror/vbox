@@ -65,6 +65,10 @@
 #include <QHelpEvent>
 #include <QLocale>
 
+#ifdef VBOX_WITH_PIDFILE
+# include <QTextStream>
+#endif /* VBOX_WITH_PIDFILE */
+
 #include <math.h>
 
 #ifdef Q_WS_X11
@@ -443,6 +447,31 @@ UIMachine* VBoxGlobal::virtualMachine()
 {
     return m_pVirtualMachine;
 }
+
+#ifdef VBOX_WITH_PIDFILE
+void VBoxGlobal::createPidfile()
+{
+    if (!m_strPidfile.isEmpty())
+    {
+        qint64 pid = qApp->applicationPid();
+        QFile file(m_strPidfile);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        {
+             QTextStream out(&file);
+             out << pid << endl;
+        }
+        else
+            LogRel(("Failed to create pid file %s\n", m_strPidfile.toUtf8().constData()));
+    }
+}
+
+void VBoxGlobal::deletePidfile()
+{
+    if (   !m_strPidfile.isEmpty()
+        && QFile::exists(m_strPidfile))
+        QFile::remove(m_strPidfile);
+}
+#endif
 
 bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
 {
@@ -5005,6 +5034,13 @@ void VBoxGlobal::init()
                 startVM = true;
             }
         }
+#ifdef VBOX_WITH_PIDFILE
+        else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
+        {
+            if (++i < argc)
+                m_strPidfile = QString(qApp->argv()[i]);
+        }
+#endif /* VBOX_WITH_PIDFILE */
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
         {
             bForceSeamless = true;
@@ -5171,6 +5207,10 @@ void VBoxGlobal::cleanup()
             AssertWrapperOk (mVBox);
         }
     }
+#endif
+
+#ifdef VBOX_WITH_PIDFILE
+    deletePidfile();
 #endif
 
     /* Destroy our event handlers */
