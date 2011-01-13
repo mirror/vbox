@@ -2122,7 +2122,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                             outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
                         }
                         else
-                            vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
+                        {
+                            /* No data within specified timeout available. Use a special
+                             * error so that we can gently handle that case a bit below. */
+                            vrc = VERR_NO_DATA;
+                        }
                     }
                     else /* If callback not called within time ... well, that's a timeout! */
                         vrc = VERR_TIMEOUT;
@@ -2136,7 +2140,8 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                 {
                     if (vrc == VERR_NO_DATA)
                     {
-                        /* This is not an error we want to report to COM. */
+                        /* If there was no output data then this is no error we want
+                         * to report to COM. The caller just gets back a size of 0 (zero). */
                         rc = S_OK;
                     }
                     else if (vrc == VERR_TIMEOUT)
