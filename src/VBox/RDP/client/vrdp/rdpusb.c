@@ -148,10 +148,9 @@ static inline void op_usbproxy_back_cancel_urb(PVUSBURB pUrb)
 /** Count the USB devices in a linked list of PUSBDEVICE structures. */
 unsigned countUSBDevices(PUSBDEVICE pDevices)
 {
-    unsigned i;
-    PUSBDEVICE pDevice;
-    for (i = 0, pDevice = pDevices; pDevices->pNext;
-         ++i, pDevices = pDevices->pNext);
+    unsigned i = 0;
+    for (; pDevices; pDevices = pDevices->pNext)
+        ++i;
     return i;
 }
 
@@ -225,17 +224,47 @@ static void fillWireListEntry(char *pBuf, PUSBDEVICE pDevice,
 static void *buildWireListFromDevices(PUSBDEVICE pDevices, int *pLen)
 {
     char *pBuf;
-    unsigned cbBuf, iCurrent;
+    unsigned cDevs, cbBuf, iCurrent;
     uint16_t iNext;
     PUSBDEVICE pCurrent;
 
-    cbBuf = countUSBDevices(pDevices) * DEV_ENTRY_SIZE + 2;
+    cDevs = countUSBDevices(pDevices);
+    cbBuf = cDevs * DEV_ENTRY_SIZE + 2;
     pBuf = (char *)xmalloc(cbBuf);
     memset(pBuf, 0, cbBuf);
     for (pCurrent = pDevices, iCurrent = 0; pCurrent;
-         pCurrent = pCurrent->pNext, iCurrent += iNext)
+         pCurrent = pCurrent->pNext, iCurrent += iNext, --cDevs)
+    {
+        unsigned i, cZeros;
+
+        AssertReturnVoidStmt(iCurrent + DEV_ENTRY_SIZE + 2 <= cbBuf,
+                             free(pBuf));
         fillWireListEntry(pBuf + iCurrent, pCurrent, &iNext);
+            DevListEntry *pEntry = (DevListEntry *)(pBuf + iCurrent);
+        /* Sanity tests */
+        for (i = iCurrent + sizeof(DevListEntry), cZeros = 0;
+             i < iCurrent + iNext; ++i)
+             if (pBuf[i] == 0)
+                 ++cZeros;
+        AssertReturnVoidStmt(cZeros ==   RT_BOOL(pEntry->oManufacturer)
+                                       + RT_BOOL(pEntry->oProduct)
+                                       + RT_BOOL(pEntry->oSerialNumber),
+                             free(pBuf));
+        AssertReturnVoidStmt(   pEntry->oManufacturer == 0
+                             || pBuf[pEntry->oManufacturer] != '\0',
+                             free(pBuf));
+        AssertReturnVoidStmt(   pEntry->oProduct == 0
+                             || pBuf[pEntry->oProduct] != '\0',
+                             free(pBuf));
+        AssertReturnVoidStmt(   pEntry->oSerialNumber == 0
+                             || pBuf[pEntry->oSerialNumber] != '\0',
+                             free(pBuf));
+        AssertReturnVoidStmt(cZeros == 0 || pBuf[iCurrent + iNext - 1] == '\0',
+                             free(pBuf));
+    }
     *pLen = iCurrent + iNext + 2;
+    Assert(cDevs == 0);
+    Assert(*pLen <= cbBuf);
     return pBuf;
 }
 
