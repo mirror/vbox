@@ -216,6 +216,7 @@ struct VirtualHardwareItem
     ResourceType_T resourceType;
     iprt::MiniString strOtherResourceType;
     iprt::MiniString strResourceSubType;
+    bool fResourceRequired;
 
     iprt::MiniString strHostResource;   // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
                                         // Not all devices need a backing." Used with disk items, for which this references a virtual
