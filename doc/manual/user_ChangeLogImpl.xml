@@ -9,13 +9,23 @@
     <itemizedlist>
 
       <listitem>
-        <para>GUI: improved user experience on Vista / Windows 7 when installing
+        <para>GUI: don't crash if a removable host drive referenced from the VM
+          settings vanished</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed a crash when using the KDE4 Oxygen theme and clicked
+         on the settings button (bug #7875)</para>
+      </listitem>
+
+      <listitem>
+        <para>ExtPack: improved user experience on Vista / Windows 7 when installing
           an extension pack</para>
       </listitem>
 
       <listitem>
-        <para>GUI: don't crash if a removable host drive referenced from the VM
-          settings vanished</para>
+        <para>ExtPack: fixed issue with non-ascii characters in the path name
+          during installing an extension pack (bug #9717)</para>
       </listitem>
 
       <listitem>
@@ -23,7 +33,7 @@
       </listitem>
 
       <listitem>
-        <para>E1000: Fixed PXE boot issues with WDS (bug #6330)</para>
+        <para>E1000: fixed PXE boot issues with WDS (bug #6330)</para>
       </listitem>
 
       <listitem>
@@ -37,15 +47,15 @@
       </listitem>
 
       <listitem>
-        <para>Storage: Fixed possible crashes with VMDK/VHD images with snapshots and async I/O</para>
+        <para>Storage: fixed possible crashes with VMDK/VHD images with snapshots and async I/O</para>
       </listitem>
 
       <listitem>
-        <para>Parallels: Fixed deletion of the image during suspend, pause or power off</para>
+        <para>Parallels: fixed deletion of the image during suspend, pause or power off</para>
       </listitem>
 
       <listitem>
-        <para>Bridged networking: Fixed host kernel panic when bridging
+        <para>Bridged networking: fixed host kernel panic when bridging
           to devices with no TX queue (4.0 regression; Linux hosts only; bug #7908)</para>
       </listitem>
 
@@ -84,15 +94,9 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed a crash when using the KDE4 Oxygen theme and clicked
-         on the settings button (bug #7875)</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF/OVA: fixed import of files created by other ovf tools (bug
+        <para>OVF/OVA: fixed import of files created by other OVF tools (bug
          #7983)</para>
       </listitem>
-
 
     </itemizedlist>
 
