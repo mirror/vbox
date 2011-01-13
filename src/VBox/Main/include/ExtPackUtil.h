@@ -109,6 +109,7 @@ typedef VBOXEXTPACKDESC *PVBOXEXTPACKDESC;
 typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
+void                VBoxExtPackInitDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
 iprt::MiniString   *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
 iprt::MiniString   *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
 iprt::MiniString   *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);

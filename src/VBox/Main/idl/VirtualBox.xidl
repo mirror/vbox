@@ -14848,8 +14848,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progess" type="IProgress" dir="return">
         <desc>
-          Progress object for the operation if it was decided that it should
-          be executed asynchronously - i.e. never in 4.0.0, but maybe in 4.0.x.
+          Progress object for the operation.
         </desc>
       </param>
     </method>
@@ -14920,8 +14919,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progess" type="IProgress" dir="return">
         <desc>
-          Progress object for the operation if it was decided that it should
-          be executed asynchronously - i.e. never in 4.0.0, but maybe in 4.0.x.
+          Progress object for the operation.
         </desc>
       </param>
     </method>

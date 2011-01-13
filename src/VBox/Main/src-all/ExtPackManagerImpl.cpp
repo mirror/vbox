@@ -43,6 +43,7 @@
 #include <VBox/version.h>
 #include "AutoCaller.h"
 #include "Global.h"
+#include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 
@@ -93,6 +94,8 @@ public:
     RTMANIFEST          hOurManifest;
     /** Pointer to the extension pack manager. */
     ComObjPtr<ExtPackManager> ptrExtPackMgr;
+    /** Pointer to the VirtualBox object so we can create a progress object. */
+    VirtualBox         *pVirtualBox;
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
@@ -157,6 +160,44 @@ struct ExtPackManager::Data
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
+/**
+ * Extension pack installation job.
+ */
+typedef struct EXTPACKINSTALLJOB
+{
+    /** Smart pointer to the extension pack file. */
+    ComPtr<ExtPackFile>     ptrExtPackFile;
+    /** The replace argument. */
+    bool                    fReplace;
+    /** The display info argument.  */
+    Utf8Str                 strDisplayInfo;
+    /** Smart pointer to the extension manager. */
+    ComPtr<ExtPackManager>  ptrExtPackMgr;
+    /** Smart pointer to the progress object for this job. */
+    ComObjPtr<Progress>     ptrProgress;
+} EXTPACKINSTALLJOB;
+/** Pointer to an extension pack installation job. */
+typedef EXTPACKINSTALLJOB *PEXTPACKINSTALLJOB;
+
+/**
+ * Extension pack uninstallation job.
+ */
+typedef struct EXTPACKUNINSTALLJOB
+{
+    /** Smart pointer to the extension manager. */
+    ComPtr<ExtPackManager>  ptrExtPackMgr;
+    /** The name of the extension pack. */
+    Utf8Str                 strName;
+    /** The replace argument. */
+    bool                    fForcedRemoval;
+    /** The display info argument.  */
+    Utf8Str                 strDisplayInfo;
+    /** Smart pointer to the progress object for this job. */
+    ComObjPtr<Progress>     ptrProgress;
+} EXTPACKUNINSTALLJOB;
+/** Pointer to an extension pack uninstallation job. */
+typedef EXTPACKUNINSTALLJOB *PEXTPACKUNINSTALLJOB;
+
 
 DEFINE_EMPTY_CTOR_DTOR(ExtPackFile)
 
@@ -179,8 +220,9 @@ HRESULT ExtPackFile::FinalConstruct()
  * @returns COM status code.
  * @param   a_pszFile       The path to the extension pack file.
  * @param   a_pExtPackMgr   Pointer to the extension pack manager.
+ * @param   a_pVirtualBox   Pointer to the VirtualBox object.
  */
-HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtPackMgr)
+HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtPackMgr, VirtualBox *a_pVirtualBox)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -189,7 +231,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
      * Allocate + initialize our private data.
      */
     m = new ExtPackFile::Data;
-    m->Desc.strName                 = NULL;
+    VBoxExtPackInitDesc(&m->Desc);
     RT_ZERO(m->ObjInfoDesc);
     m->fUsable                      = false;
     m->strWhyUnusable               = tr("ExtPack::init failed");
@@ -197,6 +239,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
     m->hExtPackFile                 = NIL_RTFILE;
     m->hOurManifest                 = NIL_RTMANIFEST;
     m->ptrExtPackMgr                = a_pExtPackMgr;
+    m->pVirtualBox                  = a_pVirtualBox;
 
     iprt::MiniString *pstrTarName = VBoxExtPackExtractNameFromTarballPath(a_pszFile);
     if (pstrTarName)
@@ -588,14 +631,55 @@ STDMETHODIMP ExtPackFile::Install(BOOL a_fReplace, IN_BSTR a_bstrDisplayInfo, IP
 {
     if (a_ppProgress)
         *a_ppProgress = NULL;
-    Utf8Str strDisplayInfo(a_bstrDisplayInfo);
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
         if (m->fUsable)
-            hrc = m->ptrExtPackMgr->doInstall(this, RT_BOOL(a_fReplace), &strDisplayInfo, a_ppProgress);
+        {
+            PEXTPACKINSTALLJOB pJob = NULL;
+            try
+            {
+                pJob = new EXTPACKINSTALLJOB;
+                pJob->ptrExtPackFile    = this;
+                pJob->fReplace          = a_fReplace;
+                pJob->strDisplayInfo    = a_bstrDisplayInfo;
+                pJob->ptrExtPackMgr     = m->ptrExtPackMgr;
+                hrc = pJob->ptrProgress.createObject();
+                if (SUCCEEDED(hrc))
+                {
+                    Bstr bstrDescription = tr("Installing extension pack");
+                    hrc = pJob->ptrProgress->init(
+#ifndef VBOX_COM_INPROC
+                                                  m->pVirtualBox,
+#endif
+                                                  static_cast<IExtPackFile *>(this),
+                                                  bstrDescription.raw(),
+                                                  FALSE /*aCancelable*/,
+                                                  NULL /*aId*/);
+                }
+                if (SUCCEEDED(hrc))
+                {
+                    ComPtr<Progress> ptrProgress = pJob->ptrProgress;
+                    int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::doInstallThreadProc, pJob, 0,
+                                             RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackInst");
+                    if (RT_SUCCESS(vrc))
+                    {
+                        pJob = NULL; /* the thread deletes it */
+                        ptrProgress.queryInterfaceTo(a_ppProgress);
+                    }
+                    else
+                        hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
+                }
+            }
+            catch (std::bad_alloc)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
+            if (pJob)
+                delete pJob;
+        }
         else
             hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     }
@@ -662,6 +746,7 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
      * Allocate + initialize our private data.
      */
     m = new Data;
+    VBoxExtPackInitDesc(&m->Desc);
     m->Desc.strName                 = a_pszName;
     RT_ZERO(m->ObjInfoDesc);
     m->fUsable                      = false;
@@ -1920,7 +2005,7 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarball, IExtPackFile
     ComObjPtr<ExtPackFile> NewExtPackFile;
     HRESULT hrc = NewExtPackFile.createObject();
     if (SUCCEEDED(hrc))
-        hrc = NewExtPackFile->initWithFile(strTarball.c_str(), this);
+        hrc = NewExtPackFile->initWithFile(strTarball.c_str(), this, m->pVirtualBox);
     if (SUCCEEDED(hrc))
         NewExtPackFile.queryInterfaceTo(a_ppExtPackFile);
 
@@ -1931,8 +2016,6 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                                        IProgress **a_ppProgress)
 {
     CheckComArgNotNull(a_bstrName);
-    Utf8Str strName(a_bstrName);
-    Utf8Str strDisplayInfo(a_bstrDisplayInfo);
     if (a_ppProgress)
         *a_ppProgress = NULL;
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
@@ -1941,74 +2024,47 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
-
-        /*
-         * Refresh the data we have on the extension pack as it may be made
-         * stale by direct meddling or some other user.
-         */
-        ExtPack *pExtPack;
-        hrc = refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, &pExtPack);
-        if (SUCCEEDED(hrc))
+        PEXTPACKUNINSTALLJOB pJob = NULL;
+        try
         {
-            if (!pExtPack)
+            pJob = new EXTPACKUNINSTALLJOB;
+            pJob->ptrExtPackMgr     = this;
+            pJob->strName           = a_bstrName;
+            pJob->fForcedRemoval    = a_fForcedRemoval != FALSE;
+            pJob->strDisplayInfo    = a_bstrDisplayInfo;
+            hrc = pJob->ptrProgress.createObject();
+            if (SUCCEEDED(hrc))
             {
-                LogRel(("ExtPackManager: Extension pack '%s' is not installed, so nothing to uninstall.\n", strName.c_str()));
-                hrc = S_OK;             /* nothing to uninstall */
+                Bstr bstrDescription = tr("Uninstalling extension pack");
+                hrc = pJob->ptrProgress->init(
+#ifndef VBOX_COM_INPROC
+                                              m->pVirtualBox,
+#endif
+                                              static_cast<IExtPackManager *>(this),
+                                              bstrDescription.raw(),
+                                              FALSE /*aCancelable*/,
+                                              NULL /*aId*/);
             }
-            else
+            if (SUCCEEDED(hrc))
             {
-                /*
-                 * Call the uninstall hook and unload the main dll.
-                 */
-                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval != FALSE);
-                if (SUCCEEDED(hrc))
+                ComPtr<Progress> ptrProgress = pJob->ptrProgress;
+                int vrc = RTThreadCreate(NULL /*phThread*/, ExtPackManager::doUninstallThreadProc, pJob, 0,
+                                         RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ExtPackUninst");
+                if (RT_SUCCESS(vrc))
                 {
-                    /*
-                     * Run the set-uid-to-root binary that performs the
-                     * uninstallation.  Then refresh the object.
-                     *
-                     * This refresh is theorically subject to races, but it's of
-                     * the don't-do-that variety.
-                     */
-                    const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
-                    hrc = runSetUidToRootHelper(&strDisplayInfo,
-                                                "uninstall",
-                                                "--base-dir", m->strBaseDir.c_str(),
-                                                "--name",     strName.c_str(),
-                                                pszForcedOpt, /* Last as it may be NULL. */
-                                                (const char *)NULL);
-                    if (SUCCEEDED(hrc))
-                    {
-                        hrc = refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, &pExtPack);
-                        if (SUCCEEDED(hrc))
-                        {
-                            if (!pExtPack)
-                                LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", strName.c_str()));
-                            else
-                                hrc = setError(E_FAIL,
-                                               tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
-                                               strName.c_str());
-                        }
-                    }
-                    else
-                    {
-                        ErrorInfoKeeper Eik;
-                        refreshExtPack(strName.c_str(), false /*a_fUnusableIsError*/, NULL);
-                    }
+                    pJob = NULL; /* the thread deletes it */
+                    ptrProgress.queryInterfaceTo(a_ppProgress);
                 }
+                else
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("RTThreadCreate failed with %Rrc"), vrc);
             }
         }
-
-        /*
-         * Do VirtualBoxReady callbacks now for any freshly installed
-         * extension pack (old ones will not be called).
-         */
-        if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
+        catch (std::bad_alloc)
         {
-            autoLock.release();
-            callAllVirtualBoxReadyHooks();
+            hrc = E_OUTOFMEMORY;
         }
+        if (pJob)
+            delete pJob;
     }
 
     return hrc;
@@ -2471,7 +2527,27 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
 }
 
 /**
+ * Thread wrapper around doInstall.
+ *
+ * @returns VINF_SUCCESS (ignored)
+ * @param   hThread             The thread handle (ignored).
+ * @param   pvJob               The job structure.
+ */
+/*static*/ DECLCALLBACK(int) ExtPackManager::doInstallThreadProc(RTTHREAD hThread, void *pvJob)
+{
+    PEXTPACKINSTALLJOB pJob = (PEXTPACKINSTALLJOB)pvJob;
+    HRESULT hrc = pJob->ptrExtPackMgr->doInstall(pJob->ptrExtPackFile, pJob->fReplace, &pJob->strDisplayInfo);
+    pJob->ptrProgress->notifyComplete(hrc);
+    delete pJob;
+
+    NOREF(hThread);
+    return VINF_SUCCESS;
+}
+
+/**
  * Worker for IExtPackFile::Install.
+ *
+ * Called on a worker thread via doInstallThreadProc.
  *
  * @returns COM status code.
  * @param   a_pExtPackFile      The extension pack file, caller checks that
@@ -2482,13 +2558,11 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
  * @param   a_ppProgress        Where to return a progress object some day. Can
  *                              be NULL.
  */
-HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo,
-                                  IProgress **a_ppProgress)
+HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo)
 {
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
     iprt::MiniString const * const pStrName     = &a_pExtPackFile->m->Desc.strName;
     iprt::MiniString const * const pStrTarball  = &a_pExtPackFile->m->strExtPackFile;
-    NOREF(a_ppProgress); /** @todo implement progress object */
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -2562,6 +2636,117 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
             {
                 ErrorInfoKeeper Eik;
                 refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+            }
+        }
+
+        /*
+         * Do VirtualBoxReady callbacks now for any freshly installed
+         * extension pack (old ones will not be called).
+         */
+        if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
+        {
+            autoLock.release();
+            callAllVirtualBoxReadyHooks();
+        }
+    }
+
+    return hrc;
+}
+
+/**
+ * Thread wrapper around doUninstall.
+ *
+ * @returns VINF_SUCCESS (ignored)
+ * @param   hThread             The thread handle (ignored).
+ * @param   pvJob               The job structure.
+ */
+/*static*/ DECLCALLBACK(int) ExtPackManager::doUninstallThreadProc(RTTHREAD hThread, void *pvJob)
+{
+    PEXTPACKUNINSTALLJOB pJob = (PEXTPACKUNINSTALLJOB)pvJob;
+    HRESULT hrc = pJob->ptrExtPackMgr->doUninstall(&pJob->strName, pJob->fForcedRemoval, &pJob->strDisplayInfo);
+    pJob->ptrProgress->notifyComplete(hrc);
+    delete pJob;
+
+    NOREF(hThread);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker for IExtPackManager::Uninstall.
+ *
+ * Called on a worker thread via doUninstallThreadProc.
+ *
+ * @returns COM status code.
+ * @param   a_pstrName          The name of the extension pack to uninstall.
+ * @param   a_fForcedRemoval    Whether to be skip and ignore certain bits of
+ *                              the extpack feedback.  To deal with misbehaving
+ *                              extension pack hooks.
+ * @param   a_pstrDisplayInfo   Host specific display information hacks.
+ */
+HRESULT ExtPackManager::doUninstall(Utf8Str const *a_pstrName, bool a_fForcedRemoval, Utf8Str const *a_pstrDisplayInfo)
+{
+    Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        /*
+         * Refresh the data we have on the extension pack as it may be made
+         * stale by direct meddling or some other user.
+         */
+        ExtPack *pExtPack;
+        hrc = refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+        if (SUCCEEDED(hrc))
+        {
+            if (!pExtPack)
+            {
+                LogRel(("ExtPackManager: Extension pack '%s' is not installed, so nothing to uninstall.\n", a_pstrName->c_str()));
+                hrc = S_OK;             /* nothing to uninstall */
+            }
+            else
+            {
+                /*
+                 * Call the uninstall hook and unload the main dll.
+                 */
+                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
+                if (SUCCEEDED(hrc))
+                {
+                    /*
+                     * Run the set-uid-to-root binary that performs the
+                     * uninstallation.  Then refresh the object.
+                     *
+                     * This refresh is theorically subject to races, but it's of
+                     * the don't-do-that variety.
+                     */
+                    const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
+                    hrc = runSetUidToRootHelper(a_pstrDisplayInfo,
+                                                "uninstall",
+                                                "--base-dir", m->strBaseDir.c_str(),
+                                                "--name",     a_pstrName->c_str(),
+                                                pszForcedOpt, /* Last as it may be NULL. */
+                                                (const char *)NULL);
+                    if (SUCCEEDED(hrc))
+                    {
+                        hrc = refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                        if (SUCCEEDED(hrc))
+                        {
+                            if (!pExtPack)
+                                LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", a_pstrName->c_str()));
+                            else
+                                hrc = setError(E_FAIL,
+                                               tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
+                                               a_pstrName->c_str());
+                        }
+                    }
+                    else
+                    {
+                        ErrorInfoKeeper Eik;
+                        refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+                    }
+                }
             }
         }
 

@@ -78,6 +78,18 @@ static void vboxExtPackClearDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
 }
 
 /**
+ * Initializes an extension pack descriptor so that it's safe to call free on
+ * it whatever happens later on.
+ *
+ * @param   a_pExtPackDesc  The descirptor to initialize.
+ */
+void VBoxExtPackInitDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
+{
+    vboxExtPackClearDesc(a_pExtPackDesc);
+}
+
+
+/**
  * Load the extension pack descriptor from an XML document.
  *
  * @returns NULL on success, pointer to an error message on failure (caller
