@@ -7529,7 +7529,15 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_Floppy:
             case DeviceType_DVD:
                 if (dev.strHostDriveSrc.isNotEmpty())
+                {
                     rc = mParent->host()->findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
+                    if (rc == VBOX_E_OBJECT_NOT_FOUND)
+                    {
+                        /* This is not an error. The host drive might have vanished,
+                         * so just go ahead without this medium attachment. */
+                        rc = S_OK;
+                    }
+                }
                 else
                     rc = mParent->findRemoveableMedium(dev.deviceType, dev.uuid, false /* fRefresh */, medium);
                 if (FAILED(rc))
