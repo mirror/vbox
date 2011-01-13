@@ -88,6 +88,12 @@
          on the settings button (bug #7875)</para>
       </listitem>
 
+      <listitem>
+        <para>OVF/OVA: fixed import of files created by other ovftools (bug
+         #7983)</para>
+      </listitem>
+
+
     </itemizedlist>
 
   </sect1>
