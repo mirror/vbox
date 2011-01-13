@@ -9,6 +9,16 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: improved user experience on Vista / Windows 7 when installing
+          an extension pack</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: don't crash if a removable host drive referenced from the VM
+          settings vanished</para>
+      </listitem>
+
+      <listitem>
         <para>ICH9: fixed VM crash (software virtualization only; bug #7885)</para>
       </listitem>
 
