@@ -354,7 +354,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
                     /* Get the error information. */
                     ComPtr<IVirtualBoxErrorInfo> ptrErrorInfo;
                     hrc = pOtherProgress->COMGETTER(ErrorInfo)(ptrErrorInfo.asOutParam());
-                    if (SUCCEEDED(hrc))
+                    if (SUCCEEDED(hrc) && !ptrErrorInfo.isNull())
                     {
                         Bstr bstrIID;
                         hrc = ptrErrorInfo->COMGETTER(InterfaceID)(bstrIID.asOutParam()); AssertComRC(hrc);
