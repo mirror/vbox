@@ -1204,7 +1204,6 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                 Info.hMonitor    = NULL;
                 Info.hProcess    = INVALID_HANDLE_VALUE;
 
-#if 0 /* This deadlocks with the GUI because the GUI thread is stuck in the API call :/ */
                 /* Apply display hacks. */
                 if (pszDisplayInfoHack)
                 {
@@ -1228,7 +1227,6 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                 }
                 if (Info.hMonitor != NULL)
                     Info.fMask |= SEE_MASK_HMONITOR;
- #endif
 
                 if (ShellExecuteExW(&Info))
                 {
