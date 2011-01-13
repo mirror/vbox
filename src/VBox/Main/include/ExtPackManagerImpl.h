@@ -45,7 +45,7 @@ public:
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     initWithFile(const char *a_pszFile, class ExtPackManager *a_pExtPackMgr);
+    HRESULT     initWithFile(const char *a_pszFile, class ExtPackManager *a_pExtPackMgr, VirtualBox *a_pVirtualBox);
     void        uninit();
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
     /** @}  */
@@ -218,8 +218,10 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-    HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo,
-                          IProgress **a_ppProgress);
+    static DECLCALLBACK(int) doInstallThreadProc(RTTHREAD hThread, void *pvJob);
+    HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
+    static DECLCALLBACK(int) doUninstallThreadProc(RTTHREAD hThread, void *pvJob);
+    HRESULT     doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
     void        callAllVirtualBoxReadyHooks(void);
     void        callAllConsoleReadyHooks(IConsole *a_pConsole);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
