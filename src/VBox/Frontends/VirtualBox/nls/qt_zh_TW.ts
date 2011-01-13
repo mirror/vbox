@@ -104,7 +104,7 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>缺少所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
+            <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
         </translation>
     </message>
     <message>

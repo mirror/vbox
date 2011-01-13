@@ -922,7 +922,7 @@
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 儲存伺服器。</translation>
+        <translation>請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出、上傳 OVF 到 Sun Cloud 服務或 S3 存放伺服器。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
@@ -1586,7 +1586,7 @@
     </message>
     <message>
         <source>All new releases and &amp;pre-releases</source>
-        <translation>所有新的發佈與預先發佈(&amp;P)</translation>
+        <translation>所有新的發佈和預先發佈(&amp;P)</translation>
     </message>
 </context>
 <context>
@@ -1783,22 +1783,6 @@
     <message>
         <source>Snapshot %1</source>
         <translation>快照 %1</translation>
-    </message>
-    <message>
-        <source>More CD/DVD Images...</source>
-        <translation type="obsolete">更多 CD/DVD 映像...</translation>
-    </message>
-    <message>
-        <source>Unmount CD/DVD Device</source>
-        <translation type="obsolete">卸載 CD/DVD 裝置</translation>
-    </message>
-    <message>
-        <source>More Floppy Images...</source>
-        <translation type="obsolete">更多軟碟映像...</translation>
-    </message>
-    <message>
-        <source>Unmount Floppy Device</source>
-        <translation type="obsolete">卸載軟碟裝置</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -3325,7 +3309,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取虛擬硬碟以用來作為虛擬機器的開機硬碟。 您可以建立新的硬碟或從下拉清單選取現有的一個或按下相對的按鈕 (調用 [開啟檔案] 視窗)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並稍候使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;選取用來作為虛擬機器開機硬碟的虛擬硬碟。 您可以建立新的硬碟或從下拉清單選取現有的一個或按下相應的按鈕 (調用 [開啟檔案] 視窗)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -3442,7 +3426,7 @@
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>於 &lt;b&gt;%1&lt;/b&gt; 頁, %2</translation>
+        <translation>在&lt;b&gt;%1&lt;/b&gt;頁，%2</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -4721,7 +4705,7 @@
     <message numerus="yes">
         <source>%n month(s)</source>
         <translation>
-            <numerusform>%n 個月</numerusform>
+            <numerusform>%n 月</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -4955,12 +4939,12 @@
     <message>
         <source>Readonly</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>唯讀</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>多重附加</translation>
     </message>
 </context>
 <context>
@@ -5612,14 +5596,6 @@
         <translation>&lt;p&gt;虛擬機器回報客體作業系統支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 這意味著您不需要在客體作業系統中使用&lt;i&gt;擷取&lt;/i&gt;滑鼠指標來使用它 -- 當滑鼠指標位於虛擬機器的顯示上方時，所有您執行的滑鼠動作將直接傳送到客體作業系統。 如果目前已擷取滑鼠，將會自動取消擷取。&lt;/p&gt;&lt;p&gt;狀態列的滑鼠圖示將看起來像&amp;nbsp;&lt; img src=:/mouse_seamless_16px.png/ &gt;&amp;nbsp;以通知您客體作業系統支援滑鼠指標整合並且目前已開啟。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 某些應用程式可能在滑鼠指標整合模式下的行為不正確。 您可以從功能表列中選取相對應的動作於目前工作階段一律停用它 (與再次啟用) 。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;將切換虛擬機器視窗到&lt;b&gt;全螢幕&lt;/b&gt;模式。您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 以回到視窗模式。請注意，目前的 &lt;i&gt;Host&lt;/i&gt; 鍵已定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在全螢幕模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取它。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;將切換虛擬機器視窗到&lt;b&gt;無縫&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 以回到視窗模式。請注意，目前的 &lt;i&gt;Host&lt;/i&gt; 鍵已定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在無縫模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取它。&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&amp;Contents...</source>
         <translation>內容(&amp;C)...</translation>
     </message>
@@ -5691,10 +5667,6 @@
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
         <translation>下一個對話方塊會讓您選擇是否也要刪除這個硬碟存放單元或保留它供以後使用。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;請注意，這個媒體的存放單元將不會刪除且這將有可能稍後再次將其加入到清單中。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -6056,7 +6028,7 @@
     <message>
         <source>Leave &amp;empty</source>
         <comment>add attachment routine</comment>
-        <translation>保留空白(&amp;E)</translation>
+        <translation>保持為空(&amp;E)</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
@@ -6073,10 +6045,6 @@
     <message>
         <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions 似乎在這個虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器中使用共用資料夾，請安裝 Guest Additions 如果是未安裝，或重新安裝如果是未正常動作，從&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
@@ -6095,10 +6063,6 @@
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>解除安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">您即將移除擴充包 &lt;b&gt;%1&lt;/b&gt;，您確定嗎?</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6130,76 +6094,76 @@
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;請注意，這個媒體的存放單元將不會刪除且可以稍後再次使用。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox Guest Additions 似乎在這部虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器內使用共用資料夾，如果是未安裝請安裝 Guest Additions ，或如果是未正常動作則重新安裝，從&lt;b&gt;裝置&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;全螢幕&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在全螢幕模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;無縫&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在無縫模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;縮放&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在縮放模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>scale</comment>
-        <translation type="unfinished">切換</translation>
+        <translation>切換</translation>
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您即將安裝 VirtualBox 擴充包。 擴充包補充 VirtualBox 的功能且可以包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
-        <translation type="unfinished"></translation>
+        <translation>安裝(&amp;I)</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
+        <translation>擴充包補充 VirtualBox 的功能且可以包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;已經安裝擴充包的較舊版本，您希望昇級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Upgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>升級(&amp;U)</translation>
     </message>
     <message>
         <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;已經安裝擴充包的較新版本，您希望降級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Downgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>降級(&amp;D)</translation>
     </message>
     <message>
         <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;已經安裝擴充包的相同版本，您希望重新安裝嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Reinstall</source>
-        <translation type="unfinished"></translation>
+        <translation>重新安裝(&amp;R)</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您即將移除 VirtualBox 擴充包 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您確定要進行嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>擴充包 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; 已安裝成功。</translation>
     </message>
 </context>
 <context>

@@ -36,7 +36,7 @@
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Il dispositivo di riproduzione audio &lt;b&gt;%1&lt;/b&gt; non funziona.&lt;br/&gt;Ripiego su &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
@@ -79,12 +79,14 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso: sembra che il pacchetto gstreamer0.10-plugins-good non sia installato.
+          Alcune funzionalità video sono state disabilitate.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso: sembra che il componente GStreamer di base non sia installato.
+          Tutti i supporti audio e video sono stati disabilitati</translation>
     </message>
 </context>
 <context>
@@ -252,7 +254,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima del contenuto dei file</translation>
     </message>
     <message>
         <source>Read-write</source>
@@ -1910,7 +1912,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Il plugin &apos;%1&apos; utilizza librerie QT non compatibili. Versione di compilazione attesa &quot;%2&quot;, ottenuta &quot;%3&quot;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1987,7 +1989,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: terminazione remota</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
@@ -2015,7 +2017,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: l&apos;operazione di socket non è supportata</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
@@ -2089,7 +2091,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile memorizzare il risultato successivo</translation>
     </message>
 </context>
 <context>
@@ -2384,11 +2386,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante lo scaricamento di %1: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante l&apos;invio di %1: %2</translation>
     </message>
 </context>
 <context>
@@ -2634,11 +2636,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Modulo</translation>
     </message>
     <message>
         <source>Paper</source>
-        <translation type="unfinished"></translation>
+        <translation>Carta</translation>
     </message>
     <message>
         <source>Page size:</source>
@@ -2646,11 +2648,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>Larghezza:</translation>
     </message>
     <message>
         <source>Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>Altezza:</translation>
     </message>
     <message>
         <source>Paper source:</source>
@@ -2670,11 +2672,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Reverse landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Orizzontale inverso</translation>
     </message>
     <message>
         <source>Reverse portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Verticale inverso</translation>
     </message>
     <message>
         <source>Margins</source>
@@ -2682,19 +2684,19 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>top margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margine superiore</translation>
     </message>
     <message>
         <source>left margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margine sinistro</translation>
     </message>
     <message>
         <source>right margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margine destro</translation>
     </message>
     <message>
         <source>bottom margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margine inferiore</translation>
     </message>
 </context>
 <context>
@@ -2894,50 +2896,50 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrivi %1 file</translation>
     </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni di pagina</translation>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima di stampa</translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagina successiva</translation>
     </message>
     <message>
         <source>Previous page</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagina precedente</translation>
     </message>
     <message>
         <source>First page</source>
-        <translation type="unfinished"></translation>
+        <translation>Prima pagina</translation>
     </message>
     <message>
         <source>Last page</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultima pagina</translation>
     </message>
     <message>
         <source>Fit width</source>
-        <translation type="unfinished"></translation>
+        <translation>Adatta alla larghezza</translation>
     </message>
     <message>
         <source>Fit page</source>
-        <translation type="unfinished"></translation>
+        <translation>Adatta alla pagina</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Aumenta zoom</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Riduci zoom</translation>
     </message>
     <message>
         <source>Portrait</source>
@@ -2953,7 +2955,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation type="unfinished">Mostra pagine</translation>
+        <translation>Mostra pagine affiancate</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
@@ -4128,7 +4130,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Apri riquadro</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -4168,7 +4170,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna stima trovata</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4203,7 +4205,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ortografia</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
