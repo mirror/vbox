@@ -84,8 +84,16 @@ static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger
                                      RTEXITCODE_FAILURE);
                     Assert(aBstrNames.size() == aBstrValues.size());
 
+                    size_t cchMaxName  = 8;
                     for (size_t i = 0; i < aBstrNames.size(); i++)
-                        RTPrintf("%ls = %ls\n", aBstrNames[i], aBstrValues[i]);
+                    {
+                        size_t cchName = RTUtf16Len(aBstrNames[i]);
+                        if (cchName > cchMaxName)
+                            cchMaxName = cchName;
+                    }
+
+                    for (size_t i = 0; i < aBstrNames.size(); i++)
+                        RTPrintf("%-*ls = %ls\n", cchMaxName, aBstrNames[i], aBstrValues[i]);
                 }
                 else
                 {

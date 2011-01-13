@@ -278,7 +278,8 @@ typedef struct DBGF
     R3PTRTYPE(RTSTRSPACE)       RegSpace;
     /** String space holding the register sets. (Protected by hRegDbLock.)  */
     R3PTRTYPE(RTSTRSPACE)       RegSetSpace;
-    /** The number of registers (aliases and sub-fields not counted). */
+    /** The number of registers (aliases, sub-fields and the special CPU
+     * register aliases (eg AH) are not counted). */
     uint32_t                    cRegs;
     /** For early initialization by . */
     bool volatile               fRegDbInitialized;

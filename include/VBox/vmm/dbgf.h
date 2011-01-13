@@ -1448,9 +1448,9 @@ VMMR3DECL(int) DBGFR3RegNmQueryU64( PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U  pu128);
 /*VMMR3DECL(int) DBGFR3RegNmQueryLrd( PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd);*/
 VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit);
-VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, PDBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs);
-VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM,                   DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM,                   PDBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
 VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
 
@@ -1460,7 +1460,7 @@ VMMR3DECL(int) DBGFR3RegNmSetU32(   PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmSetU64(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t    u64);
 VMMR3DECL(int) DBGFR3RegNmSetU128(  PVM pVM, VMCPUID idDefCpu, const char *pszReg, RTUINT128U  u128);
 VMMR3DECL(int) DBGFR3RegNmSetLrd(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double lrd);
-VMMR3DECL(int) DBGFR3RegNmSetBatch( PVM pVM, VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
+VMMR3DECL(int) DBGFR3RegNmSetBatch( PVM pVM, VMCPUID idDefCpu, PCDBGFREGENTRYNM paRegs, size_t cRegs);
 
 /** @todo add enumeration methods.  */
 
