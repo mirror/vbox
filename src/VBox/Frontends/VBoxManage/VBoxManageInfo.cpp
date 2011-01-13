@@ -169,7 +169,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 ComPtr<IVirtualBoxErrorInfo> accessError;
                 rc = machine->COMGETTER(AccessError)(accessError.asOutParam());
                 RTPrintf("Access error details:\n");
-                ErrorInfo ei(accessError, COM_IIDOF(IVirtualBoxErrorInfo));
+                ErrorInfo ei(accessError);
                 GluePrintErrorInfo(ei);
                 RTPrintf("\n");
             }

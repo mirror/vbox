@@ -123,6 +123,25 @@ public:
         init(pObj, aIID);
     }
 
+    /** Specialization for the IVirtualBoxErrorInfo smart pointer */
+    ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (aPtr); }
+
+    /**
+     *  Constructs a new ErrorInfo instance from the IVirtualBoxErrorInfo
+     *  interface pointer. If this pointer is not NULL, both #isFullAvailable()
+     *  and #isBasicAvailable() will return |true|.
+     *
+     *  @param aInfo    pointer to the IVirtualBoxErrorInfo interface that
+     *                  holds error info to be fetched by this instance
+     */
+    ErrorInfo (IVirtualBoxErrorInfo *aInfo)
+        : mIsBasicAvailable (false), mIsFullAvailable (false)
+        , mResultCode (S_OK)
+        { init (aInfo); }
+
     ErrorInfo(const ErrorInfo &x)
     {
         copyFrom(x);
