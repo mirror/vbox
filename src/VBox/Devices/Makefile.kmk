@@ -260,7 +260,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DevicesR3_DEFS         += \
  	VBOX_HGCM_HOST_CODE \
  	VBOX_WITH_HGCM \
- 	$(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,) \
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,)
  DevicesR3_DEFS.linux   += _GNU_SOURCE
  DevicesR3_DEFS.l4      += _GNU_SOURCE
@@ -787,7 +786,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT,) \
  	$(if $(VBOX_WITH_INIP),VBOX_WITH_INIP,) \
  	$(if $(VBOX_WITH_DRV_DISK_INTEGRITY),VBOX_WITH_DRV_DISK_INTEGRITY,) \
- 	$(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,) \
 
  Drivers_INCS      := \
  	build \
