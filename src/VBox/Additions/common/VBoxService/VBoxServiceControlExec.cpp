@@ -897,12 +897,12 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
  * @param   pszPassword
  * @param   uTimeLimitMS
  */
-int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
-                                             uint32_t u32ContextID,
-                                             const char *pszCmd, uint32_t uFlags,
-                                             const char *pszArgs, uint32_t uNumArgs,
-                                             const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                             const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
+static int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
+                                                    uint32_t u32ContextID,
+                                                    const char *pszCmd, uint32_t uFlags,
+                                                    const char *pszArgs, uint32_t uNumArgs,
+                                                    const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                                    const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
     AssertPtr(pThread);
 
@@ -1028,7 +1028,7 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 
 
 /** @todo Maybe we want to have an own IPRT function for that! */
-int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
+static int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -1046,7 +1046,7 @@ int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, s
 }
 
 
-int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
+static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
 {
     int rc = VINF_SUCCESS;
 
@@ -1096,19 +1096,13 @@ int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszRe
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
-                                      const char * const *papszArgs, char ***ppapszArgv)
+static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
+                                             const char * const *papszArgs, char ***ppapszArgv)
 {
     AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
 
-    bool fUseToolbox = false;
-    if (RTStrStr(papszArgs[0], "vbox_") == papszArgs[0])
-        fUseToolbox = true;
-
-    /* Skip argv[0] (= file name) if we don't run an internal
-     * VBoxService toolbox command - we already have a resolved one in pszFileName. */
     char *pszArgs;
     int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
@@ -1164,9 +1158,9 @@ int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
  * @param   pszPassword
  * @param   phProcess
  */
-int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
-                                        PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                                        const char *pszPassword, PRTPROCESS phProcess)
+static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
+                                               PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
+                                               const char *pszPassword, PRTPROCESS phProcess)
 {
     int  rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -1243,7 +1237,7 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
  * @return  IPRT status code.
  * @param   PVBOXSERVICECTRLTHREAD         Thread data associated with a started process.
  */
-DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
+static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtr(pThread);
     PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
@@ -1412,7 +1406,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD VBoxServiceControlExecFindProcess(uint32_t uPID)
+static PVBOXSERVICECTRLTHREAD VBoxServiceControlExecFindProcess(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pNode;
     bool fFound = false;
