@@ -225,7 +225,15 @@ void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
 
 void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
 {
-    AssertReturnVoid (!info.isNull());
+    if (info.isNull())
+    {
+        mIsNull = true;
+        mIsBasicAvailable = false;
+        mIsFullAvailable = false;
+        mResultCode = S_OK;
+        m_pNext = NULL;
+        AssertMsgFailedReturnVoid(("error info is NULL!\n"));
+    }
 
     bool gotSomething = false;
     bool gotAll = true;
