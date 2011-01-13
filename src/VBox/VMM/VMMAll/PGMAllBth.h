@@ -3778,13 +3778,13 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
             PPGMPOOLPAGE    pShwPde = NULL;
             PX86PDPE        pPdpeDst;
             RTGCPHYS        GCPhysPdeSrc;
-#  if PGM_GST_TYPE == PGM_TYPE_PAE
             X86PDPE         PdpeSrc;
+            PdpeSrc.u = 0;
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(pVCpu, GCPtr, &iPDSrc, &PdpeSrc);
             PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
 #  else
             PX86PML4E       pPml4eSrcIgn;
-            X86PDPE         PdpeSrc;
             PX86PDPT        pPdptDst;
             PX86PDPAE       pPDDst;
             PGSTPD          pPDSrc    = pgmGstGetLongModePDPtr(pVCpu, GCPtr, &pPml4eSrcIgn, &PdpeSrc, &iPDSrc);
