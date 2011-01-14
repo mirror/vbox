@@ -2172,7 +2172,7 @@ def attachHddCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      hdd = vb.findHardDisk(loc)
+      hdd = vb.findMedium(loc, ctx['global'].constants.DeviceType_HardDisk)
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
@@ -2194,7 +2194,7 @@ def detachVmDevice(ctx,mach,args):
                 mach.detachDevice(a.controller, a.port, a.device)
 
 def detachMedium(ctx,mid,medium):
-    cmdClosedVm(ctx, mach, detachVmDevice, [medium.id])
+    cmdClosedVm(ctx, machById(ctx, mid), detachVmDevice, [medium])
 
 def detachHddCmd(ctx,args):
    if (len(args) < 3):
@@ -2207,12 +2207,12 @@ def detachHddCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      hdd = vb.findHardDisk(loc)
+      hdd = vb.findMedium(loc, ctx['global'].constants.DeviceType_HardDisk)
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
 
-   detachMedium(ctx,mach.id,hdd)
+   detachMedium(ctx, mach.id, hdd)
    return 0
 
 def unregisterHddCmd(ctx,args):
@@ -2227,7 +2227,7 @@ def unregisterHddCmd(ctx,args):
    else:
       vmunreg = 0
    try:
-      hdd = vb.findHardDisk(loc)
+      hdd = vb.findMedium(loc, ctx['global'].constants.DeviceType_HardDisk)
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
@@ -2237,7 +2237,7 @@ def unregisterHddCmd(ctx,args):
       try:
          for m in machs:
             print "Trying to detach from %s" %(m)
-            detachMedium(ctx,m,hdd)
+            detachMedium(ctx, m, hdd)
       except Exception, e:
          print 'failed: ',e
          return 0
@@ -2252,7 +2252,7 @@ def removeHddCmd(ctx,args):
    vb = ctx['vb']
    loc = args[1]
    try:
-      hdd = vb.findHardDisk(loc)
+      hdd = vb.findMedium(loc, ctx['global'].constants.DeviceType_HardDisk)
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
@@ -2281,7 +2281,7 @@ def unregisterIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[1]
    try:
-      dvd = vb.findDVDImage(loc)
+      dvd = vb.findMedium(loc, )
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
@@ -2299,7 +2299,7 @@ def removeIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[1]
    try:
-      dvd = vb.findDVDImage(loc)
+      dvd = vb.findMedium(loc, ctx['global'].constants.DeviceType_DVD)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
@@ -2322,7 +2322,7 @@ def attachIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      dvd = vb.findDVDImage(loc)
+      dvd = vb.findMedium(loc, ctx['global'].constants.DeviceType_DVD)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
@@ -2331,7 +2331,7 @@ def attachIsoCmd(ctx,args):
        (port,slot) = args[4].split(":")
    else:
        [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
-   cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD,dvd.id))
+   cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD, dvd))
    return 0
 
 def detachIsoCmd(ctx,args):
@@ -2345,12 +2345,12 @@ def detachIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      dvd = vb.findDVDImage(loc)
+      dvd = vb.findMedium(loc, ctx['global'].constants.DeviceType_DVD)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
 
-   detachMedium(ctx,mach.id,dvd)
+   detachMedium(ctx, mach.id, dvd)
    return 0
 
 def mountIsoCmd(ctx,args):
@@ -2364,7 +2364,7 @@ def mountIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      dvd = vb.findDVDImage(loc)
+      dvd = vb.findMedium(loc, ctx['global'].constants.DeviceType_DVD)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
@@ -2376,7 +2376,7 @@ def mountIsoCmd(ctx,args):
        # autodetect controller and location, just find first controller with media == DVD
        [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
 
-   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, dvd.id, True])
+   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, dvd, True])
 
    return 0
 
@@ -2390,14 +2390,14 @@ def unmountIsoCmd(ctx,args):
         return 0
    vb = ctx['vb']
 
-   if len(args) > 2:
+   if len(args) > 3:
        ctr = args[2]
        (port,slot) = args[3].split(":")
    else:
        # autodetect controller and location, just find first controller with media == DVD
        [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
 
-   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, "", True])
+   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, None, True])
 
    return 0
 
