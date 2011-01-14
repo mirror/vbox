@@ -1185,7 +1185,7 @@ void VBoxSelectorWnd::retranslateUi()
 #else
     QString title(VBOX_PRODUCT);
 #endif
-    title += " " + tr("Manager");
+    title += " " + tr("Manager", "Note: main window title which is pretended by the product name.");
 
 #ifdef VBOX_BLEEDING_EDGE
     title += QString(" EXPERIMENTAL build ")
