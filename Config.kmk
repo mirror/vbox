@@ -3665,6 +3665,24 @@ ifdef VBOX_WITH_EXTPACK
   	$(LIB_RUNTIME) \
   	$(LIB_VMM)
  endif
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd.x86 linux.x86) # Undo the PIC avoidance in VBOXR3DLLNOXCPT/VBOXR3
+  TEMPLATE_VBoxR3ExtPack_DEFS      += PIC
+  ifdef TEMPLATE_VBoxR3ExtPack_CXXFLAGS
+   TEMPLATE_VBoxR3ExtPack_CFLAGS   += -fPIC
+  else
+   TEMPLATE_VBoxR3ExtPack_CFLAGS   += $(TEMPLATE_$(TEMPLATE_VBoxR3ExtPack_EXTENDS)_CFLAGS) -fPIC
+  endif
+  ifdef TEMPLATE_VBoxR3ExtPack_CXXFLAGS
+   TEMPLATE_VBoxR3ExtPack_CXXFLAGS += -fPIC
+  else
+   TEMPLATE_VBoxR3ExtPack_CXXFLAGS += $(TEMPLATE_$(TEMPLATE_VBoxR3ExtPack_EXTENDS)_CXXFLAGS) -fPIC
+  endif
+  ifdef TEMPLATE_VBoxR3ExtPack_LDFLAGS
+   TEMPLATE_VBoxR3ExtPack_LDFLAGS  += -fPIC
+  else
+  TEMPLATE_VBoxR3ExtPack_CFLAGS     = $(TEMPLATE_$(TEMPLATE_VBoxR3ExtPack_EXTENDS)_LDFLAGS) -fPIC
+  endif
+ endif
 
  TEMPLATE_VBoxR0ExtPack = For the ring-0 context extension pack modules.
  TEMPLATE_VBoxR0ExtPack_EXTENDS = VBoxR0
