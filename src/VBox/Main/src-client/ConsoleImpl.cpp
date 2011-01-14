@@ -5356,358 +5356,403 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (Global::IsOnlineOrTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("The virtual machine is already running or busy (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
-
     HRESULT rc = S_OK;
+    ComObjPtr<Progress> pPowerupProgress;
+    bool fBeganPoweringUp = false;
 
-    /* the network cards will undergo a quick consistency check */
-    for (ULONG slot = 0;
-         slot < SchemaDefs::NetworkAdapterCount;
-         ++slot)
+    try
     {
-        ComPtr<INetworkAdapter> pNetworkAdapter;
-        mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
-        BOOL enabled = FALSE;
-        pNetworkAdapter->COMGETTER(Enabled)(&enabled);
-        if (!enabled)
-            continue;
+        if (Global::IsOnlineOrTransient(mMachineState))
+            throw setError(VBOX_E_INVALID_VM_STATE,
+                tr("The virtual machine is already running or busy (machine state: %s)"),
+                Global::stringifyMachineState(mMachineState));
 
-        NetworkAttachmentType_T netattach;
-        pNetworkAdapter->COMGETTER(AttachmentType)(&netattach);
-        switch (netattach)
-        {
-            case NetworkAttachmentType_Bridged:
-            {
-#ifdef RT_OS_WINDOWS
-                /* a valid host interface must have been set */
-                Bstr hostif;
-                pNetworkAdapter->COMGETTER(HostInterface)(hostif.asOutParam());
-                if (hostif.isEmpty())
-                {
-                    return setError(VBOX_E_HOST_ERROR,
-                        tr("VM cannot start because host interface networking requires a host interface name to be set"));
-                }
-                ComPtr<IVirtualBox> pVirtualBox;
-                mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-                ComPtr<IHost> pHost;
-                pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
-                ComPtr<IHostNetworkInterface> pHostInterface;
-                if (!SUCCEEDED(pHost->FindHostNetworkInterfaceByName(hostif.raw(),
-                                                                     pHostInterface.asOutParam())))
-                {
-                    return setError(VBOX_E_HOST_ERROR,
-                        tr("VM cannot start because the host interface '%ls' does not exist"),
-                        hostif.raw());
-                }
-#endif /* RT_OS_WINDOWS */
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    /* Read console data stored in the saved state file (if not yet done) */
-    rc = loadDataFromSavedState();
-    if (FAILED(rc)) return rc;
-
-    /* Check all types of shared folders and compose a single list */
-    SharedFolderDataMap sharedFolders;
-    {
-        /* first, insert global folders */
-        for (SharedFolderDataMap::const_iterator it = mGlobalSharedFolders.begin();
-             it != mGlobalSharedFolders.end(); ++ it)
-            sharedFolders[it->first] = it->second;
-
-        /* second, insert machine folders */
-        for (SharedFolderDataMap::const_iterator it = mMachineSharedFolders.begin();
-             it != mMachineSharedFolders.end(); ++ it)
-            sharedFolders[it->first] = it->second;
-
-        /* third, insert console folders */
-        for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
-             it != mSharedFolders.end(); ++ it)
-            sharedFolders[it->first] = SharedFolderData(it->second->getHostPath(),
-                                                        it->second->isWritable(),
-                                                        it->second->isAutoMounted());
-    }
-
-    Bstr savedStateFile;
-
-    /*
-     * Saved VMs will have to prove that their saved states seem kosher.
-     */
-    if (mMachineState == MachineState_Saved)
-    {
-        rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
-        if (FAILED(rc)) return rc;
-        ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
-        int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
-        if (RT_FAILURE(vrc))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
-                            savedStateFile.raw(), vrc);
-    }
-
-    /* test and clear the TeleporterEnabled property  */
-    BOOL fTeleporterEnabled;
-    rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
-    if (FAILED(rc)) return rc;
+        /* test and clear the TeleporterEnabled property  */
+        BOOL fTeleporterEnabled;
+        rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
+        if (FAILED(rc))
+            throw rc;
 #if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
-    if (fTeleporterEnabled)
-    {
-        rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
-        if (FAILED(rc)) return rc;
-    }
+        if (fTeleporterEnabled)
+        {
+            rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
+            if (FAILED(rc))
+                throw rc;
+        }
 #endif
 
-    /* test the FaultToleranceState property  */
-    FaultToleranceState_T enmFaultToleranceState;
-    rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
-    if (FAILED(rc)) return rc;
-    BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Standby);
+        /* test the FaultToleranceState property  */
+        FaultToleranceState_T enmFaultToleranceState;
+        rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
+        if (FAILED(rc))
+            throw rc;
+        BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Standby);
 
-    /* create a progress object to track progress of this operation */
-    ComObjPtr<Progress> pPowerupProgress;
-    pPowerupProgress.createObject();
-    Bstr progressDesc;
-    if (mMachineState == MachineState_Saved)
-        progressDesc = tr("Restoring virtual machine");
-    else if (fTeleporterEnabled)
-        progressDesc = tr("Teleporting virtual machine");
-    else if (fFaultToleranceSyncEnabled)
-        progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
-    else
-        progressDesc = tr("Starting virtual machine");
-    if (    mMachineState == MachineState_Saved
-        ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
-        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                    progressDesc.raw(),
-                                    FALSE /* aCancelable */);
-    else
-    if (fTeleporterEnabled)
-        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                    progressDesc.raw(),
-                                    TRUE /* aCancelable */,
-                                    3    /* cOperations */,
-                                    10   /* ulTotalOperationsWeight */,
-                                    Bstr(tr("Teleporting virtual machine")).raw(),
-                                    1    /* ulFirstOperationWeight */,
-                                    NULL);
-    else
-    if (fFaultToleranceSyncEnabled)
-        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                    progressDesc.raw(),
-                                    TRUE /* aCancelable */,
-                                    3    /* cOperations */,
-                                    10   /* ulTotalOperationsWeight */,
-                                    Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
-                                    1    /* ulFirstOperationWeight */,
-                                    NULL);
+        /* Create a progress object to track progress of this operation. Must
+         * be done as early as possible (together with BeginPowerUp()) as this
+         * is vital for communicating as much as possible early powerup
+         * failure information to the API caller */
+        pPowerupProgress.createObject();
+        Bstr progressDesc;
+        if (mMachineState == MachineState_Saved)
+            progressDesc = tr("Restoring virtual machine");
+        else if (fTeleporterEnabled)
+            progressDesc = tr("Teleporting virtual machine");
+        else if (fFaultToleranceSyncEnabled)
+            progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
+        else
+            progressDesc = tr("Starting virtual machine");
+        if (    mMachineState == MachineState_Saved
+            ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        FALSE /* aCancelable */);
+        else
+        if (fTeleporterEnabled)
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        TRUE /* aCancelable */,
+                                        3    /* cOperations */,
+                                        10   /* ulTotalOperationsWeight */,
+                                        Bstr(tr("Teleporting virtual machine")).raw(),
+                                        1    /* ulFirstOperationWeight */,
+                                        NULL);
+        else
+        if (fFaultToleranceSyncEnabled)
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        TRUE /* aCancelable */,
+                                        3    /* cOperations */,
+                                        10   /* ulTotalOperationsWeight */,
+                                        Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
+                                        1    /* ulFirstOperationWeight */,
+                                        NULL);
 
-    if (FAILED(rc))
-        return rc;
+        if (FAILED(rc))
+            throw rc;
 
-    /* Tell VBoxSVC and Machine about the progress object so they can combine
-       proxy it to any openRemoteSession caller. */
-    LogFlowThisFunc(("Calling BeginPowerUp...\n"));
-    rc = mControl->BeginPowerUp(pPowerupProgress);
-    if (FAILED(rc))
-    {
-        LogFlowThisFunc(("BeginPowerUp failed\n"));
-        return rc;
-    }
-
-    LogFlowThisFunc(("Checking if canceled...\n"));
-    BOOL fCanceled;
-    rc = pPowerupProgress->COMGETTER(Canceled)(&fCanceled);
-    if (FAILED(rc))
-        return rc;
-    if (fCanceled)
-    {
-        LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
-        return setError(E_FAIL, tr("Powerup was canceled"));
-    }
-    LogFlowThisFunc(("Not canceled yet.\n"));
-
-    /* setup task object and thread to carry out the operation
-     * asynchronously */
-
-    std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
-    ComAssertComRCRetRC(task->rc());
-
-    task->mConfigConstructor = configConstructor;
-    task->mSharedFolders = sharedFolders;
-    task->mStartPaused = aPaused;
-    if (mMachineState == MachineState_Saved)
-        task->mSavedStateFile = savedStateFile;
-    task->mTeleporterEnabled = fTeleporterEnabled;
-    task->mEnmFaultToleranceState = enmFaultToleranceState;
-
-    /* Reset differencing hard disks for which autoReset is true,
-     * but only if the machine has no snapshots OR the current snapshot
-     * is an OFFLINE snapshot; otherwise we would reset the current differencing
-     * image of an ONLINE snapshot which contains the disk state of the machine
-     * while it was previously running, but without the corresponding machine
-     * state, which is equivalent to powering off a running machine and not
-     * good idea
-     */
-    ComPtr<ISnapshot> pCurrentSnapshot;
-    rc = mMachine->COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam());
-    if (FAILED(rc)) return rc;
-
-    BOOL fCurrentSnapshotIsOnline = false;
-    if (pCurrentSnapshot)
-    {
-        rc = pCurrentSnapshot->COMGETTER(Online)(&fCurrentSnapshotIsOnline);
-        if (FAILED(rc)) return rc;
-    }
-
-    if (!fCurrentSnapshotIsOnline)
-    {
-        LogFlowThisFunc(("Looking for immutable images to reset\n"));
-
-        com::SafeIfaceArray<IMediumAttachment> atts;
-        rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
-        if (FAILED(rc)) return rc;
-
-        for (size_t i = 0;
-             i < atts.size();
-             ++i)
+        /* Tell VBoxSVC and Machine about the progress object so they can
+           combine/proxy it to any openRemoteSession caller. */
+        LogFlowThisFunc(("Calling BeginPowerUp...\n"));
+        rc = mControl->BeginPowerUp(pPowerupProgress);
+        if (FAILED(rc))
         {
-            DeviceType_T devType;
-            rc = atts[i]->COMGETTER(Type)(&devType);
-            /** @todo later applies to floppies as well */
-            if (devType == DeviceType_HardDisk)
+            LogFlowThisFunc(("BeginPowerUp failed\n"));
+            throw rc;
+        }
+        fBeganPoweringUp = true;
+
+        /** @todo this code prevents starting a VM with unavailable bridged
+         * networking interface. The only benefit is a slightly better error
+         * message, which should be moved to the driver code. This is the
+         * only reason why I left the code in for now. The driver allows
+         * unavailable bridged networking interfaces in certain circumstances,
+         * and this is sabotaged by this check. The VM will initially have no
+         * network connectivity, but the user can fix this at runtime. */
+#if 0
+        /* the network cards will undergo a quick consistency check */
+        for (ULONG slot = 0;
+             slot < SchemaDefs::NetworkAdapterCount;
+             ++slot)
+        {
+            ComPtr<INetworkAdapter> pNetworkAdapter;
+            mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
+            BOOL enabled = FALSE;
+            pNetworkAdapter->COMGETTER(Enabled)(&enabled);
+            if (!enabled)
+                continue;
+
+            NetworkAttachmentType_T netattach;
+            pNetworkAdapter->COMGETTER(AttachmentType)(&netattach);
+            switch (netattach)
             {
-                ComPtr<IMedium> pMedium;
-                rc = atts[i]->COMGETTER(Medium)(pMedium.asOutParam());
-                if (FAILED(rc)) return rc;
-
-                /* needs autoreset? */
-                BOOL autoReset = FALSE;
-                rc = pMedium->COMGETTER(AutoReset)(&autoReset);
-                if (FAILED(rc)) return rc;
-
-                if (autoReset)
+                case NetworkAttachmentType_Bridged:
                 {
-                    ComPtr<IProgress> pResetProgress;
-                    rc = pMedium->Reset(pResetProgress.asOutParam());
-                    if (FAILED(rc)) return rc;
+                    /* a valid host interface must have been set */
+                    Bstr hostif;
+                    pNetworkAdapter->COMGETTER(HostInterface)(hostif.asOutParam());
+                    if (hostif.isEmpty())
+                    {
+                        throw setError(VBOX_E_HOST_ERROR,
+                            tr("VM cannot start because host interface networking requires a host interface name to be set"));
+                    }
+                    ComPtr<IVirtualBox> pVirtualBox;
+                    mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+                    ComPtr<IHost> pHost;
+                    pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
+                    ComPtr<IHostNetworkInterface> pHostInterface;
+                    if (!SUCCEEDED(pHost->FindHostNetworkInterfaceByName(hostif.raw(),
+                                                                         pHostInterface.asOutParam())))
+                    {
+                        throw setError(VBOX_E_HOST_ERROR,
+                            tr("VM cannot start because the host interface '%ls' does not exist"),
+                            hostif.raw());
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+#endif // 0
 
-                    /* save for later use on the powerup thread */
-                    task->hardDiskProgresses.push_back(pResetProgress);
+        /* Read console data stored in the saved state file (if not yet done) */
+        rc = loadDataFromSavedState();
+        if (FAILED(rc))
+            throw rc;
+
+        /* Check all types of shared folders and compose a single list */
+        SharedFolderDataMap sharedFolders;
+        {
+            /* first, insert global folders */
+            for (SharedFolderDataMap::const_iterator it = mGlobalSharedFolders.begin();
+                 it != mGlobalSharedFolders.end(); ++ it)
+                sharedFolders[it->first] = it->second;
+
+            /* second, insert machine folders */
+            for (SharedFolderDataMap::const_iterator it = mMachineSharedFolders.begin();
+                 it != mMachineSharedFolders.end(); ++ it)
+                sharedFolders[it->first] = it->second;
+
+            /* third, insert console folders */
+            for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
+                 it != mSharedFolders.end(); ++ it)
+                sharedFolders[it->first] = SharedFolderData(it->second->getHostPath(),
+                                                            it->second->isWritable(),
+                                                            it->second->isAutoMounted());
+        }
+
+        Bstr savedStateFile;
+
+        /*
+         * Saved VMs will have to prove that their saved states seem kosher.
+         */
+        if (mMachineState == MachineState_Saved)
+        {
+            rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+            ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
+            int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                                tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
+                                savedStateFile.raw(), vrc);
+        }
+
+        LogFlowThisFunc(("Checking if canceled...\n"));
+        BOOL fCanceled;
+        rc = pPowerupProgress->COMGETTER(Canceled)(&fCanceled);
+        if (FAILED(rc))
+            throw rc;
+        if (fCanceled)
+        {
+            LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
+            throw setError(E_FAIL, tr("Powerup was canceled"));
+        }
+        LogFlowThisFunc(("Not canceled yet.\n"));
+
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+
+        std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
+        ComAssertComRCRetRC(task->rc());
+
+        task->mConfigConstructor = configConstructor;
+        task->mSharedFolders = sharedFolders;
+        task->mStartPaused = aPaused;
+        if (mMachineState == MachineState_Saved)
+            task->mSavedStateFile = savedStateFile;
+        task->mTeleporterEnabled = fTeleporterEnabled;
+        task->mEnmFaultToleranceState = enmFaultToleranceState;
+
+        /* Reset differencing hard disks for which autoReset is true,
+         * but only if the machine has no snapshots OR the current snapshot
+         * is an OFFLINE snapshot; otherwise we would reset the current
+         * differencing image of an ONLINE snapshot which contains the disk
+         * state of the machine while it was previously running, but without
+         * the corresponding machine state, which is equivalent to powering
+         * off a running machine and not good idea
+         */
+        ComPtr<ISnapshot> pCurrentSnapshot;
+        rc = mMachine->COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam());
+        if (FAILED(rc))
+            throw rc;
+
+        BOOL fCurrentSnapshotIsOnline = false;
+        if (pCurrentSnapshot)
+        {
+            rc = pCurrentSnapshot->COMGETTER(Online)(&fCurrentSnapshotIsOnline);
+            if (FAILED(rc))
+                throw rc;
+        }
+
+        if (!fCurrentSnapshotIsOnline)
+        {
+            LogFlowThisFunc(("Looking for immutable images to reset\n"));
+
+            com::SafeIfaceArray<IMediumAttachment> atts;
+            rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
+            if (FAILED(rc))
+                throw rc;
+
+            for (size_t i = 0;
+                 i < atts.size();
+                 ++i)
+            {
+                DeviceType_T devType;
+                rc = atts[i]->COMGETTER(Type)(&devType);
+                /** @todo later applies to floppies as well */
+                if (devType == DeviceType_HardDisk)
+                {
+                    ComPtr<IMedium> pMedium;
+                    rc = atts[i]->COMGETTER(Medium)(pMedium.asOutParam());
+                    if (FAILED(rc))
+                        throw rc;
+
+                    /* needs autoreset? */
+                    BOOL autoReset = FALSE;
+                    rc = pMedium->COMGETTER(AutoReset)(&autoReset);
+                    if (FAILED(rc))
+                        throw rc;
+
+                    if (autoReset)
+                    {
+                        ComPtr<IProgress> pResetProgress;
+                        rc = pMedium->Reset(pResetProgress.asOutParam());
+                        if (FAILED(rc))
+                            throw rc;
+
+                        /* save for later use on the powerup thread */
+                        task->hardDiskProgresses.push_back(pResetProgress);
+                    }
                 }
             }
         }
-    }
-    else
-        LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
+        else
+            LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
 
-    rc = consoleInitReleaseLog(mMachine);
-    if (FAILED(rc)) return rc;
+        rc = consoleInitReleaseLog(mMachine);
+        if (FAILED(rc))
+            throw rc;
 
 #ifdef RT_OS_SOLARIS
-    /* setup host core dumper for the VM */
-    Bstr value;
-    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpEnabled").raw(), value.asOutParam());
-    if (SUCCEEDED(hrc) && value == "1")
-    {
-        Bstr coreDumpDir, coreDumpReplaceSys, coreDumpLive;
-        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpDir").raw(), coreDumpDir.asOutParam());
-        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpReplaceSystemDump").raw(), coreDumpReplaceSys.asOutParam());
-        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpLive").raw(), coreDumpLive.asOutParam());
-
-        uint32_t fCoreFlags = 0;
-        if (   coreDumpReplaceSys.isEmpty() == false
-            && Utf8Str(coreDumpReplaceSys).toUInt32() == 1)
+        /* setup host core dumper for the VM */
+        Bstr value;
+        HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpEnabled").raw(), value.asOutParam());
+        if (SUCCEEDED(hrc) && value == "1")
         {
-            fCoreFlags |= RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP;
-        }
+            Bstr coreDumpDir, coreDumpReplaceSys, coreDumpLive;
+            mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpDir").raw(), coreDumpDir.asOutParam());
+            mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpReplaceSystemDump").raw(), coreDumpReplaceSys.asOutParam());
+            mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpLive").raw(), coreDumpLive.asOutParam());
 
-        if (   coreDumpLive.isEmpty() == false
-            && Utf8Str(coreDumpLive).toUInt32() == 1)
-        {
-            fCoreFlags |= RTCOREDUMPER_FLAGS_LIVE_CORE;
-        }
+            uint32_t fCoreFlags = 0;
+            if (   coreDumpReplaceSys.isEmpty() == false
+                && Utf8Str(coreDumpReplaceSys).toUInt32() == 1)
+            {
+                fCoreFlags |= RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP;
+            }
 
-        Utf8Str strDumpDir(coreDumpDir);
-        const char *pszDumpDir = strDumpDir.c_str();
-        if (   pszDumpDir
-            && *pszDumpDir == '\0')
-            pszDumpDir = NULL;
+            if (   coreDumpLive.isEmpty() == false
+                && Utf8Str(coreDumpLive).toUInt32() == 1)
+            {
+                fCoreFlags |= RTCOREDUMPER_FLAGS_LIVE_CORE;
+            }
 
-        int vrc;
-        if (   pszDumpDir
-            && !RTDirExists(pszDumpDir))
-        {
-            /*
-             * Try create the directory.
-             */
-            vrc = RTDirCreateFullPath(pszDumpDir, 0777);
+            Utf8Str strDumpDir(coreDumpDir);
+            const char *pszDumpDir = strDumpDir.c_str();
+            if (   pszDumpDir
+                && *pszDumpDir == '\0')
+                pszDumpDir = NULL;
+
+            int vrc;
+            if (   pszDumpDir
+                && !RTDirExists(pszDumpDir))
+            {
+                /*
+                 * Try create the directory.
+                 */
+                vrc = RTDirCreateFullPath(pszDumpDir, 0777);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n", pszDumpDir, vrc);
+            }
+
+            vrc = RTCoreDumperSetup(pszDumpDir, fCoreFlags);
             if (RT_FAILURE(vrc))
-                return setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n", pszDumpDir, vrc);
+                throw setError(E_FAIL, "Failed to setup CoreDumper (%Rrc)", vrc);
+            else
+                LogRel(("CoreDumper setup successful. pszDumpDir=%s fFlags=%#x\n", pszDumpDir ? pszDumpDir : ".", fCoreFlags));
         }
-
-        vrc = RTCoreDumperSetup(pszDumpDir, fCoreFlags);
-        if (RT_FAILURE(vrc))
-            return setError(E_FAIL, "Failed to setup CoreDumper (%Rrc)", vrc);
-        else
-            LogRel(("CoreDumper setup successful. pszDumpDir=%s fFlags=%#x\n", pszDumpDir ? pszDumpDir : ".", fCoreFlags));
-    }
 #endif
 
-    /* pass the progress object to the caller if requested */
-    if (aProgress)
-    {
-        if (task->hardDiskProgresses.size() == 0)
+        /* pass the progress object to the caller if requested */
+        if (aProgress)
         {
-            /* there are no other operations to track, return the powerup
-             * progress only */
-            pPowerupProgress.queryInterfaceTo(aProgress);
+            if (task->hardDiskProgresses.size() == 0)
+            {
+                /* there are no other operations to track, return the powerup
+                 * progress only */
+                pPowerupProgress.queryInterfaceTo(aProgress);
+            }
+            else
+            {
+                /* create a combined progress object */
+                ComObjPtr<CombinedProgress> pProgress;
+                pProgress.createObject();
+                VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
+                progresses.push_back(ComPtr<IProgress> (pPowerupProgress));
+                rc = pProgress->init(static_cast<IConsole *>(this),
+                                     progressDesc.raw(), progresses.begin(),
+                                     progresses.end());
+                AssertComRCReturnRC(rc);
+                pProgress.queryInterfaceTo(aProgress);
+            }
         }
+
+        int vrc = RTThreadCreate(NULL, Console::powerUpThread,
+                                 (void *)task.get(), 0,
+                                 RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
+        if (RT_FAILURE(vrc))
+            throw setError(E_FAIL, "Could not create VMPowerUp thread (%Rrc)", vrc);
+
+        /* task is now owned by powerUpThread(), so release it */
+        task.release();
+
+        /* finally, set the state: no right to fail in this method afterwards
+         * since we've already started the thread and it is now responsible for
+         * any error reporting and appropriate state change! */
+        if (mMachineState == MachineState_Saved)
+            setMachineState(MachineState_Restoring);
+        else if (fTeleporterEnabled)
+            setMachineState(MachineState_TeleportingIn);
+        else if (enmFaultToleranceState == FaultToleranceState_Standby)
+            setMachineState(MachineState_FaultTolerantSyncing);
         else
-        {
-            /* create a combined progress object */
-            ComObjPtr<CombinedProgress> pProgress;
-            pProgress.createObject();
-            VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-            progresses.push_back(ComPtr<IProgress> (pPowerupProgress));
-            rc = pProgress->init(static_cast<IConsole *>(this),
-                                 progressDesc.raw(), progresses.begin(),
-                                 progresses.end());
-            AssertComRCReturnRC(rc);
-            pProgress.queryInterfaceTo(aProgress);
-        }
+            setMachineState(MachineState_Starting);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (FAILED(rc) && fBeganPoweringUp)
+    {
+
+        /* The progress object will fetch the current error info */
+        if (!pPowerupProgress.isNull())
+            pPowerupProgress->notifyComplete(rc);
+
+        /* Save the error info across the IPC below. Can't be done before the
+         * progress notification above, as saving the error info deletes it
+         * from the current context, and thus the progress object wouldn't be
+         * updated correctly. */
+        ErrorInfoKeeper eik;
+
+        /* signal end of operation */
+        mControl->EndPowerUp(rc);
     }
 
-    int vrc = RTThreadCreate(NULL, Console::powerUpThread, (void *) task.get(),
-                             0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
-    if (RT_FAILURE(vrc))
-        return setError(E_FAIL, "Could not create VMPowerUp thread (%Rrc)", vrc);
-
-    /* task is now owned by powerUpThread(), so release it */
-    task.release();
-
-    /* finally, set the state: no right to fail in this method afterwards
-     * since we've already started the thread and it is now responsible for
-     * any error reporting and appropriate state change! */
-
-    if (mMachineState == MachineState_Saved)
-        setMachineState(MachineState_Restoring);
-    else if (fTeleporterEnabled)
-        setMachineState(MachineState_TeleportingIn);
-    else if (enmFaultToleranceState == FaultToleranceState_Standby)
-        setMachineState(MachineState_FaultTolerantSyncing);
-    else
-        setMachineState(MachineState_Starting);
-
-    LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
+    LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 /**

@@ -84,6 +84,11 @@
       </listitem>
 
       <listitem>
+        <para>Main: improve error information propagation for errors preventing
+          a VM start</para>
+      </listitem>
+
+      <listitem>
         <para>Webservice: now listens to localhost by default as documented
           (bug #6067)</para>
       </listitem>
