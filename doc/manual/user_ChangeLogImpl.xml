@@ -108,6 +108,11 @@
          #7983)</para>
       </listitem>
 
+      <listitem>
+        <para>rdesktop-vrdp: fix a crash during USB device enumeration (bug
+         #7981)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
