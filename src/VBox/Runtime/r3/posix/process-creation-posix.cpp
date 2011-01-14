@@ -355,15 +355,20 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (fFlags & RTPROC_FLAGS_DETACHED)
     {
 # ifdef RT_OS_SOLARIS
-        int templateFd = rtSolarisContractPreFork();
-        if (templateFd == -1)
-            return VERR_OPEN_FAILED;
+        int templateFd = -1;
+        if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+        {
+            templateFd = rtSolarisContractPreFork();
+            if (templateFd == -1)
+                return VERR_OPEN_FAILED;
+        }
 # endif /* RT_OS_SOLARIS */
         pid = fork();
         if (!pid)
         {
 # ifdef RT_OS_SOLARIS
-            rtSolarisContractPostForkChild(templateFd);
+            if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+                rtSolarisContractPostForkChild(templateFd);
 # endif /* RT_OS_SOLARIS */
             setsid(); /* see comment above */
 
@@ -373,7 +378,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         else
         {
 #ifdef RT_OS_SOLARIS
-            rtSolarisContractPostForkParent(templateFd, pid);
+            if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+                rtSolarisContractPostForkParent(templateFd, pid);
 #endif /* RT_OS_SOLARIS */
             if (pid > 0)
             {
@@ -656,6 +662,9 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
 
     /* Create new session, fix up the standard file descriptors and the
      * current working directory. */
+    /** @todo r=klaus the webservice uses this function and assumes that the
+     * contract id of the daemon is the same as that of the original process.
+     * Whenever this code is changed this must still remain possible. */
     pid_t newpgid = setsid();
     int SavedErrno = errno;
     if (rcSigAct != -1)

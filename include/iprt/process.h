@@ -193,6 +193,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * because of the so called "Session 0" isolation which was
  * introduced with Windows Vista. */
 #define RTPROC_FLAGS_SERVICE                RT_BIT(2)
+/** Suppress changing the process contract id for the child process
+ * on Solaris. Without this flag the contract id is always changed,
+ * as that's the more frequently used case. */
+#define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
 /** @}  */
 
 
