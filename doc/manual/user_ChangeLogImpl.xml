@@ -89,6 +89,10 @@
       </listitem>
 
       <listitem>
+        <para>Main: fixed problems with snapshots and non-ASCII characters in machine paths (bug #8024)</para>
+      </listitem>
+
+      <listitem>
         <para>Webservice: now listens to localhost by default as documented
           (bug #6067)</para>
       </listitem>
