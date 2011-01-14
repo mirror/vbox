@@ -477,7 +477,7 @@ static DECLCALLBACK(int) drvHostBaseMount(PPDMIMOUNT pInterface, const char *psz
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce)
+static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
      LogFlow(("drvHostBaseUnmount: returns VERR_NOT_SUPPORTED\n"));
      return VERR_NOT_SUPPORTED;

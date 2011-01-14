@@ -2710,10 +2710,13 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                         PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
                         AssertReturn(pIMount, VERR_INVALID_POINTER);
 
-                        /* Unmount the media. */
-                        rc = pIMount->pfnUnmount(pIMount, fForceUnmount);
+                        /* Unmount the media (but do not eject the medium!) */
+                        rc = pIMount->pfnUnmount(pIMount, fForceUnmount, false /*=fEject*/);
                         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
                             rc = VINF_SUCCESS;
+                        /* for example if the medium is locked */
+                        else if (RT_FAILURE(rc))
+                            return rc;
                     }
                 }
 

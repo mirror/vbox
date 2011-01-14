@@ -624,7 +624,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
+static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
     PDRVBLOCK pThis = PDMIMOUNT_2_DRVBLOCK(pInterface);
 
