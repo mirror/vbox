@@ -281,7 +281,7 @@ void UISession::powerUp()
                  : "disabled"));
 #endif
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
     vboxGlobal().createPidfile();
 #endif
 
