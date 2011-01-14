@@ -184,9 +184,9 @@ public:
     /**
      * String length in bytes.
      *
-     * Returns the length of the member string, which is equal to strlen(c_str()).
-     * In other words, this does not count unicode codepoints but returns the number
-     * of bytes.  This is always cached so calling this is cheap and requires no
+     * Returns the length of the member string in bytes, which is equal to strlen(c_str()).
+     * In other words, this does not count unicode codepoints; use utf8length() for that.
+     * The byte length is always cached so calling this is cheap and requires no
      * strlen() invocation.
      *
      * @returns m_cbLength.
@@ -194,6 +194,19 @@ public:
     size_t length() const
     {
         return m_cch;
+    }
+
+    /**
+     * String length in UTF-8 codepoints.
+     *
+     * As opposed to length(), which returns the length in bytes, this counts the number
+     * of UTF-8 codepoints. This is *not* cached so calling this is expensive.
+     *
+     * @returns Number of codepoints in the member string.
+     */
+    size_t utf8length() const
+    {
+        return m_psz ? RTStrUniLen(m_psz) : 0;
     }
 
     /**
@@ -651,8 +664,8 @@ public:
     /**
      * Find the given substring.
      *
-     * Looks for pcszFind in "this" starting at "pos" and returns its position,
-     * counting from the beginning of "this" at 0.
+     * Looks for pcszFind in "this" starting at "pos" and returns its position
+     * as a byte (not codepoint) offset, counting from the beginning of "this" at 0.
      *
      * @param   pcszFind        The substring to find.
      * @param   pos             The (byte) offset into the string buffer to start
@@ -675,9 +688,25 @@ public:
     /**
      * Returns a substring of "this" as a new Utf8Str.
      *
-     * Works exactly like its equivalent in std::string except that this interprets
-     * pos and n as unicode codepoints instead of bytes.  With the default
-     * parameters "0" and "npos", this always copies the entire string.
+     * Works exactly like its equivalent in std::string. With the default
+     * parameters "0" and "npos", this always copies the entire string. The
+     * "pos" and "n" arguments represent bytes; it is the caller's responsibility
+     * to ensure that the offsets do not copy invalid UTF-8 sequences. When
+     * used in conjunction with find() and length(), this will work.
+     *
+     * @param   pos             Index of first byte offset to copy from "this", counting from 0.
+     * @param   n               Number of bytes to copy, starting with the one at "pos".
+     *                          The copying will stop if the null terminator is encountered before
+     *                          n bytes have been copied.
+     */
+    iprt::MiniString substr(size_t pos = 0, size_t n = npos) const
+    {
+        return MiniString(*this, pos, n);
+    }
+
+    /**
+     * Returns a substring of "this" as a new Utf8Str. As opposed to substr(),
+     * this variant takes codepoint offsets instead of byte offsets.
      *
      * @param   pos             Index of first unicode codepoint to copy from
      *                          "this", counting from 0.
@@ -685,10 +714,8 @@ public:
      *                          the one at "pos".  The copying will stop if the null
      *                          terminator is encountered before n codepoints have
      *                          been copied.
-     *
-     * @remarks This works on code points, not bytes!
      */
-    iprt::MiniString substr(size_t pos = 0, size_t n = npos) const;
+    iprt::MiniString substrCP(size_t pos = 0, size_t n = npos) const;
 
     /**
      * Returns true if "this" ends with "that".
