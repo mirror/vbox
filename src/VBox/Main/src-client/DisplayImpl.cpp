@@ -349,6 +349,9 @@ Display::displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
         SSMR3PutU32(pSSM, that->maFramebuffers[i].u32InformationSize);
         SSMR3PutU32(pSSM, that->maFramebuffers[i].w);
         SSMR3PutU32(pSSM, that->maFramebuffers[i].h);
+        SSMR3PutS32(pSSM, that->maFramebuffers[i].xOrigin);
+        SSMR3PutS32(pSSM, that->maFramebuffers[i].yOrigin);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].flags);
     }
 }
 
@@ -358,7 +361,8 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
     Display *that = static_cast<Display*>(pvUser);
 
     if (!(   uVersion == sSSMDisplayVer
-          || uVersion == sSSMDisplayVer2))
+          || uVersion == sSSMDisplayVer2
+          || uVersion == sSSMDisplayVer3))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -372,7 +376,8 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32Offset);
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
-        if (uVersion == sSSMDisplayVer2)
+        if (   uVersion == sSSMDisplayVer2
+            || uVersion == sSSMDisplayVer3)
         {
             uint32_t w;
             uint32_t h;
@@ -380,6 +385,18 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
             SSMR3GetU32(pSSM, &h);
             that->maFramebuffers[i].w = w;
             that->maFramebuffers[i].h = h;
+        }
+        if (uVersion == sSSMDisplayVer3)
+        {
+            int32_t xOrigin;
+            int32_t yOrigin;
+            uint32_t flags;
+            SSMR3GetS32(pSSM, &xOrigin);
+            SSMR3GetS32(pSSM, &yOrigin);
+            SSMR3GetU32(pSSM, &flags);
+            that->maFramebuffers[i].xOrigin = xOrigin;
+            that->maFramebuffers[i].yOrigin = yOrigin;
+            that->maFramebuffers[i].flags = (uint16_t)flags;
         }
     }
 
@@ -427,6 +444,8 @@ HRESULT Display::init (Console *aParent)
 
         maFramebuffers[ul].w = 0;
         maFramebuffers[ul].h = 0;
+
+        maFramebuffers[ul].flags = 0;
 
         maFramebuffers[ul].u16BitsPerPixel = 0;
         maFramebuffers[ul].pu8FramebufferVRAM = NULL;
@@ -503,16 +522,19 @@ void Display::uninit()
  */
 int Display::registerSSM(PVM pVM)
 {
-    /* Newest version adds width and height of the framebuffer */
-    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer2,
-                                   mcMonitors * sizeof(uint32_t) * 5 + sizeof(uint32_t),
+    /* Version 2 adds width and height of the framebuffer; version 3 adds
+     * the framebuffer offset in the virtual desktop and the framebuffer flags.
+     */
+    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer3,
+                                   mcMonitors * sizeof(uint32_t) * 8 + sizeof(uint32_t),
                                    NULL, NULL, NULL,
                                    NULL, displaySSMSave, NULL,
                                    NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
     /*
-     * Register loaders for old saved states where iInstance was 3 * sizeof(uint32_t *).
+     * Register loaders for old saved states where iInstance was
+     * 3 * sizeof(uint32_t *) due to a code mistake.
      */
     rc = SSMR3RegisterExternal(pVM, "DisplayData", 12 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,

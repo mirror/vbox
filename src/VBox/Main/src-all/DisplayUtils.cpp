@@ -163,7 +163,8 @@ int readSavedGuestSize(const Utf8Str &strStateFilePath, uint32_t u32ScreenId, ui
         if (RT_SUCCESS(vrc))
         {
             /* Only the second version is supported. */
-            if (uVersion == sSSMDisplayVer2)
+            if (   uVersion == sSSMDisplayVer2
+                || uVersion == sSSMDisplayVer3)
             {
                 uint32_t cMonitors;
                 SSMR3GetU32(pSSM, &cMonitors);
