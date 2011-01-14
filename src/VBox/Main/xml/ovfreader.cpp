@@ -750,11 +750,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         i.strAddressOnParent.toInt(vd.ulAddressOnParent);
                         // ovf://disk/lamp
                         // 123456789012345
-                        if (i.strHostResource.substr(0, 11) == "ovf://disk/")
+                        if (i.strHostResource.startsWith("ovf://disk/"))
                             vd.strDiskId = i.strHostResource.substr(11);
-                        else if (i.strHostResource.substr(0, 10) == "ovf:/disk/")
+                        else if (i.strHostResource.startsWith("ovf:/disk/"))
                             vd.strDiskId = i.strHostResource.substr(10);
-                        else if (i.strHostResource.substr(0, 6) == "/disk/")
+                        else if (i.strHostResource.startsWith("/disk/"))
                             vd.strDiskId = i.strHostResource.substr(6);
 
                         if (    !(vd.strDiskId.length())
