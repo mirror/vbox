@@ -827,22 +827,45 @@ static void __exit VBoxNetFltLinuxUnload(void)
  */
 #ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+
+# include <linux/ethtool.h>
+
+typedef struct ethtool_ops OVR_OPSTYPE;
+# define OVR_OPS  ethtool_ops
+# define OVR_XMIT pfnStartXmit
+
+# else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
+
+typedef struct net_device_ops OVR_OPSTYPE;
+# define OVR_OPS  netdev_ops
+# define OVR_XMIT pOrgOps->ndo_start_xmit
+
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
+
 /**
  * The overridden net_device_ops of the device we're attached to.
  *
- * Requires Linux 2.6.29 or later.
+ * As there is no net_device_ops structure in pre-2.6.29 kernels we override
+ * ethtool_ops instead along with hard_start_xmit callback in net_device
+ * structure.
  *
- * This is a very dirty hack that was create to explore how much we can improve
- * the host to guest transfers by not CC'ing the NIC.
+ * This is a very dirty hack that was created to explore how much we can improve
+ * the host to guest transfers by not CC'ing the NIC. It turns out to be
+ * the only way to filter outgoing packets for devices without TX queue.
  */
 typedef struct VBoxNetDeviceOpsOverride
 {
     /** Our overridden ops. */
-    struct net_device_ops           Ops;
+    OVR_OPSTYPE                     Ops;
     /** Magic word. */
     uint32_t                        u32Magic;
     /** Pointer to the original ops. */
-    struct net_device_ops const    *pOrgOps;
+    OVR_OPSTYPE const              *pOrgOps;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+    /** Pointer to the original hard_start_xmit function. */
+    int (*pfnStartXmit)(struct sk_buff *pSkb, struct net_device *pDev);
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
     /** Pointer to the net filter instance. */
     PVBOXNETFLTINS                  pVBoxNetFlt;
     /** The number of filtered packages. */
@@ -863,7 +886,7 @@ typedef struct VBoxNetDeviceOpsOverride
  */
 static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_device *pDev)
 {
-    PVBOXNETDEVICEOPSOVERRIDE   pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
+    PVBOXNETDEVICEOPSOVERRIDE   pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->OVR_OPS;
     uint8_t                     abHdrBuf[sizeof(RTNETETHERHDR) + sizeof(uint32_t) + RTNETIPV4_MIN_LEN];
     PCRTNETETHERHDR             pEtherHdr;
     PINTNETTRUNKSWPORT          pSwitchPort;
@@ -915,7 +938,7 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
         }
     }
 
-    return pOverride->pOrgOps->ndo_start_xmit(pSkb, pDev);
+    return pOverride->OVR_XMIT(pSkb, pDev);
 }
 
 /**
@@ -932,16 +955,23 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     pOverride = RTMemAlloc(sizeof(*pOverride));
     if (!pOverride)
         return;
-    pOverride->pOrgOps              = pDev->netdev_ops;
-    pOverride->Ops                  = *pDev->netdev_ops;
+    pOverride->pOrgOps              = pDev->OVR_OPS;
+    pOverride->Ops                  = *pDev->OVR_OPS;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+    pOverride->pfnStartXmit         = pDev->hard_start_xmit;
+# else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
     pOverride->Ops.ndo_start_xmit   = vboxNetFltLinuxStartXmitFilter;
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
     pOverride->u32Magic             = VBOXNETDEVICEOPSOVERRIDE_MAGIC;
     pOverride->cTotal               = 0;
     pOverride->cFiltered            = 0;
     pOverride->pVBoxNetFlt          = pThis;
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
-    ASMAtomicWritePtr((void * volatile *)&pDev->netdev_ops, pOverride);
+    ASMAtomicWritePtr((void * volatile *)&pDev->OVR_OPS, pOverride);
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+    ASMAtomicXchgPtr((void * volatile *)&pDev->hard_start_xmit, vboxNetFltLinuxStartXmitFilter);
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 }
 
@@ -962,13 +992,16 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
         pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (VALID_PTR(pDev))
     {
-        pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
+        pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->OVR_OPS;
         if (    VALID_PTR(pOverride)
             &&  pOverride->u32Magic == VBOXNETDEVICEOPSOVERRIDE_MAGIC
             &&  VALID_PTR(pOverride->pOrgOps)
            )
         {
-            ASMAtomicWritePtr((void * volatile *)&pDev->netdev_ops, pOverride->pOrgOps);
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+            ASMAtomicWritePtr((void * volatile *)&pDev->hard_start_xmit, pOverride->pfnStartXmit);
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+            ASMAtomicWritePtr((void * volatile *)&pDev->OVR_OPS, pOverride->pOrgOps);
             ASMAtomicWriteU32(&pOverride->u32Magic, 0);
         }
         else
