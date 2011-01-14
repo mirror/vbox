@@ -51,6 +51,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: don't eject the physical medium if a DVD/CDROM/floppy drive is
+          detached from a VM (bug #5825)</para>
+      </listitem>
+
+      <listitem>
         <para>Parallels: fixed deletion of the image during suspend, pause or power off</para>
       </listitem>
 
