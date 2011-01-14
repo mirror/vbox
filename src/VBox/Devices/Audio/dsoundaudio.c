@@ -234,9 +234,6 @@ static void dsound_log_hresult (HRESULT hr)
     }
 
     AUD_log (AUDIO_CAP, "Reason: %s\n", str);
-#ifdef VBOX
-    LogRel(("DSound: Reason: %s\n", str));
-#endif
 }
 
 static void GCC_FMT_ATTR (2, 3) dsound_logerr (
@@ -717,6 +714,11 @@ static int dsound_run_out (HWVoiceOut *hw)
         &ppos,
         ds->first_time ? &wpos : NULL
         );
+    if (hr == DSERR_BUFFERLOST) {
+        if (dsound_restore_out(dsb))
+            return 0;
+        hr = IDirectSoundBuffer_GetCurrentPosition(dsb, &ppos, ds->first_time ? &wpos : NULL);
+    }
     if (FAILED (hr)) {
         dsound_logerr (hr, "Could not get playback buffer position\n");
         return 0;
