@@ -47,7 +47,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # VBoxDDU (shared object)
  #
- VBoxDDU_TEMPLATE         = VBOXR3
+ VBoxDDU_TEMPLATE         = VBoxR3DllWarnNoPic
  VBoxDDU_NAME             = $(basename $(notdir $(LIB_DDU)))
  VBoxDDU_INST.darwin      = $(INST_DLL) $(INST_TESTCASE)
  VBoxDDU_DEFS             = IN_VBOXDDU
@@ -112,7 +112,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # VBoxDD (shared object)
  #
- VBoxDD_TEMPLATE         = VBOXR3
+ VBoxDD_TEMPLATE         = VBoxR3DllWarnNoPic
  VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
  VBoxDD_INCS             = build
  VBoxDD_SOURCES          = \
@@ -222,7 +222,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # VBoxDD2 (shared object)
  #
- VBoxDD2_TEMPLATE        = VBOXR3
+ VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
  VBoxDD2_DEFS            = IN_VBOXDD2
  VBoxDD2_INCS           := \
 	build \
@@ -254,7 +254,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # DevicesR3 (library)
  #
- DevicesR3_TEMPLATE      = VBOXR3
+ DevicesR3_TEMPLATE      = VBoxR3DllWarnNoPic
  DevicesR3_SDKS.win      = WINPSDK W2K3DDK
  DevicesR3_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
  DevicesR3_DEFS         += \
@@ -776,7 +776,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifeq ($(KBUILD_TARGET),l4) # We are using real Linux headers, not the cleaned up user space ones
  Drivers_TEMPLATE   = VBOXR3NP
  else
- Drivers_TEMPLATE   = VBOXR3
+ Drivers_TEMPLATE   = VBoxR3DllWarnNoPic
  endif
  Drivers_SDKS.win   = WINPSDK W2K3DDK
  Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK

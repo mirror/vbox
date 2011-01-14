@@ -177,7 +177,7 @@ ifdef VBOX_REM_WRAPPER
  # VBoxREM - Wrapper for loading VBoxREM2, VBoxREM32 or VBoxREM64.
  #
  DLLS += VBoxREMWrapper
- VBoxREMWrapper_TEMPLATE   = VBOXR3
+ VBoxREMWrapper_TEMPLATE   = VBoxR3DllWarnNoPic
  VBoxREMWrapper_NAME       = VBoxREM
  VBoxREMWrapper_DEFS       = IN_REM_R3
  if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
@@ -212,7 +212,7 @@ endif
 # won't be built until after all the other DLLs.
 #
 IMPORT_LIBS += VBoxREMImp
-VBoxREMImp_TEMPLATE        = VBOXR3
+VBoxREMImp_TEMPLATE        = VBoxR3Dll
  ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_NAME            = VBoxREM
  endif
