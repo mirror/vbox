@@ -6189,7 +6189,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         Utf8Str targetFormat(pTarget->m->strFormat);
         Utf8Str targetLocation(pTarget->m->strLocationFull);
-        uint64_t capabilities = m->formatObj->getCapabilities();
+        uint64_t capabilities = pTarget->m->formatObj->getCapabilities();
         ComAssertThrow(capabilities & VD_CAP_CREATE_DYNAMIC, E_FAIL);
 
         Assert(pTarget->m->state == MediumState_Creating);
