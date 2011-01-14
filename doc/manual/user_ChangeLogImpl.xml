@@ -29,6 +29,10 @@
       </listitem>
 
       <listitem>
+        <para>ExtPack: fixed SELinux issues on 32-bit Linux hosts</para>
+      </listitem>
+
+      <listitem>
         <para>ICH9: fixed VM crash (software virtualization only; bug #7885)</para>
       </listitem>
 
