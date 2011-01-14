@@ -410,10 +410,10 @@ void AUD_vlog (const char *cap, const char *fmt, va_list va)
     va_list va2;
     va_copy (va2, va); /* Have to make a copy here or GCC will break. */
     if (cap) {
-        Log (("%s: %N", cap, fmt, &va2));
+        LogRel (("%s: %N", cap, fmt, &va2));
     }
     else {
-        Log (("%N", fmt, &va2));
+        LogRel (("%N", fmt, &va2));
     }
     va_end (va2);
 }
