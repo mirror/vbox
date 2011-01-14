@@ -65,9 +65,9 @@
 #include <QHelpEvent>
 #include <QLocale>
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
 # include <QTextStream>
-#endif /* VBOX_WITH_PIDFILE */
+#endif /* VBOX_GUI_WITH_PIDFILE */
 
 #include <math.h>
 
@@ -448,7 +448,7 @@ UIMachine* VBoxGlobal::virtualMachine()
     return m_pVirtualMachine;
 }
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
 void VBoxGlobal::createPidfile()
 {
     if (!m_strPidfile.isEmpty())
@@ -5034,13 +5034,13 @@ void VBoxGlobal::init()
                 startVM = true;
             }
         }
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
         {
             if (++i < argc)
                 m_strPidfile = QString(qApp->argv()[i]);
         }
-#endif /* VBOX_WITH_PIDFILE */
+#endif /* VBOX_GUI_WITH_PIDFILE */
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
         {
             bForceSeamless = true;
@@ -5209,7 +5209,7 @@ void VBoxGlobal::cleanup()
     }
 #endif
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
     deletePidfile();
 #endif
 

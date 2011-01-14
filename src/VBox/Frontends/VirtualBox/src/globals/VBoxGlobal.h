@@ -146,7 +146,7 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
     void createPidfile();
     void deletePidfile();
 #endif
@@ -867,7 +867,7 @@ private:
 
     QFileIconProvider m_globalIconProvider;
 
-#ifdef VBOX_WITH_PIDFILE
+#ifdef VBOX_GUI_WITH_PIDFILE
     QString m_strPidfile;
 #endif
 

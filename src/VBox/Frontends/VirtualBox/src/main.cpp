@@ -259,7 +259,7 @@ static void showHelp()
             "  --fullscreen               switch to fullscreen mode during startup\n"
             "  --rmode %-18s select different render mode (default is %s)\n"
             "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
-# ifdef VBOX_WITH_PIDFILE
+# ifdef VBOX_GUI_WITH_PIDFILE
             "  --pid-file file            create a pidfile file when a VM is up and running\n"
 # endif
 # ifdef VBOX_WITH_DEBUGGER_GUI
