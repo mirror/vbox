@@ -290,6 +290,10 @@ endif
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
 	$(VBOXWEB_OUT_DIR)/soapServer.cpp
 
+ vboxweb.cpp_DEFS = \
+	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
+	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
+
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
 

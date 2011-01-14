@@ -29,6 +29,8 @@
 #include <VBox/VBoxAuth.h>
 #include <VBox/version.h>
 
+#include <package-generated.h>
+
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/getopt.h>
@@ -41,6 +43,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <iprt/path.h>
+#include <iprt/system.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -106,6 +110,7 @@ unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker th
 unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
 bool                    g_fVerbose = false;             // be verbose
+bool                    g_fStdOutLogging = true;        // log to stdout
 PRTSTREAM               g_pStrmLog = NULL;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -260,7 +265,7 @@ public:
                SoapQ &q,
                const struct soap *soap)
         : m_u(u),
-          m_strThread(com::Utf8StrFmt("SoapQWrk%02d", m_u)),
+          m_strThread(com::Utf8StrFmt("SQW%02d", m_u)),
           m_pQ(&q)
     {
         // make a copy of the soap struct for the new thread
@@ -565,41 +570,48 @@ void WebLog(const char *pszFormat, ...)
     RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
 
-    const char *pcszPrefix = "[   ]";
-    util::AutoReadLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
-    ThreadsMap::iterator it = g_mapThreads.find(RTThreadSelf());
-    if (it != g_mapThreads.end())
-        pcszPrefix = it->second.c_str();
-    thrLock.release();
-
-    // make a timestamp
-    RTTIMESPEC ts;
-    RTTimeLocalNow(&ts);
-    RTTIME t;
-    RTTimeExplode(&t, &ts);
-
-    com::Utf8StrFmt strPrefix("%04d-%02d-%02d %02d:%02d:%02d %s",
-                              t.i32Year, t.u8Month, t.u8MonthDay,
-                              t.u8Hour, t.u8Minute, t.u8Second,
-                              pcszPrefix);
-
-    // synchronize the actual output
-    util::AutoWriteLock logLock(g_pWebLogLockHandle COMMA_LOCKVAL_SRC_POS);
-    // terminal
-    RTPrintf("%s %s", strPrefix.c_str(), psz);
-
-    // log file
-    if (g_pStrmLog)
+    if (g_fStdOutLogging || g_pStrmLog)
     {
-        RTStrmPrintf(g_pStrmLog, "%s %s", strPrefix.c_str(), psz);
-        RTStrmFlush(g_pStrmLog);
-    }
+        const char *pcszPrefix = "[   ]";
+        util::AutoReadLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
+        ThreadsMap::iterator it = g_mapThreads.find(RTThreadSelf());
+        if (it != g_mapThreads.end())
+            pcszPrefix = it->second.c_str();
+        thrLock.release();
+
+        // make a timestamp
+        RTTIMESPEC ts;
+        RTTimeLocalNow(&ts);
+        RTTIME t;
+        RTTimeExplode(&t, &ts);
+
+        com::Utf8StrFmt strPrefix("%04d-%02d-%02d %02d:%02d:%02d %s",
+                                  t.i32Year, t.u8Month, t.u8MonthDay,
+                                  t.u8Hour, t.u8Minute, t.u8Second,
+                                  pcszPrefix);
+
+        // synchronize the actual output
+        util::AutoWriteLock logLock(g_pWebLogLockHandle COMMA_LOCKVAL_SRC_POS);
+        // terminal
+        if (g_fStdOutLogging)
+            RTPrintf("%s %s", strPrefix.c_str(), psz);
+
+        // log file
+        if (g_pStrmLog)
+        {
+            RTStrmPrintf(g_pStrmLog, "%s %s", strPrefix.c_str(), psz);
+            RTStrmFlush(g_pStrmLog);
+        }
 
 #ifdef DEBUG
-    // logger instance
-    RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s %s", pcszPrefix, psz);
+        // debug logger instance
+        RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s %s", pcszPrefix, psz);
 #endif
-    logLock.release();
+
+        logLock.release();
+    }
+
+    LogRel(("%s", psz));
 
     RTStrFree(psz);
 }
@@ -798,9 +810,84 @@ int main(int argc, char *argv[])
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (g_fDaemonize)
     {
+        /* prepare release logging */
+        char szLogFile[RTPATH_MAX];
+
+        rc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+        if (RT_FAILURE(rc))
+             return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not get base directory for logging: %Rrc", rc);
+        rc = RTPathAppend(szLogFile, sizeof(szLogFile), "vboxwebsrv.log");
+        if (RT_FAILURE(rc))
+             return RTMsgErrorExit(RTEXITCODE_FAILURE, "could not construct logging path: %Rrc", rc);
+
         rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
+
+        /* From now on it's a waste of CPU cycles to send logging to stdout. */
+        g_fStdOutLogging = false;
+
+        /* create release logger */
+        PRTLOGGER loggerRelease;
+        static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+        RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+        char szError[RTPATH_MAX + 128] = "";
+        int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
+                                "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                                RTLOGDEST_FILE, szError, sizeof(szError), szLogFile);
+        if (RT_SUCCESS(vrc))
+        {
+            /* some introductory information */
+            RTTIMESPEC timeSpec;
+            char szTmp[256];
+            RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
+            RTLogRelLogger(loggerRelease, 0, ~0U,
+                           "VirtualBox web service %s r%u %s (%s %s) release log\n"
+#ifdef VBOX_BLEEDING_EDGE
+                           "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
+#endif
+                           "Log opened %s\n",
+                           VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
+                           __DATE__, __TIME__, szTmp);
+
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Version: %s\n", szTmp);
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            RTLogRelLogger(loggerRelease, 0, ~0U,
+                           "Executable: %s\n"
+                           "Process ID: %u\n"
+                           "Package type: %s"
+#ifdef VBOX_OSE
+                           " (OSE)"
+#endif
+                           "\n",
+                           pszExecName ? pszExecName : "unknown",
+                           RTProcSelf(),
+                           VBOX_PACKAGE_STRING);
+
+            /* register this logger as the release logger */
+            RTLogRelSetDefaultInstance(loggerRelease);
+
+            /* Explicitly flush the log in case of VBOXWEBSRV_RELEASE_LOG=buffered. */
+            RTLogFlush(loggerRelease);
+        }
+        else
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
     }
 #endif
 
@@ -856,7 +943,7 @@ int main(int argc, char *argv[])
                         0,           // cbStack (default)
                         RTTHREADTYPE_MAIN_WORKER,
                         0,           // flags
-                        "SoapQPumper");
+                        "SQPmp");
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start SOAP queue pumper thread: %Rrc", rc);
 
