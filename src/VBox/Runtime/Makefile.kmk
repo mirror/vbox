@@ -1159,7 +1159,7 @@ RuntimeLnxHostR3_INCS          = \
 #
 # VBoxRT - Shared Object / DLL version.
 #
-VBoxRT_TEMPLATE                = VBoxR3Dll
+VBoxRT_TEMPLATE                = VBoxR3DllNoPic
 VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL

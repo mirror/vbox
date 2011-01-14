@@ -201,7 +201,7 @@ if defined(VBOX_USE_REM2) || defined(VBOX_USE_REM64)
 # The VBoxREM2, VBoxREM32 and VBoxREM64 wrapper.
 #
 DLLS += VBoxREMWrapper
-VBoxREMWrapper_TEMPLATE    = VBOXR3
+VBoxREMWrapper_TEMPLATE    = VBoxR3DllWarnNoPic
 VBoxREMWrapper_NAME        = VBoxREM
 VBoxREMWrapper_DEFS        = IN_REM_R3
  ifdef VBOX_USE_REM64
@@ -256,7 +256,7 @@ endif # USE_VBOXREM64
 # won't be built until after all the other DLLs.
 #
 IMPORT_LIBS += VBoxREMImp
-VBoxREMImp_TEMPLATE        = VBOXR3
+VBoxREMImp_TEMPLATE        = VBoxR3Dll
  ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_NAME            = VBoxREM
  endif
