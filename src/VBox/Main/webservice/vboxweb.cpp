@@ -28,6 +28,7 @@
 #include <VBox/com/listeners.h>
 #include <VBox/VBoxAuth.h>
 #include <VBox/version.h>
+#include <VBox/log.h>
 
 #include <package-generated.h>
 
