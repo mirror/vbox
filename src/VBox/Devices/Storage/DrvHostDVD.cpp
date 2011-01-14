@@ -126,101 +126,104 @@ static int solarisExitRootMode(uid_t *pEffUserID);
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
+static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
-     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
-     RTCritSectEnter(&pThis->CritSect);
+    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    RTCritSectEnter(&pThis->CritSect);
 
-     /*
-      * Validate state.
-      */
-     int rc = VINF_SUCCESS;
-     if (!pThis->fLocked || fForce)
-     {
+    /*
+     * Validate state.
+     */
+    int rc = VINF_SUCCESS;
+    if (!pThis->fLocked || fForce)
+    {
         /* Unlock drive if necessary. */
         if (pThis->fLocked)
             drvHostDvdDoLock(pThis, false);
 
-         /*
-          * Eject the disc.
-          */
+        if (fEject)
+        {
+            /*
+             * Eject the disc.
+             */
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-         uint8_t abCmd[16] =
-         {
-             SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
-             0,0,0,0,0,0,0,0,0,0
-         };
-         rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
+            uint8_t abCmd[16] =
+            {
+                SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
+                0,0,0,0,0,0,0,0,0,0
+            };
+            rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
-         rc = ioctl(pThis->FileDevice, CDROMEJECT, 0);
-         if (rc < 0)
-         {
-             if (errno == EBUSY)
-                 rc = VERR_PDM_MEDIA_LOCKED;
-             else if (errno == ENOSYS)
-                 rc = VERR_NOT_SUPPORTED;
-             else
-                 rc = RTErrConvertFromErrno(errno);
-         }
+            rc = ioctl(pThis->FileDevice, CDROMEJECT, 0);
+            if (rc < 0)
+            {
+                if (errno == EBUSY)
+                    rc = VERR_PDM_MEDIA_LOCKED;
+                else if (errno == ENOSYS)
+                    rc = VERR_NOT_SUPPORTED;
+                else
+                    rc = RTErrConvertFromErrno(errno);
+            }
 
 #elif defined(RT_OS_SOLARIS)
-        rc = ioctl(pThis->FileRawDevice, DKIOCEJECT, 0);
-        if (rc < 0)
-        {
-            if (errno == EBUSY)
-                rc = VERR_PDM_MEDIA_LOCKED;
-            else if (errno == ENOSYS || errno == ENOTSUP)
-                rc = VERR_NOT_SUPPORTED;
-            else if (errno == ENODEV)
-                rc = VERR_PDM_MEDIA_NOT_MOUNTED;
-            else
-                rc = RTErrConvertFromErrno(errno);
-        }
+            rc = ioctl(pThis->FileRawDevice, DKIOCEJECT, 0);
+            if (rc < 0)
+            {
+                if (errno == EBUSY)
+                    rc = VERR_PDM_MEDIA_LOCKED;
+                else if (errno == ENOSYS || errno == ENOTSUP)
+                    rc = VERR_NOT_SUPPORTED;
+                else if (errno == ENODEV)
+                    rc = VERR_PDM_MEDIA_NOT_MOUNTED;
+                else
+                    rc = RTErrConvertFromErrno(errno);
+            }
 
 #elif defined(RT_OS_WINDOWS)
-         RTFILE FileDevice = pThis->FileDevice;
-         if (FileDevice == NIL_RTFILE) /* obsolete crap */
-             rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-         if (RT_SUCCESS(rc))
-         {
-             /* do ioctl */
-             DWORD cbReturned;
-             if (DeviceIoControl((HANDLE)FileDevice, IOCTL_STORAGE_EJECT_MEDIA,
-                                 NULL, 0,
-                                 NULL, 0, &cbReturned,
-                                 NULL))
-                 rc = VINF_SUCCESS;
-             else
-                 rc = RTErrConvertFromWin32(GetLastError());
+            RTFILE FileDevice = pThis->FileDevice;
+            if (FileDevice == NIL_RTFILE) /* obsolete crap */
+                rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            if (RT_SUCCESS(rc))
+            {
+                /* do ioctl */
+                DWORD cbReturned;
+                if (DeviceIoControl((HANDLE)FileDevice, IOCTL_STORAGE_EJECT_MEDIA,
+                                    NULL, 0,
+                                    NULL, 0, &cbReturned,
+                                    NULL))
+                    rc = VINF_SUCCESS;
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
 
-             /* clean up handle */
-             if (FileDevice != pThis->FileDevice)
-                 RTFileClose(FileDevice);
-         }
-         else
-             AssertMsgFailed(("Failed to open '%s' for ejecting this tray.\n",  rc));
+                /* clean up handle */
+                if (FileDevice != pThis->FileDevice)
+                    RTFileClose(FileDevice);
+            }
+            else
+                AssertMsgFailed(("Failed to open '%s' for ejecting this tray.\n",  rc));
 
 
 #else
-         AssertMsgFailed(("Eject is not implemented!\n"));
-         rc = VINF_SUCCESS;
+            AssertMsgFailed(("Eject is not implemented!\n"));
+            rc = VINF_SUCCESS;
 #endif
+        }
 
-         /*
-          * Media is no longer present.
-          */
-         DRVHostBaseMediaNotPresent(pThis);  /** @todo This isn't thread safe! */
-     }
-     else
-     {
-         Log(("drvHostDvdUnmount: Locked\n"));
-         rc = VERR_PDM_MEDIA_LOCKED;
-     }
+        /*
+         * Media is no longer present.
+         */
+        DRVHostBaseMediaNotPresent(pThis);  /** @todo This isn't thread safe! */
+    }
+    else
+    {
+        Log(("drvHostDvdUnmount: Locked\n"));
+        rc = VERR_PDM_MEDIA_LOCKED;
+    }
 
-     RTCritSectLeave(&pThis->CritSect);
-     LogFlow(("drvHostDvdUnmount: returns %Rrc\n", rc));
-     return rc;
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlow(("drvHostDvdUnmount: returns %Rrc\n", rc));
+    return rc;
 }
 
 

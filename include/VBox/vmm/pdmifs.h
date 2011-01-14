@@ -1081,9 +1081,10 @@ typedef struct PDMIMOUNT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @thread  The emulation thread.
      * @param   fForce          Force the unmount, even for locked media.
+     * @param   fEject          Eject the medium. Only relevant for host drives.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnUnmount,(PPDMIMOUNT pInterface, bool fForce));
+    DECLR3CALLBACKMEMBER(int, pfnUnmount,(PPDMIMOUNT pInterface, bool fForce, bool fEject));
 
     /**
      * Checks if a media is mounted.
@@ -1124,7 +1125,7 @@ typedef struct PDMIMOUNT
     DECLR3CALLBACKMEMBER(bool, pfnIsLocked,(PPDMIMOUNT pInterface));
 } PDMIMOUNT;
 /** PDMIMOUNT interface ID. */
-#define PDMIMOUNT_IID                           "8e5a009a-6032-4ca1-9d86-a388d8eaf926"
+#define PDMIMOUNT_IID                           "34fc7a4c-623a-4806-a6bf-5be1be33c99f"
 
 
 /**

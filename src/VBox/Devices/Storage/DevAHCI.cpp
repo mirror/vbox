@@ -4038,7 +4038,8 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
                             PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
 
                             rc2 = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
-                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 2, pAhciPort->pDrvMount, false);
+                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
+                                                  pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
                             Assert(RT_SUCCESS(rc2) || (rc == VERR_PDM_MEDIA_LOCKED));
                         }
                         break;
