@@ -718,6 +718,8 @@ static int dsound_run_out (HWVoiceOut *hw)
         if (dsound_restore_out(dsb))
             return 0;
         hr = IDirectSoundBuffer_GetCurrentPosition(dsb, &ppos, ds->first_time ? &wpos : NULL);
+        if (hr == DSERR_BUFFERLOST)
+            return 0;   // Avoid log flooding if the error is still there.
     }
     if (FAILED (hr)) {
         dsound_logerr (hr, "Could not get playback buffer position\n");
