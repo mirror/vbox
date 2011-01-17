@@ -1052,103 +1052,14 @@ STDMETHODIMP MachineDebugger::DetectOS(BSTR *a_pbstrName)
  * @param   a_pValue            The value to format.
  * @param   a_enmType           The type of the value.
  */
-static HRESULT formatRegisterValue(Bstr *a_pbstr, PCDBGFREGVAL a_pValue, DBGFREGVALTYPE a_enmType)
+DECLINLINE(HRESULT) formatRegisterValue(Bstr *a_pbstr, PCDBGFREGVAL a_pValue, DBGFREGVALTYPE a_enmType)
 {
-    char szHex[128]; /* Must be big because RTStrFormatNumber is unsafe. */
-
-    switch (a_enmType)
-    {
-        case DBGFREGVALTYPE_U8:
-            RTStrFormatNumber(szHex, a_pValue->u8,  16,  2+2, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_8BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_U16:
-            RTStrFormatNumber(szHex, a_pValue->u16, 16,  2+4, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_16BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_U32:
-            RTStrFormatNumber(szHex, a_pValue->u32, 16,  2+8, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_U64:
-            RTStrFormatNumber(szHex, a_pValue->u64, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_U128:
-            RTStrFormatNumber(szHex, a_pValue->au64[1], 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-            RTStrFormatNumber(&szHex[2+16], a_pValue->au64[0], 16, 16, 0, RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_R80:
-        {
-            char *pszHex = szHex;
-            if (a_pValue->r80.s.fSign)
-                *pszHex++ = '-';
-            else
-                *pszHex++ = '+';
-
-            if (a_pValue->r80.s.uExponent == 0)
-            {
-                if (   !a_pValue->r80.sj64.u63Fraction
-                    && a_pValue->r80.sj64.fInteger)
-                    *pszHex++ = '0';
-                /* else: Denormal, handled way below. */
-            }
-            else if (a_pValue->r80.sj64.uExponent == UINT16_C(0x7fff))
-            {
-                /** @todo Figure out Pseudo inf/nan... */
-                if (a_pValue->r80.sj64.fInteger)
-                    *pszHex++ = 'P';
-                if (a_pValue->r80.sj64.u63Fraction == 0)
-                {
-                    *pszHex++ = 'I';
-                    *pszHex++ = 'n';
-                    *pszHex++ = 'f';
-                }
-                else
-                {
-                    *pszHex++ = 'N';
-                    *pszHex++ = 'a';
-                    *pszHex++ = 'N';
-                }
-            }
-            if (pszHex != &szHex[1])
-                *pszHex = '\0';
-            else
-            {
-                *pszHex++ = a_pValue->r80.sj64.fInteger ? '1' : '0';
-                *pszHex++ = 'm';
-                pszHex += RTStrFormatNumber(pszHex, a_pValue->r80.sj64.u63Fraction, 16, 2+16, 0,
-                                            RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-
-                *pszHex++ = 'e';
-                pszHex += RTStrFormatNumber(pszHex, (int32_t)a_pValue->r80.sj64.uExponent - 16383, 10, 0, 0,
-                                            RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
-            }
-            *a_pbstr = szHex;
-            return S_OK;
-        }
-
-        case DBGFREGVALTYPE_DTR:
-            RTStrFormatNumber(szHex, a_pValue->dtr.u64Base, 16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-            szHex[2+16] = ':';
-            RTStrFormatNumber(&szHex[2+16+1], a_pValue->dtr.u32Limit, 16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
-            *a_pbstr = szHex;
-            return S_OK;
-
-        case DBGFREGVALTYPE_INVALID:
-        case DBGFREGVALTYPE_END:
-        case DBGFREGVALTYPE_32BIT_HACK:
-            break;
-        /* no default */
-    }
-
-    return E_UNEXPECTED;
+    char szHex[160];
+    ssize_t cch = DBGFR3RegFormatValue(szHex, sizeof(szHex), a_pValue, a_enmType, true /*fSpecial*/);
+    if (RT_UNLIKELY(cch <= 0))
+        return E_UNEXPECTED;
+    *a_pbstr = szHex;
+    return S_OK;
 }
 
 STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BSTR *a_pbstrValue)

@@ -152,6 +152,52 @@ typedef DBGFREGLOOKUP const *PCDBGFREGLOOKUP;
 
 
 /**
+ * Argument packet from DBGFR3RegNmQueryAll to dbgfR3RegNmQueryAllWorker.
+ */
+typedef struct DBGFR3REGNMQUERYALLARGS
+{
+    /** The output register array. */
+    PDBGFREGENTRYNM paRegs;
+    /** The number of entries in the output array. */
+    size_t          cRegs;
+    /** The current register number when enumerating the string space. */
+    size_t          iReg;
+} DBGFR3REGNMQUERYALLARGS;
+/** Pointer to a dbgfR3RegNmQueryAllWorker argument packet. */
+typedef DBGFR3REGNMQUERYALLARGS *PDBGFR3REGNMQUERYALLARGS;
+
+
+/**
+ * Argument packet passed by DBGFR3RegNmPrintfV to dbgfR3RegNmPrintfCbOutput
+ * and dbgfR3RegNmPrintfCbFormat.
+ */
+typedef struct DBGFR3REGNMPRINTFARGS
+{
+    /** The VM handle. */
+    PVM         pVM;
+    /** The target CPU. */
+    VMCPUID     idCpu;
+    /** The output buffer. */
+    char       *pszBuf;
+    /** The format string. */
+    const char *pszFormat;
+    /** The va list with format arguments. */
+    va_list     va;
+
+    /** The current buffer offset. */
+    size_t      offBuf;
+    /** The amount of buffer space left, not counting the terminator char. */
+    size_t      cchLeftBuf;
+    /** The status code of the whole operation.  First error is return,
+     * subsequent ones are suppressed. */
+    int         rc;
+} DBGFR3REGNMPRINTFARGS;
+/** Pointer to a DBGFR3RegNmPrintfV argument packet. */
+typedef DBGFR3REGNMPRINTFARGS *PDBGFR3REGNMPRINTFARGS;
+
+
+
+/**
  * Initializes the register database.
  *
  * @returns VBox status code.
@@ -1172,7 +1218,8 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
 
 
 /**
- * On CPU worker for the register queries, used by dbgfR3RegNmQueryWorker.
+ * On CPU worker for the register queries, used by dbgfR3RegNmQueryWorker and
+ * dbgfR3RegNmPrintfCbFormat.
  *
  * @returns VBox status code.
  *
@@ -1590,21 +1637,6 @@ VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs)
     return VINF_SUCCESS;
 }
 
-/**
- * Argument packet from DBGFR3RegNmQueryAll to dbgfR3RegNmQueryAllWorker.
- */
-typedef struct DBGFR3REGNMQUERYALLARGS
-{
-    /** The output register array. */
-    PDBGFREGENTRYNM paRegs;
-    /** The number of entries in the output array. */
-    size_t          cRegs;
-    /** The current register number when enumerating the string space. */
-    size_t          iReg;
-} DBGFR3REGNMQUERYALLARGS;
-/** Pointer to a dbgfR3RegNmQueryAllWorker argument packet. */
-typedef DBGFR3REGNMQUERYALLARGS *PDBGFR3REGNMQUERYALLARGS;
-
 
 /**
  * Pad register entries.
@@ -1690,6 +1722,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     PDBGFREGENTRYNM             paRegs = pArgs->paRegs;
     size_t const                cRegs  = pArgs->cRegs;
 
+    DBGF_REG_DB_LOCK_READ(pVM);
+
     /*
      * My CPU registers.
      */
@@ -1712,6 +1746,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, pArgs->iReg, cRegs);
     }
 
+    DBGF_REG_DB_UNLOCK_READ(pVM);
     return VINF_SUCCESS; /* Ignore errors. */
 }
 
@@ -1742,6 +1777,346 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs
 }
 
 
-/// @todo VMMR3DECL(int) DBGFR3RegNmPrintf(PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
-/// @todo VMMR3DECL(int) DBGFR3RegNmPrintfV(PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
+/**
+ * Internal worker for DBGFR3RegFormatValue, cbTmp is sufficent.
+ *
+ * @copydoc DBGFR3RegFormatValue
+ */
+DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+                                            unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+{
+    switch (enmType)
+    {
+        case DBGFREGVALTYPE_U8:
+            return RTStrFormatU8(pszTmp, cbTmp, pValue->u8, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U16:
+            return RTStrFormatU16(pszTmp, cbTmp, pValue->u16, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U32:
+            return RTStrFormatU32(pszTmp, cbTmp, pValue->u32, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U64:
+            return RTStrFormatU64(pszTmp, cbTmp, pValue->u64, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U128:
+            return RTStrFormatU128(pszTmp, cbTmp, &pValue->u128, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_R80:
+            return RTStrFormatR80u2(pszTmp, cbTmp, &pValue->r80, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_DTR:
+        {
+            ssize_t cch = RTStrFormatU64(pszTmp, cbTmp, pValue->dtr.u64Base,
+                                         16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD);
+            AssertReturn(cch > 0, VERR_INTERNAL_ERROR_4);
+            pszTmp[cch++] = ':';
+            cch += RTStrFormatU64(&pszTmp[cch], cbTmp - cch, pValue->dtr.u32Limit,
+                                  16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
+            return cch;
+        }
+
+        case DBGFREGVALTYPE_32BIT_HACK:
+        case DBGFREGVALTYPE_END:
+        case DBGFREGVALTYPE_INVALID:
+            break;
+        /* no default, want gcc warnings */
+    }
+
+    RTStrPrintf(pszTmp, cbTmp, "!enmType=%d!", enmType);
+    return VERR_INTERNAL_ERROR_5;
+}
+
+
+
+/**
+ * Format a register value, extended version.
+ *
+ * @returns The number of bytes returned, VERR_BUFFER_OVERFLOW on failure.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pValue          The value to format.
+ * @param   enmType         The value type.
+ * @param   uBase           The base (ignored if not applicable).
+ * @param   cchWidth        The width if RTSTR_F_WIDTH is set, otherwise
+ *                          ignored.
+ * @param   cchPrecision    The width if RTSTR_F_PRECISION is set, otherwise
+ *                          ignored.
+ * @param   fFlags          String formatting flags, RTSTR_F_XXX.
+ */
+VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+                                        unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+{
+    /*
+     * Format to temporary buffer using worker shared with dbgfR3RegNmPrintfCbFormat.
+     */
+    char szTmp[160];
+    ssize_t cchOutput = dbgfR3RegFormatValueInt(szTmp, sizeof(szTmp), pValue, enmType, uBase, cchWidth, cchPrecision, fFlags);
+    if (cchOutput > 0)
+    {
+        if ((size_t)cchOutput < cbBuf)
+            memcpy(pszBuf, szTmp, cchOutput + 1);
+        else
+        {
+            if (cbBuf)
+            {
+                memcpy(pszBuf, szTmp, cbBuf - 1);
+                pszBuf[cbBuf - 1] = '\0';
+            }
+            cchOutput = VERR_BUFFER_OVERFLOW;
+        }
+    }
+    return cchOutput;
+}
+
+
+/**
+ * Format a register value as hexadecimal and with default width according to
+ * the type.
+ *
+ * @returns The number of bytes returned, VERR_BUFFER_OVERFLOW on failure.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pValue          The value to format.
+ * @param   enmType         The value type.
+ * @param   fSpecial        Same as RTSTR_F_SPECIAL.
+ */
+VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial)
+{
+    int cchWidth = 0;
+    switch (enmType)
+    {
+        case DBGFREGVALTYPE_U8:     cchWidth = 2  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U16:    cchWidth = 4  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U32:    cchWidth = 8  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U64:    cchWidth = 16 + fSpecial*2; break;
+        case DBGFREGVALTYPE_U128:   cchWidth = 32 + fSpecial*2; break;
+        case DBGFREGVALTYPE_R80:    cchWidth = 0; break;
+        case DBGFREGVALTYPE_DTR:    cchWidth = 16+1+4 + fSpecial*2; break;
+
+        case DBGFREGVALTYPE_32BIT_HACK:
+        case DBGFREGVALTYPE_END:
+        case DBGFREGVALTYPE_INVALID:
+            break;
+        /* no default, want gcc warnings */
+    }
+    uint32_t fFlags = RTSTR_F_ZEROPAD;
+    if (fSpecial)
+        fFlags |= RTSTR_F_SPECIAL;
+    if (cchWidth != 0)
+        fFlags |= RTSTR_F_WIDTH;
+    return DBGFR3RegFormatValueEx(pszBuf, cbBuf, pValue, enmType, 16, cchWidth, 0, fFlags);
+}
+
+
+/**
+ * @callback_method_impl{FNSTRFORMAT}
+ */
+static DECLCALLBACK(size_t)
+dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                          const char **ppszFormat, va_list *pArgs, int cchWidth,
+                          int cchPrecision, unsigned fFlags, char chArgSize)
+{
+    PDBGFR3REGNMPRINTFARGS pThis = (PDBGFR3REGNMPRINTFARGS)pvArg;
+
+    /*
+     * Parse out the register bits of the register format type.  Noisily reject
+     * unknown format types.
+     */
+    const char *pszFormat = *ppszFormat;
+    if (    pszFormat[0] != 'V'
+        ||  pszFormat[1] != 'R')
+    {
+        AssertMsgFailed(("'%s'\n", pszFormat));
+        return 0;
+    }
+    unsigned uBase;
+    if (pszFormat[2] == '{')
+        uBase = 16;
+    else if (   pszFormat[2] == 'U'
+             && pszFormat[3] == '{')
+        uBase = 10;
+    else if (   pszFormat[2] == 'O'
+             && pszFormat[3] == '{')
+        uBase = 8;
+    else if (   pszFormat[2] == 'B'
+             && pszFormat[3] == '{')
+        uBase = 2;
+    else
+    {
+        AssertMsgFailed(("'%s'\n", pszFormat));
+        return 0;
+    }
+
+    const char * const  pachReg = &pszFormat[3];
+    const char         *pszEnd = strchr(&pachReg[3], '}');
+    AssertMsgReturn(pszEnd, ("Missing closing curly bracket: '%s'\n", pszFormat), 0);
+
+    size_t const cchReg = pachReg - pszEnd;
+
+    /*
+     * Look up the register - same as dbgfR3RegResolve, except for locking and
+     * input string termination.
+     */
+    char szTmp[DBGF_REG_MAX_NAME * 4 + 64];
+
+    /* Try looking up the name without any case folding or cpu prefixing. */
+    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGetN(&pThis->pVM->dbgf.s.RegSpace, pachReg, cchReg);
+    if (!pLookupRec)
+    {
+        /* Lower case it and try again. */
+        ssize_t cchFolded = dbgfR3RegCopyToLower(pachReg, cchReg, szTmp, sizeof(szTmp) - DBGF_REG_MAX_NAME);
+        if (cchFolded > 0)
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szTmp);
+        if (   !pLookupRec
+            && cchFolded >= 0
+            && pThis->idCpu != VMCPUID_ANY)
+        {
+            /* Prefix it with the specified CPU set. */
+            size_t cchCpuSet = RTStrPrintf(szTmp, sizeof(szTmp), "cpu%u.", pThis->idCpu);
+            dbgfR3RegCopyToLower(pachReg, cchReg, &szTmp[cchCpuSet], sizeof(szTmp) - cchCpuSet);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szTmp);
+        }
+    }
+    AssertMsgReturn(pLookupRec, ("'%s'\n", pszFormat), 0);
+    AssertMsgReturn(   pLookupRec->pSet->enmType != DBGFREGSETTYPE_CPU
+                    || pLookupRec->pSet->uUserArg.pVCpu->idCpu == pThis->idCpu,
+                    ("'%s' idCpu=%u, pSet/cpu=%u\n", pszFormat, pThis->idCpu, pLookupRec->pSet->uUserArg.pVCpu->idCpu),
+                    0);
+
+    /* Commit the format type parsing so we can return more freely below. */
+    *ppszFormat = pszFormat;
+
+    /*
+     * Get the register value.
+     */
+    DBGFREGVAL      Value;
+    DBGFREGVALTYPE  enmType;
+    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
+    if (RT_FAILURE(rc))
+    {
+        PCRTSTATUSMSG pErr = RTErrGet(rc);
+        if (pErr)
+            return pfnOutput(pvArgOutput, pErr->pszDefine, strlen(pErr->pszDefine));
+        return pfnOutput(pvArgOutput, szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc));
+    }
+
+    /*
+     * Format the value.
+     */
+    ssize_t cchOutput = dbgfR3RegFormatValueInt(szTmp, sizeof(szTmp), &Value, enmType, uBase, cchWidth, cchPrecision, fFlags);
+    if (RT_UNLIKELY(cchOutput <= 0))
+    {
+        AssertFailed();
+        return pfnOutput(pvArgOutput, "internal-error", sizeof("internal-error") - 1);
+    }
+    return pfnOutput(pvArgOutput, szTmp, cchOutput);
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTROUTPUT}
+ */
+static DECLCALLBACK(size_t)
+dbgfR3RegNmPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
+{
+    PDBGFR3REGNMPRINTFARGS  pArgs    = (PDBGFR3REGNMPRINTFARGS)pvArg;
+    size_t                  cbToCopy = cbChars;
+    if (cbToCopy >= pArgs->cchLeftBuf)
+    {
+        if (RT_SUCCESS(pArgs->rc))
+            pArgs->rc = VERR_BUFFER_OVERFLOW;
+        cbToCopy = pArgs->cchLeftBuf;
+    }
+    if (cbToCopy > 0)
+    {
+        memcpy(&pArgs->pszBuf[pArgs->offBuf], pachChars, cbChars);
+        pArgs->offBuf     += cbChars;
+        pArgs->cchLeftBuf -= cbChars;
+        pArgs->pszBuf[pArgs->offBuf] = '\0';
+    }
+    return cbToCopy;
+}
+
+
+/**
+ * On CPU worker for the register formatting, used by DBGFR3RegNmPrintfV.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pArgs               The argument package and state.
+ */
+static DECLCALLBACK(int) dbgfR3RegNmPrintfWorkerOnCpu(PDBGFR3REGNMPRINTFARGS pArgs)
+{
+    DBGF_REG_DB_LOCK_READ(pArgs->pVM);
+    RTStrFormatV(dbgfR3RegNmPrintfCbOutput, pArgs, dbgfR3RegNmPrintfCbFormat, pArgs, pArgs->pszFormat, pArgs->va);
+    DBGF_REG_DB_UNLOCK_READ(pArgs->pVM);
+    return pArgs->rc;
+}
+
+
+/**
+ * Format a registers.
+ *
+ * This is restricted to registers from one CPU, that specified by @a idCpu.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   idCpu               The CPU ID of any CPU registers that may be
+ *                              printed, pass VMCPUID_ANY if not applicable.
+ * @param   pszBuf              The output buffer.
+ * @param   cbBuf               The size of the output buffer.
+ * @param   pszFormat           The format string.  Register names are given by
+ *                              %VR{name}, they take no arguments.
+ * @param   va                  Other format arguments.
+ */
+VMMR3DECL(int) DBGFR3RegNmPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va)
+{
+    AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf > 0, VERR_BUFFER_OVERFLOW);
+    *pszBuf = '\0';
+
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus || idCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
+
+    /*
+     * Set up an argument package and execute the formatting on the
+     * specified CPU.
+     */
+    DBGFR3REGNMPRINTFARGS Args;
+    Args.pVM        = pVM;
+    Args.idCpu      = idCpu;
+    Args.pszBuf     = pszBuf;
+    Args.pszFormat  = pszFormat;
+    va_copy(Args.va, va);
+    Args.offBuf     = 0;
+    Args.cchLeftBuf = cbBuf - 1;
+    Args.rc         = VINF_SUCCESS;
+    int rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3RegNmPrintfWorkerOnCpu, 1, &Args);
+    va_end(Args.va);
+    return rc;
+}
+
+
+/**
+ * Format a registers.
+ *
+ * This is restricted to registers from one CPU, that specified by @a idCpu.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   idCpu               The CPU ID of any CPU registers that may be
+ *                              printed, pass VMCPUID_ANY if not applicable.
+ * @param   pszBuf              The output buffer.
+ * @param   cbBuf               The size of the output buffer.
+ * @param   pszFormat           The format string.  Register names are given by
+ *                              %VR{name}, %VRU{name}, %VRO{name} and
+ *                              %VRB{name}, which are hexadecimal, (unsigned)
+ *                              decimal, octal and binary representation.  None
+ *                              of these types takes any arguments.
+ * @param   ...                 Other format arguments.
+ */
+VMMR3DECL(int) DBGFR3RegNmPrintf(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = DBGFR3RegNmPrintfV(pVM, idCpu, pszBuf, cbBuf, pszFormat, va);
+    va_end(va);
+    return rc;
+}
 
