@@ -322,6 +322,7 @@ public:
 
     bool confirmVMReset (QWidget *aParent);
 
+    void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);
     bool confirmHardDisklessMachine (QWidget *aParent);
 
     void cannotRunInSelectorMode();

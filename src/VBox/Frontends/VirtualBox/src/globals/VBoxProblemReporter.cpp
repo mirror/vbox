@@ -1971,6 +1971,14 @@ bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
         tr ("Reset", "machine"));
 }
 
+void VBoxProblemReporter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName)
+{
+    message(pParent ? pParent : mainWindowShown(), Critical,
+            tr("<p>Cannot create the machine folder:</p>"
+               "<p><b>%1</b></p>"
+               "<p>Please check you have the permissions required to do so.</p>").arg(strFolderName));
+}
+
 /**
  *  @return @c true if the user has selected to continue without attaching a
  *  hard disk.
