@@ -3653,7 +3653,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             s->fLBA48 = true;
         case ATA_READ_SECTORS:
         case ATA_READ_SECTORS_WITHOUT_RETRIES:
-            if (!s->pDrvBlock)
+            if (!s->pDrvBlock || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = 1;
             ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
@@ -3662,13 +3662,15 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             s->fLBA48 = true;
         case ATA_WRITE_SECTORS:
         case ATA_WRITE_SECTORS_WITHOUT_RETRIES:
+            if (!s->pDrvBlock || s->fATAPI)
+                goto abort_cmd;
             s->cSectorsPerIRQ = 1;
             ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_MULTIPLE_EXT:
             s->fLBA48 = true;
         case ATA_READ_MULTIPLE:
-            if (!s->cMultSectors)
+            if (!s->pDrvBlock || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
             ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
@@ -3676,7 +3678,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
         case ATA_WRITE_MULTIPLE_EXT:
             s->fLBA48 = true;
         case ATA_WRITE_MULTIPLE:
-            if (!s->cMultSectors)
+            if (!s->pDrvBlock || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
             ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
@@ -3685,7 +3687,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             s->fLBA48 = true;
         case ATA_READ_DMA:
         case ATA_READ_DMA_WITHOUT_RETRIES:
-            if (!s->pDrvBlock)
+            if (!s->pDrvBlock || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
             s->fDMA = true;
@@ -3695,7 +3697,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             s->fLBA48 = true;
         case ATA_WRITE_DMA:
         case ATA_WRITE_DMA_WITHOUT_RETRIES:
-            if (!s->pDrvBlock)
+            if (!s->pDrvBlock || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
             s->fDMA = true;
