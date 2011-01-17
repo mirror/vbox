@@ -2687,7 +2687,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("Configuration error: Failed to read \"HostBusPciAddress\""));
 
     /* query whether S1 power state should be exposed */
-    rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &s->fS1Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &s->fS1Enabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"PowerS1Enabled\""));
