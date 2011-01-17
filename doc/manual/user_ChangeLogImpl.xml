@@ -38,14 +38,6 @@
       </listitem>
 
       <listitem>
-        <para>ICH9: fixed VM crash (software virtualization only; bug #7885)</para>
-      </listitem>
-
-      <listitem>
-        <para>E1000: fixed PXE boot issues with WDS (bug #6330)</para>
-      </listitem>
-
-      <listitem>
         <para>VBoxManage: Host-only interface creation and removal is now
           supported for all platforms except Solaris (bug #7741)</para>
       </listitem>
@@ -74,8 +66,20 @@
       </listitem>
 
       <listitem>
+        <para>NAT: port-forwarding rule registration respects protocol parameter (bug #8094)</para>
+      </listitem>
+
+      <listitem>
+        <para>E1000: fixed PXE boot issues with WDS (bug #6330)</para>
+      </listitem>
+
+      <listitem>
         <para>Virtio-net: fixed the issue with TX performance in some Linux
           guests</para>
+      </listitem>
+
+      <listitem>
+        <para>ICH9: fixed VM crash (software virtualization only; bug #7885)</para>
       </listitem>
 
       <listitem>
@@ -112,11 +116,6 @@
       </listitem>
 
       <listitem>
-        <para>Guest Additions: fixed parsing of parameters for guest control in
-          VBoxService (4.0 regression; bug #8010)</para>
-      </listitem>
-
-      <listitem>
         <para>OVF/OVA: fixed import of files created by other OVF tools (bug
          #7983)</para>
       </listitem>
@@ -127,7 +126,8 @@
       </listitem>
 
       <listitem>
-        <para>NAT: port-forwarding rule registration respects protocol parameter (bug #8094)</para>
+        <para>Guest Additions: fixed parsing of parameters for guest control in
+          VBoxService (4.0 regression; bug #8010)</para>
       </listitem>
 
       <listitem>
