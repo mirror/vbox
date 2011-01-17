@@ -518,11 +518,11 @@ typedef union RTFLOAT80U
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
-        /** The fraction. */
-        uint64_t                    u64Fraction;
+        /** The mantissa. */
+        uint64_t                    u64Mantissa;
 # else
-        /** The fraction. */
-        uint64_t                    u64Fraction;
+        /** The mantissa. */
+        uint64_t                    u64Mantissa;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
         /** The sign indicator. */
@@ -565,10 +565,10 @@ typedef union RTFLOAT80U2
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
-        /** The fraction. */
+        /** The mantissa. */
         uint64_t                    u64Mantissa;
 #else
-        /** The fraction. */
+        /** The mantissa. */
         uint64_t                    u64Mantissa;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
