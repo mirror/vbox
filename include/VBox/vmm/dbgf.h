@@ -1273,6 +1273,9 @@ typedef DBGFREGVAL *PDBGFREGVAL;
 /** Pointer to a const generic register value type. */
 typedef DBGFREGVAL const *PCDBGFREGVAL;
 
+VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial);
+VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+                                        unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags);
 
 /**
  * Register sub-field descriptor.
@@ -1451,8 +1454,8 @@ VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, PDBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM,                   PDBGFREGENTRYNM paRegs, size_t cRegs);
-VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
-VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idDefCpu, char pszBuf, size_t cbBuf, const char *pszFormat, ...);
+VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...);
+VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va);
 
 VMMR3DECL(int) DBGFR3RegNmSetU8(    PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t     u8);
 VMMR3DECL(int) DBGFR3RegNmSetU16(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint16_t    u16);
