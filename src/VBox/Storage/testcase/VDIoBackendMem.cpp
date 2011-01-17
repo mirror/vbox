@@ -43,14 +43,14 @@ typedef struct VDIOBACKENDREQ
     uint64_t        off;
     /** Size of the transfer. */
     size_t          cbTransfer;
-    /** Segments array. */
-    PCRTSGSEG       paSegs;
     /** Number of segments in the array. */
     unsigned        cSegs;
     /** Completion handler to call. */
     PFNVDIOCOMPLETE pfnComplete;
     /** Opaque user data. */
     void           *pvUser;
+    /** Segment array - variable in size */
+    RTSGSEG         aSegs[1];
 } VDIOBACKENDREQ, *PVDIOBACKENDREQ;
 
 /**
@@ -144,7 +144,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
     PVDIOBACKENDREQ pReq = NULL;
     size_t cbData;
 
-    RTCircBufAcquireWriteBlock(pIoBackend->pRequestRing, sizeof(VDIOBACKENDREQ), (void **)&pReq, &cbData);
+    RTCircBufAcquireWriteBlock(pIoBackend->pRequestRing, RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]), (void **)&pReq, &cbData);
     if (!pReq)
         return VERR_NO_MEMORY;
 
@@ -153,10 +153,14 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
     pReq->cbTransfer  = cbTransfer;
     pReq->off         = off;
     pReq->pMemDisk    = pMemDisk;
-    pReq->paSegs      = paSegs;
     pReq->cSegs       = cSegs;
     pReq->pfnComplete = pfnComplete;
     pReq->pvUser      = pvUser;
+    for (unsigned i = 0; i < cSegs; i++)
+    {
+        pReq->aSegs[i].pvSeg = paSegs[i].pvSeg;
+        pReq->aSegs[i].cbSeg = paSegs[i].cbSeg;
+    }
     RTCircBufReleaseWriteBlock(pIoBackend->pRequestRing, sizeof(VDIOBACKENDREQ));
     vdIoBackendMemThreadPoke(pIoBackend);
 
@@ -196,14 +200,14 @@ static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
                 case VDIOTXDIR_READ:
                 {
                     RTSGBUF SgBuf;
-                    RTSgBufInit(&SgBuf, pReq->paSegs, pReq->cSegs);
+                    RTSgBufInit(&SgBuf, pReq->aSegs, pReq->cSegs);
                     rcReq = VDMemDiskRead(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &SgBuf);
                     break;
                 }
                 case VDIOTXDIR_WRITE:
                 {
                     RTSGBUF SgBuf;
-                    RTSgBufInit(&SgBuf, pReq->paSegs, pReq->cSegs);
+                    RTSgBufInit(&SgBuf, pReq->aSegs, pReq->cSegs);
                     rcReq = VDMemDiskWrite(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &SgBuf);
                     break;
                 }
