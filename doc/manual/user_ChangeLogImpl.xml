@@ -15,7 +15,12 @@
 
       <listitem>
         <para>GUI: fixed a crash when using the KDE4 Oxygen theme and clicked
-         on the settings button (bug #7875)</para>
+          on the settings button (bug #7875)</para>
+      </listitem>
+      
+      <listitem>
+        <para>GUI: properly warn if the machine folder cannot be
+          created (bug #8031)</para>
       </listitem>
 
       <listitem>
