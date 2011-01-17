@@ -1658,7 +1658,7 @@
  */
 /** The host is not supported. Uninstall the extension pack.
  * Returned by the VBOXEXTPACKREG::pfnInstalled. */
-#define VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL     (-5000)
+#define VERR_EXTPACK_UNSUPPORTED_HOST_UNINSTALL     (-6000)
 /** @} */
 
 /* SED-END */
