@@ -315,3 +315,4 @@ void BitmapScale32 (uint8_t *dst,
         }
     }
 }
+

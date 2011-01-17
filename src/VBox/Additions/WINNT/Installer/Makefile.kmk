@@ -137,7 +137,7 @@ DRIVER_FILES += \
 		$(VBOX_PATH_ADDITIONS.win.x86)/wined3d.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D9.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D8.dll
-		
+
  endif
 endif
 ifdef VBOX_WITH_WDDM_ENABLED
