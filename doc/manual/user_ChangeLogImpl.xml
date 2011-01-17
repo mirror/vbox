@@ -121,6 +121,11 @@
          #7981)</para>
       </listitem>
 
+      <listitem>
+        <para>NAT: port-forwarding rule registration respects protocol parameter (bug #8094)</para>
+      </listitem>
+
+
     </itemizedlist>
 
   </sect1>
