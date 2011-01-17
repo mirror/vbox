@@ -1219,7 +1219,7 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
 
 /**
  * On CPU worker for the register queries, used by dbgfR3RegNmQueryWorker and
- * dbgfR3RegNmPrintfCbFormat.
+ * dbgfR3RegNmPrintfCbFormatNormal.
  *
  * @returns VBox status code.
  *
@@ -1842,7 +1842,7 @@ VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL
                                         unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
 {
     /*
-     * Format to temporary buffer using worker shared with dbgfR3RegNmPrintfCbFormat.
+     * Format to temporary buffer using worker shared with dbgfR3RegNmPrintfCbFormatNormal.
      */
     char szTmp[160];
     ssize_t cchOutput = dbgfR3RegFormatValueInt(szTmp, sizeof(szTmp), pValue, enmType, uBase, cchWidth, cchPrecision, fFlags);
@@ -1904,82 +1904,107 @@ VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL p
 
 
 /**
- * @callback_method_impl{FNSTRFORMAT}
+ * Format a register using special hacks as well as sub-field specifications
+ * (the latter isn't implemented yet).
  */
-static DECLCALLBACK(size_t)
-dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                          const char **ppszFormat, va_list *pArgs, int cchWidth,
-                          int cchPrecision, unsigned fFlags, char chArgSize)
+static size_t
+dbgfR3RegNmPrintfCbFormatField(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                               PCDBGFREGLOOKUP pLookupRec, int cchWidth, int cchPrecision, unsigned fFlags)
 {
-    PDBGFR3REGNMPRINTFARGS pThis = (PDBGFR3REGNMPRINTFARGS)pvArg;
+    char szTmp[160];
 
     /*
-     * Parse out the register bits of the register format type.  Noisily reject
-     * unknown format types.
+     * Retrieve the register value.
      */
-    const char *pszFormat = *ppszFormat;
-    if (    pszFormat[0] != 'V'
-        ||  pszFormat[1] != 'R')
+    DBGFREGVAL      Value;
+    DBGFREGVALTYPE  enmType;
+    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
+    if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("'%s'\n", pszFormat));
-        return 0;
+        PCRTSTATUSMSG pErr = RTErrGet(rc);
+        if (pErr)
+            return pfnOutput(pvArgOutput, pErr->pszDefine, strlen(pErr->pszDefine));
+        return pfnOutput(pvArgOutput, szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc));
     }
-    unsigned uBase;
-    if (pszFormat[2] == '{')
-        uBase = 16;
-    else if (   pszFormat[2] == 'U'
-             && pszFormat[3] == '{')
-        uBase = 10;
-    else if (   pszFormat[2] == 'O'
-             && pszFormat[3] == '{')
-        uBase = 8;
-    else if (   pszFormat[2] == 'B'
-             && pszFormat[3] == '{')
-        uBase = 2;
+
+    char *psz = szTmp;
+
+    /*
+     * Special case: Format eflags.
+     */
+    if (   pLookupRec->pSet->enmType == DBGFREGSETTYPE_CPU
+        && pLookupRec->pDesc->enmReg == DBGFREG_RFLAGS
+        && pLookupRec->pSubField     == NULL)
+    {
+        rc = dbgfR3RegValCast(&Value, enmType, DBGFREGVALTYPE_U32);
+        AssertRC(rc);
+        uint32_t const efl = Value.u32;
+
+        /* the iopl */
+        psz += RTStrPrintf(psz, sizeof(szTmp) / 2, "iopl=%u ", X86_EFL_GET_IOPL(efl));
+
+        /* add flags */
+        static const struct
+        {
+            const char *pszSet;
+            const char *pszClear;
+            uint32_t fFlag;
+        } aFlags[] =
+        {
+            { "vip",NULL, X86_EFL_VIP },
+            { "vif",NULL, X86_EFL_VIF },
+            { "ac", NULL, X86_EFL_AC },
+            { "vm", NULL, X86_EFL_VM },
+            { "rf", NULL, X86_EFL_RF },
+            { "nt", NULL, X86_EFL_NT },
+            { "ov", "nv", X86_EFL_OF },
+            { "dn", "up", X86_EFL_DF },
+            { "ei", "di", X86_EFL_IF },
+            { "tf", NULL, X86_EFL_TF },
+            { "ng", "pl", X86_EFL_SF },
+            { "zr", "nz", X86_EFL_ZF },
+            { "ac", "na", X86_EFL_AF },
+            { "po", "pe", X86_EFL_PF },
+            { "cy", "nc", X86_EFL_CF },
+        };
+        for (unsigned i = 0; i < RT_ELEMENTS(aFlags); i++)
+        {
+            const char *pszAdd = aFlags[i].fFlag & efl ? aFlags[i].pszSet : aFlags[i].pszClear;
+            if (pszAdd)
+            {
+                *psz++ = *pszAdd++;
+                *psz++ = *pszAdd++;
+                if (*pszAdd)
+                    *psz++ = *pszAdd++;
+                *psz++ = ' ';
+            }
+        }
+
+        /* drop trailing space */
+        psz--;
+    }
     else
     {
-        AssertMsgFailed(("'%s'\n", pszFormat));
-        return 0;
+        /*
+         * General case.
+         */
+        AssertMsgFailed(("Not implemented: %s\n", pLookupRec->Core.pszString));
+        return pfnOutput(pvArgOutput, pLookupRec->Core.pszString, pLookupRec->Core.cchString);
     }
 
-    const char * const  pachReg = &pszFormat[3];
-    const char         *pszEnd = strchr(&pachReg[3], '}');
-    AssertMsgReturn(pszEnd, ("Missing closing curly bracket: '%s'\n", pszFormat), 0);
+    /* Output the string. */
+    return pfnOutput(pvArgOutput, szTmp, psz - &szTmp[0]);
+}
 
-    size_t const cchReg = pachReg - pszEnd;
 
-    /*
-     * Look up the register - same as dbgfR3RegResolve, except for locking and
-     * input string termination.
-     */
-    char szTmp[DBGF_REG_MAX_NAME * 4 + 64];
-
-    /* Try looking up the name without any case folding or cpu prefixing. */
-    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGetN(&pThis->pVM->dbgf.s.RegSpace, pachReg, cchReg);
-    if (!pLookupRec)
-    {
-        /* Lower case it and try again. */
-        ssize_t cchFolded = dbgfR3RegCopyToLower(pachReg, cchReg, szTmp, sizeof(szTmp) - DBGF_REG_MAX_NAME);
-        if (cchFolded > 0)
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szTmp);
-        if (   !pLookupRec
-            && cchFolded >= 0
-            && pThis->idCpu != VMCPUID_ANY)
-        {
-            /* Prefix it with the specified CPU set. */
-            size_t cchCpuSet = RTStrPrintf(szTmp, sizeof(szTmp), "cpu%u.", pThis->idCpu);
-            dbgfR3RegCopyToLower(pachReg, cchReg, &szTmp[cchCpuSet], sizeof(szTmp) - cchCpuSet);
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szTmp);
-        }
-    }
-    AssertMsgReturn(pLookupRec, ("'%s'\n", pszFormat), 0);
-    AssertMsgReturn(   pLookupRec->pSet->enmType != DBGFREGSETTYPE_CPU
-                    || pLookupRec->pSet->uUserArg.pVCpu->idCpu == pThis->idCpu,
-                    ("'%s' idCpu=%u, pSet/cpu=%u\n", pszFormat, pThis->idCpu, pLookupRec->pSet->uUserArg.pVCpu->idCpu),
-                    0);
-
-    /* Commit the format type parsing so we can return more freely below. */
-    *ppszFormat = pszFormat;
+/**
+ * Formats a register having parsed up to the register name.
+ */
+static size_t
+dbgfR3RegNmPrintfCbFormatNormal(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                PCDBGFREGLOOKUP pLookupRec, unsigned uBase, int cchWidth, int cchPrecision, unsigned fFlags)
+{
+    char szTmp[160];
 
     /*
      * Get the register value.
@@ -2006,6 +2031,104 @@ dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutp
     }
     return pfnOutput(pvArgOutput, szTmp, cchOutput);
 }
+
+
+/**
+ * @callback_method_impl{FNSTRFORMAT}
+ */
+static DECLCALLBACK(size_t)
+dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                          const char **ppszFormat, va_list *pArgs, int cchWidth,
+                          int cchPrecision, unsigned fFlags, char chArgSize)
+{
+    /*
+     * Parse the format type and hand the job to the appropriate worker.
+     */
+    PDBGFR3REGNMPRINTFARGS pThis = (PDBGFR3REGNMPRINTFARGS)pvArg;
+    const char *pszFormat = *ppszFormat;
+    if (    pszFormat[0] != 'V'
+        ||  pszFormat[1] != 'R')
+    {
+        AssertMsgFailed(("'%s'\n", pszFormat));
+        return 0;
+    }
+    unsigned offCurly = 2;
+    if (pszFormat[offCurly] != '{')
+    {
+        AssertMsgReturn(pszFormat[offCurly], ("'%s'\n", pszFormat), 0);
+        offCurly++;
+        AssertMsgReturn(pszFormat[offCurly] == '{', ("'%s'\n", pszFormat), 0);
+    }
+    const char *pachReg = &pszFormat[offCurly + 1];
+
+    /*
+     * The end and length of the register.
+     */
+    const char *pszEnd = strchr(&pachReg[3], '}');
+    AssertMsgReturn(pszEnd, ("Missing closing curly bracket: '%s'\n", pszFormat), 0);
+    size_t const cchReg = pszEnd - pachReg;
+
+    /*
+     * Look up the register - same as dbgfR3RegResolve, except for locking and
+     * input string termination.
+     */
+    /* Try looking up the name without any case folding or cpu prefixing. */
+    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGetN(&pThis->pVM->dbgf.s.RegSpace, pachReg, cchReg);
+    if (!pLookupRec)
+    {
+        /* Lower case it and try again. */
+        char szName[DBGF_REG_MAX_NAME * 4 + 16];
+        ssize_t cchFolded = dbgfR3RegCopyToLower(pachReg, cchReg, szName, sizeof(szName) - DBGF_REG_MAX_NAME);
+        if (cchFolded > 0)
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szName);
+        if (   !pLookupRec
+            && cchFolded >= 0
+            && pThis->idCpu != VMCPUID_ANY)
+        {
+            /* Prefix it with the specified CPU set. */
+            size_t cchCpuSet = RTStrPrintf(szName, sizeof(szName), "cpu%u.", pThis->idCpu);
+            dbgfR3RegCopyToLower(pachReg, cchReg, &szName[cchCpuSet], sizeof(szName) - cchCpuSet);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szName);
+        }
+    }
+    AssertMsgReturn(pLookupRec, ("'%s'\n", pszFormat), 0);
+    AssertMsgReturn(   pLookupRec->pSet->enmType != DBGFREGSETTYPE_CPU
+                    || pLookupRec->pSet->uUserArg.pVCpu->idCpu == pThis->idCpu,
+                    ("'%s' idCpu=%u, pSet/cpu=%u\n", pszFormat, pThis->idCpu, pLookupRec->pSet->uUserArg.pVCpu->idCpu),
+                    0);
+
+    /*
+     * Commit the parsed format string.  Up to this point it is nice to know
+     * what register lookup failed and such, so we've delayed comitting.
+     */
+    *ppszFormat = pszEnd + 1;
+
+    /*
+     * Call the responsible worker.
+     */
+    switch (pszFormat[offCurly - 1])
+    {
+        case 'R': /* %VR{} */
+        case 'X': /* %VRX{} */
+            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                   16, cchWidth, cchPrecision, fFlags);
+        case 'U':
+            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                   10, cchWidth, cchPrecision, fFlags);
+        case 'O':
+            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                   8, cchWidth, cchPrecision, fFlags);
+        case 'B':
+            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                   2, cchWidth, cchPrecision, fFlags);
+        case 'F':
+            return dbgfR3RegNmPrintfCbFormatField(pThis, pfnOutput, pvArgOutput, pLookupRec, cchWidth, cchPrecision, fFlags);
+        default:
+            AssertFailed();
+            return 0;
+    }
+}
+
 
 
 /**
