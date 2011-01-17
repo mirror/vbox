@@ -27,6 +27,7 @@
 #include <iprt/list.h>
 #include <iprt/ctype.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #include "VDMemDisk.h"
 #include "VDIoBackendMem.h"
