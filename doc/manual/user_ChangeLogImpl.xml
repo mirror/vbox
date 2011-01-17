@@ -17,7 +17,7 @@
         <para>GUI: fixed a crash when using the KDE4 Oxygen theme and clicked
           on the settings button (bug #7875)</para>
       </listitem>
-      
+
       <listitem>
         <para>GUI: properly warn if the machine folder cannot be
           created (bug #8031)</para>
@@ -130,6 +130,10 @@
         <para>NAT: port-forwarding rule registration respects protocol parameter (bug #8094)</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Guest Additions: automatic logon on Windows Vista/Windows 7 now supports
+          unlocking previously locked workstations</para>
+      </listitem>
 
     </itemizedlist>
 
