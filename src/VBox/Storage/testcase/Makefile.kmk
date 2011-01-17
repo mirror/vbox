@@ -87,7 +87,8 @@ ifdef VBOX_WITH_TESTCASES
 
  tstVDIo_SOURCES  = tstVDIo.cpp \
 	VDIoBackendMem.cpp \
-	VDMemDisk.cpp
+	VDMemDisk.cpp \
+	VDIoRnd.cpp
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

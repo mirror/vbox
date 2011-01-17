@@ -26,9 +26,11 @@
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/ctype.h>
+#include <iprt/semaphore.h>
 
 #include "VDMemDisk.h"
 #include "VDIoBackendMem.h"
+#include "VDIoRnd.h"
 
 /**
  * A virtual file backed by memory.
@@ -72,7 +74,60 @@ typedef struct VDTESTGLOB
     VDGEOMETRY       PhysGeom;
     /** Logical CHS geometry. */
     VDGEOMETRY       LogicalGeom;
+    /** I/O RNG handle. */
+    PVDIORND         pIoRnd;
 } VDTESTGLOB, *PVDTESTGLOB;
+
+/**
+ * Transfer direction.
+ */
+typedef enum VDIOREQTXDIR
+{
+    VDIOREQTXDIR_READ = 0,
+    VDIOREQTXDIR_WRITE,
+    VDIOREQTXDIR_FLUSH
+} VDIOREQTXDIR;
+
+/**
+ * I/O request.
+ */
+typedef struct VDIOREQ
+{
+    /** Transfer type. */
+    VDIOREQTXDIR enmTxDir;
+    /** slot index. */
+    unsigned  idx;
+    /** Start offset. */
+    uint64_t  off;
+    /** Size to transfer. */
+    size_t    cbReq;
+    /** S/G Buffer */
+    RTSGBUF   SgBuf;
+    /** Data segment */
+    RTSGSEG   DataSeg;
+    /** Flag whether the request is outstanding or not. */
+    volatile bool fOutstanding;
+} VDIOREQ, *PVDIOREQ;
+
+/**
+ * I/O test data.
+ */
+typedef struct VDIOTEST
+{
+    /** Start offset. */
+    uint64_t    offStart;
+    /** End offset. */
+    uint64_t    offEnd;
+    /** Flag whether random or sequential access is wanted */
+    bool        fRandomAccess;
+    /** Block size. */
+    size_t      cbBlkIo;
+    /** Number of bytes to transfer. */
+    size_t      cbIo;
+    unsigned    uWriteChance;
+    PVDIORND    pIoRnd;
+    uint64_t    offNext;
+} VDIOTEST, *PVDIOTEST;
 
 /**
  * Argument types.
@@ -170,6 +225,9 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
 static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerMerge(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 
 /* create action */
 const VDSCRIPTARGDESC g_aArgCreate[] =
@@ -222,18 +280,36 @@ const VDSCRIPTARGDESC g_aArgClose[] =
 {
     /* pcszName  chId enmType                            fFlags */
     {"mode",     'm', VDSCRIPTARGTYPE_STRING,            VDSCRIPTARGDESC_FLAG_MANDATORY},
-    {"delete",   'd', VDSCRIPTARGTYPE_BOOL  ,            VDSCRIPTARGDESC_FLAG_MANDATORY}
+    {"delete",   'd', VDSCRIPTARGTYPE_BOOL,              VDSCRIPTARGDESC_FLAG_MANDATORY}
+};
+
+/* I/O RNG create action */
+const VDSCRIPTARGDESC g_aArgIoRngCreate[] =
+{
+    /* pcszName  chId enmType                            fFlags */
+    {"size",     'd', VDSCRIPTARGTYPE_UNSIGNED_NUMBER,   VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
+    {"seed",     's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER,   VDSCRIPTARGDESC_FLAG_MANDATORY}
+};
+
+/* Sleep */
+const VDSCRIPTARGDESC g_aArgSleep[] =
+{
+    /* pcszName  chId enmType                            fFlags */
+    {"time",     't', VDSCRIPTARGTYPE_UNSIGNED_NUMBER,   VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
 const VDSCRIPTACTION g_aScriptActions[] =
 {
-    /* pcszAction paArgDesc     cArgDescs                  pfnHandler */
-    {"create",    g_aArgCreate, RT_ELEMENTS(g_aArgCreate), vdScriptHandlerCreate},
-    {"open",      g_aArgOpen,   RT_ELEMENTS(g_aArgOpen),   vdScriptHandlerOpen},
-    {"io",        g_aArgIo,     RT_ELEMENTS(g_aArgIo),     vdScriptHandlerIo},
-    {"flush",     g_aArgFlush,  RT_ELEMENTS(g_aArgFlush),  vdScriptHandlerFlush},
-    {"close",     g_aArgClose,  RT_ELEMENTS(g_aArgClose),  vdScriptHandlerClose},
-    {"merge",     g_aArgMerge,  RT_ELEMENTS(g_aArgMerge),  vdScriptHandlerMerge},
+    /* pcszAction    paArgDesc            cArgDescs                        pfnHandler */
+    {"create",       g_aArgCreate,        RT_ELEMENTS(g_aArgCreate),       vdScriptHandlerCreate},
+    {"open",         g_aArgOpen,          RT_ELEMENTS(g_aArgOpen),         vdScriptHandlerOpen},
+    {"io",           g_aArgIo,            RT_ELEMENTS(g_aArgIo),           vdScriptHandlerIo},
+    {"flush",        g_aArgFlush,         RT_ELEMENTS(g_aArgFlush),        vdScriptHandlerFlush},
+    {"close",        g_aArgClose,         RT_ELEMENTS(g_aArgClose),        vdScriptHandlerClose},
+    {"merge",        g_aArgMerge,         RT_ELEMENTS(g_aArgMerge),        vdScriptHandlerMerge},
+    {"iorngcreate",  g_aArgIoRngCreate,   RT_ELEMENTS(g_aArgIoRngCreate),  vdScriptHandlerIoRngCreate},
+    {"iorngdestroy", NULL,                0,                               vdScriptHandlerIoRngDestroy},
+    {"sleep",        g_aArgSleep,         RT_ELEMENTS(g_aArgSleep),        vdScriptHandlerSleep},
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -252,6 +328,14 @@ static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
 }
+
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, size_t cbIo,
+                           size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
+                           unsigned uWriteChance, unsigned uReadChance);
+static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
+static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq);
+static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq);
+static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 static DECLCALLBACK(int) vdScriptHandlerCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
 {
@@ -432,7 +516,150 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
             break;
     }
 
-    rc = VERR_NOT_IMPLEMENTED;
+    if (RT_SUCCESS(rc))
+    {
+        VDIOTEST IoTest;
+
+        rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, cbIo, cbBlkSize, offStart, offEnd, uWriteChance, uReadChance);
+        if (RT_SUCCESS(rc))
+        {
+            PVDIOREQ paIoReq = NULL;
+            unsigned cMaxTasksOutstanding = fAsync ? cMaxReqs : 1;
+            RTSEMEVENT EventSem;
+
+            rc = RTSemEventCreate(&EventSem);
+            paIoReq = (PVDIOREQ)RTMemAllocZ(cMaxTasksOutstanding * sizeof(VDIOREQ));
+            if (paIoReq && RT_SUCCESS(rc))
+            {
+                for (unsigned i = 0; i < cMaxTasksOutstanding; i++)
+                    paIoReq[i].idx = i;
+
+                while (tstVDIoTestRunning(&IoTest))
+                {
+                    bool fTasksOutstanding = false;
+                    unsigned idx = 0;
+
+                    /* Submit all idling requests. */
+                    while (   idx < cMaxTasksOutstanding
+                           && tstVDIoTestRunning(&IoTest))
+                    {
+                        if (!tstVDIoTestReqOutstanding(&paIoReq[idx]))
+                        {
+                            rc = tstVDIoTestReqInit(&IoTest, &paIoReq[idx]);
+                            AssertRC(rc);
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (!fAsync)
+                                {
+                                    switch (paIoReq[idx].enmTxDir)
+                                    {
+                                        case VDIOREQTXDIR_READ:
+                                        {
+                                            rc = VDRead(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+                                            RTMemFree(paIoReq[idx].DataSeg.pvSeg);
+                                            break;
+                                        }
+                                        case VDIOREQTXDIR_WRITE:
+                                        {
+                                            rc = VDWrite(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+                                            break;
+                                        }
+                                        case VDIOREQTXDIR_FLUSH:
+                                        {
+                                            rc = VDFlush(pGlob->pVD);
+                                            break;
+                                        }
+                                    }
+                                    if (RT_SUCCESS(rc))
+                                        idx++;
+                                }
+                                else
+                                {
+                                    switch (paIoReq[idx].enmTxDir)
+                                    {
+                                        case VDIOREQTXDIR_READ:
+                                        {
+                                            rc = VDAsyncRead(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
+                                                             tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
+                                            if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                                                RTMemFree(paIoReq[idx].DataSeg.pvSeg);
+                                            break;
+                                        }
+                                        case VDIOREQTXDIR_WRITE:
+                                        {
+                                            rc = VDAsyncWrite(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
+                                                              tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
+                                            break;
+                                        }
+                                        case VDIOREQTXDIR_FLUSH:
+                                        {
+                                            rc = VDAsyncFlush(pGlob->pVD, tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
+                                            break;
+                                        }
+                                    }
+
+                                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                                    {
+                                        idx++;
+                                        fTasksOutstanding = true;
+                                        rc = VINF_SUCCESS;
+                                    }
+                                    else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                                    {
+                                        ASMAtomicXchgBool(&paIoReq[idx].fOutstanding, false);
+                                        rc = VINF_SUCCESS;
+                                    }
+                                }
+
+                                if (RT_FAILURE(rc))
+                                    RTPrintf("Error submitting task %u rc=%Rrc\n", paIoReq[idx].idx, rc);
+                            }
+                        }
+                    }
+
+                    /* Wait for a request to complete. */
+                    if (   fAsync
+                        && fTasksOutstanding)
+                    {
+                        rc = RTSemEventWait(EventSem, RT_INDEFINITE_WAIT);
+                        AssertRC(rc);
+                    }
+                }
+
+                /* Cleanup, wait for all tasks to complete. */
+                while (fAsync)
+                {
+                    unsigned idx = 0;
+                    bool fAllIdle = true;
+
+                    while (idx < cMaxTasksOutstanding)
+                    {
+                        if (tstVDIoTestReqOutstanding(&paIoReq[idx]))
+                        {
+                            fAllIdle = false;
+                            break;
+                        }
+                        idx++;
+                    }
+
+                    if (!fAllIdle)
+                    {
+                        rc = RTSemEventWait(EventSem, 100);
+                        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+                    }
+                    else
+                        break;
+                }
+
+                RTSemEventDestroy(EventSem);
+                RTMemFree(paIoReq);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+
     return rc;
 }
 
@@ -514,6 +741,79 @@ static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG pa
     return rc;
 }
 
+
+static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbPattern = 0;
+    uint64_t uSeed = 0;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                cbPattern = paScriptArgs[i].u.u64;
+                break;
+            }
+            case 's':
+            {
+                uSeed = paScriptArgs[i].u.u64;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    if (pGlob->pIoRnd)
+    {
+        RTPrintf("I/O RNG already exists\n");
+        rc = VERR_INVALID_STATE;
+    }
+    else
+        rc = VDIoRndCreate(&pGlob->pIoRnd, cbPattern, uSeed);
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    if (pGlob->pIoRnd)
+    {
+        VDIoRndDestroy(pGlob->pIoRnd);
+        pGlob->pIoRnd = NULL;
+    }
+    else
+        RTPrintf("WARNING: No I/O RNG active, faulty script. Continuing\n");
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t cMillies = 0;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 't':
+            {
+                cMillies = paScriptArgs[i].u.u64;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    rc = RTThreadSleep(cMillies);
+    return rc;
+}
+
 static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
                                          uint32_t fOpen,
                                          PFNVDCOMPLETED pfnCompleted,
@@ -536,7 +836,7 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
 
     if (fFound && pIt->pfnComplete)
         rc = VERR_FILE_LOCK_FAILED;
-    else if (fOpen & RTFILE_O_CREATE)
+    else if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE)
     {
         /* If the file exists delete the memory disk. */
         if (fFound)
@@ -570,7 +870,7 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
             RTListAppend(&pGlob->ListFiles, &pIt->Node);
         }
     }
-    else if (fOpen & RTFILE_O_OPEN)
+    else if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN)
     {
         if (!fFound)
             rc = VERR_FILE_NOT_FOUND;
@@ -785,6 +1085,103 @@ static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, voi
     return rc;
 }
 
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, size_t cbIo,
+                           size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
+                           unsigned uWriteChance, unsigned uReadChance)
+{
+    pIoTest->fRandomAccess = fRandomAcc;
+    pIoTest->cbIo          = cbIo;
+    pIoTest->cbBlkIo       = cbBlkSize;
+    pIoTest->offStart      = offStart;
+    pIoTest->offEnd        = offEnd;
+    pIoTest->uWriteChance  = uWriteChance;
+    pIoTest->pIoRnd        = pGlob->pIoRnd;
+    pIoTest->offNext       = pIoTest->offEnd < pIoTest->offStart ? pIoTest->offEnd - cbBlkSize : 0;
+    return VINF_SUCCESS;
+}
+
+static bool tstVDIoTestRunning(PVDIOTEST pIoTest)
+{
+    return pIoTest->cbIo > 0;
+}
+
+static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq)
+{
+    return pIoReq->fOutstanding;
+}
+
+/**
+ * Returns true with the given chance in percent.
+ *
+ * @returns true or false
+ * @param   iPercentage   The percentage of the chance to return true.
+ */
+static bool tstVDIoTestIsTrue(PVDIOTEST pIoTest, int iPercentage)
+{
+    int uRnd = VDIoRndGetU32Ex(pIoTest->pIoRnd, 0, 100);
+
+    return (uRnd <= iPercentage); /* This should be enough for our purpose */
+}
+
+static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pIoTest->cbIo)
+    {
+        /* Read or Write? */
+        pIoReq->enmTxDir = tstVDIoTestIsTrue(pIoTest, pIoTest->uWriteChance) ? VDIOREQTXDIR_WRITE : VDIOREQTXDIR_READ;
+        pIoReq->cbReq = RT_MIN(pIoTest->cbBlkIo, pIoTest->cbIo);
+        pIoTest->cbIo -= pIoReq->cbReq;
+        pIoReq->DataSeg.cbSeg = pIoReq->cbReq;
+        pIoReq->off           = pIoTest->offNext;
+
+        if (pIoReq->enmTxDir == VDIOREQTXDIR_WRITE)
+        {
+            rc = VDIoRndGetBuffer(pIoTest->pIoRnd, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
+            AssertRC(rc);
+        }
+        else
+        {
+            /* Read */
+            pIoReq->DataSeg.pvSeg = RTMemAlloc(pIoReq->cbReq);
+            if (!pIoReq->DataSeg.pvSeg)
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            RTSgBufInit(&pIoReq->SgBuf, &pIoReq->DataSeg, 1);
+
+            if (pIoTest->fRandomAccess)
+            {
+                /** @todo */
+            }
+            else
+            {
+                pIoTest->offNext = pIoTest->offEnd < pIoTest->offStart
+                                   ? RT_MAX(pIoTest->offEnd, pIoTest->offNext - pIoTest->cbBlkIo)
+                                   : RT_MIN(pIoTest->offEnd, pIoTest->offNext + pIoTest->cbBlkIo);
+            }
+            pIoReq->fOutstanding = true;
+        }
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+}
+
+static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
+{
+    PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
+    RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
+
+    ASMAtomicXchgBool(&pIoReq->fOutstanding, false);
+    RTSemEventSignal(hEventSem);
+    return;
+}
+
 /**
  * Skips the characters until the given character is reached.
  *
@@ -903,19 +1300,19 @@ static int tstVDIoScriptArgumentParse(PCVDSCRIPTACTION pVDScriptAction, const ch
                             case 'k':
                             case 'K':
                             {
-                                pScriptArg->u.u64 *= 1024;
+                                pScriptArg->u.u64 *= _1K;
                                 break;
                             }
                             case 'm':
                             case 'M':
                             {
-                                pScriptArg->u.u64 *= 1024*1024;
+                                pScriptArg->u.u64 *= _1M;
                                 break;
                             }
                             case 'g':
                             case 'G':
                             {
-                                pScriptArg->u.u64 *= 1024*1024*1024;
+                                pScriptArg->u.u64 *= _1G;
                                 break;
                             }
                             default:
@@ -945,19 +1342,19 @@ static int tstVDIoScriptArgumentParse(PCVDSCRIPTACTION pVDScriptAction, const ch
                                 case 'k':
                                 case 'K':
                                 {
-                                    pScriptArg->u.Range.Start *= 1024;
+                                    pScriptArg->u.u64 *= _1K;
                                     break;
                                 }
                                 case 'm':
                                 case 'M':
                                 {
-                                    pScriptArg->u.Range.Start *= 1024*1024;
+                                    pScriptArg->u.u64 *= _1M;
                                     break;
                                 }
                                 case 'g':
                                 case 'G':
                                 {
-                                    pScriptArg->u.Range.Start *= 1024*1024*1024;
+                                    pScriptArg->u.u64 *= _1G;
                                     break;
                                 }
                                 default:
@@ -979,19 +1376,19 @@ static int tstVDIoScriptArgumentParse(PCVDSCRIPTACTION pVDScriptAction, const ch
                                     case 'k':
                                     case 'K':
                                     {
-                                        pScriptArg->u.Range.End *= 1024;
+                                        pScriptArg->u.Range.End *= _1K;
                                         break;
                                     }
                                     case 'm':
                                     case 'M':
                                     {
-                                        pScriptArg->u.Range.End *= 1024*1024;
+                                        pScriptArg->u.Range.End *= _1M;
                                         break;
                                     }
                                     case 'g':
                                     case 'G':
                                     {
-                                        pScriptArg->u.Range.End *= 1024*1024*1024;
+                                        pScriptArg->u.Range.End *= _1G;
                                         break;
                                     }
                                     default:
@@ -1176,22 +1573,23 @@ static int tstVDIoScriptExecute(PRTSTREAM pStrm, PVDTESTGLOB pGlob)
 
                         cScriptArgsMax = pVDScriptAction->cArgDescs;
                         paScriptArgs = (PVDSCRIPTARG)RTMemAllocZ(cScriptArgsMax * sizeof(VDSCRIPTARG));
-                        if (paScriptArgs)
-                        {
-                            unsigned cScriptArgs;
+                    }
 
-                            rc = tstVDIoScriptArgumentListParse(psz, pVDScriptAction, paScriptArgs, &cScriptArgs);
-                            if (RT_SUCCESS(rc))
-                            {
-                                /* Execute the handler. */
-                                rc = pVDScriptAction->pfnHandler(pGlob, paScriptArgs, cScriptArgs);
-                            }
-                        }
-                        else
+                    if (paScriptArgs)
+                    {
+                        unsigned cScriptArgs;
+
+                        rc = tstVDIoScriptArgumentListParse(psz, pVDScriptAction, paScriptArgs, &cScriptArgs);
+                        if (RT_SUCCESS(rc))
                         {
-                            RTPrintf("Out of memory while allocating argument array for script action %s\n", pcszAction);
-                            rc = VERR_NO_MEMORY;
+                            /* Execute the handler. */
+                            rc = pVDScriptAction->pfnHandler(pGlob, paScriptArgs, cScriptArgs);
                         }
+                    }
+                    else
+                    {
+                        RTPrintf("Out of memory while allocating argument array for script action %s\n", pcszAction);
+                        rc = VERR_NO_MEMORY;
                     }
                 }
                 else
@@ -1208,6 +1606,11 @@ static int tstVDIoScriptExecute(PRTSTREAM pStrm, PVDTESTGLOB pGlob)
         }
     } while(RT_SUCCESS(rc));
 
+    if (rc == VERR_EOF)
+    {
+        RTPrintf("Successfully executed I/O script\n");
+        rc = VINF_SUCCESS;
+    }
     return rc;
 }
 
