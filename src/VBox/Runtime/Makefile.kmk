@@ -364,6 +364,7 @@ RuntimeR3_SOURCES       = \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
+	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/stringalloc.cpp \
@@ -1079,6 +1080,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/RTStrStr.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
+	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/stringalloc.cpp \
@@ -1555,6 +1557,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/string/strformat.cpp \
+	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/strprintf.cpp \
@@ -1881,6 +1884,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/misc/sanity-c.c \
  	common/misc/sanity-cpp.cpp \
  	common/string/strformat.cpp \
+ 	common/string/strformatnum.cpp \
  	common/string/strformatrt.cpp \
  	common/string/strformattype.cpp \
  	common/string/strncmp.cpp \
