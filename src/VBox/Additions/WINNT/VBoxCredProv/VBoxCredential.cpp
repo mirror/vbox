@@ -695,8 +695,12 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
     UNREFERENCED_PARAMETER(ppwszOptionalStatusText);
     UNREFERENCED_PARAMETER(pcpsiOptionalStatusIcon);
 
-    KERB_INTERACTIVE_LOGON kil;
-    ZeroMemory(&kil, sizeof(kil));
+    KERB_INTERACTIVE_UNLOCK_LOGON kiul;
+    ZeroMemory(&kiul, sizeof(kiul));
+
+    /* Save a pointer to the interactive logon struct. */
+    KERB_INTERACTIVE_LOGON* pkil = &kiul.Logon;
+    AssertPtr(pkil);
 
     HRESULT hr;
 
@@ -706,25 +710,48 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
     {
         /* Is a domain name missing? Then use the name of the local computer. */
         if (NULL == m_rgFieldStrings [SFI_DOMAINNAME])
-            hr = UnicodeStringInitWithString(wszComputerName, &kil.LogonDomainName);
+            hr = UnicodeStringInitWithString(wszComputerName, &pkil->LogonDomainName);
         else
             hr = UnicodeStringInitWithString(m_rgFieldStrings [SFI_DOMAINNAME],
-                                             &kil.LogonDomainName);
+                                             &pkil->LogonDomainName);
 
         /* Fill in the username and password. */
         if (SUCCEEDED(hr))
         {
-            hr = UnicodeStringInitWithString(m_rgFieldStrings[SFI_USERNAME], &kil.UserName);
+            hr = UnicodeStringInitWithString(m_rgFieldStrings[SFI_USERNAME], &pkil->UserName);
             if (SUCCEEDED(hr))
             {
-                hr = UnicodeStringInitWithString(m_rgFieldStrings[SFI_PASSWORD], &kil.Password);
+                hr = UnicodeStringInitWithString(m_rgFieldStrings[SFI_PASSWORD], &pkil->Password);
                 if (SUCCEEDED(hr))
                 {
-                    /* Allocate copies of, and package, the strings in a binary blob. */
-                    kil.MessageType = KerbInteractiveLogon;
-                    hr = KerbInteractiveLogonPack(kil,
-                                                  &pcpCredentialSerialization->rgbSerialization,
-                                                  &pcpCredentialSerialization->cbSerialization);
+                    /* Set credential type according to current usage scenario. */
+                    AssertPtr(pkil);
+                    switch (m_cpUS)
+                    {
+                        case CPUS_UNLOCK_WORKSTATION:
+                            pkil->MessageType = KerbWorkstationUnlockLogon;
+                            break;
+
+                        case CPUS_LOGON:
+                            pkil->MessageType = KerbInteractiveLogon;
+                            break;
+
+                        case CPUS_CREDUI:
+                            pkil->MessageType = (KERB_LOGON_SUBMIT_TYPE)0; /* No message type required here. */
+                            break;
+
+                        default:
+                            hr = E_FAIL;
+                            break;
+                    }
+
+                    if (SUCCEEDED(hr))
+                    {
+                        /* Allocate copies of, and package, the strings in a binary blob. */
+                        hr = KerbInteractiveUnlockLogonPack(kiul,
+                                                            &pcpCredentialSerialization->rgbSerialization,
+                                                            &pcpCredentialSerialization->cbSerialization);
+                    }
                     if (SUCCEEDED(hr))
                     {
                         ULONG ulAuthPackage;

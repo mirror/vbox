@@ -43,19 +43,19 @@ HRESULT UnicodeStringInitWithString(
     );
 
 //packages the credentials into the buffer that the system expects
-HRESULT KerbInteractiveLogonPack(
-    const KERB_INTERACTIVE_LOGON& rkil,
+HRESULT KerbInteractiveUnlockLogonPack(
+    const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
     BYTE** prgb,
     DWORD* pcb
     );
 
 //unpacks the "packed" version of the creds in-place into the "unpacked" version
-void KerbInteractiveLogonUnpackInPlace(
+void KerbInteractiveUnlockLogonUnpackInPlace(
     KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
     );
-
 
 //get the authentication package that will be used for our logon attempt
 HRESULT RetrieveNegotiateAuthPackage(
     ULONG * pulAuthPackage
     );
+

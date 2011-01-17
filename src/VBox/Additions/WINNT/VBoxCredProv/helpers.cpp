@@ -169,65 +169,73 @@ static void _UnicodeStringPackedUnicodeStringCopy(
 }
 
 //
-// WinLogon and LSA consume "packed" KERB_INTERACTIVE_LOGONs.  In these, the PWSTR members of each
+// WinLogon and LSA consume "packed" KERB_INTERACTIVE_UNLOCK_LOGONs.  In these, the PWSTR members of each
 // UNICODE_STRING are not actually pointers but byte offsets into the overall buffer represented
-// by the packed KERB_INTERACTIVE_LOGON.  For example:
+// by the packed KERB_INTERACTIVE_UNLOCK_LOGON.  For example:
 //
-// kil.LogonDomainName.Length = 14                             -> Length is in bytes, not characters
-// kil.LogonDomainName.Buffer = sizeof(KERB_INTERACTIVE_LOGON) -> LogonDomainName begins immediately
-//                                                                after the KERB_... struct in the buffer
-// kil.UserName.Length = 10
-// kil.UserName.Buffer = sizeof(KERB_INTERACTIVE_LOGON) + 14   -> UNICODE_STRINGS are NOT null-terminated
+// rkiulIn.Logon.LogonDomainName.Length = 14                                    -> Length is in bytes, not characters
+// rkiulIn.Logon.LogonDomainName.Buffer = sizeof(KERB_INTERACTIVE_UNLOCK_LOGON) -> LogonDomainName begins immediately
+//                                                                              after the KERB_... struct in the buffer
+// rkiulIn.Logon.UserName.Length = 10
+// rkiulIn.Logon.UserName.Buffer = sizeof(KERB_INTERACTIVE_UNLOCK_LOGON) + 14   -> UNICODE_STRINGS are NOT null-terminated
 //
-// kil.Password.Length = 16
-// kil.Password.Buffer = sizeof(KERB_INTERACTIVE_LOGON) + 14 + 10
+// rkiulIn.Logon.Password.Length = 16
+// rkiulIn.Logon.Password.Buffer = sizeof(KERB_INTERACTIVE_UNLOCK_LOGON) + 14 + 10
 //
 // There's more information on this at:
 // http://msdn.microsoft.com/msdnmag/issues/05/06/SecurityBriefs/#void
 //
-
-HRESULT KerbInteractiveLogonPack(
-                                 const KERB_INTERACTIVE_LOGON& rkil,
-                                 BYTE** prgb,
-                                 DWORD* pcb
-                                 )
+HRESULT KerbInteractiveUnlockLogonPack(
+                                       const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
+                                       BYTE** prgb,
+                                       DWORD* pcb
+                                       )
 {
     HRESULT hr;
 
+    const KERB_INTERACTIVE_LOGON* pkilIn = &rkiulIn.Logon;
+
     // alloc space for struct plus extra for the three strings
-    DWORD cb = sizeof(rkil) +
-        rkil.LogonDomainName.Length +
-        rkil.UserName.Length +
-        rkil.Password.Length;
+    DWORD cb = sizeof(rkiulIn) +
+        pkilIn->LogonDomainName.Length +
+        pkilIn->UserName.Length +
+        pkilIn->Password.Length;
 
-    KERB_INTERACTIVE_LOGON* pkil = (KERB_INTERACTIVE_LOGON*)CoTaskMemAlloc(cb);
+    KERB_INTERACTIVE_UNLOCK_LOGON* pkiulOut = (KERB_INTERACTIVE_UNLOCK_LOGON*)CoTaskMemAlloc(cb);
 
-    if (pkil)
+    if (pkiulOut)
     {
-        pkil->MessageType = rkil.MessageType;
+        ZeroMemory(&pkiulOut->LogonId, sizeof(LUID));
 
         //
         // point pbBuffer at the beginning of the extra space
         //
-        BYTE* pbBuffer = (BYTE*)pkil + sizeof(KERB_INTERACTIVE_LOGON);
+        BYTE* pbBuffer = (BYTE*)pkiulOut + sizeof(*pkiulOut);
+
+        //
+        // set up the Logon structure within the KERB_INTERACTIVE_UNLOCK_LOGON
+        //
+        KERB_INTERACTIVE_LOGON* pkilOut = &pkiulOut->Logon;
+
+        pkilOut->MessageType = pkilIn->MessageType;
 
         //
         // copy each string,
         // fix up appropriate buffer pointer to be offset,
         // advance buffer pointer over copied characters in extra space
         //
-        _UnicodeStringPackedUnicodeStringCopy(rkil.LogonDomainName, (PWSTR)pbBuffer, &pkil->LogonDomainName);
-        pkil->LogonDomainName.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkil);
-        pbBuffer += pkil->LogonDomainName.Length;
+        _UnicodeStringPackedUnicodeStringCopy(pkilIn->LogonDomainName, (PWSTR)pbBuffer, &pkilOut->LogonDomainName);
+        pkilOut->LogonDomainName.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkiulOut);
+        pbBuffer += pkilOut->LogonDomainName.Length;
 
-        _UnicodeStringPackedUnicodeStringCopy(rkil.UserName, (PWSTR)pbBuffer, &pkil->UserName);
-        pkil->UserName.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkil);
-        pbBuffer += pkil->UserName.Length;
+        _UnicodeStringPackedUnicodeStringCopy(pkilIn->UserName, (PWSTR)pbBuffer, &pkilOut->UserName);
+        pkilOut->UserName.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkiulOut);
+        pbBuffer += pkilOut->UserName.Length;
 
-        _UnicodeStringPackedUnicodeStringCopy(rkil.Password, (PWSTR)pbBuffer, &pkil->Password);
-        pkil->Password.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkil);
+        _UnicodeStringPackedUnicodeStringCopy(pkilIn->Password, (PWSTR)pbBuffer, &pkilOut->Password);
+        pkilOut->Password.Buffer = (PWSTR)(pbBuffer - (BYTE*)pkiulOut);
 
-        *prgb = (BYTE*)pkil;
+        *prgb = (BYTE*)pkiulOut;
         *pcb = cb;
 
         hr = S_OK;
@@ -245,12 +253,7 @@ HRESULT KerbInteractiveLogonPack(
 // being real pointers.  This means, of course, that passing the resultant struct across any sort of
 // memory space boundary is not going to work -- repack it if necessary!
 //
-//
-// Unpack a KERB_INTERACTIVE_UNLOCK_LOGON *in place*.  That is, reset the Buffers from being offsets to
-// being real pointers.  This means, of course, that passing the resultant struct across any sort of
-// memory space boundary is not going to work -- repack it if necessary!
-//
-void KerbInteractiveLogonUnpackInPlace(
+void KerbInteractiveUnlockLogonUnpackInPlace(
     __inout_bcount(cb) KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
     )
 {
