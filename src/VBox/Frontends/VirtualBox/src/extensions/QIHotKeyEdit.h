@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,22 +19,12 @@
 #ifndef ___QIHotKeyEdit_h___
 #define ___QIHotKeyEdit_h___
 
+/* Global includes */
 #include <QLabel>
 
 #ifdef Q_WS_X11
 # include <QMap>
-#endif
-
-#ifdef Q_WS_PM
-/* Extra virtual keys returned by QIHotKeyEdit::virtualKey() */
-# define VK_LSHIFT   VK_USERFIRST + 0
-# define VK_LCTRL    VK_USERFIRST + 1
-# define VK_LWIN     VK_USERFIRST + 2
-# define VK_RWIN     VK_USERFIRST + 3
-# define VK_WINMENU  VK_USERFIRST + 4
-# define VK_FORWARD  VK_USERFIRST + 5
-# define VK_BACKWARD VK_USERFIRST + 6
-#endif
+#endif /* Q_WS_X11 */
 
 class QIHotKeyEdit : public QLabel
 {
@@ -42,26 +32,22 @@ class QIHotKeyEdit : public QLabel
 
 public:
 
-    QIHotKeyEdit (QWidget *aParent);
+    QIHotKeyEdit(QWidget *pParent);
     virtual ~QIHotKeyEdit();
 
-    void setKey (int aKeyVal);
-    int key() const { return mKeyVal; }
+    void setKey(int iKeyVal);
+    int key() const { return m_iKeyVal; }
 
-    QString symbolicName() const { return mSymbName; }
+    QString symbolicName() const { return m_strSymbName; }
 
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
-#ifdef Q_WS_PM
-    static int virtualKey (QMSG *aMsg);
-#endif
-
-#if defined (Q_WS_PM) || defined (Q_WS_X11)
+    static QString keyName(int iKeyVal);
+    static bool isValidKey(int iKeyVal);
+#ifdef Q_WS_X11
     static void retranslateUi();
-#endif
-    static QString keyName (int aKeyVal);
-    static bool isValidKey (int aKeyVal);
+#endif /* Q_WS_X11 */
 
 public slots:
 
@@ -70,41 +56,36 @@ public slots:
 protected:
 
 #if defined (Q_WS_WIN32)
-    bool winEvent (MSG *aMsg, long *aResult);
-#elif defined (Q_WS_PM)
-    bool pmEvent (QMSG *aMsg);
+    bool winEvent(MSG *pMsg, long *pResult);
 #elif defined (Q_WS_X11)
-    bool x11Event (XEvent *event);
+    bool x11Event(XEvent *pEvent);
 #elif defined (Q_WS_MAC)
-    static bool darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-    bool darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent);
+    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif
 
-    void focusInEvent (QFocusEvent *);
-    void focusOutEvent (QFocusEvent *);
-
-    void paintEvent (QPaintEvent *);
+    void focusInEvent(QFocusEvent *pEvent);
+    void focusOutEvent(QFocusEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent);
 
 private:
 
     void updateText();
 
-    int mKeyVal;
-    QString mSymbName;
+    int m_iKeyVal;
+    QString m_strSymbName;
 
-#if defined (Q_WS_PM)
-    static QMap <int, QString> sKeyNames;
-#elif defined (Q_WS_X11)
-    static QMap <QString, QString> sKeyNames;
-#endif
+#ifdef Q_WS_X11
+    static QMap<QString, QString> s_keyNames;
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
-    /** The current modifier key mask. Used to figure out which modifier
-     *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    uint32_t mDarwinKeyModifiers;
-#endif
+    /* The current modifier key mask. Used to figure out which modifier
+     * key was pressed when we get a kEventRawKeyModifiersChanged event. */
+    uint32_t m_uDarwinKeyModifiers;
+#endif /* Q_WS_MAC */
 
-    static const char *kNoneSymbName;
+    static const char *m_spNoneSymbName;
 };
 
 #endif // !___QIHotKeyEdit_h___
