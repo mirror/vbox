@@ -185,6 +185,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
         /* we don't support either the pixel format or the color depth,
          * bFallback to a self-provided 32bpp RGB buffer */
         m_img = QImage (m_width, m_height, QImage::Format_RGB32);
+        m_img.fill(0);
         m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
         m_bUsesGuestVRAM = false;
     }
