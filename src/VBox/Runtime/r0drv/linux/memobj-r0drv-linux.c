@@ -198,9 +198,9 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
 
      if (cPages > 255)
      {
-# ifdef __GFP_NORETRY
-        /* Not available in Linux 2.4.0 */
-        fFlagsLnx |= __GFP_NORETRY;
+# ifdef __GFP_REPEAT
+         /* Try hard to allocate the memory, but the allocation attempt might fail. */
+        fFlagsLnx |= __GFP_REPEAT;
 # endif
 # ifdef __GFP_NOMEMALLOC
         /* Introduced with Linux 2.6.12: Don't use emergency reserves */
