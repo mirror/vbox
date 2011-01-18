@@ -7529,22 +7529,16 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_Floppy:
             case DeviceType_DVD:
                 if (dev.strHostDriveSrc.isNotEmpty())
-                {
                     rc = mParent->host()->findHostDriveByName(dev.deviceType, dev.strHostDriveSrc, false /* fRefresh */, medium);
-                    if (rc == VBOX_E_OBJECT_NOT_FOUND)
-                    {
-                        /* This is not an error. The host drive might have vanished,
-                         * so just go ahead without this medium attachment. */
-                        rc = S_OK;
-                    }
-                }
                 else
-                    mParent->findRemoveableMedium(dev.deviceType,
-                                                  dev.uuid,
-                                                  false /* fRefresh */,
-                                                  false /* aSetError */,
-                                                  medium);
-                        // note: do NOT fail if a removeable medium cannot be found, silently ignore the error completely
+                    rc = mParent->findRemoveableMedium(dev.deviceType,
+                                                       dev.uuid,
+                                                       false /* fRefresh */,
+                                                       false /* aSetError */,
+                                                       medium);
+                if (rc == VBOX_E_OBJECT_NOT_FOUND)
+                    // This is not an error. The host drive or UUID might have vanished, so just go ahead without this removeable medium attachment
+                    rc = S_OK;
             break;
 
             case DeviceType_HardDisk:
