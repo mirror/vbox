@@ -320,8 +320,10 @@ typedef struct DBGFCPU
     /** Padding the structure to 16 bytes. */
     bool                    afReserved[7];
 
-    /** The register set for this CPU.  Can be NULL. */
-    R3PTRTYPE(struct DBGFREGSET *) pRegSet;
+    /** The guest register set for this CPU.  Can be NULL. */
+    R3PTRTYPE(struct DBGFREGSET *) pGuestRegSet;
+    /** The hypervisor register set for this CPU.  Can be NULL. */
+    R3PTRTYPE(struct DBGFREGSET *) pHyperRegSet;
 } DBGFCPU;
 /** Pointer to DBGFCPU data. */
 typedef DBGFCPU *PDBGFCPU;
