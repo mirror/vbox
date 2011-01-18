@@ -355,9 +355,11 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo),NULL,               0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
     { "r",          0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdReg,         "[reg [newval]]",       "Show or set register(s) - active reg set." },
     { "rg",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
+    { "rg32",       0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdRegGuest,    "",                     "Show 32-bit guest registers." },
+    { "rg64",       0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdRegGuest,    "",                     "Show 64-bit guest registers." },
     { "rh",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
-    { "s",          0,       ~0,        &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  NULL,              0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
+    { "s",          0,       ~0,        &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem), NULL,               0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
     { "sa",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for an ascii string." },
     { "sb",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more bytes." },
     { "sd",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more double words." },
@@ -1338,200 +1340,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
-    /*
-     * cArgs == 0: Show all
-     */
-    if (cArgs == 0)
-    {
-        /*
-         * Get register context.
-         */
-        PVMCPU          pVCpu = VMMGetCpuById(pVM, pDbgc->idCpu);
-        int             rc;
-        PCPUMCTX        pCtx;
-        PCCPUMCTXCORE   pCtxCore;
-        if (!*pszPrefix)
-        {
-            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-            pCtxCore = CPUMCTX2CORE(pCtx);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            rc = CPUMQueryHyperCtxPtr(pVCpu, &pCtx);
-            pCtxCore = CPUMGetHyperCtxCore(pVCpu);
-        }
-        if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Getting register context\n");
-
-        /*
-         * Format the flags.
-         */
-        static struct
-        {
-            const char *pszSet; const char *pszClear; uint32_t fFlag;
-        }   aFlags[] =
-        {
-            { "vip",NULL, X86_EFL_VIP },
-            { "vif",NULL, X86_EFL_VIF },
-            { "ac", NULL, X86_EFL_AC },
-            { "vm", NULL, X86_EFL_VM },
-            { "rf", NULL, X86_EFL_RF },
-            { "nt", NULL, X86_EFL_NT },
-            { "ov", "nv", X86_EFL_OF },
-            { "dn", "up", X86_EFL_DF },
-            { "ei", "di", X86_EFL_IF },
-            { "tf", NULL, X86_EFL_TF },
-            { "ng", "pl", X86_EFL_SF },
-            { "zr", "nz", X86_EFL_ZF },
-            { "ac", "na", X86_EFL_AF },
-            { "po", "pe", X86_EFL_PF },
-            { "cy", "nc", X86_EFL_CF },
-        };
-        char szEFlags[80];
-        char *psz = szEFlags;
-        uint32_t efl = pCtxCore->eflags.u32;
-        for (unsigned i = 0; i < RT_ELEMENTS(aFlags); i++)
-        {
-            const char *pszAdd = aFlags[i].fFlag & efl ? aFlags[i].pszSet : aFlags[i].pszClear;
-            if (pszAdd)
-            {
-                strcpy(psz, pszAdd);
-                psz += strlen(pszAdd);
-                *psz++ = ' ';
-            }
-        }
-        psz[-1] = '\0';
-
-
-        /*
-         * Format the registers.
-         */
-        if (pDbgc->fRegTerse)
-        {
-            if (CPUMIsGuestIn64BitCodeEx(pCtx))
-            {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
-                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
-                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
-                    "%sr14=%016RX64 %sr15=%016RX64\n"
-                    "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
-                    "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %sss=%04x                %seflags=%08x\n",
-                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
-                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
-                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
-                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 34 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, efl);
-            }
-            else
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                    "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
-                    "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                    "%scs=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %sss=%04x               %seflags=%08x\n",
-                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 34 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, efl);
-        }
-        else
-        {
-            if (CPUMIsGuestIn64BitCodeEx(pCtx))
-            {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                    "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
-                    "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
-                    "%sr10=%016RX64 %sr11=%016RX64 %sr12=%016RX64 %sr13=%016RX64\n"
-                    "%sr14=%016RX64 %sr15=%016RX64\n"
-                    "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
-                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%ses={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sgs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sss={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%scr0=%016RX64 %scr2=%016RX64 %scr3=%016RX64 %scr4=%016RX64\n"
-                    "%sdr0=%016RX64 %sdr1=%016RX64 %sdr2=%016RX64 %sdr3=%016RX64\n"
-                    "%sdr4=%016RX64 %sdr5=%016RX64 %sdr6=%016RX64 %sdr7=%016RX64\n"
-                    "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
-                    "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sSysEnter={cs=%04llx eip=%016RX64 esp=%016RX64}\n"
-                    ,
-                    pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
-                    pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
-                    pszPrefix, pCtxCore->r14, pszPrefix, pCtxCore->r15,
-                    pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u,
-                    pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
-                    pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1], pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
-                    pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5], pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
-                    pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
-                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
-                    pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
-
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                        "MSR:\n"
-                        "%sEFER         =%016RX64\n"
-                        "%sPAT          =%016RX64\n"
-                        "%sSTAR         =%016RX64\n"
-                        "%sCSTAR        =%016RX64\n"
-                        "%sLSTAR        =%016RX64\n"
-                        "%sSFMASK       =%016RX64\n"
-                        "%sKERNELGSBASE =%016RX64\n",
-                        pszPrefix, pCtx->msrEFER,
-                        pszPrefix, pCtx->msrPAT,
-                        pszPrefix, pCtx->msrSTAR,
-                        pszPrefix, pCtx->msrCSTAR,
-                        pszPrefix, pCtx->msrLSTAR,
-                        pszPrefix, pCtx->msrSFMASK,
-                        pszPrefix, pCtx->msrKERNELGSBASE);
-            }
-            else
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                    "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
-                    "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr0=%016RX64 %sdr1=%016RX64\n"
-                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr2=%016RX64 %sdr3=%016RX64\n"
-                    "%ses={%04x base=%016RX64 limit=%08x flags=%08x} %sdr4=%016RX64 %sdr5=%016RX64\n"
-                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr6=%016RX64 %sdr7=%016RX64\n"
-                    "%sgs={%04x base=%016RX64 limit=%08x flags=%08x} %scr0=%016RX64 %scr2=%016RX64\n"
-                    "%sss={%04x base=%016RX64 limit=%08x flags=%08x} %scr3=%016RX64 %scr4=%016RX64\n"
-                    "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
-                    "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
-                    "%sFCW=%04x %sFSW=%04x %sFTW=%04x\n"
-                    ,
-                    pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
-                    pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
-                    pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
-                    pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
-                    pszPrefix, pCtx->gdtr.pGdt,pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, pCtxCore->eflags,
-                    pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
-                    pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
-                    pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
-                    pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
-        }
-
-        /*
-         * Disassemble one instruction at cs:[r|e]ip.
-         */
-        if (CPUMIsGuestIn64BitCodeEx(pCtx))
-            return pCmdHlp->pfnExec(pCmdHlp, "u %016RX64 L 0", pCtx->rip);
-        return pCmdHlp->pfnExec(pCmdHlp, "u %04x:%08x L 0", pCtx->cs, pCtx->eip);
-    }
+    Assert(cArgs != 0); /* handled by caller */
 
     /*
      * cArgs == 1: Show the register.
@@ -1580,7 +1389,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * The 'rg' command.
+ * The 'rg', 'rg64' and 'rg32' commands.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -1591,6 +1400,95 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  */
 static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
+    /*
+     * Show all registers our selves.
+     */
+    if (cArgs == 0)
+    {
+        PDBGC       pDbgc      = DBGC_CMDHLP2DBGC(pCmdHlp);
+        bool const  f64BitMode = !strcmp(pCmd->pszCmd, "rg64")
+                              || (   !strcmp(pCmd->pszCmd, "rg32")
+                                  && CPUMIsGuestIn64BitCodeEx(CPUMQueryGuestCtxPtr(VMMGetCpuById(pVM, pDbgc->idCpu))));
+        char        szDisAndRegs[8192];
+        int         rc;
+
+        if (pDbgc->fRegTerse)
+        {
+            if (f64BitMode)
+                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
+                                     "u %016VR{rip} L 0\n"
+                                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
+                                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
+                                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
+                                     "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
+                                     "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
+                                     "cs=%04VR{cs} ds=%04VR{ds} es=%04VR{es} fs=%04VR{fs} gs=%04VR{gs} ss=%04VR{ss}                     rflags=%08VR{rflags}\n");
+            else
+                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
+                                     "u %04VR{cs}:%08VR{eip} L 0\n"
+                                     "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
+                                     "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
+                                     "cs=%04VR{cs} ds=%04VR{ds} es=%04VR{es} fs=%04VR{fs} gs=%04VR{gs} ss=%04VR{ss}               eflags=%08VR{eflags}\n");
+        }
+        else
+        {
+            if (f64BitMode)
+                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
+                                     "u %016VR{rip} L 0\n"
+                                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
+                                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
+                                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
+                                     "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
+                                     "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
+                                     "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
+                                     "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
+                                     "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
+                                     "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
+                                     "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
+                                     "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
+                                     "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
+                                     "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
+                                     "gdtr=%016VR{gdtr_base}:%04VR{gdtr_limit}  idtr=%016VR{idtr_base}:%04VR{idtr_limit}  rflags=%08VR{rflags}\n"
+                                     "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
+                                     "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
+                                     "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
+                                     "        efer=%016VR{efer}\n"
+                                     "         pat=%016VR{pat}\n"
+                                     "     sf_mask=%016VR{sf_mask}\n"
+                                     "krnl_gs_base=%016VR{krnl_gs_base}\n"
+                                     "       lstar=%016VR{lstar}\n"
+                                     "        star=%016VR{star} cstar=%016VR{cstar}\n"
+                                     "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                                     );
+            else
+                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
+                                     "u %04VR{cs}:%08VR{eip} L 0\n"
+                                     "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
+                                     "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
+                                     "cs={%04VR{cs} base=%08VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} dr0=%08VR{dr0} dr1=%08VR{dr1}\n"
+                                     "ds={%04VR{ds} base=%08VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} dr2=%08VR{dr2} dr3=%08VR{dr3}\n"
+                                     "es={%04VR{es} base=%08VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} dr6=%08VR{dr6} dr6=%08VR{dr6}\n"
+                                     "fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr0=%08VR{cr0} cr2=%08VR{cr0}\n"
+                                     "gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr3=%08VR{cr0} cr4=%08VR{cr0}\n"
+                                     "ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}} cr8=%08VR{cr8}\n"
+                                     "gdtr=%08VR{gdtr_base}:%04VR{gdtr_limit}  idtr=%08VR{idtr_base}:%04VR{idtr_limit}  eflags=%08VR{eflags}\n"
+                                     "ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
+                                     "tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
+                                     "sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
+                                     "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                                     );
+        }
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegPrintf failed");
+        char *pszRegs = strchr(szDisAndRegs, '\n');
+        *pszRegs++ = '\0';
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "%s", pszRegs);
+
+        /*
+         * Disassemble one instruction at cs:[r|e]ip.
+         */
+        return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
+    }
     return dbgcCmdRegCommon(pCmd, pCmdHlp, pVM, paArgs, cArgs, pResult, "");
 }
 
@@ -1607,6 +1505,47 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
  */
 static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
+    /*
+     * Show all registers our selves.
+     */
+    if (cArgs == 0)
+    {
+        PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+        char    szDisAndRegs[8192];
+        int     rc;
+
+        if (pDbgc->fRegTerse)
+            rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
+                                 "u %VR{cs}:%VR{eip} L 0\n"
+                                 ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
+                                 ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
+                                 ".cs=%04VR{cs} .ds=%04VR{ds} .es=%04VR{es} .fs=%04VR{fs} .gs=%04VR{gs} .ss=%04VR{ss}              .eflags=%08VR{eflags}\n");
+        else
+            rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
+                                 "u %04VR{cs}:%08VR{eip} L 0\n"
+                                 ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
+                                 ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
+                                 ".cs={%04VR{cs} base=%08VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} .dr0=%08VR{dr0} .dr1=%08VR{dr1}\n"
+                                 ".ds={%04VR{ds} base=%08VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} .dr2=%08VR{dr2} .dr3=%08VR{dr3}\n"
+                                 ".es={%04VR{es} base=%08VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} .dr6=%08VR{dr6} .dr6=%08VR{dr6}\n"
+                                 ".fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} .cr3=%016VR{cr3}\n"
+                                 ".gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}}\n"
+                                 ".ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
+                                 ".gdtr=%08VR{gdtr_base}:%04VR{gdtr_limit}  .idtr=%08VR{idtr_base}:%04VR{idtr_limit}  .eflags=%08VR{eflags}\n"
+                                 ".ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
+                                 ".tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
+                                 );
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegPrintf failed");
+        char *pszRegs = strchr(szDisAndRegs, '\n');
+        *pszRegs++ = '\0';
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "%s", pszRegs);
+
+        /*
+         * Disassemble one instruction at cs:[r|e]ip.
+         */
+        return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
+    }
     return dbgcCmdRegCommon(pCmd, pCmdHlp, pVM, paArgs, cArgs, pResult, ".");
 }
 
