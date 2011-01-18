@@ -232,6 +232,7 @@ public:
     HRESULT findRemoveableMedium(DeviceType_T mediumType,
                                  const Guid &uuid,
                                  bool fRefresh,
+                                 bool aSetError,
                                  ComObjPtr<Medium> &pMedium);
 
     HRESULT findGuestOSType(const Bstr &bstrOSType,
