@@ -57,6 +57,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: be more robust when a faulty guest sends ATA commands to an
+          ATAPI device (bug #6597)</para>
+      </listitem>
+
+      <listitem>
         <para>Parallels: fixed deletion of the image during suspend, pause or power off</para>
       </listitem>
 
