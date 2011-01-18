@@ -1423,7 +1423,7 @@ VMMR3DECL(int) DBGFR3RegCpuSetBatch( PVM pVM, VMCPUID idCpu, PCDBGFREGENTRY paRe
 
 VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE enmType);
 
-VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters);
+VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters, bool fGuestRegs);
 VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance);
 
 /**

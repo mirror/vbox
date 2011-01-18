@@ -267,7 +267,8 @@ static bool dbgfR3RegIsNameValid(const char *pszName, char chDot)
  * @param   iInstance           The instance number to be appended to @a
  *                              pszPrefix when creating the set name.
  */
-static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSETTYPE enmType, void *pvUserArg, const char *pszPrefix, uint32_t iInstance)
+static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSETTYPE enmType, void *pvUserArg,
+                                   const char *pszPrefix, uint32_t iInstance)
 {
     /*
      * Validate input.
@@ -456,7 +457,10 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             {
                 if (pRegSet->cDescs > DBGFREG_ALL_COUNT)
                     pVM->dbgf.s.cRegs -= pRegSet->cDescs - DBGFREG_ALL_COUNT;
-                pVM->aCpus[iInstance].dbgf.s.pRegSet = pRegSet;
+                if (!strcmp(pszPrefix, "cpu"))
+                    pVM->aCpus[iInstance].dbgf.s.pGuestRegSet = pRegSet;
+                else
+                    pVM->aCpus[iInstance].dbgf.s.pHyperRegSet = pRegSet;
             }
 
             PDBGFREGLOOKUP  paLookupRecs = pRegSet->paLookupRecs;
@@ -493,8 +497,10 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
  * @param   pVM             The VM handle.
  * @param   pVCpu           The virtual CPU handle.
  * @param   paRegisters     The register descriptors.
+ * @param   fGuestRegs      Set if it's the guest registers, clear if
+ *                          hypervisor registers.
  */
-VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters)
+VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters, bool fGuestRegs)
 {
     if (!pVM->dbgf.s.fRegDbInitialized)
     {
@@ -503,7 +509,7 @@ VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC pa
             return rc;
     }
 
-    return dbgfR3RegRegisterCommon(pVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, "cpu", pVCpu->idCpu);
+    return dbgfR3RegRegisterCommon(pVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, fGuestRegs ? "cpu" : "hypercpu", pVCpu->idCpu);
 }
 
 
@@ -787,7 +793,7 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryWorker(PVM pVM, VMCPUID idCpu, DBGFREG
     /*
      * Look up the register set of the specified CPU.
      */
-    PDBGFREGSET pSet = pVM->aCpus[idCpu].dbgf.s.pRegSet;
+    PDBGFREGSET pSet = pVM->aCpus[idCpu].dbgf.s.pGuestRegSet;
     if (RT_LIKELY(pSet))
     {
         /*
@@ -1127,7 +1133,7 @@ VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE
     AssertReturn(enmType >= DBGFREGVALTYPE_INVALID && enmType < DBGFREGVALTYPE_END, NULL);
     VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
 
-    PCDBGFREGSET    pSet    = pVM->aCpus[0].dbgf.s.pRegSet;
+    PCDBGFREGSET    pSet    = pVM->aCpus[0].dbgf.s.pGuestRegSet;
     if (RT_UNLIKELY(!pSet))
         return NULL;
 
@@ -1725,13 +1731,25 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     DBGF_REG_DB_LOCK_READ(pVM);
 
     /*
-     * My CPU registers.
+     * My guest CPU registers.
      */
     size_t iCpuReg = pVCpu->idCpu * DBGFREG_ALL_COUNT;
-    if (pVCpu->dbgf.s.pRegSet)
+    if (pVCpu->dbgf.s.pGuestRegSet)
     {
         if (iCpuReg < cRegs)
-            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pGuestRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+    }
+    else
+        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
+
+    /*
+     * My hypervisor CPU registers.
+     */
+    iCpuReg = pVM->cCpus * DBGFREG_ALL_COUNT + pVCpu->idCpu * DBGFREG_ALL_COUNT;
+    if (pVCpu->dbgf.s.pHyperRegSet)
+    {
+        if (iCpuReg < cRegs)
+            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pHyperRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
     }
     else
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
@@ -1741,7 +1759,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
      */
     if (pVCpu->idCpu == 0)
     {
-        pArgs->iReg = pVM->cCpus * DBGFREG_ALL_COUNT;
+        pArgs->iReg = pVM->cCpus * DBGFREG_ALL_COUNT * 2;
         RTStrSpaceEnumerate(&pVM->dbgf.s.RegSetSpace, dbgfR3RegNmQueryAllEnum, pArgs);
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, pArgs->iReg, cRegs);
     }
