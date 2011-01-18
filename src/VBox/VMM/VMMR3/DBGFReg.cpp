@@ -1100,7 +1100,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRe
 
 
 /**
- * Query a all registers for a Virtual CPU.
+ * Query all registers for a Virtual CPU.
  *
  * @retval  VINF_SUCCESS
  * @retval  VERR_INVALID_VM_HANDLE
