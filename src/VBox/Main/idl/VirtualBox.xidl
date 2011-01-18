@@ -5380,8 +5380,9 @@
 
         Returns a snapshot of this machine with the given UUID.
         A @c null argument can be used to obtain the first snapshot
-        taken on this machine. This is useful if you want to traverse
-        the whole tree of snapshots starting from the root.
+        taken on this machine. To traverse the whole tree of snapshots
+        starting from the root, inspect the root snapshot's
+        <link to="ISnapshot::children" /> attribute and recurse over those children.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Virtual machine has no snapshots or snapshot not found.
@@ -8666,11 +8667,10 @@
               This simplifies restoring a machine to the state of a snapshot:
               only the differencing images need to be deleted.
 
-              The current machine state is not changed by taking a snapshot.
-              If the machine is running, it will resume execution after the
-              snapshot has been taken. After calling this,
-              <link to="IMachine::currentSnapshot" /> is set to the snapshot
-              just created.
+              The current machine state is not changed by taking a snapshot
+              except that <link to="IMachine::currentSnapshot" /> is set to
+              the newly created snapshot, which is also added to the machine's
+              snapshots tree.
           </li>
 
           <li><link to="IConsole::restoreSnapshot"/> resets a machine to
@@ -8679,8 +8679,8 @@
               settings and state to the state that was saved in the snapshot (if any).
 
               This destroys the machine's current state. After calling this,
-              <link to="IMachine::currentSnapshot" /> is set to the snapshot that was
-              restored.
+              <link to="IMachine::currentSnapshot" /> points to the snapshot
+              that was restored.
           </li>
 
           <li><link to="IConsole::deleteSnapshot"/> deletes a snapshot
@@ -8701,15 +8701,21 @@
           </li>
       </ul>
 
-      Each snapshot contains the settings of the virtual machine (hardware
-      configuration etc.). In addition, if the machine was running when the
+      Each snapshot contains a copy of virtual machine's settings (hardware
+      configuration etc.). This copy is contained in an immutable (read-only)
+      instance of <link to="IMachine" /> which is available from the snapshot's
+      <link to="#machine" /> attribute. When restoring the snapshot, these
+      settings are copied back to the original machine.
+
+      In addition, if the machine was running when the
       snapshot was taken (<link to="IMachine::state"/> is <link to="MachineState_Running"/>),
       the current VM state is saved in the snapshot (similarly to what happens
-      when a VM's state is saved). The snapshot is then said to
-      be <i>online</i> because when restoring it, the VM will be running.
+      when a VM's state is saved). The snapshot is then said to be <i>online</i>
+      because when restoring it, the VM will be running.
 
-      If the machine is saved (<link to="MachineState_Saved"/>), the snapshot
-      receives a copy of the execution state file (<link to="IMachine::stateFilePath"/>).
+      If the machine was in <link to="MachineState_Saved">saved</link> saved,
+      the snapshot receives a copy of the execution state file
+      (<link to="IMachine::stateFilePath"/>).
 
       Otherwise, if the machine was not running (<link to="MachineState_PoweredOff"/>
       or <link to="MachineState_Aborted"/>), the snapshot is <i>offline</i>;
@@ -8722,11 +8728,17 @@
     </attribute>
 
     <attribute name="name" type="wstring">
-      <desc>Short name of the snapshot.</desc>
+      <desc>Short name of the snapshot.
+      <note>Setting this attribute causes <link to="IMachine::saveSettings" /> to
+      be called implicitly.</note>
+      </desc>
     </attribute>
 
     <attribute name="description" type="wstring">
-      <desc>Optional description of the snapshot.</desc>
+      <desc>Optional description of the snapshot.
+      <note>Setting this attribute causes <link to="IMachine::saveSettings" /> to
+      be called implicitly.</note>
+      </desc>
     </attribute>
 
     <attribute name="timeStamp" type="long long" readonly="yes">
@@ -8768,6 +8780,9 @@
     <attribute name="children" type="ISnapshot" readonly="yes" safearray="yes">
       <desc>
         Child snapshots (all snapshots having this one as a parent).
+        By inspecting this attribute starting with a machine's root snapshot
+        (which can be obtained by calling <link to="IMachine::findSnapshot" />
+        with a @c null UUID), a machine's snapshots tree can be iterated over.
       </desc>
     </attribute>
 
