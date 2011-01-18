@@ -121,6 +121,10 @@
       </listitem>
 
       <listitem>
+        <para>Settings: fixed issue that changing a snapshot name or description was not saved to machine XML</para>
+      </listitem>
+
+      <listitem>
         <para>OVF/OVA: fixed import of files created by other OVF tools (bug
          #7983)</para>
       </listitem>
