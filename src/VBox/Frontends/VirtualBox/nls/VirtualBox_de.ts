@@ -174,119 +174,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation>Pause</translation>
+        <translation type="obsolete">Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation>Druck</translation>
+        <translation type="obsolete">Druck</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation>F1</translation>
+        <translation type="obsolete">F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation>F2</translation>
+        <translation type="obsolete">F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation>F3</translation>
+        <translation type="obsolete">F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation>F4</translation>
+        <translation type="obsolete">F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation>F5</translation>
+        <translation type="obsolete">F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation>F6</translation>
+        <translation type="obsolete">F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation>F7</translation>
+        <translation type="obsolete">F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation>F8</translation>
+        <translation type="obsolete">F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation>F9</translation>
+        <translation type="obsolete">F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation>F10</translation>
+        <translation type="obsolete">F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation>F11</translation>
+        <translation type="obsolete">F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation>F12</translation>
+        <translation type="obsolete">F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation>F13</translation>
+        <translation type="obsolete">F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation>F14</translation>
+        <translation type="obsolete">F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation>F15</translation>
+        <translation type="obsolete">F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation>F16</translation>
+        <translation type="obsolete">F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation>F17</translation>
+        <translation type="obsolete">F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation>F18</translation>
+        <translation type="obsolete">F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation>F19</translation>
+        <translation type="obsolete">F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation>F20</translation>
+        <translation type="obsolete">F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation>F21</translation>
+        <translation type="obsolete">F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation>F22</translation>
+        <translation type="obsolete">F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation>F23</translation>
+        <translation type="obsolete">F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation>F24</translation>
+        <translation type="obsolete">F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation>Num</translation>
+        <translation type="obsolete">Num</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>Vorw</translation>
+        <translation type="obsolete">Vorw</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Rückw</translation>
+        <translation type="obsolete">Rückw</translation>
     </message>
 </context>
 <context>
@@ -1182,6 +1182,10 @@
         <source>Extension package files (%1)</source>
         <translation>Zusatzpakete (%1)</translation>
     </message>
+    <message>
+        <source>Extensions</source>
+        <translation>Zusatzpakete</translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsGeneral</name>
@@ -1440,7 +1444,11 @@
     </message>
     <message>
         <source>New Host-Only Interface</source>
-        <translation>Neues Host-Only Interface</translation>
+        <translation type="obsolete">Neues Host-Only Interface</translation>
+    </message>
+    <message>
+        <source>Networking</source>
+        <translation>Netzwerk</translation>
     </message>
 </context>
 <context>
@@ -6169,8 +6177,8 @@
         <translation>&amp;Neu installieren</translation>
     </message>
     <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
+        <source>&lt;p&gt;Cannot create the machine folder:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Please check you have the permissions required to do so.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Der Ordner für die virtuelle Maschine kann nicht angelegt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Bitte überprüfen Sie die Zugriffsrechte.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6359,7 +6367,7 @@
     </message>
     <message>
         <source>Manager</source>
-        <translation>Manager</translation>
+        <translation type="obsolete">Manager</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
@@ -6416,6 +6424,11 @@
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
         <translation>Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <comment>Note: main window title which is pretended by the product name.</comment>
+        <translation>Manager</translation>
     </message>
 </context>
 <context>
@@ -6572,8 +6585,8 @@
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine, die %n unveränderliches Festplattenabbild angeschlossen hat. So lange Sie mit diesem Sicherungspunkt arbeiten, wird das unveränderliche Festplattenabbild nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
-            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine, die %n unveränderliche Festplattenabbilder angeschlossen hat. So lange Sie mit diesen Sicherungspunkt arbeiten, werden die unveränderlichen Festplattenabbilder nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
+            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Maschine, die %n unveränderliches Festplattenabbild angeschlossen hat. So lange Sie mit diesem Sicherungspunkt arbeiten, wird das unveränderliche Festplattenabbild nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
+            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Maschine, die %n unveränderliche Festplattenabbilder angeschlossen hat. So lange Sie mit diesen Sicherungspunkt arbeiten, werden die unveränderlichen Festplattenabbilder nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
         </translation>
     </message>
 </context>
