@@ -278,7 +278,19 @@ static const xf86CrtcConfigFuncsRec VBOXCrtcConfigFuncs = {
 
 static void
 vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
-{ (void) crtc; (void) mode; }
+{
+    VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
+    unsigned cDisplay = (uintptr_t)crtc->driver_private;
+    TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
+    pVBox->afDisabled[cDisplay] = (mode != DPMSModeOn);
+    if (   pVBox->aScreenLocation[cDisplay].cx
+        && pVBox->aScreenLocation[cDisplay].cy)
+        VBOXSetMode(crtc->scrn, cDisplay,
+                    pVBox->aScreenLocation[cDisplay].cx,
+                    pVBox->aScreenLocation[cDisplay].cy,
+                    pVBox->aScreenLocation[cDisplay].x,
+                    pVBox->aScreenLocation[cDisplay].y);
+}
 
 static Bool
 vbox_crtc_lock (xf86CrtcPtr crtc)
@@ -299,11 +311,13 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 {
     (void) mode;
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
+    unsigned cDisplay = (uintptr_t)crtc->driver_private;
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
-    VBOXSetMode(crtc->scrn, (uintptr_t)crtc->driver_private,
-                adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
+    pVBox->afDisabled[cDisplay] = false;
+    VBOXSetMode(crtc->scrn, cDisplay, adjusted_mode->HDisplay,
+                adjusted_mode->VDisplay, x, y);
     /* Don't remember any modes set while we are seamless, as they are
      * just temporary. */
     if (!vboxGuestIsSeamless(crtc->scrn))
@@ -1131,11 +1145,19 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     pVBox->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = VBOXCloseScreen;
+#ifdef VBOXVIDEO_13
+    pScreen->SaveScreen = xf86SaveScreen;
+#else
     pScreen->SaveScreen = VBOXSaveScreen;
+#endif
 
+#ifdef VBOXVIDEO_13
+    xf86DPMSInit(pScreen, xf86DPMSSet, 0);
+#else
     /* We probably do want to support power management - even if we just use
        a dummy function. */
     xf86DPMSInit(pScreen, VBOXDisplayPowerManagementSet, 0);
+#endif
 
     /* Report any unused options (only for the first generation) */
     if (serverGeneration == 1)
@@ -1163,9 +1185,9 @@ vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY)
 
     cbOldFB = pVBox->cbLine * pScrn->virtualX;
     cbNewFB = vboxLineLength(pScrn, cNewX) * cNewY;
-    if (cbOldFB > pVBox->cbFBMax)
+    if (cbOldFB > (uint64_t)pVBox->cbFBMax)
         cbOldFB = 0;
-    if (cbNewFB > pVBox->cbFBMax)
+    if (cbNewFB > (uint64_t)pVBox->cbFBMax)
         cbNewFB = 0;
     memset(pVBox->base, 0, max(cbOldFB, cbNewFB));
 }
@@ -1297,7 +1319,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
             unsigned cHeight, int x, int y)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    Bool rc = TRUE, fActive = TRUE;
+    Bool rc = TRUE, fActive = !pVBox->afDisabled[cDisplay];
     uint32_t offStart, cwReal = cWidth;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
@@ -1319,6 +1341,8 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         fActive = FALSE;
     else
         cwReal = RT_MIN((int) cWidth, pScrn->displayWidth - x);
+    TRACE_LOG("pVBox->afDisabled[cDisplay]=%d, fActive=%d\n",
+              (int)pVBox->afDisabled[cDisplay], (int)fActive);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!pVBox->vtSwitch && fActive)

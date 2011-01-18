@@ -211,6 +211,8 @@ typedef struct VBOXRec
     /** Position information for each virtual screen for the purposes of
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation[VBOX_VIDEO_MAX_SCREENS];
+    /** Has this screen been disabled by the guest? */
+    Bool afDisabled[VBOX_VIDEO_MAX_SCREENS];
 #ifdef VBOXVIDEO_13
     /** The virtual crtcs */
     struct _xf86Crtc *paCrtcs[VBOX_VIDEO_MAX_SCREENS];
