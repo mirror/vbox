@@ -773,7 +773,11 @@ void Display::handleResizeCompletedEMT (void)
 
             pFBInfo->fDefaultFormat = (usesGuestVRAM == FALSE);
 
-            mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, pFBInfo->fDefaultFormat);
+            if (pFBInfo->fDisabled)
+                mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, false);
+            else
+                mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
+                                                  pFBInfo->fDefaultFormat);
         }
         else if (!pFBInfo->pFramebuffer.isNull())
         {
@@ -918,7 +922,8 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
     IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
 
     // if there is no framebuffer, this call is not interesting
-    if (pFramebuffer == NULL)
+    if (   pFramebuffer == NULL
+        || maFramebuffers[uScreenId].fDisabled)
         return;
 
     pFramebuffer->Lock();
@@ -963,16 +968,16 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
 
     if (!mpDrv)
         return;
-    /* If VBVA is not in use then maFramebuffers will be zeroed out and this
+    /* If VBVA is not in use then this flag will not be set and this
      * will still work as it should. */
-    if (!(maFramebuffers[0].flags & VBVA_SCREEN_F_DISABLED))
+    if (!(maFramebuffers[0].fDisabled))
     {
         x2 = mpDrv->IConnector.cx + (int32_t)maFramebuffers[0].xOrigin;
         y2 = mpDrv->IConnector.cy + (int32_t)maFramebuffers[0].yOrigin;
     }
     for (unsigned i = 1; i < mcMonitors; ++i)
     {
-        if (!(maFramebuffers[i].flags & VBVA_SCREEN_F_DISABLED))
+        if (!(maFramebuffers[i].fDisabled))
         {
             x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
             y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
@@ -2541,7 +2546,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                  * it to update. And for default format, render the guest VRAM to framebuffer.
                  */
                 if (   pFBInfo->fDefaultFormat
-                    && !(pFBInfo->flags & VBVA_SCREEN_F_DISABLED))
+                    && !(pFBInfo->fDisabled))
                 {
                     address = NULL;
                     HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
@@ -2666,7 +2671,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
         else
         {
             if (   !pFBInfo->pFramebuffer.isNull()
-                && !(pFBInfo->flags & VBVA_SCREEN_F_DISABLED))
+                && !(pFBInfo->fDisabled))
             {
                 /* Render complete VRAM screen to the framebuffer.
                  * When framebuffer uses VRAM directly, just notify it to update.
@@ -2835,9 +2840,7 @@ void Display::updateDisplayData(void)
     /* The method is only relevant to the primary framebuffer. */
     IFramebuffer *pFramebuffer = maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
 
-    if (   pFramebuffer
-        && !(  maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].flags
-             & VBVA_SCREEN_F_DISABLED))
+    if (pFramebuffer)
     {
         HRESULT rc;
         BYTE *address = 0;
@@ -3594,12 +3597,14 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
         if (pFBInfo->fDefaultFormat)
         {
             /* Make sure that framebuffer contains the same image as the guest VRAM. */
-            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
+            if (   uScreenId == VBOX_VIDEO_PRIMARY_SCREEN
+                && !pFBInfo->pFramebuffer.isNull()
+                && !pFBInfo->fDisabled)
             {
                 pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
             }
             else if (   !pFBInfo->pFramebuffer.isNull()
-                     && !(pFBInfo->flags & VBVA_SCREEN_F_DISABLED))
+                     && !(pFBInfo->fDisabled))
             {
                 /* Render VRAM content to the framebuffer. */
                 BYTE *address = NULL;
@@ -3722,7 +3727,8 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         /* Temporary: ask framebuffer to resize using a default format. The framebuffer will be black. */
         pThis->handleDisplayResize(pScreen->u32ViewIndex, 0,
                                    (uint8_t *)NULL,
-                                   0, 640, 480, pScreen->u16Flags);
+                                   pScreen->u32LineSize, pScreen->u32Width,
+                                   pScreen->u32Height, pScreen->u16Flags);
 
         fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
                                      GuestMonitorChangedEventType_Disabled,
