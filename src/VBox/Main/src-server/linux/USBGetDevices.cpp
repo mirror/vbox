@@ -976,7 +976,9 @@ static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
         if (snprintf(szPath, sizeof(szPath), "%s/%s", pcszPath,
                      entry.d_name) < 0)
             return RTErrConvertFromErrno(errno);
-        pszPath = RTStrDup(realpath(szPath, szRealPath));
+        if (!realpath(szPath, szRealPath))
+            return RTErrConvertFromErrno(errno);
+        pszPath = RTStrDup(szRealPath);
         if (!pszPath)
             return VERR_NO_MEMORY;
         if (RT_FAILURE(rc = VEC_PUSH_BACK_PTR(pvecpchDevs, char *, pszPath)))
