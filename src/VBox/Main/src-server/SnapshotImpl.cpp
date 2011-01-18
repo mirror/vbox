@@ -345,6 +345,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name)(BSTR *aName)
  */
 STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
 {
+    HRESULT rc = S_OK;
     CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
@@ -357,18 +358,11 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     if (m->strName != strName)
     {
         m->strName = strName;
-
         alock.leave(); /* Important! (child->parent locks are forbidden) */
-
-        // flag the machine as dirty or change won't get saved
-        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_Snapshots);
-        mlock.leave();
-
-        return m->pMachine->onSnapshotChange(this);
+        rc = m->pMachine->onSnapshotChange(this);
     }
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Snapshot::COMGETTER(Description)(BSTR *aDescription)
@@ -386,6 +380,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description)(BSTR *aDescription)
 
 STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
 {
+    HRESULT rc = S_OK;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -396,18 +391,11 @@ STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
     if (m->strDescription != strDescription)
     {
         m->strDescription = strDescription;
-
         alock.leave(); /* Important! (child->parent locks are forbidden) */
-
-        // flag the machine as dirty or change won't get saved
-        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        m->pMachine->setModified(Machine::IsModified_Snapshots);
-        mlock.leave();
-
-        return m->pMachine->onSnapshotChange(this);
+        rc = m->pMachine->onSnapshotChange(this);
     }
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Snapshot::COMGETTER(TimeStamp)(LONG64 *aTimeStamp)
@@ -1192,18 +1180,32 @@ RWLockHandle *SnapshotMachine::lockHandle() const
  *  Called by the snapshot object associated with this SnapshotMachine when
  *  snapshot data such as name or description is changed.
  *
- *  @note Locks this object for writing.
+ *  @warning Caller must hold no locks when calling this.
  */
 HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 mlock(this, aSnapshot COMMA_LOCKVAL_SRC_POS);
+    Guid uuidMachine(mData->mUuid),
+         uuidSnapshot(aSnapshot->getId());
+    bool fNeedsGlobalSaveSettings = false;
 
-    //     mPeer->saveAllSnapshots();  @todo
+    // flag the machine as dirty or change won't get saved
+    mPeer->setModified(Machine::IsModified_Snapshots);
+    HRESULT rc = mPeer->saveSettings(&fNeedsGlobalSaveSettings,
+                                     SaveS_Force);        // we know we need saving, no need to check
+    mlock.leave();
+
+    if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
+    {
+        // save the global settings
+        AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
 
     /* inform callbacks */
-    mParent->onSnapshotChange(mData->mUuid, aSnapshot->getId());
+    mParent->onSnapshotChange(uuidMachine, uuidSnapshot);
 
-    return S_OK;
+    return rc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
