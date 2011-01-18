@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.0.2 (2011-xx-xx)</title>
+    <title>Version 4.0.2 (2011-01-18)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -21,6 +21,15 @@
       <listitem>
         <para>GUI: properly warn if the machine folder cannot be
           created (bug #8031)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: several fixes for multimonitor X11 guests</para>
+      </listitem>
+
+      <listitem>
+        <para>ExtPack: don't make the installer helper application suid root
+          (Linux .deb/.rpm packages only)</para>
       </listitem>
 
       <listitem>
