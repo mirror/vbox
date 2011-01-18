@@ -119,8 +119,8 @@
       </listitem>
 
       <listitem>
-        <para>Settings: fixed loading of removeable drives to which a host drive
-          was attached (4.0 regression)</para>
+        <para>Settings: do not fail loading machine settings if removeable drive attachment (host drive or image)
+          cannot be found; with 4.0 this is much more likely when machines are moved from one host to another</para>
       </listitem>
 
       <listitem>
