@@ -140,6 +140,10 @@
           unlocking previously locked workstations</para>
       </listitem>
 
+      <listitem>
+        <para>Linux hosts: fixed a crash during USB device enumeration.</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
