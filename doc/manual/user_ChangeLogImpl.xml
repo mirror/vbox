@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
+    <title>Version 4.0.4 (2011-xx-xx)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>placeholder</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
     <title>Version 4.0.2 (2011-01-18)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
