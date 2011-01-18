@@ -1403,6 +1403,10 @@ typedef DBGFREGENTRY *PDBGFREGENTRY;
 /** Pointer to a const register entry in a batch operation. */
 typedef DBGFREGENTRY const *PCDBGFREGENTRY;
 
+/** Used with DBGFR3Reg* to indicate the hypervisor register set instead of the
+ *  guest. */
+#define DBGFREG_HYPER_VMCPUID       UINT32_C(0x01000000)
+
 VMMR3DECL(int) DBGFR3RegCpuQueryU8(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t     *pu8);
 VMMR3DECL(int) DBGFR3RegCpuQueryU16( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t    *pu16);
 VMMR3DECL(int) DBGFR3RegCpuQueryU32( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    *pu32);
@@ -1410,6 +1414,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU64( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uin
 VMMR3DECL(int) DBGFR3RegCpuQueryU128(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   *pu128);
 VMMR3DECL(int) DBGFR3RegCpuQueryLrd( PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double *plrd);
 VMMR3DECL(int) DBGFR3RegCpuQueryXdtr(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64Base, uint16_t *pu16Limit);
+#if 0
 VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM,VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegCpuQueryAll( PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs);
 
@@ -1420,11 +1425,12 @@ VMMR3DECL(int) DBGFR3RegCpuSetU64(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uin
 VMMR3DECL(int) DBGFR3RegCpuSetU128(  PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   u128);
 VMMR3DECL(int) DBGFR3RegCpuSetLrd(   PVM pVM, VMCPUID idCpu, DBGFREG enmReg, long double lrd);
 VMMR3DECL(int) DBGFR3RegCpuSetBatch( PVM pVM, VMCPUID idCpu, PCDBGFREGENTRY paRegs, size_t cRegs);
+#endif
 
 VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE enmType);
 
 VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters, bool fGuestRegs);
-VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance);
+VMMR3DECL(int)      DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance);
 
 /**
  * Entry in a named batch query or set operation.
@@ -1454,8 +1460,6 @@ VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, PDBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAll( PVM pVM,                   PDBGFREGENTRYNM paRegs, size_t cRegs);
-VMMR3DECL(int) DBGFR3RegNmPrintf(   PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...);
-VMMR3DECL(int) DBGFR3RegNmPrintfV(  PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va);
 
 VMMR3DECL(int) DBGFR3RegNmSetU8(    PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t     u8);
 VMMR3DECL(int) DBGFR3RegNmSetU16(   PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint16_t    u16);
@@ -1466,6 +1470,9 @@ VMMR3DECL(int) DBGFR3RegNmSetLrd(   PVM pVM, VMCPUID idDefCpu, const char *pszRe
 VMMR3DECL(int) DBGFR3RegNmSetBatch( PVM pVM, VMCPUID idDefCpu, PCDBGFREGENTRYNM paRegs, size_t cRegs);
 
 /** @todo add enumeration methods.  */
+
+VMMR3DECL(int) DBGFR3RegPrintf( PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...);
+VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idDefCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va);
 
 
 /**
