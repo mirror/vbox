@@ -238,22 +238,8 @@ int main(int argc, char *argv[])
         vboxClientUsage(pszFileName);
         exit(1);
     }
-    if (fDaemonise)
-    {
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
-        if (RT_FAILURE(rc))
-        {
-            RTPrintf("VBoxClient: failed to daemonize.  Exiting.\n");
-            LogRel(("VBoxClient: failed to daemonize.  Exiting.\n"));
-# ifdef DEBUG
-            RTPrintf("Error %Rrc\n", rc);
-# endif
-            return 1;
-        }
-    }
-    /** @todo explain why we aren't using RTPathUserHome here so it doesn't get
-     *        changed accidentally during some cleanup effort. */
-    rc = RTEnvGetEx(RTENV_DEFAULT, "HOME", g_szPidFile, sizeof(g_szPidFile), NULL);
+    /* Get the path for the pidfiles */
+    rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
     if (RT_FAILURE(rc))
     {
         RTPrintf("VBoxClient: failed to get home directory, rc=%Rrc.  Exiting.\n", rc);
@@ -281,6 +267,19 @@ int main(int argc, char *argv[])
         LogRel(("Failed to create a pidfile.  Exiting.\n"));
         VbglR3Term();
         return 1;
+    }
+    if (fDaemonise)
+    {
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("VBoxClient: failed to daemonize.  Exiting.\n");
+            LogRel(("VBoxClient: failed to daemonize.  Exiting.\n"));
+# ifdef DEBUG
+            RTPrintf("Error %Rrc\n", rc);
+# endif
+            return 1;
+        }
     }
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
