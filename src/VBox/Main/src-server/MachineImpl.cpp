@@ -7539,9 +7539,12 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                     }
                 }
                 else
-                    rc = mParent->findRemoveableMedium(dev.deviceType, dev.uuid, false /* fRefresh */, medium);
-                if (FAILED(rc))
-                    return rc;
+                    mParent->findRemoveableMedium(dev.deviceType,
+                                                  dev.uuid,
+                                                  false /* fRefresh */,
+                                                  false /* aSetError */,
+                                                  medium);
+                        // note: do NOT fail if a removeable medium cannot be found, silently ignore the error completely
             break;
 
             case DeviceType_HardDisk:
