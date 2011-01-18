@@ -859,7 +859,7 @@ static int dbgfR3RegCpuQueryWorker(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, DBGFR
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertMsgReturn(enmReg >= DBGFREG_AL && enmReg <= DBGFREG_END, ("%d\n", enmReg), VERR_INVALID_PARAMETER);
 
-    bool const fGuestRegs = idCpu & DBGFREG_HYPER_VMCPUID;
+    bool const fGuestRegs = !(idCpu & DBGFREG_HYPER_VMCPUID);
     idCpu &= ~DBGFREG_HYPER_VMCPUID;
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
