@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,8 +29,8 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(bool) tstDBGCBackInput(PDBGCBACK pBack, uint32_t cMillies);
-static DECLCALLBACK(int) tstDBGCBackRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead);
-static DECLCALLBACK(int) tstDBGCBackWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
+static DECLCALLBACK(int)  tstDBGCBackRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+static DECLCALLBACK(int)  tstDBGCBackWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
 static DECLCALLBACK(void) tstDBGCBackSetReady(PDBGCBACK pBack, bool fReady);
 
 
@@ -268,6 +268,7 @@ int main()
     /*
      * Create a DBGC instance.
      */
+    RTTestSub(g_hTest, "dbgcCreate");
     PDBGC pDbgc;
     rc = dbgcCreate(&pDbgc, &g_tstBack, 0);
     if (RT_SUCCESS(rc))
@@ -276,86 +277,98 @@ int main()
         tstCompleteOutput();
         if (RT_SUCCESS(rc))
         {
+            RTTestSub(g_hTest, "basic parsing");
             tstTry(pDbgc, "stop\n", VINF_SUCCESS);
             tstTry(pDbgc, "format 1\n", VINF_SUCCESS);
             tstTry(pDbgc, "format \n", VERR_PARSE_TOO_FEW_ARGUMENTS);
             tstTry(pDbgc, "format 0 1 23 4\n", VERR_PARSE_TOO_MANY_ARGUMENTS);
             tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
 
-            tstNumOp(pDbgc, "1",                                        1);
-            tstNumOp(pDbgc, "1",                                        1);
-            tstNumOp(pDbgc, "1",                                        1);
+            if (RTTestErrorCount(g_hTest) == 0)
+            {
+                RTTestSub(g_hTest, "Operators");
+                tstNumOp(pDbgc, "1",                                        1);
+                tstNumOp(pDbgc, "1",                                        1);
+                tstNumOp(pDbgc, "1",                                        1);
 
-            tstNumOp(pDbgc, "+1",                                       1);
-            tstNumOp(pDbgc, "++++++1",                                  1);
+                tstNumOp(pDbgc, "+1",                                       1);
+                tstNumOp(pDbgc, "++++++1",                                  1);
 
-            tstNumOp(pDbgc, "-1",                                       UINT64_MAX);
-            tstNumOp(pDbgc, "--1",                                      1);
-            tstNumOp(pDbgc, "---1",                                     UINT64_MAX);
-            tstNumOp(pDbgc, "----1",                                    1);
+                tstNumOp(pDbgc, "-1",                                       UINT64_MAX);
+                tstNumOp(pDbgc, "--1",                                      1);
+                tstNumOp(pDbgc, "---1",                                     UINT64_MAX);
+                tstNumOp(pDbgc, "----1",                                    1);
 
-            tstNumOp(pDbgc, "~0",                                       UINT64_MAX);
-            tstNumOp(pDbgc, "~1",                                       UINT64_MAX-1);
-            tstNumOp(pDbgc, "~~0",                                      0);
-            tstNumOp(pDbgc, "~~1",                                      1);
+                tstNumOp(pDbgc, "~0",                                       UINT64_MAX);
+                tstNumOp(pDbgc, "~1",                                       UINT64_MAX-1);
+                tstNumOp(pDbgc, "~~0",                                      0);
+                tstNumOp(pDbgc, "~~1",                                      1);
 
-            tstNumOp(pDbgc, "!1",                                       0);
-            tstNumOp(pDbgc, "!0",                                       1);
-            tstNumOp(pDbgc, "!42",                                      0);
-            tstNumOp(pDbgc, "!!42",                                     1);
-            tstNumOp(pDbgc, "!!!42",                                    0);
-            tstNumOp(pDbgc, "!!!!42",                                   1);
+                tstNumOp(pDbgc, "!1",                                       0);
+                tstNumOp(pDbgc, "!0",                                       1);
+                tstNumOp(pDbgc, "!42",                                      0);
+                tstNumOp(pDbgc, "!!42",                                     1);
+                tstNumOp(pDbgc, "!!!42",                                    0);
+                tstNumOp(pDbgc, "!!!!42",                                   1);
 
-            tstNumOp(pDbgc, "1 +1",                                     2);
-            tstNumOp(pDbgc, "1 + 1",                                    2);
-            tstNumOp(pDbgc, "1+1",                                      2);
-            tstNumOp(pDbgc, "1+ 1",                                     2);
+                tstNumOp(pDbgc, "1 +1",                                     2);
+                tstNumOp(pDbgc, "1 + 1",                                    2);
+                tstNumOp(pDbgc, "1+1",                                      2);
+                tstNumOp(pDbgc, "1+ 1",                                     2);
 
-            tstNumOp(pDbgc, "1 - 1",                                    0);
-            tstNumOp(pDbgc, "99 - 90",                                  9);
+                tstNumOp(pDbgc, "1 - 1",                                    0);
+                tstNumOp(pDbgc, "99 - 90",                                  9);
 
-            tstNumOp(pDbgc, "2 * 2",                                    4);
+                tstNumOp(pDbgc, "2 * 2",                                    4);
 
-            tstNumOp(pDbgc, "2 / 2",                                    1);
-            tstNumOp(pDbgc, "2 / 0",                                    UINT64_MAX);
-            tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
+                tstNumOp(pDbgc, "2 / 2",                                    1);
+                tstNumOp(pDbgc, "2 / 0",                                    UINT64_MAX);
+                tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
 
-            tstNumOp(pDbgc, "1<<1",                                     2);
-            tstNumOp(pDbgc, "1<<0i32",                                  UINT64_C(0x0000000100000000));
-            tstNumOp(pDbgc, "1<<0i48",                                  UINT64_C(0x0001000000000000));
-            tstNumOp(pDbgc, "1<<0i63",                                  UINT64_C(0x8000000000000000));
+                tstNumOp(pDbgc, "1<<1",                                     2);
+                tstNumOp(pDbgc, "1<<0i32",                                  UINT64_C(0x0000000100000000));
+                tstNumOp(pDbgc, "1<<0i48",                                  UINT64_C(0x0001000000000000));
+                tstNumOp(pDbgc, "1<<0i63",                                  UINT64_C(0x8000000000000000));
 
-            tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   UINT64_C(0x0fedcba098765432));
-            tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   UINT64_C(0xfedcba09));
-            tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   UINT64_C(0x0000fedc));
+                tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   UINT64_C(0x0fedcba098765432));
+                tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   UINT64_C(0xfedcba09));
+                tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   UINT64_C(0x0000fedc));
 
-            tstNumOp(pDbgc, "0ef & 4",                                  4);
-            tstNumOp(pDbgc, "01234567891 & fff",                        UINT64_C(0x00000000891));
-            tstNumOp(pDbgc, "01234567891 & ~fff",                       UINT64_C(0x01234567000));
+                tstNumOp(pDbgc, "0ef & 4",                                  4);
+                tstNumOp(pDbgc, "01234567891 & fff",                        UINT64_C(0x00000000891));
+                tstNumOp(pDbgc, "01234567891 & ~fff",                       UINT64_C(0x01234567000));
 
-            tstNumOp(pDbgc, "1 | 1",                                    1);
-            tstNumOp(pDbgc, "0 | 4",                                    4);
-            tstNumOp(pDbgc, "4 | 0",                                    4);
-            tstNumOp(pDbgc, "4 | 4",                                    4);
-            tstNumOp(pDbgc, "1 | 4 | 2",                                7);
+                tstNumOp(pDbgc, "1 | 1",                                    1);
+                tstNumOp(pDbgc, "0 | 4",                                    4);
+                tstNumOp(pDbgc, "4 | 0",                                    4);
+                tstNumOp(pDbgc, "4 | 4",                                    4);
+                tstNumOp(pDbgc, "1 | 4 | 2",                                7);
 
-            tstNumOp(pDbgc, "1 ^ 1",                                    0);
-            tstNumOp(pDbgc, "1 ^ 0",                                    1);
-            tstNumOp(pDbgc, "0 ^ 1",                                    1);
-            tstNumOp(pDbgc, "3 ^ 1",                                    2);
-            tstNumOp(pDbgc, "7 ^ 3",                                    4);
+                tstNumOp(pDbgc, "1 ^ 1",                                    0);
+                tstNumOp(pDbgc, "1 ^ 0",                                    1);
+                tstNumOp(pDbgc, "0 ^ 1",                                    1);
+                tstNumOp(pDbgc, "3 ^ 1",                                    2);
+                tstNumOp(pDbgc, "7 ^ 3",                                    4);
 
-            tstNumOp(pDbgc, "7 || 3",                                   1);
-            tstNumOp(pDbgc, "1 || 0",                                   1);
-            tstNumOp(pDbgc, "0 || 1",                                   1);
-            tstNumOp(pDbgc, "0 || 0",                                   0);
+                tstNumOp(pDbgc, "7 || 3",                                   1);
+                tstNumOp(pDbgc, "1 || 0",                                   1);
+                tstNumOp(pDbgc, "0 || 1",                                   1);
+                tstNumOp(pDbgc, "0 || 0",                                   0);
 
-            tstNumOp(pDbgc, "0 && 0",                                   0);
-            tstNumOp(pDbgc, "1 && 0",                                   0);
-            tstNumOp(pDbgc, "0 && 1",                                   0);
-            tstNumOp(pDbgc, "1 && 1",                                   1);
-            tstNumOp(pDbgc, "4 && 1",                                   1);
+                tstNumOp(pDbgc, "0 && 0",                                   0);
+                tstNumOp(pDbgc, "1 && 0",                                   0);
+                tstNumOp(pDbgc, "0 && 1",                                   0);
+                tstNumOp(pDbgc, "1 && 1",                                   1);
+                tstNumOp(pDbgc, "4 && 1",                                   1);
+            }
 
+            if (RTTestErrorCount(g_hTest) == 0)
+            {
+                RTTestSub(g_hTest, "Odd cases");
+                tstTry(pDbgc, "r @rax\n", VINF_SUCCESS);
+                tstTry(pDbgc, "r @eax\n", VINF_SUCCESS);
+                tstTry(pDbgc, "r @ah\n", VINF_SUCCESS);
+            }
         }
 
         dbgcDestroy(pDbgc);

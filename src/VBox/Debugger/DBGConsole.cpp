@@ -860,7 +860,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     dbgcInitCmdHlp(pDbgc);
     pDbgc->pBack            = pBack;
     pDbgc->pVM              = NULL;
-    pDbgc->idCpu            = NIL_VMCPUID;
+    pDbgc->idCpu            = 0;
     pDbgc->hDbgAs           = DBGF_AS_GLOBAL;
     pDbgc->pszEmulation     = "CodeView/WinDbg";
     pDbgc->paEmulationCmds  = &g_aCmdsCodeView[0];
@@ -974,7 +974,7 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
         rc = DBGFR3Attach(pVM);
         if (RT_SUCCESS(rc))
         {
-            pDbgc->pVM = pVM;
+            pDbgc->pVM   = pVM;
             pDbgc->idCpu = 0;
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                                          "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */
