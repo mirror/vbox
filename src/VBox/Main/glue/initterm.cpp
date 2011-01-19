@@ -252,15 +252,15 @@ HRESULT Initialize(bool fGui)
 
 #if !defined(VBOX_WITH_XPCOM)
 
-    /**
-      * We initialize COM in GUI thread in STA, to be compliant with QT and
-      * OLE requirments (for example to allow D&D), while other threads
-      * initialized in regular MTA. To allow fast proxyless access from
-      * GUI thread to COM objects, we explicitly provide our COM objects 
-      * with free threaded marshaller. 
-      * !!!!! Please think twice before touching this code !!!!! 
-      */
-    DWORD flags = fGui ? 
+    /*
+     * We initialize COM in GUI thread in STA, to be compliant with QT and
+     * OLE requirments (for example to allow D&D), while other threads
+     * initialized in regular MTA. To allow fast proxyless access from
+     * GUI thread to COM objects, we explicitly provide our COM objects
+     * with free threaded marshaller.
+     * !!!!! Please think twice before touching this code !!!!!
+     */
+    DWORD flags = fGui ?
                   COINIT_APARTMENTTHREADED
                 | COINIT_SPEED_OVER_MEMORY
                 :
@@ -286,7 +286,7 @@ HRESULT Initialize(bool fGui)
         fRc = false;
 
     if (fGui)
-           Assert(RTThreadIsMain(hSelf));
+        Assert(RTThreadIsMain(hSelf));
 
     if (!fRc)
     {
@@ -306,8 +306,8 @@ HRESULT Initialize(bool fGui)
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-     /* Unused here */
-    (void)fGui;
+    /* Unused here */
+    NOREF(fGui);
 
     if (ASMAtomicXchgBool(&gIsXPCOMInitialized, true) == true)
     {
