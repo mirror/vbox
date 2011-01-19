@@ -1339,52 +1339,89 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                                           PDBGCVAR pResult, const char *pszPrefix)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-
-    Assert(cArgs != 0); /* handled by caller */
+    Assert(cArgs == 1 || cArgs == 2); /* cArgs == 0 is handled by the caller */
+    if (   paArgs[0].enmType != DBGCVAR_TYPE_STRING
+        && paArgs[0].enmType != DBGCVAR_TYPE_SYMBOL)
+        return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly yet.. Try drop the '@' or/and quote the register name\n");
 
     /*
-     * cArgs == 1: Show the register.
-     * cArgs == 2: Modify the register.
+     * Parse the register name and kind.
      */
-    if (    cArgs == 1
-        ||  cArgs == 2)
+    const char *pszReg = paArgs[0].u.pszString;
+    if (*pszReg == '@')
+        pszReg++;
+    VMCPUID idCpu = pDbgc->idCpu;
+    if (*pszPrefix)
+        idCpu |= DBGFREG_HYPER_VMCPUID;
+    if (*pszReg == '.')
     {
-        /* locate the register symbol. */
-        const char *pszReg = paArgs[0].u.pszString;
-        if (    *pszPrefix
-            &&  pszReg[0] != *pszPrefix)
-        {
-            /* prepend the prefix. */
-            char *psz = (char *)alloca(strlen(pszReg) + 2);
-            psz[0] = *pszPrefix;
-            strcpy(psz + 1, paArgs[0].u.pszString);
-            pszReg = psz;
-        }
-        PCDBGCSYM pSym = dbgcLookupRegisterSymbol(pDbgc, pszReg);
-        if (!pSym)
-            return pCmdHlp->pfnVBoxError(pCmdHlp, VERR_INVALID_PARAMETER /* VERR_DBGC_INVALID_REGISTER */, "Invalid register name '%s'.\n", pszReg);
-
-        /* show the register */
-        if (cArgs == 1)
-        {
-            DBGCVAR Var;
-            memset(&Var, 0, sizeof(Var));
-            int rc = pSym->pfnGet(pSym, pCmdHlp, DBGCVAR_TYPE_NUMBER, &Var);
-            if (RT_FAILURE(rc))
-                return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Failed getting value for register '%s'.\n", pszReg);
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%s=%Dv\n", pszReg, &Var);
-        }
-
-        /* change the register */
-        int rc = pSym->pfnSet(pSym, pCmdHlp, &paArgs[1]);
-        if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Failed setting value for register '%s'.\n", pszReg);
-        return VINF_SUCCESS;
+        pszReg++;
+        idCpu |= DBGFREG_HYPER_VMCPUID;
     }
+    const char * const pszActualPrefix = idCpu & DBGFREG_HYPER_VMCPUID ? "." : "";
 
-
-    NOREF(pCmd); NOREF(paArgs); NOREF(pResult);
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Huh? cArgs=%d Expected 0, 1 or 2!\n", cArgs);
+    /*
+     * Query the register type & value (the setter needs the type).
+     */
+    DBGFREGVALTYPE  enmType;
+    DBGFREGVAL      Value;
+    int rc = DBGFR3RegNmQuery(pVM, idCpu, pszReg, &Value, &enmType);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
+            return DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
+                                       pszActualPrefix,  pszReg);
+        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQuery failed querying '%s%s': %Rrc.\n",
+                                   pszActualPrefix,  pszReg, rc);
+    }
+    if (cArgs == 1)
+    {
+        /*
+         * Show the register.
+         */
+        char szValue[160];
+        rc = DBGFR3RegFormatValue(szValue, sizeof(szValue), &Value, enmType, true /*fSpecial*/);
+        if (RT_SUCCESS(rc))
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, pszReg, szValue);
+        else
+            rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
+    }
+    else if (cArgs == 2)
+    {
+        /*
+         * Modify the register.
+         */
+        if (   paArgs[1].enmType == DBGCVAR_TYPE_STRING
+            || paArgs[1].enmType == DBGCVAR_TYPE_SYMBOL)
+            return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly on the 2nd argument yet...\n");
+        if (enmType != DBGFREGVALTYPE_DTR)
+        {
+            enmType = DBGFREGVALTYPE_U64;
+            rc = DBGCCmdHlpVarToNumber(pCmdHlp, &paArgs[1], &Value.u64);
+        }
+        else
+        {
+            enmType = DBGFREGVALTYPE_DTR;
+            rc = DBGCCmdHlpVarToNumber(pCmdHlp, &paArgs[1], &Value.dtr.u64Base);
+            if (RT_SUCCESS(rc) && paArgs[1].enmRangeType != DBGCVAR_RANGE_NONE)
+                Value.dtr.u32Limit = (uint32_t)paArgs[1].u64Range;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            rc = DBGFR3RegNmSet(pVM, idCpu, pszReg, &Value, enmType);
+            if (RT_FAILURE(rc))
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmSet failed settings '%s%s': %Rrc\n",
+                                         pszActualPrefix, pszReg, rc);
+        }
+        else
+            rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
+    }
+    else
+    {
+        NOREF(pCmd); NOREF(paArgs); NOREF(pResult);
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "Huh? cArgs=%d Expected 0, 1 or 2!\n", cArgs);
+    }
+    return rc;
 }
 
 
@@ -1448,7 +1485,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                                      "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
                                      "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
                                      "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
-                                     "gdtr=%016VR{gdtr_base}:%04VR{gdtr_limit}  idtr=%016VR{idtr_base}:%04VR{idtr_limit}  rflags=%08VR{rflags}\n"
+                                     "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
                                      "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
                                      "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
                                      "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
@@ -1471,7 +1508,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                                      "fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr0=%08VR{cr0} cr2=%08VR{cr0}\n"
                                      "gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr3=%08VR{cr0} cr4=%08VR{cr0}\n"
                                      "ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}} cr8=%08VR{cr8}\n"
-                                     "gdtr=%08VR{gdtr_base}:%04VR{gdtr_limit}  idtr=%08VR{idtr_base}:%04VR{idtr_limit}  eflags=%08VR{eflags}\n"
+                                     "gdtr=%08VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%08VR{idtr_base}:%04VR{idtr_lim}  eflags=%08VR{eflags}\n"
                                      "ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
                                      "tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
                                      "sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
@@ -1531,7 +1568,7 @@ static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                                  ".fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} .cr3=%016VR{cr3}\n"
                                  ".gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}}\n"
                                  ".ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
-                                 ".gdtr=%08VR{gdtr_base}:%04VR{gdtr_limit}  .idtr=%08VR{idtr_base}:%04VR{idtr_limit}  .eflags=%08VR{eflags}\n"
+                                 ".gdtr=%08VR{gdtr_base}:%04VR{gdtr_lim}  .idtr=%08VR{idtr_base}:%04VR{idtr_lim}  .eflags=%08VR{eflags}\n"
                                  ".ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
                                  ".tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
                                  );

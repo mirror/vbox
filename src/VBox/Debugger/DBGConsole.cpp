@@ -206,10 +206,12 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
  */
 int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult)
 {
+    int rc;
+
     /*
      * Builtin?
      */
-    PCDBGCSYM   pSymDesc = dbgcLookupRegisterSymbol(pDbgc, pszSymbol);
+    PCDBGCSYM pSymDesc = dbgcLookupRegisterSymbol(pDbgc, pszSymbol);
     if (pSymDesc)
     {
         if (!pSymDesc->pfnGet)
@@ -217,18 +219,60 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
         return pSymDesc->pfnGet(pSymDesc, &pDbgc->CmdHlp, enmType, pResult);
     }
 
+    /*
+     * A typical register? (Guest only)
+     */
+    static const char s_szSixLetterRegisters[] =
+        "rflags;eflags;"
+    ;
+    static const char s_szThreeLetterRegisters[] =
+        "eax;rax;"     "r10;" "r8d;r8w;r8b;"  "cr0;"  "dr0;"
+        "ebx;rbx;"     "r11;" "r9d;r9w;r8b;"          "dr1;"
+        "ecx;rcx;"     "r12;"                 "cr2;"  "dr2;"
+        "edx;rdx;"     "r13;"                 "cr3;"  "dr3;"
+        "edi;rdi;dil;" "r14;"                 "cr4;"  "dr4;"
+        "esi;rsi;sil;" "r15;"                 "cr8;"
+        "ebp;rbp;"
+        "esp;rsp;"                                    "dr6;"
+        "rip;eip;"                                    "dr7;"
+        "efl;"
+    ;
+    static const char s_szTwoLetterRegisters[] =
+        "ax;al;ah;"           "r8;"
+        "bx;bl;bh;"           "r9;"
+        "cx;cl;ch;"    "cs;"
+        "dx;dl;dh;"    "ds;"
+        "di;"          "es;"
+        "si;"          "fs;"
+        "bp;"          "gs;"
+        "sp;"          "ss;"
+        "ip;"
+    ;
+    size_t const cchSymbol = strlen(pszSymbol);
+    if (    (cchSymbol == 2 && strstr(s_szTwoLetterRegisters,   pszSymbol))
+        ||  (cchSymbol == 3 && strstr(s_szThreeLetterRegisters, pszSymbol))
+        ||  (cchSymbol == 6 && strstr(s_szSixLetterRegisters,   pszSymbol)))
+    {
+        if (!strchr(pszSymbol, ';'))
+        {
+            DBGCVAR Var;
+            DBGCVAR_INIT_STRING(&Var, pszSymbol);
+            rc = dbgcOpRegister(pDbgc, &Var, pResult);
+            if (RT_SUCCESS(rc))
+                return DBGCCmdHlpConvert(&pDbgc->CmdHlp, &Var, enmType, false /*fConvSyms*/, pResult);
+        }
+    }
 
     /*
      * Ask PDM.
      */
     /** @todo resolve symbols using PDM. */
 
-
     /*
      * Ask the debug info manager.
      */
     RTDBGSYMBOL Symbol;
-    int rc = DBGFR3AsSymbolByName(pDbgc->pVM, pDbgc->hDbgAs, pszSymbol, &Symbol, NULL);
+    rc = DBGFR3AsSymbolByName(pDbgc->pVM, pDbgc->hDbgAs, pszSymbol, &Symbol, NULL);
     if (RT_SUCCESS(rc))
     {
         /*

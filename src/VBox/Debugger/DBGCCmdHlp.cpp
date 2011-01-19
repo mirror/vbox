@@ -728,6 +728,54 @@ static DECLCALLBACK(int) dbgcHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVa
 
 
 /**
+ * Converts a DBGC variable to a number.
+ *
+ * @returns VBox status code.
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pVar        The variable to convert.
+ * @param   pu64Number  Where to store the number value.
+ */
+static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t *pu64Number)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    NOREF(pDbgc);
+
+    uint64_t u64Number;
+    switch (pVar->enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+            u64Number = pVar->u.GCFlat;
+            break;
+        case DBGCVAR_TYPE_GC_PHYS:
+            u64Number = pVar->u.GCPhys;
+            break;
+        case DBGCVAR_TYPE_HC_FLAT:
+            u64Number = (uintptr_t)pVar->u.pvHCFlat;
+            break;
+        case DBGCVAR_TYPE_HC_PHYS:
+            u64Number = (uintptr_t)pVar->u.HCPhys;
+            break;
+        case DBGCVAR_TYPE_NUMBER:
+            u64Number = (uintptr_t)pVar->u.u64Number;
+            return VINF_SUCCESS;
+        case DBGCVAR_TYPE_HC_FAR:
+            u64Number = (uintptr_t)pVar->u.HCFar.off;
+            break;
+        case DBGCVAR_TYPE_GC_FAR:
+            u64Number = (uintptr_t)pVar->u.GCFar.off;
+            break;
+        case DBGCVAR_TYPE_SYMBOL:
+        case DBGCVAR_TYPE_STRING:
+            return VERR_PARSE_INCORRECT_ARG_TYPE; /** @todo better error code! */
+        default:
+            return VERR_PARSE_INCORRECT_ARG_TYPE;
+    }
+    *pu64Number = u64Number;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Converts a DBGC variable to a boolean.
  *
  * @returns VBox status code.
@@ -815,6 +863,396 @@ static DECLCALLBACK(int) dbgcHlpVarGetRange(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar,
 
 
 /**
+ * @interface_method_impl{DBGCCMDHLP,pfnVarConvert}
+ */
+static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar, DBGCVARTYPE enmToType, bool fConvSyms,
+                                           PDBGCVAR pResult)
+{
+    PDBGC           pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    DBGCVAR const   InVar = *pInVar;    /* if pInVar == pResult  */
+    PCDBGCVAR       pArg = &InVar;      /* lazy bird, clean up later */
+    DBGFADDRESS     Address;
+    int             rc;
+
+    Assert(pDbgc->pVM);
+
+    *pResult = InVar;
+    switch (InVar.enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
+                    rc = DBGFR3AddrToPhys(pDbgc->pVM, pDbgc->idCpu,
+                                          DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
+                                          &pResult->u.GCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
+                    rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu,
+                                                   DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
+                                                   false /*fReadOnly */,
+                                                   &pResult->u.pvHCFlat);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_INVALID_PARAMETER;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
+                    rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
+                                              DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
+                                              &pResult->u.GCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = InVar.u.GCFlat;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_GC_FAR:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pResult->enmType  = DBGCVAR_TYPE_GC_FLAT;
+                        pResult->u.GCFlat = Address.FlatPtr;
+                        return VINF_SUCCESS;
+                    }
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
+                        rc = DBGFR3AddrToPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
+                        if (RT_SUCCESS(rc))
+                            return VINF_SUCCESS;
+                    }
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
+                        rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu, &Address,
+                                                       false /*fReadOnly*/, &pResult->u.pvHCFlat);
+                        if (RT_SUCCESS(rc))
+                            return VINF_SUCCESS;
+                    }
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
+                        rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
+                        if (RT_SUCCESS(rc))
+                            return VINF_SUCCESS;
+                    }
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = InVar.u.GCFar.off;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_GC_PHYS:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    //rc = MMR3PhysGCPhys2GCVirtEx(pDbgc->pVM, pResult->u.GCPhys, ..., &pResult->u.GCFlat); - yea, sure.
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
+                    rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu,
+                                                   DBGFR3AddrFromPhys(pDbgc->pVM, &Address, pArg->u.GCPhys),
+                                                   false /*fReadOnly */,
+                                                   &pResult->u.pvHCFlat);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
+                    rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
+                                              DBGFR3AddrFromPhys(pDbgc->pVM, &Address, pArg->u.GCPhys),
+                                              &pResult->u.HCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = InVar.u.GCPhys;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_HC_FLAT:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
+                    rc = PGMR3DbgR3Ptr2GCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.GCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    /** @todo more memory types! */
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
+                    rc = PGMR3DbgR3Ptr2HCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.HCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    /** @todo more memory types! */
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = (uintptr_t)InVar.u.pvHCFlat;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_HC_FAR:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = (uintptr_t)InVar.u.HCFar.off;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_HC_PHYS:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
+                    rc = PGMR3DbgHCPhys2GCPhys(pDbgc->pVM, pArg->u.HCPhys, &pResult->u.GCPhys);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+                    return VERR_PARSE_CONVERSION_FAILED;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    pResult->enmType     = enmToType;
+                    pResult->u.u64Number = InVar.u.HCPhys;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_NUMBER:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                    pResult->enmType  = DBGCVAR_TYPE_GC_FLAT;
+                    pResult->u.GCFlat = (RTGCPTR)InVar.u.u64Number;
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_GC_PHYS:
+                    pResult->enmType  = DBGCVAR_TYPE_GC_PHYS;
+                    pResult->u.GCPhys = (RTGCPHYS)InVar.u.u64Number;
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_FLAT:
+                    pResult->enmType    = DBGCVAR_TYPE_HC_FLAT;
+                    pResult->u.pvHCFlat = (void *)(uintptr_t)InVar.u.u64Number;
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_FAR:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_HC_PHYS:
+                    pResult->enmType  = DBGCVAR_TYPE_HC_PHYS;
+                    pResult->u.HCPhys = (RTHCPHYS)InVar.u.u64Number;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_NUMBER:
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_SYMBOL:
+        case DBGCVAR_TYPE_STRING:
+            switch (enmToType)
+            {
+                case DBGCVAR_TYPE_GC_FLAT:
+                case DBGCVAR_TYPE_GC_FAR:
+                case DBGCVAR_TYPE_GC_PHYS:
+                case DBGCVAR_TYPE_HC_FLAT:
+                case DBGCVAR_TYPE_HC_FAR:
+                case DBGCVAR_TYPE_HC_PHYS:
+                case DBGCVAR_TYPE_NUMBER:
+                    if (fConvSyms)
+                        return dbgcSymbolGet(pDbgc, InVar.u.pszString, enmToType, pResult);
+                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+
+                case DBGCVAR_TYPE_STRING:
+                case DBGCVAR_TYPE_SYMBOL:
+                    pResult->enmType = enmToType;
+                    return VINF_SUCCESS;
+
+                case DBGCVAR_TYPE_UNKNOWN:
+                case DBGCVAR_TYPE_ANY:
+                    break;
+            }
+            break;
+
+        case DBGCVAR_TYPE_UNKNOWN:
+        case DBGCVAR_TYPE_ANY:
+            break;
+    }
+
+    AssertMsgFailed(("f=%d t=%d\n", InVar.enmType, enmToType));
+    return VERR_INVALID_PARAMETER;
+}
+
+
+/**
  * Info helper callback wrapper - print formatted string.
  *
  * @param   pHlp        Pointer to this structure.
@@ -881,8 +1319,10 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.pfnExec               = dbgcHlpExec;
     pDbgc->CmdHlp.pfnFailV              = dbgcHlpFailV;
     pDbgc->CmdHlp.pfnVarToDbgfAddr      = dbgcHlpVarToDbgfAddr;
+    pDbgc->CmdHlp.pfnVarToNumber        = dbgcHlpVarToNumber;
     pDbgc->CmdHlp.pfnVarToBool          = dbgcHlpVarToBool;
     pDbgc->CmdHlp.pfnVarGetRange        = dbgcHlpVarGetRange;
+    pDbgc->CmdHlp.pfnVarConvert         = dbgcHlpVarConvert;
     pDbgc->CmdHlp.pfnGetDbgfOutputHlp   = dbgcHlpGetDbgfOutputHlp;
 }
 
