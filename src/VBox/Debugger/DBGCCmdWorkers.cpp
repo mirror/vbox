@@ -374,7 +374,7 @@ PDBGCBP dbgcBpGet(PDBGC pDbgc, RTUINT iBp)
  * @returns VINF_DBGC_BP_NO_COMMAND if there is no command associated with the breakpoint.
  * @returns VERR_DBGC_BP_NOT_FOUND if the breakpoint wasn't found.
  * @returns VERR_BUFFER_OVERFLOW if the is not enough space in the scratch buffer for the command.
- * @returns VBox status code from dbgcEvalCommand() other wise.
+ * @returns VBox status code from dbgcEvalCommand() otherwise.
  * @param   pDbgc       The DBGC instance.
  * @param   iBp         The breakpoint to execute.
  */

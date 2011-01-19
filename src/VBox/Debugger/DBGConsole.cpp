@@ -339,7 +339,8 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
         pDbgc->pszScratch = psz;
         pDbgc->iArg       = 0;
         rc = dbgcEvalCommand(pDbgc, &pDbgc->achScratch[0], psz - &pDbgc->achScratch[0] - 1, fNoExecute);
-        if (rc)
+        if (   rc == VERR_DBGC_QUIT
+            || rc == VWRN_DBGC_CMD_PENDING)
             break;
     }
 
