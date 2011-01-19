@@ -49,6 +49,8 @@ const char* VBoxDefs::GUI_LanguageId = "GUI/LanguageID";
 const char* VBoxDefs::GUI_PreviewUpdate = "GUI/PreviewUpdate";
 const char* VBoxDefs::GUI_DetailsPageBoxes = "GUI/DetailsPageBoxes";
 const char* VBoxDefs::GUI_SelectorVMPositions = "GUI/SelectorVMPositions";
+const char* VBoxDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
+const char* VBoxDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorShortcuts";
 #ifdef Q_WS_X11
 const char* VBoxDefs::GUI_LicenseKey = "GUI/LicenseAgreed";
 #endif

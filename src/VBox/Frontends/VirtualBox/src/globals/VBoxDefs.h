@@ -124,6 +124,8 @@ struct VBoxDefs
     static const char* GUI_PreviewUpdate;
     static const char* GUI_DetailsPageBoxes;
     static const char* GUI_SelectorVMPositions;
+    static const char* GUI_Input_MachineShortcuts;
+    static const char* GUI_Input_SelectorShortcuts;
 #ifdef Q_WS_X11
     static const char* GUI_LicenseKey;
 #endif

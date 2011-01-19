@@ -21,10 +21,11 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxHelpActions.h"
+#include "UIExtraDataEventHandler.h"
+#include "UIIconPool.h"
+#include "UISelectorShortcuts.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "UIIconPool.h"
-#include "UIExtraDataEventHandler.h"
 
 /* Qt includes */
 #include <QMenu>
@@ -105,27 +106,34 @@ void VBoxHelpActions::retranslateUi()
     AssertReturnVoid (contentsAction != NULL);
 
     contentsAction->setText (VBoxProblemReporter::tr ("&Contents..."));
-    contentsAction->setShortcut (QKeySequence::HelpContents);
+    contentsAction->setShortcut (gSS->keySequence(UISelectorShortcuts::HelpShortcut));
     contentsAction->setStatusTip (VBoxProblemReporter::tr (
         "Show the online help contents"));
 
     webAction->setText (VBoxProblemReporter::tr ("&VirtualBox Web Site..."));
+    webAction->setShortcut (gSS->keySequence(UISelectorShortcuts::WebShortcut));
     webAction->setStatusTip (VBoxProblemReporter::tr (
         "Open the browser and go to the VirtualBox product web site"));
 
     resetMessagesAction->setText (VBoxProblemReporter::tr ("&Reset All Warnings"));
+    resetMessagesAction->setShortcut (gSS->keySequence(UISelectorShortcuts::ResetWarningsShortcut));
     resetMessagesAction->setStatusTip (VBoxProblemReporter::tr (
         "Go back to showing all suppressed warnings and messages"));
 
+#ifdef VBOX_WITH_REGISTRATION
     registerAction->setText (VBoxProblemReporter::tr ("R&egister VirtualBox..."));
+    registerAction->setShortcut (gSS->keySequence(UISelectorShortcuts::RegisterShortcut));
     registerAction->setStatusTip (VBoxProblemReporter::tr (
         "Open VirtualBox registration form"));
+#endif /* VBOX_WITH_REGISTRATION */
 
     updateAction->setText (VBoxProblemReporter::tr ("C&heck for Updates..."));
+    updateAction->setShortcut (gSS->keySequence(UISelectorShortcuts::UpdateShortcut));
     updateAction->setStatusTip (VBoxProblemReporter::tr (
         "Check for a new VirtualBox version"));
 
     aboutAction->setText (VBoxProblemReporter::tr ("&About VirtualBox..."));
+    aboutAction->setShortcut (gSS->keySequence(UISelectorShortcuts::AboutShortcut));
     aboutAction->setStatusTip (VBoxProblemReporter::tr (
         "Show a dialog with product information"));
 }
