@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,24 +22,13 @@
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/vmm.h>
-#include <VBox/vmm/mm.h>
-#include <VBox/vmm/pgm.h>
-#include <VBox/vmm/selm.h>
-#include <VBox/dis.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
-#include <iprt/alloc.h>
-#include <iprt/alloca.h>
-#include <iprt/string.h>
 #include <iprt/assert.h>
-#include <iprt/ctype.h>
-
-#include <stdlib.h>
-#include <stdio.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
 
 #include "DBGCInternal.h"
 

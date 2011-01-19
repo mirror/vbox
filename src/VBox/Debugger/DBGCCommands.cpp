@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,11 +22,6 @@
 #include <VBox/dbg.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/vmm.h>
-#include <VBox/vmm/mm.h>
-#include <VBox/vmm/pgm.h>
-#include <VBox/vmm/selm.h>
-#include <VBox/dis.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -733,6 +728,9 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
 
+    /** @todo Load the script here, but someone else should do the actual
+     *        evaluation and execution of it.  */
+
     /*
      * Try open the script.
      */
@@ -866,6 +864,7 @@ static DECLCALLBACK(int) dbgcCmdCpu(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Current CPU ID: %u\n", pDbgc->idCpu);
     else
     {
+/** @todo add a DBGF getter for this. */
         if (paArgs[0].u.u64Number >= pVM->cCpus)
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: idCpu %u is out of range! Highest ID is %u.\n",
                                     paArgs[0].u.u64Number, pVM->cCpus);
@@ -908,6 +907,7 @@ static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     /*
      * Dump it.
      */
+    /** @todo DBGFR3Info should do this, not we. */
     int rc = VMR3ReqCallWait(pVM, pDbgc->idCpu, (PFNRT)DBGFR3Info, 4,
                              pVM, paArgs[0].u.pszString, cArgs == 2 ? paArgs[1].u.pszString : NULL,
                              DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
