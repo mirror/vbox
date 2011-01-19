@@ -152,7 +152,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 #else
 
 #define ROUNDUP(a) \
-        ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+        ((a) > 0 ? (1 + (((a) - 1) | (sizeof(u_long) - 1))) : sizeof(u_long))
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
 void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr **pAddresses)
@@ -160,14 +160,16 @@ void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr 
     struct sockaddr *sa;
 
     for (int i = 0; i < RTAX_MAX && cp < cplim; i++) {
-        if (!(iAddrMask & (1 << i)))
-            continue;
+        if (iAddrMask & (1 << i))
+        {
+            sa = (struct sockaddr *)cp;
 
-        sa = (struct sockaddr *)cp;
+            pAddresses[i] = sa;
 
-        pAddresses[i] = sa;
-
-        ADVANCE(cp, sa);
+            ADVANCE(cp, sa);
+        }
+        else
+            pAddresses[i] = NULL;
     }
 }
 
@@ -248,7 +250,8 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
             /* Extract addresses from the message. */
             extractAddresses(pRtMsg->rtm_addrs, (char *)(pRtMsg + 1),
                              pRtMsg->rtm_msglen + (char *)pRtMsg, addresses);
-            if ((pRtMsg->rtm_addrs & RTA_DST))
+            if ((pRtMsg->rtm_addrs & RTA_DST)
+                && (pRtMsg->rtm_addrs & RTA_NETMASK))
             {
                 if (addresses[RTAX_DST]->sa_family != AF_INET)
                     continue;
