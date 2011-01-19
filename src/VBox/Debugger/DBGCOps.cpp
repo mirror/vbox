@@ -470,7 +470,8 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
     /*
      * Parse sanity.
      */
-    if (pArg->enmType != DBGCVAR_TYPE_STRING)
+    if (   pArg->enmType != DBGCVAR_TYPE_STRING
+        && pArg->enmType != DBGCVAR_TYPE_SYMBOL)
         return VERR_PARSE_INCORRECT_ARG_TYPE;
 
     /*
@@ -481,7 +482,6 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
     int rc = DBGFR3RegNmQuery(pDbgc->pVM, pDbgc->idCpu, pArg->u.pszString, &Value, &enmType);
     if (RT_SUCCESS(rc))
     {
-        rc = VERR_INTERNAL_ERROR_5;
         switch (enmType)
         {
             case DBGFREGVALTYPE_U8:
@@ -521,6 +521,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
             case DBGFREGVALTYPE_32BIT_HACK:
                 break;
         }
+        rc = VERR_INTERNAL_ERROR_5;
     }
     return rc;
 }
@@ -539,55 +540,8 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrFlat\n"));
-    int     rc;
-    *pResult = *pArg;
-
-    switch (pArg->enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_GC_FAR:
-        {
-            Assert(pDbgc->pVM);
-            DBGFADDRESS Address;
-            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
-            if (RT_SUCCESS(rc))
-            {
-                pResult->enmType = DBGCVAR_TYPE_GC_FLAT;
-                pResult->u.GCFlat = Address.FlatPtr;
-                return VINF_SUCCESS;
-            }
-            return VERR_PARSE_CONVERSION_FAILED;
-        }
-
-        case DBGCVAR_TYPE_GC_PHYS:
-            //rc = MMR3PhysGCPhys2GCVirtEx(pDbgc->pVM, pResult->u.GCPhys, ..., &pResult->u.GCFlat); - yea, sure.
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-        case DBGCVAR_TYPE_HC_FLAT:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_HC_PHYS:
-            Assert(pDbgc->pVM);
-            pResult->enmType        = DBGCVAR_TYPE_HC_FLAT;
-            rc = MMR3HCPhys2HCVirt(pDbgc->pVM, pResult->u.HCPhys, &pResult->u.pvHCFlat);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_NUMBER:
-            pResult->enmType    = DBGCVAR_TYPE_GC_FLAT;
-            pResult->u.GCFlat   = (RTGCPTR)pResult->u.u64Number;
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_STRING:
-            return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_FLAT, pResult);
-
-        case DBGCVAR_TYPE_UNKNOWN:
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
+    DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_FLAT : DBGCVAR_TYPE_GC_FLAT;
+    return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, enmType, true /*fConvSyms*/, pResult);
 }
 
 
@@ -604,62 +558,8 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrPhys\n"));
-    int         rc;
-    DBGFADDRESS Address;
-
-    *pResult = *pArg;
-    switch (pArg->enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
-            rc = DBGFR3AddrToPhys(pDbgc->pVM, pDbgc->idCpu,
-                                  DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
-                                  &pResult->u.GCPhys);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_GC_FAR:
-            Assert(pDbgc->pVM);
-            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
-            if (RT_SUCCESS(rc))
-            {
-                pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
-                rc = DBGFR3AddrToPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
-                if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-            }
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_GC_PHYS:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_HC_FLAT:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
-            rc = PGMR3DbgR3Ptr2GCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.GCPhys);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            /** @todo more memory types! */
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_HC_PHYS:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_NUMBER:
-            pResult->enmType    = DBGCVAR_TYPE_GC_PHYS;
-            pResult->u.GCPhys   = (RTGCPHYS)pResult->u.u64Number;
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_STRING:
-            return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_PHYS, pResult);
-
-        case DBGCVAR_TYPE_UNKNOWN:
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
-    return VINF_SUCCESS;
+    DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_PHYS : DBGCVAR_TYPE_GC_PHYS;
+    return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, enmType, true /*fConvSyms*/, pResult);
 }
 
 
@@ -676,71 +576,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrPhys\n"));
-    DBGFADDRESS Address;
-    int         rc;
-
-    *pResult = *pArg;
-    switch (pArg->enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
-            rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
-                                      DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
-                                      &pResult->u.GCPhys);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_GC_FAR:
-        {
-            Assert(pDbgc->pVM);
-            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
-            if (RT_SUCCESS(rc))
-            {
-                pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
-                rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
-                if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-            }
-            return VERR_PARSE_CONVERSION_FAILED;
-        }
-
-        case DBGCVAR_TYPE_GC_PHYS:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
-            rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
-                                      DBGFR3AddrFromPhys(pDbgc->pVM, &Address, pArg->u.GCPhys),
-                                      &pResult->u.GCPhys);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_HC_FLAT:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
-            rc = PGMR3DbgR3Ptr2HCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.HCPhys);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            /** @todo more memory types! */
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_HC_PHYS:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_NUMBER:
-            pResult->enmType    = DBGCVAR_TYPE_HC_PHYS;
-            pResult->u.HCPhys   = (RTGCPHYS)pResult->u.u64Number;
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_STRING:
-            return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_HC_PHYS, pResult);
-
-        case DBGCVAR_TYPE_UNKNOWN:
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
-    return VINF_SUCCESS;
+    return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_PHYS, true /*fConvSyms*/, pResult);
 }
 
 
@@ -757,66 +593,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
 DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpAddrHost\n"));
-    int             rc;
-    DBGFADDRESS     Address;
-
-    *pResult = *pArg;
-    switch (pArg->enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
-            rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu,
-                                           DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
-                                           false /*fReadOnly */,
-                                           &pResult->u.pvHCFlat);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_GC_FAR:
-            Assert(pDbgc->pVM);
-            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
-            if (RT_SUCCESS(rc))
-            {
-                pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
-                rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu, &Address,
-                                               false /*fReadOnly*/, &pResult->u.pvHCFlat);
-                if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-            }
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_GC_PHYS:
-            Assert(pDbgc->pVM);
-            pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
-            rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu,
-                                           DBGFR3AddrFromPhys(pDbgc->pVM, &Address, pArg->u.GCPhys),
-                                           false /*fReadOnly */,
-                                           &pResult->u.pvHCFlat);
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_HC_FLAT:
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_HC_PHYS:
-            /** @todo !*/
-            return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_NUMBER:
-            pResult->enmType    = DBGCVAR_TYPE_HC_FLAT;
-            pResult->u.pvHCFlat = (void *)(uintptr_t)pResult->u.u64Number;
-            return VINF_SUCCESS;
-
-        case DBGCVAR_TYPE_STRING:
-            return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_HC_FLAT, pResult);
-
-        case DBGCVAR_TYPE_UNKNOWN:
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
+    return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_FLAT, true /*fConvSyms*/, pResult);
 }
 
 

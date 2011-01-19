@@ -201,7 +201,8 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
  * @returns VBox status on failure.
  * @param   pDbgc       The debug console instance.
  * @param   pszSymbol   The symbol name.
- * @param   enmType     The result type.
+ * @param   enmType     The result type.  Specifying DBGCVAR_TYPE_GC_FAR may
+ *                      cause failure, avoid it.
  * @param   pResult     Where to store the result.
  */
 int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult)
@@ -278,19 +279,20 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
         /*
          * Default return is a flat gc address.
          */
-        memset(pResult, 0,  sizeof(*pResult));
-        pResult->enmRangeType = Symbol.cb ? DBGCVAR_RANGE_BYTES : DBGCVAR_RANGE_NONE;
-        pResult->u64Range     = Symbol.cb;
-        pResult->enmType      = DBGCVAR_TYPE_GC_FLAT;
-        pResult->u.GCFlat     = Symbol.Value;
-        DBGCVAR VarTmp;
+        DBGCVAR_INIT_GC_FLAT(pResult, Symbol.Value);
+        if (Symbol.cb)
+            DBGCVAR_SET_RANGE(pResult, DBGCVAR_RANGE_BYTES, Symbol.cb);
+
         switch (enmType)
         {
             /* nothing to do. */
             case DBGCVAR_TYPE_GC_FLAT:
-            case DBGCVAR_TYPE_GC_FAR:
             case DBGCVAR_TYPE_ANY:
                 return VINF_SUCCESS;
+
+            /* impossible at the moment. */
+            case DBGCVAR_TYPE_GC_FAR:
+                return VERR_PARSE_CONVERSION_FAILED;
 
             /* simply make it numeric. */
             case DBGCVAR_TYPE_NUMBER:
@@ -299,18 +301,10 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
                 return VINF_SUCCESS;
 
             /* cast it. */
-
             case DBGCVAR_TYPE_GC_PHYS:
-                VarTmp = *pResult;
-                return dbgcOpAddrPhys(pDbgc, &VarTmp, pResult);
-
             case DBGCVAR_TYPE_HC_FLAT:
-                VarTmp = *pResult;
-                return dbgcOpAddrHost(pDbgc, &VarTmp, pResult);
-
             case DBGCVAR_TYPE_HC_PHYS:
-                VarTmp = *pResult;
-                return dbgcOpAddrHostPhys(pDbgc, &VarTmp, pResult);
+                return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pResult, enmType, false /*fConvSyms*/, pResult);
 
             default:
                 AssertMsgFailed(("Internal error enmType=%d\n", enmType));
@@ -1419,6 +1413,8 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute
  */
 static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
 {
+    /** @todo Replace this with a sh/ksh/csh/rexx like toplevel language that
+     *        allows doing function, loops, if, cases, and such. */
     int rc = 0;
     while (pDbgc->cInputLines)
     {
