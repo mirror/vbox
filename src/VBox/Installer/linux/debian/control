@@ -1,5 +1,5 @@
 Source: virtualbox-4.0
-Section: non-free/misc
+Section: contrib/misc
 Priority: optional
 Maintainer: Oracle Corporation <info@virtualbox.org>
 Standards-Version: 3.2.1
