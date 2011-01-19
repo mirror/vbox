@@ -60,6 +60,10 @@ typedef enum DBGCVARCAT
 {
     /** Any type is fine. */
     DBGCVAR_CAT_ANY = 0,
+    /** Any kind of pointer or number. */
+    DBGCVAR_CAT_POINTER_NUMBER,
+    /** Any kind of pointer or number, no range. */
+    DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE,
     /** Any kind of pointer. */
     DBGCVAR_CAT_POINTER,
     /** Any kind of pointer with no range option. */
