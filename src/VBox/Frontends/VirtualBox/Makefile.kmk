@@ -506,6 +506,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxWarningPane.cpp \
+	src/selector/UISelectorShortcuts.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/selector/UIVMItem.cpp \
 	src/selector/UIVMListView.cpp \
@@ -524,6 +525,7 @@ VirtualBox_SOURCES = \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
+	src/runtime/UIMachineShortcuts.cpp \
 	src/runtime/UIMachineView.cpp \
 	src/runtime/UIMachineWindow.cpp \
 	src/runtime/UIMouseHandler.cpp \

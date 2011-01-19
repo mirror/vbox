@@ -37,6 +37,7 @@
 #include "UIToolBar.h"
 #include "VBoxVMLogViewer.h"
 #include "QIFileDialog.h"
+#include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
 #include "UIGlobalSettingsExtension.h" /* extension pack installation */
 
@@ -1201,83 +1202,66 @@ void VBoxSelectorWnd::retranslateUi()
     vmListViewCurrentChanged();
 
     mFileMediaMgrAction->setText(tr("&Virtual Media Manager..."));
-    mFileMediaMgrAction->setShortcut(QKeySequence("Ctrl+D"));
+    mFileMediaMgrAction->setShortcut(gSS->keySequence(UISelectorShortcuts::VirtualMediaManagerShortcut));
     mFileMediaMgrAction->setStatusTip(tr("Display the Virtual Media Manager dialog"));
 
     mFileApplianceImportAction->setText(tr("&Import Appliance..."));
-    mFileApplianceImportAction->setShortcut(QKeySequence("Ctrl+I"));
+    mFileApplianceImportAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ImportApplianceShortcut));
     mFileApplianceImportAction->setStatusTip(tr("Import an appliance into VirtualBox"));
 
     mFileApplianceExportAction->setText(tr("&Export Appliance..."));
-    mFileApplianceExportAction->setShortcut(QKeySequence("Ctrl+E"));
+    mFileApplianceExportAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ExportApplianceShortcut));
     mFileApplianceExportAction->setStatusTip(tr("Export one or more VirtualBox virtual machines as an appliance"));
 
-#ifdef Q_WS_MAC
-    /*
-     * Macification: Getting the right menu as application preference menu item.
-     *
-     * QMenuBar::isCommand() in qmenubar_mac.cpp doesn't recognize "Setting"(s)
-     * unless it's in the first position. So, we use the Mac term here to make
-     * sure we get picked instead of the VM settings.
-     *
-     * Now, since both QMenuBar and we translate these strings, it's going to
-     * be really interesting to see how this plays on non-english systems...
-     */
     mFileSettingsAction->setText(tr("&Preferences...", "global settings"));
-#else
-    /*
-     * ...and on other platforms we use "Preferences" as well. The #ifdef is
-     * left because of the possible localization problems on Mac we first need
-     * to figure out.
-     */
-    mFileSettingsAction->setText(tr("&Preferences...", "global settings"));
-#endif
-    mFileSettingsAction->setShortcut(QKeySequence("Ctrl+G"));
+    mFileSettingsAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PreferencesShortcut));
     mFileSettingsAction->setStatusTip(tr("Display the global settings dialog"));
 
     mFileExitAction->setText(tr("E&xit"));
-    mFileExitAction->setShortcut(QKeySequence("Ctrl+Q"));
+    mFileExitAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ExitShortcut));
     mFileExitAction->setStatusTip(tr("Close application"));
 
     mVmNewAction->setText(tr("&New..."));
-    mVmNewAction->setShortcut(QKeySequence("Ctrl+N"));
+    mVmNewAction->setShortcut(gSS->keySequence(UISelectorShortcuts::NewVMShortcut));
     mVmNewAction->setStatusTip(tr("Create a new virtual machine"));
     mVmNewAction->setToolTip(mVmNewAction->text().remove('&').remove('.') +
-        QString("(%1)").arg(mVmNewAction->shortcut().toString()));
+        (mVmNewAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmNewAction->shortcut().toString())));
 
     mVmAddAction->setText(tr("&Add..."));
-    mVmAddAction->setShortcut(QKeySequence("Ctrl+A"));
+    mVmAddAction->setShortcut(gSS->keySequence(UISelectorShortcuts::AddVMShortcut));
     mVmAddAction->setStatusTip(tr("Add an existing virtual machine"));
-    mVmAddAction->setToolTip(mVmAddAction->text().remove('&').remove('.') +
-        QString("(%1)").arg(mVmAddAction->shortcut().toString()));
 
     mVmConfigAction->setText(tr("&Settings..."));
-    mVmConfigAction->setShortcut(QKeySequence("Ctrl+S"));
+    mVmConfigAction->setShortcut(gSS->keySequence(UISelectorShortcuts::SettingsVMShortcut));
     mVmConfigAction->setStatusTip(tr("Configure the selected virtual machine"));
     mVmConfigAction->setToolTip(mVmConfigAction->text().remove('&').remove('.') +
-        QString("(%1)").arg(mVmConfigAction->shortcut().toString()));
+        (mVmConfigAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmConfigAction->shortcut().toString())));
 
     mVmDeleteAction->setText(tr("&Remove"));
-    mVmDeleteAction->setShortcut(QKeySequence("Ctrl+R"));
+    mVmDeleteAction->setShortcut(gSS->keySequence(UISelectorShortcuts::RemoveVMShortcut));
     mVmDeleteAction->setStatusTip(tr("Remove the selected virtual machine"));
 
     /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
 
     mVmDiscardAction->setText(tr("D&iscard"));
+    mVmDiscardAction->setShortcut(gSS->keySequence(UISelectorShortcuts::DiscardVMShortcut));
     mVmDiscardAction->setStatusTip(
         tr("Discard the saved state of the selected virtual machine"));
+    mVmDiscardAction->setToolTip(mVmDiscardAction->text().remove('&').remove('.') +
+        (mVmDiscardAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmDiscardAction->shortcut().toString())));
 
     mVmPauseAction->setText(tr("&Pause"));
     mVmPauseAction->setStatusTip(
         tr("Suspend the execution of the virtual machine"));
 
     mVmRefreshAction->setText(tr("Re&fresh"));
+    mVmRefreshAction->setShortcut(gSS->keySequence(UISelectorShortcuts::RefreshVMShortcut));
     mVmRefreshAction->setStatusTip(
         tr("Refresh the accessibility state of the selected virtual machine"));
 
     mVmShowLogsAction->setText(tr("Show &Log..."));
     mVmShowLogsAction->setIconText(tr("Log", "icon text"));
-    mVmShowLogsAction->setShortcut(QKeySequence("Ctrl+L"));
+    mVmShowLogsAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMLogShortcut));
     mVmShowLogsAction->setStatusTip(
         tr("Show the log files of the selected virtual machine"));
 
@@ -1297,6 +1281,8 @@ void VBoxSelectorWnd::retranslateUi()
     mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
     mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
 #endif
+    mVmOpenInFileManagerAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMInFileManagerShortcut));
+    mVmCreateShortcut->setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
 
     mHelpActions.retranslateUi();
 
@@ -1374,6 +1360,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
            )
         {
             mVmStartAction->setText(tr("S&tart"));
+            mVmStartAction->setShortcut(gSS->keySequence(UISelectorShortcuts::StartVMShortcut));
+            mVmStartAction->setToolTip(mVmStartAction->text().remove('&').remove('.') +
+                  (mVmStartAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmStartAction->shortcut().toString())));
 #ifdef QT_MAC_USE_COCOA
             /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
                the necessary size of the toolbar is increased. Also for some languages
@@ -1389,6 +1378,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         else
         {
             mVmStartAction->setText(tr("S&how"));
+            mVmStartAction->setShortcut(gSS->keySequence(UISelectorShortcuts::StartVMShortcut));
+            mVmStartAction->setToolTip(mVmStartAction->text().remove('&').remove('.') +
+                  (mVmStartAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmStartAction->shortcut().toString())));
 #ifdef QT_MAC_USE_COCOA
             /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
                the necessary size of the toolbar is increased. Also for some languages
@@ -1408,7 +1400,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
            )
         {
             mVmPauseAction->setText(tr("R&esume"));
-            mVmPauseAction->setShortcut(QKeySequence("Ctrl+P"));
+            mVmPauseAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PauseVMShortcut));
             mVmPauseAction->setStatusTip(
                 tr("Resume the execution of the virtual machine"));
             mVmPauseAction->blockSignals(true);
@@ -1418,7 +1410,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         else
         {
             mVmPauseAction->setText(tr("&Pause"));
-            mVmPauseAction->setShortcut(QKeySequence("Ctrl+P"));
+            mVmPauseAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PauseVMShortcut));
             mVmPauseAction->setStatusTip(
                 tr("Suspend the execution of the virtual machine"));
             mVmPauseAction->blockSignals(true);
