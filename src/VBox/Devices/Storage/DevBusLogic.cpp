@@ -15,7 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Implemented looking at the driver source in the linux kernel (drivers/scsi/BusLogic.[ch]). */
+/* Implemented looking at the driver source in the linux kernel (drivers/scsi/BusLogic.[ch]). 
+ * See also: http://www.drdobbs.com/184410111
+ */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -139,6 +141,8 @@ enum BUSLOGICCOMMAND
     BUSLOGICCOMMAND_INQUIRE_INSTALLED_DEVICES_ID_8_TO_15 = 0x23,
     BUSLOGICCOMMAND_INQUIRE_TARGET_DEVICES = 0x24,
     BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT = 0x25,
+    BUSLOGICCOMMAND_EXT_BIOS_INFO = 0x28,
+    BUSLOGICCOMMAND_UNLOCK_MAILBOX = 0x29,
     BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX = 0x81,
     BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND = 0x83,
     BUSLOGICCOMMAND_INQUIRE_FIRMWARE_VERSION_3RD_LETTER = 0x84,
@@ -1493,6 +1497,15 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             Log(("Bus-off time: %d\n", pBusLogic->aCommandBuffer[0]));
             break;
         }
+        case BUSLOGICCOMMAND_EXT_BIOS_INFO:
+        case BUSLOGICCOMMAND_UNLOCK_MAILBOX:
+            /* Commands valid for Adaptec 154xC which we don't handle since
+             * we pretend being 154xB compatible. Just mark the command as invalid.
+             */
+            Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+            pBusLogic->cbReplyParametersLeft = 0;
+            pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_COMMAND_INVALID;
+            break;
         case BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND: /* Should be handled already. */
         default:
             AssertMsgFailed(("Invalid command %#x\n", pBusLogic->uOperationCode));
@@ -1640,8 +1653,8 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                 pBusLogic->uOperationCode = uVal;
                 pBusLogic->iParameter = 0;
 
-                /* Mark host adapter as busy. */
-                pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY;
+                /* Mark host adapter as busy and clear the invalid status bit. */
+                pBusLogic->regStatus &= ~(BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY | BUSLOGIC_REGISTER_STATUS_COMMAND_INVALID);
 
                 /* Get the number of bytes for parameters from the command code. */
                 switch (pBusLogic->uOperationCode)
@@ -1672,6 +1685,11 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                         break;
                     case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitializeExtendedMailbox);
+                        break;
+                    case BUSLOGICCOMMAND_EXT_BIOS_INFO:
+                    case BUSLOGICCOMMAND_UNLOCK_MAILBOX:
+                        /* Invalid commands. */
+                        pBusLogic->cbCommandParametersLeft = 0;
                         break;
                     case BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND: /* Should not come here anymore. */
                     default:
