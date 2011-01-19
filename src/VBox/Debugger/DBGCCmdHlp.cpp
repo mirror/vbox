@@ -128,8 +128,6 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%%%%RGp", pVar->u.GCPhys);
                 case DBGCVAR_TYPE_HC_FLAT:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%#%RHv", (uintptr_t)pVar->u.pvHCFlat);
-                case DBGCVAR_TYPE_HC_FAR:
-                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%04x:%08x", pVar->u.HCFar.sel, pVar->u.HCFar.off);
                 case DBGCVAR_TYPE_HC_PHYS:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%%%%%RHp", pVar->u.HCPhys);
                 case DBGCVAR_TYPE_STRING:
@@ -176,8 +174,6 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%%%%RGp%s", pVar->u.GCPhys, szRange);
                 case DBGCVAR_TYPE_HC_FLAT:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%%#%RHv%s", (uintptr_t)pVar->u.pvHCFlat, szRange);
-                case DBGCVAR_TYPE_HC_FAR:
-                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%04x:%08x%s", pVar->u.HCFar.sel, pVar->u.HCFar.off, szRange);
                 case DBGCVAR_TYPE_HC_PHYS:
                     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "#%%%%%RHp%s", pVar->u.HCPhys, szRange);
                 case DBGCVAR_TYPE_STRING:
@@ -385,7 +381,6 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
         case DBGCVAR_TYPE_HC_PHYS:
             break;
 
-        case DBGCVAR_TYPE_HC_FAR: /* not supported yet! */
         default:
             return VERR_NOT_IMPLEMENTED;
     }
@@ -430,7 +425,6 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
 
             case DBGCVAR_TYPE_HC_PHYS:
             case DBGCVAR_TYPE_HC_FLAT:
-            case DBGCVAR_TYPE_HC_FAR:
             {
                 DBGCVAR Var2;
                 rc = dbgcOpAddrFlat(pDbgc, &Var, &Var2);
@@ -581,7 +575,6 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, PVM pVM, const voi
 
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
-        case DBGCVAR_TYPE_HC_FAR:
         {
             /*
              * Copy HC memory page by page.
@@ -758,9 +751,6 @@ static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar,
         case DBGCVAR_TYPE_NUMBER:
             u64Number = (uintptr_t)pVar->u.u64Number;
             return VINF_SUCCESS;
-        case DBGCVAR_TYPE_HC_FAR:
-            u64Number = (uintptr_t)pVar->u.HCFar.off;
-            break;
         case DBGCVAR_TYPE_GC_FAR:
             u64Number = (uintptr_t)pVar->u.GCFar.off;
             break;
@@ -829,7 +819,6 @@ static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, b
             *pf = pVar->u.u64Number != 0;
             return VINF_SUCCESS;
 
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_SYMBOL:
         default:
@@ -907,9 +896,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                         return VINF_SUCCESS;
                     return VERR_PARSE_CONVERSION_FAILED;
 
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VERR_INVALID_PARAMETER;
-
                 case DBGCVAR_TYPE_HC_PHYS:
                     pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
                     rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
@@ -973,9 +959,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                     }
                     return VERR_PARSE_CONVERSION_FAILED;
 
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
                 case DBGCVAR_TYPE_HC_PHYS:
                     rc = DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
                     if (RT_SUCCESS(rc))
@@ -1025,9 +1008,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                         return VINF_SUCCESS;
                     return VERR_PARSE_CONVERSION_FAILED;
 
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
                 case DBGCVAR_TYPE_HC_PHYS:
                     pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
                     rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu,
@@ -1072,9 +1052,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_HC_FLAT:
                     return VINF_SUCCESS;
 
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
                 case DBGCVAR_TYPE_HC_PHYS:
                     pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
                     rc = PGMR3DbgR3Ptr2HCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.HCPhys);
@@ -1086,42 +1063,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_NUMBER:
                     pResult->enmType     = enmToType;
                     pResult->u.u64Number = (uintptr_t)InVar.u.pvHCFlat;
-                    return VINF_SUCCESS;
-
-                case DBGCVAR_TYPE_STRING:
-                case DBGCVAR_TYPE_SYMBOL:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_UNKNOWN:
-                case DBGCVAR_TYPE_ANY:
-                    break;
-            }
-            break;
-
-        case DBGCVAR_TYPE_HC_FAR:
-            switch (enmToType)
-            {
-                case DBGCVAR_TYPE_GC_FLAT:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_GC_FAR:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_GC_PHYS:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_HC_FLAT:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VINF_SUCCESS;
-
-                case DBGCVAR_TYPE_HC_PHYS:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_NUMBER:
-                    pResult->enmType     = enmToType;
-                    pResult->u.u64Number = (uintptr_t)InVar.u.HCFar.off;
                     return VINF_SUCCESS;
 
                 case DBGCVAR_TYPE_STRING:
@@ -1151,9 +1092,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                     return VERR_PARSE_CONVERSION_FAILED;
 
                 case DBGCVAR_TYPE_HC_FLAT:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
-                case DBGCVAR_TYPE_HC_FAR:
                     return VERR_PARSE_INCORRECT_ARG_TYPE;
 
                 case DBGCVAR_TYPE_HC_PHYS:
@@ -1195,9 +1133,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                     pResult->u.pvHCFlat = (void *)(uintptr_t)InVar.u.u64Number;
                     return VERR_PARSE_INCORRECT_ARG_TYPE;
 
-                case DBGCVAR_TYPE_HC_FAR:
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
-
                 case DBGCVAR_TYPE_HC_PHYS:
                     pResult->enmType  = DBGCVAR_TYPE_HC_PHYS;
                     pResult->u.HCPhys = (RTHCPHYS)InVar.u.u64Number;
@@ -1224,7 +1159,6 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_GC_FAR:
                 case DBGCVAR_TYPE_GC_PHYS:
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                 case DBGCVAR_TYPE_NUMBER:
                     if (fConvSyms)

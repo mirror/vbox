@@ -1056,20 +1056,6 @@ static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
                         "Host flat address: %%%08x\n",
                         paArgs[iArg].u.pvHCFlat);
                 break;
-            case DBGCVAR_TYPE_HC_FAR:
-                if (paArgs[iArg].enmRangeType != DBGCVAR_RANGE_NONE)
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                        "Host far address: %04x:%08x range %lld %s\n",
-                        paArgs[iArg].u.HCFar.sel,
-                        paArgs[iArg].u.HCFar.off,
-                        paArgs[iArg].u64Range,
-                        apszRangeDesc[paArgs[iArg].enmRangeType]);
-                else
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                        "Host far address: %04x:%08x\n",
-                        paArgs[iArg].u.HCFar.sel,
-                        paArgs[iArg].u.HCFar.off);
-                break;
             case DBGCVAR_TYPE_HC_PHYS:
                 if (paArgs[iArg].enmRangeType != DBGCVAR_RANGE_NONE)
                     rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,

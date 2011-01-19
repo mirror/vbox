@@ -304,7 +304,6 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
                 VarTmp = *pResult;
                 return dbgcOpAddrPhys(pDbgc, &VarTmp, pResult);
 
-            case DBGCVAR_TYPE_HC_FAR:
             case DBGCVAR_TYPE_HC_FLAT:
                 VarTmp = *pResult;
                 return dbgcOpAddrHost(pDbgc, &VarTmp, pResult);
@@ -437,7 +436,6 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
                 case DBGCVAR_TYPE_GC_FAR:
                 case DBGCVAR_TYPE_GC_PHYS:
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VINF_SUCCESS;
 
@@ -493,7 +491,6 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
                     return VINF_SUCCESS;
 
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_CONVERSION_FAILED;
 
