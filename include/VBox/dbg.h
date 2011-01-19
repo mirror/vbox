@@ -100,7 +100,8 @@ typedef enum DBGCVARTYPE
     DBGCVAR_TYPE_GC_PHYS,
     /** Flat HC pointer. */
     DBGCVAR_TYPE_HC_FLAT,
-    /** Segmented HC pointer. */
+    /** Segmented HC pointer.
+     * @todo drop this  */
     DBGCVAR_TYPE_HC_FAR,
     /** Physical HC pointer. */
     DBGCVAR_TYPE_HC_PHYS,
@@ -108,7 +109,8 @@ typedef enum DBGCVARTYPE
     DBGCVAR_TYPE_STRING,
     /** Number. */
     DBGCVAR_TYPE_NUMBER,
-    /** Symbol. */
+    /** Symbol.
+     * @todo drop this   */
     DBGCVAR_TYPE_SYMBOL,
     /** Special type used when querying symbols. */
     DBGCVAR_TYPE_ANY
@@ -284,7 +286,7 @@ typedef const DBGCVAR *PCDBGCVAR;
         } while (0)
 
 /**
- * Macro for initializing a DBGC variable with a number
+ * Macro for initializing a DBGC variable with a number.
  */
 #define DBGCVAR_INIT_NUMBER(pVar, Value) \
         do { \
@@ -292,6 +294,19 @@ typedef const DBGCVAR *PCDBGCVAR;
             (pVar)->enmType = DBGCVAR_TYPE_NUMBER; \
             (pVar)->u.u64Number = (Value); \
         } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a string.
+ */
+#define DBGCVAR_INIT_STRING(pVar, a_pszString) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType      = DBGCVAR_TYPE_STRING; \
+            (pVar)->enmRangeType = DBGCVAR_RANGE_BYTES; \
+            (pVar)->u.pszString  = (a_pszString); \
+            (pVar)->u64Range     = strlen(a_pszString); \
+        } while (0)
+
 
 
 /**
@@ -493,6 +508,16 @@ typedef struct DBGCCMDHLP
     DECLCALLBACKMEMBER(int, pfnVarToDbgfAddr)(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
     /**
+     * Converts a DBGC variable to a 64-bit number.
+     *
+     * @returns VBox status code.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pVar        The variable to convert.
+     * @param   pu64Number  Where to store the number.
+     */
+    DECLCALLBACKMEMBER(int, pfnVarToNumber)(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t *pu64Number);
+
+    /**
      * Converts a DBGC variable to a boolean.
      *
      * @returns VBox status code.
@@ -514,6 +539,21 @@ typedef struct DBGCCMDHLP
      */
     DECLCALLBACKMEMBER(int, pfnVarGetRange)(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t cbElement, uint64_t cbDefault,
                                             uint64_t *pcbRange);
+
+    /**
+     * Converts a variable to one with the specified type.
+     *
+     * This preserves the range.
+     *
+     * @returns VBox status code.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pVar        The variable to convert.
+     * @param   enmToType   The target type.
+     * @param   fConvSyms   If @c true, then attempt to resolve symbols.
+     * @param   pResult     The output variable. Can be the same as @a pVar.
+     */
+    DECLCALLBACKMEMBER(int, pfnVarConvert)(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, DBGCVARTYPE enmToType, bool fConvSyms,
+                                           PDBGCVAR pResult);
 
     /**
      * Gets a DBGF output helper that directs the output to the debugger
@@ -642,11 +682,35 @@ DECLINLINE(int) DBGCCmdHlpVarToFlatAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PRT
 }
 
 /**
+ * @copydoc DBGCCMDHLP::pfnVarToNumber
+ */
+DECLINLINE(int) DBGCCmdHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t *pu64Number)
+{
+    return pCmdHlp->pfnVarToNumber(pCmdHlp, pVar, pu64Number);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnVarToBool
+ */
+DECLINLINE(int) DBGCCmdHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, bool *pf)
+{
+    return pCmdHlp->pfnVarToBool(pCmdHlp, pVar, pf);
+}
+
+/**
  * @copydoc DBGCCMDHLP::pfnVarGetRange
  */
 DECLINLINE(int) DBGCCmdHlpVarGetRange(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t cbElement, uint64_t cbDefault, uint64_t *pcbRange)
 {
     return pCmdHlp->pfnVarGetRange(pCmdHlp, pVar, cbElement, cbDefault, pcbRange);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnVarConvert
+ */
+DECLINLINE(int) DBGCCmdHlpConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, DBGCVARTYPE enmToType, bool fConvSyms, PDBGCVAR pResult)
+{
+    return pCmdHlp->pfnVarConvert(pCmdHlp, pVar, enmToType, fConvSyms, pResult);
 }
 
 /**

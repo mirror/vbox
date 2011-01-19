@@ -168,10 +168,10 @@ typedef DBGFR3REGNMQUERYALLARGS *PDBGFR3REGNMQUERYALLARGS;
 
 
 /**
- * Argument packet passed by DBGFR3RegNmPrintfV to dbgfR3RegNmPrintfCbOutput
- * and dbgfR3RegNmPrintfCbFormat.
+ * Argument packet passed by DBGFR3RegPrintfV to dbgfR3RegPrintfCbOutput and
+ * dbgfR3RegPrintfCbFormat.
  */
-typedef struct DBGFR3REGNMPRINTFARGS
+typedef struct DBGFR3REGPRINTFARGS
 {
     /** The VM handle. */
     PVM         pVM;
@@ -193,9 +193,9 @@ typedef struct DBGFR3REGNMPRINTFARGS
     /** The status code of the whole operation.  First error is return,
      * subsequent ones are suppressed. */
     int         rc;
-} DBGFR3REGNMPRINTFARGS;
-/** Pointer to a DBGFR3RegNmPrintfV argument packet. */
-typedef DBGFR3REGNMPRINTFARGS *PDBGFR3REGNMPRINTFARGS;
+} DBGFR3REGPRINTFARGS;
+/** Pointer to a DBGFR3RegPrintfV argument packet. */
+typedef DBGFR3REGPRINTFARGS *PDBGFR3REGPRINTFARGS;
 
 
 
@@ -1258,7 +1258,7 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
 
 /**
  * On CPU worker for the register queries, used by dbgfR3RegNmQueryWorker and
- * dbgfR3RegNmPrintfCbFormatNormal.
+ * dbgfR3RegPrintfCbFormatNormal.
  *
  * @returns VBox status code.
  *
@@ -1839,6 +1839,12 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs
 }
 
 
+VMMR3DECL(int) DBGFR3RegNmSet(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /**
  * Internal worker for DBGFR3RegFormatValue, cbTmp is sufficent.
  *
@@ -1904,7 +1910,7 @@ VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL
                                         unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
 {
     /*
-     * Format to temporary buffer using worker shared with dbgfR3RegNmPrintfCbFormatNormal.
+     * Format to temporary buffer using worker shared with dbgfR3RegPrintfCbFormatNormal.
      */
     char szTmp[160];
     ssize_t cchOutput = dbgfR3RegFormatValueInt(szTmp, sizeof(szTmp), pValue, enmType, uBase, cchWidth, cchPrecision, fFlags);
@@ -1970,8 +1976,8 @@ VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL p
  * (the latter isn't implemented yet).
  */
 static size_t
-dbgfR3RegNmPrintfCbFormatField(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                               PCDBGFREGLOOKUP pLookupRec, int cchWidth, int cchPrecision, unsigned fFlags)
+dbgfR3RegPrintfCbFormatField(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                             PCDBGFREGLOOKUP pLookupRec, int cchWidth, int cchPrecision, unsigned fFlags)
 {
     char szTmp[160];
 
@@ -2063,8 +2069,8 @@ dbgfR3RegNmPrintfCbFormatField(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfnO
  * Formats a register having parsed up to the register name.
  */
 static size_t
-dbgfR3RegNmPrintfCbFormatNormal(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                PCDBGFREGLOOKUP pLookupRec, unsigned uBase, int cchWidth, int cchPrecision, unsigned fFlags)
+dbgfR3RegPrintfCbFormatNormal(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                              PCDBGFREGLOOKUP pLookupRec, unsigned uBase, int cchWidth, int cchPrecision, unsigned fFlags)
 {
     char szTmp[160];
 
@@ -2099,14 +2105,14 @@ dbgfR3RegNmPrintfCbFormatNormal(PDBGFR3REGNMPRINTFARGS pThis, PFNRTSTROUTPUT pfn
  * @callback_method_impl{FNSTRFORMAT}
  */
 static DECLCALLBACK(size_t)
-dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                          const char **ppszFormat, va_list *pArgs, int cchWidth,
-                          int cchPrecision, unsigned fFlags, char chArgSize)
+dbgfR3RegPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                        const char **ppszFormat, va_list *pArgs, int cchWidth,
+                        int cchPrecision, unsigned fFlags, char chArgSize)
 {
     /*
      * Parse the format type and hand the job to the appropriate worker.
      */
-    PDBGFR3REGNMPRINTFARGS pThis = (PDBGFR3REGNMPRINTFARGS)pvArg;
+    PDBGFR3REGPRINTFARGS pThis = (PDBGFR3REGPRINTFARGS)pvArg;
     const char *pszFormat = *ppszFormat;
     if (    pszFormat[0] != 'V'
         ||  pszFormat[1] != 'R')
@@ -2172,19 +2178,19 @@ dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutp
     {
         case 'R': /* %VR{} */
         case 'X': /* %VRX{} */
-            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
-                                                   16, cchWidth, cchPrecision, fFlags);
+            return dbgfR3RegPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                 16, cchWidth, cchPrecision, fFlags);
         case 'U':
-            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
-                                                   10, cchWidth, cchPrecision, fFlags);
+            return dbgfR3RegPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                 10, cchWidth, cchPrecision, fFlags);
         case 'O':
-            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
-                                                   8, cchWidth, cchPrecision, fFlags);
+            return dbgfR3RegPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                 8, cchWidth, cchPrecision, fFlags);
         case 'B':
-            return dbgfR3RegNmPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
-                                                   2, cchWidth, cchPrecision, fFlags);
+            return dbgfR3RegPrintfCbFormatNormal(pThis, pfnOutput, pvArgOutput, pLookupRec,
+                                                 2, cchWidth, cchPrecision, fFlags);
         case 'F':
-            return dbgfR3RegNmPrintfCbFormatField(pThis, pfnOutput, pvArgOutput, pLookupRec, cchWidth, cchPrecision, fFlags);
+            return dbgfR3RegPrintfCbFormatField(pThis, pfnOutput, pvArgOutput, pLookupRec, cchWidth, cchPrecision, fFlags);
         default:
             AssertFailed();
             return 0;
@@ -2197,9 +2203,9 @@ dbgfR3RegNmPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutp
  * @callback_method_impl{FNRTSTROUTPUT}
  */
 static DECLCALLBACK(size_t)
-dbgfR3RegNmPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
+dbgfR3RegPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
-    PDBGFR3REGNMPRINTFARGS  pArgs    = (PDBGFR3REGNMPRINTFARGS)pvArg;
+    PDBGFR3REGPRINTFARGS    pArgs    = (PDBGFR3REGPRINTFARGS)pvArg;
     size_t                  cbToCopy = cbChars;
     if (cbToCopy >= pArgs->cchLeftBuf)
     {
@@ -2219,16 +2225,16 @@ dbgfR3RegNmPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
 
 
 /**
- * On CPU worker for the register formatting, used by DBGFR3RegNmPrintfV.
+ * On CPU worker for the register formatting, used by DBGFR3RegPrintfV.
  *
  * @returns VBox status code.
  *
  * @param   pArgs               The argument package and state.
  */
-static DECLCALLBACK(int) dbgfR3RegNmPrintfWorkerOnCpu(PDBGFR3REGNMPRINTFARGS pArgs)
+static DECLCALLBACK(int) dbgfR3RegPrintfWorkerOnCpu(PDBGFR3REGPRINTFARGS pArgs)
 {
     DBGF_REG_DB_LOCK_READ(pArgs->pVM);
-    RTStrFormatV(dbgfR3RegNmPrintfCbOutput, pArgs, dbgfR3RegNmPrintfCbFormat, pArgs, pArgs->pszFormat, pArgs->va);
+    RTStrFormatV(dbgfR3RegPrintfCbOutput, pArgs, dbgfR3RegPrintfCbFormat, pArgs, pArgs->pszFormat, pArgs->va);
     DBGF_REG_DB_UNLOCK_READ(pArgs->pVM);
     return pArgs->rc;
 }
@@ -2263,7 +2269,7 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
      * Set up an argument package and execute the formatting on the
      * specified CPU.
      */
-    DBGFR3REGNMPRINTFARGS Args;
+    DBGFR3REGPRINTFARGS Args;
     Args.pVM        = pVM;
     Args.idCpu      = idCpu != VMCPUID_ANY ? idCpu & ~DBGFREG_HYPER_VMCPUID : idCpu;
     Args.fGuestRegs = idCpu != VMCPUID_ANY && !(idCpu & DBGFREG_HYPER_VMCPUID);
@@ -2273,7 +2279,7 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
     Args.offBuf     = 0;
     Args.cchLeftBuf = cbBuf - 1;
     Args.rc         = VINF_SUCCESS;
-    int rc = VMR3ReqCallWait(pVM, Args.idCpu, (PFNRT)dbgfR3RegNmPrintfWorkerOnCpu, 1, &Args);
+    int rc = VMR3ReqCallWait(pVM, Args.idCpu, (PFNRT)dbgfR3RegPrintfWorkerOnCpu, 1, &Args);
     va_end(Args.va);
     return rc;
 }
