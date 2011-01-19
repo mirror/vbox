@@ -151,7 +151,7 @@ typedef struct DBGC
 
     /** Pointer to the current VM. */
     PVM                 pVM;
-    /** The current virtual CPU id. */
+    /** The ID of current virtual CPU. */
     VMCPUID             idCpu;
     /** The current address space handle. */
     RTDBGAS             hDbgAs;
