@@ -100,9 +100,6 @@ typedef enum DBGCVARTYPE
     DBGCVAR_TYPE_GC_PHYS,
     /** Flat HC pointer. */
     DBGCVAR_TYPE_HC_FLAT,
-    /** Segmented HC pointer.
-     * @todo drop this  */
-    DBGCVAR_TYPE_HC_FAR,
     /** Physical HC pointer. */
     DBGCVAR_TYPE_HC_PHYS,
     /** String. */
@@ -121,7 +118,7 @@ typedef enum DBGCVARTYPE
 /** Checks if the specified variable type is of a pointer persuasion. */
 #define DBGCVAR_ISPOINTER(enmType)      ((enmType) >= DBGCVAR_TYPE_GC_FLAT && enmType <= DBGCVAR_TYPE_HC_PHYS)
 /** Checks if the specified variable type is of a pointer persuasion. */
-#define DBGCVAR_IS_FAR_PTR(enmType)     ((enmType) == DBGCVAR_TYPE_GC_FAR || (enmType) == DBGCVAR_TYPE_HC_FAR)
+#define DBGCVAR_IS_FAR_PTR(enmType)     ((enmType) == DBGCVAR_TYPE_GC_FAR)
 /** Checks if the specified variable type is of a pointer persuasion and of the guest context sort. */
 #define DBGCVAR_ISGCPOINTER(enmType)    ((enmType) >= DBGCVAR_TYPE_GC_FLAT && (enmType) <= DBGCVAR_TYPE_GC_PHYS)
 /** Checks if the specified variable type is of a pointer persuasion and of the host context sort. */
@@ -197,8 +194,6 @@ typedef struct DBGCVAR
         RTGCPHYS        GCPhys;
         /** Flat HC Address.        (DBGCVAR_TYPE_HC_FLAT) */
         void           *pvHCFlat;
-        /** Far (16:32) HC Address. (DBGCVAR_TYPE_HC_FAR) */
-        RTFAR32         HCFar;
         /** Physical GC Address.    (DBGCVAR_TYPE_HC_PHYS) */
         RTHCPHYS        HCPhys;
         /** String.                 (DBGCVAR_TYPE_STRING)

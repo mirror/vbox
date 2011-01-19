@@ -122,9 +122,6 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
                 case DBGCVAR_TYPE_HC_FLAT: \
                     (pResult)->u.pvHCFlat   = (void *)((uintptr_t)(pResult)->u.pvHCFlat  Operator  u64Right); \
                     break; \
-                case DBGCVAR_TYPE_HC_FAR: \
-                    (pResult)->u.HCFar.off  = (pResult)->u.HCFar.off  Operator  u64Right; \
-                    break; \
                 case DBGCVAR_TYPE_HC_PHYS: \
                     (pResult)->u.HCPhys     = (pResult)->u.HCPhys     Operator  u64Right; \
                     break; \
@@ -226,9 +223,6 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
         case DBGCVAR_TYPE_HC_FLAT:
             *pu64Ret = (uintptr_t)Var.u.pvHCFlat;
             break;
-        case DBGCVAR_TYPE_HC_FAR:
-            *pu64Ret = Var.u.HCFar.off;
-            break;
         case DBGCVAR_TYPE_HC_PHYS:
             *pu64Ret = Var.u.HCPhys;
             break;
@@ -278,9 +272,6 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
         case DBGCVAR_TYPE_HC_FLAT:
             pResult->u.pvHCFlat     = (void *) -(intptr_t)pResult->u.pvHCFlat;
             break;
-        case DBGCVAR_TYPE_HC_FAR:
-            pResult->u.HCFar.off    = -(int32_t)pResult->u.HCFar.off;
-            break;
         case DBGCVAR_TYPE_HC_PHYS:
             pResult->u.HCPhys       = (RTHCPHYS) -(int64_t)pResult->u.HCPhys;
             break;
@@ -318,7 +309,6 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_GC_PHYS:
         case DBGCVAR_TYPE_HC_FLAT:
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
         case DBGCVAR_TYPE_NUMBER:
             break;
@@ -360,9 +350,6 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
             break;
         case DBGCVAR_TYPE_HC_FLAT:
             pResult->u.u64Number    = !pResult->u.pvHCFlat;
-            break;
-        case DBGCVAR_TYPE_HC_FAR:
-            pResult->u.u64Number    = !pResult->u.HCFar.off && pResult->u.HCFar.sel <= 3;
             break;
         case DBGCVAR_TYPE_HC_PHYS:
             pResult->u.u64Number    = !pResult->u.HCPhys;
@@ -411,9 +398,6 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
             break;
         case DBGCVAR_TYPE_HC_FLAT:
             pResult->u.pvHCFlat     = (void *)~(uintptr_t)pResult->u.pvHCFlat;
-            break;
-        case DBGCVAR_TYPE_HC_FAR:
-            pResult->u.HCFar.off= ~pResult->u.HCFar.off;
             break;
         case DBGCVAR_TYPE_HC_PHYS:
             pResult->u.HCPhys       = ~pResult->u.HCPhys;
@@ -584,9 +568,6 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
         case DBGCVAR_TYPE_HC_FLAT:
             return VINF_SUCCESS;
 
-        case DBGCVAR_TYPE_HC_FAR:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-
         case DBGCVAR_TYPE_HC_PHYS:
             Assert(pDbgc->pVM);
             pResult->enmType        = DBGCVAR_TYPE_HC_FLAT;
@@ -662,9 +643,6 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                 return VINF_SUCCESS;
             /** @todo more memory types! */
             return VERR_PARSE_CONVERSION_FAILED;
-
-        case DBGCVAR_TYPE_HC_FAR:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
 
         case DBGCVAR_TYPE_HC_PHYS:
             return VINF_SUCCESS;
@@ -747,9 +725,6 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
             /** @todo more memory types! */
             return VERR_PARSE_CONVERSION_FAILED;
 
-        case DBGCVAR_TYPE_HC_FAR:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-
         case DBGCVAR_TYPE_HC_PHYS:
             return VINF_SUCCESS;
 
@@ -826,7 +801,6 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
         case DBGCVAR_TYPE_HC_FLAT:
             return VINF_SUCCESS;
 
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
             /** @todo !*/
             return VERR_PARSE_CONVERSION_FAILED;
@@ -876,7 +850,6 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_GC_PHYS:
         case DBGCVAR_TYPE_HC_FLAT:
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
         case DBGCVAR_TYPE_UNKNOWN:
         default:
@@ -893,7 +866,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
             break;
 
         case DBGCVAR_TYPE_HC_FLAT:
-            pResult->u.HCFar.off = pArg2->u.GCFlat;
+            pResult->u.pvHCFlat = (void *)(uintptr_t)pArg2->u.GCFlat;
             pResult->enmType    = DBGCVAR_TYPE_GC_FAR;
             break;
 
@@ -915,7 +888,6 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_GC_PHYS:
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
         case DBGCVAR_TYPE_UNKNOWN:
         default:
@@ -1035,7 +1007,6 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
@@ -1055,7 +1026,6 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 case DBGCVAR_TYPE_NUMBER:
@@ -1081,7 +1051,6 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
@@ -1108,32 +1077,6 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat + (uintptr_t)Var.u.pvHCFlat;
-            break;
-
-        /*
-         * HC Far
-         */
-        case DBGCVAR_TYPE_HC_FAR:
-            switch (pArg2->enmType)
-            {
-                case DBGCVAR_TYPE_NUMBER:
-                    *pResult = *pArg1;
-                    pResult->u.HCFar.off += (uintptr_t)pArg2->u.u64Number;
-                    break;
-
-                default:
-                    rc = dbgcOpAddrFlat(pDbgc, pArg1, pResult);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = dbgcOpAddrHost(pDbgc, pArg2, &Var2);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = dbgcOpAddrFlat(pDbgc, &Var2, &Var);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat + (uintptr_t)Var.u.pvHCFlat;
-                    break;
-            }
             break;
 
         /*
@@ -1224,9 +1167,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             case DBGCVAR_TYPE_GC_FAR:
                 enmType = DBGCVAR_TYPE_GC_FLAT;
                 break;
-            case DBGCVAR_TYPE_HC_FAR:
-                enmType = DBGCVAR_TYPE_HC_FLAT;
-                break;
 
             default:
             case DBGCVAR_TYPE_STRING:
@@ -1254,7 +1194,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             case DBGCVAR_TYPE_GC_PHYS:
                 pOp = dbgcOpAddrPhys;
                 break;
-            case DBGCVAR_TYPE_HC_FAR:
             case DBGCVAR_TYPE_HC_FLAT:
                 pOp = dbgcOpAddrHost;
                 break;
@@ -1293,7 +1232,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
@@ -1313,7 +1251,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 case DBGCVAR_TYPE_NUMBER:
@@ -1339,7 +1276,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             switch (pArg2->enmType)
             {
                 case DBGCVAR_TYPE_HC_FLAT:
-                case DBGCVAR_TYPE_HC_FAR:
                 case DBGCVAR_TYPE_HC_PHYS:
                     return VERR_PARSE_INVALID_OPERATION;
                 default:
@@ -1366,32 +1302,6 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             if (RT_FAILURE(rc))
                 return rc;
             pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat - (uintptr_t)Var.u.pvHCFlat;
-            break;
-
-        /*
-         * HC Far
-         */
-        case DBGCVAR_TYPE_HC_FAR:
-            switch (pArg2->enmType)
-            {
-                case DBGCVAR_TYPE_NUMBER:
-                    *pResult = *pArg1;
-                    pResult->u.HCFar.off -= (uintptr_t)pArg2->u.u64Number;
-                    break;
-
-                default:
-                    rc = dbgcOpAddrFlat(pDbgc, pArg1, pResult);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = dbgcOpAddrHost(pDbgc, pArg2, &Var2);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = dbgcOpAddrFlat(pDbgc, &Var2, &Var);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    pResult->u.pvHCFlat = (char *)pResult->u.pvHCFlat - (uintptr_t)Var.u.pvHCFlat;
-                    break;
-            }
             break;
 
         /*
@@ -1687,7 +1597,6 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_STRING:
-        case DBGCVAR_TYPE_HC_FAR:
         default:
             AssertMsgFailed(("Impossible!\n"));
             return VERR_PARSE_INVALID_OPERATION;

@@ -1032,7 +1032,6 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         case DBGCVAR_TYPE_GC_PHYS:
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
-        case DBGCVAR_TYPE_HC_FAR:
         {
             DBGCVAR VarTmp;
             rc = DBGCCmdHlpEval(pCmdHlp, &VarTmp, "%%(%Dv)", &pDbgc->DisasmPos);
@@ -1166,7 +1165,6 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         case DBGCVAR_TYPE_GC_FAR:
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
-        case DBGCVAR_TYPE_HC_FAR:
         {
             int rc = DBGCCmdHlpEval(pCmdHlp, &pDbgc->SourcePos, "%%(%Dv)", &pDbgc->SourcePos);
             if (RT_FAILURE(rc))
@@ -2102,7 +2100,6 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
             case DBGCVAR_TYPE_GC_FAR:   u64 = paArgs[i].u.GCFar.sel; break;
             case DBGCVAR_TYPE_GC_FLAT:  u64 = paArgs[i].u.GCFlat; break;
             case DBGCVAR_TYPE_GC_PHYS:  u64 = paArgs[i].u.GCPhys; break;
-            case DBGCVAR_TYPE_HC_FAR:   u64 = paArgs[i].u.HCFar.sel; break;
             case DBGCVAR_TYPE_HC_FLAT:  u64 = (uintptr_t)paArgs[i].u.pvHCFlat; break;
             case DBGCVAR_TYPE_HC_PHYS:  u64 = paArgs[i].u.HCPhys; break;
             default:                    u64 = _64K; break;
@@ -3605,7 +3602,6 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
         switch (paVars[i].enmType)
         {
             case DBGCVAR_TYPE_GC_FAR:
-            case DBGCVAR_TYPE_HC_FAR:
             case DBGCVAR_TYPE_GC_FLAT:
             case DBGCVAR_TYPE_GC_PHYS:
             case DBGCVAR_TYPE_HC_FLAT:

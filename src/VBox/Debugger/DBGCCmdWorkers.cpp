@@ -227,7 +227,6 @@ int dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
         }
 
         case DBGCVAR_TYPE_HC_FLAT:
-        case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
         default:
             return VERR_PARSE_CONVERSION_FAILED;
