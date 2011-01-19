@@ -693,9 +693,7 @@ static DECLCALLBACK(int) dbgcHlpFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const
     RTStrFormatV(dbgcFormatOutput, pDbgc, dbgcStringFormatter, pDbgc, pszFormat, va);
     if (RT_FAILURE(pDbgc->rcOutput))
         return pDbgc->rcOutput;
-
-    /** @todo DBGC: Implement failure / success on command level. */
-    return VINF_SUCCESS;
+    return VERR_DBGC_COMMAND_FAILED;
 }
 
 

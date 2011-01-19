@@ -92,7 +92,7 @@ static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVA
     pArg->u64Range      = cchExpr;
 
     NOREF(pDbgc);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -135,7 +135,7 @@ static int dbgcEvalSubNum(char *pszExpr, unsigned uBase, PDBGCVAR pArg)
     pArg->enmRangeType  = DBGCVAR_RANGE_NONE;
     pArg->u64Range      = 0;
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -355,8 +355,8 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
  *      - String reinterpreted as a symbol and resolved to a number or pointer.
  *      - Number to a pointer.
  *      - Pointer to a number.
- * @returns 0 on success with paVars.
- * @returns VBox error code for match errors.
+ *
+ * @returns VBox status code. Modified @a paVars on success.
  */
 static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMax,
                                 PCDBGCVARDESC paVarDescs, unsigned cVarDescs,
@@ -431,15 +431,14 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
         iVarDesc++;
     }
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Evaluates one argument with respect to unary operators.
  *
- * @returns 0 on success. pResult contains the result.
- * @returns VBox error code on parse or other evaluation error.
+ * @returns VBox status code. pResult contains the result on success.
  *
  * @param   pDbgc       Debugger console instance data.
  * @param   pszExpr     The expression string.
@@ -457,7 +456,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
      * Being in a lazy, recursive mode today, the parsing is done as simple as possible. :-)
      * ASSUME: unary operators are all of equal precedence.
      */
-    int         rc = 0;
+    int         rc  = VINF_SUCCESS;
     PCDBGCOP    pOp = dbgcOperatorLookup(pDbgc, pszExpr, false, ' ');
     if (pOp)
     {
@@ -586,8 +585,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
 /**
  * Evaluates one argument.
  *
- * @returns 0 on success. pResult contains the result.
- * @returns VBox error code on parse or other evaluation error.
+ * @returns VBox status code.
  *
  * @param   pDbgc       Debugger console instance data.
  * @param   pszExpr     The expression string.
@@ -786,19 +784,22 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
 /**
  * Parses the arguments of one command.
  *
- * @returns 0 on success.
- * @returns VBox error code on parse error with *pcArg containing the argument causing trouble.
+ * @returns VBox statuc code. On parser errors the index of the troublesome
+ *          argument is indicated by *pcArg.
+ *
  * @param   pDbgc       Debugger console instance data.
  * @param   pCmd        Pointer to the command descriptor.
  * @param   pszArg      Pointer to the arguments to parse.
  * @param   paArgs      Where to store the parsed arguments.
  * @param   cArgs       Size of the paArgs array.
- * @param   pcArgs      Where to store the number of arguments.
- *                      In the event of an error this is used to store the index of the offending argument.
+ * @param   pcArgs      Where to store the number of arguments.  In the event
+ *                      of an error this is (ab)used to store the index of the
+ *                      offending argument.
  */
 static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBGCVAR paArgs, unsigned cArgs, unsigned *pcArgs)
 {
     Log2(("dbgcProcessArguments: pCmd=%s pszArgs='%s'\n", pCmd->pszCmd, pszArgs));
+
     /*
      * Check if we have any argument and if the command takes any.
      */
@@ -809,7 +810,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
     if (!*pszArgs)
     {
         if (!pCmd->cArgsMin)
-            return 0;
+            return VINF_SUCCESS;
         return VERR_PARSE_TOO_FEW_ARGUMENTS;
     }
     /** @todo fixme - foo() doesn't work. */
@@ -984,12 +985,13 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
 /**
  * Evaluate one command.
  *
- * @returns VBox status code. Any error indicates the termination of the console session.
+ * @returns VBox status code. This is also stored in DBGC::rcCmd.
  *
  * @param   pDbgc       Debugger console instance data.
  * @param   pszCmd      Pointer to the command.
  * @param   cchCmd      Length of the command.
  * @param   fNoExecute  Indicates that no commands should actually be executed.
+ *
  * @todo    Change pszCmd into argc/argv?
  */
 int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
@@ -1003,7 +1005,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         pszCmd++, cchCmd--;
 
     /* external command? */
-    bool fExternal = *pszCmd == '.';
+    bool const fExternal = *pszCmd == '.';
     if (fExternal)
         pszCmd++, cchCmd--;
 
@@ -1015,9 +1017,8 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         pszArgs++;
     if (*pszArgs && (!RT_C_IS_BLANK(*pszArgs) || pszArgs == pszCmd))
     {
-        pDbgc->rcCmd = VINF_PARSE_INVALD_COMMAND_NAME;
-        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Syntax error in command '%s'!\n", pszCmdInput);
-        return 0;
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Invalid command '%s'!\n", pszCmdInput);
+        return pDbgc->rcCmd = VINF_PARSE_INVALD_COMMAND_NAME;
     }
 
     /*
@@ -1026,8 +1027,8 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
     PCDBGCCMD pCmd = dbgcRoutineLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
     if (!pCmd || (pCmd->fFlags & DBGCCMD_FLAGS_FUNCTION))
     {
-        pDbgc->rcCmd = VINF_PARSE_COMMAND_NOT_FOUND;
-        return pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Unknown command '%s'!\n", pszCmdInput);
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Unknown command '%s'!\n", pszCmdInput);
+        return pDbgc->rcCmd = VINF_PARSE_COMMAND_NOT_FOUND;
     }
 
     /*
@@ -1035,12 +1036,13 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
      */
     unsigned cArgs;
     int rc = dbgcProcessArguments(pDbgc, pCmd, pszArgs, &pDbgc->aArgs[pDbgc->iArg], RT_ELEMENTS(pDbgc->aArgs) - pDbgc->iArg, &cArgs);
-
-    /*
-     * Execute the command.
-     */
-    if (!rc)
+    if (RT_SUCCESS(rc))
     {
+        AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n",  rc));
+
+        /*
+         * Execute the command.
+         */
         if (!fNoExecute)
             rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs, NULL);
         pDbgc->rcCmd = rc;
@@ -1055,99 +1057,90 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
         switch (rc)
         {
             case VERR_PARSE_TOO_FEW_ARGUMENTS:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too few arguments. Minimum is %d for command '%s'.\n", pCmd->cArgsMin, pCmd->pszCmd);
                 break;
             case VERR_PARSE_TOO_MANY_ARGUMENTS:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too many arguments. Maximum is %d for command '%s'.\n", pCmd->cArgsMax, pCmd->pszCmd);
                 break;
             case VERR_PARSE_ARGUMENT_OVERFLOW:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Too many arguments.\n");
                 break;
             case VERR_PARSE_UNBALANCED_QUOTE:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Unbalanced quote (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_UNBALANCED_PARENTHESIS:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Unbalanced parenthesis (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_EMPTY_ARGUMENT:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: An argument or subargument contains nothing useful (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_UNEXPECTED_OPERATOR:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Invalid operator usage (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_INVALID_NUMBER:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Syntax error: Ivalid numeric value (argument %d). If a string was the intention, then quote it.\n", cArgs);
                 break;
             case VERR_PARSE_NUMBER_TOO_BIG:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Numeric overflow (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_INVALID_OPERATION:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Invalid operation attempted (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_FUNCTION_NOT_FOUND:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Function not found (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_NOT_A_FUNCTION:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: The function specified is not a function (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_NO_MEMORY:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Out memory in the regular heap! Expect odd stuff to happen...\n", cArgs);
                 break;
             case VERR_PARSE_INCORRECT_ARG_TYPE:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Incorrect argument type (argument %d?).\n", cArgs);
                 break;
             case VERR_PARSE_VARIABLE_NOT_FOUND:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: An undefined variable was referenced (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_CONVERSION_FAILED:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: A conversion between two types failed (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_NOT_IMPLEMENTED:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: You hit a debugger feature which isn't implemented yet (argument %d).\n", cArgs);
                 break;
             case VERR_PARSE_BAD_RESULT_TYPE:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Couldn't satisfy a request for a specific result type (argument %d). (Usually applies to symbols)\n", cArgs);
                 break;
             case VERR_PARSE_WRITEONLY_SYMBOL:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp,
                     "Error: Cannot get symbol, it's set only (argument %d).\n", cArgs);
                 break;
 
             case VERR_DBGC_COMMAND_FAILED:
-                rc = VINF_SUCCESS;
                 break;
 
             default:
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-                    "Error: Unknown error %d!\n", rc);
-                return rc;
+                rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %d!\n", rc);
+                break;
         }
-
-        /*
-         * Parse errors are non fatal.
-         */
-        if (rc >= VERR_PARSE_FIRST && rc < VERR_PARSE_LAST)
-            rc = VINF_SUCCESS;
     }
-
     return rc;
 }
 
