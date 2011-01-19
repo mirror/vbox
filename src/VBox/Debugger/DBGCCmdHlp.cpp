@@ -1162,7 +1162,18 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_HC_PHYS:
                 case DBGCVAR_TYPE_NUMBER:
                     if (fConvSyms)
-                        return dbgcSymbolGet(pDbgc, InVar.u.pszString, enmToType, pResult);
+                    {
+                        rc = dbgcSymbolGet(pDbgc, InVar.u.pszString, enmToType, pResult);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (InVar.enmRangeType != DBGCVAR_RANGE_NONE)
+                            {
+                                pResult->enmRangeType = InVar.enmRangeType;
+                                pResult->u64Range     = InVar.u64Range;
+                            }
+                            return VINF_SUCCESS;
+                        }
+                    }
                     return VERR_PARSE_INCORRECT_ARG_TYPE;
 
                 case DBGCVAR_TYPE_STRING:
