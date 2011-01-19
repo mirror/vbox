@@ -50,12 +50,13 @@ struct BIOSSettings::Data
 
 HRESULT BIOSSettings::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void BIOSSettings::FinalRelease()
 {
     uninit ();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

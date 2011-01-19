@@ -73,9 +73,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(USBDeviceFilter)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (IUSBDeviceFilter)
-        COM_INTERFACE_ENTRY2 (IDispatch, IUSBDeviceFilter)
+        VBOX_DEFAULT_INTERFACE_ENTRIES  (IUSBDeviceFilter)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (USBDeviceFilter)
@@ -179,10 +177,8 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(HostUSBDeviceFilter)
-        COM_INTERFACE_ENTRY(IDispatch)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IUSBDeviceFilter)
-        COM_INTERFACE_ENTRY(IHostUSBDeviceFilter)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IHostUSBDeviceFilter)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (HostUSBDeviceFilter)

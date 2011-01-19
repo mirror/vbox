@@ -132,12 +132,13 @@ HRESULT PerformanceCollector::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void PerformanceCollector::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -646,7 +647,7 @@ HRESULT PerformanceMetric::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void PerformanceMetric::FinalRelease()
@@ -654,6 +655,8 @@ void PerformanceMetric::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit ();
+
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

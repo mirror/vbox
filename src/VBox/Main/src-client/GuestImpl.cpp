@@ -43,12 +43,13 @@ DEFINE_EMPTY_CTOR_DTOR (Guest)
 
 HRESULT Guest::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Guest::FinalRelease()
 {
     uninit ();
+    BaseFinalRelease();
 }
 
 // public methods only for internal purposes

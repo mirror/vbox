@@ -56,7 +56,11 @@ HRESULT Session::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    return init();
+    HRESULT rc = init();
+    
+    BaseFinalConstruct(); 
+  
+    return rc;
 }
 
 void Session::FinalRelease()
@@ -64,6 +68,8 @@ void Session::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit();
+      
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -181,9 +187,9 @@ STDMETHODIMP Session::COMGETTER(Machine)(IMachine **aMachine)
 
     HRESULT rc;
     if (mConsole)
-        rc = mConsole->machine().queryInterfaceTo(aMachine);
+       rc = mConsole->machine().queryInterfaceTo(aMachine);
     else
-        rc = mRemoteMachine.queryInterfaceTo(aMachine);
+       rc = mRemoteMachine.queryInterfaceTo(aMachine);   
     if (FAILED(rc))
     {
         /** @todo VBox 3.3: replace E_FAIL with rc here. */
@@ -214,6 +220,7 @@ STDMETHODIMP Session::COMGETTER(Console)(IConsole **aConsole)
         rc = mConsole.queryInterfaceTo(aConsole);
     else
         rc = mRemoteConsole.queryInterfaceTo(aConsole);
+
     if (FAILED(rc))
     {
         /** @todo VBox 3.3: replace E_FAIL with rc here. */

@@ -2410,12 +2410,13 @@ VRDEServerInfo::~VRDEServerInfo()
 
 HRESULT VRDEServerInfo::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void VRDEServerInfo::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public methods only for internal purposes

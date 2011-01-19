@@ -37,12 +37,13 @@ DEFINE_EMPTY_CTOR_DTOR (RemoteUSBDevice)
 
 HRESULT RemoteUSBDevice::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void RemoteUSBDevice::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

@@ -33,9 +33,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(BandwidthGroup)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IBandwidthGroup)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IBandwidthGroup)
     END_COM_MAP()
 
     BandwidthGroup() { };

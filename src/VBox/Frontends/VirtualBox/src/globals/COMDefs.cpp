@@ -21,6 +21,7 @@
 
 #if !defined (VBOX_WITH_XPCOM)
 
+
 #else /* !defined (VBOX_WITH_XPCOM) */
 
 /* Qt includes */
@@ -86,16 +87,11 @@ private:
 /**
  *  Initializes COM/XPCOM.
  */
-HRESULT COMBase::InitializeCOM()
+HRESULT COMBase::InitializeCOM(bool fGui)
 {
     LogFlowFuncEnter();
 
-    /* Note: On Win32, Qt somehow calls CoInitialize[Ex]() during creation of
-     * the QApplication instance (didn't explore deeply why it does so) with
-     * different flags which is incompatible with our multithreaded
-     * apartment. com::Initialize() will properly care of this situation. */
-
-    HRESULT rc = com::Initialize();
+    HRESULT rc = com::Initialize(fGui);
 
 #if defined (VBOX_WITH_XPCOM)
 

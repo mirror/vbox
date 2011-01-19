@@ -78,9 +78,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(NetworkAdapter)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (INetworkAdapter)
-        COM_INTERFACE_ENTRY2 (IDispatch, INetworkAdapter)
+        VBOX_DEFAULT_INTERFACE_ENTRIES (INetworkAdapter)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (NetworkAdapter)

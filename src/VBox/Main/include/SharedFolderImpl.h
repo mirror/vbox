@@ -47,9 +47,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SharedFolder)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (ISharedFolder)
-        COM_INTERFACE_ENTRY2 (IDispatch, ISharedFolder)
+        VBOX_DEFAULT_INTERFACE_ENTRIES  (ISharedFolder)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (SharedFolder)

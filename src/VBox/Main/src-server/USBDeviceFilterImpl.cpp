@@ -186,12 +186,13 @@ USBDeviceFilter::~USBDeviceFilter()
 
 HRESULT USBDeviceFilter::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void USBDeviceFilter::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

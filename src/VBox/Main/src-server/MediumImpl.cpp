@@ -896,7 +896,7 @@ HRESULT Medium::FinalConstruct()
     vrc = RTSemEventMultiSignal(m->queryInfoSem);
     AssertRCReturn(vrc, E_FAIL);
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Medium::FinalRelease()
@@ -904,6 +904,8 @@ void Medium::FinalRelease()
     uninit();
 
     delete m;
+
+    BaseFinalRelease();
 }
 
 /**

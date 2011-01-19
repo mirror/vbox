@@ -637,6 +637,29 @@ class ATL_NO_VTABLE VirtualBoxBase
     , public ISupportErrorInfo
 #endif
 {
+protected:
+#ifdef RT_OS_WINDOWS
+     CComPtr <IUnknown>   m_pUnkMarshaler;
+#endif
+
+     HRESULT   BaseFinalConstruct()
+     {
+#ifdef RT_OS_WINDOWS
+        return   CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
+  	                                       &m_pUnkMarshaler.p);
+#else
+        return S_OK;
+#endif
+     }
+
+     void   BaseFinalRelease()
+     {
+#ifdef RT_OS_WINDOWS
+         m_pUnkMarshaler.Release();
+#endif
+     }
+
+
 public:
     enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
 

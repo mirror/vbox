@@ -33,16 +33,14 @@ class ATL_NO_VTABLE VFSExplorer :
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VFSExplorer)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IVFSExplorer)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IVFSExplorer)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(VFSExplorer)
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT FinalConstruct() { return S_OK; }
-    void FinalRelease() { uninit(); }
+    HRESULT FinalConstruct() { return BaseFinalConstruct(); }
+    void FinalRelease() { uninit(); BaseFinalRelease(); }
 
     HRESULT init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname, Utf8Str aUsername, Utf8Str aPassword, VirtualBox *aVirtualBox);
     void uninit();

@@ -49,13 +49,14 @@ struct PciDeviceAttachment::Data
 HRESULT PciDeviceAttachment::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void PciDeviceAttachment::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

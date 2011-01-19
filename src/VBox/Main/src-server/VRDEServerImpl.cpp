@@ -55,12 +55,13 @@ VRDEServer::~VRDEServer()
 
 HRESULT VRDEServer::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void VRDEServer::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

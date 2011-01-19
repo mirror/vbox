@@ -56,7 +56,6 @@ namespace settings
     class MainConfigFile;
     struct MediaRegistry;
 }
-
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IVirtualBox)
@@ -82,9 +81,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VirtualBox)
-        COM_INTERFACE_ENTRY2(IDispatch, IVirtualBox)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IVirtualBox)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IVirtualBox)
     END_COM_MAP()
 
     // to postpone generation of the default ctor/dtor

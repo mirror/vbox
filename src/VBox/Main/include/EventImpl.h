@@ -33,9 +33,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VBoxEvent)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEvent)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IEvent)
     END_COM_MAP()
 
     VBoxEvent() {}
@@ -75,10 +73,8 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VBoxVetoEvent)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY2(IEvent, IVetoEvent)
-        COM_INTERFACE_ENTRY(IVetoEvent)
-        COM_INTERFACE_ENTRY2(IDispatch, IVetoEvent)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IVetoEvent)
     END_COM_MAP()
 
     VBoxVetoEvent() {}
@@ -139,9 +135,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(EventSource)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEventSource)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IEventSource)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(EventSource)

@@ -104,12 +104,13 @@ struct StorageController::Data
 
 HRESULT StorageController::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void StorageController::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

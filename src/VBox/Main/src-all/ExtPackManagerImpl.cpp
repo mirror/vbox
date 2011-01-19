@@ -211,7 +211,7 @@ DEFINE_EMPTY_CTOR_DTOR(ExtPackFile)
 HRESULT ExtPackFile::FinalConstruct()
 {
     m = NULL;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 /**
@@ -330,6 +330,7 @@ HRESULT ExtPackFile::initFailed(const char *a_pszWhyFmt, ...)
 void ExtPackFile::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 /**

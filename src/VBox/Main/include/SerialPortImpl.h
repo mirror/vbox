@@ -41,9 +41,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SerialPort)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (ISerialPort)
-        COM_INTERFACE_ENTRY2 (IDispatch, ISerialPort)
+        VBOX_DEFAULT_INTERFACE_ENTRIES (ISerialPort)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (SerialPort)

@@ -45,12 +45,14 @@ GuestOSType::~GuestOSType()
 
 HRESULT GuestOSType::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void GuestOSType::FinalRelease()
 {
     uninit();
+   
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

@@ -34,9 +34,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(PciAddress)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IPciAddress)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IPciAddress)
     END_COM_MAP()
 
     PciAddress() { }
@@ -98,9 +96,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(PciDeviceAttachment)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IPciDeviceAttachment)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IPciDeviceAttachment)
     END_COM_MAP()
 
     PciDeviceAttachment() { }

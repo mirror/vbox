@@ -41,12 +41,15 @@ uint32_t VirtualBoxClient::g_cInstances = 0;
 
 HRESULT VirtualBoxClient::FinalConstruct()
 {
-    return init();
+    HRESULT rc = init();
+    BaseFinalConstruct();
+    return rc;
 }
 
 void VirtualBoxClient::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

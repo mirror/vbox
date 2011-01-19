@@ -950,7 +950,7 @@
       <xsl:if test="$define">
         <xsl:text>&#x0A;{&#x0A;</xsl:text>
         <!-- iface assertion -->
-        <xsl:text>    AssertReturnVoid(mIface);&#x0A;</xsl:text>
+        <xsl:text>    AssertReturnVoid(ptr());&#x0A;</xsl:text>
         <!-- method call -->
         <xsl:call-template name="composeMethodCall">
           <xsl:with-param name="isSetter" select="'yes'"/>
@@ -989,7 +989,7 @@
         <xsl:apply-templates select="$return/@type" mode="initializer"/>
         <xsl:text>;&#x0A;</xsl:text>
         <!-- iface assertion -->
-        <xsl:text>    AssertReturn(mIface, a</xsl:text>
+        <xsl:text>    AssertReturn(ptr(), a</xsl:text>
         <xsl:call-template name="capitalize">
           <xsl:with-param name="str" select="$return/@name"/>
         </xsl:call-template>
@@ -1096,7 +1096,7 @@
     </xsl:when>
   </xsl:choose>
   <!-- start the call -->
-  <xsl:text>    mRC = mIface-></xsl:text>
+  <xsl:text>    mRC = ptr()-></xsl:text>
   <xsl:choose>
     <!-- attribute method call -->
     <xsl:when test="name()='attribute'">
@@ -1136,6 +1136,11 @@
     </xsl:when>
   </xsl:choose>
   <xsl:text>);&#x0A;</xsl:text>
+
+  <xsl:text>#ifdef RT_OS_WINDOWS&#x0A;</xsl:text>
+  <xsl:text>    Assert(mRC != RPC_E_WRONG_THREAD);&#x0A;</xsl:text>
+  <xsl:text>#endif;&#x0A;</xsl:text>
+
   <!-- apply 'post-call' hooks -->
   <xsl:choose>
     <xsl:when test="name()='attribute'">
@@ -1200,7 +1205,7 @@
     <xsl:otherwise>
       <xsl:if test="$supports='strict' or $supports='yes'">
         <xsl:text>    if (RT_UNLIKELY(mRC != S_OK))&#x0A;    {&#x0A;</xsl:text>
-        <xsl:text>        fetchErrorInfo(mIface, &amp;COM_IIDOF(Base::Iface));&#x0A;</xsl:text>
+        <xsl:text>        fetchErrorInfo(ptr(), &amp;COM_IIDOF(Base::Iface));&#x0A;</xsl:text>
         <xsl:if test="$supports='strict'">
           <xsl:text>        AssertMsg(errInfo.isFullAvailable(), </xsl:text>
           <xsl:text>("for RC=0x%08X\n", mRC));&#x0A;</xsl:text>
@@ -1293,28 +1298,10 @@
           <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
           </xsl:call-template>
-          <xsl:choose>
-            <xsl:when test="@type='$unknown'">
-              <xsl:text>.raw()</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:text>.mIface</xsl:text>
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:text>.ptr()</xsl:text>
         </xsl:when>
         <xsl:when test="$isOut">
-          <xsl:text>&amp;a</xsl:text>
-          <xsl:call-template name="capitalize">
-            <xsl:with-param name="str" select="@name"/>
-          </xsl:call-template>
-          <xsl:choose>
-            <xsl:when test="@type='$unknown'">
-              <xsl:text>.rawRef()</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:text>.mIface</xsl:text>
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:value-of select="concat('&amp;', @name, 'Ptr')"/>
         </xsl:when>
       </xsl:choose>
     </xsl:when>
@@ -1782,6 +1769,11 @@
     (ancestor::library/if[@target=$self_target]/enum[@name=current()/@type])
   )"/>
 
+  <xsl:variable name="is_out" select="(
+      (name()='attribute' and not($isSetter)) or
+      (name()='param' and (@dir='out' or @dir='return'))
+   )"/>
+
   <xsl:choose>
     <xsl:when test="$when='pre-call'">
       <xsl:choose>
@@ -1837,13 +1829,24 @@
             <xsl:text>);&#x0A;</xsl:text>
           </xsl:if>
         </xsl:when>
+        <xsl:when test="$is_out and ($is_iface or (@type='$unknown'))">
+          <xsl:text>    </xsl:text>
+          <xsl:choose>
+            <xsl:when test="@type='$unknown'">
+              <xsl:text>IUnknown</xsl:text>
+              </xsl:when>
+             <xsl:otherwise>
+                <xsl:value-of select="@type"/>
+             </xsl:otherwise>
+           </xsl:choose>
+           <xsl:value-of select="concat('* ',@name,'Ptr = NULL;&#10;')"/>
+        </xsl:when>
       </xsl:choose>
     </xsl:when>
     <xsl:when test="$when='post-call'">
       <xsl:choose>
         <xsl:when test="@safearray='yes'">
-          <xsl:if test="(name()='attribute' and not($isSetter)) or
-                        (name()='param' and (@dir='out' or @dir='return'))">
+          <xsl:if test="$is_out">
             <!-- convert SafeArray to QVector -->
             <xsl:choose>
               <!-- interface types need special treatment here -->
@@ -1862,6 +1865,13 @@
             </xsl:call-template>
             <xsl:text>);&#x0A;</xsl:text>
           </xsl:if>
+        </xsl:when>
+        <xsl:when test="$is_out and ($is_iface or (@type='$unknown'))">
+            <xsl:text>    a</xsl:text>
+            <xsl:call-template name="capitalize">
+              <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
+           <xsl:value-of select="concat('.setPtr(',@name,'Ptr);&#10;')"/>
         </xsl:when>
       </xsl:choose>
     </xsl:when>

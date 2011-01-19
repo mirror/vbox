@@ -42,12 +42,14 @@ DHCPServer::~DHCPServer()
 
 HRESULT DHCPServer::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void DHCPServer::FinalRelease()
 {
     uninit ();
+
+    BaseFinalRelease();
 }
 
 void DHCPServer::uninit()
