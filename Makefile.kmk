@@ -1389,6 +1389,9 @@ vslick.h: include/VBox/cdefs.h include/iprt/cdefs.h $(MAKEFILE)
 	@$(APPEND) $@.tmp '#define RT_C_DECLS_END '
 	@$(APPEND) $@.tmp '#define RT_NO_THROW '
 	@$(APPEND) $@.tmp '#define RT_THROW(type) throw(type)'
+	@$(APPEND) $@.tmp '#define RT_GCC_EXTENSION'
+	@$(APPEND) $@.tmp '#define RT_COMPILER_GROKS_64BIT_BITFIELDS'
+	@$(APPEND) $@.tmp '#define RT_COMPILER_WITH_80BIT_LONG_DOUBLE'
 
 	@$(APPEND) $@.tmp '#define ATL_NO_VTABLE '
 	@$(APPEND) $@.tmp '#define BEGIN_COM_MAP(a) '
@@ -1521,7 +1524,7 @@ endif
 		-e '/define RT[DATGRC03]*DECL(type) *DECLHIDDEN(type)/d' \
 		\
 		--append $@.tmp \
-		$(filter-out include/VBox/err.h, $(wildcard include/VBox/*.h)) \
+		$(filter-out include/VBox/err.h, $(wildcard include/VBox/*.h include/VBox/vmm/*.h)) \
 		include/iprt/cdefs.h
 	$(CAT_EXT) $@.tmp \
 		| $(SED_EXT) -e 's/_/\x1F/g' -e 's/(/\x1E/g' -e 's/[[:space:]][[:space:]]*/\x1C/g' \
