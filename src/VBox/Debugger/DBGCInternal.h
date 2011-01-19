@@ -315,6 +315,12 @@ typedef struct DBGCOP
     PFNDBGCOPUNARY  pfnHandlerUnary;
     /** Binary operator handler. */
     PFNDBGCOPBINARY pfnHandlerBinary;
+    /** The category of the 1st argument.
+     * Set to DBGCVAR_CAT_ANY if anything goes. */
+    DBGCVARCAT      enmCatArg1;
+    /** The category of the 2nd argument.
+     * Set to DBGCVAR_CAT_ANY if anything goes. */
+    DBGCVARCAT      enmCatArg2;
     /** Operator description. */
     const char     *pszDescription;
 } DBGCOP;
@@ -396,7 +402,7 @@ void    dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
 int     dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
 void    dbgcEvalInit(void);
-int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult);
+int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult);
 int     dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute);
 
 int     dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);

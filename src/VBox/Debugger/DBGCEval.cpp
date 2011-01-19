@@ -162,14 +162,16 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
 
         /*
          * Pointer with and without range.
-         * We can try resolve strings and symbols as symbols and
-         * promote numbers to flat GC pointers.
+         * We can try resolve strings and symbols as symbols and promote
+         * numbers to flat GC pointers.
          */
         case DBGCVAR_CAT_POINTER_NO_RANGE:
+        case DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE:
             if (pVar->enmRangeType != DBGCVAR_RANGE_NONE)
                 return VERR_PARSE_NO_RANGE_ALLOWED;
             /* fallthru */
         case DBGCVAR_CAT_POINTER:
+        case DBGCVAR_CAT_POINTER_NUMBER:
             switch (pVar->enmType)
             {
                 case DBGCVAR_TYPE_GC_FLAT:
@@ -201,12 +203,14 @@ static int dbgcEvalSubMatchVar(PDBGC pDbgc, PDBGCVAR pVar, PCDBGCVARDESC pVarDes
                 }
 
                 case DBGCVAR_TYPE_NUMBER:
-                {
-                    RTGCPTR GCPtr = (RTGCPTR)pVar->u.u64Number;
-                    pVar->enmType = DBGCVAR_TYPE_GC_FLAT;
-                    pVar->u.GCFlat = GCPtr;
+                    if (   pVarDesc->enmCategory != DBGCVAR_CAT_POINTER_NUMBER
+                        && pVarDesc->enmCategory != DBGCVAR_CAT_POINTER_NUMBER_NO_RANGE)
+                    {
+                        RTGCPTR GCPtr = (RTGCPTR)pVar->u.u64Number;
+                        pVar->enmType = DBGCVAR_TYPE_GC_FLAT;
+                        pVar->u.GCFlat = GCPtr;
+                    }
                     return VINF_SUCCESS;
-                }
 
                 default:
                     break;
@@ -442,9 +446,11 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
  *
  * @param   pDbgc       Debugger console instance data.
  * @param   pszExpr     The expression string.
+ * @param   cchExpr     The length of the expression.
+ * @param   enmCategory The target category for the result.
  * @param   pResult     Where to store the result of the expression evaluation.
  */
-static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
+static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult)
 {
     Log2(("dbgcEvalSubUnary: cchExpr=%d pszExpr=%s\n", cchExpr, pszExpr));
 
@@ -479,9 +485,9 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
         {
             DBGCVAR Arg;
             if (*pszExpr2 == '(')
-                rc = dbgcEvalSub(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), &Arg);
+                rc = dbgcEvalSub(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), pOp->enmCatArg1, &Arg);
             else
-                rc = dbgcEvalSubUnary(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), &Arg);
+                rc = dbgcEvalSubUnary(pDbgc, pszExpr2, cchExpr - (pszExpr2 - pszExpr), pOp->enmCatArg1, &Arg);
             if (RT_SUCCESS(rc))
                 rc = pOp->pfnHandlerUnary(pDbgc, &Arg, pResult);
         }
@@ -530,7 +536,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
             pszExpr = pszFunEnd;
             /** @todo implement multiple arguments. */
             DBGCVAR     Arg;
-            rc = dbgcEvalSub(pDbgc, pszExpr, cchExpr, &Arg);
+            rc = dbgcEvalSub(pDbgc, pszExpr, cchExpr, enmCategory, &Arg);
             if (!rc)
             {
                 rc = dbgcEvalSubMatchVars(pDbgc, pFun->cArgsMin, pFun->cArgsMax, pFun->paArgDescs, pFun->cArgDescs, &Arg, 1);
@@ -540,6 +546,9 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
             else if (rc == VERR_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
                 rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
         }
+        else if (   enmCategory == DBGCVAR_CAT_STRING
+                 || enmCategory == DBGCVAR_CAT_SYMBOL)
+            rc = dbgcEvalSubString(pDbgc, pszExpr, cchExpr, pResult);
         else
         {
             /*
@@ -589,9 +598,10 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
  *
  * @param   pDbgc       Debugger console instance data.
  * @param   pszExpr     The expression string.
+ * @param   enmCategory The target category for the result.
  * @param   pResult     Where to store the result of the expression evaluation.
  */
-int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
+int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult)
 {
     Log2(("dbgcEvalSub: cchExpr=%d pszExpr=%s\n", cchExpr, pszExpr));
     /*
@@ -751,13 +761,13 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
         /* process 1st sub expression. */
         *pszOpSplit = '\0';
         DBGCVAR     Arg1;
-        rc = dbgcEvalSub(pDbgc, pszExpr, pszOpSplit - pszExpr, &Arg1);
+        rc = dbgcEvalSub(pDbgc, pszExpr, pszOpSplit - pszExpr, pOpSplit->enmCatArg1, &Arg1);
         if (RT_SUCCESS(rc))
         {
             /* process 2nd sub expression. */
             char       *psz2 = pszOpSplit + pOpSplit->cchName;
             DBGCVAR     Arg2;
-            rc = dbgcEvalSub(pDbgc, psz2, cchExpr - (psz2 - pszExpr), &Arg2);
+            rc = dbgcEvalSub(pDbgc, psz2, cchExpr - (psz2 - pszExpr), pOpSplit->enmCatArg2, &Arg2);
             if (RT_SUCCESS(rc))
                 /* apply the operator. */
                 rc = pOpSplit->pfnHandlerBinary(pDbgc, &Arg1, &Arg2, pResult);
@@ -768,14 +778,14 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
         /* process sub expression. */
         pszOpSplit += pOpSplit->cchName;
         DBGCVAR     Arg;
-        rc = dbgcEvalSub(pDbgc, pszOpSplit, cchExpr - (pszOpSplit - pszExpr), &Arg);
+        rc = dbgcEvalSub(pDbgc, pszOpSplit, cchExpr - (pszOpSplit - pszExpr), pOpSplit->enmCatArg1, &Arg);
         if (RT_SUCCESS(rc))
             /* apply the operator. */
             rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, pResult);
     }
     else
         /* plain expression or using unary operators perhaps with parentheses. */
-        rc = dbgcEvalSubUnary(pDbgc, pszExpr, cchExpr, pResult);
+        rc = dbgcEvalSubUnary(pDbgc, pszExpr, cchExpr, enmCategory, pResult);
 
     return rc;
 }
@@ -824,14 +834,14 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
     if (    pCmd->cArgsMax == 1
         &&  pCmd->cArgsMin == 1
         &&  pCmd->cArgDescs == 1
-        &&  pCmd->paArgDescs[0].enmCategory == DBGCVAR_CAT_STRING
+        &&  (   pCmd->paArgDescs[0].enmCategory == DBGCVAR_CAT_STRING
+             || pCmd->paArgDescs[0].enmCategory == DBGCVAR_CAT_SYMBOL)
         &&  cArgs >= 1)
     {
         *pcArgs = 1;
         RTStrStripR(pszArgs);
         return dbgcEvalSubString(pDbgc, pszArgs, strlen(pszArgs), &paArgs[0]);
     }
-
 
     /*
      * The parse loop.
@@ -961,7 +971,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         /*
          * Parse and evaluate the argument.
          */
-        int rc = dbgcEvalSub(pDbgc, pszArgs, strlen(pszArgs), pArg);
+        int rc = dbgcEvalSub(pDbgc, pszArgs, strlen(pszArgs), DBGCVAR_CAT_ANY, pArg);
         if (RT_FAILURE(rc))
             return rc;
 

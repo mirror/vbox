@@ -672,7 +672,7 @@ static DECLCALLBACK(int) dbgcHlpEvalV(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, con
     size_t cb = RTStrPrintfExV(dbgcStringFormatter, pDbgc, szExprFormatted, sizeof(szExprFormatted), pszExpr, va);
     /* ignore overflows. */
 
-    return dbgcEvalSub(pDbgc, &szExprFormatted[0], cb, pResult);
+    return dbgcEvalSub(pDbgc, &szExprFormatted[0], cb, DBGCVAR_CAT_ANY, pResult);
 }
 
 
