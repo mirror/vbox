@@ -378,7 +378,7 @@ HRESULT Console::FinalConstruct()
     *(Console **)(pVmm2UserMethods + 1) = this; /* lazy bird. */
     mpVmm2UserMethods = pVmm2UserMethods;
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Console::FinalRelease()
@@ -386,6 +386,8 @@ void Console::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit();
+    
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -485,10 +487,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
         ComPtr<IEventSource> pES;
         rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
         AssertComRC(rc);
-        mVmListner = new VmEventListenerImpl(this);
+        mVmListener = new VmEventListenerImpl(this);
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnNATRedirect);
-        rc = pES->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);
+        rc = pES->RegisterListener(mVmListener, ComSafeArrayAsInParam(eventTypes), true);
         AssertComRC(rc);
     }
 
@@ -524,7 +526,7 @@ void Console::uninit()
     }
 
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
-    if (mVmListner)
+    if (mVmListener)
     {
         ComPtr<IEventSource> pES;
         ComPtr<IVirtualBox> pVirtualBox;
@@ -536,11 +538,14 @@ void Console::uninit()
             AssertComRC(rc);
             if (!pES.isNull())
             {
-                rc = pES->UnregisterListener(mVmListner);
-                AssertComRC(rc);
+                rc = pES->UnregisterListener(mVmListener);
+                // XXX: for some reasons we're getting VBOX_E_OBJECT_NOT_FOUND
+                // here - investigate
+                //AssertComRC(rc);
             }
         }
-        mVmListner->Release();
+        mVmListener->Release();
+        mVmListener = 0;
     }
 
     /* power down the VM if necessary */

@@ -67,9 +67,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Appliance)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IAppliance)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IAppliance)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (Appliance)
@@ -82,8 +80,8 @@ public:
     };
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT FinalConstruct() { return S_OK; }
-    void FinalRelease() { uninit(); }
+    HRESULT FinalConstruct() { return BaseFinalConstruct(); }
+    void FinalRelease() { uninit(); BaseFinalRelease(); }
 
     HRESULT init(VirtualBox *aVirtualBox);
     void uninit();
@@ -251,16 +249,14 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VirtualSystemDescription)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IVirtualSystemDescription)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IVirtualSystemDescription)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (VirtualSystemDescription)
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT FinalConstruct() { return S_OK; }
-    void FinalRelease() { uninit(); }
+    HRESULT FinalConstruct() { return BaseFinalConstruct(); }
+    void FinalRelease() { uninit(); BaseFinalRelease(); }
 
     HRESULT init();
     void uninit();

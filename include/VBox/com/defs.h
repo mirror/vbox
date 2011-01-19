@@ -75,6 +75,8 @@
 
 #include <objbase.h>
 #ifndef VBOX_COM_NO_ATL
+# define _ATL_FREE_THREADED
+
 # include <atlbase.h>
 #include <atlcom.h>
 #endif
@@ -526,10 +528,18 @@ namespace com
         *ppObj = NULL;                                                       \
         return E_NOINTERFACE;                                                \
     }
+
+
+#define VBOX_DEFAULT_INTERFACE_ENTRIES(iface)                                \
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)                               \
+        COM_INTERFACE_ENTRY(iface)                                           \
+        COM_INTERFACE_ENTRY2(IDispatch,iface)                                \
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
 #else
 #define VBOX_SCRIPTABLE_IMPL(iface)                     \
     public iface
 #define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)
+#define VBOX_DEFAULT_INTERFACE_ENTRIES(iface)
 #endif
 
 

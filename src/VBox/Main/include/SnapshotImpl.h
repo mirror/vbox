@@ -43,9 +43,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Snapshot)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (ISnapshot)
-        COM_INTERFACE_ENTRY2 (IDispatch, ISnapshot)
+        VBOX_DEFAULT_INTERFACE_ENTRIES  (ISnapshot)
     END_COM_MAP()
 
     Snapshot()

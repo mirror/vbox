@@ -57,12 +57,13 @@ DEFINE_EMPTY_CTOR_DTOR (SerialPort)
 
 HRESULT SerialPort::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void SerialPort::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

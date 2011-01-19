@@ -89,12 +89,13 @@ DEFINE_EMPTY_CTOR_DTOR (USBController)
 
 HRESULT USBController::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void USBController::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

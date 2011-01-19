@@ -42,9 +42,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(USBController)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (IUSBController)
-        COM_INTERFACE_ENTRY2 (IDispatch, IUSBController)
+        VBOX_DEFAULT_INTERFACE_ENTRIES (IUSBController)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (USBController)

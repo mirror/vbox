@@ -46,6 +46,9 @@
 #define COM_INTERFACE_ENTRY(a)
 #define COM_INTERFACE_ENTRY2(a,b)
 #define END_COM_MAP()
+#define VBOX_DEFAULT_INTERFACE_ENTRIES(a)
+#define BaseFinalConstruct() (S_OK)
+#define BaseFinalRelease()
 
 #ifndef RT_OS_WINDOWS
   typedef unsigned long  HRESULT;

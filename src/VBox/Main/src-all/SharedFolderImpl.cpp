@@ -44,12 +44,13 @@ SharedFolder::~SharedFolder()
 
 HRESULT SharedFolder::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void SharedFolder::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

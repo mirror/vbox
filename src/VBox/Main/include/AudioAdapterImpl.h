@@ -49,9 +49,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(AudioAdapter)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IAudioAdapter)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IAudioAdapter)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (AudioAdapter)

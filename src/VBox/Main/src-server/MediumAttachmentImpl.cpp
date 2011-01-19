@@ -77,13 +77,14 @@ struct MediumAttachment::Data
 HRESULT MediumAttachment::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void MediumAttachment::FinalRelease()
 {
     LogFlowThisFuncEnter();
     uninit();
+    BaseFinalRelease();
     LogFlowThisFuncLeave();
 }
 

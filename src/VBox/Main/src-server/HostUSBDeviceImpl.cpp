@@ -39,12 +39,13 @@ HRESULT HostUSBDevice::FinalConstruct()
     mUSBProxyService = NULL;
     mUsb = NULL;
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void HostUSBDevice::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

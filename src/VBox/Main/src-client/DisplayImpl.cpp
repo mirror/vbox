@@ -123,7 +123,7 @@ HRESULT Display::FinalConstruct()
     mu32UpdateVBVAFlags = 0;
 #endif
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Display::FinalRelease()
@@ -135,6 +135,7 @@ void Display::FinalRelease()
         RTCritSectDelete (&mVBVALock);
         memset (&mVBVALock, 0, sizeof (mVBVALock));
     }
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

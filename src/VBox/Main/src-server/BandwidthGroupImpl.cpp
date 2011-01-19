@@ -63,12 +63,13 @@ struct BandwidthGroup::Data
 
 HRESULT BandwidthGroup::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void BandwidthGroup::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

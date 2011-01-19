@@ -220,12 +220,13 @@ struct Host::Data
 
 HRESULT Host::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Host::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 /**

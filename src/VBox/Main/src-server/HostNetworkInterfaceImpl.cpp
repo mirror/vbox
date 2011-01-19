@@ -42,12 +42,13 @@ HostNetworkInterface::~HostNetworkInterface()
 
 HRESULT HostNetworkInterface::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void HostNetworkInterface::FinalRelease()
 {
     uninit ();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

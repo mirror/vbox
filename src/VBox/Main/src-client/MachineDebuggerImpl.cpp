@@ -55,12 +55,13 @@ MachineDebugger::~MachineDebugger()
 HRESULT MachineDebugger::FinalConstruct()
 {
     unconst(mParent) = NULL;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void MachineDebugger::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

@@ -54,12 +54,13 @@ struct ParallelPort::Data
 
 HRESULT ParallelPort::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void ParallelPort::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

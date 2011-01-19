@@ -134,6 +134,8 @@ void ProgressProxy::FinalRelease()
     muOtherProgressStartWeight    = 0;
     muOtherProgressWeight         = 0;
     muOtherProgressStartOperation = 0;
+
+    BaseFinalRelease();
 }
 
 void ProgressProxy::uninit()

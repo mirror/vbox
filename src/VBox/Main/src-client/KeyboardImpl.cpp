@@ -81,12 +81,13 @@ HRESULT Keyboard::FinalConstruct()
     RT_ZERO(mpDrv);
     mpVMMDev = NULL;
     mfVMMDevInited = false;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Keyboard::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public methods

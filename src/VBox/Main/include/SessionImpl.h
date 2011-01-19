@@ -33,6 +33,9 @@
 # define VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
 #endif
 
+#ifdef RT_OS_WINDOWS
+[threading(free)]
+#endif
 class ATL_NO_VTABLE Session :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(ISession),
@@ -53,11 +56,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Session)
-        COM_INTERFACE_ENTRY2(IDispatch, ISession)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(ISession)
         COM_INTERFACE_ENTRY2(IDispatch, IInternalSessionControl)
         COM_INTERFACE_ENTRY(IInternalSessionControl)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(ISession)
     END_COM_MAP()
 
     HRESULT FinalConstruct();

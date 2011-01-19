@@ -40,12 +40,13 @@ AudioAdapter::~AudioAdapter()
 
 HRESULT AudioAdapter::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void AudioAdapter::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

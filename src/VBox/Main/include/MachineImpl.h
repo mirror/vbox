@@ -317,9 +317,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Machine)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IMachine)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IMachine)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(Machine)
@@ -902,9 +900,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SessionMachine)
-        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IMachine)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IMachine)
         COM_INTERFACE_ENTRY(IInternalMachineControl)
     END_COM_MAP()
 
@@ -1113,9 +1109,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SnapshotMachine)
-        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IMachine)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IMachine)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(SnapshotMachine)

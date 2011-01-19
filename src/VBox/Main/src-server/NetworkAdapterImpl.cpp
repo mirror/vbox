@@ -45,12 +45,13 @@ NetworkAdapter::~NetworkAdapter()
 HRESULT NetworkAdapter::FinalConstruct()
 {
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void NetworkAdapter::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

@@ -66,10 +66,10 @@
     <xsl:value-of select="//interface[@name=$name]/@extends" />
   </xsl:variable>
 
-  <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $name, ')&#10;')" />
+  <xsl:value-of select="concat('        VBOX_DEFAULT_INTERFACE_ENTRIES(', $name, ')&#10;')" />
   <xsl:choose>
     <xsl:when test="$extends='$unknown'">
-      <xsl:value-of select="   '        COM_INTERFACE_ENTRY(IDispatch)&#10;'" />
+      <!-- Reached base -->
     </xsl:when>
     <xsl:when test="//interface[@name=$extends]">
       <xsl:call-template name="genComEntry">

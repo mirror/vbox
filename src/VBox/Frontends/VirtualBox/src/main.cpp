@@ -290,19 +290,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     ShutUpAppKit();
 # endif
 
-#ifdef Q_WS_WIN
-    /* Initialize COM early, before QApplication calls OleInitialize(), to
-     * make sure we enter the multi threaded apartment instead of a single
-     * threaded one. Note that this will make some non-threadsafe system
-     * services that use OLE and require STA (such as Drag&Drop) not work
-     * anymore, however it's still better because otherwise VBox will not work
-     * on some Windows XP systems at all since it requires MTA (we cannot
-     * leave STA by calling CoUninitialize() and re-enter MTA on those systems
-     * for some unknown reason), see also src/VBox/Main/glue/initterm.cpp. */
-    /// @todo find a proper solution that satisfies both OLE and VBox
-    HRESULT hrc = COMBase::InitializeCOM();
-#endif
-
     for (int i=0; i<argc; i++)
         if (   !strcmp(argv[i], "-h")
             || !strcmp(argv[i], "-?")
@@ -463,15 +450,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
         do
         {
-#ifdef Q_WS_WIN
-            /* Check for the COM error after we've initialized Qt */
-            if (FAILED (hrc))
-            {
-                vboxProblem().cannotInitCOM (hrc);
-                break;
-            }
-#endif
-
             if (!vboxGlobal().isValid())
                 break;
 
@@ -553,12 +531,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         }
         while (0);
     }
-
-#ifdef Q_WS_WIN
-    /* See COMBase::initializeCOM() above */
-    if (SUCCEEDED (hrc))
-        COMBase::CleanupCOM();
-#endif
 
     LogFlowFunc (("rc=%d\n", rc));
     LogFlowFuncLeave();

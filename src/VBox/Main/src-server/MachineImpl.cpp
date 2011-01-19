@@ -234,13 +234,14 @@ Machine::~Machine()
 HRESULT Machine::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Machine::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
     uninit();
+    BaseFinalRelease();
 }
 
 /**
@@ -9943,7 +9944,7 @@ HRESULT SessionMachine::FinalConstruct()
 # error "Port me!"
 #endif
 
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void SessionMachine::FinalRelease()
@@ -9951,6 +9952,8 @@ void SessionMachine::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit(Uninit::Unexpected);
+
+    BaseFinalRelease();
 }
 
 /**

@@ -61,12 +61,13 @@ SystemProperties::~SystemProperties()
 
 HRESULT SystemProperties::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void SystemProperties::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public methods only for internal purposes

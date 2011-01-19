@@ -108,9 +108,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Display)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IDisplay)
-        COM_INTERFACE_ENTRY2(IDispatch,IDisplay)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IDisplay)
         COM_INTERFACE_ENTRY(IEventListener)
     END_COM_MAP()
 

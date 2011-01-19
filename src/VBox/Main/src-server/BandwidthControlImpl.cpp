@@ -55,12 +55,13 @@ struct BandwidthControl::Data
 
 HRESULT BandwidthControl::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void BandwidthControl::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

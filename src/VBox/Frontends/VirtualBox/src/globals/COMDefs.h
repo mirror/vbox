@@ -202,7 +202,7 @@ class COMBase
 {
 public:
 
-    static HRESULT InitializeCOM();
+    static HRESULT InitializeCOM(bool fGui);
     static HRESULT CleanupCOM();
 
     /**
@@ -354,7 +354,7 @@ public:
 protected:
 
     /* no arbitrary instance creations */
-    COMBase() : mRC (S_OK) {};
+    COMBase() : mRC (S_OK) {}
 
 #if defined (VBOX_WITH_XPCOM)
     static XPCOMEventQSocketListener *sSocketListener;
@@ -632,44 +632,61 @@ public:
 
     // constructors & destructor
 
-    CInterface() : mIface (NULL) {}
-
-    CInterface (const CInterface &that) : B (that), mIface (that.mIface)
+    CInterface() 
     {
-        addref (mIface);
+        clear();
     }
 
-    CInterface (I *aIface) : mIface (aIface) { addref (mIface); }
+    CInterface (const CInterface &that) : B (that)
+    {   
+        clear(); 
+        mIface = that.mIface;
+        addref(ptr());
+    }
 
-    virtual ~CInterface() { release (mIface); }
+    CInterface (I *aIface) 
+    { 
+        clear();
+        setPtr (aIface);
+        addref (aIface); 
+    }
+
+    virtual ~CInterface() 
+    { 
+        detach();
+#ifdef DEBUG
+        mDead = true;
+#endif
+    }
 
     // utility methods
-
     void createInstance (const CLSID &aClsId)
     {
-        AssertMsg (!mIface, ("Instance is already non-NULL\n"));
-        if (!mIface)
+        AssertMsg (ptr() == NULL, ("Instance is already non-NULL\n"));
+        if (ptr() == NULL)
         {
+            I* pObj = NULL;
 #if !defined (VBOX_WITH_XPCOM)
-
             B::mRC = CoCreateInstance (aClsId, NULL, CLSCTX_ALL,
-                                       _ATL_IIDOF (I), (void **) &mIface);
-
-#else /* !defined (VBOX_WITH_XPCOM) */
-
+                                       _ATL_IIDOF (I), (void **) &pObj);
+#else
             nsCOMPtr <nsIComponentManager> manager;
             B::mRC = NS_GetComponentManager (getter_AddRefs (manager));
             if (SUCCEEDED (B::mRC))
                 B::mRC = manager->CreateInstance (aClsId, nsnull, NS_GET_IID (I),
-                                                  (void **) &mIface);
-
-#endif /* !defined (VBOX_WITH_XPCOM) */
-
+                                                  (void **) &pObj);
+#endif
+             
+            if (SUCCEEDED (B::mRC))
+               setPtr(pObj);
+            else
+               setPtr(NULL);
+            
             /* fetch error info, but don't assert if it's missing -- many other
              * reasons can lead to an error (w/o providing error info), not only
              * the instance initialization code (that should always provide it) */
             B::fetchErrorInfo (NULL, NULL);
-        }
+         }
     }
 
     /**
@@ -679,18 +696,23 @@ public:
     template <class OI>
     void attach (OI *aIface)
     {
+#ifdef DEBUG
+        Assert(!mDead);
+#endif
         /* be aware of self assignment */
+        I* amIface = ptr();
         addref (aIface);
-        release (mIface);
+        release (amIface);
         if (aIface)
         {
-            mIface = NULL;
-            B::mRC = aIface->QueryInterface (COM_IIDOF (I), (void **) &mIface);
+            amIface = NULL;
+            B::mRC = aIface->QueryInterface (COM_IIDOF (I), (void **) &amIface);
             release (aIface);
+            setPtr(amIface);
         }
         else
         {
-            mIface = NULL;
+            setPtr(NULL);
             B::mRC = S_OK;
         }
     };
@@ -698,18 +720,34 @@ public:
     /** Specialization of attach() for our own interface I. Never fails. */
     void attach (I *aIface)
     {
+#ifdef DEBUG
+        Assert(!mDead);
+#endif
         /* be aware of self assignment */
         addref (aIface);
-        release (mIface);
-        mIface = aIface;
+        release (ptr());
+        setPtr(aIface);
         B::mRC = S_OK;
     };
 
     /** Detaches from the underlying interface pointer. */
-    void detach() { release (mIface); mIface = NULL; }
+    void detach() 
+    { 
+#ifdef DEBUG
+       Assert(!mDead);
+#endif
+       release (ptr()); 
+       setPtr(NULL); 
+    }
 
     /** Returns @c true if not attached to any interface pointer. */
-    bool isNull() const { return mIface == NULL; }
+    bool isNull() const 
+    { 
+#ifdef DEBUG
+       Assert(!mDead);
+#endif
+       return mIface == NULL; 
+    }
 
     /**
      * Returns @c true if the result code represents success (with or without
@@ -732,7 +770,7 @@ public:
 
     CInterface &operator= (const CInterface &that)
     {
-        attach (that.mIface);
+        attach (that.ptr());
         B::operator= (that);
         return *this;
     }
@@ -747,18 +785,44 @@ public:
      * Returns the raw interface pointer. Not intended to be used for anything
      * else but in generated wrappers and for debugging. You've been warned.
      */
-    I *raw() const { return mIface; }
+    I *raw() const 
+    {
+       return ptr();
+    }
 
-    bool operator== (const CInterface &that) const { return mIface == that.mIface; }
-    bool operator!= (const CInterface &that) const { return mIface != that.mIface; }
+    bool operator== (const CInterface &that) const { return ptr() == that.ptr(); }
+    bool operator!= (const CInterface &that) const { return ptr() != that.ptr(); }
 
-/**
- * @todo: rethink if we'll ever need 'protected' back, removed to allow mIface access in rather
- *        nontrivial inheritance situations, see 'friend wrappers' code in COMWrappers.xsl
- */
-//protected:
+    I* ptr() const
+    {
+#ifdef DEBUG
+      Assert(!mDead);
+#endif
 
-    mutable I *mIface;
+      return   mIface;
+    }
+
+    void setPtr(I* aObj) const
+    {
+#ifdef DEBUG
+      Assert(!mDead);
+#endif
+      mIface = aObj;
+    }
+
+private:
+#ifdef DEBUG
+    bool          mDead;
+#endif
+    mutable I *   mIface;
+
+    void clear()
+    {
+       mIface = NULL;       
+#ifdef DEBUG
+       mDead = false;
+#endif
+    }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -775,7 +839,7 @@ public:
     template <class OI, class OB>
     explicit CUnknown (const CInterface <OI, OB> &that)
     {
-        attach (that.mIface);
+        attach (that.ptr());
         if (SUCCEEDED (mRC))
         {
             /* preserve old error info if any */
@@ -801,7 +865,7 @@ public:
     template <class OI, class OB>
     CUnknown &operator= (const CInterface <OI, OB> &that)
     {
-        attach (that.mIface);
+        attach (that.ptr());
         if (SUCCEEDED (mRC))
         {
             /* preserve old error info if any */
@@ -832,9 +896,6 @@ public:
         Base::operator= (aIface);
         return *this;
     }
-
-    /* @internal Used in generated wrappers. Never use directly. */
-    IUnknown *&rawRef() { return mIface; };
 };
 
 /////////////////////////////////////////////////////////////////////////////

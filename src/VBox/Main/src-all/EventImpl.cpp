@@ -85,7 +85,7 @@ struct VBoxEvent::Data
 HRESULT VBoxEvent::FinalConstruct()
 {
     m = new Data;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void VBoxEvent::FinalRelease()
@@ -95,6 +95,7 @@ void VBoxEvent::FinalRelease()
         uninit();
         delete m;
         m = 0;
+        BaseFinalRelease();
     }
 }
 
@@ -910,13 +911,14 @@ EventSource::~EventSource()
 HRESULT EventSource::FinalConstruct()
 {
     m = new Data;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void EventSource::FinalRelease()
 {
     uninit();
     delete m;
+    BaseFinalRelease();
 }
 
 HRESULT EventSource::init(IUnknown *)
@@ -1183,9 +1185,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(PassiveEventListener)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEventListener)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IEventListener)
     END_COM_MAP()
 
     PassiveEventListener()
@@ -1195,10 +1195,12 @@ public:
 
     HRESULT FinalConstruct()
     {
-        return S_OK;
+        return BaseFinalConstruct();
     }
     void FinalRelease()
-    {}
+    {
+        BaseFinalRelease();
+    }
 
     // IEventListener methods
     STDMETHOD(HandleEvent)(IEvent *)
@@ -1223,9 +1225,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(ProxyEventListener)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEventListener)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IEventListener)
     END_COM_MAP()
 
     ProxyEventListener()
@@ -1235,10 +1235,12 @@ public:
 
     HRESULT FinalConstruct()
     {
-        return S_OK;
+        return BaseFinalConstruct();
     }
     void FinalRelease()
-    {}
+    {
+        BaseFinalRelease();
+    }
 
     HRESULT init(IEventSource* aSource)
     {
@@ -1278,9 +1280,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(EventSourceAggregator)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEventSource)
-        COM_INTERFACE_ENTRY(IDispatch)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(IEventSource)
     END_COM_MAP()
 
     EventSourceAggregator()
@@ -1290,13 +1290,14 @@ public:
 
     HRESULT FinalConstruct()
     {
-        return S_OK;
+        return BaseFinalConstruct();
     }
     void FinalRelease()
     {
         mEventSources.clear();
         mListenerProxies.clear();
         mSource->uninit();
+        BaseFinalRelease();
     }
 
     // internal public

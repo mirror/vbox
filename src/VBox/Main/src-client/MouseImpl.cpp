@@ -78,12 +78,13 @@ HRESULT Mouse::FinalConstruct()
     mcLastAbsY = 0x8000;
     mfLastButtons = 0;
     mfVMMDevGuestCaps = 0;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void Mouse::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 // public methods only for internal purposes

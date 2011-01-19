@@ -100,13 +100,14 @@ HRESULT NATEngine::initCopy (Machine *aParent, INetworkAdapter *aAdapter, NATEng
     unconst(mAdapter) = aAdapter;
     unconst(mParent) = aParent;
     autoInitSpan.setSucceeded();
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 
 void NATEngine::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 void NATEngine::uninit()

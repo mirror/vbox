@@ -31,12 +31,14 @@ DEFINE_EMPTY_CTOR_DTOR(MediumFormat)
 
 HRESULT MediumFormat::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void MediumFormat::FinalRelease()
 {
     uninit();
+    
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

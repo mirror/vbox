@@ -343,7 +343,11 @@ HRESULT VirtualBox::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    return init();
+    HRESULT rc = init();
+   
+    BaseFinalConstruct();
+
+    return rc;
 }
 
 void VirtualBox::FinalRelease()
@@ -351,6 +355,8 @@ void VirtualBox::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit();
+
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only

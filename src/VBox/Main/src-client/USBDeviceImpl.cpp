@@ -29,12 +29,13 @@ DEFINE_EMPTY_CTOR_DTOR (OUSBDevice)
 
 HRESULT OUSBDevice::FinalConstruct()
 {
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 void OUSBDevice::FinalRelease()
 {
     uninit ();
+    BaseFinalRelease();
 }
 
 // public initializer/uninitializer for internal purposes only
