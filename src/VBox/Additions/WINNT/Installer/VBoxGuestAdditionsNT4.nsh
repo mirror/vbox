@@ -1,5 +1,5 @@
 
-Function NT_SetVideoResolution
+Function NT4_SetVideoResolution
 
   ; Check for all required parameters
   StrCmp $g_iScreenX "0" missingParms
@@ -9,7 +9,7 @@ Function NT_SetVideoResolution
 
 missingParms:
 
-  DetailPrint "Missing display parameters for NT, setting default (640x480, 8 BPP) ..."
+  DetailPrint "Missing display parameters for NT4, setting default (640x480, 8 BPP) ..."
 
   StrCpy $g_iScreenX '640'   ; Default value
   StrCpy $g_iScreenY '480'   ; Default value
@@ -20,7 +20,7 @@ missingParms:
 
 haveParms:
 
-  DetailPrint "Setting display parameters for NT ($g_iScreenXx$g_iScreenY, $g_iScreenBpp BPP) ..."
+  DetailPrint "Setting display parameters for NT4 ($g_iScreenXx$g_iScreenY, $g_iScreenBpp BPP) ..."
 
   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\vboxvideo\Device0" "DefaultSettings.BitsPerPel" $g_iScreenBpp
   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\vboxvideo\Device0" "DefaultSettings.Flags" 0x00000000
@@ -32,7 +32,7 @@ haveParms:
 
 FunctionEnd
 
-Function NT_SaveMouseDriverInfo
+Function NT4_SaveMouseDriverInfo
 
   Push $0
 
@@ -71,7 +71,7 @@ exit:
 
 FunctionEnd
 
-Function NT_Prepare
+Function NT4_Prepare
 
   ${If} $g_bNoVBoxServiceExit == "false"
     ; Stop / kill VBoxService
@@ -91,9 +91,9 @@ Function NT_Prepare
 
 FunctionEnd
 
-Function NT_CopyFiles
+Function NT4_CopyFiles
 
-  DetailPrint "Copying files..."
+  DetailPrint "Copying files for NT4 ..."
 
   SetOutPath "$INSTDIR"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestDrvInst.exe"
@@ -118,12 +118,12 @@ Function NT_CopyFiles
 
 FunctionEnd
 
-Function NT_InstallFiles
+Function NT4_InstallFiles
 
-  DetailPrint "Installing Drivers..."
+  DetailPrint "Installing drivers for NT4 ..."
 
   ; Install guest driver
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /createsvc "VBoxGuest" "VBoxGuest Support Driver" 1 1 "$SYSDIR\drivers\VBoxGuestNT.sys" "Base"'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxGuest" "VBoxGuest Support Driver" 1 1 "$SYSDIR\drivers\VBoxGuestNT.sys" "Base"'
 
   ; Bugfix: Set "Start" to 1, otherwise, VBoxGuest won't start on boot-up!
   ; Bugfix: Correct invalid "ImagePath" (\??\C:\WINNT\...)
@@ -142,7 +142,7 @@ Function NT_InstallFiles
 
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /createsvc "VBoxService" "VirtualBox Guest Additions Service" 16 2 "system32\VBoxServiceNT.exe" "Base"'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxService" "VirtualBox Guest Additions Service" 16 2 "system32\VBoxServiceNT.exe" "Base"'
 
    ; Create the Shared Folders service ...
   ;nsSCM::Install /NOUNLOAD "VBoxSF" "VirtualBox Shared Folders" 1 1 "$SYSDIR\drivers\VBoxSFNT.sys" "Network" "" "" ""
@@ -160,45 +160,40 @@ Function NT_InstallFiles
   ;WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\VBoxSF\NetworkProvider" "ProviderPath" "$SYSDIR\VBoxMRXNP.dll"
 
   ; Add the shared folders network provider
-  ;nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /addnetprovider VBoxSF'
+  ;nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" netprovider add VBoxSF'
   ;Pop $0                      ; Ret value
-
-!ifdef _DEBUG
-  ;DetailPrint "VBoxDrvInst::AddProvider VBoxSF: $0"
-!endif
-
   ;IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
 
   Goto done
 
 error:
-  Abort "ERROR: Could not install files for Windows NT! Installation aborted."
+  Abort "ERROR: Could not install files for Windows NT4! Installation aborted."
 
 done:
 
 FunctionEnd
 
-Function NT_Main
+Function NT4_Main
 
   SetOutPath "$INSTDIR"
 
-  Call NT_Prepare
-  Call NT_CopyFiles
+  Call NT4_Prepare
+  Call NT4_CopyFiles
 
   ; This removes the flag "new display driver installed on the next bootup
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce" "VBoxGuestInst" '"$INSTDIR\RegCleanup.exe"'
 
-  Call NT_SaveMouseDriverInfo
-  Call NT_InstallFiles
-  Call NT_SetVideoResolution
+  Call NT4_SaveMouseDriverInfo
+  Call NT4_InstallFiles
+  Call NT4_SetVideoResolution
 
   ; Write mouse driver name to registry overwriting the default name
   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\i8042prt" "ImagePath" "System32\DRIVERS\VBoxMouseNT.sys"
 
 FunctionEnd
 
-!macro NT_UninstallInstDir un
-Function ${un}NT_UninstallInstDir
+!macro NT4_UninstallInstDir un
+Function ${un}NT4_UninstallInstDir
 
   ; Delete remaining files
   Delete /REBOOTOK "$INSTDIR\VBoxGuestDrvInst.exe"
@@ -206,21 +201,21 @@ Function ${un}NT_UninstallInstDir
 
 FunctionEnd
 !macroend
-!insertmacro NT_UninstallInstDir ""
-!insertmacro NT_UninstallInstDir "un."
+!insertmacro NT4_UninstallInstDir ""
+!insertmacro NT4_UninstallInstDir "un."
 
-!macro NT_Uninstall un
-Function ${un}NT_Uninstall
+!macro NT4_Uninstall un
+Function ${un}NT4_Uninstall
 
   Push $0
 
   ; Remove the guest driver service
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxGuest'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxGuest'
   Delete /REBOOTOK "$SYSDIR\drivers\VBoxGuestNT.sys"
 
   ; Delete the VBoxService service
   Call ${un}StopVBoxService
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxService'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxService'
   Pop $0    ; Ret value
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxService"
   Delete /REBOOTOK "$SYSDIR\VBoxServiceNT.exe"
@@ -229,14 +224,14 @@ Function ${un}NT_Uninstall
   Call ${un}StopVBoxTray
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxTray"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\RunOnce" "VBoxTrayDel" "$SYSDIR\cmd.exe /c del /F /Q $SYSDIR\VBoxTray.exe"
-  Delete /REBOOTOK "$SYSDIR\VBoxTray.exe"    ; If it can't be removed cause it's running, try next boot with "RunOnce" key above!
+  Delete /REBOOTOK "$SYSDIR\VBoxTray.exe" ; If it can't be removed cause it's running, try next boot with "RunOnce" key above!
   Delete /REBOOTOK "$SYSDIR\VBoxHook.dll"
 
   ; Delete the VBoxControl utility
   Delete /REBOOTOK "$SYSDIR\VBoxControl.exe"
 
   ; Delete the VBoxVideo service
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxVideo'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxVideo'
 
   ; Delete the VBox video driver files
   Delete /REBOOTOK "$SYSDIR\drivers\VBoxVideo.sys"
@@ -258,5 +253,5 @@ Function ${un}NT_Uninstall
 
 FunctionEnd
 !macroend
-!insertmacro NT_Uninstall ""
-!insertmacro NT_Uninstall "un."
+!insertmacro NT4_Uninstall ""
+!insertmacro NT4_Uninstall "un."
