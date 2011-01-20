@@ -3722,16 +3722,19 @@ int Console::configNetwork(const char *pszDevice,
                                                 &pNc,
                                                 &pszApp);
                 Assert(hrc == S_OK);
-                if (hrc == S_OK)
+                if (hrc != S_OK)
                 {
-                    /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
-                    if (hrc != S_OK)
-                    {
-                        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                        LogRel(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
-                        H();
-                    }
+                    LogRel(("NetworkAttachmentType_Bridged: Failed to get NetCfg, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                    H();
+                }
+
+                /* get the adapter's INetCfgComponent*/
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
+                if (hrc != S_OK)
+                {
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    LogRel(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
+                    H();
                 }
 #define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
                 char szTrunkName[INTNET_MAX_TRUNK_NAME];
@@ -3779,6 +3782,8 @@ int Console::configNetwork(const char *pszDevice,
                     AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
                     H();
                 }
+
+                rc = VINF_SUCCESS;
                 const char *pszTrunk = szTrunkName;
                 /* we're not releasing the INetCfg stuff here since we use it later to figure out whether it is wireless */
 
@@ -4100,16 +4105,19 @@ int Console::configNetwork(const char *pszDevice,
                                                 &pNc,
                                                 &pszApp);
                 Assert(hrc == S_OK);
-                if (hrc == S_OK)
+                if (hrc != S_OK)
                 {
-                    /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
-                    if (hrc != S_OK)
-                    {
-                        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                        LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
-                        H();
-                    }
+                    LogRel(("NetworkAttachmentType_HostOnly: Failed to get NetCfg, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                    H();
+                }
+
+                /* get the adapter's INetCfgComponent*/
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
+                if (hrc != S_OK)
+                {
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                    H();
                 }
 #define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
                 char szTrunkName[INTNET_MAX_TRUNK_NAME];
@@ -4171,6 +4179,7 @@ int Console::configNetwork(const char *pszDevice,
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;
+                rc = VINF_SUCCESS;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
                 InsertConfigString(pCfg, "Trunk", pszHifName);
