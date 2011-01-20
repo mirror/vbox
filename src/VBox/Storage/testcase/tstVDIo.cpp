@@ -1,3 +1,4 @@
+/* $Id  */
 /** @file
  *
  * VBox HDD container test utility - I/O replay.
@@ -558,6 +559,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
             paIoReq = (PVDIOREQ)RTMemAllocZ(cMaxTasksOutstanding * sizeof(VDIOREQ));
             if (paIoReq && RT_SUCCESS(rc))
             {
+                uint64_t NanoTS = RTTimeNanoTS();
+
                 for (unsigned i = 0; i < cMaxTasksOutstanding; i++)
                     paIoReq[i].idx = i;
 
@@ -678,6 +681,10 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                     else
                         break;
                 }
+
+                NanoTS = RTTimeNanoTS() - NanoTS;
+                uint64_t SpeedKBs = (uint64_t)(cbIo / (NanoTS / 1000000000.0) / 1024);
+                RTPrintf("I/O Test: Throughput %lld kb/s\n", SpeedKBs);
 
                 RTSemEventDestroy(EventSem);
                 RTMemFree(paIoReq);
@@ -1186,7 +1193,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
             rc = VERR_NO_MEMORY;
     }
     else
-        pIoTest->u.offNext = pIoTest->offEnd < pIoTest->offStart ? pIoTest->offEnd - cbBlkSize : 0;
+        pIoTest->u.offNext = pIoTest->offEnd < pIoTest->offStart ? pIoTest->offStart - cbBlkSize : 0;
 
     return rc;
 }
@@ -1486,6 +1493,8 @@ static int tstVDIoScriptArgumentParse(PCVDSCRIPTACTION pVDScriptAction, const ch
                                     rc = VERR_INVALID_PARAMETER;
                                 }
                             }
+                            if (RT_SUCCESS(rc))
+                                pszSuffix++;
                         }
 
                         if (*pszSuffix == '-')
@@ -1597,7 +1606,7 @@ static int tstVDIoScriptArgumentListParse(char *psz, PCVDSCRIPTACTION pVDScriptA
                 psz = tstVDIoScriptSkipSpace(psz);
 
                 /* We have the name and value pair now. */
-                bool fMandatory;
+                bool fMandatory = false; /* Shut up gcc */
                 rc = tstVDIoScriptArgumentParse(pVDScriptAction, pcszName, pcszValue, &paScriptArgs[cScriptArgs], &fMandatory);
                 if (RT_SUCCESS(rc))
                 {
