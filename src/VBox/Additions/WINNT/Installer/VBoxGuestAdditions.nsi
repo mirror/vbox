@@ -3,6 +3,12 @@
   !define _DEBUG     ; Turn this on to get extra output
 !endif
 
+!ifdef _DEBUG
+  ; Scratch directory for plugin tests
+  !addincludedir .\PluginTest
+  !addplugindir .\PluginTest
+!endif
+
 ; Defines for special functions
 !define WHQL_FAKE    ; Turns on the faking of non WHQL signed / approved drivers
                      ; Needs the VBoxWHQLFake.exe in the additions output directory!
@@ -554,6 +560,7 @@ Function Common_CopyFiles
   FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
 !endif
 
+  FILE "$%VBOX_PATH_DIFX%\DIFxAPI.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
 
   FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
@@ -635,7 +642,7 @@ nt4: ; Windows NT4
   ; Copy some common files ...
   Call Common_CopyFiles
 
-  Call NT_Main
+  Call NT4_Main
   goto success
 !endif
 

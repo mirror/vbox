@@ -65,7 +65,7 @@ Function ExtractFiles
 !if $%VBOX_WITH_WDDM% == "1"
   ; WDDM Video driver
   SetOutPath "$0\VBoxVideoWddm"
-    
+
   !ifdef VBOX_SIGN_ADDITIONS
     FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
   !endif
@@ -85,7 +85,7 @@ Function ExtractFiles
     FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
     FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
   !endif ; $%VBOX_WITH_CROGL% == "1"
-      
+
   !if $%BUILD_TARGET_ARCH% == "amd64"
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
 
@@ -154,6 +154,7 @@ Function ExtractFiles
   ; Misc tools
   SetOutPath "$0\Tools"
   FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
+  FILE "$%VBOX_PATH_DIFX%\DIFxAPI.dll"
 
 !if $%BUILD_TARGET_ARCH% == "x86"
   SetOutPath "$0\Tools\NT4"
