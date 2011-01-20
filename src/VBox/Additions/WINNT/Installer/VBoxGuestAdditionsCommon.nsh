@@ -8,8 +8,10 @@ Function ExtractFiles
   Push $0
   StrCpy "$0" "$INSTDIR\$%BUILD_TARGET_ARCH%"
 
+  ; Root files
+  SetOutPath "$0"
 !if $%VBOX_WITH_LICENSE_INSTALL_RTF% == "1"
-  FILE "/oname=$0\${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
+  FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
 !endif
 
   ; Video driver
