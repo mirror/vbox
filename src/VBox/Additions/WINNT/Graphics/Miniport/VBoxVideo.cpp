@@ -47,16 +47,6 @@ VIDEO_ACCESS_RANGE  VGARanges[] = {
     { 0x000003C0, 0x00000000, 0x00000020, 1, 1, 1, 0 }, /* 0x3C0-0x3DF */
     { 0x000A0000, 0x00000000, 0x00020000, 0, 0, 1, 0 }, /* 0xA0000-0xBFFFF */
 };
-/*
- * Globals for the last custom resolution set. This is important
- * for system startup so that we report the last currently set
- * custom resolution and Windows can use it again.
- */
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-uint32_t gCustomXRes = 0;
-uint32_t gCustomYRes = 0;
-uint32_t gCustomBPP  = 0;
-#endif /* !VBOX_WITH_MULTIMONITOR_FIX */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -331,6 +321,70 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     return rc;
 }
 #endif
+
+static void initVideoModeInformation(VIDEO_MODE_INFORMATION *pVideoMode, ULONG xres, ULONG yres, ULONG bpp, ULONG index, ULONG yoffset)
+{
+    /*
+     * Build mode entry.
+     */
+    memset(pVideoMode, 0, sizeof(VIDEO_MODE_INFORMATION));
+
+    pVideoMode->Length                       = sizeof(VIDEO_MODE_INFORMATION);
+    pVideoMode->ModeIndex                    = index;
+    pVideoMode->VisScreenWidth               = xres;
+    pVideoMode->VisScreenHeight              = yres - yoffset;
+    pVideoMode->ScreenStride                 = xres * ((bpp + 7) / 8);
+    pVideoMode->NumberOfPlanes               = 1;
+    pVideoMode->BitsPerPlane                 = bpp;
+    pVideoMode->Frequency                    = 60;
+    pVideoMode->XMillimeter                  = 320;
+    pVideoMode->YMillimeter                  = 240;
+    switch (bpp)
+    {
+#ifdef VBOX_WITH_8BPP_MODES
+        case 8:
+            pVideoMode->NumberRedBits        = 6;
+            pVideoMode->NumberGreenBits      = 6;
+            pVideoMode->NumberBlueBits       = 6;
+            pVideoMode->RedMask              = 0;
+            pVideoMode->GreenMask            = 0;
+            pVideoMode->BlueMask             = 0;
+            break;
+#endif
+        case 16:
+            pVideoMode->NumberRedBits        = 5;
+            pVideoMode->NumberGreenBits      = 6;
+            pVideoMode->NumberBlueBits       = 5;
+            pVideoMode->RedMask              = 0xF800;
+            pVideoMode->GreenMask            = 0x7E0;
+            pVideoMode->BlueMask             = 0x1F;
+            break;
+        case 24:
+            pVideoMode->NumberRedBits        = 8;
+            pVideoMode->NumberGreenBits      = 8;
+            pVideoMode->NumberBlueBits       = 8;
+            pVideoMode->RedMask              = 0xFF0000;
+            pVideoMode->GreenMask            = 0xFF00;
+            pVideoMode->BlueMask             = 0xFF;
+            break;
+        case 32:
+            pVideoMode->NumberRedBits        = 8;
+            pVideoMode->NumberGreenBits      = 8;
+            pVideoMode->NumberBlueBits       = 8;
+            pVideoMode->RedMask              = 0xFF0000;
+            pVideoMode->GreenMask            = 0xFF00;
+            pVideoMode->BlueMask             = 0xFF;
+            break;
+    }
+    pVideoMode->AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+#ifdef VBOX_WITH_8BPP_MODES
+    if (bpp == 8)
+        pVideoMode->AttributeFlags          |= VIDEO_MODE_PALETTE_DRIVEN | VIDEO_MODE_MANAGED_PALETTE;
+#endif
+    pVideoMode->VideoMemoryBitmapWidth       = xres;
+    pVideoMode->VideoMemoryBitmapHeight      = yres - yoffset;
+    pVideoMode->DriverSpecificAttributeFlags = 0;
+}
 
 #ifdef VBOX_WITH_GENERIC_MULTIMONITOR
 
@@ -1387,87 +1441,26 @@ static int vboxVideoBuildModesTable(PDEVICE_EXTENSION DeviceExtension, int iDisp
  * filled dynamically.
  */
 #define MAX_VIDEO_MODES 128
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-static VIDEO_MODE_INFORMATION VideoModes[MAX_VIDEO_MODES + 2] = { 0 };
-#else
 /*
  * Additional space is reserved for custom video modes for 64 guest monitors.
  * The custom video mode index is alternating and 2 indexes are reserved for the last custom mode.
  */
 static VIDEO_MODE_INFORMATION VideoModes[MAX_VIDEO_MODES + 64 + 2] = { 0 };
-/* On the driver startup this is initialized from registry (replaces gCustom*). */
+
+/*
+ * The last custom resolution set for each display. This is important
+ * for system startup so that we report the last currently set
+ * custom resolution and Windows can use it again.
+ * On the driver startup this is initialized from registry.
+ */
 static VIDEO_MODE_INFORMATION CustomVideoModes[64] = { 0 };
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
+
 /* number of available video modes, set by VBoxBuildModesTable  */
 static uint32_t gNumVideoModes = 0;
 
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
-static void initVideoModeInformation(VIDEO_MODE_INFORMATION *pVideoMode, ULONG xres, ULONG yres, ULONG bpp, ULONG index, ULONG yoffset)
-{
-    /*
-     * Build mode entry.
-     */
-    memset(pVideoMode, 0, sizeof(VIDEO_MODE_INFORMATION));
-
-    pVideoMode->Length                       = sizeof(VIDEO_MODE_INFORMATION);
-    pVideoMode->ModeIndex                    = index;
-    pVideoMode->VisScreenWidth               = xres;
-    pVideoMode->VisScreenHeight              = yres - yoffset;
-    pVideoMode->ScreenStride                 = xres * ((bpp + 7) / 8);
-    pVideoMode->NumberOfPlanes               = 1;
-    pVideoMode->BitsPerPlane                 = bpp;
-    pVideoMode->Frequency                    = 60;
-    pVideoMode->XMillimeter                  = 320;
-    pVideoMode->YMillimeter                  = 240;
-    switch (bpp)
-    {
-#ifdef VBOX_WITH_8BPP_MODES
-        case 8:
-            pVideoMode->NumberRedBits        = 6;
-            pVideoMode->NumberGreenBits      = 6;
-            pVideoMode->NumberBlueBits       = 6;
-            pVideoMode->RedMask              = 0;
-            pVideoMode->GreenMask            = 0;
-            pVideoMode->BlueMask             = 0;
-            break;
-#endif
-        case 16:
-            pVideoMode->NumberRedBits        = 5;
-            pVideoMode->NumberGreenBits      = 6;
-            pVideoMode->NumberBlueBits       = 5;
-            pVideoMode->RedMask              = 0xF800;
-            pVideoMode->GreenMask            = 0x7E0;
-            pVideoMode->BlueMask             = 0x1F;
-            break;
-        case 24:
-            pVideoMode->NumberRedBits        = 8;
-            pVideoMode->NumberGreenBits      = 8;
-            pVideoMode->NumberBlueBits       = 8;
-            pVideoMode->RedMask              = 0xFF0000;
-            pVideoMode->GreenMask            = 0xFF00;
-            pVideoMode->BlueMask             = 0xFF;
-            break;
-        case 32:
-            pVideoMode->NumberRedBits        = 8;
-            pVideoMode->NumberGreenBits      = 8;
-            pVideoMode->NumberBlueBits       = 8;
-            pVideoMode->RedMask              = 0xFF0000;
-            pVideoMode->GreenMask            = 0xFF00;
-            pVideoMode->BlueMask             = 0xFF;
-            break;
-    }
-    pVideoMode->AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
-#ifdef VBOX_WITH_8BPP_MODES
-    if (bpp == 8)
-        pVideoMode->AttributeFlags          |= VIDEO_MODE_PALETTE_DRIVEN | VIDEO_MODE_MANAGED_PALETTE;
-#endif
-    pVideoMode->VideoMemoryBitmapWidth       = xres;
-    pVideoMode->VideoMemoryBitmapHeight      = yres - yoffset;
-    pVideoMode->DriverSpecificAttributeFlags = 0;
-}
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
-
-
+/* Remember which video mode was not set because there was no enough VRAM.
+ * So repeated entries will be not written to the guest log.
+ */
 static uint32_t g_xresNoVRAM = 0, g_yresNoVRAM = 0, g_bppNoVRAM = 0;
 
 /**
@@ -2031,7 +2024,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * registry key add it to the modes table.
      */
 
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
     /* Add custom resolutions for each display and then for the display change request, if exists.
      */
     BOOLEAN fDisplayChangeRequest = FALSE;
@@ -2104,16 +2096,8 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             gNumVideoModes++;
         }
     }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-    uint32_t xres = 0, yres = 0, bpp = 0, display = 0;
-    if (   (   vboxQueryDisplayRequest(&xres, &yres, &bpp, &display)
-            && (xres || yres || bpp))
-        || (gCustomXRes || gCustomYRes || gCustomBPP))
-#else
     if (fDisplayChangeRequest || DeviceExtension->CurrentMode == 0)
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
     {
 #ifndef VBOX_WITH_WDDM
         dprintf(("VBoxVideo: adding custom video mode as #%d, current mode: %d \n", gNumVideoModes + 1, DeviceExtension->CurrentMode));
@@ -2126,15 +2110,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             /* Use the stored custom resolution values only if nothing was read from host.
              * The custom mode might be not valid anymore and would block any hints from host.
              */
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-            if (!xres)
-                xres = gCustomXRes;
-            if (!yres)
-                yres = gCustomYRes;
-            if (!bpp)
-                bpp  = gCustomBPP;
-            dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d\n", xres, yres, bpp));
-#else
             if (!xres)
                 xres = CustomVideoModes[DeviceExtension->iDevice].VisScreenWidth;
             if (!yres)
@@ -2142,7 +2117,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             if (!bpp)
                 bpp  = CustomVideoModes[DeviceExtension->iDevice].BitsPerPlane;
             dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d for %d\n", xres, yres, bpp, DeviceExtension->iDevice));
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
         }
         /* round down to multiple of 8 if necessary */
         if (!DeviceExtension->fAnyX) {
@@ -2196,9 +2170,8 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 && (xres * yres * (bpp / 8) < vramSize))
 
             {
-                /* we need an alternating index */
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
-                /* Only alternate index if the new custom mode differs from the last one
+                /* We need an alternating index so the guest will recognoize the mode as a new one.
+                 * However only alternate index if the new custom mode differs from the last one
                  * (only resolution and bpp changes are important, a display change does not matter).
                  * Always add 2 last entries to the mode array, so number of video modes
                  * do not change.
@@ -2217,19 +2190,11 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     fNewInvocation = TRUE;
                 }
                 BOOLEAN fAlternatedIndex = FALSE;
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 #ifndef VBOX_WITH_WDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
                 if (commonFromDeviceExt(DeviceExtension)->cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-                {
-                    if (gInvocationCounter % 2)
-                        gNumVideoModes++;
-                    gInvocationCounter++;
-                }
-#else
                 {
                     if (fNewInvocation)
                         gInvocationCounter++;
@@ -2246,12 +2211,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 {
                     fNewInvocation = FALSE;
                 }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
                 dprintf(("VBoxVideo: setting special mode to xres = %d, yres = %d, bpp = %d, display = %d\n", xres, yres, bpp, display));
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
                 dprintf(("VBoxVideo: fNewInvocation = %d, fAlternatedIndex = %d\n", fNewInvocation, fAlternatedIndex));
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 #ifdef VBOX_WITH_WDDM
                 /* assign host-supplied as the most preferable */
                 gPreferredVideoMode = gNumVideoModes;
@@ -2317,10 +2279,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].VideoMemoryBitmapWidth       = xres;
                 VideoModes[gNumVideoModes].VideoMemoryBitmapHeight      = yres;
                 VideoModes[gNumVideoModes].DriverSpecificAttributeFlags = 0;
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
+
                 /* Save the mode in the list of custom modes for this display. */
                 CustomVideoModes[DeviceExtension->iDevice] = VideoModes[gNumVideoModes];
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
                 ++gNumVideoModes;
 
                 /* for the startup case, we need this mode twice due to the alternating mode number */
@@ -2335,7 +2296,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     VideoModes[gNumVideoModes].ModeIndex = gNumVideoModes + 1;
                     gNumVideoModes++;
                 }
-#ifdef VBOX_WITH_MULTIMONITOR_FIX
                 else if (!fAlternatedIndex)
                 {
                     dprintf(("VBoxVideo: making a copy of the custom mode as #%d\n", gNumVideoModes + 1));
@@ -2343,20 +2303,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     VideoModes[gNumVideoModes].ModeIndex = gNumVideoModes + 1;
                     gNumVideoModes++;
                 }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-                /* store this video mode as the last custom video mode */
-                status = VBoxVideoCmnRegSetDword(Reg, L"CustomXRes", xres);
-                if (status != NO_ERROR)
-                    dprintf(("VBoxVideo: error %d writing CustomXRes\n", status));
-                status = VBoxVideoCmnRegSetDword(Reg, L"CustomYRes", yres);
-                if (status != NO_ERROR)
-                    dprintf(("VBoxVideo: error %d writing CustomYRes\n", status));
-                status = VBoxVideoCmnRegSetDword(Reg, L"CustomBPP", bpp);
-                if (status != NO_ERROR)
-                    dprintf(("VBoxVideo: error %d writing CustomBPP\n", status));
-#else
                 /* Save the custom mode for this display. */
                 if (DeviceExtension->iDevice == 0)
                 {
@@ -2387,7 +2334,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     if (status != NO_ERROR)
                         dprintf(("VBoxVideo: error %d writing CustomBPP%d\n", status, DeviceExtension->iDevice));
                 }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
             }
             else
             {
@@ -2936,23 +2882,6 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
 
     dprintf(("VBoxVideo::vboxVideoInitCustomVideoModes\n"));
 
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-    /*
-     * Get the last custom resolution
-     */
-    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomXRes", &gCustomXRes);
-    if (status != NO_ERROR)
-        gCustomXRes = 0;
-
-    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomYRes", &gCustomYRes);
-    if (status != NO_ERROR)
-        gCustomYRes = 0;
-    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomBPP", &gCustomBPP);
-    if (status != NO_ERROR)
-        gCustomBPP = 0;
-
-   dprintf(("VBoxVideo: got stored custom resolution %dx%dx%d\n", gCustomXRes, gCustomYRes, gCustomBPP));
-#else
     /* Initialize all custom modes to the 800x600x32. */
     initVideoModeInformation(&CustomVideoModes[0], 800, 600, 32, 0, 0);
 
@@ -3026,7 +2955,6 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
             initVideoModeInformation(&CustomVideoModes[iCustomMode], CustomXRes, CustomYRes, CustomBPP, 0, 0);
         }
     }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
     VBoxVideoCmnRegFini(Reg);
 }
