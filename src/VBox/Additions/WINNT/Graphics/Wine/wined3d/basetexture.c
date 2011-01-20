@@ -41,7 +41,7 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -56,7 +56,7 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
     hr = resource_init((IWineD3DResource *)texture, resource_type, device,
             size, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
-            , shared_handle, pvClientMem
+            , shared_handle, pavClientMem ? pavClientMem[0] : NULL /* <- @todo: should be always NULL ? */
 #endif
             );
     if (FAILED(hr))

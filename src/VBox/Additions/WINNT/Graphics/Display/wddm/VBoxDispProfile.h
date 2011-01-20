@@ -23,7 +23,7 @@
 #define VBOXDISPPROFILE_GET_TIME_NANO() RTTimeNanoTS()
 #define VBOXDISPPROFILE_GET_TIME_MILLI() RTTimeMilliTS()
 #define VBOXDISPPROFILE_DUMP(_m) do {\
-        vboxVDbgDoMpPrintF _m; \
+        LogRel (_m); \
     } while (0)
 
 class VBoxDispProfileEntry
@@ -58,7 +58,7 @@ public:
 //        VBOXDISPPROFILE_DUMP((pDevice, "Entry '%s': calls(%d), time: nanos(%I64u), micros(%I64u), millis(%I64u)\n",
 //                m_pName, m_cCalls,
 //                m_cTime, m_cTime/1000, m_cTime/1000000));
-        VBOXDISPPROFILE_DUMP((pDevice, "%s\t%d\t%I64u\t%I64u\t%I64u\n",
+        VBOXDISPPROFILE_DUMP(("%s\t%d\t%I64u\t%I64u\t%I64u\n",
                 m_pName, m_cCalls,
                 m_cTime, m_cTime/1000, m_cTime/1000000));
     }
@@ -98,13 +98,13 @@ public:
 
     void dump(const PVBOXWDDMDISP_DEVICE pDevice)
     {
-        VBOXDISPPROFILE_DUMP((pDevice, ">>>> Start of VBox Disp Dump '%s': num entries(%d) >>>>>\n", m_pName, m_cEntries));
-        VBOXDISPPROFILE_DUMP((pDevice, "Name\tCalls\tNanos\tMicros\tMillis\n"));
+        VBOXDISPPROFILE_DUMP((">>>> Start of VBox Disp Dump '%s': num entries(%d) >>>>>\n", m_pName, m_cEntries));
+        VBOXDISPPROFILE_DUMP(("Name\tCalls\tNanos\tMicros\tMillis\n"));
         for (uint32_t i = 0; i < m_cEntries; ++i)
         {
             m_Entries[i].dump(pDevice);
         }
-        VBOXDISPPROFILE_DUMP((pDevice, "<<<< Endi of VBox Disp Dump '%s' <<<<<\n", m_pName));
+        VBOXDISPPROFILE_DUMP(("<<<< Endi of VBox Disp Dump '%s' <<<<<\n", m_pName));
     }
 
 private:

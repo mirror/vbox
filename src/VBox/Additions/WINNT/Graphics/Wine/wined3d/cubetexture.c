@@ -442,7 +442,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -495,7 +495,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
     hr = basetexture_init((IWineD3DBaseTextureImpl *)texture, levels, WINED3DRTYPE_CUBETEXTURE,
             device, 0, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
-            , shared_handle, pvClientMem
+            , shared_handle, pavClientMem
 #endif
             );
     if (FAILED(hr))
@@ -546,7 +546,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
 #ifdef VBOX_WITH_WDDM
             hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_w,
                     format, usage, pool, i /* Level */, j, &texture->surfaces[j][i]
-                    , NULL, pvClientMem
+                    , NULL, pavClientMem ? pavClientMem[i * 6 + j] : NULL
                 );
 #else
             hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_w,

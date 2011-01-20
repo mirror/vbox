@@ -24,13 +24,13 @@
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_CREATETEXTURE(IDirect3DDevice9Ex *iface,
             UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
             D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle,
-            void *pvClientMem);
+            void **pavClientMem);
 typedef FNVBOXWINEEXD3DDEV9_CREATETEXTURE *PFNVBOXWINEEXD3DDEV9_CREATETEXTURE;
 
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE(IDirect3DDevice9Ex *iface,
             UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format, 
             D3DPOOL pool, IDirect3DCubeTexture9 **texture, HANDLE *shared_handle,
-            void *pvClientMem);
+            void **pavClientMem);
 typedef FNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE *PFNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE;
 
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_FLUSH(IDirect3DDevice9Ex *iface);
@@ -46,13 +46,13 @@ extern "C"
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
             UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
             D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle,
-            void *pvClientMem); /* <- extension arg to pass in the client memory buffer,
+            void **pavClientMem); /* <- extension arg to pass in the client memory buffer,
                                  *    applicable ONLY for SYSMEM textures */
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateCubeTexture(IDirect3DDevice9Ex *iface,
             UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format,
             D3DPOOL pool, IDirect3DCubeTexture9 **texture, HANDLE *shared_handle,
-            void *pvClientMem); /* <- extension arg to pass in the client memory buffer,
+            void **pavClientMem); /* <- extension arg to pass in the client memory buffer,
                                  *    applicable ONLY for SYSMEM textures */
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface); /* perform glFlush */

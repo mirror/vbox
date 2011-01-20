@@ -443,7 +443,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -514,7 +514,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     hr = basetexture_init((IWineD3DBaseTextureImpl *)texture, levels, WINED3DRTYPE_TEXTURE,
             device, 0, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
-            , shared_handle, pvClientMem
+            , shared_handle, pavClientMem
 #endif
         );
     if (FAILED(hr))
@@ -592,7 +592,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
                 , NULL /* <- we first create a surface in an everage "non-shared" fashion and initialize its share properties later (see below)
                         * this is done this way because the surface does not have its parent (texture) setup properly
                         * thus we can not initialize texture at this stage */
-                , pvClientMem);
+                , pavClientMem ? pavClientMem[i] : NULL);
 
 #else
         /* Use the callback to create the texture surface. */

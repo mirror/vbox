@@ -400,7 +400,7 @@ HRESULT texture_init(IDirect3DTexture9Impl *texture, IDirect3DDevice9Impl *devic
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -415,7 +415,7 @@ HRESULT texture_init(IDirect3DTexture9Impl *texture, IDirect3DDevice9Impl *devic
             usage & WINED3DUSAGE_MASK, wined3dformat_from_d3dformat(format), pool,
             &texture->wineD3DTexture, (IUnknown *)texture, &d3d9_texture_wined3d_parent_ops
             , shared_handle
-            , pvClientMem);
+            , pavClientMem);
 #else
     hr = IWineD3DDevice_CreateTexture(device->WineD3DDevice, width, height, levels,
             usage & WINED3DUSAGE_MASK, wined3dformat_from_d3dformat(format), pool,

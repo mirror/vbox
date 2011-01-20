@@ -767,7 +767,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface)
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
         D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle,
-        void *pvClientMem) /* <- extension arg to pass in the client memory buffer,
+        void **pavClientMem) /* <- extension arg to pass in the client memory buffer,
                             *    applicable ONLY for SYSMEM textures */
 {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
@@ -786,7 +786,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *ifac
 
     hr = texture_init(object, This, width, height, levels, usage, format, pool
         , shared_handle
-        , pvClientMem
+        , pavClientMem
             );
     if (FAILED(hr))
     {
@@ -811,7 +811,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DP
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateCubeTexture(IDirect3DDevice9Ex *iface,
             UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format,
             D3DPOOL pool, IDirect3DCubeTexture9 **texture, HANDLE *shared_handle,
-            void *pvClientMem) /* <- extension arg to pass in the client memory buffer,
+            void **pavClientMem) /* <- extension arg to pass in the client memory buffer,
                                 *    applicable ONLY for SYSMEM textures */
 {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
@@ -828,7 +828,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateCubeTexture(IDirect3DDevice9Ex *
         return D3DERR_OUTOFVIDEOMEMORY;
     }
 
-    hr = cubetexture_init(object, This, edge_length, levels, usage, format, pool, shared_handle, pvClientMem);
+    hr = cubetexture_init(object, This, edge_length, levels, usage, format, pool, shared_handle, pavClientMem);
     if (FAILED(hr))
     {
         WARN("Failed to initialize cube texture, hr %#x.\n", hr);

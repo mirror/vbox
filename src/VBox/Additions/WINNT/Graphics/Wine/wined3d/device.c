@@ -880,7 +880,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateTexture(IWineD3DDevice *iface,
         IWineD3DTexture **ppTexture, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -903,7 +903,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateTexture(IWineD3DDevice *iface,
     hr = texture_init(object, Width, Height, Levels, This, Usage, Format, Pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
             , shared_handle
-            , pvClientMem
+            , pavClientMem
 #endif
             );
     if (FAILED(hr))
@@ -993,7 +993,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateCubeTexture(IWineD3DDevice *iface
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         )
 {
@@ -1012,7 +1012,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateCubeTexture(IWineD3DDevice *iface
     hr = cubetexture_init(object, EdgeLength, Levels, This, Usage, Format, Pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
             , shared_handle
-            , pvClientMem
+            , pavClientMem
 #endif
         );
 

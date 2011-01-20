@@ -267,10 +267,101 @@ typedef struct VBOXWDDMDISP_OVERLAY
     PVBOXWDDMDISP_RESOURCE *pResource;
 } VBOXWDDMDISP_OVERLAY, *PVBOXWDDMDISP_OVERLAY;
 
+#define VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc) (((pRc)->cAllocations)/6)
+#define VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, idx) ((D3DCUBEMAP_FACES)(D3DCUBEMAP_FACE_POSITIVE_X+(idx)%VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc)))
+#define VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, idx) ((idx)%VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc))
+
 #ifdef VBOX_WITH_CRHGSMI
 HRESULT vboxUhgsmiGlobalSetCurrent();
 HRESULT vboxUhgsmiGlobalClearCurrent();
 #endif
+
+DECLINLINE(PVBOXWDDMDISP_SWAPCHAIN) vboxWddmSwapchainForAlloc(PVBOXWDDMDISP_ALLOCATION pAlloc)
+{
+    return pAlloc->pSwapchain;
+}
+
+DECLINLINE(UINT) vboxWddmSwapchainIdxFb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
+{
+    return (pSwapchain->iBB + pSwapchain->cRTs - 1) % pSwapchain->cRTs;
+}
+
+/* if swapchain contains only one surface returns this surface */
+DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetBb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
+{
+    if (pSwapchain->cRTs)
+    {
+        Assert(pSwapchain->iBB < pSwapchain->cRTs);
+        return &pSwapchain->aRTs[pSwapchain->iBB];
+    }
+    return NULL;
+}
+
+DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetFb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
+{
+    if (pSwapchain->cRTs)
+    {
+        UINT iFb = vboxWddmSwapchainIdxFb(pSwapchain);
+        return &pSwapchain->aRTs[iFb];
+    }
+    return NULL;
+}
+
+/* on success increments the surface ref counter,
+ * i.e. one must call pSurf->Release() once the surface is not needed*/
+DECLINLINE(HRESULT) vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3DSurface9 **ppSurf)
+{
+    HRESULT hr = S_OK;
+    Assert(pRc->cAllocations > iAlloc);
+    switch (pRc->aAllocations[0].enmD3DIfType)
+    {
+        case VBOXDISP_D3DIFTYPE_SURFACE:
+        {
+            IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pRc->aAllocations[iAlloc].pD3DIf;
+            Assert(pD3DIfSurf);
+            pD3DIfSurf->AddRef();
+            *ppSurf = pD3DIfSurf;
+            break;
+        }
+        case VBOXDISP_D3DIFTYPE_TEXTURE:
+        {
+            Assert(pRc->cAllocations == 1); /* <- vboxWddmSurfGet is typically used in Blt & ColorFill functions
+                                             * in this case, if texture is used as a destination,
+                                             * we should update sub-layers as well which is not done currently
+                                             * so for now check vboxWddmSurfGet is used for one-level textures */
+            IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
+            IDirect3DSurface9 *pSurfaceLevel;
+            Assert(pD3DIfTex);
+            hr = pD3DIfTex->GetSurfaceLevel(iAlloc, &pSurfaceLevel);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                *ppSurf = pSurfaceLevel;
+            }
+            break;
+        }
+        case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+        {
+            Assert(0);
+            IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pRc->aAllocations[0].pD3DIf;
+            IDirect3DSurface9 *pSurfaceLevel;
+            Assert(pD3DIfCubeTex);
+            hr = pD3DIfCubeTex->GetCubeMapSurface(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, iAlloc),
+                                                  VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, iAlloc), &pSurfaceLevel);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                *ppSurf = pSurfaceLevel;
+            }
+            break;
+        }
+        default:
+            Assert(0);
+            hr = E_FAIL;
+            break;
+    }
+    return hr;
+}
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 #ifdef VBOXDISP_EARLYCREATEDEVICE
