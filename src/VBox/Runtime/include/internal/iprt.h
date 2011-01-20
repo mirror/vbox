@@ -39,11 +39,15 @@
  && defined(MODULE) \
  && !defined(RT_NO_EXPORT_SYMBOL)
 # define bool linux_bool /* see r0drv/linux/the-linux-kernel.h */
-# ifndef AUTOCONF_INCLUDED
-#  include <linux/autoconf.h>
+# include <linux/version.h>
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+#  include <generated/autoconf.h>
+# else
+#  ifndef AUTOCONF_INCLUDED
+#   include <linux/autoconf.h>
+#  endif
 # endif
 # if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
-#  include <linux/version.h>
 #  define MODVERSIONS
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 71)
 #   include <linux/modversions.h>

@@ -34,10 +34,14 @@
 #include <iprt/types.h>
 #define bool linux_bool
 
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
 #include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+# include <generated/autoconf.h>
+#else
+# ifndef AUTOCONF_INCLUDED
+#  include <linux/autoconf.h>
+# endif
+#endif
 
 /* We only support 2.4 and 2.6 series kernels */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)

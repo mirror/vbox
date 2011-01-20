@@ -101,8 +101,13 @@ RT_C_DECLS_END
 #  define true linux_true
 #  define false linux_false
 #  define uintptr_t linux_uintptr_t
-#  ifndef AUTOCONF_INCLUDED
-#   include <linux/autoconf.h>
+#  include <linux/version.h>
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+#   include <generated/autoconf.h>
+#  else
+#   ifndef AUTOCONF_INCLUDED
+#    include <linux/autoconf.h>
+#   endif
 #  endif
 #  include <linux/types.h>
 #  include <linux/stddef.h>
