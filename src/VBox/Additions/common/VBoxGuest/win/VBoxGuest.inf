@@ -1,7 +1,7 @@
 ;
 ; INF file for installing the VirtualBox Windows guest driver
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2011 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -17,7 +17,6 @@ Signature="$WINDOWS NT$"
 Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Provider=%ORACLE%
-LayoutFile=layout.inf
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxGuest.cat
 
