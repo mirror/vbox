@@ -8,7 +8,7 @@ Function ExtractFiles
   Push $0
   StrCpy "$0" "$INSTDIR\$%BUILD_TARGET_ARCH%"
 
-!ifdef VBOX_WITH_LICENSE_INSTALL_RTF
+!if $%VBOX_WITH_LICENSE_INSTALL_RTF% == "1"
   FILE "/oname=$0\${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
 !endif
 

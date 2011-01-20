@@ -15,7 +15,7 @@ Function ${un}UninstallCommon
   Delete /REBOOTOK "$INSTDIR\VBoxVideo.cat"
 !endif
 
-!ifdef VBOX_WITH_LICENSE_INSTALL_RTF
+!if $%VBOX_WITH_LICENSE_INSTALL_RTF% == "1"
   Delete /REBOOTOK "$INSTDIR\${LICENSE_FILE_RTF}"
 !endif
 
