@@ -78,7 +78,7 @@ Function ${un}Uninstall
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
 nt4:
 
-  Call ${un}NT_Uninstall
+  Call ${un}NT4_Uninstall
   goto common
 !endif
 
@@ -135,7 +135,7 @@ Function ${un}UninstallInstDir
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
 nt4:
 
-  Call ${un}NT_UninstallInstDir
+  Call ${un}NT4_UninstallInstDir
   goto common
 !endif
 
