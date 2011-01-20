@@ -49,10 +49,14 @@
  *    Gareth Hughes <gareth@valinux.com>
  */
 
-#ifndef AUTOCONF_INCLUDED
-# include <linux/autoconf.h>
-#endif
 #include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+# include <generated/autoconf.h>
+#else
+# ifndef AUTOCONF_INCLUDED
+#  include <linux/autoconf.h>
+# endif
+#endif
 #include <linux/module.h>
 #include "version-generated.h"
 
