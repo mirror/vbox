@@ -148,7 +148,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
     if (!pReq)
         return VERR_NO_MEMORY;
 
-    Assert(cbData == sizeof(VDIOBACKENDREQ));
+    Assert(cbData == (size_t)RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
     pReq->enmTxDir    = enmTxDir;
     pReq->cbTransfer  = cbTransfer;
     pReq->off         = off;
@@ -161,7 +161,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
         pReq->aSegs[i].pvSeg = paSegs[i].pvSeg;
         pReq->aSegs[i].cbSeg = paSegs[i].cbSeg;
     }
-    RTCircBufReleaseWriteBlock(pIoBackend->pRequestRing, sizeof(VDIOBACKENDREQ));
+    RTCircBufReleaseWriteBlock(pIoBackend->pRequestRing, RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
     vdIoBackendMemThreadPoke(pIoBackend);
 
     return VINF_SUCCESS;
