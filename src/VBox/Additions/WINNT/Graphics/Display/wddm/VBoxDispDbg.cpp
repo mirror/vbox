@@ -1,8 +1,9 @@
-#include <iprt/asm.h>
+#include "VBoxDispD3DCmn.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "VBoxDispD3DCmn.h"
+#include <iprt/asm.h>
 
 #ifdef VBOXWDDMDISP_DEBUG
 bool g_bVBoxVDbgFDumpSetTexture = false;
