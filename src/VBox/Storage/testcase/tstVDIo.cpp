@@ -125,9 +125,24 @@ typedef struct VDIOTEST
     size_t      cbBlkIo;
     /** Number of bytes to transfer. */
     size_t      cbIo;
+    /** Chance in percent to get a write. */
     unsigned    uWriteChance;
+    /** Pointer to the I/O data generator. */
     PVDIORND    pIoRnd;
-    uint64_t    offNext;
+    /** Data dependent on the I/O mode (sequential or random). */
+    union
+    {
+        /** Next offset for seuential access. */
+        uint64_t    offNext;
+        /** Data for random acess. */
+        struct
+        {
+            /** Number of valid entries in the bitmap. */
+            uint32_t cBlocks;
+            /** Pointer to the bitmap marking accessed blocks. */
+            uint8_t *pbMapAccessed;
+        } Rnd;
+    } u;
 } VDIOTEST, *PVDIOTEST;
 
 /**
@@ -229,6 +244,7 @@ static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG pa
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 
 /* create action */
 const VDSCRIPTARGDESC g_aArgCreate[] =
@@ -299,6 +315,14 @@ const VDSCRIPTARGDESC g_aArgSleep[] =
     {"time",     't', VDSCRIPTARGTYPE_UNSIGNED_NUMBER,   VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
+/* Dump memory file */
+const VDSCRIPTARGDESC g_aArgDumpFile[] =
+{
+    /* pcszName  chId enmType                            fFlags */
+    {"file",     'f', VDSCRIPTARGTYPE_STRING,            VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"path",     'p', VDSCRIPTARGTYPE_STRING,            VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
 const VDSCRIPTACTION g_aScriptActions[] =
 {
     /* pcszAction    paArgDesc            cArgDescs                        pfnHandler */
@@ -311,6 +335,7 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"iorngcreate",  g_aArgIoRngCreate,   RT_ELEMENTS(g_aArgIoRngCreate),  vdScriptHandlerIoRngCreate},
     {"iorngdestroy", NULL,                0,                               vdScriptHandlerIoRngDestroy},
     {"sleep",        g_aArgSleep,         RT_ELEMENTS(g_aArgSleep),        vdScriptHandlerSleep},
+    {"dumpfile",     g_aArgDumpFile,      RT_ELEMENTS(g_aArgDumpFile),     vdScriptHandlerDumpFile}
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -334,6 +359,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, unsigned uReadChance);
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
+static void tstVDIoTestDestroy(PVDIOTEST pIoTest);
 static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq);
 static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq);
 static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq);
@@ -658,6 +684,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
             }
             else
                 rc = VERR_NO_MEMORY;
+
+            tstVDIoTestDestroy(&IoTest);
         }
     }
 
@@ -812,6 +840,54 @@ static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG pa
     }
 
     rc = RTThreadSleep(cMillies);
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszFile = NULL;
+    const char *pcszPathToDump = NULL;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'f':
+            {
+                pcszFile = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'p':
+            {
+                pcszPathToDump = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    /* Check for the file. */
+    PVDFILE pIt = NULL;
+    bool fFound = false;
+    RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
+    {
+        if (!RTStrCmp(pIt->pszName, pcszFile))
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    if (fFound)
+    {
+        RTPrintf("Dumping memory file %s to %s, this might take some time\n", pcszFile, pcszPathToDump);
+        rc = VDMemDiskWriteToFile(pIt->pMemDisk, pcszPathToDump);
+    }
+    else
+        rc = VERR_FILE_NOT_FOUND;
+
     return rc;
 }
 
@@ -1090,6 +1166,8 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, unsigned uReadChance)
 {
+    int rc = VINF_SUCCESS;
+
     pIoTest->fRandomAccess = fRandomAcc;
     pIoTest->cbIo          = cbIo;
     pIoTest->cbBlkIo       = cbBlkSize;
@@ -1097,8 +1175,26 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
     pIoTest->offEnd        = offEnd;
     pIoTest->uWriteChance  = uWriteChance;
     pIoTest->pIoRnd        = pGlob->pIoRnd;
-    pIoTest->offNext       = pIoTest->offEnd < pIoTest->offStart ? pIoTest->offEnd - cbBlkSize : 0;
-    return VINF_SUCCESS;
+    if (fRandomAcc)
+    {
+        pIoTest->u.Rnd.cBlocks = cbIo / cbBlkSize + ((cbIo % cbBlkSize) ? 1 : 0);
+        pIoTest->u.Rnd.pbMapAccessed = (uint8_t *)RTMemAllocZ(pIoTest->u.Rnd.cBlocks / 8
+                                                              + ((pIoTest->u.Rnd.cBlocks % 8)
+                                                                ? 1
+                                                                : 0));
+        if (!pIoTest->u.Rnd.pbMapAccessed)
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        pIoTest->u.offNext = pIoTest->offEnd < pIoTest->offStart ? pIoTest->offEnd - cbBlkSize : 0;
+
+    return rc;
+}
+
+static void tstVDIoTestDestroy(PVDIOTEST pIoTest)
+{
+    if (pIoTest->fRandomAccess)
+        RTMemFree(pIoTest->u.Rnd.pbMapAccessed);
 }
 
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest)
@@ -1135,7 +1231,6 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
         pIoReq->cbReq = RT_MIN(pIoTest->cbBlkIo, pIoTest->cbIo);
         pIoTest->cbIo -= pIoReq->cbReq;
         pIoReq->DataSeg.cbSeg = pIoReq->cbReq;
-        pIoReq->off           = pIoTest->offNext;
 
         if (pIoReq->enmTxDir == VDIOREQTXDIR_WRITE)
         {
@@ -1156,13 +1251,40 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
 
             if (pIoTest->fRandomAccess)
             {
-                /** @todo */
+                int idx = -1;
+
+                idx = ASMBitFirstClear(pIoTest->u.Rnd.pbMapAccessed, pIoTest->u.Rnd.cBlocks);
+
+                /* In case this is the last request we don't need to search further. */
+                if (pIoTest->cbIo > 0)
+                {
+                    int idxIo;
+                    idxIo = VDIoRndGetU32Ex(pIoTest->pIoRnd, idx, pIoTest->u.Rnd.cBlocks - 1);
+
+                    /*
+                     * If the bit is marked free use it, otherwise search for the next free bit
+                     * and if that doesn't work use the first free bit.
+                     */
+                    if (ASMBitTest(pIoTest->u.Rnd.pbMapAccessed, idxIo))
+                    {
+                        idxIo = ASMBitNextClear(pIoTest->u.Rnd.pbMapAccessed, pIoTest->u.Rnd.cBlocks, idxIo);
+                        if (idxIo != -1)
+                            idx = idxIo;
+                    }
+                    else
+                        idx = idxIo;
+                }
+
+                Assert(idx != -1);
+                pIoReq->off = idx * pIoTest->cbBlkIo;
+                ASMBitSet(pIoTest->u.Rnd.pbMapAccessed, idx);
             }
             else
             {
-                pIoTest->offNext = pIoTest->offEnd < pIoTest->offStart
-                                   ? RT_MAX(pIoTest->offEnd, pIoTest->offNext - pIoTest->cbBlkIo)
-                                   : RT_MIN(pIoTest->offEnd, pIoTest->offNext + pIoTest->cbBlkIo);
+                pIoReq->off        = pIoTest->u.offNext;
+                pIoTest->u.offNext = pIoTest->offEnd < pIoTest->offStart
+                                     ? RT_MAX(pIoTest->offEnd, pIoTest->u.offNext - pIoTest->cbBlkIo)
+                                     : RT_MIN(pIoTest->offEnd, pIoTest->u.offNext + pIoTest->cbBlkIo);
             }
             pIoReq->fOutstanding = true;
         }
