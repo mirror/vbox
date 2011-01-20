@@ -1,3 +1,41 @@
+/** @file
+ * VBoxVideo Display D3D User mode dll
+ *
+ * Copyright (C) 2011 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+/* @todo: move this to VBoxDispD3DCmn.h ? */
+#   if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
+#       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
+#       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
+#       define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
+#       define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandset      _interlockedbittestandset_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandreset    _interlockedbittestandreset_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
+#       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
+#       pragma warning(disable : 4163)
+#       include <windows.h>
+#       pragma warning(default : 4163)
+#       undef  _InterlockedExchange
+#       undef  _InterlockedExchangeAdd
+#       undef  _InterlockedCompareExchange
+#       undef  _InterlockedAddLargeStatistic
+#       undef  _interlockedbittestandset
+#       undef  _interlockedbittestandreset
+#       undef  _interlockedbittestandset64
+#       undef  _interlockedbittestandreset64
+#   else
+#       include <windows.h>
+#   endif
+
 #include "VBoxDispD3DCmn.h"
 
 #include <stdio.h>
