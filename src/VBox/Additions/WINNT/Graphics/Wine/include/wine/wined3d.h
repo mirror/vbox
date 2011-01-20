@@ -7407,7 +7407,7 @@ typedef struct IWineD3DDeviceVtbl {
         const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         );
 
@@ -7448,7 +7448,7 @@ typedef struct IWineD3DDeviceVtbl {
         const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         );
 
@@ -8114,14 +8114,14 @@ interface IWineD3DDevice {
 #endif
 #define IWineD3DDevice_CreateRendertargetView(This,resource,parent,rendertarget_view) (This)->lpVtbl->CreateRendertargetView(This,resource,parent,rendertarget_view)
 #ifdef VBOX_WITH_WDDM
-#define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem)
+#define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem)
 #else
 #define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops)
 #endif
 #define IWineD3DDevice_CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops)
 #define IWineD3DDevice_CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops) (This)->lpVtbl->CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops)
 #ifdef VBOX_WITH_WDDM
-#define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem)
+#define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem)
 #else
 #define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops)
 #endif

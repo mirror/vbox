@@ -1951,7 +1951,7 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         ) DECLSPEC_HIDDEN;
 HRESULT basetexture_set_autogen_filter_type(IWineD3DBaseTexture *iface,
@@ -1982,7 +1982,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         ) DECLSPEC_HIDDEN;
 
@@ -2005,7 +2005,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         ) DECLSPEC_HIDDEN;
 

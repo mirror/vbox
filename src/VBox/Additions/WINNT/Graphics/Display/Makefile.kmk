@@ -97,6 +97,8 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispMp.cpp \
 	wddm/VBoxScreen.cpp \
 	wddm/VBoxDispMpTst.cpp \
+	wddm/VBoxDispKmt.cpp \
+	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxDispD3D.rc \
 	wddm/VBoxDispD3D.def
 #ifdef VBOX_WITH_CRHGSMI
@@ -131,6 +133,8 @@ VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
 VBoxCrHgsmi_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA
 VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
+	wddm/VBoxDispKmt.cpp \
+	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxUhgsmiKmt.cpp
 VBoxCrHgsmi_SDKS        = WINDDKWLH
 

@@ -416,7 +416,7 @@ HRESULT cubetexture_init(IDirect3DCubeTexture9Impl *texture, IDirect3DDevice9Imp
         UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         ) DECLSPEC_HIDDEN;
 
@@ -444,7 +444,7 @@ HRESULT texture_init(IDirect3DTexture9Impl *texture, IDirect3DDevice9Impl *devic
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
 #ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
-        , void *pvClientMem
+        , void **pavClientMem
 #endif
         ) DECLSPEC_HIDDEN;
 
