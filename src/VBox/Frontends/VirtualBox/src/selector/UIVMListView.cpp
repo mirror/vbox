@@ -593,10 +593,17 @@ QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
     p.setPen(Qt::white);
     p.setFont(font());
     p.drawText(QRect(margin, margin + osTypeSize.height() + space,  s.width() - 2 * margin, nameSize.height()), Qt::AlignCenter, name);
-#ifdef Q_WS_MAC
-    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-    p.fillRect(image.rect(), QColor(0, 0, 0, 177));
-#endif /* Q_WS_MAC */
+	/* Transparent icons are not supported on all platforms. */
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+# ifdef Q_WS_WIN
+    /* Todo: check Win XP, Vista, 2003 */
+    if (QSysInfo::windowsVersion() == QSysInfo::WV_WINDOWS7)
+# endif /* Q_WS_WIN */
+	{
+	    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+		p.fillRect(image.rect(), QColor(0, 0, 0, 177));
+	}
+#endif /* defined(Q_WS_MAC) || defined(Q_WS_WIN) */
     p.end();
     /* Some Qt versions seems buggy in creating QPixmap from QImage. Seems they
      * don't clear the background. */
