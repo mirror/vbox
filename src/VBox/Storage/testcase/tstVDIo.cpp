@@ -1,4 +1,4 @@
-/* $Id  */
+/* $Id$ */
 /** @file
  *
  * VBox HDD container test utility - I/O replay.
@@ -109,6 +109,8 @@ typedef struct VDIOREQ
     RTSGSEG   DataSeg;
     /** Flag whether the request is outstanding or not. */
     volatile bool fOutstanding;
+    /** Buffer to use for reads. */
+    void          *pvBufRead;
 } VDIOREQ, *PVDIOREQ;
 
 /**
@@ -125,7 +127,7 @@ typedef struct VDIOTEST
     /** Block size. */
     size_t      cbBlkIo;
     /** Number of bytes to transfer. */
-    size_t      cbIo;
+    uint64_t    cbIo;
     /** Chance in percent to get a write. */
     unsigned    uWriteChance;
     /** Pointer to the I/O data generator. */
@@ -142,6 +144,8 @@ typedef struct VDIOTEST
             uint32_t cBlocks;
             /** Pointer to the bitmap marking accessed blocks. */
             uint8_t *pbMapAccessed;
+            /** Number of unaccessed blocks. */
+            uint32_t cBlocksLeft;
         } Rnd;
     } u;
 } VDIOTEST, *PVDIOTEST;
@@ -356,7 +360,7 @@ static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
     return VINF_SUCCESS;
 }
 
-static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, size_t cbIo,
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, unsigned uReadChance);
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
@@ -561,10 +565,20 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
             {
                 uint64_t NanoTS = RTTimeNanoTS();
 
+                /* Init requests. */
                 for (unsigned i = 0; i < cMaxTasksOutstanding; i++)
+                {
                     paIoReq[i].idx = i;
+                    paIoReq[i].pvBufRead = RTMemAlloc(cbBlkSize);
+                    if (!paIoReq[i].pvBufRead)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                }
 
-                while (tstVDIoTestRunning(&IoTest))
+                while (   tstVDIoTestRunning(&IoTest)
+                       && RT_SUCCESS(rc))
                 {
                     bool fTasksOutstanding = false;
                     unsigned idx = 0;
@@ -587,7 +601,6 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                         case VDIOREQTXDIR_READ:
                                         {
                                             rc = VDRead(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
-                                            RTMemFree(paIoReq[idx].DataSeg.pvSeg);
                                             break;
                                         }
                                         case VDIOREQTXDIR_WRITE:
@@ -612,8 +625,6 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                         {
                                             rc = VDAsyncRead(pGlob->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
                                                              tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
-                                            if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                                                RTMemFree(paIoReq[idx].DataSeg.pvSeg);
                                             break;
                                         }
                                         case VDIOREQTXDIR_WRITE:
@@ -1169,7 +1180,7 @@ static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, voi
     return rc;
 }
 
-static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, size_t cbIo,
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, unsigned uReadChance)
 {
@@ -1182,9 +1193,15 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
     pIoTest->offEnd        = offEnd;
     pIoTest->uWriteChance  = uWriteChance;
     pIoTest->pIoRnd        = pGlob->pIoRnd;
+
     if (fRandomAcc)
     {
-        pIoTest->u.Rnd.cBlocks = cbIo / cbBlkSize + ((cbIo % cbBlkSize) ? 1 : 0);
+        uint64_t cbRange = pIoTest->offEnd < pIoTest->offStart
+                           ? pIoTest->offStart - pIoTest->offEnd
+                           : pIoTest->offEnd - pIoTest->offStart;
+
+        pIoTest->u.Rnd.cBlocks = cbRange / cbBlkSize + ((cbRange % cbBlkSize) ? 1 : 0);
+        pIoTest->u.Rnd.cBlocksLeft = pIoTest->u.Rnd.cBlocks;
         pIoTest->u.Rnd.pbMapAccessed = (uint8_t *)RTMemAllocZ(pIoTest->u.Rnd.cBlocks / 8
                                                               + ((pIoTest->u.Rnd.cBlocks % 8)
                                                                 ? 1
@@ -1247,9 +1264,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
         else
         {
             /* Read */
-            pIoReq->DataSeg.pvSeg = RTMemAlloc(pIoReq->cbReq);
-            if (!pIoReq->DataSeg.pvSeg)
-                rc = VERR_NO_MEMORY;
+            pIoReq->DataSeg.pvSeg = pIoReq->pvBufRead;
         }
 
         if (RT_SUCCESS(rc))
@@ -1263,7 +1278,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
                 idx = ASMBitFirstClear(pIoTest->u.Rnd.pbMapAccessed, pIoTest->u.Rnd.cBlocks);
 
                 /* In case this is the last request we don't need to search further. */
-                if (pIoTest->cbIo > 0)
+                if (pIoTest->u.Rnd.cBlocksLeft > 1)
                 {
                     int idxIo;
                     idxIo = VDIoRndGetU32Ex(pIoTest->pIoRnd, idx, pIoTest->u.Rnd.cBlocks - 1);
@@ -1284,14 +1299,31 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
 
                 Assert(idx != -1);
                 pIoReq->off = idx * pIoTest->cbBlkIo;
-                ASMBitSet(pIoTest->u.Rnd.pbMapAccessed, idx);
+                pIoTest->u.Rnd.cBlocksLeft--;
+                if (!pIoTest->u.Rnd.cBlocksLeft)
+                {
+                    /* New round, clear everthing. */
+                    ASMBitClearRange(pIoTest->u.Rnd.pbMapAccessed, 0, pIoTest->u.Rnd.cBlocks);
+                    pIoTest->u.Rnd.cBlocksLeft = pIoTest->u.Rnd.cBlocks;
+                }
+                else
+                    ASMBitSet(pIoTest->u.Rnd.pbMapAccessed, idx);
             }
             else
             {
-                pIoReq->off        = pIoTest->u.offNext;
-                pIoTest->u.offNext = pIoTest->offEnd < pIoTest->offStart
-                                     ? RT_MAX(pIoTest->offEnd, pIoTest->u.offNext - pIoTest->cbBlkIo)
-                                     : RT_MIN(pIoTest->offEnd, pIoTest->u.offNext + pIoTest->cbBlkIo);
+                pIoReq->off = pIoTest->u.offNext;
+                if (pIoTest->offEnd < pIoTest->offStart)
+                {
+                    pIoTest->u.offNext = pIoTest->u.offNext == 0
+                                         ? pIoTest->offEnd - pIoTest->cbBlkIo
+                                         : RT_MAX(pIoTest->offEnd, pIoTest->u.offNext - pIoTest->cbBlkIo);
+                }
+                else
+                {
+                    pIoTest->u.offNext = pIoTest->u.offNext + pIoTest->cbBlkIo >= pIoTest->offEnd
+                                         ? 0
+                                         : RT_MIN(pIoTest->offEnd, pIoTest->u.offNext + pIoTest->cbBlkIo);
+                }
             }
             pIoReq->fOutstanding = true;
         }
