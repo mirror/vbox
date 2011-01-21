@@ -1332,10 +1332,22 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     /*
-     * Do we have a name but no UUID?
+     * Do we have a UUID?
      */
-    if (vmName && uuidVM.isEmpty())
+    if (!uuidVM.isEmpty())
     {
+        rc = pVirtualBox->FindMachine(uuidVM.toUtf16().raw(), pMachine.asOutParam());
+        if (FAILED(rc) || !pMachine)
+        {
+            RTPrintf("Error: machine with the given ID not found!\n");
+            goto leave;
+        }
+    }
+    else if (vmName)
+    {
+        /*
+         * Do we have a name but no UUID?
+         */
         rc = pVirtualBox->FindMachine(Bstr(vmName).raw(), pMachine.asOutParam());
         if ((rc == S_OK) && pMachine)
         {
