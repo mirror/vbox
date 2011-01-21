@@ -4212,7 +4212,8 @@ QString VBoxGlobal::insertKeyToActionText(const QString &strText, const QString 
 #else
     QString pattern("%1 \tHost+%2");
 #endif
-    if (strKey.isEmpty())
+    if (   strKey.isEmpty()
+        || strKey.compare("None", Qt::CaseInsensitive) == 0)
         return strText;
     else
         return pattern.arg(strText).arg(QKeySequence(strKey).toString(QKeySequence::NativeText));
