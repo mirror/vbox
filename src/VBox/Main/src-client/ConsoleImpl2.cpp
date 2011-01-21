@@ -3715,7 +3715,6 @@ int Console::configNetwork(const char *pszDevice,
                 INetCfg              *pNc;
                 ComPtr<INetCfgComponent> pAdaptorComponent;
                 LPWSTR                pszApp;
-                int rc = VERR_INTNET_FLT_IF_NOT_FOUND;
 
                 hrc = VBoxNetCfgWinQueryINetCfg(FALSE /*fGetWriteLock*/,
                                                 L"VirtualBox",
@@ -3783,7 +3782,6 @@ int Console::configNetwork(const char *pszDevice,
                     H();
                 }
 
-                rc = VINF_SUCCESS;
                 const char *pszTrunk = szTrunkName;
                 /* we're not releasing the INetCfg stuff here since we use it later to figure out whether it is wireless */
 
@@ -4098,7 +4096,6 @@ int Console::configNetwork(const char *pszDevice,
                 INetCfg *pNc;
                 ComPtr<INetCfgComponent> pAdaptorComponent;
                 LPWSTR pszApp;
-                rc = VERR_INTNET_FLT_IF_NOT_FOUND;
 
                 hrc = VBoxNetCfgWinQueryINetCfg(FALSE,
                                                 L"VirtualBox",
@@ -4179,7 +4176,6 @@ int Console::configNetwork(const char *pszDevice,
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;
-                rc = VINF_SUCCESS;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
                 InsertConfigString(pCfg, "Trunk", pszHifName);
