@@ -274,6 +274,17 @@ typedef const DBGCVAR *PCDBGCVAR;
         } while (0)
 
 /**
+ * Macro for initializing a DBGC variable with a GC flat address.
+ */
+#define DBGCVAR_INIT_GC_FLAT_BYTE_RANGE(pVar, Flat, cbRange) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_GC_FLAT; \
+            (pVar)->u.GCFlat = (Flat); \
+            DBGCVAR_SET_RANGE(pVar, DBGCVAR_RANGE_BYTES, cbRange); \
+        } while (0)
+
+/**
  * Macro for initializing a DBGC variable with a GC far address.
  */
 #define DBGCVAR_INIT_GC_FAR(pVar, _sel, _off) \
@@ -307,7 +318,6 @@ typedef const DBGCVAR *PCDBGCVAR;
         } while (0)
 
 
-
 /**
  * Macro for setting the range of a DBGC variable.
  * @param   pVar            The variable.
@@ -315,10 +325,41 @@ typedef const DBGCVAR *PCDBGCVAR;
  * @param   Value           The range length value.
  */
 #define DBGCVAR_SET_RANGE(pVar, _enmRangeType, Value) \
-        do { \
-            (pVar)->enmRangeType = (_enmRangeType); \
-            (pVar)->u64Range = (Value); \
-        } while (0)
+    do { \
+        (pVar)->enmRangeType = (_enmRangeType); \
+        (pVar)->u64Range = (Value); \
+    } while (0)
+
+
+/**
+ * Macro for setting the range of a DBGC variable.
+ * @param   a_pVar          The variable.
+ * @param   a_cbRange       The range, in bytes.
+ */
+#define DBGCVAR_SET_BYTE_RANGE(a_pVar, a_cbRange) \
+    DBGCVAR_SET_RANGE(a_pVar, DBGCVAR_RANGE_BYTES, a_cbRange)
+
+
+/**
+ * Macro for resetting the range a DBGC variable.
+ * @param   a_pVar          The variable.
+ */
+#define DBGCVAR_ZAP_RANGE(a_pVar) \
+    do { \
+        (a_pVar)->enmRangeType  = DBGCVAR_RANGE_NONE; \
+        (a_pVar)->u64Range      = 0; \
+    } while (0)
+
+
+/**
+ * Macro for assigning one DBGC variable to another.
+ * @param   a_pResult       The result (target) variable.
+ * @param   a_pVar          The source variable.
+ */
+#define DBGCVAR_ASSIGN(a_pResult, a_pVar) \
+    do { \
+        *(a_pResult) = *(a_pVar); \
+    } while (0)
 
 
 /** Pointer to command descriptor. */
@@ -507,6 +548,16 @@ typedef struct DBGCCMDHLP
     DECLCALLBACKMEMBER(int, pfnVarToDbgfAddr)(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
     /**
+     * Converts a DBGF address structure to a DBGC variable.
+     *
+     * @returns VBox status code.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pAddress    The source address.
+     * @param   pResult     The result variable.
+     */
+    DECLCALLBACKMEMBER(int, pfnVarFromDbgfAddr)(PDBGCCMDHLP pCmdHlp, PCDBGFADDRESS pAddress, PDBGCVAR pResult);
+
+    /**
      * Converts a DBGC variable to a 64-bit number.
      *
      * @returns VBox status code.
@@ -661,6 +712,14 @@ DECLINLINE(int) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *
 DECLINLINE(int) DBGCCmdHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
 {
     return pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, pVar, pAddress);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnVarToDbgfAddr
+ */
+DECLINLINE(int) DBGCCmdHlpVarFromDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGFADDRESS pAddress, PDBGCVAR pResult)
+{
+    return pCmdHlp->pfnVarFromDbgfAddr(pCmdHlp, pAddress, pResult);
 }
 
 /**
