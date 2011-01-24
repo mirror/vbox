@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * BusMouse - Microsoft Bus (parallel) mouse controller device.
  */
@@ -5,13 +6,26 @@
 /*
  * Copyright (C) 2006-2011 Oracle Corporation
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /*******************************************************************************
@@ -144,7 +158,7 @@ typedef struct MouState {
 
 #ifdef IN_RING3
 
-/* Report a change in status down the driver chain. 
+/* Report a change in status down the driver chain.
  * We want to report the mouse as enabled if and only if the guest
  * is "using" it. That way, other devices (e.g. a PS/2 or USB mouse)
  * can receive mouse events when the bus mouse is disabled.
@@ -227,7 +241,7 @@ static void bms_timer(void *opaque)
     {
         if (s->disable_counter)
             --s->disable_counter;
-        
+
         if (s->disable_counter == 0 && s->mouse_enabled)
         {
             s->mouse_enabled = false;
@@ -281,7 +295,7 @@ static void bms_update_ctrl(MouState *s)
         s->cnt_held = false;
 
     /* Move the appropriate nibble into port A. */
-    if (s->cnt_held) 
+    if (s->cnt_held)
     {
         if (s->port_c & BMS_CTL_SEL_Y)
         {
@@ -316,7 +330,7 @@ static int bms_write_port(void *opaque, uint32_t addr, uint32_t val)
     MouState *s = (MouState*)opaque;
 
     LogRel3(("%s: write port %d: 0x%02x\n", __PRETTY_FUNCTION__, addr, val));
-            
+
     switch(addr) {
     case BMS_PORT_SIG:
         /* Update port B. */
@@ -579,7 +593,7 @@ static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, 
 static DECLCALLBACK(void) mouTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     MouState   *s = PDMINS_2_DATA(pDevIns, MouState *);
-    
+
     bms_timer(s);
 
     /* Re-arm the timer. */
@@ -741,7 +755,7 @@ static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"IRQ\" from the config"));
     if ((irq_lvl < 2) || (irq_lvl > 5))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Invalid \"IRQ\" config setting"));
-    
+
     pThis->irq = irq_lvl;
     //@todo: remove after properly enabling RC/GC support
     fGCEnabled = fR0Enabled = false;
@@ -869,3 +883,4 @@ const PDMDEVREG g_DeviceBusMouse =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
