@@ -94,11 +94,12 @@ static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, u
  * @returns IPRT status code.
  * @retval  VINF_TRY_AGAIN if there is still data left in the buffer.
  *
+ * @param   hPollSet            The polling set.
  * @param   pStdInBuf           The standard input buffer.
  * @param   hStdInW             The standard input pipe.
  * @param   pfClose             Pointer to a flag whether the pipe needs to be closed afterwards.
  */
-static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf, RTPIPE hStdInW,
+static int VBoxServiceControlExecProcWriteStdIn(RTPOLLSET hPollSet, PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf, RTPIPE hStdInW,
                                                 size_t *pcbWritten, bool *pfClose)
 {
     AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
@@ -107,23 +108,19 @@ static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLEXECPIPEBUF pStd
     int rc = RTCritSectEnter(&pStdInBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
+        Assert(pStdInBuf->cbSize >= pStdInBuf->cbOffset);
         size_t cbToWrite = pStdInBuf->cbSize - pStdInBuf->cbOffset;
         cbToWrite = RT_MIN(cbToWrite, _1M);
         *pfClose = false;
-        if (cbToWrite && pStdInBuf->fAlive)
+        if (   pStdInBuf->fAlive
+            && cbToWrite)
         {
             rc = RTPipeWrite(hStdInW, &pStdInBuf->pbData[pStdInBuf->cbOffset], cbToWrite, pcbWritten);
             if (RT_SUCCESS(rc))
             {
                 pStdInBuf->fNeedNotification = true;
-                if (rc == VINF_TRY_AGAIN)
-                {
-                    //if (pStdInBuf->fNeedNotification)
-                }
-                else
-                {
+                if (rc != VINF_TRY_AGAIN)
                     pStdInBuf->cbOffset += *pcbWritten;
-                }
 
                 /* Did somebody tell us that we should come to an end,
                  * e.g. no more data coming in? */
@@ -162,8 +159,19 @@ static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLEXECPIPEBUF pStd
         {
             *pcbWritten = 0;
             pStdInBuf->fNeedNotification = pStdInBuf->fAlive;
-            //rc = VERR_BAD_PIPE;
         }
+
+        if (   !*pcbWritten
+            && pStdInBuf->fAlive)
+        {
+            /*
+             * Nothing else left to write now? Remove the writable event from the poll set
+             * to not trigger too high CPU loads.
+             */
+            rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+            AssertRC(rc);
+        }
+
         int rc2 = RTCritSectLeave(&pStdInBuf->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -191,7 +199,9 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
     if (!(fPollEvt & RTPOLL_EVT_ERROR))
     {
         bool fClose;
-        rc = VBoxServiceControlExecProcWriteStdIn(pStdInBuf, *phStdInW, pcbWritten, &fClose);
+        rc = VBoxServiceControlExecProcWriteStdIn(hPollSet,
+                                                  pStdInBuf, *phStdInW,
+                                                  pcbWritten, &fClose);
         if (rc == VINF_TRY_AGAIN)
             rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))
@@ -212,13 +222,6 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
         {
             /* If the pipe needs to be closed, do so. */
             rc = VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
-        }
-        else if (!*pcbWritten)
-        {
-            /* Nothing else left to write now? Remove the writable event from the poll set
-             * to not trigger too high CPU loads. */
-            rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
-            AssertRC(rc);
         }
     }
     else
@@ -329,6 +332,31 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
 }
 
 
+int VBoxServiceControlExecProcHandleStdInputNotify(RTPOLLSET hPollSet,
+                                                   PRTPIPE phNotificationPipeR, PRTPIPE phInputPipeW)
+{
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "ControlExec: HandleStdInputNotify\n");
+#endif
+    /* Drain the notification pipe. */
+    uint8_t abBuf[8];
+    size_t cbIgnore;
+    int rc = RTPipeRead(*phNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * When the writable handle previously was removed from the poll set we need to add
+         * it here again so that writable events from the started procecss get handled correctly.
+         */
+        RTHANDLE hWritableIgnored;
+        rc = RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE, &hWritableIgnored);
+        if (rc == VERR_POLL_HANDLE_ID_NOT_FOUND)
+            rc = RTPollSetAddPipe(hPollSet, *phInputPipeW, RTPOLL_EVT_WRITE, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+    }
+    return rc;
+}
+
+
 /**
  * Execution loop which (usually) runs in a dedicated per-started-process thread and
  * handles all pipe input/output and signalling stuff.
@@ -407,29 +435,10 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDIN_INPUT_NOTIFY:
-                {
-                    /* Drain the notification pipe. */
-                    uint8_t abBuf[8];
-                    size_t cbIgnore;
-                    rc = RTPipeRead(pData->stdIn.hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * When the writable handle previously was removed from the poll set we need to add
-                         * it here again so that writable events from the started procecss get handled correctly.
-                         */
-                        RTHANDLE hWritableIgnored;
-                        rc = RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE, &hWritableIgnored);
-                        if (rc == VERR_POLL_HANDLE_ID_NOT_FOUND)
-                        {
-                            rc = RTPollSetAddPipe(hPollSet, pData->pipeStdInW, RTPOLL_EVT_WRITE, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
-                            AssertRC(rc);
-                            break;
-                        }
-                        AssertRC(rc);
-                    }
-                }
-                /* Fall through. */
+                    rc = VBoxServiceControlExecProcHandleStdInputNotify(hPollSet,
+                                                                        &pData->stdIn.hNotificationPipeR, &pData->pipeStdInW);
+                    AssertRC(rc);
+                    /* Fall through. */
                 case VBOXSERVICECTRLPIPEID_STDIN_WRITABLE:
                 {
                     size_t cbWritten;
