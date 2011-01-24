@@ -37,12 +37,12 @@
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable,
-                                        uint8_t u8Type, uint8_t cb, PRTUINT piBp);
-static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, PRTUINT piBp);
-static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, PRTUINT piBp);
-static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, RTUINT iBp);
-static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, RTUINT iBp);
-static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, RTUINT iBp);
+                                        uint8_t u8Type, uint8_t cb, uint32_t *piBp);
+static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, uint32_t *piBp);
+static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, uint32_t *piBp);
+static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, uint32_t iBp);
+static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, uint32_t iBp);
+static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, uint32_t iBp);
 static DECLCALLBACK(int) dbgfR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp);
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp);
@@ -100,9 +100,9 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
     /*
      * Determine which array to search.
      */
-    unsigned cBps;
-    PRTUINT  pcBpsCur;
-    PDBGFBP  paBps;
+    unsigned    cBps;
+    uint32_t   *pcBpsCur;
+    PDBGFBP     paBps;
     switch (enmType)
     {
         case DBGFBPTYPE_REG:
@@ -148,7 +148,7 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
  * @param   pVM     The VM handle.
  * @param   iBp     The breakpoint id.
  */
-static PDBGFBP dbgfR3BpGet(PVM pVM, RTUINT iBp)
+static PDBGFBP dbgfR3BpGet(PVM pVM, uint32_t iBp)
 {
     /* Find it. */
     PDBGFBP pBp;
@@ -277,7 +277,7 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
  * @param   piBp        Where to store the breakpoint id. (optional)
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp)
+VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
 {
     /*
      * This must be done in EMT.
@@ -302,7 +302,7 @@ VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger
  * @param   piBp            Where to store the breakpoint id. (optional)
  * @thread  Any thread.
  */
-static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, PRTUINT piBp)
+static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, uint32_t *piBp)
 {
     /*
      * Validate input.
@@ -434,7 +434,7 @@ static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
  * @thread  Any thread.
  */
 VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
-                              uint8_t fType, uint8_t cb, PRTUINT piBp)
+                              uint8_t fType, uint8_t cb, uint32_t *piBp)
 {
     /** @todo SMP - broadcast, VT-x/AMD-V. */
     /*
@@ -465,7 +465,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
  * @internal
  */
 static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable,
-                                        uint8_t fType, uint8_t cb, PRTUINT piBp)
+                                        uint8_t fType, uint8_t cb, uint32_t *piBp)
 {
     /*
      * Validate input.
@@ -602,7 +602,7 @@ static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
  * @param   piBp        Where to store the breakpoint id. (optional)
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp)
+VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
 {
     /*
      * This must be done in EMT.
@@ -627,7 +627,7 @@ VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
  * @thread  EMT
  * @internal
  */
-static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, PRTUINT piBp)
+static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, uint32_t *piBp)
 {
     /*
      * Validate input.
@@ -694,7 +694,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
  * @param   iBp         The id of the breakpoint which should be removed (cleared).
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp)
+VMMR3DECL(int) DBGFR3BpClear(PVM pVM, uint32_t iBp)
 {
     /*
      * This must be done in EMT.
@@ -714,7 +714,7 @@ VMMR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp)
  * @thread  EMT
  * @internal
  */
-static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, RTUINT iBp)
+static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, uint32_t iBp)
 {
     /*
      * Validate input.
@@ -767,7 +767,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, RTUINT iBp)
  * @param   iBp         The id of the breakpoint which should be enabled.
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp)
+VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, uint32_t iBp)
 {
     /*
      * This must be done in EMT.
@@ -787,7 +787,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp)
  * @thread  EMT
  * @internal
  */
-static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, RTUINT iBp)
+static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, uint32_t iBp)
 {
     /*
      * Validate input.
@@ -840,7 +840,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, RTUINT iBp)
  * @param   iBp         The id of the breakpoint which should be disabled.
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp)
+VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, uint32_t iBp)
 {
     /*
      * This must be done in EMT.
@@ -860,7 +860,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp)
  * @thread  EMT
  * @internal
  */
-static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, RTUINT iBp)
+static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, uint32_t iBp)
 {
     /*
      * Validate input.

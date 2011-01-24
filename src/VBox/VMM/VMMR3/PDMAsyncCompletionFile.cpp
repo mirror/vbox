@@ -85,7 +85,7 @@ static const DBGCVARDESC g_aInjectErrorArgs[] =
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "direction",    "write/read." },
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "filename",     "Filename." },
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "errcode",      "IPRT error code." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "errcode",      "VBox status code." },
 };
 
 /** Command descriptors. */
@@ -698,63 +698,65 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
  */
 static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs, PDBGCVAR pResult)
 {
-    bool fWrite;
-    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
-
     /*
      * Validate input.
      */
-    if (!pVM)
-        return DBGCCmdHlpPrintf(pCmdHlp, "error: The command requires a VM to be selected.\n");
-    if (    cArgs != 3
-        ||  pArgs[0].enmType != DBGCVAR_TYPE_STRING
-        ||  pArgs[1].enmType != DBGCVAR_TYPE_STRING
-        ||  pArgs[2].enmType != DBGCVAR_TYPE_STRING)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 3);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, pArgs[0].enmType == DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pArgs[1].enmType == DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 2, pArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
 
+    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
     pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
 
     /* Syntax is "read|write <filename> <status code>" */
+    bool fWrite;
     if (!RTStrCmp(pArgs[0].u.pszString, "read"))
         fWrite = false;
     else if (!RTStrCmp(pArgs[0].u.pszString, "write"))
         fWrite = true;
     else
-    {
-        DBGCCmdHlpPrintf(pCmdHlp, "error: invalid transefr direction '%s'.\n", pArgs[0].u.pszString);
-        return VINF_SUCCESS;
-    }
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "invalid transfer direction '%s'", pArgs[0].u.pszString);
 
-    /* Search for the matching endpoint. */
+    int32_t rcToInject = (int32_t)pArgs[2].u.u64Number;
+    if ((uint64_t)rcToInject != pArgs[2].u.u64Number)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "The status code '%lld' is out of range", pArgs[0].u.u64Number);
+
+
+    /*
+     * Search for the matching endpoint.
+     */
     RTCritSectEnter(&pEpClassFile->Core.CritSect);
-    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
 
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
     while (pEpFile)
     {
         if (!RTStrCmp(pArgs[1].u.pszString, RTPathFilename(pEpFile->Core.pszUri)))
             break;
         pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
     }
-
     if (pEpFile)
     {
-        int rcToInject = RTStrToInt32(pArgs[2].u.pszString);
-
+        /*
+         * Do the job.
+         */
         if (fWrite)
             ASMAtomicXchgS32(&pEpFile->rcReqWrite, rcToInject);
         else
-            ASMAtomicXchgS32(&pEpFile->rcReqRead, rcToInject);
+            ASMAtomicXchgS32(&pEpFile->rcReqRead,  rcToInject);
 
-            DBGCCmdHlpPrintf(pCmdHlp, "Injected %Rrc into '%s' for %s\n",
-                             rcToInject, pArgs[1].u.pszString, pArgs[0].u.pszString);
+        DBGCCmdHlpPrintf(pCmdHlp, "Injected %Rrc into '%s' for %s\n",
+                         (int)rcToInject, pArgs[1].u.pszString, pArgs[0].u.pszString);
     }
-    else
-        DBGCCmdHlpPrintf(pCmdHlp, "No file with name '%s' found\n", NULL, pArgs[1].u.pszString);
 
     RTCritSectLeave(&pEpClassFile->Core.CritSect);
+
+    if (!pEpFile)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No file with name '%s' found", pArgs[1].u.pszString);
     return VINF_SUCCESS;
 }
-#endif
+#endif /* VBOX_WITH_DEBUGGER */
 
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
 {
@@ -829,7 +831,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     /* Install the error injection handler. */
     if (RT_SUCCESS(rc))
     {
-        rc = DBGCRegisterCommands(&g_aCmds[0], 1);
+        rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         AssertRC(rc);
     }
 #endif

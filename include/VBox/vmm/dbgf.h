@@ -377,13 +377,13 @@ typedef DBGFBP *PDBGFBP;
 typedef const DBGFBP *PCDBGFBP;
 
 
-VMMR3DECL(int)  DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
+VMMR3DECL(int)  DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
-                               uint8_t fType, uint8_t cb, PRTUINT piBp);
-VMMR3DECL(int)  DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
-VMMR3DECL(int)  DBGFR3BpClear(PVM pVM, RTUINT iBp);
-VMMR3DECL(int)  DBGFR3BpEnable(PVM pVM, RTUINT iBp);
-VMMR3DECL(int)  DBGFR3BpDisable(PVM pVM, RTUINT iBp);
+                               uint8_t fType, uint8_t cb, uint32_t *piBp);
+VMMR3DECL(int)  DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
+VMMR3DECL(int)  DBGFR3BpClear(PVM pVM, uint32_t iBp);
+VMMR3DECL(int)  DBGFR3BpEnable(PVM pVM, uint32_t iBp);
+VMMR3DECL(int)  DBGFR3BpDisable(PVM pVM, uint32_t iBp);
 
 /**
  * Breakpoint enumeration callback function.

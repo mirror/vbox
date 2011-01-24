@@ -389,23 +389,20 @@ const unsigned g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
  */
 static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+
     /*
      * Check if the VM is halted or not before trying to resume it.
      */
     if (!DBGFR3IsHalted(pVM))
-        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "warning: The VM is already running...\n");
-    else
-    {
-        int rc = DBGFR3Resume(pVM);
-        if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Executing DBGFR3Resume().");
-    }
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "The VM is already running");
 
-    NOREF(pCmd);
-    NOREF(paArgs);
-    NOREF(cArgs);
-    NOREF(pResult);
-    return 0;
+    int rc = DBGFR3Resume(pVM);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3Resume");
+
+    NOREF(paArgs); NOREF(cArgs); NOREF(pResult);
+    return VINF_SUCCESS;
 }
 
 
@@ -421,13 +418,15 @@ static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM,
  */
 static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+
     /*
      * Interpret access type.
      */
     if (    !strchr("xrwi", paArgs[0].u.pszString[0])
         ||  paArgs[0].u.pszString[1])
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid access type '%s' for '%s'. Valid types are 'e', 'r', 'w' and 'i'.\n",
-                                  paArgs[0].u.pszString, pCmd->pszCmd);
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid access type '%s' for '%s'. Valid types are 'e', 'r', 'w' and 'i'",
+                              paArgs[0].u.pszString, pCmd->pszCmd);
     uint8_t fType = 0;
     switch (paArgs[0].u.pszString[0])
     {
@@ -441,8 +440,8 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      * Validate size.
      */
     if (fType == X86_DR7_RW_EO && paArgs[1].u.u64Number != 1)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid access size %RX64 for '%s'. 'x' access type requires size 1!\n",
-                                  paArgs[1].u.u64Number, pCmd->pszCmd);
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid access size %RX64 for '%s'. 'x' access type requires size 1!",
+                              paArgs[1].u.u64Number, pCmd->pszCmd);
     switch (paArgs[1].u.u64Number)
     {
         case 1:
@@ -451,8 +450,8 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             break;
         /*case 8: - later*/
         default:
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid access size %RX64 for '%s'. 1, 2 or 4!\n",
-                                      paArgs[1].u.u64Number, pCmd->pszCmd);
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid access size %RX64 for '%s'. 1, 2 or 4!",
+                                  paArgs[1].u.u64Number, pCmd->pszCmd);
     }
     uint8_t cb = (uint8_t)paArgs[1].u.u64Number;
 
@@ -460,9 +459,9 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      * Convert the pointer to a DBGF address.
      */
     DBGFADDRESS Address;
-    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[2], &Address);
+    int rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &paArgs[2], &Address);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Couldn't convert '%DV' to a DBGF address, rc=%Rrc.\n", &paArgs[2], rc);
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr(,%DV,)", &paArgs[2]);
 
     /*
      * Pick out the optional arguments.
@@ -490,24 +489,24 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     /*
      * Try set the breakpoint.
      */
-    RTUINT iBp;
+    uint32_t iBp;
     rc = DBGFR3BpSetReg(pVM, &Address, iHitTrigger, iHitDisable, fType, cb, &iBp);
     if (RT_SUCCESS(rc))
     {
         PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
         rc = dbgcBpAdd(pDbgc, iBp, pszCmds);
         if (RT_SUCCESS(rc))
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Set access breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+            return DBGCCmdHlpPrintf(pCmdHlp, "Set access breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         if (rc == VERR_DBGC_BP_EXISTS)
         {
             rc = dbgcBpUpdate(pDbgc, iBp, pszCmds);
             if (RT_SUCCESS(rc))
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Updated access breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+                return DBGCCmdHlpPrintf(pCmdHlp, "Updated access breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
         int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
         AssertRC(rc2);
     }
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Failed to set access breakpoint at %RGv, rc=%Rrc.\n", Address.FlatPtr, rc);
+    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set access breakpoint at %RGv", Address.FlatPtr);
 }
 
 
@@ -523,27 +522,29 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  */
 static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+
     /*
      * Enumerate the arguments.
      */
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    int     rc = VINF_SUCCESS;
+    int     rc    = VINF_SUCCESS;
     for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
     {
         if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
         {
             /* one */
-            RTUINT iBp = (RTUINT)paArgs[iArg].u.u64Number;
-            if (iBp != paArgs[iArg].u.u64Number)
+            uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iBp == paArgs[iArg].u.u64Number)
             {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Breakpoint id %RX64 is too large!\n", paArgs[iArg].u.u64Number);
-                break;
+                int rc2 = DBGFR3BpClear(pVM, iBp);
+                if (RT_FAILURE(rc2))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpClear(,%#x)", iBp);
+                if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
+                    dbgcBpDelete(pDbgc, iBp);
             }
-            int rc2 = DBGFR3BpClear(pVM, iBp);
-            if (RT_FAILURE(rc2))
-                rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc2, "DBGFR3BpClear failed for breakpoint %u!\n", iBp);
-            if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
-                dbgcBpDelete(pDbgc, iBp);
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Breakpoint id %RX64 is too large", paArgs[iArg].u.u64Number);
         }
         else if (!strcmp(paArgs[iArg].u.pszString, "all"))
         {
@@ -551,22 +552,18 @@ static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
             PDBGCBP pBp = pDbgc->pFirstBp;
             while (pBp)
             {
-                RTUINT iBp = pBp->iBp;
+                uint32_t iBp = pBp->iBp;
                 pBp = pBp->pNext;
 
                 int rc2 = DBGFR3BpClear(pVM, iBp);
                 if (RT_FAILURE(rc2))
-                    rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc2, "DBGFR3BpClear failed for breakpoint %u!\n", iBp);
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpClear(,%#x)", iBp);
                 if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
                     dbgcBpDelete(pDbgc, iBp);
             }
         }
         else
-        {
-            /* invalid parameter */
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid argument '%s' to '%s'!\n", paArgs[iArg].u.pszString, pCmd->pszCmd);
-            break;
-        }
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
     }
     return rc;
 }
@@ -593,15 +590,15 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
         {
             /* one */
-            RTUINT iBp = (RTUINT)paArgs[iArg].u.u64Number;
-            if (iBp != paArgs[iArg].u.u64Number)
+            uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iBp == paArgs[iArg].u.u64Number)
             {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Breakpoint id %RX64 is too large!\n", paArgs[iArg].u.u64Number);
-                break;
+                rc = DBGFR3BpDisable(pVM, iBp);
+                if (RT_FAILURE(rc))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpDisable failed for breakpoint %#x", iBp);
             }
-            rc = DBGFR3BpDisable(pVM, iBp);
-            if (RT_FAILURE(rc))
-                rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3BpDisable failed for breakpoint %u!\n", iBp);
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Breakpoint id %RX64 is too large", paArgs[iArg].u.u64Number);
         }
         else if (!strcmp(paArgs[iArg].u.pszString, "all"))
         {
@@ -609,17 +606,13 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
             for (PDBGCBP pBp = pDbgc->pFirstBp; pBp; pBp = pBp->pNext)
             {
-                rc = DBGFR3BpDisable(pVM, pBp->iBp);
-                if (RT_FAILURE(rc))
-                    rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3BpDisable failed for breakpoint %u!\n", pBp->iBp);
+                int rc2 = DBGFR3BpDisable(pVM, pBp->iBp);
+                if (RT_FAILURE(rc2))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpDisable failed for breakpoint %#x", pBp->iBp);
             }
         }
         else
-        {
-            /* invalid parameter */
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid argument '%s' to '%s'!\n", paArgs[iArg].u.pszString, pCmd->pszCmd);
-            break;
-        }
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
     }
     return rc;
 }
@@ -637,6 +630,8 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  */
 static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+
     /*
      * Enumerate the arguments.
      */
@@ -646,15 +641,15 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
         {
             /* one */
-            RTUINT iBp = (RTUINT)paArgs[iArg].u.u64Number;
-            if (iBp != paArgs[iArg].u.u64Number)
+            uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iBp == paArgs[iArg].u.u64Number)
             {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Breakpoint id %RX64 is too large!\n", paArgs[iArg].u.u64Number);
-                break;
+                rc = DBGFR3BpEnable(pVM, iBp);
+                if (RT_FAILURE(rc))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpEnable failed for breakpoint %#x", iBp);
             }
-            rc = DBGFR3BpEnable(pVM, iBp);
-            if (RT_FAILURE(rc))
-                rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3BpEnable failed for breakpoint %u!\n", iBp);
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Breakpoint id %RX64 is too large", paArgs[iArg].u.u64Number);
         }
         else if (!strcmp(paArgs[iArg].u.pszString, "all"))
         {
@@ -662,17 +657,13 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
             for (PDBGCBP pBp = pDbgc->pFirstBp; pBp; pBp = pBp->pNext)
             {
-                rc = DBGFR3BpEnable(pVM, pBp->iBp);
-                if (RT_FAILURE(rc))
-                    rc = pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3BpEnable failed for breakpoint %u!\n", pBp->iBp);
+                int rc2 = DBGFR3BpEnable(pVM, pBp->iBp);
+                if (RT_FAILURE(rc2))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpEnable failed for breakpoint %#x", pBp->iBp);
             }
         }
         else
-        {
-            /* invalid parameter */
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid argument '%s' to '%s'!\n", paArgs[iArg].u.pszString, pCmd->pszCmd);
-            break;
-        }
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
     }
     return rc;
 }
@@ -688,7 +679,7 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  */
 static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDBGFBP pBp)
 {
-    PDBGC pDbgc = (PDBGC)pvUser;
+    PDBGC   pDbgc   = (PDBGC)pvUser;
     PDBGCBP pDbgcBp = dbgcBpGet(pDbgc, pBp->iBp);
 
     /*
@@ -721,13 +712,13 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
             break;
     }
 
-    pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%2u %c %d %c %RGv %04RX64 (%04RX64 to ",
-                            pBp->iBp, pBp->fEnabled ? 'e' : 'd', cb, chType,
-                            pBp->GCPtr, pBp->cHits, pBp->iHitTrigger);
+    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%4#x %c %d %c %RGv %04RX64 (%04RX64 to ",
+                     pBp->iBp, pBp->fEnabled ? 'e' : 'd', cb, chType,
+                     pBp->GCPtr, pBp->cHits, pBp->iHitTrigger);
     if (pBp->iHitDisable == ~(uint64_t)0)
-        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "~0)  ");
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "~0)  ");
     else
-        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%04RX64)");
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%04RX64)");
 
     /*
      * Try resolve the address.
@@ -739,11 +730,11 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
     if (RT_SUCCESS(rc))
     {
         if (!off)
-            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%s", Sym.szName);
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s", Sym.szName);
         else if (off > 0)
-            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%s+%RGv", Sym.szName, off);
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, off);
         else
-            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%s+%RGv", Sym.szName, -off);
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, -off);
     }
 
     /*
@@ -752,13 +743,12 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
     if (pDbgcBp)
     {
         if (pDbgcBp->cchCmd)
-            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n  cmds: '%s'\n",
-                                    pDbgcBp->szCmd);
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "\n  cmds: '%s'\n", pDbgcBp->szCmd);
         else
-            pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "\n");
     }
     else
-        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " [unknown bp]\n");
+        DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " [unknown bp]\n");
 
     return VINF_SUCCESS;
 }
@@ -774,16 +764,18 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR /*paArgs*/, unsigned /*cArgs*/, PDBGCVAR /*pResult*/)
+static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR /*paArgs*/, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 0);
 
     /*
      * Enumerate the breakpoints.
      */
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     int rc = DBGFR3BpEnum(pVM, dbgcEnumBreakpointsCallback, pDbgc);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3BpEnum failed.\n");
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpEnum");
     return rc;
 }
 
@@ -798,15 +790,15 @@ static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp,
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
+static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
     /*
      * Convert the pointer to a DBGF address.
      */
     DBGFADDRESS Address;
-    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[0], &Address);
+    int rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &paArgs[0], &Address);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Couldn't convert '%DV' to a DBGF address, rc=%Rrc.\n", &paArgs[0], rc);
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr(,'%DV',)", &paArgs[0]);
 
     /*
      * Pick out the optional arguments.
@@ -834,24 +826,24 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, 
     /*
      * Try set the breakpoint.
      */
-    RTUINT iBp;
+    uint32_t iBp;
     rc = DBGFR3BpSet(pVM, &Address, iHitTrigger, iHitDisable, &iBp);
     if (RT_SUCCESS(rc))
     {
-        PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+        PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
         rc = dbgcBpAdd(pDbgc, iBp, pszCmds);
         if (RT_SUCCESS(rc))
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Set breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+            return DBGCCmdHlpPrintf(pCmdHlp, "Set breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         if (rc == VERR_DBGC_BP_EXISTS)
         {
             rc = dbgcBpUpdate(pDbgc, iBp, pszCmds);
             if (RT_SUCCESS(rc))
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Updated breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+                return DBGCCmdHlpPrintf(pCmdHlp, "Updated breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
         int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
         AssertRC(rc2);
     }
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Failed to set breakpoint at %RGv, rc=%Rrc.\n", Address.FlatPtr, rc);
+    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set breakpoint at %RGv", Address.FlatPtr);
 }
 
 
@@ -865,15 +857,15 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, 
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
+static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR /*pResult*/)
 {
     /*
      * Convert the pointer to a DBGF address.
      */
     DBGFADDRESS Address;
-    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[0], &Address);
+    int rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &paArgs[0], &Address);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Couldn't convert '%DV' to a DBGF address, rc=%Rrc.\n", &paArgs[0], rc);
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr(,'%DV',)", &paArgs[0]);
 
     /*
      * Pick out the optional arguments.
@@ -901,24 +893,24 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, 
     /*
      * Try set the breakpoint.
      */
-    RTUINT iBp;
+    uint32_t iBp;
     rc = DBGFR3BpSetREM(pVM, &Address, iHitTrigger, iHitDisable, &iBp);
     if (RT_SUCCESS(rc))
     {
         PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
         rc = dbgcBpAdd(pDbgc, iBp, pszCmds);
         if (RT_SUCCESS(rc))
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Set REM breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+            return DBGCCmdHlpPrintf(pCmdHlp, "Set REM breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         if (rc == VERR_DBGC_BP_EXISTS)
         {
             rc = dbgcBpUpdate(pDbgc, iBp, pszCmds);
             if (RT_SUCCESS(rc))
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Updated REM breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
+                return DBGCCmdHlpPrintf(pCmdHlp, "Updated REM breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
         int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
         AssertRC(rc2);
     }
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Failed to set REM breakpoint at %RGv, rc=%Rrc.\n", Address.FlatPtr, rc);
+    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set REM breakpoint at %RGv", Address.FlatPtr);
 }
 
 

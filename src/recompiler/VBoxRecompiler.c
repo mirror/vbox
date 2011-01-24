@@ -3668,24 +3668,35 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
  */
 static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
-    bool fEnable;
     int rc;
 
-    /* print status */
     if (cArgs == 0)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "DisasStepping is %s\n",
-                                  pVM->rem.s.Env.state & CPU_EMULATE_SINGLE_STEP ? "enabled" : "disabled");
-
-    /* convert the argument and change the mode. */
-    rc = pCmdHlp->pfnVarToBool(pCmdHlp, &paArgs[0], &fEnable);
-    if (RT_FAILURE(rc))
-        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "boolean conversion failed!\n");
-    rc = REMR3DisasEnableStepping(pVM, fEnable);
-    if (RT_FAILURE(rc))
-        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "REMR3DisasEnableStepping failed!\n");
+        /*
+         * Print the current status.
+         */
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "DisasStepping is %s\n",
+                              pVM->rem.s.Env.state & CPU_EMULATE_SINGLE_STEP ? "enabled" : "disabled");
+    else
+    {
+        /*
+         * Convert the argument and change the mode.
+         */
+        bool fEnable;
+        rc = DBGCCmdHlpVarToBool(pCmdHlp, &paArgs[0], &fEnable);
+        if (RT_SUCCESS(rc))
+        {
+            rc = REMR3DisasEnableStepping(pVM, fEnable);
+            if (RT_SUCCESS(rc))
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "DisasStepping was %s\n", fEnable ? "enabled" : "disabled");
+            else
+                rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "REMR3DisasEnableStepping");
+        }
+        else
+            rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToBool");
+    }
     return rc;
 }
-#endif
+#endif /* VBOX_WITH_DEBUGGER && !win.amd64 */
 
 
 /**
