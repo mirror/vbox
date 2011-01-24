@@ -47,6 +47,7 @@ extern DECLEXPORT(const PDMAPICHLPR0)   g_pdmR0ApicHlp;
 extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPR0)    g_pdmR0PciHlp;
 extern DECLEXPORT(const PDMHPETHLPR0)   g_pdmR0HpetHlp;
+extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp;
 extern DECLEXPORT(const PDMDRVHLPR0)    g_pdmR0DrvHlp;
 RT_C_DECLS_END
 
@@ -679,8 +680,19 @@ extern DECLEXPORT(const PDMHPETHLPR0) g_pdmR0HpetHlp =
 
 /** @} */
 
+/** @name Raw PCI Ring-0 Helpers
+ * @{
+ */
+/**
+ * The Ring-0 PCI raw Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp =
+{
+    PDM_PCIRAWHLPR0_VERSION,
+    PDM_PCIRAWHLPR0_VERSION, /* the end */
+};
 
-
+/** @} */
 
 /** @name Ring-0 Context Driver Helpers
  * @{
@@ -899,4 +911,3 @@ static void pdmR0IoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue)
         pdmUnlock(pVM);
     }
 }
-

@@ -3421,17 +3421,6 @@
   </enum>
 
   <interface
-    name="IEventContext" extends="$unknown"
-    uuid="7563F4E7-1583-40F7-B4C4-C9BA02CB0AE3"
-    wsmap="managed"
-    >
-    <desc>
-      Placeholder class for event contexts.
-    </desc>
-  </interface>
-
-
-  <interface
     name="IPciAddress" extends="$unknown"
     uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
     wsmap="struct"
@@ -4742,9 +4731,6 @@
       <param name="desiredGuestAddress" type="long" dir="in">
         <desc>Desired position of this device on guest PCI bus.</desc>
       </param>
-      <param name="eventContext" type="IEventContext" dir="in">
-        <desc>Context passed into IHostPciDevicePlugEvent event.</desc>
-      </param>
       <param name="tryToUnbind" type="boolean" dir="in">
         <desc>If VMM shall try to unbind existing drivers from the
         device before attaching it to the guest.</desc>
@@ -4755,7 +4741,8 @@
       <desc>
         Detach host PCI device from the virtual machine.
         Also HostPciDevicePlugEvent on IVirtualBox event source
-        will be delivered.
+        will be delivered. As currently we don't support hot device
+        unplug, IHostPciDevicePlugEvent event is delivered immediately.
 
         <note>
           Not yet implemented.
@@ -16643,16 +16630,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IHostPciDevicePlugEvent" extends="IMachineEvent"
     waitable="yes"
-    uuid="EDD4782B-DB74-43A0-B724-2BAA36F039CC"
+    uuid="9cebfc27-c579-4965-8eb7-d31794cd7dcf"
     wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
     >
     <desc>
-      Notification when host PCI device is plugged/unplugged.
+      Notification when host PCI device is plugged/unplugged. Plugging
+      usually takes place on VM startup, unplug - when
+      IMachine::DetachHostPciDevice is called.
+
+      <see>IMachine::DetachHostPciDevice</see>
+
     </desc>
 
     <attribute name="plugged" type="boolean" readonly="yes">
       <desc>
-        If device successfully plugged or unplugged.
+      If device successfully plugged or unplugged.
       </desc>
     </attribute>
 
@@ -16666,13 +16658,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
       <desc>
         Attachment info for this device.
-      </desc>
-    </attribute>
-
-    <attribute name="eventContext" type="IEventContext" readonly="yes">
-      <desc>
-        Context object, passed into attachHostPciDevice() and
-        attachHostPciDevice().
       </desc>
     </attribute>
 

@@ -1821,7 +1821,74 @@ typedef R3PTRTYPE(const PDMHPETHLPR3 *) PCPDMHPETHLPR3;
 /** Current PDMHPETHLPR3 version number. */
 #define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 2, 0)
 
+typedef struct PDMPCIRAWREG
+{
+    /** Struct version+magic number (PDM_PCIRAWREG_VERSION). */
+     uint32_t            u32Version;
+} PDMPCIRAWREG;
 
+/** Pointer to a raw PCI registration structure. */
+typedef PDMPCIRAWREG *PPDMPCIRAWREG;
+/** Current PDMPCIRAWREG version number. */
+#define PDM_PCIRAWREG_VERSION                     PDM_VERSION_MAKE(0xffe3, 1, 0)
+struct PDMPCIRAWHLPRC
+{
+    uint32_t u32Version;
+    /** Just a safety precaution. */
+    uint32_t u32TheEnd;
+};
+typedef RCPTRTYPE(PDMPCIRAWHLPRC *) PPDMPCIRAWHLPRC;
+typedef RCPTRTYPE(const PDMPCIRAWHLPRC *) PCPDMPCIRAWHLPRC;
+
+struct PDMPCIRAWHLPR0
+{
+uint32_t u32Version;
+/** Just a safety precaution. */
+uint32_t u32TheEnd;
+};
+typedef R0PTRTYPE(PDMPCIRAWHLPR0 *) PPDMPCIRAWHLPR0;
+typedef R0PTRTYPE(const PDMPCIRAWHLPR0 *) PCPDMPCIRAWHLPR0;
+
+
+typedef struct PDMPCIRAWHLPR3 
+{ 
+uint32_t u32Version; 
+/** 
+* Gets the address of the RC PCI raw helpers. 
+* 
+* This should be called at both construction and relocation time 
+* to obtain the correct address of the RC helpers. 
+* 
+* @returns RC pointer to the PCI raw helpers. 
+* @param   pDevIns         Device instance of the raw PCI device. 
+*/ 
+DECLR3CALLBACKMEMBER(PCPDMPCIRAWHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns)); 
+
+/** 
+* Gets the address of the R0 PCI raw helpers. 
+* 
+* This should be called at both construction and relocation time 
+* to obtain the correct address of the R0 helpers. 
+* 
+* @returns R0 pointer to the PCI raw helpers. 
+* @param   pDevIns         Device instance of the raw PCI device. 
+*/ 
+DECLR3CALLBACKMEMBER(PCPDMPCIRAWHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns)); 
+
+/** Just a safety precaution. */ 
+uint32_t                u32TheEnd; 
+} PDMPCIRAWHLPR3; 
+/** Pointer to raw PCI R3 helpers. */ 
+typedef R3PTRTYPE(PDMPCIRAWHLPR3 *) PPDMPCIRAWHLPR3; 
+/** Pointer to const raw PCI R3 helpers. */ 
+typedef R3PTRTYPE(const PDMPCIRAWHLPR3 *) PCPDMPCIRAWHLPR3; 
+
+/** Current PDMPCIRAWHLPRC version number. */ 
+#define PDM_PCIRAWHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff0, 1, 0) 
+/** Current PDMPCIRAWHLPR0 version number. */ 
+#define PDM_PCIRAWHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff1, 1, 0) 
+/** Current PDMPCIRAWHLPR3 version number. */ 
+#define PDM_PCIRAWHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff2, 1, 0) 
 
 #ifdef IN_RING3
 
@@ -2920,6 +2987,17 @@ typedef struct PDMDEVHLPR3
      *                              helpers.
      */
     DECLR3CALLBACKMEMBER(int, pfnHPETRegister,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3));
+
+    /** 
+     * Register the raw PCI device. 
+     * 
+     * @returns VBox status code. 
+     * @param   pDevIns             The device instance. 
+     * @param   pHpetReg            Pointer to a raw PCI registration structure. 
+     * @param   ppHpetHlpR3         Where to store the pointer to the raw PCI 
+     *                              helpers. 
+     */ 
+    DECLR3CALLBACKMEMBER(int, pfnPciRawRegister,(PPDMDEVINS pDevIns, PPDMPCIRAWREG pPciRawReg, PCPDMPCIRAWHLPR3 *ppPciRawHlpR3)); 
 
     /**
      * Register the DMA device.
@@ -4453,6 +4531,14 @@ DECLINLINE(int) PDMDevHlpHPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, 
 {
     return pDevIns->pHlpR3->pfnHPETRegister(pDevIns, pHpetReg, ppHpetHlpR3);
 }
+
+/** 
+ * @copydoc PDMDEVHLPR3::pfnPciRawRegister 
+ */ 
+DECLINLINE(int) PDMDevHlpPciRawRegister(PPDMDEVINS pDevIns, PPDMPCIRAWREG pPciRawReg, PCPDMPCIRAWHLPR3 *ppPciRawHlpR3) 
+{ 
+    return pDevIns->pHlpR3->pfnPciRawRegister(pDevIns, pPciRawReg, ppPciRawHlpR3); 
+} 
 
 /**
  * @copydoc PDMDEVHLPR3::pfnDMACRegister

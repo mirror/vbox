@@ -636,6 +636,7 @@ VBoxC_SOURCES = \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
 	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \
+	src-client/PciRawDevImpl.cpp \
 	src-client/ConsoleImpl.cpp \
 	src-client/ConsoleImpl2.cpp \
 	src-client/ConsoleImplTeleporter.cpp \

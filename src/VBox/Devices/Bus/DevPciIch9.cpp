@@ -948,6 +948,7 @@ static DECLCALLBACK(void) ich9pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVI
  */
 static DECLCALLBACK(int) ich9pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
+    Assert(!PCIIsPassthrough(pPciDev));
     return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1200,7 +1201,9 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
      * Loop thru the fields covering the 64 bytes of standard registers.
      */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
+    Assert(!PCIIsPassthrough(pDev)); 
     uint8_t *pbDstConfig = &pDev->config[0];
+
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
         if (s_aFields[i].fBridge & fBridge)
         {
@@ -1394,6 +1397,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
                                      i, pDev->name, PCIDevGetVendorId(&DevTmp), PCIDevGetVendorId(pDev));
 
         /* commit the loaded device config. */
+        Assert(!PCIIsPassthrough(pDev)); 
         pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
@@ -1425,6 +1429,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
  */
 static DECLCALLBACK(int) ich9pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
+    Assert(!PCIIsPassthrough(pPciDev));
     return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1750,6 +1755,8 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         AssertMsgReturn(false, ("Read from extended registers falled back to generic code\n"), 0);
     }
 
+    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"), 
+                    0); 
     if (   PCIIsMsiCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsiCapOffset)
         && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
@@ -2145,6 +2152,21 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool f
         PPCIDEVICE pPciDev = pBus->apDevices[iDev];
         if (pPciDev != NULL)
         {
+            if (PCIIsPassthrough(pPciDev))
+            {
+                printIndent(pHlp, iIndent);
+                /**
+                 * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
+                 * as host driver handles real devices interrupts.
+                 */
+                pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %s%s - PASSTHROUGH\n",
+                                pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
+                                pPciDev->name,
+                                PCIIsMsiCapable(pPciDev)  ? " MSI" : "",
+                                PCIIsMsixCapable(pPciDev) ? " MSI-X" : ""
+                                );
+                continue;
+            }
             printIndent(pHlp, iIndent);
             pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %04x-%04x%s%s",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,

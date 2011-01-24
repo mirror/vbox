@@ -50,6 +50,9 @@
 #include "DisplayUtils.h"
 #include "BandwidthControlImpl.h"
 
+// generated header
+#include "VBoxEvents.h"
+
 #ifdef VBOX_WITH_USB
 # include "USBProxyService.h"
 #endif
@@ -5811,32 +5814,99 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeA
 }
 
 
-STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IEventContext * /*eventContext*/, BOOL /*tryToUnbind*/)
+/**
+ * Currently this method doesn't attach device to the running VM,
+ * just makes sure it's plugged on next VM start.
+ */
+STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL /*tryToUnbind*/)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComObjPtr<PciDeviceAttachment> pda;
-    char name[32];
+    // lock scope
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    pda.createObject();
-    RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (hostAddress>>8) & 0xff, (hostAddress & 0xf8) >> 3, hostAddress & 7);
-    Bstr bname(name);
-    pda.createObject();
-    pda->init(this, bname,  hostAddress, desiredGuestAddress, TRUE);
+        //HRESULT rc = checkStateDependency(MutableStateDep);
+        //if (FAILED(rc)) return rc;
 
-    mPciDeviceAssignments.push_back(pda);
+        ComObjPtr<PciDeviceAttachment> pda;
+        char name[32];
+
+        RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (hostAddress>>8) & 0xff, (hostAddress & 0xf8) >> 3, hostAddress & 7);
+        Bstr bname(name);
+        pda.createObject();
+        pda->init(this, bname,  hostAddress, desiredGuestAddress, TRUE);
+        setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mPciDeviceAssignments.push_back(pda);
+    }
+
+    // do we need it?
+    //saveSettings(NULL);
+    mHWData.commit();
+
     return S_OK;
 }
 
-STDMETHODIMP Machine::DetachHostPciDevice(LONG /*hostAddress*/)
+/**
+ * Currently this method doesn't detach device from the running VM,
+ * just makes sure it's not plugged on next VM start.
+ */
+STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return E_NOTIMPL;
+    ComObjPtr<PciDeviceAttachment> pAttach;
+    bool fRemoved = false;
+    HRESULT rc;
+
+    // lock scope
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        rc = checkStateDependency(MutableStateDep);
+        if (FAILED(rc)) return rc;
+
+        for (HWData::PciDeviceAssignmentList::iterator it =  mHWData->mPciDeviceAssignments.begin();
+             it !=  mHWData->mPciDeviceAssignments.end();
+             ++it)
+        {
+            LONG iHostAddress = -1;
+            pAttach = *it;
+            pAttach->COMGETTER(HostAddress)(&iHostAddress);
+            if (iHostAddress  != -1  && iHostAddress == hostAddress)
+            {
+                setModified(IsModified_MachineData);
+                mHWData.backup();
+                mHWData->mPciDeviceAssignments.remove(pAttach);
+                fRemoved = true;
+                break;
+            }
+        }
+        // Indeed under lock?
+        mHWData.commit();
+
+        // do we need it?
+        // saveSettings(NULL);
+    }
+
+
+    /* Fire event outside of the lock */
+    if (fRemoved)
+    {
+        Assert(!pAttach.isNull());
+        ComPtr<IEventSource> es;
+        rc = mParent->COMGETTER(EventSource)(es.asOutParam());
+        Assert(SUCCEEDED(rc));
+        Bstr mid;
+        rc = this->COMGETTER(Id)(mid.asOutParam());
+        Assert(SUCCEEDED(rc));
+        fireHostPciDevicePlugEvent(es, mid.raw(), false /* unplugged */, true /* success */, pAttach, NULL);
+    }
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments))
@@ -5848,7 +5918,7 @@ STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDevice
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IPciDeviceAttachment> assignments(mPciDeviceAssignments);
+    SafeIfaceArray<IPciDeviceAttachment> assignments(mHWData->mPciDeviceAssignments);
     assignments.detachTo(ComSafeArrayOutArg(aAssignments));
 
     return S_OK;
@@ -6127,6 +6197,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
         const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0 };
+        fprintf(stderr, "SDL=%s\n",  szPath);
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_VBOXSDL */
