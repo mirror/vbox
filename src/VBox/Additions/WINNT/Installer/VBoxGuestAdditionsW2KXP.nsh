@@ -343,7 +343,6 @@ Function W2K_InstallFiles
   SetOutPath "$INSTDIR"
 
   ${If} $g_bNoGuestDrv <> "true"
-    StrCmp $g_bNoGuestDrv "true" drv_video
     DetailPrint "Installing guest driver ..."
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
     Pop $0 ; Ret value
