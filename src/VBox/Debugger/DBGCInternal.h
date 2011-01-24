@@ -79,7 +79,7 @@ typedef struct DBGCBP
     /** Pointer to the next breakpoint in the list. */
     struct DBGCBP  *pNext;
     /** The breakpoint identifier. */
-    RTUINT          iBp;
+    uint32_t        iBp;
     /** The size of the command. */
     size_t          cchCmd;
     /** The command to execute when the breakpoint is hit. */
@@ -238,6 +238,9 @@ typedef struct DBGC
 
     /** rc from the last dbgcHlpPrintfV(). */
     int                 rcOutput;
+    /** The last character we wrote. */
+    char                chLastOutput;
+
     /** rc from the last command. */
     int                 rcCmd;
     /** @} */

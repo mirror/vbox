@@ -244,12 +244,12 @@ typedef struct DBGF
      * This part is initialized in a lazy manner for performance reasons. */
     bool                        fSymInited;
     /** Alignment padding. */
-    RTUINT                      uAlignment0;
+    uint32_t                    uAlignment0;
 
     /** The number of hardware breakpoints. */
-    RTUINT                      cHwBreakpoints;
+    uint32_t                    cHwBreakpoints;
     /** The number of active breakpoints. */
-    RTUINT                      cBreakpoints;
+    uint32_t                    cBreakpoints;
     /** Array of hardware breakpoints. (0..3)
      * This is shared among all the CPUs because life is much simpler that way. */
     DBGFBP                      aHwBreakpoints[4];

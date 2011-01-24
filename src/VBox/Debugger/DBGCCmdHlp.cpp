@@ -36,31 +36,7 @@
 
 
 /**
- * Command helper for writing text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pvBuf       What to write.
- * @param   cbBuf       Number of bytes to write.
- * @param   pcbWritten  Where to store the number of bytes actually written.
- *                      If NULL the entire buffer must be successfully written.
- */
-static DECLCALLBACK(int) dbgcHlpWrite(PDBGCCMDHLP pCmdHlp, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
-{
-    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    return pDbgc->pBack->pfnWrite(pDbgc->pBack, pvBuf, cbBuf, pcbWritten);
-}
-
-
-/**
- * Command helper for writing formatted text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pcb         Where to store the number of bytes written.
- * @param   pszFormat   The format string.
- *                      This is using the log formatter, so it's format extensions can be used.
- * @param   ...         Arguments specified in the format string.
+ * @interface_method_impl{DBGCCMDHLP,pfnPrintf}
  */
 static DECLCALLBACK(int) dbgcHlpPrintf(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, ...)
 {
@@ -76,7 +52,8 @@ static DECLCALLBACK(int) dbgcHlpPrintf(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, 
 }
 
 /**
- * Callback to format non-standard format specifiers.
+ * Callback to format non-standard format specifiers, employed by dbgcPrintfV
+ * and others.
  *
  * @returns The number of bytes formatted.
  * @param   pvArg           Formatter argument.
@@ -189,7 +166,7 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
 
 
 /**
- * Output callback.
+ * Output callback employed by dbgcHlpPrintfV.
  *
  * @returns number of bytes written.
  * @param   pvArg       User argument.
@@ -198,11 +175,13 @@ static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnO
  */
 static DECLCALLBACK(size_t) dbgcFormatOutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
-    PDBGC   pDbgc = (PDBGC)pvArg;
+    PDBGC pDbgc = (PDBGC)pvArg;
     if (cbChars)
     {
         int rc = pDbgc->pBack->pfnWrite(pDbgc->pBack, pachChars, cbChars, NULL);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            pDbgc->chLastOutput = pachChars[cbChars - 1];
+        else
         {
             pDbgc->rcOutput = rc;
             cbChars = 0;
@@ -215,14 +194,7 @@ static DECLCALLBACK(size_t) dbgcFormatOutput(void *pvArg, const char *pachChars,
 
 
 /**
- * Command helper for writing formatted text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pcbWritten  Where to store the number of bytes written.
- * @param   pszFormat   The format string.
- *                      This is using the log formatter, so it's format extensions can be used.
- * @param   args        Arguments specified in the format string.
+ * @interface_method_impl{DBGCCMDHLP,pfnPrintfV}
  */
 static DECLCALLBACK(int) dbgcHlpPrintfV(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args)
 {
@@ -242,13 +214,7 @@ static DECLCALLBACK(int) dbgcHlpPrintfV(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
 
 
 /**
- * Reports an error from a DBGF call.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to command helpers.
- * @param   rc          The VBox status code returned by a DBGF call.
- * @param   pszFormat   Format string for additional messages. Can be NULL.
- * @param   ...         Format arguments, optional.
+ * @interface_method_impl{DBGCCMDHLP,pfnVBoxErrorV}
  */
 static DECLCALLBACK(int) dbgcHlpVBoxErrorV(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, va_list args)
 {
@@ -270,13 +236,7 @@ static DECLCALLBACK(int) dbgcHlpVBoxErrorV(PDBGCCMDHLP pCmdHlp, int rc, const ch
 
 
 /**
- * Reports an error from a DBGF call.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to command helpers.
- * @param   rc          The VBox status code returned by a DBGF call.
- * @param   pszFormat   Format string for additional messages. Can be NULL.
- * @param   ...         Format arguments, optional.
+ * @interface_method_impl{DBGCCMDHLP,pfnVBoxError}
  */
 static DECLCALLBACK(int) dbgcHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
 {
@@ -289,19 +249,7 @@ static DECLCALLBACK(int) dbgcHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const cha
 
 
 /**
- * Command helper for reading memory specified by a DBGC variable.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVM         VM handle if GC or physical HC address.
- * @param   pvBuffer    Where to store the read data.
- * @param   cbRead      Number of bytes to read.
- * @param   pVarPointer DBGC variable specifying where to start reading.
- * @param   pcbRead     Where to store the number of bytes actually read.
- *                      This optional, but it's useful when read GC virtual memory where a
- *                      page in the requested range might not be present.
- *                      If not specified not-present failure or end of a HC physical page
- *                      will cause failure.
+ * @interface_method_impl{DBGCCMDHLP,pfnMemRead}
  */
 static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBuffer, size_t cbRead, PCDBGCVAR pVarPointer, size_t *pcbRead)
 {
@@ -471,18 +419,9 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
     return 0;
 }
 
+
 /**
- * Command helper for writing memory specified by a DBGC variable.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVM         VM handle if GC or physical HC address.
- * @param   pvBuffer    What to write.
- * @param   cbWrite     Number of bytes to write.
- * @param   pVarPointer DBGC variable specifying where to start reading.
- * @param   pcbWritten  Where to store the number of bytes written.
- *                      This is optional. If NULL be aware that some of the buffer
- *                      might have been written to the specified address.
+ * @interface_method_impl{DBGCCMDHLP,pfnMemWrite}
  */
 static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, PVM pVM, const void *pvBuffer, size_t cbWrite, PCDBGCVAR pVarPointer, size_t *pcbWritten)
 {
@@ -617,13 +556,7 @@ static DECLCALLBACK(int) dbgcHlpMemWrite(PDBGCCMDHLP pCmdHlp, PVM pVM, const voi
 
 
 /**
- * Executes one command expression.
- * (Hopefully the parser and functions are fully reentrant.)
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pszExpr     The expression. Format string with the format DBGC extensions.
- * @param   ...         Format arguments.
+ * @interface_method_impl{DBGCCMDHLP,pfnHlpExec}
  */
 static DECLCALLBACK(int) dbgcHlpExec(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...)
 {
@@ -693,6 +626,33 @@ static DECLCALLBACK(int) dbgcHlpFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const
     RTStrFormatV(dbgcFormatOutput, pDbgc, dbgcStringFormatter, pDbgc, pszFormat, va);
     if (RT_FAILURE(pDbgc->rcOutput))
         return pDbgc->rcOutput;
+    if (pDbgc->chLastOutput != '\n')
+        dbgcFormatOutput(pDbgc, "\n", 1);
+    return VERR_DBGC_COMMAND_FAILED;
+}
+
+
+/**
+ * @copydoc DBGCCMDHLP::pfnFailV
+ */
+static DECLCALLBACK(int) dbgcHlpFailRcV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, va_list va)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Do the formatting and output.
+     */
+    pDbgc->rcOutput = VINF_SUCCESS;
+    RTStrFormat(dbgcFormatOutput, pDbgc, dbgcStringFormatter, pDbgc, "%s: error: ", pCmd->pszCmd);
+    if (RT_FAILURE(pDbgc->rcOutput))
+        return pDbgc->rcOutput;
+    RTStrFormatV(dbgcFormatOutput, pDbgc, dbgcStringFormatter, pDbgc, pszFormat, va);
+    if (RT_FAILURE(pDbgc->rcOutput))
+        return pDbgc->rcOutput;
+    RTStrFormat(dbgcFormatOutput, pDbgc, dbgcStringFormatter, pDbgc, ": %Rrc\n", rc);
+    if (RT_FAILURE(pDbgc->rcOutput))
+        return pDbgc->rcOutput;
+
     return VERR_DBGC_COMMAND_FAILED;
 }
 
@@ -777,12 +737,7 @@ static DECLCALLBACK(int) dbgcHlpVarFromDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGFADDRE
 
 
 /**
- * Converts a DBGC variable to a number.
- *
- * @returns VBox status code.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVar        The variable to convert.
- * @param   pu64Number  Where to store the number value.
+ * @interface_method_impl{DBGCCMDHLP,pfnVarToNumber}
  */
 static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t *pu64Number)
 {
@@ -822,12 +777,7 @@ static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar,
 
 
 /**
- * Converts a DBGC variable to a boolean.
- *
- * @returns VBox status code.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVar        The variable to convert.
- * @param   pf          Where to store the boolean.
+ * @interface_method_impl{DBGCCMDHLP,pfnVarToBool}
  */
 static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, bool *pf)
 {
@@ -1254,11 +1204,7 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
 
 
 /**
- * Info helper callback wrapper - print formatted string.
- *
- * @param   pHlp        Pointer to this structure.
- * @param   pszFormat   The format string.
- * @param   ...         Arguments.
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintf}
  */
 static DECLCALLBACK(void) dbgcHlpGetDbgfOutputHlp_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
@@ -1271,11 +1217,7 @@ static DECLCALLBACK(void) dbgcHlpGetDbgfOutputHlp_Printf(PCDBGFINFOHLP pHlp, con
 
 
 /**
- * Info helper callback wrapper - print formatted string.
- *
- * @param   pHlp        Pointer to this structure.
- * @param   pszFormat   The format string.
- * @param   args        Argument list.
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintfV}
  */
 static DECLCALLBACK(void) dbgcHlpGetDbgfOutputHlp_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
@@ -1309,7 +1251,7 @@ static DECLCALLBACK(PCDBGFINFOHLP) dbgcHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
  */
 void dbgcInitCmdHlp(PDBGC pDbgc)
 {
-    pDbgc->CmdHlp.pfnWrite              = dbgcHlpWrite;
+    pDbgc->CmdHlp.u32Magic              = DBGCCMDHLP_MAGIC;
     pDbgc->CmdHlp.pfnPrintfV            = dbgcHlpPrintfV;
     pDbgc->CmdHlp.pfnPrintf             = dbgcHlpPrintf;
     pDbgc->CmdHlp.pfnVBoxErrorV         = dbgcHlpVBoxErrorV;
@@ -1319,6 +1261,7 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.pfnEvalV              = dbgcHlpEvalV;
     pDbgc->CmdHlp.pfnExec               = dbgcHlpExec;
     pDbgc->CmdHlp.pfnFailV              = dbgcHlpFailV;
+    pDbgc->CmdHlp.pfnFailRcV            = dbgcHlpFailRcV;
     pDbgc->CmdHlp.pfnVarToDbgfAddr      = dbgcHlpVarToDbgfAddr;
     pDbgc->CmdHlp.pfnVarFromDbgfAddr    = dbgcHlpVarFromDbgfAddr;
     pDbgc->CmdHlp.pfnVarToNumber        = dbgcHlpVarToNumber;
@@ -1326,5 +1269,6 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.pfnVarGetRange        = dbgcHlpVarGetRange;
     pDbgc->CmdHlp.pfnVarConvert         = dbgcHlpVarConvert;
     pDbgc->CmdHlp.pfnGetDbgfOutputHlp   = dbgcHlpGetDbgfOutputHlp;
+    pDbgc->CmdHlp.u32EndMarker          = DBGCCMDHLP_MAGIC;
 }
 

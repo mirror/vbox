@@ -171,8 +171,8 @@ static const DBGCVARDESC    g_aArgPat[] =
 static const DBGCCMD    g_aCmds[] =
 {
     /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "stats",      0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
-    { "statsreset", 0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),        NULL,               0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
+    { "stats",      0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     NULL,               0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
+    { "statsreset", 0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     NULL,               0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
 };
 #endif
 
@@ -1921,19 +1921,18 @@ static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     /*
      * Validate input.
      */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
     PUVM pUVM = pVM->pUVM;
     if (!pUVM->stam.s.pHead)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no statistics present.\n");
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No statistics present");
 
     /*
      * Do the printing.
      */
     STAMR3PRINTONEARGS Args;
-    Args.pVM = pVM;
-    Args.pvArg = pCmdHlp;
-    Args.pfnPrintf = stamR3EnumDbgfPrintf;
+    Args.pVM        = pVM;
+    Args.pvArg      = pCmdHlp;
+    Args.pfnPrintf  = stamR3EnumDbgfPrintf;
 
     return stamR3EnumU(pUVM, cArgs ? paArgs[0].u.pszString : NULL, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
 }
@@ -1973,20 +1972,18 @@ static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
     /*
      * Validate input.
      */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
     PUVM pUVM = pVM->pUVM;
     if (!pUVM->stam.s.pHead)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no statistics present.\n");
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No statistics present");
 
     /*
      * Execute reset.
      */
     int rc = STAMR3ResetU(pUVM, cArgs ? paArgs[0].u.pszString : NULL);
     if (RT_SUCCESS(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "info: Statistics reset.\n");
-
-    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Resetting statistics.\n");
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "STAMR3ResetU");
+    return DBGCCmdHlpPrintf(pCmdHlp, "Statistics have been reset.\n");
 }
 
 #endif /* VBOX_WITH_DEBUGGER */

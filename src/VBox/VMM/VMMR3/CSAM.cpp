@@ -2662,6 +2662,7 @@ VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
 }
 
 #ifdef VBOX_WITH_DEBUGGER
+
 /**
  * The '.csamoff' command.
  *
@@ -2674,14 +2675,12 @@ VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
  */
 static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
 
-    CSAMDisableScanning(pVM);
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "CSAM Scanning disabled\n");
+    int rc = CSAMDisableScanning(pVM);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMDisableScanning");
+    return DBGCCmdHlpPrintf(pCmdHlp, "CSAM Scanning disabled\n");
 }
 
 /**
@@ -2696,13 +2695,12 @@ static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
  */
 static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
 
-    CSAMEnableScanning(pVM);
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "CSAM Scanning enabled\n");
+    int rc = CSAMEnableScanning(pVM);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMEnableScanning");
+    return DBGCCmdHlpPrintf(pCmdHlp, "CSAM Scanning enabled\n");
 }
-#endif
+
+#endif /* VBOX_WITH_DEBUGGER */

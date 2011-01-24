@@ -370,148 +370,104 @@ typedef const struct DBGCCMD *PCDBGCCMD;
 /** Pointer to helper functions for commands. */
 typedef struct DBGCCMDHLP *PDBGCCMDHLP;
 
-/**
- * Command helper for writing text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pvBuf       What to write.
- * @param   cbBuf       Number of bytes to write.
- * @param   pcbWritten  Where to store the number of bytes actually written.
- *                      If NULL the entire buffer must be successfully written.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPWRITE(PDBGCCMDHLP pCmdHlp, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
-/** Pointer to a FNDBGCHLPWRITE() function. */
-typedef FNDBGCHLPWRITE *PFNDBGCHLPWRITE;
-
-/**
- * Command helper for writing formatted text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pcb         Where to store the number of bytes written.
- * @param   pszFormat   The format string.
- *                      This is using the log formatter, so it's format extensions can be used.
- * @param   ...         Arguments specified in the format string.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPPRINTF(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, ...);
-/** Pointer to a FNDBGCHLPPRINTF() function. */
-typedef FNDBGCHLPPRINTF *PFNDBGCHLPPRINTF;
-
-/**
- * Command helper for writing formatted text to the debug console.
- *
- * @returns VBox status.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pcb         Where to store the number of bytes written.
- * @param   pszFormat   The format string.
- *                      This is using the log formatter, so it's format extensions can be used.
- * @param   args        Arguments specified in the format string.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPPRINTFV(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args);
-/** Pointer to a FNDBGCHLPPRINTFV() function. */
-typedef FNDBGCHLPPRINTFV *PFNDBGCHLPPRINTFV;
-
-/**
- * Command helper for formatting and error message for a VBox status code.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   rc          The VBox status code.
- * @param   pszFormat   Format string for additional messages. Can be NULL.
- * @param   ...         Format arguments, optional.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPVBOXERROR(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...);
-/** Pointer to a FNDBGCHLPVBOXERROR() function. */
-typedef FNDBGCHLPVBOXERROR *PFNDBGCHLPVBOXERROR;
-
-/**
- * Command helper for formatting and error message for a VBox status code.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   rc          The VBox status code.
- * @param   pcb         Where to store the number of bytes written.
- * @param   pszFormat   Format string for additional messages. Can be NULL.
- * @param   args        Format arguments, optional.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPVBOXERRORV(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, va_list args);
-/** Pointer to a FNDBGCHLPVBOXERRORV() function. */
-typedef FNDBGCHLPVBOXERRORV *PFNDBGCHLPVBOXERRORV;
-
-/**
- * Command helper for reading memory specified by a DBGC variable.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVM         VM handle if GC or physical HC address.
- * @param   pvBuffer    Where to store the read data.
- * @param   cbRead      Number of bytes to read.
- * @param   pVarPointer DBGC variable specifying where to start reading.
- * @param   pcbRead     Where to store the number of bytes actually read.
- *                      This optional, but it's useful when read GC virtual memory where a
- *                      page in the requested range might not be present.
- *                      If not specified not-present failure or end of a HC physical page
- *                      will cause failure.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPMEMREAD(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBuffer, size_t cbRead, PCDBGCVAR pVarPointer, size_t *pcbRead);
-/** Pointer to a FNDBGCHLPMEMREAD() function. */
-typedef FNDBGCHLPMEMREAD *PFNDBGCHLPMEMREAD;
-
-/**
- * Command helper for writing memory specified by a DBGC variable.
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVM         VM handle if GC or physical HC address.
- * @param   pvBuffer    What to write.
- * @param   cbWrite     Number of bytes to write.
- * @param   pVarPointer DBGC variable specifying where to start reading.
- * @param   pcbWritten  Where to store the number of bytes written.
- *                      This is optional. If NULL be aware that some of the buffer
- *                      might have been written to the specified address.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPMEMWRITE(PDBGCCMDHLP pCmdHlp, PVM pVM, const void *pvBuffer, size_t cbWrite, PCDBGCVAR pVarPointer, size_t *pcbWritten);
-/** Pointer to a FNDBGCHLPMEMWRITE() function. */
-typedef FNDBGCHLPMEMWRITE *PFNDBGCHLPMEMWRITE;
-
-
-
-/**
- * Executes command an expression.
- * (Hopefully the parser and functions are fully reentrant.)
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pszExpr     The expression. Format string with the format DBGC extensions.
- * @param   ...         Format arguments.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPEXEC(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...);
-/** Pointer to a FNDBGCHLPEVAL() function. */
-typedef FNDBGCHLPEXEC *PFNDBGCHLPEXEC;
-
 
 /**
  * Helper functions for commands.
  */
 typedef struct DBGCCMDHLP
 {
-    /** Pointer to a FNDBCHLPWRITE() function. */
-    PFNDBGCHLPWRITE         pfnWrite;
-    /** Pointer to a FNDBGCHLPPRINTF() function. */
-    PFNDBGCHLPPRINTF        pfnPrintf;
-    /** Pointer to a FNDBGCHLPPRINTFV() function. */
-    PFNDBGCHLPPRINTFV       pfnPrintfV;
-    /** Pointer to a FNDBGCHLPVBOXERROR() function. */
-    PFNDBGCHLPVBOXERROR     pfnVBoxError;
-    /** Pointer to a FNDBGCHLPVBOXERRORV() function. */
-    PFNDBGCHLPVBOXERRORV    pfnVBoxErrorV;
-    /** Pointer to a FNDBGCHLPMEMREAD() function. */
-    PFNDBGCHLPMEMREAD       pfnMemRead;
-    /** Pointer to a FNDBGCHLPMEMWRITE() function. */
-    PFNDBGCHLPMEMWRITE      pfnMemWrite;
-    /** Pointer to a FNDBGCHLPEXEC() function. */
-    PFNDBGCHLPEXEC          pfnExec;
+    /** Magic value (DBGCCMDHLP_MAGIC). */
+    uint32_t                u32Magic;
+
+    /**
+     * Command helper for writing formatted text to the debug console.
+     *
+     * @returns VBox status.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pcb         Where to store the number of bytes written.
+     * @param   pszFormat   The format string.
+     *                      This is using the log formatter, so it's format extensions can be used.
+     * @param   ...         Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(int, pfnPrintf)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, ...);
+
+    /**
+     * Command helper for writing formatted text to the debug console.
+     *
+     * @returns VBox status.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pcb         Where to store the number of bytes written.
+     * @param   pszFormat   The format string.
+     *                      This is using the log formatter, so it's format extensions can be used.
+     * @param   args        Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(int, pfnPrintfV)(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args);
+
+    /**
+     * Command helper for formatting and error message for a VBox status code.
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   rc          The VBox status code.
+     * @param   pszFormat   Format string for additional messages. Can be NULL.
+     * @param   ...         Format arguments, optional.
+     */
+    DECLCALLBACKMEMBER(int, pfnVBoxError)(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...);
+
+    /**
+     * Command helper for formatting and error message for a VBox status code.
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   rc          The VBox status code.
+     * @param   pcb         Where to store the number of bytes written.
+     * @param   pszFormat   Format string for additional messages. Can be NULL.
+     * @param   args        Format arguments, optional.
+     */
+    DECLCALLBACKMEMBER(int, pfnVBoxErrorV)(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, va_list args);
+
+    /**
+     * Command helper for reading memory specified by a DBGC variable.
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pVM         VM handle if GC or physical HC address.
+     * @param   pvBuffer    Where to store the read data.
+     * @param   cbRead      Number of bytes to read.
+     * @param   pVarPointer DBGC variable specifying where to start reading.
+     * @param   pcbRead     Where to store the number of bytes actually read.
+     *                      This optional, but it's useful when read GC virtual memory where a
+     *                      page in the requested range might not be present.
+     *                      If not specified not-present failure or end of a HC physical page
+     *                      will cause failure.
+     */
+    DECLCALLBACKMEMBER(int, pfnMemRead)(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBuffer, size_t cbRead, PCDBGCVAR pVarPointer, size_t *pcbRead);
+
+    /**
+     * Command helper for writing memory specified by a DBGC variable.
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pVM         VM handle if GC or physical HC address.
+     * @param   pvBuffer    What to write.
+     * @param   cbWrite     Number of bytes to write.
+     * @param   pVarPointer DBGC variable specifying where to start reading.
+     * @param   pcbWritten  Where to store the number of bytes written.
+     *                      This is optional. If NULL be aware that some of the buffer
+     *                      might have been written to the specified address.
+     */
+    DECLCALLBACKMEMBER(int, pfnMemWrite)(PDBGCCMDHLP pCmdHlp, PVM pVM, const void *pvBuffer, size_t cbWrite, PCDBGCVAR pVarPointer, size_t *pcbWritten);
+
+    /**
+     * Executes command an expression.
+     * (Hopefully the parser and functions are fully reentrant.)
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pszExpr     The expression. Format string with the format DBGC extensions.
+     * @param   ...         Format arguments.
+     */
+    DECLCALLBACKMEMBER(int, pfnExec)(PDBGCCMDHLP pCmdHlp, const char *pszExpr, ...);
 
     /**
      * Evaluates an expression.
@@ -536,6 +492,35 @@ typedef struct DBGCCMDHLP
      * @param   va          Format arguments.
      */
     DECLCALLBACKMEMBER(int, pfnFailV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, va_list va);
+
+    /**
+     * Print an error and fail the current command.
+     *
+     * @returns VBox status code to pass upwards.
+     *
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pCmd        The failing command.
+     * @param   rc          The status code indicating the failure.  This will
+     *                      be appended to the message after a colon (': ').
+     * @param   pszFormat   The error message format string.
+     * @param   va          Format arguments.
+     *
+     * @see     DBGCCmdHlpFailRc
+     */
+    DECLCALLBACKMEMBER(int, pfnFailRcV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, va_list va);
+
+    /**
+     * Parser error.
+     *
+     * @returns VBox status code to pass upwards.
+     *
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pCmd        The failing command, can be NULL but shouldn't.
+     * @param   iArg        The offending argument, -1 when lazy.
+     * @param   pszExpr     The expression.
+     * @param   iLine       The line number.
+     */
+    DECLCALLBACKMEMBER(int, pfnParserError)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int iArg, const char *pszExpr, unsigned iLine);
 
     /**
      * Converts a DBGC variable to a DBGF address structure.
@@ -614,7 +599,12 @@ typedef struct DBGCCMDHLP
      */
     DECLCALLBACKMEMBER(PCDBGFINFOHLP, pfnGetDbgfOutputHlp)(PDBGCCMDHLP pCmdHlp);
 
+    /** End marker (DBGCCMDHLP_MAGIC). */
+    uint32_t                u32EndMarker;
 } DBGCCMDHLP;
+
+/** Magic value for DBGCCMDHLP::u32Magic. (Fyodor Mikhaylovich Dostoyevsky) */
+#define DBGCCMDHLP_MAGIC    UINT32_C(18211111)
 
 
 #ifdef IN_RING3
@@ -705,6 +695,60 @@ DECLINLINE(int) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *
 
     return rc;
 }
+
+/**
+ * Print an error and fail the current command.
+ *
+ * Usage example:
+ * @code
+    int rc = VMMR3Something(pVM);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "VMMR3Something");
+    return VINF_SUCCESS;
+ * @endcode
+ *
+ * @returns VBox status code to pass upwards.
+ *
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pCmd        The failing command.
+ * @param   rc          The status code indicating the failure.
+ * @param   pszFormat   The error message format string.
+ * @param   ...         Format arguments.
+ */
+DECLINLINE(int) DBGCCmdHlpFailRc(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, ...)
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    rc = pCmdHlp->pfnFailRcV(pCmdHlp, pCmd, rc, pszFormat, va);
+    va_end(va);
+
+    return rc;
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnParserError
+ */
+DECLINLINE(int) DBGCCmdHlpParserError(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int iArg, const char *pszExpr, unsigned iLine)
+{
+    return pCmdHlp->pfnParserError(pCmdHlp, pCmd, iArg, pszExpr, iLine);
+}
+
+/** Assert+return like macro for checking parser sanity.
+ * Returns with failure if the precodition is not met. */
+#define DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, iArg, expr) \
+    do { \
+        if (!(expr)) \
+            return DBGCCmdHlpParserError(pCmdHlp, pCmd, iArg, #expr, __LINE__); \
+    } while (0)
+
+/** Assert+return like macro that the VM handle is present.
+ * Returns with failure if the VM handle is NIL.  */
+#define DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM) \
+    do { \
+        if (!(pVM)) \
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM selected"); \
+    } while (0)
 
 /**
  * @copydoc DBGCCMDHLP::pfnVarToDbgfAddr
