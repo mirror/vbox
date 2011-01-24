@@ -31,8 +31,13 @@
 class QMenu;
 class QMenuBar;
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+# ifdef Q_WS_MAC
+struct __siginfo;
+typedef struct __siginfo siginfo_t;
+# else /* Q_WS_MAC */
 struct siginfo;
 typedef struct siginfo siginfo_t;
+# endif /* !Q_WS_MAC */
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
 /* Local forwards */
