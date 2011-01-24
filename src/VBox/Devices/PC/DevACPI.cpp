@@ -2693,7 +2693,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("Configuration error: Failed to read \"PowerS1Enabled\""));
 
     /* query whether S4 power state should be exposed */
-    rc = CFGMR3QueryBoolDef(pCfg, "PowerS4Enabled", &s->fS4Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "PowerS4Enabled", &s->fS4Enabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"PowerS4Enabled\""));
