@@ -320,13 +320,22 @@ Function W2K_InstallFiles
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxHook.dll" "$g_strSystemDir\VBoxHook.dll" "$INSTDIR"
   AccessControl::GrantOnFile "$g_strSystemDir\VBoxHook.dll" "(BU)" "GenericRead"
 
-  DetailPrint "Installing Drivers..."
+  DetailPrint "Installing drivers ..."
 
   Push $0 ; For fetching results
 
+drv_guest:
+
+  StrCmp $g_bNoGuestDrv "true" drv_video
+  DetailPrint "Installing guest driver ..."
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
+  Pop $0 ; Ret value
+  LogText "Guest driver result: $0"
+  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
+
 drv_video:
 
-  StrCmp $g_bNoVideoDrv "true" drv_guest
+  StrCmp $g_bNoVideoDrv "true" drv_mouse
   SetOutPath "$INSTDIR"
   ${If} $g_bWithWDDM == "true"
     DetailPrint "Installing WDDM video driver ..."
@@ -338,15 +347,6 @@ drv_video:
   Pop $0 ; Ret value
   LogText "Video driver result: $0"
   IntCmp $0 0 +1 error error ; Check ret value (0=OK, 1=Error)
-
-drv_guest:
-
-  StrCmp $g_bNoGuestDrv "true" drv_mouse
-  DetailPrint "Installing guest driver ..."
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
-  Pop $0 ; Ret value
-  LogText "Guest driver result: $0"
-  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
 
 drv_mouse:
 
