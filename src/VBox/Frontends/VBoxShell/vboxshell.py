@@ -51,7 +51,8 @@ term_colors = {
     'blue':'\033[94m',
     'green':'\033[92m',
     'yellow':'\033[93m',
-    'magenta':'\033[35m'
+    'magenta':'\033[35m',
+    'cyan':'\033[36m'
     }
 def colored(string,color):
     if not g_hascolors:
@@ -203,6 +204,12 @@ def colPath(ctx,p):
 
 def colSize(ctx,m):
     return colored(m, 'red')
+
+def colPci(ctx,vm):
+    return colored(vm, 'green')
+
+def colDev(ctx,vm):
+    return colored(vm, 'cyan')
 
 def colSizeM(ctx,m):
     return colored(str(m)+'M', 'red')
@@ -3076,6 +3083,36 @@ def playbackDemoCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  playbackDemo(ctx, console, filename, dur)])
     return 0
 
+
+def pciAddr(ctx,addr):
+    str = "%d:%d.%d" %(addr >> 8, (addr & 0xff) >> 3, addr & 7)
+    return colPci(ctx, str)
+
+def lspci(ctx, console):
+    assigned = ctx['global'].getArray(console.machine, 'pciDeviceAssignments')
+    for a in assigned:
+        if a.isPhysicalDevice:
+            print "%s: assigned host device %s" %(colDev(ctx, a.name), pciAddr(ctx, a.hostAddress))
+
+    atts = ctx['global'].getArray(console, 'attachedPciDevices')
+    for a in atts:
+        if a.isPhysicalDevice:
+            print "%s: physical, guest %s, host %s" %(colDev(a.name), pciAddr(ctx, a.guestAddress), pciAddr(ctx, a.hostAddress))
+        else:
+            print "%s: virtual, guest %s" %(colDev(ctx, a.name), pciAddr(ctx, a.guestAddress))
+    return
+
+
+def lspciCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: lspci vm"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  lspci(ctx, console)])
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -3157,11 +3194,12 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'snapshot':['VM snapshot manipulation, snapshot help for more info', snapshotCmd, 0],
             'nat':['NAT (network address translation engine) manipulation, nat help for more info', natCmd, 0],
             'nic' : ['Network adapter management', nicCmd, 0],
-            'prompt' : ['Control prompt', promptCmd, 0],
+            'prompt' : ['Control shell prompt', promptCmd, 0],
             'foreachvm' : ['Perform command for each VM', foreachvmCmd, 0],
             'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm[@OSTypeId=\'MacOS\'] "print obj.name"', foreachCmd, 0],
             'recordDemo':['Record demo: recordDemo Win32 file.dmo 10', recordDemoCmd, 0],
-            'playbackDemo':['Playback demo: playbackDemo Win32 file.dmo 10', playbackDemoCmd, 0]
+            'playbackDemo':['Playback demo: playbackDemo Win32 file.dmo 10', playbackDemoCmd, 0],
+            'lspci': ['List PCI devices attached to the VM: lspci Win32', lspciCmd]
             }
 
 def runCommandArgs(ctx, args):
