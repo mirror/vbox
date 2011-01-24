@@ -828,7 +828,7 @@
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>Désactivée</translation>
+        <translation>Désactivé</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -838,7 +838,7 @@
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivés</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -848,7 +848,7 @@
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivés</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -960,7 +960,7 @@
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Choisissez où enregistrer l&apos;image des Additions invité</translation>
+        <translation>Choisissez où enregistrer le CD virtuel des Additions invité</translation>
     </message>
 </context>
 <context>
@@ -1301,11 +1301,11 @@
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>&amp;Extension Packages:</source>
-        <translation>&amp;Paquets:</translation>
+        <translation>&amp;Extensions:</translation>
     </message>
     <message>
         <source>Lists all installed packages.</source>
-        <translation>Liste des paquets installés.</translation>
+        <translation>Liste des extensions installées.</translation>
     </message>
     <message>
         <source>Active</source>
@@ -1321,19 +1321,19 @@
     </message>
     <message>
         <source>Add package</source>
-        <translation>Ajouter paquet</translation>
+        <translation>Ajouter extension</translation>
     </message>
     <message>
         <source>Remove package</source>
-        <translation>Supprimer paquet</translation>
+        <translation>Supprimer extension</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation>Sélectionner un paquet</translation>
+        <translation>Choisissez un fichier extension</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation>Paquet (%1)</translation>
+        <translation>Fichiers extensions (%1)</translation>
     </message>
 </context>
 <context>
@@ -1380,7 +1380,7 @@
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
-        <translation>Désactiver l&apos;é&amp;conomiseur écran hôte</translation>
+        <translation>Désactiver l&apos;é&amp;conomiseur d&apos;écran hôte</translation>
     </message>
 </context>
 <context>
@@ -2136,7 +2136,7 @@
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation>&amp;Autoriser les connexions multiples</translation>
+        <translation>&amp;Autoriser des connexions multiples</translation>
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2299,7 +2299,7 @@
     </message>
     <message>
         <source>Opens dialog to manage port forwarding rules.</source>
-        <translation>Ouvrir la fenêtre pour gérer les règles de redirection de ports.</translation>
+        <translation>Ouvre une fenêtre pour gérer les règles de redirection de ports.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
@@ -2377,7 +2377,7 @@
     </message>
     <message>
         <source>This table contains a list of port forwarding rules.</source>
-        <translation>Cette table contient la liste des règle de redirection de ports.</translation>
+        <translation>Cette table contient une liste de règles de redirection de ports.</translation>
     </message>
     <message>
         <source>Insert new rule</source>
@@ -2564,7 +2564,7 @@
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Si cette case est cochée le tube spécifié dans le champ &lt;b&gt;Chemin du port&lt;/b&gt; sera créé lors du lancement de la machine virtuelle ; sinon elle essaiera de de l&apos;utiliser comme s&apos;il existait.</translation>
+        <translation>Si cette case est cochée le tube spécifié dans le champ &lt;b&gt;Chemin du port&lt;/b&gt; sera créé lors du lancement de la machine virtuelle ; sinon elle essaiera de l&apos;utiliser comme s&apos;il existait.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -2734,7 +2734,7 @@
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>Contient tous les contrôleurs de stockage pour cette machine virtuelle, avec images et les disques durs qui leurs sont associés.</translation>
+        <translation>Contient tous les contrôleurs de stockage pour cette machine virtuelle, avec les disques virtuels et lecteurs physiques qui leurs sont associés.</translation>
     </message>
     <message>
         <source>Information</source>
@@ -2846,7 +2846,7 @@
     </message>
     <message>
         <source>Type:</source>
-        <translation>Type:</translation>
+        <translation>Type :</translation>
     </message>
     <message>
         <source>Host Drive</source>
@@ -2854,7 +2854,7 @@
     </message>
     <message>
         <source>Image</source>
-        <translation>Image</translation>
+        <translation>Disque virtuel</translation>
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
@@ -3324,11 +3324,11 @@
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annuler le téléchargement de l&apos;image disque « Additions invité VirtualBox »</translation>
+        <translation>Annuler le téléchargement du CD virtuel « Additions invité VirtualBox »</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Téléchargement de l&apos;image disque « Additions invité VirtualBox » de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Téléchargement du CD virtuel « Additions invité VirtualBox » de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -3383,23 +3383,23 @@
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez le type d&apos;image qui contiendra le disque dur virtuel que vous voulez créer.&lt;/p&gt;&lt;p&gt;Au début une &lt;b&gt;image de taille variable&lt;/b&gt; prend peu de place sur votre vrai disque dur. L&apos;espace occupé augmentera en fonction des besoins du système d&apos;exploitation invité, jusqu&apos;à la taille limite spécifiée.&lt;/p&gt;&lt;p&gt;Une &lt;b&gt;image de taille fixe&lt;/b&gt; occupe un espace constant. La taille du fichier image correspond approximativement à l&apos;espace du disque virtuel. La création d&apos;une image de taille fixe peut prendre un certain temps, qui dépend de la taille choisie et des performances en écriture de votre vrai disque dur.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez le type de disque virtuel que vous voulez créer.&lt;/p&gt;&lt;p&gt;Au début un &lt;b&gt;fichier disque de taille variable&lt;/b&gt; prend peu de place sur votre vrai disque dur. L&apos;espace occupé augmentera en fonction des besoins du système d&apos;exploitation invité, jusqu&apos;à la taille limite spécifiée.&lt;/p&gt;&lt;p&gt;Un &lt;b&gt;fichier disque de taille fixe&lt;/b&gt; occupe un espace constant. La taille du fichier correspond approximativement à l&apos;espace du disque virtuel. La création d&apos;un fichier disque de taille fixe peut prendre un certain temps, qui dépend de la taille choisie et des performances en écriture de votre vrai disque dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Type de l&apos;image</translation>
+        <translation>Type de disque virtuel</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>Image de taille &amp;variable</translation>
+        <translation>Fichier de taille &amp;variable</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>Image de taille &amp;fixe</translation>
+        <translation>Fichier de taille &amp;fixe</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation>Type de conteneur pour le disque dur</translation>
+        <translation>Type de disque dur virtuel</translation>
     </message>
 </context>
 <context>
@@ -3429,11 +3429,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Choisissez un emplacement pour la nouvelle image disque dur</translation>
+        <translation>Choisissez un emplacement pour le nouvelle disque dur virtuel</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Images disque dur (*.vdi)</translation>
+        <translation>Disque dur virtuel (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -3568,7 +3568,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Void pouvez soit créer un nouveau disque, soit choisir une image existante dans la liste ou en cliquant sur le bouton corréspontand.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Void pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton corréspontand.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -3840,7 +3840,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>No Preview</source>
-        <translation>Pas de prévisualisation</translation>
+        <translation>Aucune prévisualisation</translation>
     </message>
 </context>
 <context>
@@ -4018,7 +4018,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation>Image disque dur virtuel</translation>
+        <translation>Disque virtuel</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
@@ -5136,7 +5136,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>You can create media images using the virtual media manager.</source>
-        <translation>Vous pouvez créer des images de médias avec le gestionnaire de médias virtuels.</translation>
+        <translation>Vous pouvez créer des fichiers de médias avec le gestionnaire de médias virtuels.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -5329,7 +5329,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>Tous les %1 images (%2)</translation>
+        <translation>Tous les fichiers %1 virtuels (%2)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -5590,7 +5590,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Choisir une image de disque dur</translation>
+        <translation>Choisissez un fichier disque dur virtuel</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
@@ -5598,7 +5598,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Choisir une image CD/DVD</translation>
+        <translation>Choisissez un fichier CD/DVD virtuel</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -5606,7 +5606,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>Choisir une image de disquette</translation>
+        <translation>Choisissez un fichier disquette virtuel</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
@@ -5639,7 +5639,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>Images &amp;CD/DVD</translation>
+        <translation>&amp;CD/DVDs virtuels</translation>
     </message>
     <message>
         <source>Size</source>
@@ -5647,7 +5647,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>Images de &amp;disquette</translation>
+        <translation>&amp;Disquettes virtuelles</translation>
     </message>
     <message>
         <source>Attached to</source>
@@ -5681,7 +5681,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation>Tous les %1 images (%2)</translation>
+        <translation>Tous les fichiers %1 virtuels (%2)</translation>
     </message>
 </context>
 <context>
@@ -5988,19 +5988,19 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image disque « Additions invité VirtualBox » n&apos;a été trouvée ni à &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ni à &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voulez-vous télécharger cette image sur Internet ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le CD virtuel « Additions invité VirtualBox » n&apos;a été trouvée ni à &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ni à &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voulez-vous télécharger le fichier sur Internet ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Échec du téléchargement de l&apos;image disque « Additions invité VirtualBox » à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Échec du téléchargement du CD virtuel « Additions invité VirtualBox » à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous vraiment télécharger l&apos;image disque « Additions invité VirtualBox » à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets) ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment télécharger le CD virtuel « Additions invité VirtualBox » à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets) ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image disque « Additions invité VirtualBox » a été téléchargée à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistrée sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voulez-vous inscrire cette image disque et la monter dans le lecteur virtuel ?&lt;/p&gt; </translation>
+        <translation>&lt;p&gt;Le CD virtuel « Additions invité VirtualBox » a été téléchargée à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistrée sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voulez-vous monter ce CD dans le lecteur virtuel ?&lt;/p&gt; </translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
@@ -6367,7 +6367,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface correspondante de la machine hôte (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) sera également enlevée. Voulez-vous vraiment supprimer cette interface ?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface est peut-être utilisée par d&apos;autres machines virtuelles. Si vous l&apos;enlevez, ces interfaces ne seront plus utilisables jusqu&apos;à ce que vous modifiez leur configuration en choisissant un autre réseau privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si vous supprimez ce réseau privé hôte, l&apos;interface correspondante de la machine hôte (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) sera également suprimée. Voulez-vous vraiment supprimer cette interface ?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface est peut-être utilisée par d&apos;autres machines virtuelles. Si vous la suprimez, ces interfaces ne seront plus utilisables jusqu&apos;à ce que vous modifiez leur configuration en choisissant un autre réseau privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
@@ -6469,7 +6469,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation>l&apos;image CD/DVD</translation>
+        <translation>le CD/DVD virtuel</translation>
     </message>
     <message>
         <source>floppy</source>
@@ -6479,7 +6479,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation>l&apos;image de disquette</translation>
+        <translation>la disquette virtuelle</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -6498,7 +6498,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Supprimer cet instantané entrainera la perte de toutes les informations d&apos;état qui y sont sauvegardées, et la fusion des données de disques virtuels répartis sur plusieurs fichiers en un seul. Ce processus peut durer longtemps et est irréversible.&lt;/p&gt;&lt;/p&gt;Voulez-vous vraiment effacer l&apos;instantané &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Supprimer cet instantané entrainera la perte de toutes les informations d&apos;état qui y sont sauvegardées, et la fusion des données de disques virtuels répartis sur plusieurs fichiers en un seul. Ce processus peut durer longtemps et est irréversible.&lt;/p&gt;&lt;/p&gt;Voulez-vous vraiment supprimer l&apos;instantané &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6526,7 +6526,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image CD contenant les Additions Invité VirtualBox n&apos;a pas pu être insérée dans la machine virtuelle &lt;b&gt;%1&lt;/b&gt; car elle n&apos;a pas de lecteur virtuel. Ajoutez-en un dans la section Stockage de la fenêtre Configuration de la machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le CD virtuel contenant les Additions Invité VirtualBox n&apos;a pas pu être inséré dans la machine virtuelle &lt;b&gt;%1&lt;/b&gt; car elle n&apos;a pas de lecteurs CD/DVD. Ajoutez-en un dans la section Stockage de la fenêtre Configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6535,7 +6535,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous vraiment supprimer le lecteur CD/DVD ?&lt;/p&gt;&lt;p&gt;Sans lecteur vous ne pourrez ni utiliser les médias de l&apos;hôte ou des images disques ni installer les Additions invité dans la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment supprimer le lecteur CD/DVD ?&lt;/p&gt;&lt;p&gt;Sans lecteur vous ne pourrez ni utiliser les lecteurs physiques ou des disques CD/DVD virtuels ni installer les Additions invité dans la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
@@ -6547,7 +6547,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La suppression de l&apos;instantané %1 nécessitera temporairement de l&apos;espace disque supplémentaire. La taille de l&apos;image %2 pourra augmenter de %3, mais il n&apos;y a que %4 d&apos;espace disponible.&lt;/p&gt;&lt;p&gt;Un manque d&apos;espace disque pendant l&apos;opération de fusion peut corrompre l&apos;image et la configuration de la machine virtuelle, donc une perte de ces données.&lt;/p&gt;&lt;p&gt;Soyez conscient des risques encourus.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La suppression de l&apos;instantané %1 nécessitera temporairement de l&apos;espace disque supplémentaire. La taille du fichier %2 pourra augmenter de %3, mais il n&apos;y a que %4 d&apos;espace disponible.&lt;/p&gt;&lt;p&gt;Un manque d&apos;espace disque pendant l&apos;opération de fusion peut corrompre le fichier et la configuration de la machine virtuelle, donc une perte de ces données.&lt;/p&gt;&lt;p&gt;Soyez conscient des risques encourus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -6595,11 +6595,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous êtes sur le point d&apos;enlever la machine virtuelle &lt;b&gt;%1&lt;/b&gt; de la liste des machines.&lt;/p&gt;&lt;p&gt;Voulez-vous également suprimer les fichiers contenant la machine virtuelle de votre disque dur?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous êtes sur le point de supprimer la machine virtuelle &lt;b&gt;%1&lt;/b&gt; de la liste des machines.&lt;/p&gt;&lt;p&gt;Voulez-vous également supprimer les fichiers contenant la machine virtuelle de votre disque dur?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous êtes sur le point d&apos;enlever la machine virtuelle &lt;b&gt;%1&lt;/b&gt; de la liste des machines.&lt;/p&gt;&lt;p&gt;Voulez-vous également suprimer les fichiers contenant la machine virtuelle de votre disque dur? Ceci enlevera également les fichiers contenant les disques durs virtuels de la machine s&apos;ils ne sont pas aussi en utilisation par une autre machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous êtes sur le point de supprimer la machine virtuelle &lt;b&gt;%1&lt;/b&gt; de la liste des machines.&lt;/p&gt;&lt;p&gt;Voulez-vous également supprimer les fichiers contenant la machine virtuelle de votre disque dur? Ceci supprimera également les fichiers contenant les disques durs virtuels de la machine s&apos;ils ne sont pas aussi en utilisation par une autre machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete all files</source>
@@ -6611,7 +6611,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>Vous êtes sur le point d&apos;enlever la machine virtuelle non-disponible &lt;b&gt;%1&lt;/b&gt; de la liste des machines. Voulez-vous continuer?</translation>
+        <translation>Vous êtes sur le point de supprimer la machine virtuelle non-disponible &lt;b&gt;%1&lt;/b&gt; de la liste des machines. Voulez-vous continuer?</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -6624,60 +6624,61 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Create &amp;new disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Créer un &amp;nouveau disque</translation>
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Choisir un disque existant</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous êtes sur le point d&apos;ajouter un nouveau lecteur CD/DVD au contrôleur &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Voulez-vous choisir un CD/DVD virtuel à insérer dans le lecteur ou bien le laisser vide pour le moment ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Choisir un disque</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
         <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Laisser &amp;vide</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous êtes sur le point d&apos;ajouter un nouveau lecteur de disquettes au contrôleur &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Voulez-vous choisir une disquette virtuel à insérer dans le lecteur ou bien le laisser vide pour le moment ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de détacher le disque dur (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) de l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;détacher le lecteur CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) de l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de détacher le lecteur disquettes (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) de l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;La machine virtuelle &lt;b&gt;%1&lt;/b&gt; est actuellement dans l&apos;état sauvegardé.&lt;/p&gt;&lt;p&gt;Si vous continuez l&apos;état d&apos;exécution de la machine sera rejeté. Aucune autre machine ne sera modifiée.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Les machines virtuelles &lt;b&gt;%1&lt;/b&gt; sont actuellement dans l&apos;état sauvegardé.&lt;/p&gt;&lt;p&gt;Si vous continuez l&apos;état d&apos;exécution des machines sera rejeté. Aucune autre machine ne sera modifiée.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec du mis à jour des Additions invité. Le CD virtuel d&apos;installation des Additions Invité sera inséré afin de permetre une installation manuelle.</translation>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec de l&apos;installation de l&apos;extension &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec du désinstallation de l&apos;extension &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6685,47 +6686,47 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
+        <translation>Les règles actuelles de redirection de ports ne sont pas valables. Ni la valeur du port hôte ni celle du port invité ne peut être nulle.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La configuration de redirection des ports contient des changements non sauvegardés.&lt;/p&gt;&lt;p&gt;Si vous continuez ces changementes seront perdus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
+        <translation>Une erreur non-identifiée s&apos;est produite.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;attacher le disque dur (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;attacher le lecteur CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible d&apos;attacher le lecteur disquettes (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Le fichier contenant le disque virtuel ne sera pas effacé et il sera possible de le réutiliser ultérieurement.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Les Additions Invités VirtualBox semblent ne pas être actives sur cette machine virtuelle et de ce fait les dossiers partagés ne peuvent pas être utilisés.Pour utiliser les dossiers partagés dans cette machine virtuelle, installez les Additions Invités, ou bien réinstallez-les si elles ne fonctionnent pas correctement en choisissant &lt;b&gt;Installer les Additions Invités...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;. Si elles sont installés et la machine est encore en train d&apos;amorcer les dossiers partagés devront être disponibles en fin d&apos;amorçage.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle va passer en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez toujours revenir au mode fenêtré avec &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Attention, la barre de menu n&apos;est pas affichée en mode plein écran. Vous pouvez toutefois y accéder avec la combinaison &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle va passer en mode &lt;b&gt;intégré&lt;/b&gt;. Vous pouvez toujours revenir au mode fenêtré avec &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Attention, la barre de menu n&apos;est pas affichée en mode intégré. Vous pouvez toutefois y accéder avec la combinaison &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle va passer en mode &lt;b&gt;redimensionné&lt;/b&gt;. Vous pouvez toujours revenir au mode fenêtré avec &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Attention, la barre de menu n&apos;est pas affichée en mode intégré. Vous pouvez toutefois y accéder avec la combinaison &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -6734,51 +6735,51 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Échec d&apos;ouverture de l&apos;extension &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous êtes sur le point d&apos;installer une extension VirtualBox. Les extensions complémentent la fonctionalité de VirtualBox et peuvent contenir des logiciels - eventuellement nuisibles - qui s&apos;intègrent au système d&apos;exploitation. Veuillez revoir la déscription ci-dessous et ne continuez que si vous avez obtenu l&apos;extension d&apos;une source fiable.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nom&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Déscription&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Installer</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Les extensions complémentent la fonctionalité de VirtualBox et peuvent contenir des logiciels - eventuellement nuisibles - qui s&apos;intègrent au système d&apos;exploitation. Veuillez revoir la déscription ci-dessous et ne continuez que si vous avez obtenu l&apos;extension d&apos;une source fiable.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Une ancienne version de cette extension est déjà installée. Voulez-vous la mettre à jour ? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nom&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nouvelle version&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version actuelle&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Déscription&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Upgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mettre à jour</translation>
     </message>
     <message>
         <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Une version plus récente de cette extension est déjà installée. Voulez-vous la remplacer ? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nom&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nouvelle version&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version actuelle&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Déscription&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Downgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Remplacer</translation>
     </message>
     <message>
         <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La même version de cette extension est déjà installée. Voulez-vous la réinstaller ? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nom&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Déscription&amp;nbsp;:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Reinstall</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Réinstaller</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous êtes sur le point de supprimer cette extension VirtualBox &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir continuer ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;extension &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; a été installée avec succès.</translation>
     </message>
 </context>
 <context>
@@ -7004,11 +7005,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher dans le Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le fichier de définition de la machine VirtualBox dans le Finder.</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
@@ -7016,7 +7017,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Créé un alias du fichier de définition de la machine VirtualBox sur votre bureau.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -7024,7 +7025,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Afficher le fichier de définition de la machine virtuelle dans l&apos;explorateur</translation>
+        <translation>Afficher le fichier de définition de la machine virtuelle dans l&apos;explorateur.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
@@ -7032,7 +7033,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Créer un raccourci vers le fichier de définition de la machine virtuelle</translation>
+        <translation>Créé un raccourci vers le fichier de définition de la machine virtuelle sur votre bureau.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -7231,8 +7232,8 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Attention : vous allez prendre un instantané d&apos;une machine allumée qui a %n image de disque immuable connectée. Tant que vous travaillez sous cet instantané l&apos;image ne sera pas réinitialisée pour éviter la perte de données.</numerusform>
-            <numerusform>Attention : vous allez prendre un instantané d&apos;une machine allumée aui a %n images disques immuables connectées. Tant que vous travaillez sous cet instantané les images ne seront pas réinitialisées pour éviter la perte de données.</numerusform>
+            <numerusform>Attention : vous allez prendre un instantané d&apos;une machine allumée qui a %n disque virtuel immuable connectée. Tant que vous travaillez sous cet instantané le disque ne sera pas réinitialisée pour éviter la perte de données.</numerusform>
+            <numerusform>Attention : vous allez prendre un instantané d&apos;une machine allumée aui a %n disques virtuels immuables connectées. Tant que vous travaillez sous cet instantané les disques ne seront pas réinitialisées pour éviter la perte de données.</numerusform>
         </translation>
     </message>
 </context>
