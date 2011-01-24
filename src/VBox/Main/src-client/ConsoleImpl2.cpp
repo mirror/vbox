@@ -33,7 +33,9 @@
 #endif
 #include "VMMDev.h"
 #include "Global.h"
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
 #include "PciRawDevImpl.h"
+#endif
 
 // generated header
 #include "SchemaDefs.h"
@@ -454,6 +456,7 @@ static void RemoveConfigValue(PCFGMNODE pNode,
         throw ConfigError("CFGMR3RemoveValue", vrc, pcszName);
 }
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
 static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
                                    PCFGMNODE             pDevices,
                                    Console*              pConsole)
@@ -511,6 +514,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
 
     return hrc;
 }
+#endif
 
 /**
  *  Construct the VM configuration tree (CFGM).
@@ -979,8 +983,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);                               H();
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
             /* Add PCI passthrough devices */
             hrc = attachRawPciDevices(BusMgr, pDevices, pConsole);                               H();
+#endif
         }
         /*
          * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests or on ICH9 chipset
