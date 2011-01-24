@@ -3813,12 +3813,13 @@ static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGFADDRESS
 
         /* report result */
         DBGCVAR VarCur;
-        dbgcVarInit(&VarCur);
-        dbgcVarSetDbgfAddr(&VarCur, &HitAddress);
+        rc = DBGCCmdHlpVarFromDbgfAddr(pCmdHlp, &HitAddress, &VarCur);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGCCmdHlpVarFromDbgfAddr\n");
         if (!pResult)
             pCmdHlp->pfnExec(pCmdHlp, "db %DV LB 10", &VarCur);
         else
-            dbgcVarSetDbgfAddr(pResult, &HitAddress);
+            DBGCVAR_ASSIGN(pResult, &VarCur);
 
         /* advance */
         cbRange -= HitAddress.FlatPtr - pAddress->FlatPtr;
@@ -3914,7 +3915,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR p
 static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddress, uint64_t cMaxHits, char chType,
                                   PCDBGCVAR paPatArgs, unsigned cPatArgs, PDBGCVAR pResult)
 {
-    dbgcVarSetGCFlat(pResult, 0);
+    DBGCVAR_INIT_GC_FLAT(pResult, 0);
 
     /*
      * Convert the search pattern into bytes and DBGFR3MemScan can deal with.
@@ -4037,7 +4038,7 @@ static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    dbgcVarSetGCFlat(pResult, 0);
+    DBGCVAR_INIT_GC_FLAT(pResult, 0);
 
     RTDBGSYMBOL Symbol;
     int         rc;
@@ -4051,7 +4052,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg, PDBGCVAR
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3AsSymbolByName(,,%s,)\n", pArg->u.pszString);
 
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%Rptr %s\n", Symbol.Value, Symbol.szName);
-        dbgcVarSetGCFlatByteRange(pResult, Symbol.Value, Symbol.cb);
+        DBGCVAR_INIT_GC_FLAT_BYTE_RANGE(pResult, Symbol.Value, Symbol.cb);
     }
     else
     {
@@ -4063,7 +4064,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg, PDBGCVAR
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(%DV)\n", pArg);
 
-        dbgcVarSetVar(pResult, &AddrVar);
+        DBGCVAR_ASSIGN(pResult, &AddrVar);
 
         RTINTPTR    offDisp;
         DBGFADDRESS Addr;
@@ -4080,12 +4081,12 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg, PDBGCVAR
         if ((RTGCINTPTR)Symbol.cb > -offDisp)
         {
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " LB %RGv\n", Symbol.cb + offDisp);
-            dbgcVarSetByteRange(pResult, Symbol.cb + offDisp);
+            DBGCVAR_SET_BYTE_RANGE(pResult, Symbol.cb + offDisp);
         }
         else
         {
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
-            dbgcVarSetNoRange(pResult);
+            DBGCVAR_ZAP_RANGE(pResult);
         }
     }
 
@@ -4105,7 +4106,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg, PDBGCVAR
  */
 static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
-    dbgcVarSetGCFlat(pResult, 0);
+    DBGCVAR_INIT_GC_FLAT(pResult, 0);
     if (!cArgs)
     {
         /*

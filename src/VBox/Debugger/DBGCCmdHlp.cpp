@@ -698,17 +698,81 @@ static DECLCALLBACK(int) dbgcHlpFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const
 
 
 /**
- * Converts a DBGC variable to a DBGF address structure.
- *
- * @returns VBox status code.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pVar        The variable to convert.
- * @param   pAddress    The target address.
+ * @interface_method_impl{DBGCCMDHLP,pfnVarToDbgfAddr}
  */
 static DECLCALLBACK(int) dbgcHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    return dbgcVarToDbgfAddr(pDbgc, pVar, pAddress);
+    AssertPtr(pVar);
+    AssertPtr(pAddress);
+
+    switch (pVar->enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+            DBGFR3AddrFromFlat(pDbgc->pVM, pAddress, pVar->u.GCFlat);
+            return VINF_SUCCESS;
+
+        case DBGCVAR_TYPE_NUMBER:
+            DBGFR3AddrFromFlat(pDbgc->pVM, pAddress, (RTGCUINTPTR)pVar->u.u64Number);
+            return VINF_SUCCESS;
+
+        case DBGCVAR_TYPE_GC_FAR:
+            return DBGFR3AddrFromSelOff(pDbgc->pVM, pDbgc->idCpu, pAddress, pVar->u.GCFar.sel, pVar->u.GCFar.off);
+
+        case DBGCVAR_TYPE_GC_PHYS:
+            DBGFR3AddrFromPhys(pDbgc->pVM, pAddress, pVar->u.GCPhys);
+            return VINF_SUCCESS;
+
+        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
+        {
+            DBGCVAR Var;
+            int rc = DBGCCmdHlpEval(&pDbgc->CmdHlp, &Var, "%%(%DV)", pVar);
+            if (RT_FAILURE(rc))
+                return rc;
+            return dbgcHlpVarToDbgfAddr(pCmdHlp, &Var, pAddress);
+        }
+
+        case DBGCVAR_TYPE_HC_FLAT:
+        case DBGCVAR_TYPE_HC_PHYS:
+        default:
+            return VERR_PARSE_CONVERSION_FAILED;
+    }
+}
+
+
+/**
+ * @interface_method_impl{DBGCCMDHLP,pfnVarFromDbgfAddr}
+ */
+static DECLCALLBACK(int) dbgcHlpVarFromDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGFADDRESS pAddress, PDBGCVAR pResult)
+{
+    AssertPtrReturn(pAddress, VERR_INVALID_POINTER);
+    AssertReturn(DBGFADDRESS_IS_VALID(pAddress), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pResult,  VERR_INVALID_POINTER);
+
+    switch (pAddress->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
+    {
+        case DBGFADDRESS_FLAGS_FAR16:
+        case DBGFADDRESS_FLAGS_FAR32:
+        case DBGFADDRESS_FLAGS_FAR64:
+            DBGCVAR_INIT_GC_FAR(pResult, pAddress->Sel, pAddress->off);
+            break;
+
+        case DBGFADDRESS_FLAGS_FLAT:
+            DBGCVAR_INIT_GC_FLAT(pResult, pAddress->FlatPtr);
+            break;
+
+        case DBGFADDRESS_FLAGS_PHYS:
+            DBGCVAR_INIT_GC_PHYS(pResult, pAddress->FlatPtr);
+            break;
+
+        default:
+            DBGCVAR_INIT(pResult);
+            AssertMsgFailedReturn(("%#x\n", pAddress->fFlags), VERR_INVALID_PARAMETER);
+            break;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1256,6 +1320,7 @@ void dbgcInitCmdHlp(PDBGC pDbgc)
     pDbgc->CmdHlp.pfnExec               = dbgcHlpExec;
     pDbgc->CmdHlp.pfnFailV              = dbgcHlpFailV;
     pDbgc->CmdHlp.pfnVarToDbgfAddr      = dbgcHlpVarToDbgfAddr;
+    pDbgc->CmdHlp.pfnVarFromDbgfAddr    = dbgcHlpVarFromDbgfAddr;
     pDbgc->CmdHlp.pfnVarToNumber        = dbgcHlpVarToNumber;
     pDbgc->CmdHlp.pfnVarToBool          = dbgcHlpVarToBool;
     pDbgc->CmdHlp.pfnVarGetRange        = dbgcHlpVarGetRange;
