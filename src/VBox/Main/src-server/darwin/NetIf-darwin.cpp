@@ -249,7 +249,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
         {
             /* Extract addresses from the message. */
             extractAddresses(pRtMsg->rtm_addrs, (char *)(pRtMsg + 1),
-                             pRtMsg->rtm_msglen + (char *)pRtMsg, addresses);
+                             pRtMsg->rtm_msglen + 1 + (char *)pRtMsg, addresses);
             if ((pRtMsg->rtm_addrs & RTA_DST)
                 && (pRtMsg->rtm_addrs & RTA_NETMASK))
             {
