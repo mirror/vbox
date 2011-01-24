@@ -227,7 +227,8 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_LIVE_MIGRATION),VBOX_WITH_LIVE_MIGRATION,) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_VUSB),VBOX_WITH_VUSB,) \
-	$(if $(VBOX_WITH_S3),VBOX_WITH_S3,)
+	$(if $(VBOX_WITH_S3),VBOX_WITH_S3,) \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,)
 ifdef VBOX_WITH_USB
  VBoxSVC_DEFS += \
 	VBOX_WITH_USB \
@@ -584,7 +585,8 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_VIDEOHWACCEL),VBOX_WITH_VIDEOHWACCEL,) \
 	$(if $(VBOX_WITH_USB),VBOX_WITH_USB,) \
 	$(if-expr defined(VBOX_WITH_EHCI) && defined(VBOX_WITH_USB),VBOX_WITH_EHCI,) \
-	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,)
+	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,)
 
 VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
@@ -636,7 +638,7 @@ VBoxC_SOURCES = \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
 	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \
-	src-client/PciRawDevImpl.cpp \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),src-client/PciRawDevImpl.cpp,) \
 	src-client/ConsoleImpl.cpp \
 	src-client/ConsoleImpl2.cpp \
 	src-client/ConsoleImplTeleporter.cpp \
