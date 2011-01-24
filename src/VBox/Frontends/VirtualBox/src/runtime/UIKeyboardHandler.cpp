@@ -269,6 +269,55 @@ void UIKeyboardHandler::releaseKeyboard()
     }
 }
 
+void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
+{
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
+    bool fSentRESEND = false;
+
+    /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
+     * a single key click (for ex., Alt) and performing an unwanted action
+     * (for ex., activating the menu) when we release all pressed keys below.
+     * Note, that it's just a guess that sending RESEND will give the desired
+     * effect :), but at least it works with NT and W2k guests. */
+    for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
+    {
+        if (m_pressedKeys[i] & IsKeyPressed)
+        {
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode (0xFE);
+                fSentRESEND = true;
+            }
+            keyboard.PutScancode(i | 0x80);
+        }
+        else if (m_pressedKeys[i] & IsExtKeyPressed)
+        {
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode(0xFE);
+                fSentRESEND = true;
+            }
+            QVector <LONG> codes(2);
+            codes[0] = 0xE0;
+            codes[1] = i | 0x80;
+            keyboard.PutScancodes(codes);
+        }
+        m_pressedKeys[i] = 0;
+    }
+
+    if (aReleaseHostKey)
+        m_bIsHostkeyPressed = false;
+
+#ifdef Q_WS_MAC
+    /* Clear most of the modifiers: */
+    m_darwinKeyModifiers &=
+        alphaLock | kEventKeyModifierNumLockMask |
+        (aReleaseHostKey ? 0 : ::DarwinKeyCodeToDarwinModifierMask(m_globalSettings.hostKey()));
+#endif
+
+    emit keyboardStateChanged(keyboardState());
+}
+
 /* Current keyboard state: */
 int UIKeyboardHandler::keyboardState() const
 {
@@ -1429,55 +1478,6 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
 void UIKeyboardHandler::saveKeyStates()
 {
     ::memcpy(m_pressedKeysCopy, m_pressedKeys, sizeof(m_pressedKeys));
-}
-
-void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
-{
-    CKeyboard keyboard = session().GetConsole().GetKeyboard();
-    bool fSentRESEND = false;
-
-    /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
-     * a single key click (for ex., Alt) and performing an unwanted action
-     * (for ex., activating the menu) when we release all pressed keys below.
-     * Note, that it's just a guess that sending RESEND will give the desired
-     * effect :), but at least it works with NT and W2k guests. */
-    for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
-    {
-        if (m_pressedKeys[i] & IsKeyPressed)
-        {
-            if (!fSentRESEND)
-            {
-                keyboard.PutScancode (0xFE);
-                fSentRESEND = true;
-            }
-            keyboard.PutScancode(i | 0x80);
-        }
-        else if (m_pressedKeys[i] & IsExtKeyPressed)
-        {
-            if (!fSentRESEND)
-            {
-                keyboard.PutScancode(0xFE);
-                fSentRESEND = true;
-            }
-            QVector <LONG> codes(2);
-            codes[0] = 0xE0;
-            codes[1] = i | 0x80;
-            keyboard.PutScancodes(codes);
-        }
-        m_pressedKeys[i] = 0;
-    }
-
-    if (aReleaseHostKey)
-        m_bIsHostkeyPressed = false;
-
-#ifdef Q_WS_MAC
-    /* Clear most of the modifiers: */
-    m_darwinKeyModifiers &=
-        alphaLock | kEventKeyModifierNumLockMask |
-        (aReleaseHostKey ? 0 : ::DarwinKeyCodeToDarwinModifierMask(m_globalSettings.hostKey()));
-#endif
-
-    emit keyboardStateChanged(keyboardState());
 }
 
 void UIKeyboardHandler::sendChangedKeyStates()

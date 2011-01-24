@@ -46,6 +46,11 @@
 # endif
 #endif
 
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+# include "UIKeyboardHandler.h"
+# include <signal.h>
+#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
 UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     : QObject(pMachine)
     /* Base variables: */
@@ -133,6 +138,14 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 
     /* Load uisession settings: */
     loadSessionSettings();
+
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+    struct sigaction sa;
+    sa.sa_sigaction = &signalHandlerSIGUSR1;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGUSR1, &sa, NULL);
+#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 }
 
 UISession::~UISession()
@@ -1035,3 +1048,21 @@ int UISession::setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer)
     return VERR_INVALID_PARAMETER;
 }
 #endif
+
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+/**
+ * Custom signal handler. When switching VTs, we might not get release events
+ * for Ctrl-Alt and in case a savestate is performed on the new VT, the VM will
+ * be saved with modifier keys stuck. This is annoying enough for introducing
+ * this hack.
+ */
+/* static */
+void UISession::signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSecret */)
+{
+    /* only SIGUSR1 is interesting */
+    if (sig == SIGUSR1)
+        if (UIMachine *pMachine = vboxGlobal().virtualMachine())
+            pMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
+}
+#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
