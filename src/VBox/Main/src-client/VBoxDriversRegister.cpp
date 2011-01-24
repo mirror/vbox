@@ -25,7 +25,9 @@
 #include "VMMDev.h"
 #include "AudioSnifferInterface.h"
 #include "ConsoleImpl.h"
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
 #include "PciRawDevImpl.h"
+#endif
 
 #include "Logging.h"
 
@@ -68,9 +70,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
     rc = pCallbacks->pfnRegister(pCallbacks, &PciRawDev::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
+#endif
 
     return VINF_SUCCESS;
 }

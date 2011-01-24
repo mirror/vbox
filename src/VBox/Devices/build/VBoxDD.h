@@ -83,7 +83,9 @@ extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #ifdef VBOX_WITH_EFI
 extern const PDMDEVREG g_DeviceEFI;
 #endif
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
 extern const PDMDEVREG g_DevicePciRaw;
+#endif
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
