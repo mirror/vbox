@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -318,16 +318,17 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
 
 
 /**
- * TODO
+ * Execution loop which (usually) runs in a dedicated per-started-process thread and
+ * handles all pipe input/output and signalling stuff.
  *
  * @return  IPRT status code.
- * @param   pThread
- * @param   hProcess
- * @param   cMillies
- * @param   hPollSet
- * @param   hStdInW
- * @param   hStdOutR
- * @param   hStdErrR
+ * @param   pThread                     The process' thread handle.
+ * @param   hProcess                    The actual process handle.
+ * @param   cMsTimeout                  Time limit (in ms) of the process' life time.
+ * @param   hPollSet                    The poll set to use.
+ * @param   hStdInW                     Handle to the process' stdin write end.
+ * @param   hStdOutR                    Handle to the process' stdout read end.
+ * @param   hStdErrR                    Handle to the process' stderr read end.
  */
 static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                           RTPROCESS hProcess, RTMSINTERVAL cMsTimeout, RTPOLLSET hPollSet,
@@ -727,19 +728,22 @@ void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 
 
 /**
- * TODO
+ * Reads out data from a specififed pipe buffer.
  *
  * @return  IPRT status code.
- * @param   pBuf
- * @param   pbBuffer
- * @param   cbBuffer
- * @param   pcbToRead
+ * @param   pBuf                        Pointer to pipe buffer to read the data from.
+ * @param   pbBuffer                    Pointer to buffer to store the read out data.
+ * @param   cbBuffer                    Size (in bytes) of the buffer where to store the data.
+ * @param   pcbToRead                   Pointer to desired amount (in bytes) of data to read,
+ *                                      will reflect the actual amount read on return.
  */
 int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                                 uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead)
 {
-    AssertPtr(pBuf);
-    AssertPtr(pcbToRead);
+    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pbBuffer, VERR_INVALID_PARAMETER);
+    AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbToRead, VERR_INVALID_PARAMETER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
@@ -768,21 +772,21 @@ int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf
 
 
 /**
- * TODO
+ * Writes data into a specififed pipe buffer.
  *
  * @return  IPRT status code.
- * @param   pBuf
- * @param   pbData
- * @param   cbData
- * @param   fPendingClose
- * @param   pcbWritten
+ * @param   pBuf                        Pointer to pipe buffer to write data into.
+ * @param   pbData                      Pointer to byte data to write.
+ * @param   cbData                      Data size (in bytes) to write.
+ * @param   fPendingClose               Needs the pipe (buffer) to be closed next time we have the chance to?
+ * @param   pcbWritten                  Pointer to where the amount of written bytes get stored. Optional.
  */
 int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                           uint8_t *pbData, uint32_t cbData, bool fPendingClose,
                                           uint32_t *pcbWritten)
 {
     AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pbData, VERR_INVALID_PARAMETER);
 
     int rc;
     if (pBuf->fAlive)
@@ -845,11 +849,12 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 
             if (RT_SUCCESS(rc))
             {
-                /* Report back written bytes. */
-                *pcbWritten = cbData;
+                /* Report back written bytes (if wanted). */
+                if (pcbWritten)
+                    *pcbWritten = cbData;
 
                 /*
-                 * Was this the final read/write to do on this buffer? The close it
+                 * Was this the final read/write to do on this buffer? Then close it
                  * next time we have the chance to.
                  */
                 if (fPendingClose)
@@ -884,18 +889,19 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
  *  Needs to be freed with VBoxServiceControlExecDestroyThreadData().
  *
  * @return  IPRT status code.
- * @param   pThread
- * @param   u32ContextID
- * @param   pszCmd
- * @param   uFlags
- * @param   pszArgs
- * @param   uNumArgs
- * @param   pszEnv
- * @param   cbEnv
- * @param   uNumEnvVars
- * @param   pszUser
- * @param   pszPassword
- * @param   uTimeLimitMS
+ * @param   pThread                     The thread's handle to allocate the data for.
+ * @param   u32ContextID                The context ID bound to this request / command.
+ * @param   pszCmd                      Full qualified path of process to start (without arguments).
+ * @param   uFlags                      Process execution flags.
+ * @param   pszArgs                     String of arguments to pass to the process to start.
+ * @param   uNumArgs                    Number of arguments specified in pszArgs.
+ * @param   pszEnv                      String of environment variables ("FOO=BAR") to pass to the process
+ *                                      to start.
+ * @param   cbEnv                       Size (in bytes) of environment variables.
+ * @param   uNumEnvVars                 Number of environment variables specified in pszEnv.
+ * @param   pszUser                     User name (account) to start the process under.
+ * @param   pszPassword                 Password of specified user name (account).
+ * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
  */
 static int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
                                                     uint32_t u32ContextID,
@@ -1027,7 +1033,16 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 }
 
 
-/** @todo Maybe we want to have an own IPRT function for that! */
+/**
+ * Expands a file name / path to its real content. This only works on Windows
+ * for now (e.g. translating "%TEMP%\foo.exe" to "C:\Windows\Temp" when starting
+ * with system / administrative rights).
+ *
+ * @return  IPRT status code.
+ * @param   pszPath                     Path to resolve.
+ * @param   pszExpanded                 Pointer to string to store the resolved path in.
+ * @param   cbExpanded                  Size (in bytes) of string to store the resolved path.
+ */
 static int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
 {
     int rc = VINF_SUCCESS;
@@ -1039,13 +1054,22 @@ static int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpa
     rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
 #endif
 #ifdef DEBUG
-        VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecMakeFullPath: %s -> %s\n",
-                           pszPath, pszExpanded);
+    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecMakeFullPath: %s -> %s\n",
+                       pszPath, pszExpanded);
 #endif
     return rc;
 }
 
 
+/**
+ * Resolves the full path of a specified executable name. This function also
+ * resolves internal VBoxService tools to its appropriate executable path + name.
+ *
+ * @return  IPRT status code.
+ * @param   pszFileName                 File name to resovle.
+ * @param   pszResolved                 Pointer to a string where the resolved file name will be stored.
+ * @param   cbResolved                  Size (in bytes) of resolved file name string.
+ */
 static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
 {
     int rc = VINF_SUCCESS;
@@ -1144,24 +1168,29 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
 
 
 /**
- * TODO
+ * Helper function to create/start a process on the guest.
  *
  * @return  IPRT status code.
- * @param   pszExec
- * @param   papszArgs
- * @param   hEnv
- * @param   fFlags
- * @param   phStdIn
- * @param   phStdOut
- * @param   phStdErr
- * @param   pszAsUser
- * @param   pszPassword
- * @param   phProcess
+ * @param   pszExec                     Full qualified path of process to start (without arguments).
+ * @param   papszArgs                   Pointer to array of command line arguments.
+ * @param   hEnv                        Handle to environment block to use.
+ * @param   fFlags                      Process execution flags.
+ * @param   phStdIn                     Handle for the process' stdin pipe.
+ * @param   phStdOut                    Handle for the process' stdout pipe.
+ * @param   phStdErr                    Handle for the process' stderr pipe.
+ * @param   pszAsUser                   User name (account) to start the process under.
+ * @param   pszPassword                 Password of the specified user.
+ * @param   phProcess                   Pointer which will receive the process handle after
+ *                                      successful process start.
  */
 static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                                const char *pszPassword, PRTPROCESS phProcess)
 {
+    AssertPtrReturn(pszExec, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phProcess, VERR_INVALID_PARAMETER);
+
     int  rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     /*
@@ -1443,20 +1472,22 @@ static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void 
 
 
 /**
- * TODO
+ * Executes (starts) a process on the guest. This causes a new thread to be created
+ * so that this function will not block the overall program execution.
  *
- * @return  int
- * @param   uContextID
- * @param   pszCmd
- * @param   uFlags
- * @param   pszArgs
- * @param   uNumArgs
- * @param   pszEnv
- * @param   cbEnv
- * @param   uNumEnvVars
- * @param   pszUser
- * @param   pszPassword
- * @param   uTimeLimitMS
+ * @return  IPRT status code.
+ * @param   uContextID                  Context ID to associate the process to start with.
+ * @param   pszCmd                      Full qualified path of process to start (without arguments).
+ * @param   uFlags                      Process execution flags.
+ * @param   pszArgs                     String of arguments to pass to the process to start.
+ * @param   uNumArgs                    Number of arguments specified in pszArgs.
+ * @param   pszEnv                      String of environment variables ("FOO=BAR") to pass to the process
+ *                                      to start.
+ * @param   cbEnv                       Size (in bytes) of environment variables.
+ * @param   uNumEnvVars                 Number of environment variables specified in pszEnv.
+ * @param   pszUser                     User name (account) to start the process under.
+ * @param   pszPassword                 Password of specified user name (account).
+ * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
  */
 int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint32_t uFlags,
                                   const char *pszArgs, uint32_t uNumArgs,
@@ -1516,11 +1547,11 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
 
 
 /**
- * TODO
+ * Handles starting processes on the guest.
  *
- * @return  IPRT status code.
- * @param   u32ClientId
- * @param   uNumParms
+ * @returns IPRT status code.
+ * @param   u32ClientId                 The HGCM client session ID.
+ * @param   uNumParms                   The number of parameters the host is offering.
  */
 int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms)
 {
@@ -1581,13 +1612,13 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
 
 
 /**
- * Handles input for the started process by copying the received data into its
+ * Handles input for a started process by copying the received data into its
  * stdin pipe.
  *
  * @returns IPRT status code.
- * @param   u32ClientId     idClient    The HGCM client session ID.
- * @param   uNumParms       cParms      The number of parameters the host is
- *                                      offering.
+ * @param   u32ClientId                 The HGCM client session ID.
+ * @param   uNumParms                   The number of parameters the host is offering.
+ * @param   cMaxBufSize                 The maximum buffer size for retrieving the input data.
  */
 int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize)
 {
@@ -1612,7 +1643,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
     }
     else if (cbSize >  cbMaxBufSize)
     {
-        VBoxServiceError("ControlExec: Input size is invalid! cbSize=%u\n", cbSize);
+        VBoxServiceError("ControlExec: Maximum input buffer size is too small! cbSize=%u, cbMaxBufSize=%u\n",
+                         cbSize, cbMaxBufSize);
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1690,11 +1722,12 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
 
 
 /**
- *
+ * Handles the guest control output command.
  *
  * @return  IPRT status code.
- * @param   u32ClientId
- * @param   uNumParms
+ * @param   u32ClientId     idClient    The HGCM client session ID.
+ * @param   uNumParms       cParms      The number of parameters the host is
+ *                                      offering.
  */
 int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms)
 {
