@@ -63,7 +63,12 @@ static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, u
     if (RT_SUCCESS(rc))
     {
         int rc2 = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
-        AssertRC(rc2);
+        /* Don't assert if writable handle is not in poll set anymore. */
+        if (   RT_FAILURE(rc2)
+            && rc2 != VERR_POLL_HANDLE_ID_NOT_FOUND)
+		{
+            AssertRC(rc2);
+		}
 
         rc2 = RTPipeClose(*phStdInW);
         AssertRC(rc2);
@@ -207,6 +212,13 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
         {
             /* If the pipe needs to be closed, do so. */
             rc = VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
+        }
+        else if (!*pcbWritten)
+        {
+            /* Nothing else left to write now? Remove the writable event from the poll set
+             * to not trigger too high CPU loads. */
+            rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+            AssertRC(rc);
         }
     }
     else
@@ -387,9 +399,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         if (RT_SUCCESS(rc2))
         {
-#ifdef DEBUG
             VBoxServiceVerbose(4, "ControlExec: RTPollNoResume idPollHnd=%u\n", idPollHnd);
-#endif
             switch (idPollHnd)
             {
                 case VBOXSERVICECTRLPIPEID_STDIN_ERROR:
@@ -401,7 +411,23 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                     /* Drain the notification pipe. */
                     uint8_t abBuf[8];
                     size_t cbIgnore;
-                    RTPipeRead(pData->stdIn.hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+                    rc = RTPipeRead(pData->stdIn.hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * When the writable handle previously was removed from the poll set we need to add
+                         * it here again so that writable events from the started procecss get handled correctly.
+                         */
+                        RTHANDLE hWritableIgnored;
+                        rc = RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE, &hWritableIgnored);
+                        if (rc == VERR_POLL_HANDLE_ID_NOT_FOUND)
+                        {
+                            rc = RTPollSetAddPipe(hPollSet, pData->pipeStdInW, RTPOLL_EVT_WRITE, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+                            AssertRC(rc);
+                            break;
+                        }
+                        AssertRC(rc);
+                    }
                 }
                 /* Fall through. */
                 case VBOXSERVICECTRLPIPEID_STDIN_WRITABLE:
@@ -631,9 +657,9 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
  */
 static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
-    AssertPtr(ph);
-    AssertPtr(pph);
-    AssertPtr(phPipe);
+    AssertPtrReturn(ph, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pph, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phPipe, VERR_INVALID_PARAMETER);
 
     ph->enmType = RTHANDLETYPE_PIPE;
     ph->u.hPipe = NIL_RTPIPE;
@@ -676,7 +702,7 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
  */
 static int VBoxServiceControlExecInitPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe)
 {
-    AssertPtr(pBuf);
+    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
 
     /** @todo Add allocation size as function parameter! */
     pBuf->pbData = (uint8_t *)RTMemAlloc(_64K); /* Start with a 64k buffer. */
