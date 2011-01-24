@@ -84,15 +84,15 @@ static bool fInCSAMCodePageInvalidate = false;
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "csamon",     0,        0,        NULL,               0,                          NULL,               0,          csamr3CmdOn,        "",                     "Enable CSAM code scanning." },
-    { "csamoff",    0,        0,        NULL,               0,                          NULL,               0,          csamr3CmdOff,       "",                     "Disable CSAM code scanning." },
+    /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,  cArgDescs,  fFlags, pfnHandler     pszSyntax, ....pszDescription */
+    { "csamon",     0,        0,        NULL,       0,          0,      csamr3CmdOn,   "",        "Enable CSAM code scanning."  },
+    { "csamoff",    0,        0,        NULL,       0,          0,      csamr3CmdOff,  "",        "Disable CSAM code scanning." },
 };
 #endif
 
@@ -2673,7 +2673,7 @@ VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
 
@@ -2693,7 +2693,7 @@ static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
 
