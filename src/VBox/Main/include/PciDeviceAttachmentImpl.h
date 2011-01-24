@@ -103,7 +103,7 @@ public:
     ~PciDeviceAttachment() { }
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *     aParent,
+    HRESULT init(IMachine *    aParent,
                  const Bstr    &aName,
                  LONG          aHostAddess,
                  LONG          aGuestAddress,
