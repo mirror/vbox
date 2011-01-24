@@ -64,6 +64,7 @@ public:
     /* Commands to capture/release keyboard: */
     void captureKeyboard(ulong uScreenId);
     void releaseKeyboard();
+    void releaseAllPressedKeys(bool aReleaseHostKey = true);
 
     /* Current keyboard state: */
     int keyboardState() const;
@@ -128,7 +129,6 @@ protected:
     /* Private helpers: */
     void fixModifierState(LONG *piCodes, uint *puCount);
     void saveKeyStates();
-    void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
 
     UIMachineWindow* isItListenedWindow(QObject *pWatchedObject) const;
