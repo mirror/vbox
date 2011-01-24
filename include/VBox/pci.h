@@ -983,6 +983,21 @@ DECLINLINE(bool) PCIIsMsixCapable(PPCIDEVICE pDev)
 {
     return (pDev->Int.s.uFlags & PCIDEV_FLAG_MSIX_CAPABLE) != 0;
 }
+
+DECLINLINE(void) PCISetPassthrough(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_PASSTHROUGH;
+}
+
+DECLINLINE(void) PCIClearPassthrough(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_PASSTHROUGH;
+}
+
+DECLINLINE(bool) PCIIsPassthrough(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PASSTHROUGH) != 0;
+}
 #endif
 
 #ifdef __cplusplus
@@ -1070,11 +1085,12 @@ struct PciBusAddress
         return (iBus << 8) | (iDevice << 3) | iFn;
     }
 
-    void fromLong(int32_t value)
+    PciBusAddress& fromLong(int32_t value)
     {
         iBus = (value >> 8) & 0xff;
         iDevice = (value & 0xff) >> 3;
         iFn = (value & 7);
+        return *this;
     }
 };
 #endif /* __cplusplus */

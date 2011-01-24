@@ -2811,6 +2811,35 @@ static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETRE
     return VINF_SUCCESS;
 }
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPciRawRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_PciRawRegister(PPDMDEVINS pDevIns, PPDMPCIRAWREG pPciRawReg, PCPDMPCIRAWHLPR3 *ppPciRawHlpR3)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d:\n"));
+
+    /*
+     * Validate input.
+     */
+    if (pPciRawReg->u32Version != PDM_PCIRAWREG_VERSION)
+    {
+        AssertMsgFailed(("u32Version=%#x expected %#x\n", pPciRawReg->u32Version, PDM_PCIRAWREG_VERSION));
+        LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (!ppPciRawHlpR3)
+    {
+        Assert(ppPciRawHlpR3);
+        LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* set the helper pointer and return. */
+    *ppPciRawHlpR3 = &g_pdmR3DevPciRawHlp;
+    LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnDMACRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
@@ -3181,6 +3210,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_APICRegister,
     pdmR3DevHlp_IOAPICRegister,
     pdmR3DevHlp_HPETRegister,
+    pdmR3DevHlp_PciRawRegister,
     pdmR3DevHlp_DMACRegister,
     pdmR3DevHlp_DMARegister,
     pdmR3DevHlp_DMAReadMemory,
@@ -3391,6 +3421,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_APICRegister,
     pdmR3DevHlp_IOAPICRegister,
     pdmR3DevHlp_HPETRegister,
+    pdmR3DevHlp_PciRawRegister,
     pdmR3DevHlp_DMACRegister,
     pdmR3DevHlp_DMARegister,
     pdmR3DevHlp_DMAReadMemory,
@@ -3468,4 +3499,3 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 }
 
 /** @} */
-

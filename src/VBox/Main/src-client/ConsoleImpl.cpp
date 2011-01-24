@@ -313,8 +313,15 @@ public:
                 mConsole->onNATRedirectRuleChange(ulSlot, fRemove, proto, hostIp.raw(), hostPort, guestIp.raw(), guestPort);
             }
             break;
+
+            case VBoxEventType_OnHostPciDevicePlug:
+            {
+                // handle if needed
+                break;
+            }
+
             default:
-                AssertFailed();
+              AssertFailed();
         }
         return S_OK;
     }
@@ -386,7 +393,7 @@ void Console::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit();
-    
+
     BaseFinalRelease();
 }
 
@@ -490,6 +497,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
         mVmListener = new VmEventListenerImpl(this);
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnNATRedirect);
+        eventTypes.push_back(VBoxEventType_OnHostPciDevicePlug);
         rc = pES->RegisterListener(mVmListener, ComSafeArrayAsInParam(eventTypes), true);
         AssertComRC(rc);
     }

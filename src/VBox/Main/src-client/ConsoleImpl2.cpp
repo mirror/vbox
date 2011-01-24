@@ -33,6 +33,7 @@
 #endif
 #include "VMMDev.h"
 #include "Global.h"
+#include "PciRawDevImpl.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -453,6 +454,63 @@ static void RemoveConfigValue(PCFGMNODE pNode,
         throw ConfigError("CFGMR3RemoveValue", vrc, pcszName);
 }
 
+static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
+                                   PCFGMNODE             pDevices,
+                                   Console*              pConsole)
+{
+    HRESULT hrc = S_OK;
+    PCFGMNODE pDev, pInst, pCfg, pLunL0;
+
+    SafeIfaceArray<IPciDeviceAttachment> assignments;
+    ComPtr<IMachine> aMachine =  pConsole->machine();
+
+    hrc = aMachine->COMGETTER(PciDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
+    if (hrc != S_OK)
+        return hrc;
+
+    for (size_t iDev = 0; iDev < assignments.size(); iDev++)
+    {
+        PciBusAddress HostPciAddress, GuestPciAddress;
+        ComPtr<IPciDeviceAttachment> assignment = assignments[iDev];
+        LONG host, guest;
+        Bstr aDevName;
+
+        assignment->COMGETTER(HostAddress)(&host);
+        assignment->COMGETTER(GuestAddress)(&guest);
+        assignment->COMGETTER(Name)(aDevName.asOutParam());
+
+        InsertConfigNode(pDevices,     "pciraw",  &pDev);
+        InsertConfigNode(pDev,          Utf8StrFmt("%d", iDev).c_str(), &pInst);
+        InsertConfigInteger(pInst,     "Trusted", 1);
+
+        HostPciAddress.fromLong(host);
+        Assert(HostPciAddress.valid());
+        InsertConfigNode(pInst,        "Config",  &pCfg);
+        InsertConfigString(pCfg,       "DeviceName",  aDevName);
+
+        InsertConfigInteger(pCfg,      "HostPCIBusNo",      HostPciAddress.iBus);
+        InsertConfigInteger(pCfg,      "HostPCIDeviceNo",   HostPciAddress.iDevice);
+        InsertConfigInteger(pCfg,      "HostPCIFunctionNo", HostPciAddress.iFn);
+
+        GuestPciAddress.fromLong(guest);
+        Assert(GuestPciAddress.valid());
+        hrc = BusMgr->assignPciDevice("pciraw", pInst, GuestPciAddress, true);
+        if (hrc != S_OK)
+            return hrc;
+        InsertConfigInteger(pCfg,      "GuestPCIBusNo",      GuestPciAddress.iBus);
+        InsertConfigInteger(pCfg,      "GuestPCIDeviceNo",   GuestPciAddress.iDevice);
+        InsertConfigInteger(pCfg,      "GuestPCIFunctionNo", GuestPciAddress.iFn);
+
+        /* the Main driver */
+        PciRawDev* pMainDev = new PciRawDev(pConsole);
+        InsertConfigNode(pInst,        "LUN#0",   &pLunL0);
+        InsertConfigString(pLunL0,     "Driver",  "PciRawMain");
+        InsertConfigNode(pLunL0,       "Config" , &pCfg);
+        InsertConfigInteger(pCfg,      "Object", (uintptr_t)pMainDev);
+    }
+
+    return hrc;
+}
 
 /**
  *  Construct the VM configuration tree (CFGM).
@@ -920,10 +978,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "1", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);                               H();
-        }
 
+            /* Add PCI passthrough devices */
+            hrc = attachRawPciDevices(BusMgr, pDevices, pConsole);                               H();
+        }
         /*
-         * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests
+         * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests or on ICH9 chipset
          */
         /*
          * High Precision Event Timer (HPET)
