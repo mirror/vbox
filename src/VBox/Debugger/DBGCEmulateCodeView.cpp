@@ -920,24 +920,22 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
  */
 static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    if (    cArgs > 1
-        ||  (cArgs == 1 && !DBGCVAR_ISPOINTER(paArgs[0].enmType)))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
-    if (!pVM && !cArgs && !DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Don't know where to start disassembling...\n");
-    if (!pVM && cArgs && DBGCVAR_ISGCPOINTER(paArgs[0].enmType))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: GC address but no VM.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs <= 1);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 0 || DBGCVAR_ISPOINTER(paArgs[0].enmType));
 
-    unsigned fFlags = DBGF_DISAS_FLAGS_NO_ADDRESS;
+    if (!cArgs && !DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Don't know where to start disassembling");
 
     /*
      * Check the desired mode.
      */
+    unsigned fFlags = DBGF_DISAS_FLAGS_NO_ADDRESS;
     switch (pCmd->pszCmd[1])
     {
         default: AssertFailed();
@@ -955,6 +953,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
+            /** @todo Batch query CS, RIP & CPU mode. */
             PVMCPU pVCpu = VMMGetCpuById(pVM, pDbgc->idCpu);
             if (    pDbgc->fRegCtxGuest
                 &&  CPUMIsGuestIn64BitCodeEx(CPUMQueryGuestCtxPtr(pVCpu)))
@@ -992,16 +991,16 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
         case DBGCVAR_RANGE_ELEMENTS:
             if (pDbgc->DisasmPos.u64Range > 2048)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Too many lines requested. Max is 2048 lines.\n");
+                return DBGCCmdHlpFail(pCmdHlp, pCmd, "Too many lines requested. Max is 2048 lines");
             break;
 
         case DBGCVAR_RANGE_BYTES:
             if (pDbgc->DisasmPos.u64Range > 65536)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The requested range is too big. Max is 64KB.\n");
+                return DBGCCmdHlpFail(pCmdHlp, pCmd, "The requested range is too big. Max is 64KB");
             break;
 
         default:
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: Unknown range type %d.\n", pDbgc->DisasmPos.enmRangeType);
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Unknown range type %d", pDbgc->DisasmPos.enmRangeType);
     }
 
     /*
@@ -1020,7 +1019,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             DBGCVAR VarTmp;
             rc = DBGCCmdHlpEval(pCmdHlp, &VarTmp, "%%(%Dv)", &pDbgc->DisasmPos);
             if (RT_FAILURE(rc))
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: failed to evaluate '%%(%Dv)' -> %Rrc .\n", &pDbgc->DisasmPos, rc);
+                return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "failed to evaluate '%%(%Dv)'", &pDbgc->DisasmPos);
             pDbgc->DisasmPos = VarTmp;
             break;
         }
@@ -1060,18 +1059,18 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         if (RT_SUCCESS(rc))
         {
             /* print it */
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%-16DV %s\n", &pDbgc->DisasmPos, &szDis[0]);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%-16DV %s\n", &pDbgc->DisasmPos, &szDis[0]);
             if (RT_FAILURE(rc))
                 return rc;
         }
         else
         {
             /* bitch. */
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Failed to disassemble instruction, skipping one byte.\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "Failed to disassemble instruction, skipping one byte.\n");
             if (RT_FAILURE(rc))
                 return rc;
             if (cTries-- > 0)
-                return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Too many disassembly failures. Giving up.\n");
+                return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Too many disassembly failures. Giving up");
             cbInstr = 1;
         }
 
@@ -1084,14 +1083,14 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             iRangeLeft -= cbInstr;
         rc = DBGCCmdHlpEval(pCmdHlp, &pDbgc->DisasmPos, "(%Dv) + %x", &pDbgc->DisasmPos, cbInstr);
         if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: (%Dv) + %x\n", &pDbgc->DisasmPos, cbInstr);
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpEval(,,'(%Dv) + %x')", &pDbgc->DisasmPos, cbInstr);
         if (iRangeLeft <= 0)
             break;
         fFlags &= ~(DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER);
     }
 
     NOREF(pCmd);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
