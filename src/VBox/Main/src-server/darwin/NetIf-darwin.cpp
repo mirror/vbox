@@ -152,8 +152,8 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 #else
 
 #define ROUNDUP(a) \
-        ((a) > 0 ? (1 + (((a) - 1) | (sizeof(u_long) - 1))) : sizeof(u_long))
-#define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
+    (((a) & (sizeof(u_long) - 1)) ? (1 + ((a) | (sizeof(u_long) - 1))) : (a))
+#define ADVANCE(x, n) (x += (n)->sa_len ? ROUNDUP((n)->sa_len) : sizeof(u_long))
 
 void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr **pAddresses)
 {
