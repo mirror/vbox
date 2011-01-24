@@ -968,10 +968,12 @@
 
     <para>Ever since the original IBM PC, personal computers have been
     equipped with one or two serial ports (also called COM ports by DOS and
-    Windows). Most importantly, computer mice used to be connected to serial
-    ports before USB became commonplace. </para>
+    Windows). Serial ports were commonly used with modems, and some
+    computer mice used to be connected to serial ports before USB became 
+    commonplace. 
+    </para>
 
-    <para>While serial ports are no longer as important as they used to be,
+    <para>While serial ports are no longer as ubiquitous as they used to be,
     there are still some important uses left for them. For example, serial
     ports can be used to set up a primitive network over a null-modem cable,
     in case Ethernet is not available. Also, serial ports are indispensable
@@ -981,9 +983,10 @@
     virtual machine instead of needing a real computer to connect to.</para>
 
     <para>If a virtual serial port is enabled, the guest operating system sees
-    a standard 16450-type device. Both receiving and transmitting data is
-    supported. How this virtual serial port is then connected to the host is
-    configurable, and the details depend on your host operating system.</para>
+    a standard 16550A compatible UART device. Both receiving and transmitting
+    data is supported. How this virtual serial port is then connected to the 
+    host is configurable, and the details depend on your host operating system.
+    </para>
 
     <para>You can use either the graphical user interface or the command-line
     <computeroutput>VBoxManage</computeroutput> tool to set up virtual serial
@@ -992,8 +995,8 @@
     <computeroutput>--uart</computeroutput> and
     <computeroutput>--uartmode</computeroutput> options.</para>
 
-    <para>In either case, you can configure up to two virtual serial ports
-    simultaneously. For each such device, you will need to
+    <para>In either case, you can configure up to two virtual serial ports per 
+    virtual machine. For each such device, you will need to
     determine<orderedlist>
         <listitem>
           <para>what kind of serial port the virtual machine should see by
@@ -1051,9 +1054,15 @@
                 operating system:<itemizedlist>
                     <listitem>
                       <para>On a Windows host, data will be sent and received
-                      through a named pipe. You can use a helper program
-                      called VMware Serial Line Gateway, available for
-                      download at <literal> <ulink
+                      through a named pipe. The pipe name must be in the format
+                      <computeroutput>\\.\pipe\&lt;name&gt;</computeroutput> 
+                      where <computeroutput>&lt;name&gt;</computeroutput> should
+                      identify the virtual machine but may be freely 
+                      chosen.</para> 
+                      <para>For forwarding serial traffic, you can use a helper
+                      program called VMware Serial Line Gateway, available for
+                      download at
+                                  <literal> <ulink
                       url="http://www.l4ka.org/tools/vmwaregateway.php">http://www.l4ka.org/tools/vmwaregateway.php</ulink>
                       </literal>. This tool provides a fixed server mode named
                       pipe at
@@ -1063,10 +1072,15 @@
                     </listitem>
 
                     <listitem>
-                      <para>On a Mac, Linux or OpenSolaris host, a local
-                      domain socket is used instead. On Linux there are
-                      various tools which can connect to a local domain socket
-                      or create one in server mode. The most flexible tool is
+                      <para>On a Mac, Linux or Solaris host, a local
+                      domain socket is used instead. The socket filename must be
+                      chosen such that the user running VirtualBox has 
+                      sufficient privileges to create and write to it. The 
+                      <computeroutput>/tmp</computeroutput> directory is often a 
+                      good candidate.</para>
+                      <para>On Linux there are various tools which can connect 
+                      to a local domain socket or create one in server mode. The 
+                      most flexible tool is
                       <computeroutput>socat</computeroutput> and is available
                       as part of many distributions.</para>
                     </listitem>
@@ -1079,13 +1093,29 @@
                 <computeroutput>VBoxManage</computeroutput> command-line
                 options, this is referred to as "server" or "client" mode,
                 respectively.</para>
+
+                <para>For a direct connection between two virtual machines
+                (corresponding to a null-modem cable), simply configure one VM 
+                to create a pipe/socket and another to attach to it.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>You can send the virtual serial port output to a file. 
+                This option is very useful for capturing diagnostic output from 
+                a guest. Any file may be used for this purpose, as long as the 
+                user running VirtualBox has sufficient privileges to create and 
+                write to the file.
+                </para>
               </listitem>
             </itemizedlist></para>
         </listitem>
-      </orderedlist>Up to two serial ports can be configured simultaneously
-    per virtual machine, but you can pick any port numbers out of the above.
-    For example, you can configure two serial ports to be able to work with
-    COM2 and COM4 in the guest.</para>
+      </orderedlist>Up to two serial ports can be configured per virtual 
+      machine, but you can pick any port numbers out of the above. However,
+      serial ports cannot reliably share interrupts; if both ports are to be 
+      used at the same time, they must use different interrupt levels, for 
+      example COM1 and COM2, but not COM1 and COM3.
+    </para>
   </sect1>
 
   <sect1>
