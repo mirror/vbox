@@ -188,7 +188,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 /*
  * Debugger commands.
  */
-static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 
 /** '.remstep' arguments. */
 static const DBGCVARDESC    g_aArgRemStep[] =
@@ -206,7 +206,6 @@ static const DBGCCMD    g_aCmds[] =
         .cArgsMax = 1,
         .paArgDescs = &g_aArgRemStep[0],
         .cArgDescs = RT_ELEMENTS(g_aArgRemStep),
-        .pResultDesc = NULL,
         .fFlags = 0,
         .pfnHandler = remR3CmdDisasEnableStepping,
         .pszSyntax = "[on/off]",
@@ -3666,7 +3665,7 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 /**
  * External Debugger Command: .remstep [on|off|1|0]
  */
-static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     int rc;
 

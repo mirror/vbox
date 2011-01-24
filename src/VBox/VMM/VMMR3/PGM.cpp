@@ -623,14 +623,14 @@ static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUP
 
 #ifdef VBOX_WITH_DEBUGGER
 /** @todo Convert the first two commands to 'info' items. */
-static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 # ifdef VBOX_STRICT
-static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 # endif
-static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 #endif
 
 
@@ -664,20 +664,20 @@ static const DBGCVARDESC g_aPgmCountPhysWritesArgs[] =
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "pgmram",        0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
-    { "pgmsync",       0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
-    { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
-    { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
+    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs, fFlags, pfnHandler          pszSyntax,          ....pszDescription */
+    { "pgmram",        0, 0,        NULL,                     0,         0,      pgmR3CmdRam,        "",                     "Display the ram ranges." },
+    { "pgmsync",       0, 0,        NULL,                     0,         0,      pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+    { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,         0,      pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
+    { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,         0,      pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
 # ifdef VBOX_STRICT
-    { "pgmassertcr3",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
+    { "pgmassertcr3",  0, 0,        NULL,                     0,         0,      pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
 #  if HC_ARCH_BITS == 64
-    { "pgmcheckduppages", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
-    { "pgmsharedmodules", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
+    { "pgmcheckduppages", 0, 0,     NULL,                     0,         0,      pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
+    { "pgmsharedmodules", 0, 0,     NULL,                     0,         0,      pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
 #  endif
 # endif
-    { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
-    { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
+    { "pgmsyncalways", 0, 0,        NULL,                     0,         0,      pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
+    { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,         0,      pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
 };
 #endif
 
@@ -3529,7 +3529,7 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
@@ -3567,7 +3567,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
@@ -3613,7 +3613,7 @@ static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /** @todo SMP support */
 
@@ -3649,7 +3649,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /** @todo SMP support!! */
 
@@ -3682,7 +3682,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /** @todo SMP support!! */
     PVMCPU pVCpu = &pVM->aCpus[0];
@@ -3720,7 +3720,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.

@@ -114,15 +114,15 @@
 *******************************************************************************/
 static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int)  pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "pgmpoolcheck",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3PoolCmdCheck,  "",                 "Check the pgm pool pages." },
+    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc, cArgDescs, fFlags, pfnHandler          pszSyntax,  ....pszDescription */
+    { "pgmpoolcheck",  0, 0,        NULL,      0,         0,      pgmR3PoolCmdCheck,  "",         "Check the pgm pool pages." },
 };
 #endif
 
@@ -975,28 +975,25 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 0);
+    uint32_t cErrors = 0;
 
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-
     for (unsigned i = 0; i < pPool->cCurPages; i++)
     {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-        bool fFirstMsg = true;
+        PPGMPOOLPAGE    pPage     = &pPool->aPages[i];
+        bool            fFirstMsg = true;
 
         /* Todo: cover other paging modes too. */
         if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
         {
             PPGMSHWPTPAE pShwPT = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
             {
-                PX86PTPAE pGstPT;
-                PGMPAGEMAPLOCK LockPage;
+                PX86PTPAE       pGstPT;
+                PGMPAGEMAPLOCK  LockPage;
                 int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPage->GCPhys, (const void **)&pGstPT, &LockPage);     AssertReleaseRC(rc);
 
                 /* Check if any PTEs are out of sync. */
@@ -1011,20 +1008,22 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                         {
                             if (fFirstMsg)
                             {
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
                                 fFirstMsg = false;
                             }
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%Rrc idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
+                            DBGCCmdHlpPrintf(pCmdHlp, "Mismatch HCPhys: rc=%Rrc idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
+                            cErrors++;
                         }
                         else if (   PGMSHWPTEPAE_IS_RW(pShwPT->a[j])
                                  && !pGstPT->a[j].n.u1Write)
                         {
                             if (fFirstMsg)
                             {
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
                                 fFirstMsg = false;
                             }
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
+                            DBGCCmdHlpPrintf(pCmdHlp, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
+                            cErrors++;
                         }
                     }
                 }
@@ -1055,10 +1054,11 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                             {
                                 if (fFirstMsg)
                                 {
-                                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                    DBGCCmdHlpPrintf(pCmdHlp, "Check pool page %RGp\n", pPage->GCPhys);
                                     fFirstMsg = false;
                                 }
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, PGMSHWPTEPAE_GET_LOG(pShwPT->a[k]), PGMSHWPTEPAE_GET_LOG(pShwPT2->a[k]));
+                                DBGCCmdHlpPrintf(pCmdHlp, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, PGMSHWPTEPAE_GET_LOG(pShwPT->a[k]), PGMSHWPTEPAE_GET_LOG(pShwPT2->a[k]));
+                                cErrors++;
                             }
                         }
                     }
@@ -1066,6 +1066,8 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             }
         }
     }
+    if (cErrors > 0)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %#x errors", cErrors);
     return VINF_SUCCESS;
 }
 #endif /* VBOX_WITH_DEBUGGER */

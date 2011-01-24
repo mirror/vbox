@@ -150,9 +150,9 @@ static void                 stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPa
 static void                 stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExpressions, unsigned cExpressions);
 
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int)    stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)    stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 static DECLCALLBACK(void)   stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const char *pszFormat, ...);
-static DECLCALLBACK(int)    stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)    stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 #endif
 
 
@@ -170,9 +170,9 @@ static const DBGCVARDESC    g_aArgPat[] =
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "stats",      0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     NULL,               0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
-    { "statsreset", 0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     NULL,               0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
+    /* pszCmd,      cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "stats",      0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     0,          stamR3CmdStats,     "[pattern]",        "Display statistics." },
+    { "statsreset", 0,        1,        &g_aArgPat[0],      RT_ELEMENTS(g_aArgPat),     0,          stamR3CmdStatsReset,"[pattern]",        "Resets statistics." }
 };
 #endif
 
@@ -1916,7 +1916,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
@@ -1967,7 +1967,7 @@ static DECLCALLBACK(void) stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const 
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.

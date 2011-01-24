@@ -526,6 +526,7 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             PCDBGCCMD pFun = dbgcRoutineLookup(pDbgc, pszExpr, pszFunEnd - pszExpr, fExternal);
             if (!pFun)
                 return VERR_PARSE_FUNCTION_NOT_FOUND;
+#if 0
             if (!pFun->pResultDesc)
                 return VERR_PARSE_NOT_A_FUNCTION;
 
@@ -545,6 +546,9 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARC
             }
             else if (rc == VERR_PARSE_EMPTY_ARGUMENT && pFun->cArgsMin == 0)
                 rc = pFun->pfnHandler(pFun, &pDbgc->CmdHlp, pDbgc->pVM, NULL, 0, pResult);
+#else
+            rc = VERR_NOT_IMPLEMENTED;
+#endif
         }
         else if (   enmCategory == DBGCVAR_CAT_STRING
                  || enmCategory == DBGCVAR_CAT_SYMBOL)
@@ -1035,7 +1039,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
      * Find the command.
      */
     PCDBGCCMD pCmd = dbgcRoutineLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
-    if (!pCmd || (pCmd->fFlags & DBGCCMD_FLAGS_FUNCTION))
+    if (!pCmd)
     {
         DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Syntax error: Unknown command '%s'!\n", pszCmdInput);
         return pDbgc->rcCmd = VINF_PARSE_COMMAND_NOT_FOUND;
@@ -1054,7 +1058,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
          * Execute the command.
          */
         if (!fNoExecute)
-            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs, NULL);
+            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs);
         pDbgc->rcCmd = rc;
         if (rc == VERR_DBGC_COMMAND_FAILED)
             rc = VINF_SUCCESS;

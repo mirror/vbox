@@ -831,7 +831,7 @@ DECLINLINE(PCDBGFINFOHLP) DBGCCmdHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
  * Command handler.
  *
  * The console will call the handler for a command once it's finished
- * parsing the user input. The command handler function is responsible
+ * parsing the user input.  The command handler function is responsible
  * for executing the command itself.
  *
  * @returns VBox status.
@@ -840,9 +840,8 @@ DECLINLINE(PCDBGFINFOHLP) DBGCCmdHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
  * @param   pVM         Pointer to the current VM (if any).
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
- * @param   pResult     Where to store the result. NULL if no result descriptor was specified.
  */
-typedef DECLCALLBACK(int) FNDBGCCMD(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs, PDBGCVAR pResult);
+typedef DECLCALLBACK(int) FNDBGCCMD(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
 /** Pointer to a FNDBGCCMD() function. */
 typedef FNDBGCCMD *PFNDBGCCMD;
 
@@ -865,8 +864,6 @@ typedef struct DBGCCMD
     PCDBGCVARDESC   paArgDescs;
     /** Number of argument descriptors. */
     unsigned        cArgDescs;
-    /** Result descriptor. */
-    PCDBGCVARDESC   pResultDesc;
     /** flags. (reserved for now) */
     unsigned        fFlags;
     /** Handler function. */
@@ -880,9 +877,6 @@ typedef struct DBGCCMD
 /** DBGCCMD Flags.
  * @{
  */
-/** The description is of a pure function which cannot be invoked
- * as a command from the commandline. */
-#define DBGCCMD_FLAGS_FUNCTION  1
 /** @} */
 
 
