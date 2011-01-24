@@ -324,48 +324,50 @@ Function W2K_InstallFiles
 
   Push $0 ; For fetching results
 
-drv_guest:
-
-  StrCmp $g_bNoGuestDrv "true" drv_video
-  DetailPrint "Installing guest driver ..."
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
-  Pop $0 ; Ret value
-  LogText "Guest driver result: $0"
-  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
-
-drv_video:
-
-  StrCmp $g_bNoVideoDrv "true" drv_mouse
   SetOutPath "$INSTDIR"
-  ${If} $g_bWithWDDM == "true"
-    DetailPrint "Installing WDDM video driver ..."
-    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf"'
+
+  ${If} $g_bNoGuestDrv <> "true"
+    StrCmp $g_bNoGuestDrv "true" drv_video
+    DetailPrint "Installing guest driver ..."
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
+    Pop $0 ; Ret value
+    LogText "Guest driver returned: $0"
+    IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
   ${Else}
-    DetailPrint "Installing video driver ..."
-    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf"'
+    LogText "Guest driver installation skipped!"
   ${EndIf}
-  Pop $0 ; Ret value
-  LogText "Video driver result: $0"
-  IntCmp $0 0 +1 error error ; Check ret value (0=OK, 1=Error)
 
-drv_mouse:
+  ${If} $g_bNoVideoDrv <> "true"
+    ${If} $g_bWithWDDM == "true"
+      DetailPrint "Installing WDDM video driver ..."
+      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf"'
+    ${Else}
+      DetailPrint "Installing video driver ..."
+      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf"'
+    ${EndIf}
+    Pop $0 ; Ret value
+    LogText "Video driver returned: $0"
+    IntCmp $0 0 +1 error error ; Check ret value (0=OK, 1=Error)
+  ${Else}
+    LogText "Video driver installation skipped!"
+  ${EndIf}
 
-  StrCmp $g_bNoMouseDrv "true" vbox_service
-  DetailPrint "Installing mouse filter ..."
-  ; The mouse filter does not contain any device IDs but a "DefaultInstall" section;
-  ; so this .INF file needs to be installed using "InstallHinfSection" which is implemented
-  ; with VBoxDrvInst's "driver executeinf" routine
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver executeinf "$INSTDIR\VBoxMouse.inf"'
-  Pop $0  ; Ret value
-  LogText "Mouse driver returned: $0"
-  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
-
-vbox_service:
-
-  DetailPrint "Installing VirtualBox service ..."
+  ${If} $g_bNoMouseDrv <> "true"
+    DetailPrint "Installing mouse driver ..."
+    ; The mouse filter does not contain any device IDs but a "DefaultInstall" section;
+    ; so this .INF file needs to be installed using "InstallHinfSection" which is implemented
+    ; with VBoxDrvInst's "driver executeinf" routine
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver executeinf "$INSTDIR\VBoxMouse.inf"'
+    Pop $0  ; Ret value
+    LogText "Mouse driver returned: $0"
+    IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
+  ${Else}
+    LogText "Mouse driver installation skipped!"
+  ${EndIf}
 
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
+  DetailPrint "Installing VirtualBox service ..."
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxService" "VirtualBox Guest Additions Service" 16 2 "system32\VBoxService.exe" "Base"'
   Pop $0 ; Ret value
   LogText "VBoxService returned: $0"
