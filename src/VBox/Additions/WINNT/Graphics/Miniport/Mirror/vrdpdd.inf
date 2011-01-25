@@ -20,6 +20,7 @@ Signature="$WINDOWS NT$"
 Provider=%ORACLE%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
+DriverPackageType=PlugAndPlay
 ;edit-DriverVer=08/26/2008,2.00.0000
 
 [DestinationDirs]
