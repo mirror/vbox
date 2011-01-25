@@ -105,8 +105,16 @@ void VBoxSnapshotDetailsDlg::putBackToSnapshot()
 {
     AssertReturn (!mSnapshot.isNull(), (void) 0);
 
-    mSnapshot.SetName (mLeName->text());
-    mSnapshot.SetDescription (mTeDescription->toPlainText());
+    /* We need a session when we manipulate the snapshot data of a machine. */
+    CSession session = vboxGlobal().openSession(mSnapshot.GetMachine().GetId(), true);
+    if (session.isNull())
+        return;
+
+    mSnapshot.SetName(mLeName->text());
+    mSnapshot.SetDescription(mTeDescription->toPlainText());
+
+    /* Close the session again. */
+    session.UnlockMachine();
 }
 
 void VBoxSnapshotDetailsDlg::retranslateUi()
