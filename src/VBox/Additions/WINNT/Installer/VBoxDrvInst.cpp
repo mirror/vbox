@@ -121,15 +121,10 @@ bool GetErrorMsg(DWORD dwLastError, _TCHAR *pszMsg, DWORD dwBufSize)
  */
 void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVOID pCallbackContext)
 {
-#ifdef DEBUG
     if (dwError == 0)
         _tprintf(_T("(%u) %ws\n"), Event, pEventDescription);
     else
         _tprintf(_T("(%u) ERROR: %u - %ws\n"), Event, dwError, pEventDescription);
-#else
-    if (dwError > 0)
-        _tprintf(_T("ERROR: (%u) %u - %ws\n"), Event, dwError, pEventDescription);
-#endif
 
      if (pCallbackContext)
          fwprintf((FILE*)pCallbackContext, _T("(%u) %u - %s\n"), Event, dwError, pEventDescription);
@@ -143,7 +138,8 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
  * @param   pszDriverPath       Full qualified path to the driver's .INF file (+ driver files).
  * @param   fSilent             Flag indicating a silent installation (TRUE) or not (FALSE).
  */
-int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSilent)
+int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSilent,
+                      const _TCHAR *pszLogFile)
 {
     HRESULT hr = ERROR_SUCCESS;
     HMODULE hDIFxAPI = LoadLibrary(_T("DIFxAPI.dll"));
@@ -187,16 +183,13 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
     if (SUCCEEDED(hr))
     {
         FILE *fh = NULL;
-#ifdef DEBUG
-        char szLogFile[MAX_PATH + 1];
-        sprintf(szLogFile, VBOX_DRVINST_LOGFILE);
-        fh = fopen(szLogFile, "a");
-        if (!fh)
-            _tprintf(_T("ERROR: Unable to create log file!\n"));
-        else
-             _tprintf(_T("Logging enabled ...\n"));
-#endif
-        g_pfnDIFXAPISetLogCallback(LogCallback, fh);
+        if (pszLogFile)
+        {
+            fh = _wfopen(pszLogFile, _T("a"));
+            if (!fh)
+                _tprintf(_T("ERROR: Unable to create log file!\n"));
+            g_pfnDIFXAPISetLogCallback(LogCallback, fh);
+        }
 
         INSTALLERINFO instInfo =
         {
@@ -336,10 +329,8 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                 hr = ERROR_INSTALL_FAILURE;
             }
             g_pfnDIFXAPISetLogCallback(NULL, NULL);
-#ifdef DEBUG
             if (fh)
                 fclose(fh);
-#endif
             if (SUCCEEDED(hr))
             {
                 if (fReboot)
@@ -1009,8 +1000,8 @@ void PrintHelp(void)
     _tprintf(_T("Syntax:\n"));
     _tprintf(_T("\n"));
     _tprintf(_T("Drivers:\n"));
-    _tprintf(_T("\tVBoxDrvInst         driver install <inf-file>\n"));
-    _tprintf(_T("\tVBoxDrvInst         driver uninstall <inf-file>\n"));
+    _tprintf(_T("\tVBoxDrvInst         driver install <inf-file> [log file]\n"));
+    _tprintf(_T("\tVBoxDrvInst         driver uninstall <inf-file> [log file]\n"));
     _tprintf(_T("\tVBoxDrvInst         driver executeinf <inf-file>\n"));
     _tprintf(_T("\n"));
     _tprintf(_T("Network Provider:\n"));
@@ -1055,7 +1046,12 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
                 else
                 {
                     _stprintf(szINF, _T("%ws"), argv[3]);
-                    rc = VBoxInstallDriver(!_tcsicmp(argv[2], _T("install")) ? TRUE : FALSE, szINF, FALSE);
+
+                    _TCHAR szLogFile[_MAX_PATH] = { 0 };
+                    if (argc > 4)
+                        _stprintf(szLogFile, _T("%ws"), argv[4]);
+                    rc = VBoxInstallDriver(!_tcsicmp(argv[2], _T("install")) ? TRUE : FALSE, szINF,
+                                           FALSE /* Not silent */, szLogFile[0] != NULL ? szLogFile : NULL);
                 }
             }
             else if (   !_tcsicmp(argv[2], _T("executeinf"))
