@@ -436,10 +436,10 @@ void UIGlobalSettingsNetwork::sltAddInterface()
             appendListItem(m_cache.m_items.last());
         }
         else
-            vboxProblem().cannotCreateHostInterface(progress);
+            vboxProblem().cannotCreateHostInterface(progress, this);
     }
     else
-        vboxProblem().cannotRemoveHostInterface(host, iface);
+        vboxProblem().cannotCreateHostInterface(host, this);
 }
 
 /* Removes selected network interface: */
@@ -480,10 +480,10 @@ void UIGlobalSettingsNetwork::sltDelInterface()
             removeCacheItem(strInterfaceName);
         }
         else
-            vboxProblem().cannotRemoveHostInterface(progress, iface);
+            vboxProblem().cannotRemoveHostInterface(progress, iface, this);
     }
     else
-        vboxProblem().cannotRemoveHostInterface(host, iface);
+        vboxProblem().cannotRemoveHostInterface(host, iface, this);
 }
 
 /* Edits selected network interface: */
