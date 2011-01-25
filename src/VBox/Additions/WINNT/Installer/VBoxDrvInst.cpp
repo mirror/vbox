@@ -1038,7 +1038,7 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
             _TCHAR szINF[_MAX_PATH] = { 0 }; /* Complete path to INF file.*/
             if (   (   !_tcsicmp(argv[2], _T("install"))
                     || !_tcsicmp(argv[2], _T("uninstall")))
-                && argc == 4)
+                && argc >= 4)
             {
                 if (OSinfo.dwMajorVersion < 5)
                 {
