@@ -135,8 +135,10 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
  *
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
  * @param   fInstall            Flag indicating whether to install (TRUE) or uninstall (FALSE) a driver.
- * @param   pszDriverPath       Full qualified path to the driver's .INF file (+ driver files).
+ * @param   pszDriverPath       Pointer to full qualified path to the driver's .INF file (+ driver files).
  * @param   fSilent             Flag indicating a silent installation (TRUE) or not (FALSE).
+ * @param   pszLogFile          Pointer to full qualified path to log file to be written during installation.
+ *                              Optional.
  */
 int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSilent,
                       const _TCHAR *pszLogFile)
