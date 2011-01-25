@@ -18,7 +18,7 @@
 !macro UninstallCommon un
 Function ${un}UninstallCommon
 
-  Delete /REBOOTOK "$INSTDIR\install.log"
+  Delete /REBOOTOK "$INSTDIR\install*.log"
   Delete /REBOOTOK "$INSTDIR\uninst.exe"
   Delete /REBOOTOK "$INSTDIR\${PRODUCT_NAME}.url"
 
