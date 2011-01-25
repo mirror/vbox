@@ -613,6 +613,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                                      Guest::tr("Installed Guest Additions do not support automatic updating"));
                                 break;
 
+                            case VERR_TIMEOUT:
+                                LogRel(("Guest was unable to start copying the Guest Additions setup within time\n"));
+                                rc = TaskGuest::setProgressErrorInfo(E_FAIL, aTask->progress,
+                                                                     Guest::tr("Guest was unable to start copying the Guest Additions setup within time"));
+                                break;
+
                             default:
                                 rc = TaskGuest::setProgressErrorInfo(E_FAIL, aTask->progress,
                                                                      Guest::tr("Error copying Guest Additions setup file to guest path \"%s\" (%Rrc)"),
