@@ -97,13 +97,12 @@ bool GetErrorMsg(DWORD dwLastError, _TCHAR *pszMsg, DWORD dwBufSize)
 {
     if (::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwLastError, 0, pszMsg, dwBufSize / sizeof(TCHAR), NULL) == 0)
     {
-        _stprintf(pszMsg, _T("Unknown error!\n"), dwLastError);
+        _sntprintf(pszMsg, dwBufSize / sizeof(TCHAR), _T("Unknown error!\n"), dwLastError);
         return false;
     }
     else
     {
         _TCHAR *p = _tcschr(pszMsg, _T('\r'));
-
         if (p != NULL)
             *p = _T('\0');
     }
@@ -1047,11 +1046,11 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
                 }
                 else
                 {
-                    _stprintf(szINF, _T("%ws"), argv[3]);
+                    _sntprintf(szINF, sizeof(szINF) / sizeof(TCHAR), _T("%ws"), argv[3]);
 
                     _TCHAR szLogFile[_MAX_PATH] = { 0 };
                     if (argc > 4)
-                        _stprintf(szLogFile, _T("%ws"), argv[4]);
+                        _sntprintf(szLogFile, sizeof(szLogFile) / sizeof(TCHAR), _T("%ws"), argv[4]);
                     rc = VBoxInstallDriver(!_tcsicmp(argv[2], _T("install")) ? TRUE : FALSE, szINF,
                                            FALSE /* Not silent */, szLogFile[0] != NULL ? szLogFile : NULL);
                 }
@@ -1059,7 +1058,7 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
             else if (   !_tcsicmp(argv[2], _T("executeinf"))
                      && argc == 4)
             {
-                _stprintf(szINF, _T("%ws"), argv[3]);
+                _sntprintf(szINF, sizeof(szINF) / sizeof(TCHAR), _T("%ws"), argv[3]);
                 rc = ExecuteInfFile(_T("DefaultInstall"), 132, szINF);
             }
         }
@@ -1073,13 +1072,13 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
                 int iOrder = 0;
                 if (argc > 4)
                     iOrder = _ttoi(argv[4]);
-                _stprintf(szProvider, _T("%ws"), argv[3]);
+                _sntprintf(szProvider, sizeof(szProvider) / sizeof(TCHAR), _T("%ws"), argv[3]);
                 rc = AddNetworkProvider(szProvider, iOrder);
             }
             else if (  !_tcsicmp(argv[2], _T("remove"))
                 && argc >= 4)
             {
-                _stprintf(szProvider, _T("%ws"), argv[3]);
+                _sntprintf(szProvider, sizeof(szProvider) / sizeof(TCHAR), _T("%ws"), argv[3]);
                 rc = RemoveNetworkProvider(szProvider);
             }
         }
