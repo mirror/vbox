@@ -344,7 +344,7 @@ Function W2K_InstallFiles
 
   ${If} $g_bNoGuestDrv == "false"
     DetailPrint "Installing guest driver ..."
-    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf" "$INSTDIR\install_drivers.log"'
     Pop $0 ; Ret value
     LogText "Guest driver returned: $0"
     IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
@@ -355,10 +355,10 @@ Function W2K_InstallFiles
   ${If} $g_bNoVideoDrv == "false"
     ${If} $g_bWithWDDM == "true"
       DetailPrint "Installing WDDM video driver ..."
-      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf"'
+      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf" "$INSTDIR\install_drivers.log"'
     ${Else}
       DetailPrint "Installing video driver ..."
-      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf"'
+      nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf" "$INSTDIR\install_drivers.log"'
     ${EndIf}
     Pop $0 ; Ret value
     LogText "Video driver returned: $0"
