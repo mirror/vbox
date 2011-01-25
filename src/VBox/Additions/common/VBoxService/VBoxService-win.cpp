@@ -367,7 +367,7 @@ static int vboxServiceWinStart(void)
 RTEXITCODE VBoxServiceWinEnterCtrlDispatcher(void)
 {
     if (!StartServiceCtrlDispatcher(&g_aServiceTable[0]))
-        return VBoxServiceError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!",
+        return VBoxServiceError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!\n",
                                 GetLastError(), g_pszProgName);
     return RTEXITCODE_SUCCESS;
 }
