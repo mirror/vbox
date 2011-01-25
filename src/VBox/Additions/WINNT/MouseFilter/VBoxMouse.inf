@@ -15,8 +15,9 @@
 
 [Version]
 Signature="$Windows NT$"
-Class=Mouse
 ClassGuid={4D36E96F-E325-11CE-BFC1-08002BE10318}
+Class=Mouse
+DriverPackageType=ClassFilter
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxMouse.cat
 

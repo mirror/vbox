@@ -17,6 +17,7 @@ Signature="$WINDOWS NT$"
 Provider=%ORACLE%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
+DriverPackageType=PlugAndPlay
 ;edit-DriverVer=02/26/2010,1.00.0000
 ;cat CatalogFile = VBoxVideoWddm.cat
 
@@ -43,7 +44,7 @@ Include = msdv.inf
 ;amd64 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.Display_wow64, VBoxVideo.GL, VBoxVideo.GL_wow64
 AddReg = VBoxVideo_SoftwareDeviceSettings
 ;todo: clear XPDM driver settings: DelReg = VBoxVideo_RemoveDeviceSettings
-RegisterDlls = VBoxVideo_RegisterDlls  
+RegisterDlls = VBoxVideo_RegisterDlls
 
 [VBoxVideo.Miniport]
 VBoxVideoWddm.sys
@@ -152,7 +153,7 @@ VBoxVideoWddm.sys = 1
 ;amd64 ;gl VBoxOGLpackspu-x86.dll = 1
 ;gl VBoxOGLpackspu.dll = 1
 ;amd64 ;gl VBoxOGLpassthroughspu-x86.dll = 1
-;gl VBoxOGLpassthroughspu.dll = 1 
+;gl VBoxOGLpassthroughspu.dll = 1
 
 [Strings]
 REG_SZ = 0x00000000
