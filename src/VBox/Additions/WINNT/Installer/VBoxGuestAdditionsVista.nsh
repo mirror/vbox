@@ -31,7 +31,7 @@ FunctionEnd
 
 Function Vista_InstallFiles
 
-  DetailPrint "Installing Drivers for Vista / Windows 7 ..."
+  DetailPrint "Installing drivers for Vista / Windows 7 ..."
 
   SetOutPath "$INSTDIR"
   ; Nothing here yet
