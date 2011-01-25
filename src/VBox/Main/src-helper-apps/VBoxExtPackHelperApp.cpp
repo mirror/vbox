@@ -349,7 +349,14 @@ static RTEXITCODE UnpackExtPackDir(const char *pszDstDirName, RTVFSOBJ hVfsObj)
     int rc = RTDirCreate(pszDstDirName, 0755);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszDstDirName, rc);
+#if !defined(RT_OS_WINDOWS)
+    /* This is necessary because of umask! */
+    rc = RTPathSetMode(pszDstDirName, 0755);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions: %Rrc ('%s')", rc, pszDstDirName);
+#else
     /** @todo Ownership tricks on windows? */
+#endif
     return RTEXITCODE_SUCCESS;
 }
 
