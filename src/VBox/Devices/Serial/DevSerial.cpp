@@ -137,7 +137,7 @@
 
 #define XMIT_FIFO           0
 #define RECV_FIFO           1
-#define MAX_XMIT_RETRY      8
+#define MAX_XMIT_RETRY      16
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -272,6 +272,8 @@ static int fifo_put(SerialState *s, int fifo, uint8_t chr)
 
     if (f->count < UART_FIFO_LENGTH)
         f->count++;
+    else if (fifo == XMIT_FIFO) /* need to at least adjust tail to maintain pipe state consistency */
+    	++f->tail;
     else if (fifo == RECV_FIFO)
         s->lsr |= UART_LSR_OE;
 
@@ -370,10 +372,9 @@ static void serial_update_parameters(SerialState *s)
         s->pDrvChar->pfnSetParameters(s->pDrvChar, speed, parity, data_bits, stop_bits);
 }
 
-static void serial_xmit(void *opaque)
+static void serial_xmit(void *opaque, bool bRetryXmit)
 {
     SerialState *s = (SerialState*)opaque;
-    uint64_t new_xmit_ts = TMTimerGet(CTX_SUFF(s->transmit_timer));
 
     if (s->tsr_retry <= 0) {
         if (s->fcr & UART_FCR_FE) {
@@ -391,9 +392,13 @@ static void serial_xmit(void *opaque)
         serial_receive(s, &s->tsr, 1);
     } else if (   RT_LIKELY(s->pDrvChar)
                && RT_FAILURE(s->pDrvChar->pfnWrite(s->pDrvChar, &s->tsr, 1))) {
-        if ((s->tsr_retry >= 0) && (s->tsr_retry <= MAX_XMIT_RETRY)) {
-            s->tsr_retry++;
-            TMTimerSet(CTX_SUFF(s->transmit_timer), new_xmit_ts + s->char_transmit_time);
+        if ((s->tsr_retry >= 0) && ((!bRetryXmit) || (s->tsr_retry <= MAX_XMIT_RETRY))) {
+            if (!s->tsr_retry)
+                s->tsr_retry = 1; /* make sure the retry state is always set */
+            else if (bRetryXmit) /* do not increase the retry count if the retry is actually caused by next char write */
+                s->tsr_retry++;
+
+            TMTimerSet(CTX_SUFF(s->transmit_timer), TMTimerGet(CTX_SUFF(s->transmit_timer)) + s->char_transmit_time * 4);
             return;
         } else {
             /* drop this character. */
@@ -444,7 +449,7 @@ static int serial_ioport_write(SerialState *s, uint32_t addr, uint32_t val)
                 s->lsr &= ~UART_LSR_THRE;
                 serial_update_irq(s);
             }
-            serial_xmit(s);
+            serial_xmit(s, false);
         }
         break;
     case 1:
@@ -809,7 +814,7 @@ static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 static DECLCALLBACK(void) serialTransmitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     SerialState *s = (SerialState*)pvUser;
-    serial_xmit(s);
+    serial_xmit(s, true);
 }
 
 /**
