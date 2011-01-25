@@ -3700,7 +3700,9 @@ static void delete_glsl_program_entry(struct shader_glsl_priv *priv, const struc
     key.ps_args = entry->ps_args;
     wine_rb_remove(&priv->program_lookup, &key);
 
+    TRACE("deleting program %u\n", entry->programId);
     GL_EXTCALL(glDeleteObjectARB(entry->programId));
+    checkGLcall("glDeleteObjectARB");
     if (entry->vshader) list_remove(&entry->vshader_entry);
     if (entry->pshader) list_remove(&entry->pshader_entry);
     HeapFree(GetProcessHeap(), 0, entry->vuniformF_locations);

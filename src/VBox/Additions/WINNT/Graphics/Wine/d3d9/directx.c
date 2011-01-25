@@ -466,12 +466,57 @@ static HRESULT WINAPI IDirect3D9ExImpl_EnumAdapterModesEx(IDirect3D9Ex *iface,
 }
 
 static HRESULT WINAPI IDirect3D9ExImpl_GetAdapterDisplayModeEx(IDirect3D9Ex *iface,
-        UINT adapter, D3DDISPLAYMODEEX *mode, D3DDISPLAYROTATION *rotation)
+        UINT Adapter, D3DDISPLAYMODEEX *pMode, D3DDISPLAYROTATION *pRotation)
 {
-    FIXME("iface %p, adapter %u, mode %p, rotation %p stub!\n",
-            iface, adapter, mode, rotation);
+    IDirect3D9Impl *This = (IDirect3D9Impl *)iface;
+    HRESULT hr;
 
-    return D3DERR_DRIVERINTERNALERROR;
+    TRACE("iface %p, adapter %u, mode %p, rotation %p", iface, Adapter, pMode, pRotation);
+
+    wined3d_mutex_lock();
+    hr = IWineD3D_GetAdapterDisplayModeEx(This->WineD3D, Adapter, (WINED3DDISPLAYMODEEX *) pMode, (WINED3DDISPLAYROTATION *) pRotation);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+    {
+        pMode->Format = d3dformat_from_wined3dformat(pMode->Format);
+    }
+
+/*
+    if (mode)
+    {
+        D3DDISPLAYMODE* d3dmode;
+
+        if (mode->Size != sizeof(D3DDISPLAYMODEEX))
+        {
+            WARN("Invalid mode->Size %u expected %u", mode->Size, sizeof(D3DDISPLAYMODEEX));
+            return D3DERR_INVALIDCALL;
+        }
+
+        wined3d_mutex_lock();
+        hr = IWineD3D_GetAdapterDisplayMode(This->WineD3D, Adapter, (WINED3DDISPLAYMODE *) &d3dmode);
+        wined3d_mutex_unlock();
+
+        if (SUCCEEDED(hr))
+        {
+            mode->Width = d3dmode.Width;
+            mode->Height = d3dmode.Height;
+            mode->RefreshRate = d3dmode.RefreshRate;
+            mode->Format = d3dformat_from_wined3dformat(d3dmode.Format);
+            mode->ScanLineOrdering = D3DSCANLINEORDERING_PROGRESSIVE; //D3DSCANLINEORDERING_INTERLACED
+        }
+    }
+    else
+    {
+        hr = WINED3D_OK;
+    }
+
+    if (rotation)
+    {
+        *rotation = D3DDISPLAYROTATION_IDENTITY;
+    }
+*/
+    return hr;
 }
 
 static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3D9ExImpl_CreateDeviceEx(IDirect3D9Ex *iface,

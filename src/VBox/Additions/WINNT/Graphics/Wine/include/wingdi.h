@@ -2903,7 +2903,7 @@ typedef struct
         DWORD dmDisplayOrientation;
         DWORD dmDisplayFixedOutput;
       } DUMMYSTRUCTNAME2;
-    } DUMMYUNIONNAME1;
+    } DUMMYUNIONNAME;
     short  dmColor;
     short  dmDuplex;
     short  dmYResolution;
@@ -2950,6 +2950,7 @@ DECL_WINELIB_TYPE_AW(LPDEVMODE)
 #define DM_PAPERWIDTH		0x00000008L
 #define DM_SCALE		0x00000010L
 #define DM_POSITION             0x00000020L
+#define DM_DISPLAYORIENTATION   0x00000080L
 #define DM_COPIES		0x00000100L
 #define DM_DEFAULTSOURCE	0x00000200L
 #define DM_PRINTQUALITY		0x00000400L
@@ -3135,6 +3136,16 @@ DECL_WINELIB_TYPE_AW(LPDEVMODE)
 
 #define DMCOLLATE_FALSE         0
 #define DMCOLLATE_TRUE          1
+
+/* DEVMODE dmDisplayOrientation specifiations */
+#define DMDO_DEFAULT    0
+#define DMDO_90         1
+#define DMDO_180        2
+#define DMDO_270        3
+
+/* DEVMODE dmDisplayFlags flags */
+#define DM_INTERLACED           0x00000002
+#define DMDISPLAYFLAGS_TEXTMODE 0x00000004
 
 #define DMICMMETHOD_NONE        1
 #define DMICMMETHOD_SYSTEM      2
