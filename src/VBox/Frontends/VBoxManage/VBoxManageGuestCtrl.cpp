@@ -255,7 +255,8 @@ static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> 
     CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
     if (machineState != MachineState_Running)
     {
-        RTMsgError("Machine \"%s\" is not running!\n", pszNameOrId);
+        RTMsgError("Machine \"%s\" is not running (currently %s)!\n",
+                   pszNameOrId, stateToName(machineState, false));
         return VERR_VM_INVALID_VM_STATE;
     }
 
