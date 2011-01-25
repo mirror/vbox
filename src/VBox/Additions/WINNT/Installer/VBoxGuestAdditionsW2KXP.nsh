@@ -342,7 +342,7 @@ Function W2K_InstallFiles
 
   SetOutPath "$INSTDIR"
 
-  ${If} $g_bNoGuestDrv <> "true"
+  ${If} $g_bNoGuestDrv == "false"
     DetailPrint "Installing guest driver ..."
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf"'
     Pop $0 ; Ret value
@@ -352,7 +352,7 @@ Function W2K_InstallFiles
     LogText "Guest driver installation skipped!"
   ${EndIf}
 
-  ${If} $g_bNoVideoDrv <> "true"
+  ${If} $g_bNoVideoDrv == "false"
     ${If} $g_bWithWDDM == "true"
       DetailPrint "Installing WDDM video driver ..."
       nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf"'
@@ -367,7 +367,7 @@ Function W2K_InstallFiles
     LogText "Video driver installation skipped!"
   ${EndIf}
 
-  ${If} $g_bNoMouseDrv <> "true"
+  ${If} $g_bNoMouseDrv == "false"
     DetailPrint "Installing mouse driver ..."
     ; The mouse filter does not contain any device IDs but a "DefaultInstall" section;
     ; so this .INF file needs to be installed using "InstallHinfSection" which is implemented
