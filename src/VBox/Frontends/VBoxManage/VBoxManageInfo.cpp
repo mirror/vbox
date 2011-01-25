@@ -110,6 +110,56 @@ static void makeTimeStr(char *s, int cb, int64_t millies)
                         t.u8Hour, t.u8Minute, t.u8Second);
 }
 
+
+const char *stateToName(MachineState_T machineState, bool fShort)
+{
+    switch (machineState)
+    {
+        case MachineState_PoweredOff:
+            return fShort ? "poweroff"             : "powered off";
+        case MachineState_Saved:
+            return "saved";
+        case MachineState_Aborted:
+            return "aborted";
+        case MachineState_Teleported:
+            return "teleported";
+        case MachineState_Running:
+            return "running";
+        case MachineState_Paused:
+            return "paused";
+        case MachineState_Stuck:
+            return fShort ? "gurumeditation"       : "guru meditation";
+        case MachineState_LiveSnapshotting:
+            return fShort ? "livesnapshotting"     : "live snapshotting";
+        case MachineState_Teleporting:
+            return "teleporting";
+        case MachineState_Starting:
+            return "starting";
+        case MachineState_Stopping:
+            return "stopping";
+        case MachineState_Saving:
+            return "saving";
+        case MachineState_Restoring:
+            return "restoring";
+        case MachineState_TeleportingPausedVM:
+            return fShort ? "teleportingpausedvm"  : "teleporting paused vm";
+        case MachineState_TeleportingIn:
+            return fShort ? "teleportingin"        : "teleporting (incoming)";
+        case MachineState_RestoringSnapshot:
+            return fShort ? "restoringsnapshot"    : "restoring snapshot";
+        case MachineState_DeletingSnapshot:
+            return fShort ? "deletingsnapshot"     : "deleting snapshot";
+        case MachineState_DeletingSnapshotOnline:
+            return fShort ? "deletingsnapshotlive" : "deleting snapshot live";
+        case MachineState_DeletingSnapshotPaused:
+            return fShort ? "deletingsnapshotlivepaused" : "deleting snapshot live paused";
+        case MachineState_SettingUp:
+            return fShort ? "settingup"           : "setting up";
+        default:
+            return "unknown";
+    }
+}
+
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
    time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
    sufficient to qualify for this hack as well since this code isn't performance
@@ -517,74 +567,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("VT-x VPID:       %s\n", HWVirtExVPIDEnabled ? "on" : "off");
 
     MachineState_T machineState;
-    const char *pszState = NULL;
     rc = machine->COMGETTER(State)(&machineState);
-    switch (machineState)
-    {
-        case MachineState_PoweredOff:
-            pszState = details == VMINFO_MACHINEREADABLE ? "poweroff"            : "powered off";
-            break;
-        case MachineState_Saved:
-            pszState = "saved";
-            break;
-        case MachineState_Aborted:
-            pszState = "aborted";
-            break;
-        case MachineState_Teleported:
-            pszState = "teleported";
-            break;
-        case MachineState_Running:
-            pszState = "running";
-            break;
-        case MachineState_Paused:
-            pszState = "paused";
-            break;
-        case MachineState_Stuck:
-            pszState = details == VMINFO_MACHINEREADABLE ? "gurumeditation"      : "guru meditation";
-            break;
-        case MachineState_LiveSnapshotting:
-            pszState = details == VMINFO_MACHINEREADABLE ? "livesnapshotting"    : "live snapshotting";
-            break;
-        case MachineState_Teleporting:
-            pszState = "teleporting";
-            break;
-        case MachineState_Starting:
-            pszState = "starting";
-            break;
-        case MachineState_Stopping:
-            pszState = "stopping";
-            break;
-        case MachineState_Saving:
-            pszState = "saving";
-            break;
-        case MachineState_Restoring:
-            pszState = "restoring";
-            break;
-        case MachineState_TeleportingPausedVM:
-            pszState = details == VMINFO_MACHINEREADABLE ? "teleportingpausedvm" : "teleporting paused vm";
-            break;
-        case MachineState_TeleportingIn:
-            pszState = details == VMINFO_MACHINEREADABLE ? "teleportingin"       : "teleporting (incoming)";
-            break;
-        case MachineState_RestoringSnapshot:
-            pszState = details == VMINFO_MACHINEREADABLE ? "restoringsnapshot"   : "restoring snapshot";
-            break;
-        case MachineState_DeletingSnapshot:
-            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshot"    : "deleting snapshot";
-            break;
-        case MachineState_DeletingSnapshotOnline:
-            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshotlive" : "deleting snapshot live";
-            break;
-        case MachineState_DeletingSnapshotPaused:
-            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshotlivepaused" : "deleting snapshot live paused";
-            break;
-        case MachineState_SettingUp:
-            pszState = details == VMINFO_MACHINEREADABLE ? "settingup"           : "setting up";
-            break;
-        default:
-            pszState = "unknown";
-            break;
-    }
+    const char *pszState = stateToName(machineState, details == VMINFO_MACHINEREADABLE /*=fShort*/);
+
     LONG64 stateSince;
     machine->COMGETTER(LastStateChange)(&stateSince);
     RTTIMESPEC timeSpec;

@@ -161,7 +161,22 @@ int handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "savestate"))
         {
             /* first pause so we don't trigger a live save which needs more time/resources */
-            CHECK_ERROR_BREAK(console, Pause());
+            rc = console->Pause();
+            if (FAILED(rc))
+            {
+                if (rc == VBOX_E_INVALID_VM_STATE)
+                {
+                    /* check if we are already paused */
+                    MachineState_T machineState;
+                    CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
+                    if (machineState != MachineState_Paused)
+                    {
+                        RTMsgError("Machine in invalid state %d -- %s\n",
+                                   machineState, stateToName(machineState, false));
+                        break;
+                    }
+                }
+            }
 
             ComPtr<IProgress> progress;
             CHECK_ERROR(console, SaveState(progress.asOutParam()));
