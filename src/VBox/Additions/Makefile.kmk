@@ -87,8 +87,7 @@ ifndef VBOX_ONLY_TESTSUITE
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
   endif # signing
   VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
   VBoxGuest-inf_BLDDIRS = \
@@ -107,15 +106,11 @@ ifndef VBOX_ONLY_TESTSUITE
   $(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe:    $$(TARGET_VBoxTray) | $$(dir $$@)
 	$(INSTALL) -m 755 $< $(@D)
 
-  $(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
   $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
 	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # KBUILD_TARGET == win
