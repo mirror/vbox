@@ -142,7 +142,6 @@ Function ExtractFiles
 !ifdef VBOX_SIGN_ADDITIONS
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
 !endif
-  FILE "$%PATH_OUT%\bin\additions\VBCoInst.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
   FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"

@@ -63,16 +63,6 @@ ServiceBinary  = %12%\VBoxSF.sys
 [VBoxMRXNP_Add_Reg]
 HKLM, SOFTWARE\Microsoft\Windows\CurrentVersion\Run, VBoxMRXNP, 0x00000000, %11%\VBoxMRXNP.exe
 
-[VBoxSF_Install.CoInstallers]
-AddReg = VBoxSF_Install_CoInstallers_reg
-CopyFiles = VBox_CoInstaller_CopyFiles
-
-[VBox_CoInstaller_CopyFiles]
-vbcoinst.dll
-
-[VBoxSF_Install_CoInstallers_reg]
-HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
-
 [Strings]
 ORACLE = "Oracle Corporation"
 VBoxSF.DeviceDesc = "VirtualBox Device"

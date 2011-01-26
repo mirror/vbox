@@ -190,7 +190,6 @@ Function W2K_CopyFiles
 !endif
 
   ; Guest driver files
-  FILE "$%PATH_OUT%\bin\additions\VBCoInst.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
   FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe" ; Not used by W2K and up, but required by the .INF file
 
@@ -492,9 +491,9 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxGuest.inf"
   Delete /REBOOTOK "$INSTDIR\VBoxGuest.cat"
 
-  Delete /REBOOTOK "$INSTDIR\VBCoInst.dll"
+  Delete /REBOOTOK "$INSTDIR\VBCoInst.dll" ; Deprecated, does not get installed anymore
   Delete /REBOOTOK "$INSTDIR\VBoxControl.exe"
-  Delete /REBOOTOK "$INSTDIR\VBoxService.exe" ; File from an older installation maybe, not present here anymore
+  Delete /REBOOTOK "$INSTDIR\VBoxService.exe" ; Deprecated, does not get installed anymore
 
 !if $%VBOX_WITH_WDDM% == "1"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
@@ -683,7 +682,7 @@ Function ${un}W2K_Uninstall
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxGuest'
   Pop $0 ; Ret value
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxGuest.sys"
-  Delete /REBOOTOK "$g_strSystemDir\vbcoinst.dll"
+  Delete /REBOOTOK "$g_strSystemDir\VBCoInst.dll" ; Deprecated, does not get installed anymore
   Delete /REBOOTOK "$g_strSystemDir\VBoxTray.exe"
   Delete /REBOOTOK "$g_strSystemDir\VBoxHook.dll"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxTray" ; Remove VBoxTray autorun
@@ -695,7 +694,7 @@ Function ${un}W2K_Uninstall
   Pop $0 ; Ret value
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxSF'
   Pop $0 ; Ret value
-  Delete /REBOOTOK "$g_strSystemDir\VBoxMRXNP.dll"   ; The network provider DLL will be locked
+  Delete /REBOOTOK "$g_strSystemDir\VBoxMRXNP.dll" ; The network provider DLL will be locked
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxSF.sys"
 
   Pop $0
