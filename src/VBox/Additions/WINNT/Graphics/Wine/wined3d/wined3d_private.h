@@ -814,6 +814,12 @@ do {                                                                \
     GLint err;                                                      \
     if(!__WINE_IS_DEBUG_ON(_FIXME, __wine_dbch___default)) break;   \
     err = glGetError();                                             \
+    if (!pwglGetCurrentContext())                                   \
+    {                                                               \
+        ERR(">>>>>>>>>>>>>>>>> NULL ctx issuing %s @ %s / %d\n",    \
+            A, __FILE__, __LINE__);                                 \
+        break;                                                      \
+    }                                                               \
     if (err == GL_NO_ERROR) {                                       \
        TRACE("%s call ok %s / %d\n", A, __FILE__, __LINE__);        \
                                                                     \
