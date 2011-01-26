@@ -507,6 +507,12 @@ namespace com
 #define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)                                 \
     STDMETHOD(QueryInterface)(REFIID riid , void **ppObj)                    \
     {                                                                        \
+        if (riid == IID_##iface)                                             \
+        {                                                                    \
+            *ppObj = (iface*)this;                                           \
+            AddRef();                                                        \
+            return S_OK;                                                     \
+        }                                                                    \
         if (riid == IID_IUnknown)                                            \
         {                                                                    \
             *ppObj = (IUnknown*)this;                                        \
@@ -516,12 +522,6 @@ namespace com
         if (riid == IID_IDispatch)                                           \
         {                                                                    \
             *ppObj = (IDispatch*)this;                                       \
-            AddRef();                                                        \
-            return S_OK;                                                     \
-        }                                                                    \
-        if (riid == IID_##iface)                                             \
-        {                                                                    \
-            *ppObj = (iface*)this;                                           \
             AddRef();                                                        \
             return S_OK;                                                     \
         }                                                                    \

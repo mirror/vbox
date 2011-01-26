@@ -753,7 +753,7 @@ private:
         }
     }
     mCallbackData;
-    COM_STRUCT_OR_CLASS(IEventListener) *mVmListener;
+    ComPtr<IEventListener> mVmListener;
 
     friend struct VMTask;
 };

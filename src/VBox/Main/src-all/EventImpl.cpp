@@ -803,6 +803,9 @@ HRESULT ListenerRecord::process(IEvent*                     aEvent,
         {
             aAlock.release();
             rc =  mListener->HandleEvent(aEvent);
+#ifdef RT_OS_WINDOWS
+            Assert(rc != RPC_E_WRONG_THREAD);
+#endif
             aAlock.acquire();
         }
         if (aWaitable)

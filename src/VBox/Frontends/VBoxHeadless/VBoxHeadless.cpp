@@ -101,6 +101,15 @@ public:
     {
     }
 
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
+    {
+    }
+
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
         switch (aType)
@@ -144,6 +153,15 @@ public:
     }
 
     virtual ~VirtualBoxEventListener()
+    {
+    }
+
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
     {
     }
 
@@ -251,6 +269,15 @@ public:
     }
 
     virtual ~ConsoleEventListener()
+    {
+    }
+
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
     {
     }
 
@@ -762,9 +789,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr<ISession> session;
     ComPtr<IMachine> machine;
     bool fSessionOpened = false;
-    IEventListener *vboxClientListener = NULL;
-    IEventListener *vboxListener = NULL;
-    ConsoleEventListenerImpl *consoleListener = NULL;
+    ComPtr<IEventListener> vboxClientListener;
+    ComPtr<IEventListener> vboxListener;
+    ComObjPtr<ConsoleEventListenerImpl> consoleListener;
 
     do
     {
@@ -1000,7 +1027,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IEventSource> pES;
             CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
-            vboxClientListener = new VirtualBoxClientEventListenerImpl();
+            ComObjPtr<VirtualBoxClientEventListenerImpl> listener;
+            listener.createObject();
+            listener->init(new VirtualBoxClientEventListener());
+            vboxClientListener = listener;
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
             CHECK_ERROR(pES, RegisterListener(vboxClientListener, ComSafeArrayAsInParam(eventTypes), true));
@@ -1010,7 +1040,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IEventSource> es;
             CHECK_ERROR(console, COMGETTER(EventSource)(es.asOutParam()));
-            consoleListener = new ConsoleEventListenerImpl();
+            consoleListener.createObject(); 
+            consoleListener->init(new ConsoleEventListener());
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
             eventTypes.push_back(VBoxEventType_OnStateChanged);
@@ -1165,7 +1196,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IEventSource> es;
             CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-            vboxListener = new VirtualBoxEventListenerImpl();
+            ComObjPtr<VirtualBoxEventListenerImpl> listener;
+            listener.createObject();
+            listener->init(new VirtualBoxEventListener());
+            vboxListener = listener;
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
             CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));

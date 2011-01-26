@@ -43,8 +43,17 @@
 class VRDPConsoleListener
 {
 public:
-    VRDPConsoleListener(ConsoleVRDPServer *server)
-        : m_server(server)
+    VRDPConsoleListener()
+    {
+    }
+
+    HRESULT init(ConsoleVRDPServer *server)
+    {
+        m_server = server;
+        return S_OK;
+    }
+
+    void uninit()
     {
     }
 
@@ -1289,7 +1298,10 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     {
         ComPtr<IEventSource> es;
         console->COMGETTER(EventSource)(es.asOutParam());
-        mConsoleListener = new VRDPConsoleListenerImpl(this);
+        ComObjPtr<VRDPConsoleListenerImpl> aConsoleListener;
+        aConsoleListener.createObject();
+        aConsoleListener->init(new VRDPConsoleListener(), this);
+        mConsoleListener = aConsoleListener;
         com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
@@ -1313,8 +1325,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
         ComPtr<IEventSource> es;
         mConsole->COMGETTER(EventSource)(es.asOutParam());
         es->UnregisterListener(mConsoleListener);
-        mConsoleListener->Release();
-        mConsoleListener = NULL;
+        mConsoleListener.setNull();
     }
 
     unsigned i;

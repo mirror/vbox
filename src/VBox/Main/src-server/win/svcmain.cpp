@@ -19,6 +19,8 @@
 
 #include "VBox/com/defs.h"
 
+#include "VBox/com/com.h"
+
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
@@ -156,11 +158,8 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
 
     lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
 
-#if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
-    HRESULT hRes = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-#else
-    HRESULT hRes = CoInitialize(NULL);
-#endif
+    HRESULT hRes = com::Initialize();
+
     _ASSERTE(SUCCEEDED(hRes));
     _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
     _Module.dwThreadID = GetCurrentThreadId();
@@ -276,7 +275,9 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
     }
 
     _Module.Term();
-    CoUninitialize();
+
+    com::Shutdown();
+
     Log(("SVCMAIN: Returning, COM server process ends.\n"));
     return nRet;
 }
