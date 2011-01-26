@@ -137,7 +137,8 @@
 
 #define XMIT_FIFO           0
 #define RECV_FIFO           1
-#define MAX_XMIT_RETRY      16
+#define MIN_XMIT_RETRY      16
+#define MAX_XMIT_RETRY_TIME 1           /* max time (in seconds) for retrying the character xmit before dropping it */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -211,6 +212,9 @@ struct SerialState
     int                             last_break_enable;
     /** Counter for retrying xmit */
     int                             tsr_retry;
+    int                             tsr_retry_bound; /**< number of retries before dropping a character */
+    int                             tsr_retry_bound_max; /**< maximum possible tsr_retry_bound value that can be set while dynamic bound adjustment */
+    int                             tsr_retry_bound_min; /**< minimum possible tsr_retry_bound value that can be set while dynamic bound adjustment */
     bool                            msr_changed;
     bool                            fGCEnabled;
     bool                            fR0Enabled;
@@ -340,6 +344,28 @@ static void serial_update_irq(SerialState *s)
     }
 }
 
+static void serial_tsr_retry_update_parameters(SerialState *s, uint64_t tf)
+{
+    s->tsr_retry_bound_max = RT_MAX((tf * MAX_XMIT_RETRY_TIME) / s->char_transmit_time, MIN_XMIT_RETRY);
+    s->tsr_retry_bound_min = RT_MAX(s->tsr_retry_bound_max / (1000 * MAX_XMIT_RETRY_TIME), MIN_XMIT_RETRY);
+    /* for simplicity just reset to max retry count */
+    s->tsr_retry_bound = s->tsr_retry_bound_max;
+}
+
+static void serial_tsr_retry_bound_reached(SerialState *s)
+{
+    /* this is most likely means we have some backend connection issues */
+    /* decrement the retry bound */
+    s->tsr_retry_bound = RT_MAX(s->tsr_retry_bound / (10 * MAX_XMIT_RETRY_TIME), s->tsr_retry_bound_min);
+}
+
+static void serial_tsr_retry_succeeded(SerialState *s)
+{
+    /* success means we have a backend connection working OK,
+     * set retry bound to its maximum value */
+    s->tsr_retry_bound = s->tsr_retry_bound_max;
+}
+
 static void serial_update_parameters(SerialState *s)
 {
     int speed, parity, data_bits, stop_bits, frame_size;
@@ -365,7 +391,10 @@ static void serial_update_parameters(SerialState *s)
     data_bits = (s->lcr & 0x03) + 5;
     frame_size += data_bits + stop_bits;
     speed = 115200 / s->divider;
-    s->char_transmit_time = (TMTimerGetFreq(CTX_SUFF(s->transmit_timer)) / speed) * frame_size;
+    uint64_t tf = TMTimerGetFreq(CTX_SUFF(s->transmit_timer));
+    s->char_transmit_time = (tf / speed) * frame_size;
+    serial_tsr_retry_update_parameters(s, tf);
+
     Log(("speed=%d parity=%c data=%d stop=%d\n", speed, parity, data_bits, stop_bits));
 
     if (RT_LIKELY(s->pDrvChar))
@@ -392,7 +421,7 @@ static void serial_xmit(void *opaque, bool bRetryXmit)
         serial_receive(s, &s->tsr, 1);
     } else if (   RT_LIKELY(s->pDrvChar)
                && RT_FAILURE(s->pDrvChar->pfnWrite(s->pDrvChar, &s->tsr, 1))) {
-        if ((s->tsr_retry >= 0) && ((!bRetryXmit) || (s->tsr_retry <= MAX_XMIT_RETRY))) {
+        if ((s->tsr_retry >= 0) && ((!bRetryXmit) || (s->tsr_retry <= s->tsr_retry_bound))) {
             if (!s->tsr_retry)
                 s->tsr_retry = 1; /* make sure the retry state is always set */
             else if (bRetryXmit) /* do not increase the retry count if the retry is actually caused by next char write */
@@ -403,10 +432,12 @@ static void serial_xmit(void *opaque, bool bRetryXmit)
         } else {
             /* drop this character. */
             s->tsr_retry = 0;
+            serial_tsr_retry_bound_reached(s);
         }
     }
     else {
         s->tsr_retry = 0;
+        serial_tsr_retry_succeeded(s);
     }
 
     if (!(s->lsr & UART_LSR_THRE))
@@ -837,7 +868,9 @@ static DECLCALLBACK(void) serialReset(PPDMDEVINS pDevIns)
     s->mcr = UART_MCR_OUT2;
     s->scr = 0;
     s->tsr_retry = 0;
-    s->char_transmit_time = (TMTimerGetFreq(CTX_SUFF(s->transmit_timer)) / 9600) * 10;
+    uint64_t tf = TMTimerGetFreq(CTX_SUFF(s->transmit_timer));
+    s->char_transmit_time = (tf / 9600) * 10;
+    serial_tsr_retry_update_parameters(s, tf);
 
     fifo_clear(s, RECV_FIFO);
     fifo_clear(s, XMIT_FIFO);
