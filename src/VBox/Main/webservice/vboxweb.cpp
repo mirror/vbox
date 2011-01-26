@@ -501,6 +501,16 @@ public:
     {
     }
 
+    HRESULT init()
+    {
+       return S_OK;
+    }
+
+    void uninit()
+    {
+    }
+
+
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
         switch (aType)
@@ -920,11 +930,14 @@ int main(int argc, char *argv[])
     }
 
     /* VirtualBoxClient events registration. */
-    IEventListener *vboxClientListener = NULL;
+    ComPtr<IEventListener> vboxClientListener;
     {
         ComPtr<IEventSource> pES;
         CHECK_ERROR(g_pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
-        vboxClientListener = new VirtualBoxClientEventListenerImpl();
+        ComObjPtr<VirtualBoxClientEventListenerImpl> clientListener;
+        clientListener.createObject();
+        clientListener->init(new VirtualBoxClientEventListener()); 
+        vboxClientListener = clientListener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
         CHECK_ERROR(pES, RegisterListener(vboxClientListener, ComSafeArrayAsInParam(eventTypes), true));

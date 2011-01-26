@@ -29,7 +29,6 @@
 #define ___VBox_com_listeners_h
 #include <VBox/com/com.h>
 #include <VBox/com/defs.h>
-#include <iprt/asm.h>
 
 #ifdef VBOX_WITH_XPCOM
 #define NS_IMPL_QUERY_HEAD_INLINE()                                   \
@@ -47,63 +46,92 @@ NS_IMETHODIMP QueryInterface(REFNSIID aIID, void** aInstancePtr)      \
 #endif
 
 template <class T, class TParam = void* >
-class ListenerImpl : VBOX_SCRIPTABLE_IMPL(IEventListener)
+class ListenerImpl : 
+     public CComObjectRootEx<CComMultiThreadModel>,
+     VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
-    T                 mListener;
-    volatile uint32_t mRefCnt;
+    T*                mListener;
 
-    virtual ~ListenerImpl()
-    {}
+#ifdef RT_OS_WINDOWS
+    /* FTM stuff */
+    CComPtr <IUnknown>   m_pUnkMarshaler;
+#endif
 
 public:
-    ListenerImpl(TParam param)
-    : mListener(param), mRefCnt(1)
+    ListenerImpl()
+    {
+    } 
+
+    virtual ~ListenerImpl()
     {
     }
 
-    ListenerImpl()
-    : mRefCnt(1)
+    HRESULT init(T* aListener, TParam param)
     {
+       mListener = aListener;  
+       return mListener->init(param);
+    }
+
+    HRESULT init(T* aListener)
+    {
+       mListener = aListener;
+       return mListener->init();
+    }
+
+    void uninit()
+    {
+       if (mListener)
+       {
+          mListener->uninit();
+          delete mListener;
+          mListener = 0;
+       }
+    }
+
+    HRESULT   FinalConstruct()
+    {
+#ifdef RT_OS_WINDOWS
+       return CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
+#else
+       mRefCnt = 1;
+       return S_OK;
+#endif
+    }
+
+    void   FinalRelease()
+    {
+      uninit();
+#ifdef RT_OS_WINDOWS
+      m_pUnkMarshaler.Release();
+#endif
     }
 
     T* getWrapped()
     {
-        return &mListener;
+        return mListener;
     }
 
-    /* On Windows QI implemented by VBOX_SCRIPTABLE_DISPATCH_IMPL */
+    /* On Windows QI implemented by COM_MAP() */
 #ifndef RT_OS_WINDOWS
     NS_IMPL_QUERY_INTERFACE1_INLINE(IEventListener)
 #endif
+ 
+    DECLARE_NOT_AGGREGATABLE(ListenerImpl)
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
-#else
-    NS_IMETHOD_(nsrefcnt) AddRef(void)
-#endif
-    {
-        return ASMAtomicIncU32(&mRefCnt);
-    }
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, Release)()
-#else
-    NS_IMETHOD_(nsrefcnt) Release(void)
-#endif
-    {
-        uint32_t cnt = ::ASMAtomicDecU32(&mRefCnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
+    BEGIN_COM_MAP(ListenerImpl)
+        COM_INTERFACE_ENTRY(IEventListener)  
+        COM_INTERFACE_ENTRY2(IDispatch, IEventListener)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    END_COM_MAP()
 
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
 
     STDMETHOD(HandleEvent)(IEvent * aEvent)
     {
         VBoxEventType_T aType = VBoxEventType_Invalid;
         aEvent->COMGETTER(Type)(&aType);
-        return mListener.HandleEvent(aType, aEvent);
+        return mListener->HandleEvent(aType, aEvent);
     }
 };
 

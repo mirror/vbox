@@ -58,7 +58,9 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     Assert(pSession);
 
 //    RTPrintf("Self add: %RTthrd\n", RTThreadSelf());
-    UIMainEventListenerImpl *pListener = new UIMainEventListenerImpl(this);
+    ComObjPtr<UIMainEventListenerImpl> pListener;
+    pListener.createObject();
+    pListener->init(new UIMainEventListener(), this);
     m_mainEventListener = CEventListener(pListener);
     QVector<KVBoxEventType> events;
     events

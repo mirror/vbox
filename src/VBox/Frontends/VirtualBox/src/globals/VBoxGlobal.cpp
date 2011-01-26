@@ -5248,11 +5248,7 @@ void VBoxGlobal::cleanup()
      * before uninitializing the COM subsystem. */
     QApplication::removePostedEvents (this);
 
-#ifdef Q_WS_WIN
-    /* COM for the main thread is shutdown in main() */
-#else
     COMBase::CleanupCOM();
-#endif
 
     mValid = false;
 }

@@ -42,7 +42,11 @@ class UIMainEventListener: public QObject
     Q_OBJECT;
 
 public:
-    UIMainEventListener(QObject *pParent);
+    UIMainEventListener();
+
+
+    HRESULT init(QObject *pParent);
+    void    uninit();
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *pEvent);
 

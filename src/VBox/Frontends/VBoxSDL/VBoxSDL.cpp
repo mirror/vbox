@@ -244,6 +244,15 @@ public:
     {
     }
 
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
+    {
+    }
+
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
         switch (aType)
@@ -286,6 +295,15 @@ public:
     }
 
     virtual ~VBoxSDLEventListener()
+    {
+    }
+
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
     {
     }
 
@@ -346,6 +364,15 @@ public:
     }
 
     virtual ~VBoxSDLConsoleEventListener()
+    {
+    }
+
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
     {
     }
 
@@ -771,9 +798,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
-    IEventListener *pVBoxClientListener = NULL;
-    IEventListener *pVBoxListener = NULL;
-    VBoxSDLConsoleEventListenerImpl *pConsoleListener = NULL;
+    ComPtr<IEventListener> pVBoxClientListener;
+    ComPtr<IEventListener> pVBoxListener;
+    ComObjPtr<VBoxSDLConsoleEventListenerImpl> pConsoleListener;
 
     bool fFullscreen = false;
     bool fResizable = true;
@@ -1833,7 +1860,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         // register listener for VirtualBoxClient events
         ComPtr<IEventSource> pES;
         CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
-        pVBoxClientListener = new VBoxSDLClientEventListenerImpl();
+        ComObjPtr<VBoxSDLClientEventListenerImpl> listener;
+        listener.createObject();
+        listener->init(new VBoxSDLClientEventListener());
+        pVBoxClientListener = listener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
         CHECK_ERROR(pES, RegisterListener(pVBoxClientListener, ComSafeArrayAsInParam(eventTypes), true));
@@ -1843,7 +1873,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         // register listener for VirtualBox (server) events
         ComPtr<IEventSource> pES;
         CHECK_ERROR(pVirtualBox, COMGETTER(EventSource)(pES.asOutParam()));
-        pVBoxListener = new VBoxSDLEventListenerImpl();
+        ComObjPtr<VBoxSDLEventListenerImpl> listener;
+        listener.createObject();
+        listener->init(new VBoxSDLEventListener());
+        pVBoxListener = listener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
         CHECK_ERROR(pES, RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true));
@@ -1853,7 +1886,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         // register listener for Console events
         ComPtr<IEventSource> pES;
         CHECK_ERROR(gpConsole, COMGETTER(EventSource)(pES.asOutParam()));
-        pConsoleListener = new VBoxSDLConsoleEventListenerImpl();
+        pConsoleListener.createObject();
+        pConsoleListener->init(new VBoxSDLConsoleEventListener());
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);

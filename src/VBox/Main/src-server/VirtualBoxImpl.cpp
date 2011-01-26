@@ -4391,6 +4391,8 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
     LogFlowFuncEnter();
 
     AssertReturn(pvUser, VERR_INVALID_POINTER);
+    
+    com::Initialize();
 
     // create an event queue for the current thread
     EventQueue *eventQ = new EventQueue();
@@ -4405,6 +4407,9 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
         /* nothing */ ;
 
     delete eventQ;
+
+    com::Shutdown();
+
 
     LogFlowFuncLeave();
 

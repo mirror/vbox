@@ -265,9 +265,18 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
 
 class VmEventListener {
 public:
-    VmEventListener(Console *aConsole)
+    VmEventListener()
+    {}
+
+
+    HRESULT init(Console *aConsole)
     {
         mConsole = aConsole;
+        return S_OK;
+    }
+
+    void uninit()
+    {
     }
 
     virtual ~VmEventListener()
@@ -494,11 +503,14 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
         ComPtr<IEventSource> pES;
         rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
         AssertComRC(rc);
-        mVmListener = new VmEventListenerImpl(this);
+        ComObjPtr<VmEventListenerImpl> aVmListener;
+        aVmListener.createObject();
+        aVmListener->init(new VmEventListener(), this);
+        mVmListener = aVmListener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnNATRedirect);
         eventTypes.push_back(VBoxEventType_OnHostPciDevicePlug);
-        rc = pES->RegisterListener(mVmListener, ComSafeArrayAsInParam(eventTypes), true);
+        rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
         AssertComRC(rc);
     }
 
@@ -547,13 +559,10 @@ void Console::uninit()
             if (!pES.isNull())
             {
                 rc = pES->UnregisterListener(mVmListener);
-                // XXX: for some reasons we're getting VBOX_E_OBJECT_NOT_FOUND
-                // here - investigate
-                //AssertComRC(rc);
+                AssertComRC(rc);
             }
         }
-        mVmListener->Release();
-        mVmListener = 0;
+        mVmListener.setNull();
     }
 
     /* power down the VM if necessary */
