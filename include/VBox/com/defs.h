@@ -272,6 +272,7 @@ typedef const OLECHAR *CBSTR;
 #define COM_INTERFACE_ENTRY(a)
 #define COM_INTERFACE_ENTRY2(a,b)
 #define END_COM_MAP() NS_DECL_ISUPPORTS
+#define COM_INTERFACE_ENTRY_AGGREGATE(a,b)
 
 #define HRESULT     nsresult
 #define SUCCEEDED   NS_SUCCEEDED
