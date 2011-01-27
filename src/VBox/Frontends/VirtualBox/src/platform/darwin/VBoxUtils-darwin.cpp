@@ -341,6 +341,155 @@ void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow)
     UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(3) /* NSRightMouseDown */, ::darwinUnifiedToolbarEvents, pWindow);
 }
 
+void darwinMouseGrab(QWidget *pWidget)
+{
+    CGAssociateMouseAndMouseCursorPosition(false);
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(1)  | /* NSLeftMouseDown */
+                                                            RT_BIT_32(2)  | /* NSLeftMouseUp */
+                                                            RT_BIT_32(3)  | /* NSRightMouseDown */
+                                                            RT_BIT_32(4)  | /* NSRightMouseUp */
+                                                            RT_BIT_32(5)  | /* NSMouseMoved */
+                                                            RT_BIT_32(6)  | /* NSLeftMouseDragged */
+                                                            RT_BIT_32(7)  | /* NSRightMouseDragged */
+                                                            RT_BIT_32(25) | /* NSOtherMouseDown */
+                                                            RT_BIT_32(26) | /* NSOtherMouseUp */
+                                                            RT_BIT_32(27) | /* NSOtherMouseDragged */
+                                                            RT_BIT_32(22),  /* NSScrollWheel */
+                                                            ::darwinMouseMoveEvents, pWidget);
+}
+
+void darwinMouseRelease(QWidget *pWidget)
+{
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(1)  | /* NSLeftMouseDown */
+                                                              RT_BIT_32(2)  | /* NSLeftMouseUp */
+                                                              RT_BIT_32(3)  | /* NSRightMouseDown */
+                                                              RT_BIT_32(4)  | /* NSRightMouseUp */
+                                                              RT_BIT_32(5)  | /* NSMouseMoved */
+                                                              RT_BIT_32(6)  | /* NSLeftMouseDragged */
+                                                              RT_BIT_32(7)  | /* NSRightMouseDragged */
+                                                              RT_BIT_32(25) | /* NSOtherMouseDown */
+                                                              RT_BIT_32(26) | /* NSOtherMouseUp */
+                                                              RT_BIT_32(27) | /* NSOtherMouseDragged */
+                                                              RT_BIT_32(22),  /* NSScrollWheel */
+                                                              ::darwinMouseMoveEvents, pWidget);
+    CGAssociateMouseAndMouseCursorPosition(true);
+}
+
+void darwinSendDeltaEvents(QWidget *pWidget, int type, int button, int buttons, int x, int y)
+{
+    QEvent::Type qtType = QEvent::None;
+    Qt::MouseButtons qtButtons = Qt::NoButton;
+    Qt::MouseButton qtButton = Qt::NoButton;
+    Qt::MouseButton qtExtraButton = Qt::NoButton;
+    Qt::Orientation qtOrientation = Qt::Horizontal;
+    int wheelDelta = 0;
+    /* Which button is used in the NSOtherMouse... cases? */
+    if (button == 0)
+        qtExtraButton = Qt::LeftButton;
+    else if (button == 1)
+        qtExtraButton = Qt::RightButton;
+    else if (button == 2)
+        qtExtraButton = Qt::MidButton;
+    else if (button == 3)
+        qtExtraButton = Qt::XButton1;
+    else if (button == 4)
+        qtExtraButton = Qt::XButton2;
+    /* Map the NSEvent to a QEvent and define the Qt::Buttons when necessary. */
+    switch(type)
+    {
+        case 1: /* NSLeftMouseDown */
+        {
+            qtType = QEvent::MouseButtonPress;
+            qtButton = Qt::LeftButton;
+            break;
+        }
+        case 2: /* NSLeftMouseUp */
+        {
+            qtType = QEvent::MouseButtonRelease;
+            qtButton = Qt::LeftButton;
+            break;
+        }
+        case 3: /* NSRightMouseDown */
+        {
+            qtType = QEvent::MouseButtonPress;
+            qtButton = Qt::RightButton;
+            break;
+        }
+        case 4: /* NSRightMouseUp */
+        {
+            qtType = QEvent::MouseButtonRelease;
+            qtButton = Qt::RightButton;
+            break;
+        }
+        case 5: /* NSMouseMoved */
+        {
+            qtType = QEvent::MouseMove;
+            break;
+        }
+        case 6: /* NSLeftMouseDragged */
+        {
+            qtType = QEvent::MouseMove;
+            qtButton = Qt::LeftButton;
+            break;
+        }
+        case 7: /* NSRightMouseDragged */
+        {
+            qtType = QEvent::MouseMove;
+            qtButton = Qt::RightButton;
+            break;
+        }
+        case 22: /* NSScrollWheel */
+        {
+            qtType = QEvent::Wheel;
+            if (y != 0)
+            {
+                wheelDelta = y;
+                qtOrientation = Qt::Vertical;
+            }
+            else if (x != 0)
+            {
+                wheelDelta = x;
+                qtOrientation = Qt::Horizontal;
+            }
+            x = y = 0;
+            break;
+        }
+        case 25: /* NSOtherMouseDown */
+        {
+            qtType = QEvent::MouseButtonPress;
+            qtButton = qtExtraButton;
+            break;
+        }
+        case 26: /* NSOtherMouseUp */
+        {
+            qtType = QEvent::MouseButtonRelease;
+            qtButton = qtExtraButton;
+            break;
+        }
+        case 27: /* NSOtherMouseDragged */
+        {
+            qtType = QEvent::MouseMove;
+            qtButton = qtExtraButton;
+            break;
+        }
+        default: return;
+    }
+    /* Create a Qt::MouseButtons Mask. */
+    if ((buttons & RT_BIT_32(0)) == RT_BIT_32(0))
+        qtButtons |= Qt::LeftButton;
+    if ((buttons & RT_BIT_32(1)) == RT_BIT_32(1))
+        qtButtons |= Qt::RightButton;
+    if ((buttons & RT_BIT_32(2)) == RT_BIT_32(2))
+        qtButtons |= Qt::MidButton;
+    if ((buttons & RT_BIT_32(3)) == RT_BIT_32(3))
+        qtButtons |= Qt::XButton1;
+    if ((buttons & RT_BIT_32(4)) == RT_BIT_32(4))
+        qtButtons |= Qt::XButton2;
+    /* Create a new mouse delta event and send it to the widget. */
+    UIGrabMouseEvent *pEvent = new UIGrabMouseEvent(qtType, qtButton, qtButtons, x, y, wheelDelta, qtOrientation);
+    qApp->sendEvent(pWidget, pEvent);
+}
+
 void darwinCreateContextMenuEvent(void *pvUser, int x, int y)
 {
     QWidget *pWin = static_cast<QWidget*>(pvUser);
