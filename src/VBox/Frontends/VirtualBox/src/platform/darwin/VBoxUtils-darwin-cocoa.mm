@@ -333,6 +333,54 @@ float darwinSmallFontSize()
     return size;
 }
 
+bool darwinMouseMoveEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+{
+    NSEvent *pEvent = (NSEvent*)pvCocoaEvent;
+    NSEventType EvtType = [pEvent type];
+    NSWindow *pWin = ::darwinToNativeWindow((QWidget*)pvUser);
+    if (   pWin == [pEvent window]
+        && (   EvtType == NSLeftMouseDown
+            || EvtType == NSLeftMouseUp
+            || EvtType == NSRightMouseDown
+            || EvtType == NSRightMouseUp
+            || EvtType == NSOtherMouseDown
+            || EvtType == NSOtherMouseUp
+            || EvtType == NSLeftMouseDragged
+            || EvtType == NSRightMouseDragged
+            || EvtType == NSOtherMouseDragged
+            || EvtType == NSMouseMoved
+            || EvtType == NSScrollWheel))
+    {
+        float x = [pEvent deltaX];
+        float y = [pEvent deltaY];
+        /* Get the buttons which where pressed when this event occurs. We have
+           to use Carbon here, cause the Cocoa method [NSEvent pressedMouseButtons]
+           is >= 10.6. */
+        if (EvtType == NSScrollWheel)
+        {
+            /* In the scroll wheel case we have to do some magic, cause a
+               normal scroll wheel on a mouse behaves different to a trackpad.
+               The following is used within Qt. We use the same to get a
+               similar behavior. */
+            if ([pEvent respondsToSelector:@selector(deviceDeltaX:)])
+                x = (float)(intptr_t)[pEvent performSelector:@selector(deviceDeltaX)] * 2;
+            else
+                x = qBound(-120, (int)(x * 10000), 120);
+            if ([pEvent respondsToSelector:@selector(deviceDeltaY:)])
+                y = (float)(intptr_t)[pEvent performSelector:@selector(deviceDeltaY)] * 2;
+            else
+                y = qBound(-120, (int)(y * 10000), 120);
+        }
+        uint32 buttonMask = 0;
+        GetEventParameter((EventRef)pvCarbonEvent, kEventParamMouseChord, typeUInt32, 0,
+                          sizeof(buttonMask), 0, &buttonMask);
+        /* Produce a Qt event out of our info. */
+        ::darwinSendDeltaEvents((QWidget*)pvUser, EvtType, [pEvent buttonNumber], buttonMask, x, y);
+        return true;
+    }
+    return false;
+}
+
 /* Cocoa event handler which checks if the user right clicked at the unified
    toolbar or the title area. */
 bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
