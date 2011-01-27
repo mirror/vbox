@@ -517,7 +517,7 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             m_uDarwinKeyModifiers = modifierMask;
 
             /* Convert to keycode: */
-            int iKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
+            unsigned iKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
 
             /* Check if symbol is valid else pass it to Qt: */
             if (!iKeyCode || iKeyCode == ~0U || !UIHotKey::isValidKey(iKeyCode))
@@ -526,7 +526,7 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             if (changed)
             {
                 /* Key release: */
-                if (changed & modifierMask)
+                if (!(changed & modifierMask))
                 {
                     /* Remove pressed symbol: */
                     m_pressedKeys.remove(iKeyCode);
