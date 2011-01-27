@@ -829,7 +829,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Synthetic CPU */
         BOOL fSyntheticCpu = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
-        InsertConfigInteger(pRoot, "SyntheticCpu", fSyntheticCpu);
+        InsertConfigInteger(pCPUM, "SyntheticCpu", fSyntheticCpu);
 
         BOOL fPXEDebug;
         hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                         H();
