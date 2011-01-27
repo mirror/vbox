@@ -519,6 +519,11 @@ void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
         {
             pEvent->setDropAction(Qt::CopyAction);
             pEvent->accept();
+        }else if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxExtPackFileExts)
+                  && pEvent->possibleActions().testFlag(Qt::CopyAction))
+        {
+            pEvent->setDropAction(Qt::CopyAction);
+            pEvent->accept();
         }
     }
 }
