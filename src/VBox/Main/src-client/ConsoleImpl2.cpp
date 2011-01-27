@@ -1823,6 +1823,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * Serial (UART) Ports
          */
+        /* serial enabled mask to be passed to dev ACPI */
+        uint16_t auSerialIoPortBase[SchemaDefs::SerialPortCount] = {0};
+        uint8_t auSerialIrq[SchemaDefs::SerialPortCount] = {0};
         InsertConfigNode(pDevices, "serial", &pDev);
         for (ULONG ulInstance = 0; ulInstance < SchemaDefs::SerialPortCount; ++ulInstance)
         {
@@ -1840,9 +1843,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             ULONG ulIRQ;
             hrc = serialPort->COMGETTER(IRQ)(&ulIRQ);                                       H();
             InsertConfigInteger(pCfg, "IRQ", ulIRQ);
+            auSerialIrq[ulInstance] = (uint8_t)ulIRQ;
+
             ULONG ulIOBase;
             hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                                 H();
             InsertConfigInteger(pCfg, "IOBase", ulIOBase);
+            auSerialIoPortBase[ulInstance] = (uint16_t)ulIOBase;
+
             BOOL  fServer;
             hrc = serialPort->COMGETTER(Server)(&fServer);                                  H();
             hrc = serialPort->COMGETTER(Path)(bstr.asOutParam());                           H();
@@ -2454,6 +2461,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
+
+            InsertConfigInteger(pCfg,  "Serial0IoPortBase", auSerialIoPortBase[0]);
+            InsertConfigInteger(pCfg,  "Serial0Irq", auSerialIrq[0]);
+
+            InsertConfigInteger(pCfg,  "Serial1IoPortBase", auSerialIoPortBase[1]);
+            InsertConfigInteger(pCfg,  "Serial1Irq", auSerialIrq[1]);
 
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
             InsertConfigString(pLunL0, "Driver",               "ACPIHost");
