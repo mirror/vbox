@@ -919,6 +919,12 @@ DECLINLINE(uint8_t) PCIDevGetInterruptPin(PPCIDEVICE pPciDev)
 }
 
 #ifdef PCIDEVICEINT_DECLARED
+/** @todo r=bird: These are internal methods and should start with lowercase
+ *  prefix as well as including the 'Dev' bit: s/PCI\(Set|Get\)/pciDev\1/
+ *
+ *  Also: s/uFlags/fFlags/
+ */
+
 DECLINLINE(void) PCISetRequestedDevfunc(PPCIDEVICE pDev)
 {
     pDev->Int.s.uFlags |= PCIDEV_FLAG_REQUESTED_DEVFUNC;
@@ -998,11 +1004,22 @@ DECLINLINE(bool) PCIIsPassthrough(PPCIDEVICE pDev)
 {
     return (pDev->Int.s.uFlags & PCIDEV_FLAG_PASSTHROUGH) != 0;
 }
-#endif
 
-#ifdef __cplusplus
+#endif /* PCIDEVICEINT_DECLARED */
+
+#if defined(__cplusplus) && defined(IN_RING3)
+/**
+ * Document me.
+ *
+ * @remarks C++ classes (structs included) are not generally accepted in
+ *          VMM devices or drivers.  An exception may be granted for this class
+ *          if it's contained to ring-3 and that this is a one time exception
+ *          which sets no precedent.
+ */
 struct PciBusAddress
 {
+    /** @todo r=bird: Add 'm', or 'm_' to data members. This is general
+     *        practice in most of the source tree. */
     int  iBus;
     int  iDevice;
     int  iFn;

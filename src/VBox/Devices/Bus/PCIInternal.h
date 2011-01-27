@@ -98,21 +98,21 @@ typedef struct PCIDEVICEINT
 {
     /** I/O regions. */
     PCIIOREGION                     aIORegions[PCI_NUM_REGIONS];
-    /** Pointer to the PCI bus of the device. - R3 ptr */
+    /** Pointer to the PCI bus of the device. (R3 ptr) */
     R3PTRTYPE(struct PCIBus *)      pBusR3;
-    /** Pointer to the PCI bus of the device. - R0 ptr */
+    /** Pointer to the PCI bus of the device. (R0 ptr) */
     R0PTRTYPE(struct PCIBus *)      pBusR0;
-    /** Pointer to the PCI bus of the device. - RC ptr */
+    /** Pointer to the PCI bus of the device. (RC ptr) */
     RCPTRTYPE(struct PCIBus *)      pBusRC;
 #if HC_ARCH_BITS == 64
     RTRCPTR                         Alignment0;
 #endif
 
-    /* Page used for MSI-X state.             - R3 ptr */
+    /** Page used for MSI-X state.             (R3 ptr) */
     R3PTRTYPE(void*)                pMsixPageR3;
-    /* Page used for MSI-X state.             - R0 ptr */
+    /** Page used for MSI-X state.             (R0 ptr) */
     R0PTRTYPE(void*)                pMsixPageR0;
-    /* Page used for MSI-X state.             - RC ptr */
+    /** Page used for MSI-X state.             (RC ptr) */
     RCPTRTYPE(void*)                pMsixPageRC;
 #if HC_ARCH_BITS == 64
     RTRCPTR                         Alignment1;
@@ -124,23 +124,24 @@ typedef struct PCIDEVICEINT
     /** Write config callback. */
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
 
-    /* Flags of this PCI device, see PCIDEV_FLAG_ constants */
+    /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants.
+     *  @todo s/uFlags/fFlags/g */
     uint32_t                        uFlags;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
 
-    /* Offset of MSI PCI capability in config space, or 0 */
+    /** Offset of MSI PCI capability in config space, or 0. */
     uint8_t                         u8MsiCapOffset;
-    /* Size of MSI PCI capability in config space, or 0 */
+    /** Size of MSI PCI capability in config space, or 0. */
     uint8_t                         u8MsiCapSize;
-    /* Offset of MSI-X PCI capability in config space, or 0 */
+    /** Offset of MSI-X PCI capability in config space, or 0. */
     uint8_t                         u8MsixCapOffset;
-    /* Size of MSI-X PCI capability in config space, or 0 */
+    /** Size of MSI-X PCI capability in config space, or 0. */
     uint8_t                         u8MsixCapSize;
 
     uint32_t                        Alignment2;
 
-    /* Pointer to bus specific data.                 - R3 ptr */
+    /** Pointer to bus specific data.                 (R3 ptr) */
     R3PTRTYPE(const void*)          pPciBusPtrR3;
 
     /** Read config callback for PCI bridges to pass requests
@@ -154,7 +155,7 @@ typedef struct PCIDEVICEINT
 
 } PCIDEVICEINT;
 
-/* Indicate that PCIDEVICE::Int.s can be declared. */
+/** Indicate that PCIDEVICE::Int.s can be declared. */
 #define PCIDEVICEINT_DECLARED
 
 #endif

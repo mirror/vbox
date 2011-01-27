@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -650,45 +650,54 @@ const PDMHPETHLPR3 g_pdmR3DevHpetHlp =
 
 /** @} */
 
-/** @interface_method_impl{PDMPCIRAWHLPR3,pfnGetRCHelpers} */ 
-static DECLCALLBACK(PCPDMPCIRAWHLPRC) pdmR3PciRawHlp_GetRCHelpers(PPDMDEVINS pDevIns) 
-{ 
-    PDMDEV_ASSERT_DEVINS(pDevIns); 
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3); 
-    RTRCPTR pRCHelpers = 0; 
-    int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCPciRawHlp", &pRCHelpers); 
-    AssertReleaseRC(rc); 
-    AssertRelease(pRCHelpers); 
-    LogFlow(("pdmR3PciRawHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n", 
-             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers)); 
-    return pRCHelpers; 
-} 
+
+/** @name Ring-3 Raw PCI Device Helpers
+ * {@
+ */
+
+/** @interface_method_impl{PDMPCIRAWHLPR3,pfnGetRCHelpers} */
+static DECLCALLBACK(PCPDMPCIRAWHLPRC) pdmR3PciRawHlp_GetRCHelpers(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    RTRCPTR pRCHelpers = NIL_RTRCPTR;
+    int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCPciRawHlp", &pRCHelpers);
+    AssertReleaseRC(rc);
+    AssertRelease(pRCHelpers);
+    LogFlow(("pdmR3PciRawHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));
+    return pRCHelpers;
+}
 
 
-/** @interface_method_impl{PDMPCIRAWHLPR3,pfnGetR0Helpers} */ 
-static DECLCALLBACK(PCPDMPCIRAWHLPR0) pdmR3PciRawHlp_GetR0Helpers(PPDMDEVINS pDevIns) 
-{ 
-    PDMDEV_ASSERT_DEVINS(pDevIns); 
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3); 
-    PCPDMHPETHLPR0 pR0Helpers = 0; 
-    int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0PciRawHlp", &pR0Helpers); 
-    AssertReleaseRC(rc); 
-    AssertRelease(pR0Helpers); 
-    LogFlow(("pdmR3PciRawHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n", 
-             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers)); 
-    return pR0Helpers; 
-} 
+/** @interface_method_impl{PDMPCIRAWHLPR3,pfnGetR0Helpers} */
+static DECLCALLBACK(PCPDMPCIRAWHLPR0) pdmR3PciRawHlp_GetR0Helpers(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PCPDMHPETHLPR0 pR0Helpers = NIL_RTR0PTR;
+    int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0PciRawHlp", &pR0Helpers);
+    AssertReleaseRC(rc);
+    AssertRelease(pR0Helpers);
+    LogFlow(("pdmR3PciRawHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers));
+    return pR0Helpers;
+}
 
-/** 
- * Raw PCI Device Helpers. 
- */ 
-const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp = 
-{ 
-    PDM_PCIRAWHLPR3_VERSION, 
-    pdmR3PciRawHlp_GetRCHelpers, 
-    pdmR3PciRawHlp_GetR0Helpers, 
-    PDM_PCIRAWHLPR3_VERSION, /* the end */ 
-}; 
+
+/**
+ * Raw PCI Device Helpers.
+ */
+const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp =
+{
+    PDM_PCIRAWHLPR3_VERSION,
+    pdmR3PciRawHlp_GetRCHelpers,
+    pdmR3PciRawHlp_GetR0Helpers,
+    PDM_PCIRAWHLPR3_VERSION, /* the end */
+};
+
+/** @} */
+
 
 /* none yet */
 
