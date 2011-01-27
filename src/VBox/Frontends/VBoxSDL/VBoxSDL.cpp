@@ -2759,8 +2759,7 @@ leave:
         CHECK_ERROR(gpConsole, COMGETTER(EventSource)(pES.asOutParam()));
         if (!pES.isNull())
             CHECK_ERROR(pES, UnregisterListener(pConsoleListener));
-        pConsoleListener->Release();
-        pConsoleListener = NULL;
+        pConsoleListener.setNull();
     }
 
     /*
@@ -2859,8 +2858,7 @@ leave:
         CHECK_ERROR(pVirtualBox, COMGETTER(EventSource)(pES.asOutParam()));
         if (!pES.isNull())
             CHECK_ERROR(pES, UnregisterListener(pVBoxListener));
-        pVBoxListener->Release();
-        pVBoxListener = NULL;
+        pVBoxListener.setNull();
     }
 
     /* VirtualBoxClient listener unregistration. */
@@ -2870,8 +2868,7 @@ leave:
         CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
         if (!pES.isNull())
             CHECK_ERROR(pES, UnregisterListener(pVBoxClientListener));
-        pVBoxClientListener->Release();
-        pVBoxClientListener = NULL;
+        pVBoxClientListener.setNull();
     }
 
     LogFlow(("Releasing machine, session...\n"));
