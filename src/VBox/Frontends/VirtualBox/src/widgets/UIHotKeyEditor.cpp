@@ -123,13 +123,13 @@ QString UIHotKey::toString(int iKeyCode)
         case optionKey:
         case controlKey:
         case cmdKey:
-            strKeyName = tr("Left ");
+            strKeyName = UIHotKeyEditor::tr("Left ");
             break;
         case rightShiftKey:
         case rightOptionKey:
         case rightControlKey:
         case kEventKeyModifierRightCmdKeyMask:
-            strKeyName = tr("Right ");
+            strKeyName = UIHotKeyEditor::tr("Right ");
             break;
         default:
             AssertMsgFailedReturn(("modMask=%#x\n", modMask), QString());
