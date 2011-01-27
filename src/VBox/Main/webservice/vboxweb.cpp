@@ -716,6 +716,12 @@ int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
     return 0;
 }
 
+#ifdef RT_OS_WINDOWS 
+// Required for ATL
+static CComModule _Module;
+#endif
+
+
 /**
  * Start up the webservice server. This keeps running and waits
  * for incoming SOAP connections; for each request that comes in,
