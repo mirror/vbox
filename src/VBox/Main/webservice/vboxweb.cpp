@@ -936,7 +936,7 @@ int main(int argc, char *argv[])
         CHECK_ERROR(g_pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
         ComObjPtr<VirtualBoxClientEventListenerImpl> clientListener;
         clientListener.createObject();
-        clientListener->init(new VirtualBoxClientEventListener()); 
+        clientListener->init(new VirtualBoxClientEventListener());
         vboxClientListener = clientListener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
@@ -993,7 +993,7 @@ int main(int argc, char *argv[])
         CHECK_ERROR(g_pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
         if (!pES.isNull())
             CHECK_ERROR(pES, UnregisterListener(vboxClientListener));
-        vboxClientListener->Release();
+        vboxClientListener.setNull();
     }
 
     com::Shutdown();
@@ -1971,4 +1971,3 @@ int __vbox__IWebsessionManager_USCORElogoff(
         return SOAP_FAULT;
     return SOAP_OK;
 }
-
