@@ -149,6 +149,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         HBCA,  32, // host bus controller address
         PCIB,  32, // PCI MCFG base start
         PCIL,  32, // PCI MCFG length
+        SL0B,  32, // Serial0 base IO address  
+        SL0I,  32, // Serial0 IRQ
+        SL1B,  32, // Serial1 base IO address  
+        SL1I,  32, // Serial1 IRQ
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -676,6 +680,72 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         IO (Decode16, 0x0778, 0x0778, 0x08, 0x08)
                         IRQNoFlags () {7}
                     })
+                }
+
+                // Serial port 0
+                Device (^SRL0)
+                {
+                    Name (_HID, EisaId ("PNP0501"))
+                    Name (_UID, 0x01)
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        If (LEqual (SL0B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
+                    }
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x03F8, 0x03F8, 0x01, 0x08, _Y14) 
+                        IRQNoFlags (_Y15) {4}
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.SRL0._Y14._MIN, MIN0)
+                        CreateWordField (CRS, \_SB.PCI0.SRL0._Y14._MAX, MAX0)
+                        CreateWordField (CRS, \_SB.PCI0.SRL0._Y15._INT, IRQ0)
+                        Store (SL0B, MIN0)
+                        Store (SL0B, MAX0)
+                        ShiftLeft (0x01, SL0I, IRQ0)
+                        Return (CRS)
+                    }
+                }
+                
+                // Serial port 1
+                Device (^SRL1)
+                {
+                    Name (_HID, EisaId ("PNP0501"))
+                    Name (_UID, 0x02)
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        If (LEqual (SL1B, Zero))
+                        {
+                            Return (0x00)
+                        }
+                        Else
+                        {
+                            Return (0x0F)
+                        }
+                    }
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x02F8, 0x02F8, 0x01, 0x08, _Y16) 
+                        IRQNoFlags (_Y17) {3}
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateWordField (CRS, \_SB.PCI0.SRL1._Y16._MIN, MIN1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL1._Y16._MAX, MAX1)
+                        CreateWordField (CRS, \_SB.PCI0.SRL1._Y17._INT, IRQ1)
+                        Store (SL1B, MIN1)
+                        Store (SL1B, MAX1)
+                        ShiftLeft (0x01, SL1I, IRQ1)
+                        Return (CRS)
+                    }
                 }
 
                 // Programmable Interval Timer (i8254)

@@ -166,7 +166,11 @@ enum
     SYSTEM_INFO_INDEX_HBC_ADDRESS       = 19, /**< host bus controller PCI address */
     SYSTEM_INFO_INDEX_PCI_BASE          = 20, /**< PCI bus MCFG MMIO range base */
     SYSTEM_INFO_INDEX_PCI_LENGTH        = 21, /**< PCI bus MCFG MMIO range length */
-    SYSTEM_INFO_INDEX_END               = 22,
+    SYSTEM_INFO_INDEX_SERIAL0_IOBASE    = 22,
+    SYSTEM_INFO_INDEX_SERIAL0_IRQ       = 23,
+    SYSTEM_INFO_INDEX_SERIAL1_IOBASE    = 24,
+    SYSTEM_INFO_INDEX_SERIAL1_IRQ       = 25,
+    SYSTEM_INFO_INDEX_END               = 28,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -281,7 +285,14 @@ typedef struct ACPIState
     uint64_t            u64PciConfigMMioAddress;
     /* Length of PCI config space MMIO region */
     uint64_t            u64PciConfigMMioLength;
-
+    /** Serial 0 IRQ number */
+    uint8_t             uSerial0Irq;
+    /** Serial 1 IRQ number */
+    uint8_t             uSerial1Irq;
+    /** Serial 0 IO port base */
+    RTIOPORT            uSerial0IoPortBase;
+    /** Serial 1 IO port base */
+    RTIOPORT            uSerial1IoPortBase;
     /** ACPI port base interface. */
     PDMIBASE            IBase;
     /** ACPI port interface. */
@@ -1723,6 +1734,25 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                     *pu32 = s->u32CpuEvent;
                     break;
 
+                case SYSTEM_INFO_INDEX_SERIAL0_IOBASE:
+                    *pu32 = s->uSerial0IoPortBase;
+                    break;
+
+                case SYSTEM_INFO_INDEX_SERIAL0_IRQ:
+                    *pu32 = s->uSerial0Irq;
+                    break;
+
+                case SYSTEM_INFO_INDEX_SERIAL1_IOBASE:
+                    *pu32 = s->uSerial1IoPortBase;
+                    break;
+
+                case SYSTEM_INFO_INDEX_SERIAL1_IRQ:
+                    *pu32 = s->uSerial1Irq;
+                    break;
+
+                case SYSTEM_INFO_INDEX_END:
+                    break;
+
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
                     *pu32 = 0;
@@ -2605,6 +2635,10 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "PowerS4Enabled\0"
                               "CpuHotPlug\0"
                               "AmlFilePath\0"
+                              "Serial0IoPortBase\0"
+                              "Serial1IoPortBase\0"
+                              "Serial0Irq\0"
+                              "Serial1Irq\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -2723,6 +2757,28 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("configuration error: failed to read R0Enabled as boolean"));
+
+    /* query serial info */
+    rc = CFGMR3QueryU8Def(pCfg, "Serial0Irq", &s->uSerial0Irq, 4);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial0Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Serial0IoPortBase", &s->uSerial0IoPortBase, 0x3f8);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial0IoPortBase\""));
+
+    /* Serial 1 is enabled, get config data */
+    rc = CFGMR3QueryU8Def(pCfg, "Serial1Irq", &s->uSerial1Irq, 3);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial1Irq\""));
+
+    rc = CFGMR3QueryU16Def(pCfg, "Serial1IoPortBase", &s->uSerial1IoPortBase, 0x2f8);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"Serial1IoPortBase\""));
 
     /*
      * Interfaces
