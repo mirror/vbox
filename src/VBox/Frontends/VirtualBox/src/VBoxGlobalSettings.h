@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@ public:
 
 private:
 
-    int hostkey;
+    QString hostCombo;
     bool autoCapture;
     QString guiFeatures;
     QString languageId;
@@ -55,7 +55,7 @@ private:
 class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsData>
 {
     Q_OBJECT
-    Q_PROPERTY (int hostKey READ hostKey WRITE setHostKey)
+    Q_PROPERTY (QString hostCombo READ hostCombo WRITE setHostCombo)
     Q_PROPERTY (bool autoCapture READ autoCapture WRITE setAutoCapture)
     Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
@@ -78,8 +78,8 @@ public:
 
     // Properties
 
-    int hostKey() const { return data()->hostkey; }
-    void setHostKey (int key);
+    QString hostCombo() const { return data()->hostCombo; }
+    void setHostCombo (const QString &hostCombo);
 
     bool autoCapture() const { return data()->autoCapture; }
     void setAutoCapture (bool aAutoCapture)

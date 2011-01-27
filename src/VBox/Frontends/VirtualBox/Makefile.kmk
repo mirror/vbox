@@ -275,7 +275,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIArrowSplitter.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIFileDialog.h \
-	src/extensions/QIHotKeyEdit.h \
 	src/extensions/QIHttp.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
@@ -327,6 +326,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIDownloader.h \
 	src/widgets/UIDownloaderAdditions.h \
 	src/widgets/UIDownloaderUserManual.h \
+	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpacerWidgets.h \
@@ -442,7 +442,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QIDialog.cpp \
 	src/extensions/QIDialogButtonBox.cpp \
 	src/extensions/QIFileDialog.cpp \
-	src/extensions/QIHotKeyEdit.cpp \
 	src/extensions/QILabel.cpp \
 	src/extensions/QILabelSeparator.cpp \
 	src/extensions/QILineEdit.cpp \
@@ -492,6 +491,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIDownloader.cpp \
 	src/widgets/UIDownloaderAdditions.cpp \
 	src/widgets/UIDownloaderUserManual.cpp \
+	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \

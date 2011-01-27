@@ -26,7 +26,7 @@
 /* Global settings / Input page / Cache: */
 struct UISettingsCacheGlobalInput
 {
-    int m_iHostKey;
+    QString m_strHostCombo;
     bool m_fAutoCapture;
 };
 

@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIHotKeyEdit class declaration
+ * VirtualBox Qt extensions: UIHotKeyEditor class declaration
  */
 
 /*
@@ -16,54 +16,66 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIHotKeyEdit_h___
-#define ___QIHotKeyEdit_h___
+#ifndef ___UIHotKeyEditor_h___
+#define ___UIHotKeyEditor_h___
 
 /* Global includes */
 #include <QLabel>
+#include <QMap>
+#include <QSet>
 
-#ifdef Q_WS_X11
-# include <QMap>
-#endif /* Q_WS_X11 */
-
-class QIHotKeyEdit : public QLabel
+/* Hot-key namespace to unify
+ * all the related hot-key processing stuff: */
+namespace UIHotKey
 {
-    Q_OBJECT
+    QString toString(int iKeyCode);
+    bool isValidKey(int iKeyCode);
+#ifdef Q_WS_WIN
+    int distinguishModifierVKey(int wParam);
+#endif /* Q_WS_WIN */
+#ifdef Q_WS_X11
+    void retranslateKeyNames();
+#endif /* Q_WS_X11 */
+}
+
+/* Hot-combo namespace to unify
+ * all the related hot-combo processing stuff: */
+namespace UIHotKeyCombination
+{
+    QString toReadableString(const QString &strKeyCombo);
+    QList<int> toKeyCodeList(const QString &strKeyCombo);
+    bool isValidKeyCombo(const QString &strKeyCombo);
+}
+
+class UIHotKeyEditor : public QLabel
+{
+    Q_OBJECT;
 
 public:
 
-    QIHotKeyEdit(QWidget *pParent);
-    virtual ~QIHotKeyEdit();
+    UIHotKeyEditor(QWidget *pParent);
+    virtual ~UIHotKeyEditor();
 
-    void setKey(int iKeyVal);
-    int key() const { return m_iKeyVal; }
-
-    QString symbolicName() const { return m_strSymbName; }
+    void setCombo(const QString &strKeyCombo);
+    QString combo() const;
 
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
-    static QString keyName(int iKeyVal);
-    static bool isValidKey(int iKeyVal);
-#ifdef Q_WS_X11
-    static void retranslateUi();
-#endif /* Q_WS_X11 */
-
-public slots:
-
-    void clear();
-
 protected:
 
-#if defined (Q_WS_WIN32)
+#ifdef Q_WS_WIN
     bool winEvent(MSG *pMsg, long *pResult);
-#elif defined (Q_WS_X11)
+#endif /* Q_WS_WIN */
+#ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
-#elif defined (Q_WS_MAC)
+#endif /* Q_WS_X11 */
+#ifdef Q_WS_MAC
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-#endif
+#endif /* Q_WS_MAC */
 
+    void keyPressEvent(QKeyEvent *pEvent);
     void focusInEvent(QFocusEvent *pEvent);
     void focusOutEvent(QFocusEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
@@ -72,21 +84,17 @@ private:
 
     void updateText();
 
-    int m_iKeyVal;
-    QString m_strSymbName;
+    QSet<int> m_pressedKeys;
+    QMap<int, QString> m_shownKeys;
 
-#ifdef Q_WS_X11
-    static QMap<QString, QString> s_keyNames;
-#endif /* Q_WS_X11 */
+    bool m_fStartNewSequence;
 
 #ifdef Q_WS_MAC
     /* The current modifier key mask. Used to figure out which modifier
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     uint32_t m_uDarwinKeyModifiers;
 #endif /* Q_WS_MAC */
-
-    static const char *m_spNoneSymbName;
 };
 
-#endif // !___QIHotKeyEdit_h___
+#endif // !___UIHotKeyEditor_h___
 
