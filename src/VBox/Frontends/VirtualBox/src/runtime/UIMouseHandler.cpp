@@ -530,8 +530,6 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseMove:
                 case QEvent::MouseButtonRelease:
                 {
-
-                    printf("move event \n");
                     /* Check if we should propagate this event to another window: */
                     QWidget *pHoveredWidget = QApplication::widgetAt(QCursor::pos());
                     if (pHoveredWidget && pHoveredWidget != pWatchedWidget && m_viewports.values().contains(pHoveredWidget))
