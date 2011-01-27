@@ -1097,7 +1097,7 @@ AttributeNode* ElementNode::setAttributePath(const char *pcszName, const iprt::M
  */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int32_t i)
 {
-    char szValue[10];
+    char szValue[12];  // negative sign + 10 digits + \0
     RTStrPrintf(szValue, sizeof(szValue), "%RI32", i);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
@@ -1116,7 +1116,7 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, int32_t i)
  */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t u)
 {
-    char szValue[10];
+    char szValue[11];  // 10 digits + \0
     RTStrPrintf(szValue, sizeof(szValue), "%RU32", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
@@ -1135,7 +1135,7 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t u)
  */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int64_t i)
 {
-    char szValue[20];
+    char szValue[21];  // negative sign + 19 digits + \0
     RTStrPrintf(szValue, sizeof(szValue), "%RI64", i);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
@@ -1154,7 +1154,7 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, int64_t i)
  */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t u)
 {
-    char szValue[20];
+    char szValue[21];  // 20 digits + \0
     RTStrPrintf(szValue, sizeof(szValue), "%RU64", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
@@ -1173,7 +1173,7 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t u)
  */
 AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t u)
 {
-    char szValue[10];
+    char szValue[11];  // "0x" + 8 digits + \0
     RTStrPrintf(szValue, sizeof(szValue), "0x%RX32", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
