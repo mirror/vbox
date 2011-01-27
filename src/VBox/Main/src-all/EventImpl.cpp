@@ -901,7 +901,6 @@ HRESULT ListenerRecord::eventProcessed (IEvent* aEvent, PendingEventsMap::iterat
         mOwner->m->mPendingMap.erase(pit);
     }
 
-    Assert(pit->second >= 0);
     return S_OK;
 }
 
