@@ -38,7 +38,7 @@
 #include "UIDownloaderUserManual.h"
 #include "UIMachine.h"
 #include "VBoxAboutDlg.h"
-#include "QIHotKeyEdit.h"
+#include "UIHotKeyEditor.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -1676,7 +1676,7 @@ bool VBoxProblemReporter::confirmInputCapture (bool *aAutoConfirmed /* = NULL */
             "</p>") +
         tr ("<p>The host key is currently defined as <b>%1</b>.</p>",
             "additional message box paragraph")
-            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+            .arg (UIHotKeyCombination::toReadableString (vboxGlobal().settings().hostCombo())),
         "confirmInputCapture",
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -1709,7 +1709,7 @@ void VBoxProblemReporter::remindAboutAutoCapture()
             "</p>") +
         tr ("<p>The host key is currently defined as <b>%1</b>.</p>",
             "additional message box paragraph")
-            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+            .arg (UIHotKeyCombination::toReadableString (vboxGlobal().settings().hostCombo())),
         "remindAboutAutoCapture");
 }
 
@@ -1877,7 +1877,7 @@ bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
             "<p>Note that the main menu bar is hidden in fullscreen mode. "
             "You can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
-            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+            .arg (UIHotKeyCombination::toReadableString (vboxGlobal().settings().hostCombo())),
         "confirmGoingFullscreen",
         tr ("Switch", "fullscreen"));
 }
@@ -1897,7 +1897,7 @@ bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
             "<p>Note that the main menu bar is hidden in seamless mode. "
             "You can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
-            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+            .arg (UIHotKeyCombination::toReadableString (vboxGlobal().settings().hostCombo())),
         "confirmGoingSeamless",
         tr ("Switch", "seamless"));
 }
@@ -1917,7 +1917,7 @@ bool VBoxProblemReporter::confirmGoingScale (const QString &aHotKey)
             "<p>Note that the main menu bar is hidden in scale mode. "
             "You can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
-            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+            .arg (UIHotKeyCombination::toReadableString (vboxGlobal().settings().hostCombo())),
         "confirmGoingScale",
         tr ("Switch", "scale"));
 }

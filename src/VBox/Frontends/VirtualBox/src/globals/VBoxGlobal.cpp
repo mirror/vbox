@@ -24,7 +24,6 @@
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxProblemReporter.h"
-#include "QIHotKeyEdit.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
@@ -72,6 +71,7 @@
 #include <math.h>
 
 #ifdef Q_WS_X11
+# include "UIHotKeyEditor.h"
 # ifndef VBOX_OSE
 #  include "VBoxLicenseViewer.h"
 # endif /* VBOX_OSE */
@@ -3015,12 +3015,11 @@ void VBoxGlobal::retranslateUi()
          it != mMediaList.end(); ++ it)
         it->refresh();
 
-#if defined (Q_WS_PM) || defined (Q_WS_X11)
-    /* As PM and X11 do not (to my knowledge) have functionality for providing
-     * human readable key names, we keep a table of them, which must be
-     * updated when the language is changed. */
-    QIHotKeyEdit::retranslateUi();
-#endif
+#ifdef Q_WS_X11
+    /* As X11 do not have functionality for providing human readable key names,
+     * we keep a table of them, which must be updated when the language is changed. */
+    UIHotKey::retranslateKeyNames();
+#endif /* Q_WS_X11 */
 }
 
 // public static stuff

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,7 @@
 #include <QVariant>
 
 #include "VBoxGlobalSettings.h"
-#include "QIHotKeyEdit.h"
+#include "UIHotKeyEditor.h"
 #include "COMDefs.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -39,22 +39,14 @@
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-#if defined (Q_WS_WIN32)
-    hostkey = 0xA3; // VK_RCONTROL
-//    hostkey = 165; // VK_RMENU
-#elif defined (Q_WS_PM)
-    hostkey = VK_CTRL;
+#if defined (Q_WS_WIN)
+    hostCombo = "163"; // VK_RCONTROL
 #elif defined (Q_WS_X11)
-    hostkey = 0xffe4; // XK_Control_R
-//    hostkey = 65514; // XK_Alt_R
+    hostCombo = "65508"; // XK_Control_R
 #elif defined (Q_WS_MAC)
-//    hostkey = 0x36; // QZ_RMETA
-    hostkey = 0x37; // QZ_LMETA
-//    hostkey = 0x3e; // QZ_RCTRL
-//    hostkey = 0x3d; // QZ_RALT
+    hostCombo = "55"; // QZ_LMETA
 #else
 # warning "port me!"
-    hostkey = 0;
 #endif
     autoCapture = true;
     guiFeatures = QString::null;
@@ -68,7 +60,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    hostkey = that.hostkey;
+    hostCombo = that.hostCombo;
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
@@ -86,7 +78,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (hostkey == that.hostkey &&
+        (hostCombo == that.hostCombo &&
          autoCapture == that.autoCapture &&
          guiFeatures == that.guiFeatures &&
          languageId  == that.languageId &&
@@ -116,7 +108,7 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKey",                         "hostKey",                 "0|\\d*[1-9]\\d*", true },
+    { "GUI/Input/HostCombo",                       "hostCombo",               "0|\\d*[1-9]\\d*(,\\d*[1-9]\\d*)?(,\\d*[1-9]\\d*)?", true },
     { "GUI/Input/AutoCapture",                     "autoCapture",             "true|false", true },
     { "GUI/Customizations",                        "guiFeatures",             "\\S+", true },
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
@@ -126,19 +118,17 @@ gPropertyMap[] =
 #ifdef Q_WS_MAC
     { VBoxDefs::GUI_PresentationModeEnabled,       "presentationModeEnabled", "true|false", true },
 #endif /* Q_WS_MAC */
-    { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled",     "true|false", true }
+    { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };
 
-void VBoxGlobalSettings::setHostKey (int key)
+void VBoxGlobalSettings::setHostCombo (const QString &hostCombo)
 {
-    if (!QIHotKeyEdit::isValidKey (key))
+    if (!UIHotKeyCombination::isValidKeyCombo (hostCombo))
     {
-        last_err = tr ("'%1 (0x%2)' is an invalid host key code.")
-                       .arg (key).arg (key, 0, 16);
+        last_err = tr ("'%1' is an invalid host-combination code-sequence.").arg (hostCombo);
         return;
     }
-
-    mData()->hostkey = key;
+    mData()->hostCombo = hostCombo;
     resetError();
 }
 
