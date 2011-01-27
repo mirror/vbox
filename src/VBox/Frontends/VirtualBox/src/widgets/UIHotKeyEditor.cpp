@@ -242,6 +242,11 @@ void UIHotKey::retranslateKeyNames()
 #endif /* Q_WS_X11 */
 
 
+namespace UIHotKeyCombination
+{
+    int m_iMaxComboSize = 3;
+}
+
 QString UIHotKeyCombination::toReadableString(const QString &strKeyCombo)
 {
     QStringList encodedKeyList = strKeyCombo.split(',');
@@ -265,6 +270,8 @@ QList<int> UIHotKeyCombination::toKeyCodeList(const QString &strKeyCombo)
 bool UIHotKeyCombination::isValidKeyCombo(const QString &strKeyCombo)
 {
     QList<int> keyCodeList = toKeyCodeList(strKeyCombo);
+    if (keyCodeList.size() > m_iMaxComboSize)
+        return false;
     for (int i = 0; i < keyCodeList.size(); ++i)
         if (!UIHotKey::isValidKey(keyCodeList[i]))
             return false;
@@ -381,12 +388,16 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
                 if (m_fStartNewSequence)
                     m_shownKeys.clear();
 
-                /* Remember pressed symbol: */
-                m_pressedKeys << pMsg->wParam;
-                m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+                /* Check maximum combo size: */
+                if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+                {
+                    /* Remember pressed symbol: */
+                    m_pressedKeys << pMsg->wParam;
+                    m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
 
-                /* Remember what we already started a sequence: */
-                m_fStartNewSequence = false;
+                    /* Remember what we already started a sequence: */
+                    m_fStartNewSequence = false;
+                }
             }
             /* Key release: */
             else if (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
@@ -437,12 +448,16 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
                 if (m_fStartNewSequence)
                     m_shownKeys.clear();
 
-                /* Remember pressed symbol: */
-                m_pressedKeys << iKeySym;
-                m_shownKeys.insert(iKeySym, UIHotKey::toString(iKeySym));
+                /* Check maximum combo size: */
+                if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+                {
+                    /* Remember pressed symbol: */
+                    m_pressedKeys << iKeySym;
+                    m_shownKeys.insert(iKeySym, UIHotKey::toString(iKeySym));
 
-                /* Remember what we already started a sequence: */
-                m_fStartNewSequence = false;
+                    /* Remember what we already started a sequence: */
+                    m_fStartNewSequence = false;
+                }
             }
             /* Key release: */
             else if (pEvent->type == XKeyRelease)
@@ -527,12 +542,16 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
                     if (m_fStartNewSequence)
                         m_shownKeys.clear();
 
-                    /* Remember pressed symbol: */
-                    m_pressedKeys << iKeyCode;
-                    m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+                    /* Check maximum combo size: */
+                    if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+                    {
+                        /* Remember pressed symbol: */
+                        m_pressedKeys << iKeyCode;
+                        m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
 
-                    /* Remember what we already started a sequence: */
-                    m_fStartNewSequence = false;
+                        /* Remember what we already started a sequence: */
+                        m_fStartNewSequence = false;
+                    }
                 }
             }
 
