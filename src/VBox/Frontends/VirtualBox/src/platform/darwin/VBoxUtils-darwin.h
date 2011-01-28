@@ -85,14 +85,14 @@ bool darwinSetFrontMostProcess();
 uint64_t darwinGetCurrentProcessId();
 
 bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-bool darwinMouseMoveEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+bool darwinMouseGrabEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
 void darwinCreateContextMenuEvent(void *pvWin, int x, int y);
 
 bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent);
 
 void darwinRetranslateAppMenu();
 
-void darwinSendDeltaEvents(QWidget *pWidget, int type, int button, int buttons, int x, int y);
+void darwinSendMouseGrabEvents(QWidget *pWidget, int type, int button, int buttons, int x, int y);
 
 QString darwinResolveAlias(const QString &strFile);
 

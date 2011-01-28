@@ -333,7 +333,7 @@ float darwinSmallFontSize()
     return size;
 }
 
-bool darwinMouseMoveEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+bool darwinMouseGrabEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
     NSEvent *pEvent = (NSEvent*)pvCocoaEvent;
     NSEventType EvtType = [pEvent type];
@@ -351,11 +351,10 @@ bool darwinMouseMoveEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, 
             || EvtType == NSMouseMoved
             || EvtType == NSScrollWheel))
     {
+        /* When the mouse position is not associated to the mouse cursor, the x
+           and y values are reported as delta values. */
         float x = [pEvent deltaX];
         float y = [pEvent deltaY];
-        /* Get the buttons which where pressed when this event occurs. We have
-           to use Carbon here, cause the Cocoa method [NSEvent pressedMouseButtons]
-           is >= 10.6. */
         if (EvtType == NSScrollWheel)
         {
             /* In the scroll wheel case we have to do some magic, cause a
@@ -371,11 +370,14 @@ bool darwinMouseMoveEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, 
             else
                 y = qBound(-120, (int)(y * 10000), 120);
         }
+        /* Get the buttons which where pressed when this event occurs. We have
+           to use Carbon here, cause the Cocoa method [NSEvent pressedMouseButtons]
+           is >= 10.6. */
         uint32 buttonMask = 0;
         GetEventParameter((EventRef)pvCarbonEvent, kEventParamMouseChord, typeUInt32, 0,
                           sizeof(buttonMask), 0, &buttonMask);
         /* Produce a Qt event out of our info. */
-        ::darwinSendDeltaEvents((QWidget*)pvUser, EvtType, [pEvent buttonNumber], buttonMask, x, y);
+        ::darwinSendMouseGrabEvents((QWidget*)pvUser, EvtType, [pEvent buttonNumber], buttonMask, x, y);
         return true;
     }
     return false;
