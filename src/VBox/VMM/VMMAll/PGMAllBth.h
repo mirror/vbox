@@ -3180,7 +3180,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 break;
         }
     }
-    /* else cached entry; assume it's still fully valid. */
+    else
+        rc = VINF_SUCCESS; /* Cached entry; assume it's still fully valid. */
 
     /* Save the new PDE. */
     PdeDst.u &= X86_PDE_AVL_MASK;
