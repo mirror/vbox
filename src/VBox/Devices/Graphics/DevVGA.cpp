@@ -4604,7 +4604,10 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
      */
     size_t cbRequired = pThis->last_scr_width * 4 * pThis->last_scr_height;
 
-    if (cbRequired)
+    /* The size can't be zero or greater than the size of the VRAM.
+     * Inconsistent VGA device state can cause the incorrect size values.
+     */
+    if (cbRequired && cbRequired <= pThis->vram_size)
     {
         uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbRequired);
 
