@@ -170,7 +170,7 @@ enum
     SYSTEM_INFO_INDEX_SERIAL0_IRQ       = 23,
     SYSTEM_INFO_INDEX_SERIAL1_IOBASE    = 24,
     SYSTEM_INFO_INDEX_SERIAL1_IRQ       = 25,
-    SYSTEM_INFO_INDEX_END               = 28,
+    SYSTEM_INFO_INDEX_END               = 26,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
