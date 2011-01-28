@@ -186,7 +186,7 @@ private:
     /* Helper members: */
     void appendCacheItem(const CHostNetworkInterface &iface);
     void removeCacheItem(const QString &strInterfaceName);
-    void appendListItem(const UIHostNetworkData &data);
+    void appendListItem(const UIHostNetworkData &data, bool fChooseItem = false);
     void removeListItem(UIHostInterfaceItem *pItem);
 
     /* Validator: */
