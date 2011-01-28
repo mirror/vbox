@@ -273,7 +273,7 @@ void VBoxVMInformationDlg::retranslateUi()
     }
 
     /* Network statistics: */
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
     for (ulong i = 0; i < count; ++ i)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter (i);
@@ -586,7 +586,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += hdrRow.arg (":/nw_16px.png").arg (tr ("Network Statistics"));
 
         /* Network Adapters list */
-        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
         for (ulong slot = 0; slot < count; ++ slot)
         {
             if (m.GetNetworkAdapter (slot).GetEnabled())
@@ -689,4 +689,3 @@ QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo, int aSp
 
     return result;
 }
-

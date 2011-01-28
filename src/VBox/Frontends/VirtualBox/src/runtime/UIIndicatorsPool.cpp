@@ -269,7 +269,7 @@ public:
         const CMachine &machine = m_session.GetMachine();
         QString strFullData;
 
-        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
 
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                  "<p style='white-space:pre'><nobr>Indicates the activity of the "

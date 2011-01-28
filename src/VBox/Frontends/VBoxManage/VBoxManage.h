@@ -162,6 +162,7 @@ int handleInternalCommands(HandlerArg *a);
 
 /* VBoxManageControlVM.cpp */
 int handleControlVM(HandlerArg *a);
+ULONG getMaxNics(IVirtualBox* vbox, IMachine* mach);
 
 /* VBoxManageModifyVM.cpp */
 int handleModifyVM(HandlerArg *a);
@@ -255,4 +256,3 @@ int handleBandwidthControl(HandlerArg *a);
 #endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !___H_VBOXMANAGE */
-

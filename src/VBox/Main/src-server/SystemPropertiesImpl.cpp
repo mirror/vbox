@@ -274,19 +274,6 @@ STDMETHODIMP SystemProperties::COMGETTER(InfoVDSize)(LONG64 *infoVDSize)
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
-{
-    CheckComArgOutPointerValid(count);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* no need to lock, this is const */
-    *count = SchemaDefs::NetworkAdapterCount;
-
-    return S_OK;
-}
-
 STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
 {
     CheckComArgOutPointerValid(count);
@@ -325,6 +312,68 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
 
     return S_OK;
 }
+
+
+STDMETHODIMP SystemProperties::GetMaxNetworkAdapters(ChipsetType_T aChipset, ULONG *count)
+{
+    CheckComArgOutPointerValid(count);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ULONG uResult = 0;
+
+    /* no need for locking, no state */
+    switch (aChipset)
+    {
+        case ChipsetType_PIIX3:
+            uResult = SchemaDefs::NetworkAdapterCount; /* == 8 */
+            break;
+        case ChipsetType_ICH9:
+            uResult = 36;
+            break;
+        default:
+            AssertMsgFailed(("Invalid chipset type %d\n", aChipset));
+    }
+
+    *count = uResult;
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipset, NetworkAttachmentType_T aType, ULONG *count)
+{
+    CheckComArgOutPointerValid(count);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ULONG uResult = 0;
+    HRESULT rc = GetMaxNetworkAdapters(aChipset, &uResult);
+    
+
+    /* no need for locking, no state */
+    switch (aType)
+    {
+        case NetworkAttachmentType_NAT:        
+        case NetworkAttachmentType_Internal:
+            /* chipset default is OK */
+            break;
+        case NetworkAttachmentType_Bridged:
+            /* Maybe use current host interface count here? */
+            break;
+        case NetworkAttachmentType_HostOnly:
+            uResult = 8;
+            break;
+        default:
+            AssertMsgFailed(("Unhandled attachment type %d\n", aType));
+    }
+
+    *count = uResult;
+
+    return S_OK;
+}
+
 
 STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus(StorageBus_T aBus,
                                                                  ULONG *aMaxDevicesPerPort)
@@ -1085,4 +1134,3 @@ HRESULT SystemProperties::setDefaultVRDEExtPack(const Utf8Str &aExtPack)
 
     return S_OK;
 }
-

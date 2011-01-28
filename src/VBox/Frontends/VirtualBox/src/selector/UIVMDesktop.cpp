@@ -725,7 +725,7 @@ void UIDetailsPagePrivate::sltUpdateNetwork()
         {
             QString item;
 
-            ulong count = m_vbox.GetSystemProperties().GetNetworkAdapterCount();
+            ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
             for (ulong slot = 0; slot < count; slot ++)
             {
                 const CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(slot);

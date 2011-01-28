@@ -7386,7 +7386,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="51c81048-b261-4fa2-a44e-fd756f0db589"
+    uuid="2f89cdfe-2d10-43d4-b37f-61760f877f29"
     wsmap="managed"
     >
     <desc>
@@ -7431,23 +7431,16 @@
       does not reflect the limits of any virtual disk image format.</desc>
     </attribute>
 
-    <attribute name="networkAdapterCount" type="unsigned long" readonly="yes">
-      <desc>
-        Number of network adapters associated with every
-        <link to="IMachine"/> instance.
-      </desc>
-    </attribute>
-
     <attribute name="serialPortCount" type="unsigned long" readonly="yes">
       <desc>
-        Number of serial ports associated with every
+        Maximum number of serial ports associated with every
         <link to="IMachine"/> instance.
       </desc>
     </attribute>
 
     <attribute name="parallelPortCount" type="unsigned long" readonly="yes">
       <desc>
-        Number of parallel ports associated with every
+        Maximum number of parallel ports associated with every
         <link to="IMachine"/> instance.
       </desc>
     </attribute>
@@ -7645,6 +7638,46 @@
       system.</desc>
     </attribute>
 
+
+    <method name="getMaxNetworkAdapters">
+      <desc>
+        Maximum total number of network adapters associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+
+      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
+        <desc>The maximum total number of network adapters allowed.</desc>
+      </param>
+
+    </method>
+
+    <method name="getMaxNetworkAdaptersOfType">
+      <desc>
+        Maximum number of network adapters of a given attachment type,
+        associated with every <link to="IMachine"/> instance.
+      </desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+      <param name="type" type="NetworkAttachmentType" dir="in">
+        <desc>Type of attachment.</desc>
+      </param>
+
+      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
+        <desc>The maximum number of network adapters allowed for
+          particular chipset and attachment  type.</desc>
+      </param>
+
+    </method>
+
+
     <method name="getMaxDevicesPerPortForStorageBus">
       <desc>Returns the maximum number of devices which can be attached to a port
       for the given storage bus.</desc>
@@ -7654,7 +7687,7 @@
       </param>
 
       <param name="maxDevicesPerPort" type="unsigned long" dir="return">
-        <desc>The maximum number of devices which can eb attached to the port for the given
+        <desc>The maximum number of devices which can be attached to the port for the given
         storage bus.</desc>
       </param>
     </method>

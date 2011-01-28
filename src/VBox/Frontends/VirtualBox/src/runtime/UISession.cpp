@@ -979,7 +979,7 @@ void UISession::reinitMenuPool()
     /* Network stuff: */
     {
         bool fAtLeastOneAdapterActive = false;
-        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
         for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
