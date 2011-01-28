@@ -957,9 +957,9 @@ void UIVMItemPainter::calcLayout(const QModelIndex &aIndex,
     /* Really basic layout management.
      * First layout as usual */
     aOSType->moveTo(m_Margin, m_Margin);
-    aVMName->moveTo(m_Margin + aOSType->width() + m_Spacing, m_Margin);
+    aVMName->moveTo(aOSType->right() + m_Spacing, m_Margin);
     aShot->moveTo(aVMName->right() + nameSpaceWidth, aVMName->top());
-    aStateIcon->moveTo(aVMName->left(), aVMName->bottom());
+    aStateIcon->moveTo(aVMName->left(), aOSType->bottom() - aStateIcon->height());
     aState->moveTo(aStateIcon->right() + stateSpaceWidth, aStateIcon->top());
     /* Do grouping for the automatic center routine.
      * First the states group: */
