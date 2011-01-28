@@ -162,7 +162,9 @@ int handleInternalCommands(HandlerArg *a);
 
 /* VBoxManageControlVM.cpp */
 int handleControlVM(HandlerArg *a);
+#ifndef VBOX_ONLY_DOCS
 unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach);
+#endif
 
 /* VBoxManageModifyVM.cpp */
 int handleModifyVM(HandlerArg *a);
