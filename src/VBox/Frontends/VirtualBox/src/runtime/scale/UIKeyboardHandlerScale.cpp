@@ -25,6 +25,7 @@
 /* Local includes */
 #include "UIKeyboardHandlerScale.h"
 #include "UIMachineWindow.h"
+#include "UIMachineShortcuts.h"
 
 /* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerScale::UIKeyboardHandlerScale(UIMachineLogic* pMachineLogic)
@@ -57,7 +58,7 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home for menu popup: */
-                if (isHostKeyPressed() && pKeyEvent->key() == Qt::Key_Home)
+                if (isHostKeyPressed() && pKeyEvent->key() == gMS->keySequence(UIMachineShortcuts::PopupMenuShortcut))
                 {
                     /* Post request to show popup-menu: */
                     QTimer::singleShot(0, m_windows[uScreenId]->machineWindow(), SLOT(sltPopupMainMenu()));
