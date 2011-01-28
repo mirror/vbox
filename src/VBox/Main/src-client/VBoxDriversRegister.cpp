@@ -26,7 +26,7 @@
 #include "AudioSnifferInterface.h"
 #include "ConsoleImpl.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-#include "PciRawDevImpl.h"
+# include "PciRawDevImpl.h"
 #endif
 
 #include "Logging.h"
