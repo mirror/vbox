@@ -5549,8 +5549,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         /* Check all types of shared folders and compose a single list */
         SharedFolderDataMap sharedFolders;
         {
-            // @todo umoeller
-
             /* first, insert global folders */
             for (SharedFolderDataMap::const_iterator it = m_mapGlobalSharedFolders.begin();
                  it != m_mapGlobalSharedFolders.end();
@@ -6265,7 +6263,6 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
                                                                 SharedFolderData(strHostPath, writable, autoMount)));
 
                 /* send changes to HGCM if the VM is running */
-                /// @todo umoeller report errors as runtime warnings through VMSetError
                 if (online)
                 {
                     SharedFolderDataMap::iterator it = oldFolders.find(strName);
