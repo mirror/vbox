@@ -58,7 +58,8 @@ public:
 #endif /* VBOX_WITH_REGISTRATION */
         UpdateShortcut,
         AboutShortcut,
-        EndShortcutType,
+        PopupMenuShortcut,
+        EndShortcutType
     };
 
 private:
