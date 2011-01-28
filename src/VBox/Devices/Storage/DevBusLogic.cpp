@@ -1632,6 +1632,8 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             /* Fast path for mailbox execution command. */
             if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
+                AssertMsg(pBusLogic->cMailboxesReady < pBusLogic->cMailbox,
+                          ("Mailbox count exceeded, max is %u\n", pBusLogic->cMailbox));
                 ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
                 if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
                 {
