@@ -405,21 +405,31 @@ public:
     class SharedFolderData
     {
     public:
-        SharedFolderData() {}
-        SharedFolderData(Bstr aHostPath, BOOL aWritable, BOOL aAutoMount)
-           : mHostPath(aHostPath)
-           , mWritable(aWritable)
-           , mAutoMount(aAutoMount) {}
+        SharedFolderData()
+        { }
+
+        SharedFolderData(const Utf8Str &aHostPath,
+                         bool aWritable,
+                         bool aAutoMount)
+           : m_strHostPath(aHostPath),
+             m_fWritable(aWritable),
+             m_fAutoMount(aAutoMount)
+        { }
+
+        // copy constructor
         SharedFolderData(const SharedFolderData& aThat)
-           : mHostPath(aThat.mHostPath)
-           , mWritable(aThat.mWritable)
-           , mAutoMount(aThat.mAutoMount) {}
-        Bstr mHostPath;
-        BOOL mWritable;
-        BOOL mAutoMount;
+           : m_strHostPath(aThat.m_strHostPath),
+             m_fWritable(aThat.m_fWritable),
+             m_fAutoMount(aThat.m_fAutoMount)
+        { }
+
+        Utf8Str m_strHostPath;
+        bool m_fWritable;
+        bool m_fAutoMount;
     };
-    typedef std::map <Bstr, ComObjPtr<SharedFolder> > SharedFolderMap;
-    typedef std::map <Bstr, SharedFolderData> SharedFolderDataMap;
+
+    typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
+    typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
 
 private:
 
@@ -448,16 +458,16 @@ private:
         return setMachineState(aMachineState, false /* aUpdateServer */);
     }
 
-    HRESULT findSharedFolder(CBSTR aName,
+    HRESULT findSharedFolder(const Utf8Str &strName,
                              ComObjPtr<SharedFolder> &aSharedFolder,
                              bool aSetError = false);
 
     HRESULT fetchSharedFolders(BOOL aGlobal);
-    bool findOtherSharedFolder(IN_BSTR aName,
+    bool findOtherSharedFolder(const Utf8Str &straName,
                                SharedFolderDataMap::const_iterator &aIt);
 
-    HRESULT createSharedFolder(CBSTR aName, SharedFolderData aData);
-    HRESULT removeSharedFolder(CBSTR aName);
+    HRESULT createSharedFolder(const Utf8Str &strName, const SharedFolderData &aData);
+    HRESULT removeSharedFolder(const Utf8Str &strName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
     int configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMachine);
@@ -630,9 +640,9 @@ private:
     USBDeviceList mUSBDevices;
     RemoteUSBDeviceList mRemoteUSBDevices;
 
-    SharedFolderMap mSharedFolders;
-    SharedFolderDataMap mMachineSharedFolders;
-    SharedFolderDataMap mGlobalSharedFolders;
+    SharedFolderDataMap m_mapGlobalSharedFolders;
+    SharedFolderDataMap m_mapMachineSharedFolders;
+    SharedFolderMap m_mapSharedFolders;             // the console instances
 
     /** The VM instance handle. */
     PVM mpVM;

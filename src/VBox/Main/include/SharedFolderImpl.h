@@ -29,17 +29,6 @@ class ATL_NO_VTABLE SharedFolder :
 {
 public:
 
-    struct Data
-    {
-        Data() {}
-
-        const Bstr name;
-        const Bstr hostPath;
-        BOOL       writable;
-        BOOL       autoMount;
-        Bstr       lastAccessError;
-    };
-
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SharedFolder, ISharedFolder)
 
     DECLARE_NOT_AGGREGATABLE(SharedFolder)
@@ -56,10 +45,10 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aMachine, CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
+    HRESULT init(Machine *aMachine, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount);
     HRESULT initCopy(Machine *aMachine, SharedFolder *aThat);
-    HRESULT init(Console *aConsole, CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
-    HRESULT init(VirtualBox *aVirtualBox, CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
+    HRESULT init(Console *aConsole, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount);
+    HRESULT init(VirtualBox *aVirtualBox, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount);
     void uninit();
 
     // ISharedFolder properties
@@ -73,19 +62,33 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
-    // public methods that don't need a lock (because access constant data)
-    // (ensure there is a caller added before calling them!)
+    /**
+     * Public internal method. Returns the shared folder's name. Needs caller! Locking not necessary.
+     * @return
+     */
+    const Utf8Str& getName() const;
 
-    const Bstr& getName() const { return m.name; }
-    const Bstr& getHostPath() const { return m.hostPath; }
-    BOOL isWritable() const { return m.writable; }
-    BOOL isAutoMounted() const { return m.autoMount; }
+    /**
+     * Public internal method. Returns the shared folder's host path. Needs caller! Locking not necessary.
+     * @return
+     */
+    const Utf8Str& getHostPath() const;
+
+    /**
+     * Public internal method. Returns true if the shared folder is writable. Needs caller and locking!
+     * @return
+     */
+    bool isWritable() const;
+
+    /**
+     * Public internal method. Returns true if the shared folder is auto-mounted. Needs caller and locking!
+     * @return
+     */
+    bool isAutoMounted() const;
 
 protected:
 
-    HRESULT protectedInit(VirtualBoxBase *aParent,
-                          CBSTR aName, CBSTR aHostPath,
-                          BOOL aWritable, BOOL aAutoMount);
+    HRESULT protectedInit(VirtualBoxBase *aParent, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount);
 private:
 
     VirtualBoxBase * const  mParent;
@@ -95,7 +98,8 @@ private:
     Console * const         mConsole;
     VirtualBox * const      mVirtualBox;
 
-    Data m;
+    struct Data;            // opaque data struct, defined in SharedFolderImpl.cpp
+    Data *m;
 };
 
 #endif // ____H_SHAREDFOLDERIMPL

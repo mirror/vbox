@@ -725,7 +725,7 @@ protected:
 
     virtual HRESULT setMachineState(MachineState_T aMachineState);
 
-    HRESULT findSharedFolder(CBSTR aName,
+    HRESULT findSharedFolder(const Utf8Str &aName,
                              ComObjPtr<SharedFolder> &aSharedFolder,
                              bool aSetError = false);
 
