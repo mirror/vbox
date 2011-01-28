@@ -71,18 +71,6 @@
 #include "VBoxDD.h"
 
 
-/** Size of the send fifo queue (in bytes) */
-#ifdef RT_OS_DARWIN
-  /** @todo This is really desperate, but it seriously looks like
-   * the data is arriving way too fast for us to push over. 9600
-   * baud and zoc reports sending at 12000+ chars/sec... */
-# define CHAR_MAX_SEND_QUEUE             0x400
-# define CHAR_MAX_SEND_QUEUE_MASK        0x3ff
-#else
-# define CHAR_MAX_SEND_QUEUE             0x80
-# define CHAR_MAX_SEND_QUEUE_MASK        0x7f
-#endif
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -145,9 +133,9 @@ typedef struct DRVHOSTSERIAL
 #endif
 
     /** Internal send FIFO queue */
-    uint8_t volatile            aSendQueue[CHAR_MAX_SEND_QUEUE];
-    uint32_t volatile           iSendQueueHead;
-    uint32_t volatile           iSendQueueTail;
+    uint8_t volatile            u8SendByte;
+    bool volatile               fSending;
+    uint8_t                     Alignment[2];
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
@@ -192,41 +180,13 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHARCONNECTOR pInterface, const
 
     for (uint32_t i = 0; i < cbWrite; i++)
     {
-#ifdef RT_OS_DARWIN /* don't wanna break the others here. */
-        uint32_t iHead = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
-        uint32_t iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail);
-        int32_t  cbAvail = iTail > iHead
-                         ? iTail - iHead - 1
-                         : CHAR_MAX_SEND_QUEUE - (iHead - iTail) - 1;
-        if (cbAvail <= 0)
-        {
-# ifdef DEBUG
-            uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
-# endif
-            Log(("%s: dropping %d chars (cbAvail=%d iHead=%d iTail=%d)\n", __FUNCTION__, cbWrite - i , cbAvail, iHead, iTail));
-            STAM_COUNTER_INC(&pThis->StatSendOverflows);
-            break;
-        }
+        if (ASMAtomicXchgBool(&pThis->fSending, true))
+            return VERR_BUFFER_OVERFLOW;
 
-        pThis->aSendQueue[iHead] = pbBuffer[i];
+        pThis->u8SendByte = pbBuffer[i];
+        RTSemEventSignal(pThis->SendSem);
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        ASMAtomicWriteU32(&pThis->iSendQueueHead, (iHead + 1) & CHAR_MAX_SEND_QUEUE_MASK);
-        if (cbAvail < CHAR_MAX_SEND_QUEUE / 4)
-        {
-            RTSemEventSignal(pThis->SendSem);
-            RTThreadYield();
-        }
-#else /* old code */
-        uint32_t idx = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
-
-        pThis->aSendQueue[idx] = pbBuffer[i];
-        idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
-
-        STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        ASMAtomicWriteU32(&pThis->iSendQueueHead, idx);
-#endif /* old code */
     }
-    RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
 }
 
@@ -521,41 +481,19 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         while (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
             /* copy the send queue so we get a linear buffer with the maximal size. */
-            uint8_t  abBuf[sizeof(pThis->aSendQueue)];
-            uint32_t cb = 0;
-            uint32_t iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail);
-            uint32_t iHead = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
-            if (iTail == iHead)
-                break;
-            do
-            {
-                abBuf[cb++] = pThis->aSendQueue[iTail];
-                iTail = (iTail + 1) & CHAR_MAX_SEND_QUEUE_MASK;
-            } while (iTail != iHead);
-
-            ASMAtomicWriteU32(&pThis->iSendQueueTail, iTail);
-
-            /* write it. */
-#ifdef DEBUG
-            uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
-#endif
+            uint8_t ch = pThis->u8SendByte;
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
             size_t cbWritten;
-            rc = RTFileWrite(pThis->DeviceFile, abBuf, cb, &cbWritten);
+            rc = RTFileWrite(pThis->DeviceFile, &ch, 1, &cbWritten);
             if (rc == VERR_TRY_AGAIN)
                 cbWritten = 0;
-            if (cbWritten < cb && (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN))
+            if (cbWritten < 1 && (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN))
             {
                 /* ok, block till the device is ready for more (O_NONBLOCK) effect. */
                 rc = VINF_SUCCESS;
-                uint8_t const *pbSrc = &abBuf[0];
                 while (pThread->enmState == PDMTHREADSTATE_RUNNING)
                 {
-                    /* advance */
-                    cb -= cbWritten;
-                    pbSrc += cbWritten;
-
                     /* wait */
                     fd_set WrSet;
                     FD_ZERO(&WrSet);
@@ -563,16 +501,22 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     fd_set XcptSet;
                     FD_ZERO(&XcptSet);
                     FD_SET(pThis->DeviceFile, &XcptSet);
+# ifdef DEBUG
+                    uint64_t u64Now = RTTimeMilliTS();
+# endif
                     rc = select(pThis->DeviceFile + 1, NULL, &WrSet, &XcptSet, NULL);
                     /** @todo check rc? */
 
+# ifdef DEBUG
+                    Log2(("select wait for %dms\n", RTTimeMilliTS() - u64Now));
+# endif
                     /* try write more */
-                    rc = RTFileWrite(pThis->DeviceFile, pbSrc, cb, &cbWritten);
+                    rc = RTFileWrite(pThis->DeviceFile, &ch, 1, &cbWritten);
                     if (rc == VERR_TRY_AGAIN)
                         cbWritten = 0;
                     else if (RT_FAILURE(rc))
                         break;
-                    else if (cbWritten >= cb)
+                    else if (cbWritten >= 1)
                         break;
                     rc = VINF_SUCCESS;
                 } /* wait/write loop */
@@ -583,7 +527,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             DWORD cbWritten;
             memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
             pThis->overlappedSend.hEvent = pThis->hEventSend;
-            if (!WriteFile(pThis->hDeviceFile, abBuf, cb, &cbWritten, &pThis->overlappedSend))
+            if (!WriteFile(pThis->hDeviceFile, &ch, 1, &cbWritten, &pThis->overlappedSend))
             {
                 dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
@@ -608,6 +552,8 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
                 return rc;
             }
+            ASMAtomicXchgBool(&pThis->fSending, false);
+            break;
         } /* write loop */
     }
 
@@ -621,7 +567,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
  */
-static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD /*pThread*/)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc;
@@ -893,7 +839,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
  */
-static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD /*pThread*/)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -1108,8 +1054,6 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     /* Empty the send queue */
-    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
-
     RTSemEventDestroy(pThis->SendSem);
     pThis->SendSem = NIL_RTSEMEVENT;
 
@@ -1166,7 +1110,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
+static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t /*fFlags*/)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
