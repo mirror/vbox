@@ -144,13 +144,6 @@ static DECLCALLBACK(void) svcPresentFBO(void *data, int32_t screenId, int32_t x,
     RTCritSectLeave(&g_SvcPresentFBO.hQueueLock);
 
     RTSemEventSignal(g_SvcPresentFBO.hEventProcess);
-    /*
-    HRESULT rc;
-    ComPtr<IDisplay> pDisplay;
-
-    CHECK_ERROR(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()));
-    CHECK_ERROR(pDisplay, DrawToScreen(screenId, (BYTE*)data, x, y, w, h));
-    */
 }
 
 static DECLCALLBACK(int) svcPresentFBOWorkerThreadProc(RTTHREAD ThreadSelf, void *pvUser)
