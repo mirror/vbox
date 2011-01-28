@@ -4773,7 +4773,7 @@
         Returns the network adapter associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
         number of adapters per machine is defined by the
-        <link to="ISystemProperties::networkAdapterCount"/> property,
+        <link to="ISystemProperties::getMaxNetworkAdapters"/> property,
         so the maximum slot number is one less than that property's value.
 
         <result name="E_INVALIDARG">
