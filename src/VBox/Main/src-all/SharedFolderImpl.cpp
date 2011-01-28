@@ -27,6 +27,24 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/path.h>
 
+/////////////////////////////////////////////////////////////////////////////
+// SharedFolder::Data structure
+/////////////////////////////////////////////////////////////////////////////
+
+struct SharedFolder::Data
+{
+    Data()
+    : fWritable(false),
+      fAutoMount(false)
+    { }
+
+    const Utf8Str   strName;
+    const Utf8Str   strHostPath;
+    bool            fWritable;
+    bool            fAutoMount;
+    Utf8Str         strLastAccessError;
+};
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -36,10 +54,13 @@ SharedFolder::SharedFolder()
       mConsole(NULL),
       mVirtualBox(NULL)
 {
+    m = new Data;
 }
 
 SharedFolder::~SharedFolder()
 {
+    delete m;
+    m = NULL;
 }
 
 HRESULT SharedFolder::FinalConstruct()
@@ -67,8 +88,11 @@ void SharedFolder::FinalRelease()
  *
  *  @return          COM result indicator
  */
-HRESULT SharedFolder::init (Machine *aMachine,
-                            CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
+HRESULT SharedFolder::init(Machine *aMachine,
+                           const Utf8Str &aName,
+                           const Utf8Str &aHostPath,
+                           bool aWritable,
+                           bool aAutoMount)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -95,7 +119,7 @@ HRESULT SharedFolder::init (Machine *aMachine,
  *
  *  @return          COM result indicator
  */
-HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
+HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
 {
     ComAssertRet(aThat, E_INVALIDARG);
 
@@ -105,9 +129,11 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit(aMachine, aThat->m.name.raw(),
-                               aThat->m.hostPath.raw(), aThat->m.writable,
-                               aThat->m.autoMount);
+    HRESULT rc = protectedInit(aMachine,
+                               aThat->m->strName,
+                               aThat->m->strHostPath,
+                               aThat->m->fWritable,
+                               aThat->m->fAutoMount);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -117,7 +143,8 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 }
 
 /**
- *  Initializes the shared folder object.
+ *  Initializes the shared folder object. This variant gets called when
+ *  the shared folder lives in the Console address space.
  *
  *  @param aConsole     Console parent object
  *  @param aName        logical name of the shared folder
@@ -127,7 +154,10 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init(Console *aConsole,
-                            CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
+                           const Utf8Str &aName,
+                           const Utf8Str &aHostPath,
+                           bool aWritable,
+                           bool aAutoMount)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -145,7 +175,8 @@ HRESULT SharedFolder::init(Console *aConsole,
 }
 
 /**
- *  Initializes the shared folder object.
+ *  Initializes the shared folder object. This variant gets called when
+ *  the shared folder lives in the VirtualBox (server) address space.
  *
  *  @param aVirtualBox  VirtualBox parent object
  *  @param aName        logical name of the shared folder
@@ -154,8 +185,11 @@ HRESULT SharedFolder::init(Console *aConsole,
  *
  *  @return          COM result indicator
  */
-HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
-                            CBSTR aName, CBSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
+HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
+                           const Utf8Str &aName,
+                           const Utf8Str &aHostPath,
+                           bool aWritable,
+                           bool aAutoMount)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -173,23 +207,23 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
 }
 
 /**
- *  Helper for init() methods.
+ *  Shared initialization code. Called from the other constructors.
  *
  *  @note
  *      Must be called from under the object's lock!
  */
 HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
-                                    CBSTR           aName,
-                                    CBSTR           aHostPath,
-                                    BOOL            aWritable,
-                                    BOOL            aAutoMount)
+                                    const Utf8Str &aName,
+                                    const Utf8Str &aHostPath,
+                                    bool aWritable,
+                                    bool aAutoMount)
 {
-    LogFlowThisFunc(("aName={%ls}, aHostPath={%ls}, aWritable={%d}, aAutoMount={%d}\n",
-                      aName, aHostPath, aWritable, aAutoMount));
+    LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d}\n",
+                      aName.c_str(), aHostPath.c_str(), aWritable, aAutoMount));
 
-    ComAssertRet(aParent && aName && aHostPath, E_INVALIDARG);
+    ComAssertRet(aParent && aName.isNotEmpty() && aHostPath.isNotEmpty(), E_INVALIDARG);
 
-    Utf8Str hostPath = Utf8Str (aHostPath);
+    Utf8Str hostPath = aHostPath;
     size_t hostPathLen = hostPath.length();
 
     /* Remove the trailing slash unless it's a root directory
@@ -228,10 +262,10 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
 
     unconst(mParent) = aParent;
 
-    unconst(m.name) = aName;
-    unconst(m.hostPath) = hostPath;
-    m.writable = aWritable;
-    m.autoMount = aAutoMount;
+    unconst(m->strName) = aName;
+    unconst(m->strHostPath) = hostPath;
+    m->fWritable = aWritable;
+    m->fAutoMount = aAutoMount;
 
     return S_OK;
 }
@@ -267,7 +301,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mName is constant during life time, no need to lock */
-    m.name.cloneTo(aName);
+    m->strName.cloneTo(aName);
 
     return S_OK;
 }
@@ -280,7 +314,7 @@ STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mHostPath is constant during life time, no need to lock */
-    m.hostPath.cloneTo(aHostPath);
+    m->strHostPath.cloneTo(aHostPath);
 
     return S_OK;
 }
@@ -295,7 +329,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     /* mName and mHostPath are constant during life time, no need to lock */
 
     /* check whether the host path exists */
-    Utf8Str hostPath = Utf8Str(m.hostPath);
+    Utf8Str hostPath = m->strHostPath;
     char hostPathFull[RTPATH_MAX];
     int vrc = RTPathExists(hostPath.c_str()) ? RTPathReal(hostPath.c_str(),
                                                           hostPathFull,
@@ -309,10 +343,11 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m.lastAccessError = BstrFmt (
-        tr ("'%s' is not accessible (%Rrc)"), hostPath.c_str(), vrc);
+    m->strLastAccessError = Utf8StrFmt(tr("'%s' is not accessible (%Rrc)"),
+                                       m->strHostPath.c_str(),
+                                       vrc);
 
-    LogWarningThisFunc(("m.lastAccessError=\"%ls\"\n", m.lastAccessError.raw()));
+    LogWarningThisFunc(("m.lastAccessError=\"%s\"\n", m->strLastAccessError.c_str()));
 
     *aAccessible = FALSE;
     return S_OK;
@@ -327,7 +362,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aWritable = m.writable;
+    *aWritable = !!m->fWritable;
 
     return S_OK;
 }
@@ -341,7 +376,7 @@ STDMETHODIMP SharedFolder::COMGETTER(AutoMount) (BOOL *aAutoMount)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aAutoMount = m.autoMount;
+    *aAutoMount = !!m->fAutoMount;
 
     return S_OK;
 }
@@ -355,9 +390,29 @@ STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m.lastAccessError.cloneTo(aLastAccessError);
+    m->strLastAccessError.cloneTo(aLastAccessError);
 
     return S_OK;
+}
+
+const Utf8Str& SharedFolder::getName() const
+{
+    return m->strName;
+}
+
+const Utf8Str& SharedFolder::getHostPath() const
+{
+    return m->strHostPath;
+}
+
+bool SharedFolder::isWritable() const
+{
+    return m->fWritable;
+}
+
+bool SharedFolder::isAutoMounted() const
+{
+    return m->fAutoMount;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

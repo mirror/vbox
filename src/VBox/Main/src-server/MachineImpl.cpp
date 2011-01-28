@@ -7031,25 +7031,27 @@ HRESULT Machine::setMachineState(MachineState_T aMachineState)
  *  @note
  *      must be called from under the object's lock!
  */
-HRESULT Machine::findSharedFolder(CBSTR aName,
+HRESULT Machine::findSharedFolder(const Utf8Str &aName,
                                   ComObjPtr<SharedFolder> &aSharedFolder,
                                   bool aSetError /* = false */)
 {
-    bool found = false;
+    HRESULT rc = VBOX_E_OBJECT_NOT_FOUND;
     for (HWData::SharedFolderList::const_iterator it = mHWData->mSharedFolders.begin();
-        !found && it != mHWData->mSharedFolders.end();
+        it != mHWData->mSharedFolders.end();
         ++it)
     {
-        AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
-        found = (*it)->getName() == aName;
-        if (found)
-            aSharedFolder = *it;
+        SharedFolder *pSF = *it;
+        AutoCaller autoCaller(pSF);
+        if (pSF->getName() == aName)
+        {
+            aSharedFolder = pSF;
+            rc = S_OK;
+            break;
+        }
     }
 
-    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
-
-    if (aSetError && !found)
-        setError(rc, tr("Could not find a shared folder named '%ls'"), aName);
+    if (aSetError && FAILED(rc))
+        setError(rc, tr("Could not find a shared folder named '%s'"), aName.c_str());
 
     return rc;
 }
@@ -8501,12 +8503,14 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             it != mHWData->mSharedFolders.end();
             ++it)
         {
-            ComObjPtr<SharedFolder> pFolder = *it;
+            SharedFolder *pSF = *it;
+            AutoCaller sfCaller(pSF);
+            AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
             settings::SharedFolder sf;
-            sf.strName = pFolder->getName();
-            sf.strHostPath = pFolder->getHostPath();
-            sf.fWritable = !!pFolder->isWritable();
-            sf.fAutoMount = !!pFolder->isAutoMounted();
+            sf.strName = pSF->getName();
+            sf.strHostPath = pSF->getHostPath();
+            sf.fWritable = !!pSF->isWritable();
+            sf.fAutoMount = !!pSF->isAutoMounted();
 
             data.llSharedFolders.push_back(sf);
         }
