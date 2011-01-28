@@ -55,6 +55,7 @@
 # include "DarwinKeyboard.h"
 # include "VBoxUtils.h"
 # include <Carbon/Carbon.h>
+# include <QTimer>
 #endif /* Q_WS_MAC */
 
 
@@ -302,9 +303,14 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
-    m_uDarwinKeyModifiers = GetCurrentEventKeyModifiers();
+    m_uDarwinKeyModifiers = 0;
     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHotKeyEditor::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
+
+    m_pRemoveTimer = new QTimer(this);
+    m_pRemoveTimer->setInterval(200);
+    connect(m_pRemoveTimer, SIGNAL(timeout()),
+            this, SLOT(removePendingKeys()));
 #endif /* Q_WS_MAC */
 }
 
@@ -514,7 +520,6 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
                                 sizeof(modifierMask), NULL, &modifierMask);
             modifierMask = ::DarwinAdjustModifierMask(modifierMask, pvCocoaEvent);
             UInt32 changed = m_uDarwinKeyModifiers ^ modifierMask;
-            m_uDarwinKeyModifiers = modifierMask;
 
             /* Convert to keycode: */
             unsigned iKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
@@ -525,15 +530,19 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
 
             if (changed)
             {
+                /* Stop the delete pending keys timer. */
+                m_pRemoveTimer->stop();
+                /* If modifierMask is empty, no key is pressed anymore. Stop
+                 * all key handling and the deletion of keys. This is the
+                 * status the user want. */
+                if (!modifierMask)
+                    m_fStartNewSequence = true;
                 /* Key release: */
-                if (!(changed & modifierMask))
+                else if (!(changed & modifierMask))
                 {
-                    /* Remove pressed symbol: */
-                    m_pressedKeys.remove(iKeyCode);
-
-                    /* If pressed key map is empty => start new sequence: */
-                    if (m_pressedKeys.isEmpty())
-                        m_fStartNewSequence = true;
+                    /* Queue pressed symbol for removing: */
+                    m_removeKeys.insert(iKeyCode);
+                    m_pRemoveTimer->start();
                 }
                 /* Key press: */
                 else
@@ -541,7 +550,8 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
                     /* Clear reflected symbols if new sequence started: */
                     if (m_fStartNewSequence)
                         m_shownKeys.clear();
-
+                    /* Make sure any keys pending for removal are removed. */
+                    removePendingKeys();
                     /* Check maximum combo size: */
                     if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
                     {
@@ -554,6 +564,8 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
                     }
                 }
             }
+            /* Save the new modifier mask state. */
+            m_uDarwinKeyModifiers = modifierMask;
 
             /* Update text: */
             updateText();
@@ -562,6 +574,28 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
     }
     return false;
 }
+
+void UIHotKeyEditor::removePendingKeys()
+{
+    /* Stop the timer, we process all pending keys at once. */
+    m_pRemoveTimer->stop();
+    /* Something to do? */
+    if (!m_removeKeys.isEmpty())
+    {
+        /* Remove every key. */
+        foreach(int v, m_removeKeys)
+        {
+            m_pressedKeys.remove(v);
+            m_shownKeys.remove(v);
+        }
+        m_removeKeys.clear();
+        if (m_pressedKeys.isEmpty())
+            m_fStartNewSequence = true;
+    }
+    /* Make sure the user see what happens. */
+    updateText();
+}
+
 #endif /* Q_WS_MAC */
 
 void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)

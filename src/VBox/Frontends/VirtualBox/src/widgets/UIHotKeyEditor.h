@@ -89,11 +89,15 @@ private:
 
     bool m_fStartNewSequence;
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
+    QSet<int> m_removeKeys;
+    QTimer* m_pRemoveTimer;
     /* The current modifier key mask. Used to figure out which modifier
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     uint32_t m_uDarwinKeyModifiers;
-#endif /* Q_WS_MAC */
+private slots:
+    void removePendingKeys();
+#endif /* RT_OS_DARWIN */
 };
 
 #endif // !___UIHotKeyEditor_h___
