@@ -336,20 +336,21 @@ void crServerPresentFBO(CRMuralInfo *mural)
     {
         if (crServerIntersectScreen(mural, i, &rect))
         {
-            tmppixels = crAlloc(4*(rect.x2-rect.x1)*(rect.y2-rect.y1));
-            if (!tmppixels)
-            {
-                crWarning("Out of memory in crServerPresentFBO");
-                crFree(pixels);
-                return;
-            }
-
             /* rect in window relative coords */
             crServerTransformRect(&rectwr, &rect, -mural->gX, -mural->gY);
 
             if (!mural->pVisibleRects)
             {
+                tmppixels = crAlloc(4*(rect.x2-rect.x1)*(rect.y2-rect.y1));
+                if (!tmppixels)
+                {
+                    crWarning("Out of memory in crServerPresentFBO");
+                    crFree(pixels);
+                    return;
+                }
+
                 crServerCopySubImage(tmppixels, pixels, &rectwr, mural->fboWidth, mural->fboHeight);
+                /*Note: pfnPresentFBO would free tmppixels*/
                 cr_server.pfnPresentFBO(tmppixels, i, rect.x1-cr_server.screen[i].x, rect.y1-cr_server.screen[i].y, rect.x2-rect.x1, rect.y2-rect.y1);
             }
             else
@@ -358,7 +359,16 @@ void crServerPresentFBO(CRMuralInfo *mural)
                 {
                     if (crServerIntersectRect(&rectwr, (CRrecti*) &mural->pVisibleRects[4*j], &sectr))
                     {
+                        tmppixels = crAlloc(4*(sectr.x2-sectr.x1)*(sectr.y2-sectr.y1));
+                        if (!tmppixels)
+                        {
+                            crWarning("Out of memory in crServerPresentFBO");
+                            crFree(pixels);
+                            return;
+                        }
+
                         crServerCopySubImage(tmppixels, pixels, &sectr, mural->fboWidth, mural->fboHeight);
+                        /*Note: pfnPresentFBO would free tmppixels*/
                         cr_server.pfnPresentFBO(tmppixels, i,
                                                 sectr.x1+mural->gX-cr_server.screen[i].x,
                                                 sectr.y1+mural->gY-cr_server.screen[i].y,
@@ -366,8 +376,6 @@ void crServerPresentFBO(CRMuralInfo *mural)
                     }
                 }
             }
-
-            crFree(tmppixels);
         }
     }
     crFree(pixels);
