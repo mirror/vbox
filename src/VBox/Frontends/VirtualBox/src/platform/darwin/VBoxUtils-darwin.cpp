@@ -355,7 +355,7 @@ void darwinMouseGrab(QWidget *pWidget)
                                                             RT_BIT_32(26) | /* NSOtherMouseUp */
                                                             RT_BIT_32(27) | /* NSOtherMouseDragged */
                                                             RT_BIT_32(22),  /* NSScrollWheel */
-                                                            ::darwinMouseMoveEvents, pWidget);
+                                                            ::darwinMouseGrabEvents, pWidget);
 }
 
 void darwinMouseRelease(QWidget *pWidget)
@@ -371,11 +371,11 @@ void darwinMouseRelease(QWidget *pWidget)
                                                               RT_BIT_32(26) | /* NSOtherMouseUp */
                                                               RT_BIT_32(27) | /* NSOtherMouseDragged */
                                                               RT_BIT_32(22),  /* NSScrollWheel */
-                                                              ::darwinMouseMoveEvents, pWidget);
+                                                              ::darwinMouseGrabEvents, pWidget);
     CGAssociateMouseAndMouseCursorPosition(true);
 }
 
-void darwinSendDeltaEvents(QWidget *pWidget, int type, int button, int buttons, int x, int y)
+void darwinSendMouseGrabEvents(QWidget *pWidget, int type, int button, int buttons, int x, int y)
 {
     QEvent::Type qtType = QEvent::None;
     Qt::MouseButtons qtButtons = Qt::NoButton;

@@ -505,25 +505,13 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case UIGrabMouseEvent::GrabMouseEvent:
                 {
                     UIGrabMouseEvent *pDeltaEvent = static_cast<UIGrabMouseEvent*>(pEvent);
-                    QPoint gl = m_lastMousePos;
-                    QPoint p = QPoint(pDeltaEvent->xDelta() + gl.x(),
-                                      pDeltaEvent->yDelta() + gl.y());
+                    QPoint p = QPoint(pDeltaEvent->xDelta() + m_lastMousePos.x(),
+                                      pDeltaEvent->yDelta() + m_lastMousePos.y());
                     if (mouseEvent(pDeltaEvent->mouseEventType(), uScreenId,
                                    m_viewports[uScreenId]->mapFromGlobal(p), p,
                                    pDeltaEvent->buttons(),
                                    pDeltaEvent->wheelDelta(), pDeltaEvent->orientation()))
                         return true;
-//
-//                    QMouseEvent *pNewMouseEvent = new QMouseEvent(QEvent::MouseMove,
-//                                                                  m_viewports[uScreenId]->mapFromGlobal(p), p,
-//                                                                  Qt::NoButton,
-//                                                                  Qt::NoButton,
-//                                                                  Qt::NoModifier);
-//
-//
-//                    /* Send that event to real destination: */
-//                    QApplication::postEvent(m_viewports[uScreenId], pNewMouseEvent);
-                    return false;
                     break;
                 }
 #endif /* Q_WS_MAC */
