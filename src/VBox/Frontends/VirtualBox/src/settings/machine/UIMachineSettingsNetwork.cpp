@@ -625,7 +625,7 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage(bool aDisableStaticCo
     mDisableStaticControls = aDisableStaticControls;
 
     /* How many adapters to display */
-    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
+    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
     /* Add the tab pages to parent tab widget. Needed for space calculations. */
     for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
     {
@@ -680,7 +680,7 @@ QStringList UIMachineSettingsNetworkPage::intList (bool aRefresh)
         /* Load total network list of all VMs */
         mIntList.clear();
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
+        ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
         CMachineVector vec = vbox.GetMachines();
         for (CMachineVector::ConstIterator m = vec.begin(); m != vec.end(); ++ m)
         {
@@ -749,7 +749,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     hoiList(true);
 
     /* Load adapters data: */
-    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
+    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
         /* Get adapter: */
@@ -983,4 +983,3 @@ void UIMachineSettingsNetworkPage::updatePages()
             QTimer::singleShot (0, page, SLOT (updateAttachmentAlternative()));
     }
 }
-

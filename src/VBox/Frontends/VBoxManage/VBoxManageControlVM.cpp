@@ -64,6 +64,25 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
 }
 
 
+ULONG getMaxNics(IVirtualBox* vbox, IMachine* mach)
+{
+    ComPtr <ISystemProperties> info;
+    ChipsetType_T aChipset;
+    ULONG NetworkAdapterCount = 0;
+    HRESULT rc;
+
+    do {
+        CHECK_ERROR_BREAK(vbox, COMGETTER(SystemProperties)(info.asOutParam()));
+        CHECK_ERROR_BREAK(mach, COMGETTER(ChipsetType)(&aChipset));
+        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
+
+        return NetworkAdapterCount;
+    } while (0);
+
+    return 0;
+}
+
+
 int handleControlVM(HandlerArg *a)
 {
     using namespace com;
@@ -264,10 +283,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "setlinkstate", 12))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = 0;
-            ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
 
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
@@ -310,11 +326,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nictracefile", 12))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = 0;
-            ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
-
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -355,10 +367,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nictrace", 8))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = 0;
-            ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
 
             unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
             if (!n)
@@ -405,11 +414,8 @@ int handleControlVM(HandlerArg *a)
                 && !strncmp(a->argv[1], "natpf", 5))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = 0;
-            ComPtr <ISystemProperties> info;
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             ComPtr<INATEngine> engine;
-            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
             unsigned n = parseNum(&a->argv[1][5], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -502,11 +508,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nic", 3))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = 0;
-            ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
-
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox,sessionMachine) ;
             unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -1034,4 +1036,3 @@ int handleControlVM(HandlerArg *a)
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
-

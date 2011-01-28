@@ -846,14 +846,16 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             RTPrintf("Maximum guest CPU count:         %u\n", ulValue);
             systemProperties->COMGETTER(InfoVDSize)(&i64Value);
             RTPrintf("Virtual disk limit (info):       %lld Bytes\n", i64Value);
-            systemProperties->COMGETTER(NetworkAdapterCount)(&ulValue);
-            RTPrintf("Maximum Network Adapter count:   %u\n", ulValue);
             systemProperties->COMGETTER(SerialPortCount)(&ulValue);
             RTPrintf("Maximum Serial Port count:       %u\n", ulValue);
             systemProperties->COMGETTER(ParallelPortCount)(&ulValue);
             RTPrintf("Maximum Parallel Port count:     %u\n", ulValue);
             systemProperties->COMGETTER(MaxBootPosition)(&ulValue);
             RTPrintf("Maximum Boot Position:           %u\n", ulValue);
+            systemProperties->GetMaxNetworkAdapters(ChipsetType_PIIX3, &ulValue);
+            RTPrintf("Maximum PIIX3 Network Adapter count:   %u\n", ulValue);
+            systemProperties->GetMaxNetworkAdapters(ChipsetType_ICH9,  &ulValue);
+            RTPrintf("Maximum ICH9 Network Adapter count:   %u\n", ulValue);
             systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_IDE, &ulValue);
             RTPrintf("Maximum PIIX3 IDE Controllers:   %u\n", ulValue);
             systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_IDE, &ulValue);

@@ -317,13 +317,6 @@ int handleModifyVM(HandlerArg *a)
     if (a->argc < 2)
         return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
 
-    /* Get the number of network adapters */
-    ULONG NetworkAdapterCount = 0;
-    {
-        ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()), 1);
-        CHECK_ERROR_RET(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount), 1);
-    }
     ULONG SerialPortCount = 0;
     {
         ComPtr <ISystemProperties> info;
@@ -334,6 +327,10 @@ int handleModifyVM(HandlerArg *a)
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                                machine.asOutParam()), 1);
+
+
+    /* Get the number of network adapters */
+    ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, machine);
 
     /* open a session for the VM */
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);

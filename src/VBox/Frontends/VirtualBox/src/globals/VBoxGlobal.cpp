@@ -1813,7 +1813,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        ulong count = mVBox.GetSystemProperties().GetNetworkAdapterCount();
+        ulong count = mVBox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
         int rows = 2; /* including section header and footer */
         for (ulong slot = 0; slot < count; slot ++)
         {
