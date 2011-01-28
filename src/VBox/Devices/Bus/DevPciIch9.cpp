@@ -1201,7 +1201,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
      * Loop thru the fields covering the 64 bytes of standard registers.
      */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
-    Assert(!PCIIsPassthrough(pDev)); 
+    Assert(!PCIIsPassthrough(pDev));
     uint8_t *pbDstConfig = &pDev->config[0];
 
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
@@ -1397,7 +1397,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
                                      i, pDev->name, PCIDevGetVendorId(&DevTmp), PCIDevGetVendorId(pDev));
 
         /* commit the loaded device config. */
-        Assert(!PCIIsPassthrough(pDev)); 
+        Assert(!PCIIsPassthrough(pDev));
         pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
@@ -1755,8 +1755,8 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         AssertMsgReturn(false, ("Read from extended registers falled back to generic code\n"), 0);
     }
 
-    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"), 
-                    0); 
+    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
+                    0);
     if (   PCIIsMsiCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsiCapOffset)
         && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
@@ -2273,8 +2273,8 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
                                           int        iInstance,
                                           PCFGMNODE  pCfg)
 {
-    int rc;
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read configuration.
@@ -2290,7 +2290,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     /* query whether we got an IOAPIC */
     bool fUseIoApic;
-    rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &fUseIoApic, false);
+    int rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &fUseIoApic, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
@@ -2587,7 +2587,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
                                                   int        iInstance,
                                                   PCFGMNODE  pCfg)
 {
-    int rc;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read configuration.
@@ -2597,7 +2597,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
 
     /* check if RC code is enabled. */
     bool fGCEnabled;
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
+    int rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));

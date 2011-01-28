@@ -34,7 +34,7 @@
 #include "VMMDev.h"
 #include "Global.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-#include "PciRawDevImpl.h"
+# include "PciRawDevImpl.h"
 #endif
 
 // generated header
