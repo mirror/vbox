@@ -827,11 +827,13 @@ static DECLCALLBACK(int) serialNotifyBreak(PPDMICHARPORT pInterface)
 static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     SerialState *s = (SerialState*)pvUser;
+    PDMCritSectEnter(&s->CritSect, VERR_PERMISSION_DENIED);
     if (s->recv_fifo.count)
     {
         s->timeout_ipending = 1;
         serial_update_irq(s);
     }
+    PDMCritSectLeave(&s->CritSect);
 }
 
 /**
@@ -845,7 +847,9 @@ static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 static DECLCALLBACK(void) serialTransmitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     SerialState *s = (SerialState*)pvUser;
+    PDMCritSectEnter(&s->CritSect, VERR_PERMISSION_DENIED);
     serial_xmit(s, true);
+    PDMCritSectLeave(&s->CritSect);
 }
 
 /**
