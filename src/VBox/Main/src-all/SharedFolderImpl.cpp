@@ -80,11 +80,14 @@ void SharedFolder::FinalRelease()
 /**
  *  Initializes the shared folder object.
  *
+ *  This variant initializes a machine instance that lives in the server address space.
+ *
  *  @param aMachine     parent Machine object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
  *  @param aAutoMount   if auto mounted by guest true, false otherwise
+ *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
  */
@@ -92,7 +95,8 @@ HRESULT SharedFolder::init(Machine *aMachine,
                            const Utf8Str &aName,
                            const Utf8Str &aHostPath,
                            bool aWritable,
-                           bool aAutoMount)
+                           bool aAutoMount,
+                           bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -100,7 +104,7 @@ HRESULT SharedFolder::init(Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount);
+    HRESULT rc = protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -133,7 +137,8 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
                                aThat->m->strName,
                                aThat->m->strHostPath,
                                aThat->m->fWritable,
-                               aThat->m->fAutoMount);
+                               aThat->m->fAutoMount,
+                               false /* fFailOnError */ );
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -143,13 +148,15 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
 }
 
 /**
- *  Initializes the shared folder object. This variant gets called when
- *  the shared folder lives in the Console address space.
+ *  Initializes the shared folder object.
+ *
+ *  This variant initializes an instance that lives in the console address space.
  *
  *  @param aConsole     Console parent object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
+ *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
  */
@@ -157,7 +164,8 @@ HRESULT SharedFolder::init(Console *aConsole,
                            const Utf8Str &aName,
                            const Utf8Str &aHostPath,
                            bool aWritable,
-                           bool aAutoMount)
+                           bool aAutoMount,
+                           bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -165,7 +173,7 @@ HRESULT SharedFolder::init(Console *aConsole,
 
     unconst(mConsole) = aConsole;
 
-    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount);
+    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -174,14 +182,18 @@ HRESULT SharedFolder::init(Console *aConsole,
     return rc;
 }
 
+#if 0
+
 /**
- *  Initializes the shared folder object. This variant gets called when
- *  the shared folder lives in the VirtualBox (server) address space.
+ *  Initializes the shared folder object.
+ *
+ *  This variant initializes a global instance that lives in the server address space. It is not presently used.
  *
  *  @param aVirtualBox  VirtualBox parent object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
+ *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
  */
@@ -189,7 +201,8 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
                            const Utf8Str &aName,
                            const Utf8Str &aHostPath,
                            bool aWritable,
-                           bool aAutoMount)
+                           bool aAutoMount,
+                           bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -206,6 +219,8 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
     return rc;
 }
 
+#endif
+
 /**
  *  Shared initialization code. Called from the other constructors.
  *
@@ -216,7 +231,8 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
                                     const Utf8Str &aName,
                                     const Utf8Str &aHostPath,
                                     bool aWritable,
-                                    bool aAutoMount)
+                                    bool aAutoMount,
+                                    bool fFailOnError)
 {
     LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d}\n",
                       aName.c_str(), aHostPath.c_str(), aWritable, aAutoMount));
@@ -244,21 +260,24 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
     else
         hostPath.stripTrailingSlash();
 
-    /* Check whether the path is full (absolute) */
-    char hostPathFull[RTPATH_MAX];
-    int vrc = RTPathAbsEx(NULL,
-                          hostPath.c_str(),
-                          hostPathFull,
-                          sizeof (hostPathFull));
-    if (RT_FAILURE(vrc))
-        return setError(E_INVALIDARG,
-                        tr("Invalid shared folder path: '%s' (%Rrc)"),
-                        hostPath.c_str(), vrc);
+    if (fFailOnError)
+    {
+        /* Check whether the path is full (absolute) */
+        char hostPathFull[RTPATH_MAX];
+        int vrc = RTPathAbsEx(NULL,
+                              hostPath.c_str(),
+                              hostPathFull,
+                              sizeof (hostPathFull));
+        if (RT_FAILURE(vrc))
+            return setError(E_INVALIDARG,
+                            tr("Invalid shared folder path: '%s' (%Rrc)"),
+                            hostPath.c_str(), vrc);
 
-    if (RTPathCompare(hostPath.c_str(), hostPathFull) != 0)
-        return setError(E_INVALIDARG,
-                        tr("Shared folder path '%s' is not absolute"),
-                        hostPath.c_str());
+        if (RTPathCompare(hostPath.c_str(), hostPathFull) != 0)
+            return setError(E_INVALIDARG,
+                            tr("Shared folder path '%s' is not absolute"),
+                            hostPath.c_str());
+    }
 
     unconst(mParent) = aParent;
 

@@ -4651,15 +4651,22 @@ STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    Utf8Str strName(aName);
+
     ComObjPtr<SharedFolder> sharedFolder;
-    rc = findSharedFolder(aName, sharedFolder, false /* aSetError */);
+    rc = findSharedFolder(strName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED(rc))
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Shared folder named '%ls' already exists"),
-                        aName);
+                        tr("Shared folder named '%s' already exists"),
+                        strName.c_str());
 
     sharedFolder.createObject();
-    rc = sharedFolder->init(getMachine(), aName, aHostPath, aWritable, aAutoMount);
+    rc = sharedFolder->init(getMachine(),
+                            strName,
+                            aHostPath,
+                            !!aWritable,
+                            !!aAutoMount,
+                           true /* fFailOnError */);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_SharedFolders);
