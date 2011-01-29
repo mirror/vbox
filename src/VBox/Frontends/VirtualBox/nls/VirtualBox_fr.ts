@@ -674,12 +674,12 @@
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>Nom</translation>
+        <translation>Nom </translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Système d&apos;exploitation</translation>
+        <translation>Système d&apos;exploitation </translation>
     </message>
     <message>
         <source>Base Memory</source>
@@ -694,7 +694,7 @@
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation>Processeurs</translation>
+        <translation>Processeurs </translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -729,7 +729,7 @@
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Pagination imbriquée</translation>
+        <translation>Pagination imbriquée </translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -739,7 +739,7 @@
     <message>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation>Accélération</translation>
+        <translation>Accélération </translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -754,22 +754,22 @@
     <message>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation>2D</translation>
+        <translation>2D </translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details report</comment>
-        <translation>3D</translation>
+        <translation>3D </translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Port du bureau à distance</translation>
+        <translation>Port du bureau à distance </translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Serveur du bureau à distance (RDP)</translation>
+        <translation>Serveur du bureau à distance (RDP) </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -823,7 +823,7 @@
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Carte %1</translation>
+        <translation>Carte %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -833,7 +833,7 @@
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Port %1</translation>
+        <translation>Port %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -843,7 +843,7 @@
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Port %1</translation>
+        <translation>Port %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -868,7 +868,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Dossiers partagés</translation>
+        <translation>Dossiers partagés </translation>
     </message>
     <message>
         <source>None</source>
@@ -3071,7 +3071,7 @@
     </message>
     <message>
         <source>&amp;Chipset:</source>
-        <translation>&amp;Chipset:</translation>
+        <translation>&amp;Chipset :</translation>
     </message>
     <message>
         <source>Defines chipset type used in this VM.</source>
@@ -6985,7 +6985,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Manager</source>
-        <translation>Gestionnaire</translation>
+        <translation>-- Gestionnaire de machines</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
