@@ -163,6 +163,7 @@ xf86GetPointerScreenFuncs
 xf86HandleColormaps
 xf86InitCursor
 xf86InitialConfiguration
+xf86InterpretEDID
 xf86LoadSubModule
 xf86LoaderCheckSymbol
 xf86LoaderReqSymLists
