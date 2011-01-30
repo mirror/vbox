@@ -1034,9 +1034,9 @@ enum
  * @param    pcy     where to store the mode's height
  * @param    pcBits  where to store the mode's BPP
  */
-static unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
-                                     uint32_t *pcx, uint32_t *pcy,
-                                     uint32_t *pcBits)
+unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
+                              uint32_t *pcx, uint32_t *pcy,
+                              uint32_t *pcBits)
 {
     XF86ASSERT(cIndex < vboxNumStdModes,
                ("cIndex = %d, vboxNumStdModes = %d\n", cIndex,

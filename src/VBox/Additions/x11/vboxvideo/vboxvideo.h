@@ -256,6 +256,9 @@ extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
 extern Bool vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
 extern Bool vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits);
 extern Bool vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
+extern unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
+                                     uint32_t *pcx, uint32_t *pcy,
+                                     uint32_t *pcBits);
 extern void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t iScreen,
                                  uint32_t *pcx, uint32_t *pcy,
                                  uint32_t *pcBits);
@@ -269,9 +272,8 @@ extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
-/* Xinerama stuff */
-#define VBOXRAMA_MAJOR_VERSION 1
-#define VBOXRAMA_MINOR_VERSION 0
+/* EDID generation */
+extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
 
 #endif /* _VBOXVIDEO_H_ */
 
