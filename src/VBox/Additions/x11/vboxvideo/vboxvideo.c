@@ -403,7 +403,7 @@ vbox_output_detect (xf86OutputPtr output)
     return XF86OutputStatusConnected;
 }
 
-static void
+static DisplayModePtr
 vbox_output_add_mode (VBOXPtr pVBox, DisplayModePtr *pModes,
                       const char *pszName, int x, int y,
                       Bool isPreferred, Bool isUserDef)
@@ -437,13 +437,14 @@ vbox_output_add_mode (VBOXPtr pVBox, DisplayModePtr *pModes,
         pMode->name          = xnfstrdup(pszName);
     }
     *pModes = xf86ModesAdd(*pModes, pMode);
+    return pMode;
 }
 
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    unsigned i;
-    DisplayModePtr pModes = NULL;
+    unsigned i, cIndex = 0;
+    DisplayModePtr pModes = NULL, pMode;
     ScrnInfoPtr pScrn = output->scrn;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
@@ -451,7 +452,16 @@ vbox_output_get_modes (xf86OutputPtr output)
     uint32_t x, y, bpp, iScreen;
     iScreen = (uintptr_t)output->driver_private;
     vboxGetPreferredMode(pScrn, iScreen, &x, &y, &bpp);
-    vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
+    pMode = vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
+    VBOXEDIDSet(output, pMode);
+    /* Add standard modes supported by the host */
+    for ( ; ; )
+    {
+        cIndex = vboxNextStandardMode(pScrn, cIndex, &x, &y, NULL);
+        if (cIndex == 0)
+            break;
+        vbox_output_add_mode(pVBox, &pModes, NULL, x, y, FALSE, FALSE);
+    }
 
     /* Also report any modes the user may have requested in the xorg.conf
      * configuration file. */
@@ -469,10 +479,13 @@ vbox_output_get_modes (xf86OutputPtr output)
 static Atom
 vboxAtomVBoxMode(void)
 {
-    static Atom rc = 0;
-    if (!rc)
-        rc = MakeAtom("VBOX_MODE", sizeof("VBOX_MODE") - 1, TRUE);
-    return rc;
+    return MakeAtom("VBOX_MODE", sizeof("VBOX_MODE") - 1, TRUE);
+}
+
+static Atom
+vboxAtomEDID(void)
+{
+    return MakeAtom("EDID", sizeof("EDID") - 1, TRUE);
 }
 
 /** We use this for receiving information from clients for the purpose of
@@ -503,6 +516,8 @@ vbox_output_set_property(xf86OutputPtr output, Atom property,
         pVBox->aPreferredSize[cDisplay].cy = h;
         return TRUE;
     }
+    if (property == vboxAtomEDID())
+        return TRUE;
     return FALSE;
 }
 #endif

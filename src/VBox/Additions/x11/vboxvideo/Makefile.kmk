@@ -140,7 +140,7 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
 vboxvideo_drv_13_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
-vboxvideo_drv_13_SOURCES = $(vboxvideo_drv_SOURCES)
+vboxvideo_drv_13_SOURCES = $(vboxvideo_drv_SOURCES) edid.c
 
 
 #
@@ -159,7 +159,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
 vboxvideo_drv_14_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
-vboxvideo_drv_14_SOURCES  = $(vboxvideo_drv_SOURCES)
+vboxvideo_drv_14_SOURCES  = $(vboxvideo_drv_13_SOURCES)
 
 
 #
@@ -182,7 +182,7 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
 vboxvideo_drv_15_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
-vboxvideo_drv_15_SOURCES  = $(vboxvideo_drv_SOURCES)
+vboxvideo_drv_15_SOURCES  = $(vboxvideo_drv_13_SOURCES)
 if1of ($(KBUILD_TARGET), linux solaris)
  vboxvideo_drv_15_SOURCES += \
 	vboxvideo_dri.c

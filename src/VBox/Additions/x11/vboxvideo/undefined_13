@@ -186,6 +186,7 @@ xf86SetDefaultVisual
 xf86SetDepthBpp
 xf86SetDesiredModes
 xf86SetDpi
+xf86OutputSetEDID
 xf86SetGamma
 xf86SetModeDefaultName
 xf86SetSingleMode
