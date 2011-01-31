@@ -1735,7 +1735,7 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
 static int vdWriteHelperOptimizedCommitAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVDIMAGE pImage = pIoCtx->pImageCur;
+    PVDIMAGE pImage = pIoCtx->pImageStart;
     size_t cbPreRead      = pIoCtx->Type.Child.cbPreRead;
     size_t cbPostRead     = pIoCtx->Type.Child.cbPostRead;
     size_t cbThisWrite    = pIoCtx->Type.Child.cbTransferParent;
