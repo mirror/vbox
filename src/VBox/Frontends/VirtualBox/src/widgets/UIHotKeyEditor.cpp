@@ -431,7 +431,6 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
 
             /* Process the key event */
             return processKeyEvent(iKeySym, pEvent->type == XKeyPress);
-            /* Check if symbol is valid else pass it to Qt: */
         }
     }
 
