@@ -27,6 +27,7 @@
 #include <QStyleOption>
 #include <QStylePainter>
 #include <QKeyEvent>
+#include <QTimer>
 
 #ifdef Q_WS_WIN
 # undef LOWORD
@@ -55,7 +56,6 @@
 # include "DarwinKeyboard.h"
 # include "VBoxUtils.h"
 # include <Carbon/Carbon.h>
-# include <QTimer>
 #endif /* Q_WS_MAC */
 
 
@@ -202,23 +202,41 @@ bool UIHotKey::isValidKey(int iKeyCode)
 }
 
 #ifdef Q_WS_WIN
-int UIHotKey::distinguishModifierVKey(int wParam)
+int UIHotKey::distinguishModifierVKey(int wParam, int lParam)
 {
     int iKeyCode = wParam;
     switch (iKeyCode)
     {
         case VK_SHIFT:
-            if (::GetKeyState(VK_LSHIFT) & 0x8000) iKeyCode = VK_LSHIFT;
-            else if (::GetKeyState(VK_RSHIFT) & 0x8000) iKeyCode = VK_RSHIFT;
+        {
+            UINT uCurrentScanCode = (lParam & 0x01FF0000) >> 16;
+            UINT uLeftScanCode = ::MapVirtualKey(iKeyCode, 0);
+            if (uCurrentScanCode == uLeftScanCode)
+                iKeyCode = VK_LSHIFT;
+            else
+                iKeyCode = VK_RSHIFT;
             break;
+        }
         case VK_CONTROL:
-            if (::GetKeyState(VK_LCONTROL) & 0x8000) iKeyCode = VK_LCONTROL;
-            else if (::GetKeyState(VK_RCONTROL) & 0x8000) iKeyCode = VK_RCONTROL;
+        {
+            UINT uCurrentScanCode = (lParam & 0x01FF0000) >> 16;
+            UINT uLeftScanCode = ::MapVirtualKey(iKeyCode, 0);
+            if (uCurrentScanCode == uLeftScanCode)
+                iKeyCode = VK_LCONTROL;
+            else
+                iKeyCode = VK_RCONTROL;
             break;
+        }
         case VK_MENU:
-            if (::GetKeyState(VK_LMENU) & 0x8000) iKeyCode = VK_LMENU;
-            else if (::GetKeyState(VK_RMENU) & 0x8000) iKeyCode = VK_RMENU;
+        {
+            UINT uCurrentScanCode = (lParam & 0x01FF0000) >> 16;
+            UINT uLeftScanCode = ::MapVirtualKey(iKeyCode, 0);
+            if (uCurrentScanCode == uLeftScanCode)
+                iKeyCode = VK_LMENU;
+            else
+                iKeyCode = VK_RMENU;
             break;
+        }
     }
     return iKeyCode;
 }
@@ -282,6 +300,7 @@ bool UIHotKeyCombination::isValidKeyCombo(const QString &strKeyCombo)
 
 UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     : QLabel(pParent)
+    , m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
 {
     /* Configure widget: */
@@ -297,6 +316,11 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     p.setColor(QPalette::Active, QPalette::Background, p.color(QPalette::Active, QPalette::Base));
     setPalette(p);
 
+    /* Setup release-pending-keys timer: */
+    m_pReleaseTimer = new QTimer(this);
+    m_pReleaseTimer->setInterval(200);
+    connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
+
 #ifdef Q_WS_X11
     /* Initialize the X keyboard subsystem: */
     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
@@ -306,11 +330,6 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     m_uDarwinKeyModifiers = 0;
     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHotKeyEditor::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
-
-    m_pRemoveTimer = new QTimer(this);
-    m_pRemoveTimer->setInterval(200);
-    connect(m_pRemoveTimer, SIGNAL(timeout()),
-            this, SLOT(removePendingKeys()));
 #endif /* Q_WS_MAC */
 }
 
@@ -381,11 +400,14 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
         case WM_SYSKEYUP:
         {
             /* Get key-code: */
-            int iKeyCode = UIHotKey::distinguishModifierVKey((int)pMsg->wParam);
+            int iKeyCode = UIHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
 
             /* Check if symbol is valid else pass it to Qt: */
             if (!UIHotKey::isValidKey(iKeyCode))
                 return false;
+
+            /* Stop the release-pending-keys timer: */
+            m_pReleaseTimer->stop();
 
             /* Key press: */
             if (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
@@ -393,12 +415,13 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
                 /* Clear reflected symbols if new sequence started: */
                 if (m_fStartNewSequence)
                     m_shownKeys.clear();
-
+                /* Make sure any keys pending for releasing are processed: */
+                sltReleasePendingKeys();
                 /* Check maximum combo size: */
                 if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
                 {
                     /* Remember pressed symbol: */
-                    m_pressedKeys << pMsg->wParam;
+                    m_pressedKeys << iKeyCode;
                     m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
 
                     /* Remember what we already started a sequence: */
@@ -408,12 +431,19 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
             /* Key release: */
             else if (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
             {
-                /* Remove pressed symbol: */
-                m_pressedKeys.remove(pMsg->wParam);
+                /* Queue released symbol for processing: */
+                m_releasedKeys << iKeyCode;
 
-                /* If pressed keys map is empty => start new sequence: */
-                if (m_pressedKeys.isEmpty())
+                /* If all pressed keys are now pending for releasing we should stop further handling.
+                 * Now we have the status the user want: */
+                if (m_pressedKeys == m_releasedKeys)
+                {
+                    m_pressedKeys.clear();
+                    m_releasedKeys.clear();
                     m_fStartNewSequence = true;
+                }
+                else
+                    m_pReleaseTimer->start();
             }
 
             /* Update text: */
@@ -447,13 +477,17 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
             if (!UIHotKey::isValidKey(iKeySym))
                 return false;
 
+            /* Stop the release-pending-keys timer: */
+            m_pReleaseTimer->stop();
+
             /* Key press: */
             if (pEvent->type == XKeyPress)
             {
                 /* Clear reflected symbols if new sequence started: */
                 if (m_fStartNewSequence)
                     m_shownKeys.clear();
-
+                /* Make sure any keys pending for releasing are processed: */
+                sltReleasePendingKeys();
                 /* Check maximum combo size: */
                 if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
                 {
@@ -468,12 +502,19 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
             /* Key release: */
             else if (pEvent->type == XKeyRelease)
             {
-                /* Remove pressed symbol: */
-                m_pressedKeys.remove(iKeySym);
+                /* Queue released symbol for processing: */
+                m_releasedKeys << iKeySym;
 
-                /* If pressed keys map is empty => start new sequence: */
-                if (m_pressedKeys.isEmpty())
+                /* If all pressed keys are now pending for releasing we should stop further handling.
+                 * Now we have the status the user want: */
+                if (m_pressedKeys == m_releasedKeys)
+                {
+                    m_pressedKeys.clear();
+                    m_releasedKeys.clear();
                     m_fStartNewSequence = true;
+                }
+                else
+                    m_pReleaseTimer->start();
             }
 
             /* Update text: */
@@ -492,11 +533,11 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
 /* static */
 bool UIHotKeyEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
-    UIHotKeyEditor *edit = (UIHotKeyEditor*)pvUser;
+    UIHotKeyEditor *pEditor = (UIHotKeyEditor*)pvUser;
     EventRef inEvent = (EventRef)pvCarbonEvent;
     UInt32 EventClass = ::GetEventClass(inEvent);
     if (EventClass == kEventClassKeyboard)
-        return edit->darwinKeyboardEvent(pvCocoaEvent, inEvent);
+        return pEditor->darwinKeyboardEvent(pvCocoaEvent, inEvent);
     return false;
 }
 
@@ -532,17 +573,16 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             {
                 /* Stop the delete pending keys timer. */
                 m_pRemoveTimer->stop();
-                /* If modifierMask is empty, no key is pressed anymore. Stop
-                 * all key handling and the deletion of keys. This is the
-                 * status the user want. */
+                /* If modifierMask is empty, no key is pressed anymore.
+                 * Stop all key handling and the deletion of keys. This is the status the user want: */
                 if (!modifierMask)
                     m_fStartNewSequence = true;
                 /* Key release: */
                 else if (!(changed & modifierMask))
                 {
-                    /* Queue pressed symbol for removing: */
-                    m_removeKeys.insert(iKeyCode);
-                    m_pRemoveTimer->start();
+                    /* Queue released symbol for processing: */
+                    m_releasedKeys << iKeyCode;
+                    m_pReleaseTimer->start();
                 }
                 /* Key press: */
                 else
@@ -550,8 +590,8 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
                     /* Clear reflected symbols if new sequence started: */
                     if (m_fStartNewSequence)
                         m_shownKeys.clear();
-                    /* Make sure any keys pending for removal are removed. */
-                    removePendingKeys();
+                    /* Make sure any keys pending for releasing are processed: */
+                    sltReleasePendingKeys();
                     /* Check maximum combo size: */
                     if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
                     {
@@ -574,28 +614,6 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
     }
     return false;
 }
-
-void UIHotKeyEditor::removePendingKeys()
-{
-    /* Stop the timer, we process all pending keys at once. */
-    m_pRemoveTimer->stop();
-    /* Something to do? */
-    if (!m_removeKeys.isEmpty())
-    {
-        /* Remove every key. */
-        foreach(int v, m_removeKeys)
-        {
-            m_pressedKeys.remove(v);
-            m_shownKeys.remove(v);
-        }
-        m_removeKeys.clear();
-        if (m_pressedKeys.isEmpty())
-            m_fStartNewSequence = true;
-    }
-    /* Make sure the user see what happens. */
-    updateText();
-}
-
 #endif /* Q_WS_MAC */
 
 void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
@@ -645,6 +663,29 @@ void UIHotKeyEditor::paintEvent(QPaintEvent *pEvent)
         painter.drawPrimitive(QStyle::PE_FrameFocusRect, option);
     }
     QLabel::paintEvent(pEvent);
+}
+
+void UIHotKeyEditor::sltReleasePendingKeys()
+{
+    /* Stop the timer, we process all pending keys at once: */
+    m_pReleaseTimer->stop();
+    /* Something to do? */
+    if (!m_releasedKeys.isEmpty())
+    {
+        /* Remove every key: */
+        QSetIterator<int> iterator(m_releasedKeys);
+        while (iterator.hasNext())
+        {
+            int iKeyCode = iterator.next();
+            m_pressedKeys.remove(iKeyCode);
+            m_shownKeys.remove(iKeyCode);
+        }
+        m_releasedKeys.clear();
+        if (m_pressedKeys.isEmpty())
+            m_fStartNewSequence = true;
+    }
+    /* Make sure the user see what happens: */
+    updateText();
 }
 
 void UIHotKeyEditor::updateText()
