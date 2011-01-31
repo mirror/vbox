@@ -3293,7 +3293,7 @@ def interpret(ctx):
 
     home = getHomeFolder(ctx)
     checkUserExtensions(ctx, commands, home)
-    if platform.system() == 'Windows':
+    if platform.system() in ['Windows', 'Microsoft']:
         global g_hascolors
         g_hascolors = False
     hist_file=os.path.join(home, ".vboxshellhistory")
