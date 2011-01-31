@@ -126,7 +126,10 @@ int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /
 }
 
 
-int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
+                                        IHostNetworkInterface **aHostNetworkInterface, 
+                                        IProgress **aProgress,
+                                        const char *pcszName)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /* create a progress object */
@@ -154,7 +157,14 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface
                                          "Failed to get program path, rc=%Rrc\n", rc);
                 return rc;
             }
-            strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " add");
+            strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " ");
+            if (pcszName && strlen(pcszName) <= RTPATH_MAX - strlen(szAdpCtl) - sizeof(" add"))
+            {
+                strcat(szAdpCtl, pcszName);
+                strcat(szAdpCtl, " add");
+            }
+            else
+                strcat(szAdpCtl, "add");
             FILE *fp = popen(szAdpCtl, "r");
 
             if (fp)

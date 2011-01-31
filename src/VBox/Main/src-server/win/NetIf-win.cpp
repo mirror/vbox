@@ -1084,7 +1084,8 @@ int NetIfGetConfigByName(PNETIFINFO)
 
 int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                                         IHostNetworkInterface **aHostNetworkInterface,
-                                        IProgress **aProgress)
+                                        IProgress **aProgress,
+                                        const char *pcszName)
 {
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;

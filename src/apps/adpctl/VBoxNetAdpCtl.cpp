@@ -65,7 +65,7 @@ typedef VBOXNETADPREQ *PVBOXNETADPREQ;
 static void showUsage(void)
 {
     fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> ([netmask <address>] | remove)\n");
-    fprintf(stderr, "     | VBoxNetAdpCtl add\n");
+    fprintf(stderr, "     | VBoxNetAdpCtl [<adapter>] add\n");
     fprintf(stderr, "     | VBoxNetAdpCtl <adapter> remove\n");
 }
 
@@ -267,21 +267,33 @@ int main(int argc, char *argv[])
 
         case 3:
         {
-            /* Remove an existing interface */
             pszAdapterName = argv[1];
+            memset(&Req, '\0', sizeof(Req));
+            rc = checkAdapterName(pszAdapterName, szAdapterName);
+            if (rc)
+                return rc;
+            snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
             pszAddress = argv[2];
             if (strcmp("remove", pszAddress) == 0)
             {
-                rc = checkAdapterName(pszAdapterName, szAdapterName);
-                if (rc)
-                    return rc;
+                /* Remove an existing interface */
 #ifdef RT_OS_SOLARIS
                 return 1;
 #else
-                memset(&Req, '\0', sizeof(Req));
-                snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
                 return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
 #endif
+            }
+            else if (strcmp("add", pszAddress) == 0)
+            {
+                /* Create an interface with given name */
+#ifdef RT_OS_SOLARIS
+                return 1;
+#else
+                rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
+                if (rc == 0)
+                    puts(Req.szName);
+#endif
+                return rc;
             }
             break;
         }

@@ -140,7 +140,7 @@ typedef VBOXNETADP *PVBOXNETADP;
 
 DECLHIDDEN(int) vboxNetAdpInit(void);
 DECLHIDDEN(void) vboxNetAdpShutdown(void);
-DECLHIDDEN(int) vboxNetAdpCreate (PVBOXNETADP *ppNew);
+DECLHIDDEN(int) vboxNetAdpCreate (PVBOXNETADP *ppNew, const char *pcszName);
 DECLHIDDEN(int) vboxNetAdpDestroy(PVBOXNETADP pThis);
 DECLHIDDEN(PVBOXNETADP) vboxNetAdpFindByName(const char *pszName);
 DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac);
@@ -176,7 +176,7 @@ DECLHIDDEN(void) vboxNetAdpOsDestroy(PVBOXNETADP pThis);
  *
  * @remarks Owns no locks.
  */
-DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac);
+DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac, const char *pcszName);
 
 
 
