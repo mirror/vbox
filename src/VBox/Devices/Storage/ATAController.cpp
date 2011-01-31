@@ -4259,27 +4259,26 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                 break;
 
             case AHCIATA_AIO_ABORT:
-                /* Abort the current command only if it operates on the same interface. */
-                if (pCtl->iAIOIf == pReq->u.a.iIf)
-                {
-                    s = &pCtl->aIfs[pCtl->iAIOIf];
+                /* Abort the current command no matter what. There cannot be
+                 * any command activity on the other drive otherwise using
+                 * one thread per controller wouldn't work at all. */
+                s = &pCtl->aIfs[pReq->u.a.iIf];
 
-                    pCtl->uAsyncIOState = AHCIATA_AIO_NEW;
-                    /* Do not change the DMA registers, they are not affected by the
-                     * ATA controller reset logic. It should be sufficient to issue a
-                     * new command, which is now possible as the state is cleared. */
-                    if (pReq->u.a.fResetDrive)
-                    {
-                        ataResetDevice(s);
-                        ataExecuteDeviceDiagnosticSS(s);
-                    }
-                    else
-                    {
-                        ataPIOTransferStop(s);
-                        ataUnsetStatus(s, ATA_STAT_BUSY | ATA_STAT_DRQ | ATA_STAT_SEEK | ATA_STAT_ERR);
-                        ataSetStatus(s, ATA_STAT_READY);
-                        ataSetIRQ(s);
-                    }
+                pCtl->uAsyncIOState = AHCIATA_AIO_NEW;
+                /* Do not change the DMA registers, they are not affected by the
+                 * ATA controller reset logic. It should be sufficient to issue a
+                 * new command, which is now possible as the state is cleared. */
+                if (pReq->u.a.fResetDrive)
+                {
+                    ataResetDevice(s);
+                    ataExecuteDeviceDiagnosticSS(s);
+                }
+                else
+                {
+                    ataPIOTransferStop(s);
+                    ataUnsetStatus(s, ATA_STAT_BUSY | ATA_STAT_DRQ | ATA_STAT_SEEK | ATA_STAT_ERR);
+                    ataSetStatus(s, ATA_STAT_READY);
+                    ataSetIRQ(s);
                 }
                 break;
 
