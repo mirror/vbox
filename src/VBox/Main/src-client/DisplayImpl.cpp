@@ -2348,6 +2348,12 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
 
+    /* Do not allow too large screenshots. This also filters out negative
+     * values passed as either 'width' or 'height'.
+     */
+    CheckComArgExpr(width, width <= 32767);
+    CheckComArgExpr(height, height <= 32767);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -2396,6 +2402,12 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
     CheckComArgOutSafeArrayPointerValid(aScreenData);
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
+
+    /* Do not allow too large screenshots. This also filters out negative
+     * values passed as either 'width' or 'height'.
+     */
+    CheckComArgExpr(width, width <= 32767);
+    CheckComArgExpr(height, height <= 32767);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2469,6 +2481,12 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
     CheckComArgOutSafeArrayPointerValid(aScreenData);
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
+
+    /* Do not allow too large screenshots. This also filters out negative
+     * values passed as either 'width' or 'height'.
+     */
+    CheckComArgExpr(width, width <= 32767);
+    CheckComArgExpr(height, height <= 32767);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
