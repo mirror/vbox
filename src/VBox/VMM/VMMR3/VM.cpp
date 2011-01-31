@@ -300,7 +300,12 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     break;
 
                 case VERR_VERSION_MISMATCH:
-                    pszError = N_("VMMR0 driver version mismatch. Please terminate all VMs, make sure that "
+                    pszError = N_("VMMR0 driver version mismatch:\n"
+                                  "Either there is an older extension package installed which does not "
+                                  "fit to this version of VirtualBox. In that case update the extension "
+                                  "pack. Make sure to terminate all VMs before.\n"
+                                  "Or VirtualBox was recently upgraded and there is still some process "
+                                  "of the older version active. Please terminate all VMs, make sure that "
                                   "VBoxNetDHCP is not running and try again. If you still get this error, "
                                   "re-install VirtualBox");
                     break;
