@@ -181,6 +181,9 @@ bool UIHotKey::isValidKey(int iKeyCode)
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
+    if (!iKeyCode || iKeyCode == ~0U)
+        return false;
+
     UInt32 modMask = ::DarwinKeyCodeToDarwinModifierMask(iKeyCode);
     switch (modMask)
     {
@@ -402,55 +405,8 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
             /* Get key-code: */
             int iKeyCode = UIHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
 
-            /* Check if symbol is valid else pass it to Qt: */
-            if (!UIHotKey::isValidKey(iKeyCode))
-                return false;
-
-            /* Stop the release-pending-keys timer: */
-            m_pReleaseTimer->stop();
-
-            /* Key press: */
-            if (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
-            {
-                /* Clear reflected symbols if new sequence started: */
-                if (m_fStartNewSequence)
-                    m_shownKeys.clear();
-                /* Make sure any keys pending for releasing are processed: */
-                sltReleasePendingKeys();
-                /* Check maximum combo size: */
-                if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
-                {
-                    /* Remember pressed symbol: */
-                    m_pressedKeys << iKeyCode;
-                    m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
-
-                    /* Remember what we already started a sequence: */
-                    m_fStartNewSequence = false;
-                }
-            }
-            /* Key release: */
-            else if (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
-            {
-                /* Queue released symbol for processing: */
-                m_releasedKeys << iKeyCode;
-
-                /* If all pressed keys are now pending for releasing we should stop further handling.
-                 * Now we have the status the user want: */
-                if (m_pressedKeys == m_releasedKeys)
-                {
-                    m_pressedKeys.clear();
-                    m_releasedKeys.clear();
-                    m_fStartNewSequence = true;
-                }
-                else
-                    m_pReleaseTimer->start();
-            }
-
-            /* Update text: */
-            updateText();
-
-            /* Prevent passing to Qt: */
-            return true;
+            /* Process the key event */
+            return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
         }
         default:
             break;
@@ -473,55 +429,9 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
             KeySym ks = ::XKeycodeToKeysym(pKeyEvent->display, pKeyEvent->keycode, 0);
             int iKeySym = (int)ks;
 
+            /* Process the key event */
+            return processKeyEvent(iKeySym, pEvent->type == XKeyPress);
             /* Check if symbol is valid else pass it to Qt: */
-            if (!UIHotKey::isValidKey(iKeySym))
-                return false;
-
-            /* Stop the release-pending-keys timer: */
-            m_pReleaseTimer->stop();
-
-            /* Key press: */
-            if (pEvent->type == XKeyPress)
-            {
-                /* Clear reflected symbols if new sequence started: */
-                if (m_fStartNewSequence)
-                    m_shownKeys.clear();
-                /* Make sure any keys pending for releasing are processed: */
-                sltReleasePendingKeys();
-                /* Check maximum combo size: */
-                if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
-                {
-                    /* Remember pressed symbol: */
-                    m_pressedKeys << iKeySym;
-                    m_shownKeys.insert(iKeySym, UIHotKey::toString(iKeySym));
-
-                    /* Remember what we already started a sequence: */
-                    m_fStartNewSequence = false;
-                }
-            }
-            /* Key release: */
-            else if (pEvent->type == XKeyRelease)
-            {
-                /* Queue released symbol for processing: */
-                m_releasedKeys << iKeySym;
-
-                /* If all pressed keys are now pending for releasing we should stop further handling.
-                 * Now we have the status the user want: */
-                if (m_pressedKeys == m_releasedKeys)
-                {
-                    m_pressedKeys.clear();
-                    m_releasedKeys.clear();
-                    m_fStartNewSequence = true;
-                }
-                else
-                    m_pReleaseTimer->start();
-            }
-
-            /* Update text: */
-            updateText();
-
-            /* Prevent passing to Qt: */
-            return true;
         }
     }
 
@@ -533,7 +443,7 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
 /* static */
 bool UIHotKeyEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
-    UIHotKeyEditor *pEditor = (UIHotKeyEditor*)pvUser;
+    UIHotKeyEditor *pEditor = static_cast<UIHotKeyEditor*>(pvUser);
     EventRef inEvent = (EventRef)pvCarbonEvent;
     UInt32 EventClass = ::GetEventClass(inEvent);
     if (EventClass == kEventClassKeyboard)
@@ -562,59 +472,77 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             modifierMask = ::DarwinAdjustModifierMask(modifierMask, pvCocoaEvent);
             UInt32 changed = m_uDarwinKeyModifiers ^ modifierMask;
 
+            if (!changed)
+                break;
+
             /* Convert to keycode: */
             unsigned iKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
 
-            /* Check if symbol is valid else pass it to Qt: */
-            if (!iKeyCode || iKeyCode == ~0U || !UIHotKey::isValidKey(iKeyCode))
-                break;
-
-            if (changed)
+            if (processKeyEvent(iKeyCode, changed & modifierMask))
             {
-                /* Stop the delete pending keys timer. */
-                m_pReleaseTimer->stop();
-                /* If modifierMask is empty, no key is pressed anymore.
-                 * Stop all key handling and the deletion of keys. This is the status the user want: */
-                if (!modifierMask)
-                    m_fStartNewSequence = true;
-                /* Key release: */
-                else if (!(changed & modifierMask))
-                {
-                    /* Queue released symbol for processing: */
-                    m_releasedKeys << iKeyCode;
-                    m_pReleaseTimer->start();
-                }
-                /* Key press: */
-                else
-                {
-                    /* Clear reflected symbols if new sequence started: */
-                    if (m_fStartNewSequence)
-                        m_shownKeys.clear();
-                    /* Make sure any keys pending for releasing are processed: */
-                    sltReleasePendingKeys();
-                    /* Check maximum combo size: */
-                    if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
-                    {
-                        /* Remember pressed symbol: */
-                        m_pressedKeys << iKeyCode;
-                        m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
-
-                        /* Remember what we already started a sequence: */
-                        m_fStartNewSequence = false;
-                    }
-                }
+                /* Save the new modifier mask state. */
+                m_uDarwinKeyModifiers = modifierMask;
+                return true;
             }
-            /* Save the new modifier mask state. */
-            m_uDarwinKeyModifiers = modifierMask;
-
-            /* Update text: */
-            updateText();
+            break;
         }
-        break;
     }
     return false;
 }
 #endif /* Q_WS_MAC */
+
+bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
+{
+    /* Check if symbol is valid else pass it to Qt: */
+    if (!UIHotKey::isValidKey(iKeyCode))
+        return false;
+
+    /* Stop the release-pending-keys timer: */
+    m_pReleaseTimer->stop();
+
+    /* Key press: */
+    if (fKeyPress)
+    {
+        /* Clear reflected symbols if new sequence started: */
+        if (m_fStartNewSequence)
+            m_shownKeys.clear();
+        /* Make sure any keys pending for releasing are processed: */
+        sltReleasePendingKeys();
+        /* Check maximum combo size: */
+        if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+        {
+            /* Remember pressed symbol: */
+            m_pressedKeys << iKeyCode;
+            m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+
+            /* Remember what we already started a sequence: */
+            m_fStartNewSequence = false;
+        }
+    }
+    /* Key release: */
+    else
+    {
+        /* Queue released symbol for processing: */
+        m_releasedKeys << iKeyCode;
+
+        /* If all pressed keys are now pending for releasing we should stop further handling.
+         * Now we have the status the user want: */
+        if (m_pressedKeys == m_releasedKeys)
+        {
+            m_pressedKeys.clear();
+            m_releasedKeys.clear();
+            m_fStartNewSequence = true;
+        }
+        else
+            m_pReleaseTimer->start();
+    }
+
+    /* Update text: */
+    updateText();
+
+    /* Prevent passing to Qt: */
+    return true;
+}
 
 void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
 {
