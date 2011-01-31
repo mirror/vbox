@@ -572,7 +572,7 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             if (changed)
             {
                 /* Stop the delete pending keys timer. */
-                m_pRemoveTimer->stop();
+                m_pReleaseTimer->stop();
                 /* If modifierMask is empty, no key is pressed anymore.
                  * Stop all key handling and the deletion of keys. This is the status the user want: */
                 if (!modifierMask)
