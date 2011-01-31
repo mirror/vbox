@@ -1,0 +1,53 @@
+# $Id$
+#
+# Storage: Testcase for shareable disks.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+# Init I/O RNG for generating random data for writes
+iorngcreate size=10M seed=1234567890
+
+# Create disk containers.
+createdisk name=shared1
+createdisk name=shared2
+
+# Create the disk and close it.
+create disk=shared1 mode=base name=tstShared.vdi type=fixed backend=VDI size=20M
+close disk=shared1 mode=all delete=no
+
+# Open the disk with sharing enabled.
+open disk=shared1 name=tstShared.vdi backend=VDI shareable=yes
+open disk=shared2 name=tstShared.vdi backend=VDI shareable=yes
+
+# Write to one disk and verify that the other disk can see the content.
+io disk=shared1 async=yes max-reqs=32 mode=seq blocksize=64k off=0-20M size=20M writes=100
+comparedisks disk1=shared1 disk2=shared2
+
+# Write to the second disk and verify that the first can see the content.
+io disk=shared2 async=yes max-reqs=64 mode=seq blocksize=8k off=0-20M size=20M writes=50
+comparedisks disk1=shared1 disk2=shared2
+
+# Close but don't delete yet.
+close disk=shared1 mode=all delete=no
+close disk=shared2 mode=all delete=no
+
+# Open and delete
+open disk=shared1 name=tstShared.vdi backend=VDI shareable=no
+close disk=shared1 mode=single delete=yes
+
+# Cleanup
+destroydisk name=shared1
+destroydisk name=shared2
+iorngdestroy
+
