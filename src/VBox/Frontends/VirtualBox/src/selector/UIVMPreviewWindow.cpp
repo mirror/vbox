@@ -126,6 +126,7 @@ void UIVMPreviewWindow::retranslateUi()
 void UIVMPreviewWindow::resizeEvent(QResizeEvent *pEvent)
 {
     repaintBGImages();
+    sltRecreatePreview();
     QWidget::resizeEvent(pEvent);
 }
 
@@ -227,7 +228,9 @@ void UIVMPreviewWindow::sltRecreatePreview()
         m_pPreviewImg = 0;
     }
 
-    if (!m_machine.isNull())
+    if (   !m_machine.isNull()
+        && m_vRect.width() > 0
+        && m_vRect.height() > 0)
     {
         Assert(m_machineState != KMachineState_Null);
         QImage image(size(), QImage::Format_ARGB32);
