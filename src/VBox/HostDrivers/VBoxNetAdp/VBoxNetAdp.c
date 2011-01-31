@@ -1076,7 +1076,7 @@ DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
     pMac->au8[5] = pThis->uUnit;
 }
 
-int vboxNetAdpCreate (PVBOXNETADP *ppNew)
+int vboxNetAdpCreate (PVBOXNETADP *ppNew, const char *pcszName)
 {
     int rc;
     unsigned i;
@@ -1090,7 +1090,7 @@ int vboxNetAdpCreate (PVBOXNETADP *ppNew)
             /* Found an empty slot -- use it. */
             Log(("vboxNetAdpCreate: found empty slot: %d\n", i));
             vboxNetAdpComposeMACAddress(pThis, &Mac);
-            rc = vboxNetAdpOsCreate(pThis, &Mac);
+            rc = vboxNetAdpOsCreate(pThis, &Mac, pcszName);
             Log(("vboxNetAdpCreate: pThis=%p pThis->szName=%p\n", pThis, pThis->szName));
             if (RT_SUCCESS(rc))
             {
@@ -1142,8 +1142,9 @@ int  vboxNetAdpInit(void)
         vboxNetAdpOsInit(&g_aAdapters[i]);
     }
 
-    /* Create vboxnet0 */
-    return vboxNetAdpCreate(&pVboxnet0);
+    return VINF_SUCCESS;
+    /* Create vboxnet0
+       return vboxNetAdpCreate(&pVboxnet0);*/
 }
 
 /**

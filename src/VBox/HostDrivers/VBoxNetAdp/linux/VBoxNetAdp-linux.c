@@ -175,13 +175,15 @@ static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
 }
 
 
-int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
+int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress, const char *pcszName)
 {
     int rc = VINF_SUCCESS;
     struct net_device *pNetDev;
 
     /* No need for private data. */
-    pNetDev = alloc_netdev(sizeof(VBOXNETADPPRIV), VBOXNETADP_LINUX_NAME, vboxNetAdpNetDevInit);
+    pNetDev = alloc_netdev(sizeof(VBOXNETADPPRIV),
+                           pcszName ? pcszName : VBOXNETADP_LINUX_NAME,
+                           vboxNetAdpNetDevInit);
     if (pNetDev)
     {
         int err;
@@ -276,6 +278,7 @@ static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp,
     VBOXNETADPREQ Req;
     PVBOXNETADP pAdp;
     int rc;
+    char *pszName = NULL;
 
     Log(("VBoxNetAdpLinuxIOCtl: param len %#x; uCmd=%#x; add=%#x\n", _IOC_SIZE(uCmd), uCmd, VBOXNETADP_CTL_ADD));
     if (RT_UNLIKELY(_IOC_SIZE(uCmd) != sizeof(Req))) /* paranoia */
@@ -288,7 +291,24 @@ static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp,
     {
         case VBOXNETADP_CTL_ADD:
             Log(("VBoxNetAdpLinuxIOCtl: _IOC_DIR(uCmd)=%#x; IOC_OUT=%#x\n", _IOC_DIR(uCmd), IOC_OUT));
-            rc = vboxNetAdpCreate(&pAdp);
+            if (RT_UNLIKELY(copy_from_user(&Req, (void *)ulArg, sizeof(Req))))
+            {
+                Log(("VBoxNetAdpLinuxIOCtl: copy_from_user(,%#lx,) failed; uCmd=%#x.\n", ulArg, uCmd));
+                return -EFAULT;
+            }
+            Log(("VBoxNetAdpLinuxIOCtl: Add %s\n", Req.szName));
+
+            if (Req.szName[0])
+            {
+                pAdp = vboxNetAdpFindByName(Req.szName);
+                if (pAdp)
+                {
+                    Log(("VBoxNetAdpLinuxIOCtl: '%s' already exists\n", Req.szName));
+                    return -EINVAL;
+                }
+                pszName = Req.szName;
+            }
+            rc = vboxNetAdpCreate(&pAdp, pszName);
             if (RT_FAILURE(rc))
             {
                 Log(("VBoxNetAdpLinuxIOCtl: vboxNetAdpCreate -> %Rrc\n", rc));

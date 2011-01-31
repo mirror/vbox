@@ -192,8 +192,9 @@ static void vboxNetAdpDarwinDetach(ifnet_t pIface)
 }
 
 
-int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
+int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress, const char *pcszName)
 {
+    /* TODO: Use pcszName */
     int rc;
     struct ifnet_init_params Params;
     RTUUID uuid;

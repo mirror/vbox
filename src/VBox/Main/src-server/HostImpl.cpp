@@ -42,6 +42,10 @@
 # include <HostHardwareLinux.h>
 #endif
 
+#if defined(RT_OS_LINUX)
+# include <set>
+#endif
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -361,6 +365,42 @@ HRESULT Host::init(VirtualBox *aParent)
 #ifdef VBOX_WITH_CROGL
     m->f3DAccelerationSupported = is3DAccelerationSupported();
 #endif /* VBOX_WITH_CROGL */
+
+#if defined (RT_OS_LINUX)
+    /* Extract the list of configured host-only interfaces */
+    std::set<Utf8Str> aConfiguredNames;
+    SafeArray<BSTR> aGlobalExtraDataKeys;
+    hrc = aParent->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys));
+    AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
+    for (size_t i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+    {
+        Utf8Str strKey = aGlobalExtraDataKeys[i];
+
+        if (!strKey.startsWith("HostOnly/vboxnet"))
+            continue;
+
+        size_t pos = strKey.find("/", sizeof("HostOnly/vboxnet"));
+        if (pos != Utf8Str::npos)
+            aConfiguredNames.insert(strKey.substr(sizeof("HostOnly"),
+                                                  pos - sizeof("HostOnly")));
+    }
+
+    for (std::set<Utf8Str>::const_iterator it = aConfiguredNames.begin();
+         it != aConfiguredNames.end();
+         ++it)
+    {
+        ComPtr<IHostNetworkInterface> hif;
+        ComPtr<IProgress> progress;
+
+        int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, 
+                                                    hif.asOutParam(), 
+                                                    progress.asOutParam(),
+                                                    it->c_str());
+        if (RT_FAILURE(r))
+            return E_FAIL;
+    }
+
+#endif /* defined (RT_OS_LINUX) */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -1081,6 +1121,9 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
      * of the host object. If that ever changes then check for lock order
      * violations with the called functions. */
 
+    Bstr name;
+    HRESULT rc;
+
     /* first check whether an interface with the given name already exists */
     {
         ComPtr<IHostNetworkInterface> iface;
@@ -1089,11 +1132,21 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Host network interface with UUID {%RTuuid} does not exist"),
                             Guid (aId).raw());
+        rc = iface->COMGETTER(Name)(name.asOutParam());
+        ComAssertComRCRet(rc, rc);
     }
 
     int r = NetIfRemoveHostOnlyNetworkInterface(m->pParent, Guid(aId).ref(), aProgress);
     if (RT_SUCCESS(r))
+    {
+        /* Drop configuration parameters for removed interface */
+        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", name.raw()).raw(), NULL);
+        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", name.raw()).raw(), NULL);
+        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", name.raw()).raw(), NULL);
+        rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", name.raw()).raw(), NULL);
+
         return S_OK;
+    }
 
     return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 #else
