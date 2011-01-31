@@ -23,6 +23,7 @@ VBESetGetPaletteData
 VBESetVBEMode
 XNFcalloc
 XNFstrdup
+Xalloc
 _Jv_RegisterClasses
 ___errno
 __cxa_finalize
@@ -195,5 +196,8 @@ xf86SetWeight
 xf86ShowUnusedOptions
 xf86SlowBcopy
 xf86UnMapVidMem
+xf86errno
+xf86isspace
 xf86sprintf
 xf86snprintf
+xf86strtoul
