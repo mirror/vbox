@@ -31,7 +31,7 @@ namespace UIHotKey
     QString toString(int iKeyCode);
     bool isValidKey(int iKeyCode);
 #ifdef Q_WS_WIN
-    int distinguishModifierVKey(int wParam);
+    int distinguishModifierVKey(int wParam, int lParam);
 #endif /* Q_WS_WIN */
 #ifdef Q_WS_X11
     void retranslateKeyNames();
@@ -80,23 +80,25 @@ protected:
     void focusOutEvent(QFocusEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
+private slots:
+
+    void sltReleasePendingKeys();
+
 private:
 
     void updateText();
 
     QSet<int> m_pressedKeys;
+    QSet<int> m_releasedKeys;
     QMap<int, QString> m_shownKeys;
 
+    QTimer* m_pReleaseTimer;
     bool m_fStartNewSequence;
 
 #ifdef RT_OS_DARWIN
-    QSet<int> m_removeKeys;
-    QTimer* m_pRemoveTimer;
     /* The current modifier key mask. Used to figure out which modifier
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     uint32_t m_uDarwinKeyModifiers;
-private slots:
-    void removePendingKeys();
 #endif /* RT_OS_DARWIN */
 };
 
