@@ -75,6 +75,8 @@ protected:
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif /* Q_WS_MAC */
 
+    bool processKeyEvent(int iKeyCode, bool fKeyPress);
+
     void keyPressEvent(QKeyEvent *pEvent);
     void focusInEvent(QFocusEvent *pEvent);
     void focusOutEvent(QFocusEvent *pEvent);
