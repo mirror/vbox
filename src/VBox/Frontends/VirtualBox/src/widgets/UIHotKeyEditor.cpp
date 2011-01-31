@@ -405,7 +405,7 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
             /* Get key-code: */
             int iKeyCode = UIHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
 
-            /* Process the key event */
+            /* Process the key event: */
             return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
         }
         default:
@@ -429,9 +429,11 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
             KeySym ks = ::XKeycodeToKeysym(pKeyEvent->display, pKeyEvent->keycode, 0);
             int iKeySym = (int)ks;
 
-            /* Process the key event */
+            /* Process the key event: */
             return processKeyEvent(iKeySym, pEvent->type == XKeyPress);
         }
+        default:
+            break;
     }
 
     return false;
@@ -477,6 +479,7 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             /* Convert to keycode: */
             unsigned iKeyCode = ::DarwinModifierMaskToDarwinKeycode(changed);
 
+            /* Process the key event: */
             if (processKeyEvent(iKeyCode, changed & modifierMask))
             {
                 /* Save the new modifier mask state. */
@@ -485,6 +488,8 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
             }
             break;
         }
+        default:
+            break;
     }
     return false;
 }
