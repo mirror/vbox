@@ -350,7 +350,8 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipse
 
     ULONG uResult = 0;
     HRESULT rc = GetMaxNetworkAdapters(aChipset, &uResult);
-    
+    if (FAILED(rc))
+        return rc;
 
     /* no need for locking, no state */
     switch (aType)
