@@ -38,6 +38,7 @@
 #endif
 #if defined(RT_OS_SOLARIS)
 # include <sched.h>
+# include <sys/resource.h>
 #endif
 
 #include <iprt/thread.h>
@@ -412,7 +413,16 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 
 RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
 {
-#ifndef RT_OS_DARWIN
+#if defined(RT_OS_SOLARIS)
+    struct rusage ts;
+    int rc = getrusage(RUSAGE_LWP, &ts);
+    if (rc)
+        return RTErrConvertFromErrno(rc);
+
+    *pKernelTime = ts.ru_stime.tv_sec * 1000 + ts.ru_stime.tv_usec / 1000;
+    *pUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
+    return VINF_SUCCESS;
+#elif !defined(RT_OS_DARWIN)
     struct timespec ts;
     int rc = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     if (rc)
@@ -425,3 +435,4 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
