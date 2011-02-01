@@ -364,6 +364,7 @@ VMMR3DECL(int)      VMR3AtErrorRegisterU(PUVM pVM, PFNVMATERROR pfnAtError, void
 VMMR3DECL(int)      VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(void)     VMR3SetErrorWorker(PVM pVM);
 VMMR3DECL(uint32_t) VMR3GetErrorCount(PVM pVM);
+VMMR3DECL(uint32_t) VMR3GetErrorCountU(PUVM pUVM);
 VMMR3DECL(int)      VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)      VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)      VMR3SetRuntimeErrorWorker(PVM pVM);

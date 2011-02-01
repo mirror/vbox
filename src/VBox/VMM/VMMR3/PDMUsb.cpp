@@ -636,7 +636,11 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
                 pUsbIns->pReg->szName, pUsbIns->iInstance, pHub, rc));
     }
     else
+    {
         AssertMsgFailed(("Failed to construct '%s'/%d! %Rra\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
+        if (rc == VERR_VERSION_MISMATCH)
+            rc = VERR_PDM_DRIVER_VERSION_MISMATCH;
+    }
     if (fAtRuntime)
         pdmR3UsbDestroyDevice(pVM, pUsbIns);
     /* else: destructors are invoked later. */

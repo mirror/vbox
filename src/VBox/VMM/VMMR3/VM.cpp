@@ -268,10 +268,10 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                 AssertMsgFailed(("VMR3ReqCallU failed rc=%Rrc\n", rc));
 
             /*
-             * An error occurred during VM creation. Set the error message directly
-             * using the initial callback, as the callback list doesn't exist yet.
+             * An error occurred during VM creation.  Set the error message directly
+             * using the initial callback, as the callback list might not exist yet.
              */
-            const char *pszError = NULL;
+            const char *pszError;
             switch (rc)
             {
                 case VERR_VMX_IN_VMX_ROOT_MODE:
@@ -297,17 +297,6 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
 #else
                     pszError = N_("VirtualBox can't enable the AMD-V extension. Please close all other virtualization programs.");
 #endif
-                    break;
-
-                case VERR_VERSION_MISMATCH:
-                    pszError = N_("VMMR0 driver version mismatch:\n"
-                                  "Either there is an older extension package installed which does not "
-                                  "fit to this version of VirtualBox. In that case update the extension "
-                                  "pack. Make sure to terminate all VMs before.\n"
-                                  "Or VirtualBox was recently upgraded and there is still some process "
-                                  "of the older version active. Please terminate all VMs, make sure that "
-                                  "VBoxNetDHCP is not running and try again. If you still get this error, "
-                                  "re-install VirtualBox");
                     break;
 
 #ifdef RT_OS_LINUX
@@ -349,10 +338,14 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     break;
 
                 default:
-                    pszError = N_("Unknown error creating VM");
+                    if (VMR3GetErrorCountU(pUVM) == 0)
+                        pszError = RTErrGetFull(rc);
+                    else
+                        pszError = NULL; /* already set. */
                     break;
             }
-            vmR3SetErrorU(pUVM, rc, RT_SRC_POS, pszError, rc);
+            if (pszError)
+                vmR3SetErrorU(pUVM, rc, RT_SRC_POS, pszError, rc);
         }
         else
         {
@@ -3651,7 +3644,24 @@ VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
  */
 VMMR3DECL(uint32_t) VMR3GetErrorCount(PVM pVM)
 {
-    return pVM->pUVM->vm.s.cErrors;
+    AssertPtrReturn(pVM, 0);
+    return VMR3GetErrorCountU(pVM->pUVM);
+}
+
+
+/**
+ * Gets the number of errors raised via VMSetError.
+ *
+ * This can be used avoid double error messages.
+ *
+ * @returns The error count.
+ * @param   pVM             The VM handle.
+ */
+VMMR3DECL(uint32_t) VMR3GetErrorCountU(PUVM pUVM)
+{
+    AssertPtrReturn(pUVM, 0);
+    AssertReturn(pUVM->u32Magic == UVM_MAGIC, 0);
+    return pUVM->vm.s.cErrors;
 }
 
 

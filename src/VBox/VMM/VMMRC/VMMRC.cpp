@@ -72,7 +72,7 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
              * Validate the svn revision (uArg).
              */
             if (uArg != VMMGetSvnRev())
-                return VERR_VERSION_MISMATCH;
+                return VERR_VMM_RC_VERSION_MISMATCH;
 
             /*
              * Initialize the runtime.

@@ -93,6 +93,11 @@ s/  { NULL, \"\([^.!?"]*[.!?][.!?]*\)/  { \"\1\",\n    \"\1/
 
 # terminate the string
 s/[[:space:]]*\*\//\"\,/
+
+# translate empty lines into new-lines (only one, please).
+s/[[:space:]]*[[:space:]]\*[[:space:]][[:space:]]*\*[[:space:]][[:space:]]*/\\n/g
+
+# remove asterics.
 s/[[:space:]]*[[:space:]]\*[[:space:]][[:space:]]*/ /g
 b end
 

@@ -3851,10 +3851,10 @@ typedef struct PDMDEVINS
         PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION), \
                               ("DevIns=%#x  mine=%#x\n", (pDevIns)->u32Version, PDM_DEVINS_VERSION), \
-                              VERR_VERSION_MISMATCH); \
+                              VERR_PDM_DEVINS_VERSION_MISMATCH); \
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
                               ("DevHlp=%#x  mine=%#x\n", (pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
-                              VERR_VERSION_MISMATCH); \
+                              VERR_PDM_DEVHLPR3_VERSION_MISMATCH); \
     } while (0)
 
 /**
@@ -3869,9 +3869,10 @@ typedef struct PDMDEVINS
     do \
     { \
         PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
-        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) \
-                        || !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
-            return VERR_VERSION_MISMATCH; \
+        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) )) \
+            return VERR_PDM_DEVINS_VERSION_MISMATCH; \
+        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
+            return VERR_PDM_DEVHLPR3_VERSION_MISMATCH; \
     } while (0)
 
 /**
