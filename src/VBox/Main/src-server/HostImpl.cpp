@@ -1315,12 +1315,16 @@ STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
     for (size_t i = 0; i < drivevec.size(); ++i)
     {
         ComPtr<IMedium> drive = drivevec[i];
-        Bstr name, location;
+        Bstr name, location, id;
         rc = drive->COMGETTER(Name)(name.asOutParam());
         if (FAILED(rc)) return rc;
         rc = drive->COMGETTER(Location)(location.asOutParam());
         if (FAILED(rc)) return rc;
-        if (name == aName || location == aName)
+        rc = drive->COMGETTER(Id)(id.asOutParam());
+        if (FAILED(rc)) return rc;
+        if (   name == aName
+            || location == aName
+            || (!Guid(aName).isEmpty() && aName == id))
             return drive.queryInterfaceTo(aDrive);
     }
 
