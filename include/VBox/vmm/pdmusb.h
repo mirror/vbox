@@ -732,10 +732,10 @@ typedef struct PDMUSBINS
         PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION), \
                               ("DevIns=%#x  mine=%#x\n", (pUsbIns)->u32Version, PDM_USBINS_VERSION), \
-                              VERR_VERSION_MISMATCH); \
+                              VERR_PDM_USBINS_VERSION_MISMATCH); \
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLP_VERSION), \
                               ("DevHlp=%#x  mine=%#x\n", (pUsbIns)->pHlpR3->u32Version, PDM_USBHLP_VERSION), \
-                              VERR_VERSION_MISMATCH); \
+                              VERR_PDM_USBHLPR3_VERSION_MISMATCH); \
     } while (0)
 
 /**
@@ -750,9 +750,10 @@ typedef struct PDMUSBINS
     do \
     { \
         PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
-        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) \
-                        || !PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
-            return VERR_VERSION_MISMATCH; \
+        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) )) \
+            return VERR_PDM_USBINS_VERSION_MISMATCH; \
+        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
+            return VERR_PDM_USBHLPR3_VERSION_MISMATCH; \
     } while (0)
 
 

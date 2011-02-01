@@ -403,7 +403,7 @@ int pdmR3DevInit(PVM pVM)
             LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
             paDevs[i].pDev->cInstances--;
             /* because we're damn lazy right now, we'll say that the destructor will be called even if the constructor fails. */
-            return rc;
+            return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
         }
     } /* for device instances */
 

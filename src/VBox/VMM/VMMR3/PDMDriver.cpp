@@ -507,7 +507,11 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                                  pDrvAbove, pDrvAbove ? pDrvAbove->pReg->szName : "", pDrvAbove ? pDrvAbove->iInstance : UINT32_MAX));
                     }
                     else
+                    {
                         pdmR3DrvDestroyChain(pNew, PDM_TACH_FLAGS_NO_CALLBACKS);
+                        if (rc == VERR_VERSION_MISMATCH)
+                            rc = VERR_PDM_DRIVER_VERSION_MISMATCH;
+                    }
                 }
                 else
                 {
