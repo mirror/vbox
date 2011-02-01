@@ -178,18 +178,22 @@ static bool removeAddresses(char *pszAdapterName)
     return true;
 }
 
-int doIOCtl(unsigned long uCmd, void *pData)
+static int doIOCtl(unsigned long uCmd, VBOXNETADPREQ *pReq)
 {
     int fd = open(VBOXNETADP_CTL_DEV_NAME, O_RDWR);
     if (fd == -1)
     {
-        perror("VBoxNetAdpCtl: failed to open " VBOXNETADP_CTL_DEV_NAME);
+        fprintf(stderr, "VBoxNetAdpCtl: Error while %s '%s': ",
+               uCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding", pReq->szName);
+        perror("failed to open " VBOXNETADP_CTL_DEV_NAME);
         return ADPCTLERR_NO_CTL_DEV;
     }
 
-    int rc = ioctl(fd, uCmd, pData);
+    int rc = ioctl(fd, uCmd, pReq);
     if (rc == -1)
     {
+        fprintf(stderr, "VBoxNetAdpCtl: Error while %s '%s': ",
+               uCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding", pReq->szName);
         perror("VBoxNetAdpCtl: ioctl failed for " VBOXNETADP_CTL_DEV_NAME);
         rc = ADPCTLERR_IOCTL_FAILED;
     }
@@ -199,7 +203,7 @@ int doIOCtl(unsigned long uCmd, void *pData)
     return rc;
 }
 
-int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
+static int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
 {
     int iAdapterIndex = -1;
 
@@ -207,13 +211,13 @@ int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
         || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
         || iAdapterIndex < 0 || iAdapterIndex > 99 )
     {
-        fprintf(stderr, "Setting configuration for %s is not supported.\n", pcszNameIn);
+        fprintf(stderr, "VBoxNetAdpCtl: Setting configuration for '%s' is not supported.\n", pcszNameIn);
         return ADPCTLERR_BAD_NAME;
     }
     sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
     if (strcmp(pszNameOut, pcszNameIn))
     {
-        fprintf(stderr, "Invalid adapter name %s.\n", pcszNameIn);
+        fprintf(stderr, "VBoxNetAdpCtl: Invalid adapter name '%s'.\n", pcszNameIn);
         return ADPCTLERR_BAD_NAME;
     }
 
@@ -221,7 +225,6 @@ int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
 }
 
 int main(int argc, char *argv[])
-
 {
     char szAdapterName[VBOXNETADP_MAX_NAME_LEN];
     char *pszAdapterName = NULL;
