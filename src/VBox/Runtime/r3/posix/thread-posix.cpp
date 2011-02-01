@@ -423,6 +423,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     *pUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
     return VINF_SUCCESS;
 #elif !defined(RT_OS_DARWIN)
+    /* on Linux, getrusage(RUSAGE_THREAD, ...) is available since 2.6.26 */
     struct timespec ts;
     int rc = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     if (rc)
