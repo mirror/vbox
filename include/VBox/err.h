@@ -932,7 +932,7 @@
 /** Reason for leaving RZ: Illegal call to ring-3. */
 #define VERR_VMM_RING3_CALL_DISABLED        (-2703)
 /** The VMMR0.r0 module version does not match VBoxVMM.dll/so/dylib.
- * If you just upgraded VirtualBox, please make terminate all VMs and make sure
+ * If you just upgraded VirtualBox, please terminate all VMs and make sure
  * VBoxNetDHCP is not running.  Then try again.  If this error persists, try
  * re-installing VirtualBox. */
 #define VERR_VMM_R0_VERSION_MISMATCH        (-2704)
@@ -1144,55 +1144,55 @@
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DEVINS_VERSION_MISMATCH            (-2870)
 /** The device helper structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DEVHLPR3_VERSION_MISMATCH          (-2871)
 /** The USB device instance structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_USBINS_VERSION_MISMATCH            (-2872)
 /** The USB device helper structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_USBHLPR3_VERSION_MISMATCH          (-2873)
 /** The driver instance structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DRVINS_VERSION_MISMATCH            (-2874)
 /** The driver helper structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DRVHLPR3_VERSION_MISMATCH          (-2875)
 /** Generic device structure version mismatch.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DEVICE_VERSION_MISMATCH            (-2876)
 /** Generic USB device structure version mismatch.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_USBDEV_VERSION_MISMATCH            (-2877)
 /** Generic driver structure version mismatch.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
- * persists, try re-install VirtualBox. */
+ * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DRIVER_VERSION_MISMATCH            (-2878)
 /** @} */
 
@@ -1475,7 +1475,7 @@
 /** Unable to allocate more pages from the host system. */
 #define VERR_GMM_OUT_OF_MEMORY                      (-3801)
 /** Hit the global allocation limit.
- * If you know there is still sufficient memory available, try raise the limit. */
+ * If you know there is still sufficient memory available, try raising the limit. */
 #define VERR_GMM_HIT_GLOBAL_LIMIT                   (-3802)
 /** Hit the a VM account limit. */
 #define VERR_GMM_HIT_VM_ACCOUNT_LIMIT               (-3803)
