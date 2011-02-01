@@ -415,8 +415,6 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
 {
 #if defined(RT_OS_SOLARIS)
     struct rusage ts;
-    /* XXX getrusage() returns the times for the whole process while this
-     *     function should return the times per thread. */
     int rc = getrusage(RUSAGE_LWP, &ts);
     if (rc)
         return RTErrConvertFromErrno(rc);
