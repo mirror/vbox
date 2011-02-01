@@ -515,6 +515,15 @@ void UIMachineWindowNormal::prepareMachineView()
         indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineLogic()->keyboardHandler()->keyboardState());
         indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineLogic()->mouseHandler()->mouseState());
     }
+
+#ifdef VBOX_GUI_WITH_CUSTOMIZATIONS1
+    /* The background has to go black: */
+    QPalette palette(centralWidget()->palette());
+    palette.setColor(centralWidget()->backgroundRole(), Qt::black);
+    centralWidget()->setPalette(palette);
+    centralWidget()->setAutoFillBackground(true);
+    setAutoFillBackground(true);
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
 void UIMachineWindowNormal::loadWindowSettings()
