@@ -128,6 +128,7 @@ private:
 
     HRESULT buildDVDDrivesList(MediaList &list);
     HRESULT buildFloppyDrivesList(MediaList &list);
+    HRESULT findHostDriveByNameOrId(DeviceType_T mediumType, const Utf8Str &strNameOrId, ComObjPtr<Medium> &pMedium);
 
 #if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
     bool getDVDInfoFromHal(std::list< ComObjPtr<Medium> > &list);

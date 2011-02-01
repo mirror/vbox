@@ -392,8 +392,8 @@ HRESULT Host::init(VirtualBox *aParent)
         ComPtr<IHostNetworkInterface> hif;
         ComPtr<IProgress> progress;
 
-        int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, 
-                                                    hif.asOutParam(), 
+        int r = NetIfCreateHostOnlyNetworkInterface(m->pParent,
+                                                    hif.asOutParam(),
                                                     progress.asOutParam(),
                                                     it->c_str());
         if (RT_FAILURE(r))
@@ -1306,30 +1306,12 @@ STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
     CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
-    *aDrive = NULL;
-
-    SafeIfaceArray<IMedium> drivevec;
-    HRESULT rc = COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(drivevec));
-    if (FAILED(rc)) return rc;
-
-    for (size_t i = 0; i < drivevec.size(); ++i)
-    {
-        ComPtr<IMedium> drive = drivevec[i];
-        Bstr name, location, id;
-        rc = drive->COMGETTER(Name)(name.asOutParam());
-        if (FAILED(rc)) return rc;
-        rc = drive->COMGETTER(Location)(location.asOutParam());
-        if (FAILED(rc)) return rc;
-        rc = drive->COMGETTER(Id)(id.asOutParam());
-        if (FAILED(rc)) return rc;
-        if (   name == aName
-            || location == aName
-            || (!Guid(aName).isEmpty() && aName == id))
-            return drive.queryInterfaceTo(aDrive);
-    }
-
-    return setError(VBOX_E_OBJECT_NOT_FOUND,
-                    Medium::tr("The host DVD drive named '%ls' could not be found"), aName);
+    ComObjPtr<Medium>medium;
+    HRESULT rc = findHostDriveByNameOrId(DeviceType_DVD, Utf8Str(aName), medium);
+    if (SUCCEEDED(rc))
+        return medium.queryInterfaceTo(aDrive);
+    else
+        return setError(rc, Medium::tr("The host DVD drive named '%ls' could not be found"), aName);
 }
 
 STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IMedium **aDrive)
@@ -1339,22 +1321,12 @@ STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IMedium **aDrive)
 
     *aDrive = NULL;
 
-    SafeIfaceArray<IMedium> drivevec;
-    HRESULT rc = COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(drivevec));
-    if (FAILED(rc)) return rc;
-
-    for (size_t i = 0; i < drivevec.size(); ++i)
-    {
-        ComPtr<IMedium> drive = drivevec[i];
-        Bstr name;
-        rc = drive->COMGETTER(Name)(name.asOutParam());
-        if (FAILED(rc)) return rc;
-        if (name == aName)
-            return drive.queryInterfaceTo(aDrive);
-    }
-
-    return setError(VBOX_E_OBJECT_NOT_FOUND,
-                    Medium::tr("The host floppy drive named '%ls' could not be found"), aName);
+    ComObjPtr<Medium>medium;
+    HRESULT rc = findHostDriveByNameOrId(DeviceType_Floppy, Utf8Str(aName), medium);
+    if (SUCCEEDED(rc))
+        return medium.queryInterfaceTo(aDrive);
+    else
+        return setError(rc, Medium::tr("The host floppy drive named '%ls' could not be found"), aName);
 }
 
 STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)
@@ -1757,6 +1729,8 @@ HRESULT Host::findHostDriveById(DeviceType_T mediumType,
              ++it)
         {
             Medium *pThis = *it;
+            AutoCaller mediumCaller(pThis);
+            AutoReadLock mediumLock(pThis COMMA_LOCKVAL_SRC_POS);
             if (pThis->getId() == uuid)
             {
                 pMedium = pThis;
@@ -1795,6 +1769,8 @@ HRESULT Host::findHostDriveByName(DeviceType_T mediumType,
              ++it)
         {
             Medium *pThis = *it;
+            AutoCaller mediumCaller(pThis);
+            AutoReadLock mediumLock(pThis COMMA_LOCKVAL_SRC_POS);
             if (pThis->getLocationFull() == strLocationFull)
             {
                 pMedium = pThis;
@@ -1804,6 +1780,32 @@ HRESULT Host::findHostDriveByName(DeviceType_T mediumType,
     }
 
     return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Goes through the list of host drives that would be returned by getDrives()
+ * and looks for a host drive with the given name, location or ID. If found,
+ * it sets pMedium to that drive; otherwise returns VBOX_E_OBJECT_NOT_FOUND.
+ *
+ * @param mediumType  Must be DeviceType_DVD or DeviceType_Floppy.
+ * @param strNameOrId Name or full location or UUID of host drive to look for.
+ * @param pMedium     Medium object, if found…
+ * @return VBOX_E_OBJECT_NOT_FOUND if not found, or S_OK if found, or errors from getDrives().
+ */
+HRESULT Host::findHostDriveByNameOrId(DeviceType_T mediumType,
+                                      const Utf8Str &strNameOrId,
+                                      ComObjPtr<Medium> &pMedium)
+{
+    MediaList *pllMedia;
+
+    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+
+    Guid uuid(strNameOrId);
+    if (!uuid.isEmpty())
+        return findHostDriveById(mediumType, uuid, true /* fRefresh */, pMedium);
+
+    // string is not a syntactically valid UUID: try a name then
+    return findHostDriveByName(mediumType, strNameOrId, true /* fRefresh */, pMedium);
 }
 
 /**
