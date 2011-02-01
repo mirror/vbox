@@ -389,9 +389,9 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                     Bstr uuid;
                     dvdDrive->COMGETTER(Id)(uuid.asOutParam());
                     RTPrintf("UUID:         %s\n", Utf8Str(uuid).c_str());
-                    Bstr name;
-                    dvdDrive->COMGETTER(Name)(name.asOutParam());
-                    RTPrintf("Name:         %lS\n\n", name.raw());
+                    Bstr location;
+                    dvdDrive->COMGETTER(Location)(location.asOutParam());
+                    RTPrintf("Name:         %lS\n\n", location.raw());
                 }
             }
             break;
@@ -411,9 +411,9 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                     Bstr uuid;
                     floppyDrive->COMGETTER(Id)(uuid.asOutParam());
                     RTPrintf("UUID:         %s\n", Utf8Str(uuid).c_str());
-                    Bstr name;
-                    floppyDrive->COMGETTER(Name)(name.asOutParam());
-                    RTPrintf("Name:         %lS\n\n", name.raw());
+                    Bstr location;
+                    floppyDrive->COMGETTER(Location)(location.asOutParam());
+                    RTPrintf("Name:         %lS\n\n", location.raw());
                 }
             }
             break;
