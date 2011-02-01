@@ -175,14 +175,14 @@ static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
 }
 
 
-int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress, const char *pcszName)
+int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 {
     int rc = VINF_SUCCESS;
     struct net_device *pNetDev;
 
     /* No need for private data. */
     pNetDev = alloc_netdev(sizeof(VBOXNETADPPRIV),
-                           pcszName ? pcszName : VBOXNETADP_LINUX_NAME,
+                           pThis->szName[0] ? pThis->szName : VBOXNETADP_LINUX_NAME,
                            vboxNetAdpNetDevInit);
     if (pNetDev)
     {

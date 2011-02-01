@@ -42,7 +42,7 @@
 # include <HostHardwareLinux.h>
 #endif
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 # include <set>
 #endif
 
@@ -366,7 +366,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->f3DAccelerationSupported = is3DAccelerationSupported();
 #endif /* VBOX_WITH_CROGL */
 
-#if defined (RT_OS_LINUX)
+#if defined (RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /* Extract the list of configured host-only interfaces */
     std::set<Utf8Str> aConfiguredNames;
     SafeArray<BSTR> aGlobalExtraDataKeys;
@@ -400,7 +400,7 @@ HRESULT Host::init(VirtualBox *aParent)
             return E_FAIL;
     }
 
-#endif /* defined (RT_OS_LINUX) */
+#endif /* defined (RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
