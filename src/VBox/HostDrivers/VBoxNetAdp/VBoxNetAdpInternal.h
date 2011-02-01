@@ -30,6 +30,7 @@ RT_C_DECLS_BEGIN
 typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 
 #define VBOXNETADP_MAX_INSTANCES   8
+#define VBOXNETADP_MAX_UNITS       128
 #define VBOXNETADP_NAME            "vboxnet"
 #define VBOXNETADP_MAX_NAME_LEN    32
 #define VBOXNETADP_MTU             1500
@@ -39,7 +40,7 @@ typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
 #endif
 
 #define VBOXNETADP_CTL_DEV_NAME    "vboxnetctl"
-#define VBOXNETADP_CTL_ADD    _IOR('v', 1, VBOXNETADPREQ)
+#define VBOXNETADP_CTL_ADD   _IOWR('v', 1, VBOXNETADPREQ)
 #define VBOXNETADP_CTL_REMOVE _IOW('v', 2, VBOXNETADPREQ)
 
 typedef struct VBoxNetAdpReq
@@ -84,7 +85,7 @@ struct VBoxNetAdapter
     /** Denotes availability of this slot in adapter array. */
     VBOXNETADPSTATE   enmState;
     /** Corresponds to the digit at the end of device name. */
-    uint32_t          uUnit;
+    int               nUnit;
 
     union
     {
@@ -176,7 +177,7 @@ DECLHIDDEN(void) vboxNetAdpOsDestroy(PVBOXNETADP pThis);
  *
  * @remarks Owns no locks.
  */
-DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac, const char *pcszName);
+DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac);
 
 
 
