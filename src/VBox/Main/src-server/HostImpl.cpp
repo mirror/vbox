@@ -1796,8 +1796,6 @@ HRESULT Host::findHostDriveByNameOrId(DeviceType_T mediumType,
                                       const Utf8Str &strNameOrId,
                                       ComObjPtr<Medium> &pMedium)
 {
-    MediaList *pllMedia;
-
     AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(strNameOrId);
