@@ -1061,25 +1061,26 @@ static uint8_t g_aUnits[VBOXNETADP_MAX_UNITS/8];
 DECLINLINE(int) vboxNetAdpGetUnitByName(const char *pcszName)
 {
     uint32_t nUnit = RTStrToUInt32(pcszName + sizeof(VBOXNETADP_NAME) - 1);
+    bool fOld;
 
     if (nUnit >= VBOXNETADP_MAX_UNITS)
         return -1;
 
-    bool bOld = ASMAtomicBitTestAndSet(g_aUnits, nUnit);
-    return bOld ? -1 : (int)nUnit;
+    fOld = ASMAtomicBitTestAndSet(g_aUnits, nUnit);
+    return fOld ? -1 : (int)nUnit;
 }
 
 DECLINLINE(int) vboxNetAdpGetNextAvailableUnit(void)
 {
-    bool bOld;
+    bool fOld;
     int nUnit;
     /* There is absolutely no chance that all units are taken */
     do {
         nUnit = ASMBitFirstClear(g_aUnits, VBOXNETADP_MAX_UNITS);
         if (nUnit < 0)
             break;
-        bOld = ASMAtomicBitTestAndSet(g_aUnits, nUnit);
-    } while (bOld);
+        fOld = ASMAtomicBitTestAndSet(g_aUnits, nUnit);
+    } while (fOld);
 
     return nUnit;
 }
