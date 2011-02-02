@@ -4905,7 +4905,7 @@
     </message>
     <message>
         <source>hard disk</source>
-        <translation>Die Festplatte</translation>
+        <translation>Platten</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
@@ -4921,7 +4921,7 @@
     </message>
     <message>
         <source>floppy disk</source>
-        <translation>Diskette</translation>
+        <translation>Disketten</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
