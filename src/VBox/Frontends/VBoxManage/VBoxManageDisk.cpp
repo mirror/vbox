@@ -957,7 +957,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
 
         LONG64 logicalSize;
         hardDisk->COMGETTER(LogicalSize)(&logicalSize);
-        RTPrintf("Logical size:         %lld MBytes\n", logicalSize);
+        RTPrintf("Logical size:         %lld MBytes\n", logicalSize >> 20);
         LONG64 actualSize;
         hardDisk->COMGETTER(Size)(&actualSize);
         RTPrintf("Current size on disk: %lld MBytes\n", actualSize >> 20);
