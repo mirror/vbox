@@ -708,6 +708,8 @@ enum fogmode {
     FOG_EXP2
 };
 
+struct wined3d_context;
+
 /* Stateblock dependent parameters which have to be hardcoded
  * into the shader code
  */
@@ -735,8 +737,6 @@ struct vs_compile_args {
     BYTE                        clip_enabled;
     WORD                        swizzle_map;   /* MAX_ATTRIBS, 16 */
 };
-
-struct wined3d_context;
 
 typedef struct {
     void (*shader_handle_instruction)(const struct wined3d_shader_instruction *);

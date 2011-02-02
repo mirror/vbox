@@ -190,6 +190,7 @@ struct arb_ps_compiled_shader
     UINT                            ycorrection;
     unsigned char                   numbumpenvmatconsts;
     char                            num_int_consts;
+    const struct wined3d_context    *context;
 };
 
 struct arb_vs_compile_args
@@ -222,6 +223,7 @@ struct arb_vs_compiled_shader
     char                            num_int_consts;
     char                            need_color_unclamp;
     UINT                            pos_fixup;
+    const struct wined3d_context    *context;
 };
 
 struct recorded_instruction
@@ -4065,7 +4067,8 @@ static GLuint shader_arb_generate_vshader(IWineD3DVertexShaderImpl *This, struct
 }
 
 /* GL locking is done by the caller */
-static struct arb_ps_compiled_shader *find_arb_pshader(IWineD3DPixelShaderImpl *shader, const struct arb_ps_compile_args *args)
+static struct arb_ps_compiled_shader *find_arb_pshader(IWineD3DPixelShaderImpl *shader, 
+    const struct arb_ps_compile_args *args, const struct wined3d_context *context)
 {
     UINT i;
     DWORD new_size;
@@ -4103,7 +4106,8 @@ static struct arb_ps_compiled_shader *find_arb_pshader(IWineD3DPixelShaderImpl *
      * (cache coherency etc)
      */
     for(i = 0; i < shader_data->num_gl_shaders; i++) {
-        if(memcmp(&shader_data->gl_shaders[i].args, args, sizeof(*args)) == 0) {
+        if(shader_data->gl_shaders[i].context==context
+           && memcmp(&shader_data->gl_shaders[i].args, args, sizeof(*args)) == 0) {
             return &shader_data->gl_shaders[i];
         }
     }
@@ -4128,6 +4132,7 @@ static struct arb_ps_compiled_shader *find_arb_pshader(IWineD3DPixelShaderImpl *
         shader_data->shader_array_size = new_size;
     }
 
+    shader_data->gl_shaders[shader_data->num_gl_shaders].context = context;
     shader_data->gl_shaders[shader_data->num_gl_shaders].args = *args;
 
     pixelshader_update_samplers(&shader->baseShader.reg_maps,
@@ -4160,7 +4165,8 @@ static inline BOOL vs_args_equal(const struct arb_vs_compile_args *stored, const
     return memcmp(stored->loop_ctrl, new->loop_ctrl, sizeof(stored->loop_ctrl)) == 0;
 }
 
-static struct arb_vs_compiled_shader *find_arb_vshader(IWineD3DVertexShaderImpl *shader, const struct arb_vs_compile_args *args)
+static struct arb_vs_compiled_shader *find_arb_vshader(IWineD3DVertexShaderImpl *shader, 
+    const struct arb_vs_compile_args *args, const struct wined3d_context *context)
 {
     UINT i;
     DWORD new_size;
@@ -4182,8 +4188,9 @@ static struct arb_vs_compiled_shader *find_arb_vshader(IWineD3DVertexShaderImpl 
      * (cache coherency etc)
      */
     for(i = 0; i < shader_data->num_gl_shaders; i++) {
-        if (vs_args_equal(&shader_data->gl_shaders[i].args, args,
-                use_map, gl_info->supported[NV_VERTEX_PROGRAM2_OPTION]))
+        if (shader_data->gl_shaders[i].context==context
+            && vs_args_equal(&shader_data->gl_shaders[i].args, args,
+                             use_map, gl_info->supported[NV_VERTEX_PROGRAM2_OPTION]))
         {
             return &shader_data->gl_shaders[i];
         }
@@ -4210,6 +4217,7 @@ static struct arb_vs_compiled_shader *find_arb_vshader(IWineD3DVertexShaderImpl 
         shader_data->shader_array_size = new_size;
     }
 
+    shader_data->gl_shaders[shader_data->num_gl_shaders].context = context;
     shader_data->gl_shaders[shader_data->num_gl_shaders].args = *args;
 
     if (!shader_buffer_init(&buffer))
@@ -4377,7 +4385,7 @@ static void shader_arb_select(const struct wined3d_context *context, BOOL usePS,
 
         TRACE("Using pixel shader %p\n", This->stateBlock->pixelShader);
         find_arb_ps_compile_args(ps, This->stateBlock, &compile_args);
-        compiled = find_arb_pshader(ps, &compile_args);
+        compiled = find_arb_pshader(ps, &compile_args, context);
         priv->current_fprogram_id = compiled->prgId;
         priv->compiled_fprog = compiled;
 
@@ -4433,7 +4441,7 @@ static void shader_arb_select(const struct wined3d_context *context, BOOL usePS,
 
         TRACE("Using vertex shader %p\n", This->stateBlock->vertexShader);
         find_arb_vs_compile_args(vs, This->stateBlock, &compile_args);
-        compiled = find_arb_vshader(vs, &compile_args);
+        compiled = find_arb_vshader(vs, &compile_args, context);
         priv->current_vprogram_id = compiled->prgId;
         priv->compiled_vprog = compiled;
 
@@ -4529,8 +4537,16 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
             ENTER_GL();
             for (i = 0; i < shader_data->num_gl_shaders; ++i)
             {
-                GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
-                checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
+                if (shader_data->gl_shaders[i].context==context_get_current())
+                {
+                    GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
+                    checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
+                }
+                else
+                {
+                    WARN("Attempting to delete fprog %u created in ctx %p from ctx %p\n", 
+                         shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
+                }
             }
             LEAVE_GL();
 
@@ -4555,8 +4571,16 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
             ENTER_GL();
             for (i = 0; i < shader_data->num_gl_shaders; ++i)
             {
-                GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
-                checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
+                if (shader_data->gl_shaders[i].context==context_get_current())
+                {
+                    GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
+                    checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
+                }
+                else
+                {
+                    WARN("Attempting to delete vprog %u created in ctx %p from ctx %p\n", 
+                         shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
+                }
             }
             LEAVE_GL();
 
