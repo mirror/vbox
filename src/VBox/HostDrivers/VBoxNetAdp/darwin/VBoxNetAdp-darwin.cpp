@@ -135,7 +135,7 @@ static void vboxNetAdpDarwinComposeUUID(PVBOXNETADP pThis, PRTUUID pUuid)
     memcpy(pUuid->au8, "vboxnet", 7);
     pUuid->Gen.u8ClockSeqHiAndReserved = (pUuid->Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     pUuid->Gen.u16TimeHiAndVersion = (pUuid->Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-    pUuid->Gen.u8ClockSeqLow = pThis->nUnit;
+    pUuid->Gen.u8ClockSeqLow = pThis->iUnit;
     vboxNetAdpComposeMACAddress(pThis, (PRTMAC)pUuid->Gen.au8Node);
 }
 
@@ -215,12 +215,12 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     mac.sdl_slen = 0;
     memcpy(LLADDR(&mac), pMACAddress->au8, mac.sdl_alen);
 
-    RTStrPrintf(pThis->szName, VBOXNETADP_MAX_NAME_LEN, "%s%d", VBOXNETADP_NAME, pThis->nUnit);
+    RTStrPrintf(pThis->szName, VBOXNETADP_MAX_NAME_LEN, "%s%d", VBOXNETADP_NAME, pThis->iUnit);
     vboxNetAdpDarwinComposeUUID(pThis, &uuid);
     Params.uniqueid = uuid.au8;
     Params.uniqueid_len = sizeof(uuid);
     Params.name = VBOXNETADP_NAME;
-    Params.unit = pThis->nUnit;
+    Params.unit = pThis->iUnit;
     Params.family = IFNET_FAMILY_ETHERNET;
     Params.type = IFT_ETHER;
     Params.output = vboxNetAdpDarwinOutput;
@@ -293,7 +293,7 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
     rc = RTSemEventWait(pThis->u.s.hEvtDetached, VBOXNETADP_DETACH_TIMEOUT);
     if (rc == VERR_TIMEOUT)
         LogRel(("VBoxAdpDrv: Failed to detach interface %s%d\n.",
-                VBOXNETADP_NAME, pThis->nUnit));
+                VBOXNETADP_NAME, pThis->iUnit));
     err = ifnet_release(pThis->u.s.pIface);
     if (err)
         Log(("vboxNetAdpUnregisterDevice: Failed to release interface (err=%d).\n", err));
