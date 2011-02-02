@@ -263,7 +263,7 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac, const char *pcszName)
     if (ifp == NULL)
         return VERR_NO_MEMORY;
 
-    if_initname(ifp, VBOXNETADP_NAME, pThis->nUnit);
+    if_initname(ifp, VBOXNETADP_NAME, pThis->iUnit);
     ifp->if_softc = pThis;
     ifp->if_mtu = ETHERMTU;
     ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
