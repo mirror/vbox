@@ -319,10 +319,18 @@ setup()
         esac
     fi
     case $x_version in
-        1.9.99.* )
+        1.10.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
             dox11config=""
+            ;;
+        1.9.99.* | 1.10.* )
+            begin "Installing X.Org Server 1.10 modules"
+            vboxvideo_src=vboxvideo_drv_110.so
+            vboxmouse_src=vboxmouse_drv_110.so
+            doxorgconfd="true"
+            # Does Fedora still ship without vboxvideo detection?
+            # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.8.99.* | 1.9.* )
             begin "Installing X.Org Server 1.9 modules"
