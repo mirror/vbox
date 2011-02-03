@@ -118,6 +118,8 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
             scan = 0x39;
         else if (keysym == 0xFE03)          /* ISO level3 shift, aka AltGr */
             scan = 0x138;
+        else if (keysym == 0xFE11)          /* ISO level5 shift, R-Ctrl on */
+            scan = 0x11d;                   /* Canadian multilingual layout */
     }
     if (keyc2scan[code])
         scan = keyc2scan[code];
