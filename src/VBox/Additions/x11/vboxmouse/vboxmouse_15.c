@@ -132,14 +132,22 @@ VBoxInit(DeviceIntPtr device)
                                axis_labels[0],
 # endif
                                0 /* min X */, 65536 /* max X */,
-                               10000, 0, 10000);
+                               10000, 0, 10000
+# if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
+                               , Absolute
+# endif                               
+                               );
 
     xf86InitValuatorAxisStruct(device, 1,
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[1],
 # endif
                                0 /* min Y */, 65536 /* max Y */,
-                               10000, 0, 10000);
+                               10000, 0, 10000
+# if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
+                               , Absolute
+# endif                               
+                               );
 #endif
     xf86InitValuatorDefaults(device, 0);
     xf86InitValuatorDefaults(device, 1);
@@ -214,7 +222,7 @@ VBoxProbe(InputInfoPtr pInfo)
     if (!RT_SUCCESS(rc)) {
         xf86Msg(X_ERROR, "%s: Failed to open the VirtualBox device (error %d)\n",
                 pInfo->name, rc);
-        return !Success;
+        return BadMatch;
     }
 
     return Success;
@@ -232,6 +240,41 @@ VBoxConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
         return FALSE;
 }
 
+static int
+VBoxPreInitInfo(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
+{
+    const char *device;
+    int rc;
+
+    /* Initialise the InputInfoRec. */
+    pInfo->device_control = VBoxProc;
+    pInfo->read_input = VBoxReadInput;
+    /* Unlike evdev, we set this unconditionally, as we don't handle keyboards. */
+    pInfo->type_name = XI_MOUSE;
+    pInfo->flags |= XI86_ALWAYS_CORE;
+
+    device = xf86CheckStrOption(pInfo->options, "Device",
+                                "/dev/vboxguest");
+
+    xf86Msg(X_CONFIG, "%s: Device: \"%s\"\n", pInfo->name, device);
+    do {
+        pInfo->fd = open(device, O_RDWR, 0);
+    }
+    while (pInfo->fd < 0 && errno == EINTR);
+
+    if (pInfo->fd < 0) {
+        xf86Msg(X_ERROR, "Unable to open VirtualBox device \"%s\".\n", device);
+        return BadMatch;
+    }
+
+    rc = VBoxProbe(pInfo);
+    if (rc != Success)
+        return rc;
+
+    return Success;
+}
+
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 static InputInfoPtr
 VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 {
@@ -243,34 +286,14 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 
     /* Initialise the InputInfoRec. */
     pInfo->name = dev->identifier;
-    pInfo->device_control = VBoxProc;
-    pInfo->read_input = VBoxReadInput;
     pInfo->conf_idev = dev;
-    /* Unlike evdev, we set this unconditionally, as we don't handle keyboards. */
-    pInfo->type_name = XI_MOUSE;
     pInfo->conversion_proc = VBoxConvert;
-    pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
-            XI86_ALWAYS_CORE;
+    pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS;
 
     xf86CollectInputOptions(pInfo, NULL, NULL);
     xf86ProcessCommonOptions(pInfo, pInfo->options);
 
-    device = xf86CheckStrOption(dev->commonOptions, "Device",
-                                "/dev/vboxguest");
-
-    xf86Msg(X_CONFIG, "%s: Device: \"%s\"\n", pInfo->name, device);
-    do {
-        pInfo->fd = open(device, O_RDWR, 0);
-    }
-    while (pInfo->fd < 0 && errno == EINTR);
-
-    if (pInfo->fd < 0) {
-        xf86Msg(X_ERROR, "Unable to open VirtualBox device \"%s\".\n", device);
-        xf86DeleteInput(pInfo, 0);
-        return NULL;
-    }
-
-    if (VBoxProbe(pInfo) != Success) {
+    if (VBoxPreInitInfo(drv, pInfo, flags) != Success) {
         xf86DeleteInput(pInfo, 0);
         return NULL;
     }
@@ -278,12 +301,17 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->flags |= XI86_CONFIGURED;
     return pInfo;
 }
+#endif
 
 _X_EXPORT InputDriverRec VBOXMOUSE = {
     1,
     "vboxmouse",
     NULL,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
     VBoxPreInit,
+#else
+    VBoxPreInitInfo,
+#endif
     NULL,
     NULL,
     0
