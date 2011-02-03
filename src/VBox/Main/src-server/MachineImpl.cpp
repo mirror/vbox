@@ -3623,10 +3623,20 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         ComObjPtr<Medium> diff;
         diff.createObject();
+        // store this diff in the same registry as the parent
+        Guid uuidRegistryParent;
+        if (!medium->getFirstRegistryMachineId(uuidRegistryParent))
+        {
+            // parent image has no registry: this can happen if we're attaching a new immutable
+            // image that has not yet been attached (medium then points to the base and we're
+            // creating the diff image for the immutable, and the parent is not yet registered);
+            // put the parent in the machine registry then
+            addMediumToRegistry(medium, llRegistriesThatNeedSaving, &uuidRegistryParent);
+        }
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
                         strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                        medium->getFirstRegistryMachineId(),         // store this diff in the same registry as the parent
+                        uuidRegistryParent,
                         &llRegistriesThatNeedSaving);
         if (FAILED(rc)) return rc;
 
@@ -3701,17 +3711,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         // here we can fail because of Deleting, or being in process of creating a Diff
         if (FAILED(rc)) return rc;
 
-        // and decide which medium registry to use now that the medium is attached:
-        Guid uuid;
-        if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
-            // machine XML is VirtualBox 4.0 or higher:
-            uuid = getId();     // machine UUID
-        else
-            uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
-
-        if (medium->addRegistry(uuid))
-            // registry actually changed:
-            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+        addMediumToRegistry(medium,
+                            llRegistriesThatNeedSaving,
+                            NULL /* Guid *puuid */);
     }
 
     /* success: finally remember the attachment */
@@ -3947,17 +3949,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         {
             pMedium->addBackReference(mData->mUuid);
 
-            // and decide which medium registry to use now that the medium is attached:
-            Guid uuid;
-            if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
-                // machine XML is VirtualBox 4.0 or higher:
-                uuid = getId();     // machine UUID
-            else
-                uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
-
-            if (pMedium->addRegistry(uuid))
-                // registry actually changed:
-                mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+            addMediumToRegistry(pMedium, llRegistriesThatNeedSaving, NULL /* Guid *puuid */ );
         }
 
         pAttach->updateMedium(pMedium);
@@ -8738,6 +8730,40 @@ HRESULT Machine::saveStateSettings(int aFlags)
 }
 
 /**
+ * Ensures that the given medium is added to a media registry. If this machine
+ * was created with 4.0 or later, then the machine registry is used. Otherwise
+ * the global VirtualBox media registry is used. If the medium was actually
+ * added to a registry (because it wasn't in the registry yet), the UUID of
+ * that registry is added to the given list so that the caller can save the
+ * registry.
+ *
+ * Caller must hold machine read lock!
+ *
+ * @param pMedium
+ * @param llRegistriesThatNeedSaving
+ * @param puuid Optional buffer that receives the registry UUID that was used.
+ */
+void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
+                                  GuidList &llRegistriesThatNeedSaving,
+                                  Guid *puuid)
+{
+    // decide which medium registry to use now that the medium is attached:
+    Guid uuid;
+    if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+        // machine XML is VirtualBox 4.0 or higher:
+        uuid = getId();     // machine UUID
+    else
+        uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
+
+    if (pMedium->addRegistry(uuid))
+        // registry actually changed:
+        mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+
+    if (puuid)
+        *puuid = uuid;
+}
+
+/**
  * Creates differencing hard disks for all normal hard disks attached to this
  * machine and a new set of attachments to refer to created disks.
  *
@@ -8893,10 +8919,15 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             ComObjPtr<Medium> diff;
             diff.createObject();
+            // store the diff in the same registry as the parent
+            // (this cannot fail here because we can't create implicit diffs for
+            // unregistered images)
+            Guid uuidRegistryParent;
+            Assert(pMedium->getFirstRegistryMachineId(uuidRegistryParent));
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
                             strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                            pMedium->getFirstRegistryMachineId(),        // store the diff in the same registry as the parent
+                            uuidRegistryParent,
                             pllRegistriesThatNeedSaving);
             if (FAILED(rc)) throw rc;
 

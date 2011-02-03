@@ -3130,8 +3130,8 @@ bool Medium::isInRegistry(const Guid& id)
  * Internal method to return the medium's first registry machine (i.e. the machine in whose
  * machine XML this medium is listed).
  *
- * Every medium must now (4.0) reside in at least one media registry, which is identified by
- * a UUID. This is either a machine UUID if the machine is from 4.0 or newer, in which case
+ * Every attached medium must now (4.0) reside in at least one media registry, which is identified
+ * by a UUID. This is either a machine UUID if the machine is from 4.0 or newer, in which case
  * machines have their own media registries, or it is the pseudo-UUID of the VirtualBox
  * object if the machine is old and still needs the global registry in VirtualBox.xml.
  *
@@ -3140,16 +3140,25 @@ bool Medium::isInRegistry(const Guid& id)
  * in sync. (This is the "cloned VM" case in which VM1 may link to the disks of VM2; in this
  * case, only VM2's registry is used for the disk in question.)
  *
+ * If there is no medium registry, particularly if the medium has not been attached yet, this
+ * does not modify uuid and returns false.
+ *
  * ISOs and RAWs, by contrast, can be in more than one repository to make things easier for
  * the user.
  *
  * Must have caller + locking!
  *
- * @return
+ * @param uuid Receives first registry machine UUID, if available.
+ * @return true if uuid was set.
  */
-const Guid& Medium::getFirstRegistryMachineId() const
+bool Medium::getFirstRegistryMachineId(Guid &uuid) const
 {
-    return m->llRegistryIDs.front();
+    if (m->llRegistryIDs.size())
+    {
+        uuid = m->llRegistryIDs.front();
+        return true;
+    }
+    return false;
 }
 
 /**

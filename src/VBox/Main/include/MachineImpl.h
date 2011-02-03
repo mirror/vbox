@@ -781,6 +781,10 @@ protected:
                                settings::StorageController &data);
     HRESULT saveStateSettings(int aFlags);
 
+    void addMediumToRegistry(ComObjPtr<Medium> &pMedium,
+                             GuidList &llRegistriesThatNeedSaving,
+                             Guid *puuid);
+
     HRESULT createImplicitDiffs(IProgress *aProgress,
                                 ULONG aWeight,
                                 bool aOnline,
