@@ -223,31 +223,20 @@ struct BootNic
     }
 };
 
-/*
- * VC++ 8 / amd64 has some serious trouble with this function.
- * As a temporary measure, we'll drop global optimizations.
- */
-#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
-# pragma optimize("g", off)
-#endif
-
-static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& aEfiRomFile)
+static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile)
 {
-    int rc;
-    BOOL fPresent = FALSE;
     Bstr aFilePath, empty;
-
-    rc = vbox->CheckFirmwarePresent(aFirmwareType, empty.raw(),
-                                    empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
-    if (RT_FAILURE(rc))
-        AssertComRCReturn(rc, VERR_FILE_NOT_FOUND);
+    BOOL fPresent = FALSE;
+    HRESULT hrc = vbox->CheckFirmwarePresent(aFirmwareType, empty.raw(),
+                                             empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
+    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
 
     if (!fPresent)
         return VERR_FILE_NOT_FOUND;
 
-    aEfiRomFile = Utf8Str(aFilePath);
+    *pEfiRomFile = Utf8Str(aFilePath);
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
 static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRealSMC)
@@ -316,6 +305,16 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
 
     return rc;
 }
+
+
+/*
+ * VC++ 8 / amd64 has some serious trouble with the next functions.
+ * As a temporary measure, we'll drop global optimizations.
+ */
+#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
+# pragma optimize("g", off)
+#endif
+
 
 class ConfigError : public iprt::Error
 {
@@ -532,9 +531,6 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
 DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
-    PciBusAddress         PciAddr;
-    bool fFdcEnabled = false;
-    BOOL fIs64BitGuest = false;
 
 #if !defined(VBOX_WITH_XPCOM)
     {
@@ -588,7 +584,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(HardwareUUID)(bstr.asOutParam());                         H();
     RTUUID HardwareUuid;
     rc = RTUuidFromUtf16(&HardwareUuid, bstr.raw());
-    AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+    AssertRCReturn(rc, rc);
 
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                    H();
@@ -596,10 +592,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     if (RTEnvExist("VBOX_RAM_SIZE"))
         cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE"));
 #endif
-    uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
-    uint32_t cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
-    uint64_t u64McfgBase   = 0;
-    uint32_t u32McfgLength = 0;
+    uint64_t const cbRam   = cRamMBs * (uint64_t)_1M;
+    uint32_t cbRamHole     = MM_RAM_HOLE_SIZE_DEFAULT;
+    uint64_t uMcfgBase     = 0;
+    uint32_t cbMcfgLength  = 0;
 
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                               H();
@@ -607,9 +603,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     {
         /* We'd better have 0x10000000 region, to cover 256 buses
            but this put too much load on hypervisor heap */
-        u32McfgLength = 0x4000000; //0x10000000;
-        cbRamHole += u32McfgLength;
-        u64McfgBase = _4G - cbRamHole;
+        cbMcfgLength = 0x4000000; //0x10000000;
+        cbRamHole += cbMcfgLength;
+        uMcfgBase = _4G - cbRamHole;
     }
 
     BusAssignmentManager* BusMgr = pConsole->mBusMgr = BusAssignmentManager::createInstance(chipsetType);
@@ -648,7 +644,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * Set the root (and VMM) level values.
          */
         hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                                 H();
-        InsertConfigString(pRoot, "Name",                 bstr);
+        InsertConfigString(pRoot,  "Name",                 bstr);
         InsertConfigBytes(pRoot,   "UUID", &HardwareUuid, sizeof(HardwareUuid));
         InsertConfigInteger(pRoot, "RamSize",              cbRam);
         InsertConfigInteger(pRoot, "RamHoleSize",          cbRamHole);
@@ -755,7 +751,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * Hardware virtualization settings.
          */
-        PCFGMNODE pHWVirtExt;
+        BOOL        fIsGuest64Bit = false;
+        PCFGMNODE   pHWVirtExt;
         InsertConfigNode(pRoot, "HWVirtExt", &pHWVirtExt);
         if (fHWVirtExEnabled)
         {
@@ -768,9 +765,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             BOOL fSupportsLongMode = false;
             hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
                                             &fSupportsLongMode);                            H();
-            hrc = guestOSType->COMGETTER(Is64Bit)(&fIs64BitGuest);                          H();
+            hrc = guestOSType->COMGETTER(Is64Bit)(&fIsGuest64Bit);                          H();
 
-            if (fSupportsLongMode && fIs64BitGuest)
+            if (fSupportsLongMode && fIsGuest64Bit)
             {
                 InsertConfigInteger(pHWVirtExt, "64bitEnabled", 1);
 #if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
@@ -787,7 +784,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 
             /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
-            if (    !fIs64BitGuest
+            if (    !fIsGuest64Bit
                 &&  fIOAPIC
                 &&  (   osTypeId == "WindowsNT4"
                     || osTypeId == "Windows2000"
@@ -946,20 +943,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * PCI buses.
          */
-        uint32_t u32IocPciAddress, u32HbcPciAddress;
+        uint32_t uIocPciAddress, uHbcPciAddress;
         switch (chipsetType)
         {
             default:
                 Assert(false);
             case ChipsetType_PIIX3:
                 InsertConfigNode(pDevices, "pci", &pDev);
-                u32HbcPciAddress = (0x0 << 16) | 0;
-                u32IocPciAddress = (0x1 << 16) | 0; // ISA controller
+                uHbcPciAddress = (0x0 << 16) | 0;
+                uIocPciAddress = (0x1 << 16) | 0; // ISA controller
                 break;
             case ChipsetType_ICH9:
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
-                u32HbcPciAddress = (0x1e << 16) | 0;
-                u32IocPciAddress = (0x1f << 16) | 0; // LPC controller
+                uHbcPciAddress = (0x1e << 16) | 0;
+                uIocPciAddress = (0x1f << 16) | 0; // LPC controller
                 break;
         }
         InsertConfigNode(pDev,     "0", &pInst);
@@ -969,8 +966,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (chipsetType == ChipsetType_ICH9)
         {
             /* Provide MCFG info */
-            InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
-            InsertConfigInteger(pCfg,  "McfgLength", u32McfgLength);
+            InsertConfigInteger(pCfg,  "McfgBase",   uMcfgBase);
+            InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
 
 
             /* And register 2 bridges */
@@ -1023,7 +1020,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             bool fGetKeyFromRealSMC;
             Bstr bstrKey;
             rc = getSmcDeviceKey(pMachine, bstrKey.asOutParam(), &fGetKeyFromRealSMC);
-            AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+            AssertRCReturn(rc, rc);
 
             InsertConfigString(pCfg,   "DeviceKey", bstrKey);
             InsertConfigInteger(pCfg,  "GetKeyFromRealSMC", fGetKeyFromRealSMC);
@@ -1241,8 +1238,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
-            InsertConfigInteger(pBiosCfg,  "McfgBase",   u64McfgBase);
-            InsertConfigInteger(pBiosCfg,  "McfgLength", u32McfgLength);
+            InsertConfigInteger(pBiosCfg,  "McfgBase",   uMcfgBase);
+            InsertConfigInteger(pBiosCfg,  "McfgLength", cbMcfgLength);
 
             DeviceType_T bootDevice;
             if (SchemaDefs::MaxBootPosition > 9)
@@ -1287,21 +1284,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
         else
         {
-            Utf8Str efiRomFile;
-
             /* Autodetect firmware type, basing on guest type */
             if (eFwType == FirmwareType_EFI)
             {
-                eFwType =
-                        fIs64BitGuest ?
-                        (FirmwareType_T)FirmwareType_EFI64
-                        :
-                        (FirmwareType_T)FirmwareType_EFI32;
+                eFwType = fIsGuest64Bit
+                        ? (FirmwareType_T)FirmwareType_EFI64
+                        : (FirmwareType_T)FirmwareType_EFI32;
             }
-            bool f64BitEntry = eFwType == FirmwareType_EFI64;
+            bool const f64BitEntry = eFwType == FirmwareType_EFI64;
 
-            rc = findEfiRom(virtualBox, eFwType, efiRomFile);
-            AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+            Utf8Str efiRomFile;
+            rc = findEfiRom(virtualBox, eFwType, &efiRomFile);
+            AssertRCReturn(rc, rc);
 
             /* Get boot args */
             Bstr bootArgs;
@@ -1310,6 +1304,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* Get device props */
             Bstr deviceProps;
             hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiDeviceProps").raw(), deviceProps.asOutParam()); H();
+
             /* Get GOP mode settings */
             uint32_t u32GopMode = UINT32_MAX;
             hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiGopMode").raw(), bstr.asOutParam()); H();
@@ -1362,6 +1357,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         PCFGMNODE aCtrlNodes[StorageControllerType_LsiLogicSas + 1] = {};
         hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));       H();
 
+        bool fFdcEnabled = false;
         for (size_t i = 0; i < ctrls.size(); ++i)
         {
             DeviceType_T *paLedDevType = NULL;
@@ -1460,9 +1456,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         for (uint32_t j = 0; j < 4; ++j)
                         {
                             static const char * const s_apszConfig[4] =
-                                    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+                            { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
                             static const char * const s_apszBiosConfig[4] =
-                                    { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
+                            { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
 
                             LONG lPortNumber = -1;
                             hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);               H();
@@ -1686,7 +1682,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (iPciDeviceNo == 0x11 && fSwapSlots3and11)
                 iPciDeviceNo = 3;
 #endif
-            PciAddr = PciBusAddress(0, iPciDeviceNo, 0);
+            PciBusAddress PciAddr = PciBusAddress(0, iPciDeviceNo, 0);
             hrc = BusMgr->assignPciDevice(pszAdapterName, pInst, PciAddr);                               H();
 
             InsertConfigNode(pInst, "Config", &pCfg);
@@ -2452,13 +2448,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
                 }
             }
-            InsertConfigInteger(pCfg,  "IocPciAddress", u32IocPciAddress);
+            InsertConfigInteger(pCfg,  "IocPciAddress", uIocPciAddress);
             if (chipsetType == ChipsetType_ICH9)
             {
-                InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
-                InsertConfigInteger(pCfg,  "McfgLength", u32McfgLength);
+                InsertConfigInteger(pCfg,  "McfgBase",   uMcfgBase);
+                InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
             }
-            InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
+            InsertConfigInteger(pCfg,  "HostBusPciAddress", uHbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
 
@@ -2802,7 +2798,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, uLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
-                AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+                AssertRCReturn(rc, rc);
 
                 CFGMR3RemoveNode(pLunL0);
             }
@@ -3039,7 +3035,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             /* Attach the new driver. */
             rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, uLUN,
                                 PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
-            AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+            AssertRCReturn(rc, rc);
 
             /* There is no need to handle removable medium mounting, as we
              * unconditionally replace everthing including the block driver level.
@@ -3079,11 +3075,12 @@ int Console::configMedium(PCFGMNODE pLunL0,
         int rc = VINF_SUCCESS;
         HRESULT hrc;
         Bstr bstr;
-
-#define H()         AssertMsgReturnStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), if (phrc) *phrc = hrc, VERR_GENERAL_FAILURE)
-
         PCFGMNODE pLunL1 = NULL;
         PCFGMNODE pCfg = NULL;
+
+#define H() \
+    AssertMsgReturnStmt(SUCCEEDED(hrc), ("hrc=%Rhrc\n", hrc), if (phrc) *phrc = hrc, Global::vboxStatusCodeFromCOM(hrc))
+
 
         BOOL fHostDrive = FALSE;
         MediumType_T mediumType  = MediumType_Normal;
@@ -3137,8 +3134,8 @@ int Console::configMedium(PCFGMNODE pLunL0,
 
             if (    pMedium
                 && (   enmType == DeviceType_DVD
-                    || enmType == DeviceType_Floppy
-            ))
+                    || enmType == DeviceType_Floppy)
+               )
             {
                 // if this medium represents an ISO image and this image is inaccessible,
                 // the ignore it instead of causing a failure; this can happen when we
@@ -3147,15 +3144,11 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 // we failed on startup, but that's not good because the only way out then
                 // would be to discard the VM state...
                 MediumState_T mediumState;
-                rc = pMedium->RefreshState(&mediumState);
-                AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
-
+                hrc = pMedium->RefreshState(&mediumState);                              H();
                 if (mediumState == MediumState_Inaccessible)
                 {
                     Bstr loc;
-                    rc = pMedium->COMGETTER(Location)(loc.asOutParam());
-                    if (FAILED(rc)) return rc;
-
+                    hrc = pMedium->COMGETTER(Location)(loc.asOutParam());               H();
                     setVMRuntimeErrorCallbackF(mpVM,
                                             this,
                                             0,
@@ -3199,13 +3192,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 InsertConfigString(pCfg, "Format", bstr);
 
                 if (mediumType == MediumType_Readonly)
-                {
                     InsertConfigInteger(pCfg, "ReadOnly", 1);
-                }
                 else if (enmType == DeviceType_Floppy)
-                {
                     InsertConfigInteger(pCfg, "MaybeReadOnly", 1);
-                }
 
                 /* Start without exclusive write access to the images. */
                 /** @todo Live Migration: I don't quite like this, we risk screwing up when
@@ -3219,17 +3208,13 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 if (   enmType == DeviceType_HardDisk
                     && (   aMachineState == MachineState_TeleportingIn
                         || aMachineState == MachineState_FaultTolerantSyncing))
-                {
                     InsertConfigInteger(pCfg, "TempReadOnly", 1);
-                }
 
                 /* Flag for opening the medium for sharing between VMs. This
                  * is done at the moment only for the first (and only) medium
                  * in the chain, as shared media can have no diffs. */
                 if (mediumType == MediumType_Shareable)
-                {
                     InsertConfigInteger(pCfg, "Shareable", 1);
-                }
 
                 if (!fUseHostIOCache)
                 {
@@ -3248,13 +3233,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 {
                     InsertConfigInteger(pCfg, "SetupMerge", 1);
                     if (uImage == uMergeSource)
-                    {
                         InsertConfigInteger(pCfg, "MergeSource", 1);
-                    }
                     else if (uImage == uMergeTarget)
-                    {
                         InsertConfigInteger(pCfg, "MergeTarget", 1);
-                    }
                 }
 
                 switch (enmType)
@@ -3319,13 +3300,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     if (fSetupMerge)
                     {
                         if (uImage == uMergeSource)
-                        {
                             InsertConfigInteger(pCur, "MergeSource", 1);
-                        }
                         else if (uImage == uMergeTarget)
-                        {
                             InsertConfigInteger(pCur, "MergeTarget", 1);
-                        }
                     }
 
                     /* Pass all custom parameters. */
@@ -3356,9 +3333,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     /* Custom code: put marker to not use host IP stack to driver
                      * configuration node. Simplifies life of DrvVD a bit. */
                     if (!fHostIP)
-                    {
                         InsertConfigInteger(pCfg, "HostIPStack", 0);
-                    }
 
                     /* next */
                     pParent = pCur;
@@ -3366,14 +3341,13 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 }
             }
         }
+#undef H
     }
     catch (ConfigError &x)
     {
         // InsertConfig threw something:
         return x.m_vrc;
     }
-
-#undef H
 
     return VINF_SUCCESS;
 }
