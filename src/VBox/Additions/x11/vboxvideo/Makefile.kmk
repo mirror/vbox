@@ -71,6 +71,7 @@ vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
 vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_SOURCES = \
+	pointer.c \
 	vboxutils.c \
 	vboxvideo.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
