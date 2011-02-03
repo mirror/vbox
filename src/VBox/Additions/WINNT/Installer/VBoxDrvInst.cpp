@@ -142,12 +142,12 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
 int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSilent,
                       const _TCHAR *pszLogFile)
 {
-    HRESULT hr = ERROR_SUCCESS;
+    HRESULT hr = S_OK;
     HMODULE hDIFxAPI = LoadLibrary(_T("DIFxAPI.dll"));
     if (NULL == hDIFxAPI)
     {
         _tprintf(_T("ERROR: Unable to locate DIFxAPI.dll!\n"));
-        hr = ERROR_FILE_NOT_FOUND;
+        hr = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
     }
     else
     {
@@ -157,7 +157,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
             if (g_pfnDriverPackageInstall == NULL)
             {
                 _tprintf(_T("ERROR: Unable to retrieve entry point for DriverPackageInstallW!\n"));
-                hr = ERROR_PROC_NOT_FOUND;
+                hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
             }
         }
         else
@@ -166,7 +166,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
             if (g_pfnDriverPackageUninstall == NULL)
             {
                 _tprintf(_T("ERROR: Unable to retrieve entry point for DriverPackageUninstallW!\n"));
-                hr = ERROR_PROC_NOT_FOUND;
+                hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
             }
         }
 
@@ -176,20 +176,20 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
             if (g_pfnDIFXAPISetLogCallback == NULL)
             {
                 _tprintf(_T("ERROR: Unable to retrieve entry point for DIFXAPISetLogCallbackW!\n"));
-                hr = ERROR_PROC_NOT_FOUND;
+                hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
             }
         }
     }
 
     if (SUCCEEDED(hr))
     {
-        FILE *fh = NULL;
+        FILE *phFile = NULL;
         if (pszLogFile)
         {
-            fh = _wfopen(pszLogFile, _T("a"));
-            if (!fh)
+            phFile = _wfopen(pszLogFile, _T("a"));
+            if (!phFile)
                 _tprintf(_T("ERROR: Unable to create log file!\n"));
-            g_pfnDIFXAPISetLogCallback(LogCallback, fh);
+            g_pfnDIFXAPISetLogCallback(LogCallback, phFile);
         }
 
         INSTALLERINFO instInfo =
@@ -204,7 +204,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
         if (0 == GetFullPathNameW(pszDriverPath, MAX_PATH, szDriverInf, NULL))
         {
             _tprintf(_T("ERROR: INF-Path too long / could not be retrieved!\n"));
-            hr = ERROR_INVALID_PARAMETER;
+            hr = HRESULT_FROM_WIN32(ERROR_INVALID_PARAMETER);
         }
         else
         {
@@ -300,9 +300,9 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                         _tprintf(_T("ERROR: Section in .INF-file was not found!\n"));
                         break;
 
-                case ERROR_SHARING_VIOLATION:
-                    _tprintf(_T("ERROR: A component of the driver package in the DIFx driver store is locked by a thread or process\n"));
-                    break;
+                    case ERROR_SHARING_VIOLATION:
+                        _tprintf(_T("ERROR: A component of the driver package in the DIFx driver store is locked by a thread or process\n"));
+                        break;
 
                     /*
                      * !    sig:           Verifying file against specific Authenticode(tm) catalog failed! (0x800b0109)
@@ -314,9 +314,9 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                         _tprintf(_T("ERROR: Adding driver to the driver store failed!!\n"));
                         break;
 
-                case ERROR_UNSUPPORTED_TYPE:
-                    _tprintf(_T("ERROR: The driver package type is not supported of INF %ws!\n"), szDriverInf);
-                    break;
+                    case ERROR_UNSUPPORTED_TYPE:
+                        _tprintf(_T("ERROR: The driver package type is not supported of INF %ws!\n"), szDriverInf);
+                        break;
 
                     default:
                     {
@@ -327,13 +327,14 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                         break;
                     }
                 }
-                hr = ERROR_INSTALL_FAILURE;
+                hr = HRESULT_FROM_WIN32(dwRet);
             }
             g_pfnDIFXAPISetLogCallback(NULL, NULL);
-            if (fh)
-                fclose(fh);
+            if (phFile)
+                fclose(phFile);
             if (SUCCEEDED(hr))
             {
+                _tprintf(_T("Driver was installed successfully!\n"));
                 if (fReboot)
                     _tprintf(_T("A reboot is needed to complete the driver (un)installation!\n"));
             }
