@@ -581,7 +581,6 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     {
                         if (cMilliesSleep < 100)
                             cMilliesSleep++;
-                        RTPrintf("cMilliesSleep = %d\n", cMilliesSleep);
                         RTThreadSleep(cMilliesSleep);
                     }
                     else
