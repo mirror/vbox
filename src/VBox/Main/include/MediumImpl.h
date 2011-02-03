@@ -176,7 +176,7 @@ public:
 
     bool addRegistry(const Guid& id);
     bool isInRegistry(const Guid& id);
-    const Guid& getFirstRegistryMachineId() const;
+    bool getFirstRegistryMachineId(Guid &uuid) const;
     HRESULT addToRegistryIDList(GuidList &llRegistryIDs);
 
     HRESULT addBackReference(const Guid &aMachineId,
