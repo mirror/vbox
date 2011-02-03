@@ -284,7 +284,7 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
 {
     /** @todo Replace this with a sh/ksh/csh/rexx like toplevel language that
      *        allows doing function, loops, if, cases, and such. */
-    int rc = 0;
+    int rc = VINF_SUCCESS;
     while (pDbgc->cInputLines)
     {
         /*
@@ -342,6 +342,7 @@ static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
         if (   rc == VERR_DBGC_QUIT
             || rc == VWRN_DBGC_CMD_PENDING)
             break;
+        rc = VINF_SUCCESS; /* ignore other statuses */
     }
 
     return rc;
