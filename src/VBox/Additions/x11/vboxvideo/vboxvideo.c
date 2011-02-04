@@ -947,10 +947,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Framebuffer-related setup */
     pScrn->bitmapBitOrder = BITMAP_BIT_ORDER;
 
-    /* VGA hardware initialisation */
-    if (!vgaHWGetHWRec(pScrn))
-        return FALSE;
-
     TRACE_EXIT();
     return (TRUE);
 }
@@ -990,6 +986,11 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     unsigned flags;
 
     TRACE_ENTRY();
+
+    /* VGA hardware initialisation */
+    if (!vgaHWGetHWRec(pScrn))
+        return FALSE;
+
     /* We make use of the X11 VBE code to save and restore text mode, in
        order to keep our code simple. */
     if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
