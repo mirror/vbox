@@ -1444,11 +1444,29 @@ static void crStateLockClientPointer(CRClientPointer* cp)
     }
 }
 
+static GLboolean crStateCanLockClientPointer(CRClientPointer* cp)
+{
+    return !(cp->enabled && cp->buffer && cp->buffer->id);
+}
+
 void STATE_APIENTRY crStateLockArraysEXT(GLint first, GLint count)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
-    unsigned int i;
+    int i;
+
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
+    {
+        if (!crStateCanLockClientPointer(crStateGetClientPointerByIndex(i, &c->array)))
+        {
+            break;
+        }
+    }
+    if (i<CRSTATECLIENT_MAX_VERTEXARRAYS)
+    {
+        crDebug("crStateLockArraysEXT ignored because array %i have a bound VBO", i);
+        return;
+    }
 
     c->array.locked = GL_TRUE;
     c->array.lockFirst = first;
@@ -1457,20 +1475,9 @@ void STATE_APIENTRY crStateLockArraysEXT(GLint first, GLint count)
     c->array.synced = GL_FALSE;
 #endif
 
-    crStateLockClientPointer(&c->array.v);
-    crStateLockClientPointer(&c->array.c);
-    crStateLockClientPointer(&c->array.f);
-    crStateLockClientPointer(&c->array.s);
-    crStateLockClientPointer(&c->array.e);
-    crStateLockClientPointer(&c->array.i);
-    crStateLockClientPointer(&c->array.n);
-    for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
     {
-        crStateLockClientPointer(&c->array.t[i]);
-    }
-    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
-    {
-        crStateLockClientPointer(&c->array.a[i]);
+        crStateLockClientPointer(crStateGetClientPointerByIndex(i, &c->array));
     }
 }
 
@@ -1478,27 +1485,16 @@ void STATE_APIENTRY crStateUnlockArraysEXT()
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
-    unsigned int i;
+    int i;
 
     c->array.locked = GL_FALSE;
 #ifdef IN_GUEST
     c->array.synced = GL_FALSE;
 #endif
 
-    crStateUnlockClientPointer(&c->array.v);
-    crStateUnlockClientPointer(&c->array.c);
-    crStateUnlockClientPointer(&c->array.f);
-    crStateUnlockClientPointer(&c->array.s);
-    crStateUnlockClientPointer(&c->array.e);
-    crStateUnlockClientPointer(&c->array.i);
-    crStateUnlockClientPointer(&c->array.n);
-    for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
     {
-        crStateUnlockClientPointer(&c->array.t[i]);
-    }
-    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
-    {
-        crStateUnlockClientPointer(&c->array.a[i]);
+        crStateUnlockClientPointer(crStateGetClientPointerByIndex(i, &c->array));
     }
 }
 
