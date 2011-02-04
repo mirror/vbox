@@ -119,12 +119,8 @@ void packspuFlush(void *arg )
     CRMessageOpcodes *hdr;
     CRPackBuffer *buf;
 
-#ifdef CHROMIUM_THREADSAFE
-    crLockMutex(&_PackMutex);
-#endif
-
     /* we should _always_ pass a valid <arg> value */
-    CRASSERT(thread);
+    CRASSERT(thread && thread->inUse);
 #ifdef CHROMIUM_THREADSAFE
     CR_LOCK_PACKER_CONTEXT(thread->packer);
 #endif
@@ -151,7 +147,6 @@ void packspuFlush(void *arg )
            crPackResetPointers(thread->packer);
 #ifdef CHROMIUM_THREADSAFE
            CR_UNLOCK_PACKER_CONTEXT(thread->packer);
-           crUnlockMutex(&_PackMutex);
 #endif
            return;
     }
@@ -182,7 +177,6 @@ void packspuFlush(void *arg )
 
 #ifdef CHROMIUM_THREADSAFE
     CR_UNLOCK_PACKER_CONTEXT(thread->packer);
-    crUnlockMutex(&_PackMutex);
 #endif
 }
 

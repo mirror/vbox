@@ -133,7 +133,6 @@ void PACKSPU_APIENTRY packspu_Flush( void )
                 && (pack_spu.thread[i].netServer.conn->u32ClientID == thread->netServer.conn->u32InjectClientID)
                 && pack_spu.thread[i].packer && pack_spu.thread[i].packer->currentBuffer)
             {
-                crUnlockMutex(&_PackMutex);
                 packspuFlush((void *) &pack_spu.thread[i]);
                 break;
             }
@@ -145,8 +144,9 @@ void PACKSPU_APIENTRY packspu_Flush( void )
               so there's nothing to sync with and we should just pass commands through our own connection.
              */
             thread->netServer.conn->u32InjectClientID=0;
-            crUnlockMutex(&_PackMutex);
-        } 
+        }
+
+        crUnlockMutex(&_PackMutex);
 
         packspuFlush((void *) thread);
     }
