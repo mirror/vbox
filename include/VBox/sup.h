@@ -1116,6 +1116,8 @@ typedef enum SUPDRVOBJTYPE
     SUPDRVOBJTYPE_SEM_EVENT,
     /** Multiple release event semaphore. */
     SUPDRVOBJTYPE_SEM_EVENT_MULTI,
+    /** Raw PCI device. */
+    SUPDRVOBJTYPE_RAW_PCI_DEVICE,
     /** The first invalid object type in this end. */
     SUPDRVOBJTYPE_END,
     /** The usual 32-bit type size hack. */
