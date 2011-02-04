@@ -1040,7 +1040,6 @@ RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_SOURCES = \
 	common/alloc/alloc.cpp \
 	common/err/errmsg.cpp \
-	common/err/errmsgxpcom.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
@@ -1109,7 +1108,8 @@ RuntimeGuestR3Mini_SOURCES.freebsd = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp
+	r3/posix/utf8-posix.cpp \
+	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-posix.cpp \
@@ -1119,7 +1119,8 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp
+	r3/posix/utf8-posix.cpp \
+	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-posix.cpp \
@@ -1129,7 +1130,8 @@ RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp
+	r3/posix/utf8-posix.cpp \
+	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.win = \
 	r3/win/alloc-win.cpp \
 	r3/win/fileio-win.cpp \
