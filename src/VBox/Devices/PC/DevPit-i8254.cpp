@@ -176,7 +176,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 #ifdef IN_RING3
 PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now);
+static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now, bool in_timer);
 #endif
 RT_C_DECLS_END
 
@@ -306,7 +306,7 @@ static void pit_set_gate(PITState *pit, int channel, int val)
             /* restart counting on rising edge */
             Log(("pit_set_gate: restarting mode %d\n", s->mode));
             s->count_load_time = TMTimerGet(pTimer);
-            pit_irq_timer_update(s, s->count_load_time, s->count_load_time);
+            pit_irq_timer_update(s, s->count_load_time, s->count_load_time, false);
         }
         break;
     case 2:
@@ -315,7 +315,7 @@ static void pit_set_gate(PITState *pit, int channel, int val)
             /* restart counting on rising edge */
             Log(("pit_set_gate: restarting mode %d\n", s->mode));
             s->count_load_time = s->u64ReloadTS = TMTimerGet(pTimer);
-            pit_irq_timer_update(s, s->count_load_time, s->count_load_time);
+            pit_irq_timer_update(s, s->count_load_time, s->count_load_time, false);
         }
         /* XXX: disable/enable counting */
         break;
@@ -330,7 +330,7 @@ DECLINLINE(void) pit_load_count(PITChannelState *s, int val)
         val = 0x10000;
     s->count_load_time = s->u64ReloadTS = TMTimerGet(pTimer);
     s->count = val;
-    pit_irq_timer_update(s, s->count_load_time, s->count_load_time);
+    pit_irq_timer_update(s, s->count_load_time, s->count_load_time, false);
 
     /* log the new rate (ch 0 only). */
     if (s->pTimerR3 /* ch 0 */)
@@ -418,7 +418,7 @@ static int64_t pit_get_next_transition_time(PITChannelState *s,
     return next_time + 1;
 }
 
-static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now)
+static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now, bool in_timer)
 {
     int64_t expire_time;
     int irq_level;
@@ -437,10 +437,15 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
     {
         pDevIns = s->CTX_SUFF(pPit)->pDevIns;
 
-        if (EFFECTIVE_MODE(s->mode) == 2)
+        if (EFFECTIVE_MODE(s->mode) == 2 && in_timer)
         {
-            /* We just flip-flop the irq level to save that extra timer call, which isn't generally required (we haven't served it for years). */
+            /* We just flip-flop the irq level to save that extra timer call, which
+             * isn't generally required (we haven't served it for years). However,
+             * the pulse is only generated when running on the timer callback (and
+             * thus on the trailing edge of the output signal pulse).
+             */
             PDMDevHlpISASetIrq(pDevIns, s->irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+
         } else
             PDMDevHlpISASetIrq(pDevIns, s->irq, irq_level);
     }
@@ -895,7 +900,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     PITChannelState *s = (PITChannelState *)pvUser;
     STAM_PROFILE_ADV_START(&s->CTX_SUFF(pPit)->StatPITHandler, a);
     Log(("pitTimer\n"));
-    pit_irq_timer_update(s, s->next_transition_time, TMTimerGet(pTimer));
+    pit_irq_timer_update(s, s->next_transition_time, TMTimerGet(pTimer), true);
     STAM_PROFILE_ADV_STOP(&s->CTX_SUFF(pPit)->StatPITHandler, a);
 }
 
