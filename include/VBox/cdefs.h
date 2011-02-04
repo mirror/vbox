@@ -59,6 +59,8 @@
 #define IN_DIS
 #define IN_INTNET_R0
 #define IN_INTNET_R3
+#define IN_PCIRAW_R0
+#define IN_PCIRAW_R3
 #define IN_REM_R3
 #define IN_SUP_R0
 #define IN_SUP_R3
@@ -144,6 +146,33 @@
 # define INTNETR0DECL(type) DECLIMPORT(type) VBOXCALL
 #endif
 
+/** @def IN_PCIRAW_R3
+ * Used to indicate whether we're inside the same link module as the Ring-3
+ * PCI passthrough support.
+ */
+/** @def PCIRAWR3DECL(type)
+ * PCI passthrough export or import declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#ifdef IN_PCIRAW_R3
+# define PCIRAWR3DECL(type) DECLEXPORT(type) VBOXCALL
+#else
+# define PCIRAWR3DECL(type) DECLIMPORT(type) VBOXCALL
+#endif
+
+/** @def IN_PCIRAW_R0
+ * Used to indicate whether we're inside the same link module as the R0
+ * PCI passthrough support.
+ */
+/** @def PCIRAWR0DECL(type)
+ * PCI passthroug export or import declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#ifdef IN_PCIRAW_R0
+# define PCIRAWR0DECL(type) DECLEXPORT(type) VBOXCALL
+#else
+# define PCIRAWR0DECL(type) DECLIMPORT(type) VBOXCALL
+#endif
 
 
 /** @def IN_REM_R3

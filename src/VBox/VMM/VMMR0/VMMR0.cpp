@@ -29,6 +29,9 @@
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+#include <VBox/vmm/pdmpci.h>
+#endif
 
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
@@ -38,6 +41,7 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
+
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
@@ -126,19 +130,28 @@ VMMR0DECL(int) ModuleInit(void)
                         rc = IntNetR0Init();
                         if (RT_SUCCESS(rc))
                         {
-                            rc = CPUMR0ModuleInit();
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                            rc = PciRawR0Init();
+#endif
                             if (RT_SUCCESS(rc))
                             {
-                                LogFlow(("ModuleInit: returns success.\n"));
-                                return VINF_SUCCESS;
+                                rc = CPUMR0ModuleInit();
+                                if (RT_SUCCESS(rc))
+                                {
+                                    LogFlow(("ModuleInit: returns success.\n"));
+                                    return VINF_SUCCESS;
+                                }
                             }
-                        }
-
-                        /* bail out */
-                        LogFlow(("ModuleTerm: returns %Rrc\n", rc));
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                        PGMR0DynMapTerm();
+                            
+                            /* bail out */
+                            LogFlow(("ModuleTerm: returns %Rrc\n", rc));
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                            PciRawR0Term();
 #endif
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                            PGMR0DynMapTerm();
+#endif
+                        }
                     }
                     PGMDeregisterStringFormatTypes();
                 }
@@ -177,6 +190,13 @@ VMMR0DECL(void) ModuleTerm(void)
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
+#endif
+        
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+    /*
+     * Terminate PCI passthrough service.
+     */
+    PciRawR0Term();
 #endif
     PGMDeregisterStringFormatTypes();
     HWACCMR0Term();
@@ -1154,6 +1174,15 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
             return IntNetR0IfAbortWaitReq(pSession, (PINTNETIFABORTWAITREQ)pReqHdr);
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+        /*
+         * Requests to host PCI driver service.
+         */
+        case VMMR0_DO_PCIRAW_REQ:
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PPCIRAWSENDREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            return PciRawR0ProcessReq(pSession, (PPCIRAWSENDREQ)pReqHdr);
+#endif
         /*
          * For profiling.
          */
@@ -1177,7 +1206,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 #endif
         default:
             /*
-             * We're returning VERR_NOT_SUPPORT here so we've got something else
+             * We're returning VERR_NOT_SUPPORT here s we've got something else
              * than -1 which the interrupt gate glue code might return.
              */
             Log(("operation %#x is not supported\n", enmOperation));
@@ -1526,4 +1555,3 @@ DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
      */
     RTAssertMsg2V(pszFormat, va);
 }
-
