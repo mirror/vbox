@@ -116,7 +116,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_SHOWVMINFO)
         RTStrmPrintf(pStrm,
-                     "VBoxManage showvminfo       <uuid>|<name> [--details] [--statistics]\n"
+                     "VBoxManage showvminfo       <uuid>|<name> [--details]\n"
                      "                            [--machinereadable]\n"
                      "VBoxManage showvminfo       <uuid>|<name> --log <idx>\n"
                      "\n");
