@@ -126,11 +126,8 @@ unsetenv
 utimes
 vgaHWFreeHWRec
 vgaHWGetHWRec
-vgaHWGetIndex
-vgaHWMapMem
 vgaHWRestoreFonts
 vgaHWSaveFonts
-vgaHWUnmapMem
 write
 xf86AddDriver
 xf86ConfigPciEntity

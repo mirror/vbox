@@ -218,10 +218,7 @@ static const char *ramdacSymbols[] = {
 
 static const char *vgahwSymbols[] = {
     "vgaHWGetHWRec",
-    "vgaHWGetIndex",
     "vgaHWFreeHWRec",
-    "vgaHWMapMem",
-    "vgaHWUnmapMem",
     "vgaHWSaveFonts",
     "vgaHWRestoreFonts",
     NULL
@@ -1455,13 +1452,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
                                     pVBox->pciTag, pScrn->memPhysBase,
                                     (unsigned) pScrn->videoRam * 1024);
 #endif
-        if (pVBox->base)
-        {
-            /* We need this for saving/restoring textmode */
-            VGAHWPTR(pScrn)->IOBase = pScrn->domainIOBase;
-            rc = vgaHWMapMem(pScrn);
-        }
-        else
+        if (!pVBox->base)
             rc = FALSE;
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
@@ -1485,7 +1476,6 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->base,
                     (unsigned) pScrn->videoRam * 1024);
 #endif
-    vgaHWUnmapMem(pScrn);
     pVBox->base = NULL;
     TRACE_EXIT();
 }
