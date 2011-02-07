@@ -198,28 +198,15 @@ static const char *fbSymbols[] = {
 };
 
 static const char *shadowfbSymbols[] = {
-  "ShadowFBInit2",
-  NULL
+    "ShadowFBInit2",
+    NULL
 };
 
 static const char *vbeSymbols[] = {
     "VBEExtendedInit",
-    "VBEFindSupportedDepths",
-    "VBEGetModeInfo",
-    "VBEGetVBEInfo",
     "VBEGetVBEMode",
-    "VBEPrintModes",
     "VBESaveRestore",
-    "VBESetDisplayStart",
-    "VBESetGetDACPaletteFormat",
-    "VBESetGetLogicalScanlineLength",
-    "VBESetGetPaletteData",
-    "VBESetModeNames",
-    "VBESetModeParameters",
     "VBESetVBEMode",
-    "VBEValidateModes",
-    "vbeDoEDID",
-    "vbeFree",
     NULL
 };
 
@@ -231,15 +218,12 @@ static const char *ramdacSymbols[] = {
 
 static const char *vgahwSymbols[] = {
     "vgaHWGetHWRec",
-    "vgaHWHandleColormaps",
+    "vgaHWGetIndex",
     "vgaHWFreeHWRec",
     "vgaHWMapMem",
     "vgaHWUnmapMem",
     "vgaHWSaveFonts",
     "vgaHWRestoreFonts",
-    "vgaHWGetIndex",
-    "vgaHWSaveScreen",
-    "vgaHWDPMSSet",
     NULL
 };
 #endif /* !XORG_7X */
