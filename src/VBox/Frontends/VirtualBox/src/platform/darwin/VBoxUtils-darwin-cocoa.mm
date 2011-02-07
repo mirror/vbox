@@ -471,11 +471,6 @@ void darwinRetranslateAppMenu()
     }
 }
 
-/* Make an empty interface declaration of QCocoaWindowDelegate to shut up the
-   compiler. */
-@interface QCocoaWindowDelegate: NSObject {}
-@end
-
 /* Our resize proxy singleton. This class has two major tasks. First it is used
    to proxy the windowWillResize selector of the Qt delegate. As this is class
    global and therewith done for all Qt window instances, we have to track the
@@ -483,6 +478,7 @@ void darwinRetranslateAppMenu()
 @interface UIResizeProxy: NSObject
 {
     NSMutableArray *m_pArray;
+    bool m_fInit;
 }
 +(UIResizeProxy*)sharedResizeProxy;
 -(void)addWindow:(NSWindow*)pWindow;
@@ -501,14 +497,22 @@ static UIResizeProxy *gSharedResizeProxy = nil;
 }
 -(id)init
 {
-    if ((self = [super init]))
+    self = [super init];
+
+    m_fInit = false;
+
+    return self;
+}
+- (void)addWindow:(NSWindow*)pWindow
+{
+    if (!m_fInit)
     {
         /* Create an array which contains the registered windows. */
         m_pArray = [[NSMutableArray alloc] init];
         /* Swizzle the windowWillResize method. This means replacing the
            original method with our own one and reroute the original one to
            another name. */
-        Class oriClass = [QCocoaWindowDelegate class];
+        Class oriClass = [[pWindow delegate] class];
         Class myClass = [UIResizeProxy class];
         SEL oriSel = @selector(windowWillResize:toSize:);
         SEL qtSel  = @selector(qtWindowWillResize:toSize:);
@@ -520,11 +524,8 @@ static UIResizeProxy *gSharedResizeProxy = nil;
         IMP old = method_setImplementation(m1, method_getImplementation(m2));
         /* Add a new method to our class with the old implementation. */
         class_addMethod(oriClass, qtSel, old, method_getTypeEncoding(m3));
+        m_fInit = true;
     }
-    return self;
-}
-- (void)addWindow:(NSWindow*)pWindow
-{
     [m_pArray addObject:pWindow];
 }
 - (void)removeWindow:(NSWindow*)pWindow
