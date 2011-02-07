@@ -129,7 +129,7 @@ int VBoxIPCMsgShowBalloonMsg(PVBOXIPCCONTEXT pCtx, UINT wParam, UINT lParam)
     int rc = VBoxIPCReadMessage(pCtx,(BYTE*)&msg, sizeof(msg));
     if (RT_SUCCESS(rc))
     {
-        hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
+        hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
                           msg.szContent, msg.szTitle,
                           msg.ulShowMS, msg.ulType);
     }
