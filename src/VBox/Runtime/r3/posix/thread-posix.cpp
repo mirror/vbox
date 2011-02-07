@@ -443,11 +443,9 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_DARWIN)
-    thread_basic_info ThreadInfo;
-    mach_msg_type_number_t Count = sizeof(ThreadInfo) / sizeof(int);
-    kern_return_t krc;
-
-    krc = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&ThreadInfo, &Count);
+    thread_basic_info       ThreadInfo;
+    mach_msg_type_number_t  Count = THREAD_BASIC_INFO_COUNT;
+    kern_return_t krc = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&ThreadInfo, &Count);
     AssertReturn(krc == KERN_SUCCESS, RTErrConvertFromDarwinKern(krc));
 
     *pKernelTime = ThreadInfo.system_time.seconds * 1000 + ThreadInfo.system_time.microseconds / 1000;
