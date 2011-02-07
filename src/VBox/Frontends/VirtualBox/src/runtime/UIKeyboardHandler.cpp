@@ -307,7 +307,10 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
     }
 
     if (aReleaseHostKey)
+    {
         m_bIsHostComboPressed = false;
+        m_pressedHostComboKeys.clear();
+    }
 
 #ifdef Q_WS_MAC
     unsigned int hostComboModifierMask = 0;
@@ -1271,7 +1274,6 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                 if (m_bIsHostComboAlone)
                 {
                     m_bIsHostComboAlone = false;
-                    m_pressedHostComboKeys.clear();
                     /* Process Host+<key> shortcuts.
                      * Currently, <key> is limited to alphanumeric chars.
                      * Other Host+<key> combinations are handled in Qt event(): */
@@ -1303,8 +1305,6 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                             ok = vboxProblem().confirmInputCapture(&fIsAutoConfirmed);
                             if (fIsAutoConfirmed)
                                 uisession()->setAutoCaptureDisabled(false);
-                            else
-                                m_pressedHostComboKeys.clear();
                             /* Otherwise, the disable flag will be reset in the next
                              * machine-view's focus-in event (since may happen asynchronously
                              * on some platforms, after we return from this code): */
@@ -1338,7 +1338,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         else
         {
             if (m_bIsHostComboPressed)
-                m_bIsHostComboAlone = false;
+                m_bIsHostComboAlone = true;
         }
     }
 
