@@ -389,6 +389,12 @@ QSize UIHotKeyEditor::minimumSizeHint() const
     return QSize(w + m, h + m);
 }
 
+void UIHotKeyEditor::sltClear()
+{
+    m_shownKeys.clear();
+    updateText();
+}
+
 #ifdef Q_WS_WIN
 bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
 {
@@ -495,74 +501,6 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
 }
 #endif /* Q_WS_MAC */
 
-bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
-{
-    /* Check if symbol is valid else pass it to Qt: */
-    if (!UIHotKey::isValidKey(iKeyCode))
-        return false;
-
-    /* Stop the release-pending-keys timer: */
-    m_pReleaseTimer->stop();
-
-    /* Key press: */
-    if (fKeyPress)
-    {
-        /* Clear reflected symbols if new sequence started: */
-        if (m_fStartNewSequence)
-            m_shownKeys.clear();
-        /* Make sure any keys pending for releasing are processed: */
-        sltReleasePendingKeys();
-        /* Check maximum combo size: */
-        if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
-        {
-            /* Remember pressed symbol: */
-            m_pressedKeys << iKeyCode;
-            m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
-
-            /* Remember what we already started a sequence: */
-            m_fStartNewSequence = false;
-        }
-    }
-    /* Key release: */
-    else
-    {
-        /* Queue released symbol for processing: */
-        m_releasedKeys << iKeyCode;
-
-        /* If all pressed keys are now pending for releasing we should stop further handling.
-         * Now we have the status the user want: */
-        if (m_pressedKeys == m_releasedKeys)
-        {
-            m_pressedKeys.clear();
-            m_releasedKeys.clear();
-            m_fStartNewSequence = true;
-        }
-        else
-            m_pReleaseTimer->start();
-    }
-
-    /* Update text: */
-    updateText();
-
-    /* Prevent passing to Qt: */
-    return true;
-}
-
-void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
-{
-    switch (pEvent->key())
-    {
-        case Qt::Key_Delete:
-        case Qt::Key_Backspace:
-            m_shownKeys.clear();
-            updateText();
-            break;
-        default:
-            QWidget::keyPressEvent(pEvent);
-            break;
-    }
-}
-
 void UIHotKeyEditor::focusInEvent(QFocusEvent *pEvent)
 {
     QLabel::focusInEvent(pEvent);
@@ -618,6 +556,59 @@ void UIHotKeyEditor::sltReleasePendingKeys()
     }
     /* Make sure the user see what happens: */
     updateText();
+}
+
+bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
+{
+    /* Check if symbol is valid else pass it to Qt: */
+    if (!UIHotKey::isValidKey(iKeyCode))
+        return false;
+
+    /* Stop the release-pending-keys timer: */
+    m_pReleaseTimer->stop();
+
+    /* Key press: */
+    if (fKeyPress)
+    {
+        /* Clear reflected symbols if new sequence started: */
+        if (m_fStartNewSequence)
+            m_shownKeys.clear();
+        /* Make sure any keys pending for releasing are processed: */
+        sltReleasePendingKeys();
+        /* Check maximum combo size: */
+        if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+        {
+            /* Remember pressed symbol: */
+            m_pressedKeys << iKeyCode;
+            m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+
+            /* Remember what we already started a sequence: */
+            m_fStartNewSequence = false;
+        }
+    }
+    /* Key release: */
+    else
+    {
+        /* Queue released symbol for processing: */
+        m_releasedKeys << iKeyCode;
+
+        /* If all pressed keys are now pending for releasing we should stop further handling.
+         * Now we have the status the user want: */
+        if (m_pressedKeys == m_releasedKeys)
+        {
+            m_pressedKeys.clear();
+            m_releasedKeys.clear();
+            m_fStartNewSequence = true;
+        }
+        else
+            m_pReleaseTimer->start();
+    }
+
+    /* Update text: */
+    updateText();
+
+    /* Prevent passing to Qt: */
+    return true;
 }
 
 void UIHotKeyEditor::updateText()

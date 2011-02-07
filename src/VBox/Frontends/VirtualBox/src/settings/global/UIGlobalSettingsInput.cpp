@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QShortcut>
+
 /* Local includes */
 #include "UIGlobalSettingsInput.h"
 #include "VBoxGlobalSettings.h"
@@ -26,6 +29,11 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi(this);
+
+    /* Set the new shortcut for the eraze-host-combo button: */
+    m_pResetHostCombinationButton->setShortcut(QKeySequence());
+    new QShortcut(QKeySequence(Qt::Key_Delete), m_pResetHostCombinationButton, SLOT(animateClick()));
+    new QShortcut(QKeySequence(Qt::Key_Backspace), m_pResetHostCombinationButton, SLOT(animateClick()));
 
     /* Apply language settings: */
     retranslateUi();
@@ -83,7 +91,8 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pHostKeyEditor);
-    setTabOrder(m_pHostKeyEditor, m_pEnableAutoGrabCheckbox);
+    setTabOrder(m_pHostKeyEditor, m_pResetHostCombinationButton);
+    setTabOrder(m_pResetHostCombinationButton, m_pEnableAutoGrabCheckbox);
 }
 
 /* Translation stuff: */

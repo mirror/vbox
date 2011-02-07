@@ -62,6 +62,10 @@ public:
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
+public slots:
+
+    void sltClear();
+
 protected:
 
 #ifdef Q_WS_WIN
@@ -75,9 +79,6 @@ protected:
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif /* Q_WS_MAC */
 
-    bool processKeyEvent(int iKeyCode, bool fKeyPress);
-
-    void keyPressEvent(QKeyEvent *pEvent);
     void focusInEvent(QFocusEvent *pEvent);
     void focusOutEvent(QFocusEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
@@ -88,6 +89,7 @@ private slots:
 
 private:
 
+    bool processKeyEvent(int iKeyCode, bool fKeyPress);
     void updateText();
 
     QSet<int> m_pressedKeys;
