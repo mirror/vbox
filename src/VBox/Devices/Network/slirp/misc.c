@@ -164,6 +164,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
         {
             /* We're on master zone and we cant allocate more */
             Log2(("NAT: no room on %s zone\n", zone->name));
+            AssertMsgFailed(("NAT: OOM!"));
             break;
         }
 
