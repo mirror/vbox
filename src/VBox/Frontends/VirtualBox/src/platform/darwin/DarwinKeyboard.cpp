@@ -55,6 +55,7 @@ typedef enum
 {
     kCGSGlobalHotKeyEnable = 0,
     kCGSGlobalHotKeyDisable,
+    kCGSGlobalHotKeyDisableExceptUniversalAccess,
     kCGSGlobalHotKeyInvalid = -1 /* bird */
 } CGSGlobalHotKeyOperatingMode;
 extern CGSConnection _CGSDefaultConnection(void);
@@ -435,7 +436,8 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
     CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
     CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
     if (    enmMode != kCGSGlobalHotKeyEnable
-        &&  enmMode != kCGSGlobalHotKeyDisable)
+        &&  enmMode != kCGSGlobalHotKeyDisable
+        &&  enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
     {
         AssertMsgFailed(("%d\n", enmMode));
         if (s_cComplaints++ < 32)
