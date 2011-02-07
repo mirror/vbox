@@ -259,6 +259,12 @@ void VBoxMiniToolBar::timerEvent(QTimerEvent *pEvent)
 {
     if (pEvent->timerId() == m_scrollTimer.timerId())
     {
+        /* Due to X11 async nature, this timer-event could come before parent
+         * VM window become visible, we should ignore those timer-events: */
+        if (QApplication::desktop()->screenNumber(window()) == -1)
+            return;
+
+        /* Update tool-bar position: */
         QRect screen = m_fSeamless ? vboxGlobal().availableGeometry(QApplication::desktop()->screenNumber(window())) :
                                      QApplication::desktop()->screenGeometry(window());
         switch (m_alignment)
