@@ -65,7 +65,20 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
+   <item row="0" column="3">
+    <widget class="UIResetButton" name="m_pResetHostCombinationButton">
+     <property name="focusPolicy">
+      <enum>Qt::StrongFocus</enum>
+     </property>
+     <property name="toolTip">
+      <string>Reset host combination</string>
+     </property>
+     <property name="whatsThis">
+      <string>Resets the key combination used as the host combination in the VM window.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" colspan="2">
     <widget class="QCheckBox" name="m_pEnableAutoGrabCheckbox">
      <property name="whatsThis">
       <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
@@ -75,7 +88,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="3">
+   <item row="2" column="0" colspan="4">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -102,15 +115,13 @@
    <header>UISpecialControls.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../VirtualBox1.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
-   <sender>m_pResetHostKeyButton</sender>
+   <sender>m_pResetHostCombinationButton</sender>
    <signal>clicked(bool)</signal>
    <receiver>m_pHostKeyEditor</receiver>
-   <slot>clear()</slot>
+   <slot>sltClear()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>111</x>
