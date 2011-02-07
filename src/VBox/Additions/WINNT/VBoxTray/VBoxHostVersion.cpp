@@ -50,7 +50,7 @@ int VBoxCheckHostVersion()
                                                 "We recommend updating to the latest version (%s) by choosing the "
                                                 "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
 
-                rc = hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
+                rc = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
                                        szMsg, szTitle,
                                        5000 /* Time to display in msec */, NIIF_INFO);
                 if (RT_FAILURE(rc))

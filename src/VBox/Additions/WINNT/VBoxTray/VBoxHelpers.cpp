@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
 #include <windows.h>
 
 #include <iprt/string.h>
+#include <VBox/Log.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include <VBoxGuestInternal.h>
@@ -26,6 +27,15 @@
 #include "resource.h"
 
 
+int hlpReportStatus(VBoxGuestStatusCurrent statusCurrent)
+{
+    int rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxTray,
+                                         statusCurrent,
+                                         0 /* Flags */);
+    if (RT_FAILURE(rc))
+        Log(("VBoxTray: Could not report VBoxTray status \"%ld\", rc=%Rrc\n", statusCurrent, rc));
+    return rc;
+}
 
 /**
  * Attempt to force Windows to reload the cursor image by attaching to the

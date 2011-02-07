@@ -101,8 +101,8 @@ typedef struct _VBOXGLOBALMESSAGE
     UINT     uMsgID;
 } VBOXGLOBALMESSAGE, *PVBOXGLOBALMESSAGE;
 
-extern HWND         gToolWindow;
-extern HINSTANCE    gInstance;
+extern HWND         ghwndToolWindow;
+extern HINSTANCE    ghInstance;
 
 #endif /* !___VBOXTRAY_H */
 
