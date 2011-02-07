@@ -29,6 +29,8 @@
 #import <AppKit/NSColor.h>
 #import <AppKit/NSFont.h>
 
+#import <objc/objc-class.h>
+
 /* For the keyboard stuff */
 #include <Carbon/Carbon.h>
 #include "DarwinKeyboard.h"
@@ -467,5 +469,129 @@ void darwinRetranslateAppMenu()
         if ([loader respondsToSelector:@selector(qtTranslateApplicationMenu)])
             [loader performSelector:@selector(qtTranslateApplicationMenu)];
     }
+}
+
+/* Make an empty interface declaration of QCocoaWindowDelegate to shut up the
+   compiler. */
+@interface QCocoaWindowDelegate: NSObject {}
+@end
+
+/* Our resize proxy singleton. This class has two major tasks. First it is used
+   to proxy the windowWillResize selector of the Qt delegate. As this is class
+   global and therewith done for all Qt window instances, we have to track the
+   windows we are interested in. This is the second task. */
+@interface UIResizeProxy: NSObject
+{
+    NSMutableArray *m_pArray;
+}
++(UIResizeProxy*)sharedResizeProxy;
+-(void)addWindow:(NSWindow*)pWindow;
+-(void)removeWindow:(NSWindow*)pWindow;
+-(BOOL)containsWindow:(NSWindow*)pWindow;
+@end
+
+static UIResizeProxy *gSharedResizeProxy = nil;
+
+@implementation UIResizeProxy
++(UIResizeProxy*)sharedResizeProxy
+{
+    if (gSharedResizeProxy == nil)
+        gSharedResizeProxy = [[super allocWithZone:NULL] init];
+    return gSharedResizeProxy;
+}
+-(id)init
+{
+    if ((self = [super init]))
+    {
+        /* Create an array which contains the registered windows. */
+        m_pArray = [[NSMutableArray alloc] init];
+        /* Swizzle the windowWillResize method. This means replacing the
+           original method with our own one and reroute the original one to
+           another name. */
+        Class oriClass = [QCocoaWindowDelegate class];
+        Class myClass = [UIResizeProxy class];
+        SEL oriSel = @selector(windowWillResize:toSize:);
+        SEL qtSel  = @selector(qtWindowWillResize:toSize:);
+        Method m1 = class_getInstanceMethod(oriClass, oriSel);
+        Method m2 = class_getInstanceMethod(myClass, oriSel);
+        Method m3 = class_getInstanceMethod(myClass, qtSel);
+        /* Overwrite the original implementation with our own one. old contains
+           the old implementation. */
+        IMP old = method_setImplementation(m1, method_getImplementation(m2));
+        /* Add a new method to our class with the old implementation. */
+        class_addMethod(oriClass, qtSel, old, method_getTypeEncoding(m3));
+    }
+    return self;
+}
+- (void)addWindow:(NSWindow*)pWindow
+{
+    [m_pArray addObject:pWindow];
+}
+- (void)removeWindow:(NSWindow*)pWindow
+{
+    [m_pArray removeObject:pWindow];
+}
+- (BOOL)containsWindow:(NSWindow*)pWindow
+{
+    return [m_pArray containsObject:pWindow];
+}
+- (NSSize)qtWindowWillResize:(NSWindow *)pWindow toSize:(NSSize)newFrameSize
+{
+    /* This is a fake implementation. It will be replaced by the original Qt
+       method. */
+    return newFrameSize;
+}
+- (NSSize)windowWillResize:(NSWindow *)pWindow toSize:(NSSize)newFrameSize
+{
+    /* Call the original implementation for newFrameSize. */
+    NSSize qtSize = [self qtWindowWillResize:pWindow toSize:newFrameSize];
+    /* Check if we are responsible for this window. */
+    if (![[UIResizeProxy sharedResizeProxy] containsWindow:pWindow])
+        return qtSize;
+    /* The static modifier method in NSEvent is >= 10.6. It allows us to check
+       the shift modifier state during the resize. If it is not available the
+       user have to press shift before he start to resize. */
+    if ([NSEvent respondsToSelector:@selector(modifierFlags)])
+        if (((int)(intptr_t)[NSEvent performSelector:@selector(modifierFlags)] & NSShiftKeyMask) == NSShiftKeyMask)
+            return qtSize;
+    else
+        /* Shift key pressed when this resize event was initiated? */
+        if (([pWindow resizeFlags] & NSShiftKeyMask) == NSShiftKeyMask)
+            return qtSize;
+    /* The default case is to calculate the aspect radio of the old size and
+       used it for the new size. */
+    NSSize s = [pWindow frame].size;
+    double a = (double)s.width / s.height;
+    NSSize newSize = NSMakeSize(newFrameSize.width, newFrameSize.width / a);
+    /* We have to make sure the new rectangle meets the minimum requirements. */
+    NSSize testSize = [self qtWindowWillResize:pWindow toSize:newSize];
+    if (   testSize.width > newSize.width
+        || testSize.height > newSize.height)
+    {
+        double w1 = testSize.width / newSize.width;
+        double h1 = testSize.height / newSize.height;
+        if (   w1 > 1
+            && w1 > h1)
+        {
+            newSize.width = testSize.width;
+            newSize.height = testSize.width * a;
+        }else if (h1 > 1)
+        {
+            newSize.width = testSize.height * a;
+            newSize.height = testSize.height;
+        }
+    }
+    return newSize;
+}
+@end
+
+void darwinInstallResizeDelegate(NativeNSWindowRef pWindow)
+{
+    [[UIResizeProxy sharedResizeProxy] addWindow:pWindow];
+}
+
+void darwinUninstallResizeDelegate(NativeNSWindowRef pWindow)
+{
+    [[UIResizeProxy sharedResizeProxy] removeWindow:pWindow];
 }
 

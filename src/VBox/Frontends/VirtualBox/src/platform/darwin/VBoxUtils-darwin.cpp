@@ -141,6 +141,16 @@ void darwinMinaturizeWindow(QWidget *pWidget)
     return ::darwinMinaturizeWindow(::darwinToNativeWindow(pWidget));
 }
 
+void darwinInstallResizeDelegate(QWidget *pWidget)
+{
+    ::darwinInstallResizeDelegate(::darwinToNativeWindow(pWidget));
+}
+
+void darwinUninstallResizeDelegate(QWidget *pWidget)
+{
+    ::darwinUninstallResizeDelegate(::darwinToNativeWindow(pWidget));
+}
+
 bool darwinOpenFile(const QString& strFile)
 {
     return ::darwinOpenFile(darwinToNativeString(strFile.toUtf8().constData()));

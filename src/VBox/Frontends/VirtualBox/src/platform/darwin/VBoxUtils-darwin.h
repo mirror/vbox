@@ -84,6 +84,9 @@ float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
 uint64_t darwinGetCurrentProcessId();
 
+void darwinInstallResizeDelegate(NativeNSWindowRef pWindow);
+void darwinUninstallResizeDelegate(NativeNSWindowRef pWindow);
+
 bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
 bool darwinMouseGrabEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
 void darwinCreateContextMenuEvent(void *pvWin, int x, int y);
@@ -235,11 +238,13 @@ int  darwinWindowToolBarHeight(QWidget *pWidget);
 bool darwinIsToolbarVisible(QToolBar *pToolBar);
 bool darwinIsWindowMaximized(QWidget *pWidget);
 void darwinMinaturizeWindow(QWidget *pWidget);
-
 bool darwinOpenFile(const QString &strFile);
 
 QString darwinSystemLanguage(void);
 QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
+
+void darwinInstallResizeDelegate(QWidget *pWidget);
+void darwinUninstallResizeDelegate(QWidget *pWidget);
 
 void darwinRegisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
 void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
