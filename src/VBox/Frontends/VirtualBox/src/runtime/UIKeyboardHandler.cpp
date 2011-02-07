@@ -1111,20 +1111,20 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     QSet<int> allHostComboKeys = UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
 
     /* Update the map of pressed host-combo keys: */
-    if (fFlags & KeyPressed)
+    if (allHostComboKeys.contains(iKey))
     {
-        if (allHostComboKeys.contains(iKey))
+        if (fFlags & KeyPressed)
         {
             if (!m_pressedHostComboKeys.contains(iKey))
                 m_pressedHostComboKeys.insert(iKey, uScan);
             else if (m_bIsHostComboPressed)
                 return true;
         }
-    }
-    else
-    {
-        if (allHostComboKeys.contains(iKey) && m_pressedHostComboKeys.contains(iKey))
-            m_pressedHostComboKeys.remove(iKey);
+        else
+        {
+            if (m_pressedHostComboKeys.contains(iKey))
+                m_pressedHostComboKeys.remove(iKey);
+        }
     }
     /* Check if we are currently holding FULL host-combo: */
     bool fIsFullHostComboPresent = allHostComboKeys == m_pressedHostComboKeys.keys().toSet();
@@ -1160,12 +1160,17 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         return true;
     }
 
-    /* Prepare empty code-buffer: */
+    /* Preparing the press/release scan-codes array for sending to the guest:
+     * 1. if host-combo is NOT pressed, taking into account currently pressed key too,
+     * 2. if currently released key releases host-combo too.
+     * Using that rule, we are NOT sending to the guest:
+     * 1. the last key-press of host-combo,
+     * 2. all keys pressed while the host-combo being held. */
     LONG aCodesBuffer[16];
     LONG *pCodes = aCodesBuffer;
     uint uCodesCount = 0;
-    /* Processing usual key-presses/releases without host-key being held: */
-    if (!m_bIsHostComboPressed || isHostComboStateChanged)
+    if (!m_bIsHostComboPressed && !isHostComboStateChanged ||
+        m_bIsHostComboPressed && isHostComboStateChanged)
     {
         /* Special flags handling (KeyPrint): */
         if (fFlags & KeyPrint)
@@ -1340,22 +1345,25 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     /* Notify all listeners: */
     emit keyboardStateChanged(keyboardState());
 
-    /* If the VM is NOT paused and there are scancodes to send: */
-    if (!uisession()->isPaused() && uCodesCount)
+    /* If the VM is NOT paused: */
+    if (!uisession()->isPaused())
     {
-        /* Get the  VM keyboard to pass key in there: */
+        /* Get the VM keyboard: */
         CKeyboard keyboard = session().GetConsole().GetKeyboard();
         Assert(!keyboard.isNull());
 
-        /* Pass this key to the guest: */
-        std::vector<LONG> scancodes(pCodes, &pCodes[uCodesCount]);
-        keyboard.PutScancodes(QVector<LONG>::fromStdVector(scancodes));
+        /* If there are scan-codes to send: */
+        if (uCodesCount)
+        {
+            /* Send prepared scan-codes to the guest: */
+            std::vector<LONG> scancodes(pCodes, &pCodes[uCodesCount]);
+            keyboard.PutScancodes(QVector<LONG>::fromStdVector(scancodes));
+        }
 
-        /* If full host-key sequence was just finalized
-         * and the last key of host-combination was just sent to the guest =>
-         * we have to notify guest to make it release keys from the host-combination: */
+        /* If full host-key sequence was just finalized: */
         if (isHostComboStateChanged && m_bIsHostComboPressed)
         {
+            /* We have to make guest to release pressed keys from the host-combination: */
             QList<uint8_t> hostComboScans = m_pressedHostComboKeys.values();
             for (int i = 0 ; i < hostComboScans.size(); ++i)
             {
