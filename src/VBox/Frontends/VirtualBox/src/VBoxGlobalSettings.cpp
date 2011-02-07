@@ -153,16 +153,21 @@ bool VBoxGlobalSettings::isFeatureActive (const char *aFeature) const
  */
 void VBoxGlobalSettings::load (CVirtualBox &vbox)
 {
-    for (size_t i = 0; i < SIZEOF_ARRAY (gPropertyMap); i++)
+    for (size_t i = 0; i < SIZEOF_ARRAY(gPropertyMap); i++)
     {
-        QString value = vbox.GetExtraData (gPropertyMap [i].publicName);
+        QString value = vbox.GetExtraData(gPropertyMap[i].publicName);
         if (!vbox.isOk())
             return;
-        // empty value means the key is absent. it is ok, the default will apply
+        /* Check for the host key upgrade path. */
+        if (   value.isEmpty()
+            && QString(gPropertyMap[i].publicName) == "GUI/Input/HostCombo")
+            value = vbox.GetExtraData("GUI/Input/HostKey");
+        /* Empty value means the key is absent. It is OK, the default will
+         * apply. */
         if (value.isEmpty())
             continue;
-        // try to set the property validating it against rx
-        setPropertyPrivate (i, value);
+        /* Try to set the property validating it against rx. */
+        setPropertyPrivate(i, value);
         if (!(*this))
             break;
     }
