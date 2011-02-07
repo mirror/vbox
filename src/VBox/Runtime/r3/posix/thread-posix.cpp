@@ -418,6 +418,7 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 }
 #endif
 
+/** @todo move this into platform specific files. */
 RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
 {
 #if defined(RT_OS_SOLARIS)
@@ -429,6 +430,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     *pKernelTime = ts.ru_stime.tv_sec * 1000 + ts.ru_stime.tv_usec / 1000;
     *pUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
     return VINF_SUCCESS;
+
 #elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     /* on Linux, getrusage(RUSAGE_THREAD, ...) is available since 2.6.26 */
     struct timespec ts;
@@ -439,16 +441,17 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     *pKernelTime = 0;
     *pUserTime = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
     return VINF_SUCCESS;
+
 #elif defined(RT_OS_DARWIN)
     thread_basic_info ThreadInfo;
     mach_msg_type_number_t Count = sizeof(ThreadInfo) / sizeof(int);
     kern_return_t krc;
 
     krc = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&ThreadInfo, &Count);
-    Assert(krc == KERN_SUCCESS);
+    AssertReturn(krc == KERN_SUCCESS, RTErrConvertFromDarwinKern(krc));
 
     *pKernelTime = ThreadInfo.system_time.seconds * 1000 + ThreadInfo.system_time.microseconds / 1000;
-    *pUserTime   = ThreadInfo.user_time.seconds * 1000 + ThreadInfo.user_time.microseconds / 1000;;
+    *pUserTime   = ThreadInfo.user_time.seconds   * 1000 + ThreadInfo.user_time.microseconds   / 1000;
 
     return VINF_SUCCESS;
 #else
