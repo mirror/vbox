@@ -131,6 +131,7 @@ vgaHWSaveFonts
 write
 xf86AddDriver
 xf86ConfigPciEntity
+xf86CrtcConfigPrivateIndex
 xf86CreateCursorInfoRec
 xf86CrtcConfigInit
 xf86CrtcCreate
