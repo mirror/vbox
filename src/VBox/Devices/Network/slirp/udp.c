@@ -297,8 +297,9 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         Log2(("NAT: UDP tx errno = %d (%s) on sent to %R[IP4]\n",
               errno, strerror(errno), &ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
-        /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
+        m_freem(pData, m);
         so->so_m = NULL;
+        return;
     }
 
     if (so->so_m)
