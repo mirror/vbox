@@ -129,6 +129,11 @@ private:
 #ifndef VBOXBFE_WITHOUT_COM
     const ComObjPtr<EventSource> mEventSource;
     VBoxEventDesc                mMouseEvent;
+
+    void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons);
+#else
+    void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons)
+    {}
 #endif
 };
 

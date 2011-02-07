@@ -404,6 +404,26 @@ HRESULT Mouse::reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
     return rc;
 }
 
+#ifndef VBOXBFE_WITHOUT_COM
+void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons)
+{
+    /* If mouse button is pressed, we generate new event, to avoid reusable events coalescing and thus
+       dropping key press events */
+    if (Buttons != 0)
+    {
+        VBoxEventDesc evDesc;
+        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw, Buttons);
+        evDesc.fire(0);
+    }
+    else
+    {
+        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw, Buttons);
+        mMouseEvent.fire(0);
+    }
+}
+#endif
+
+
 /**
  * Send a relative mouse event to the guest.
  * @note the VMMDev capability change is so that the guest knows we are sending
@@ -432,10 +452,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
     updateVMMDevMouseCaps(0, VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE);
     rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtons);
 
-#ifndef VBOXBFE_WITHOUT_COM
-    mMouseEvent.reinit(VBoxEventType_OnGuestMouse, false, dx, dy, dz, dw, fButtons);
-    mMouseEvent.fire(0);
-#endif
+    fireMouseEvent(false, dx, dy, dz, dw, buttonState);
 
     return rc;
 }
@@ -537,11 +554,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                             RT_BOOL(  mfVMMDevGuestCaps
                                     & VMMDEV_MOUSE_NEW_PROTOCOL));
 
-#ifndef VBOXBFE_WITHOUT_COM
-        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, true, x, y, dz, dw,
-                           fButtons);
-        mMouseEvent.fire(0);
-#endif
+        fireMouseEvent(true, x, y, dz, dw, buttonState);
     }
 
     return rc;
