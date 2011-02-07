@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2204,7 +2204,9 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
-    using namespace guestControl;
+    CheckComArgNotNull(aExitCode);
+    CheckComArgNotNull(aFlags);
+    CheckComArgNotNull(aStatus);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
