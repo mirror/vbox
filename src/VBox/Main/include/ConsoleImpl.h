@@ -470,6 +470,7 @@ private:
     HRESULT removeSharedFolder(const Utf8Str &strName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
+    int configConstructorInner(PVM pVM, AutoWriteLock *pAlock);
     int configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMachine);
 
     int configMediumAttachment(PCFGMNODE pCtlInst,
