@@ -7895,7 +7895,7 @@
       <desc>VirtualBox system service (VBoxService).</desc>
     </const>
     <const name="VBoxTrayClient"          value="101">
-      <desc>VirtualBox VBoxTray (Windows) / VBoxClient (Non-Windows).</desc>
+      <desc>VirtualBox desktop integration (VBoxTray on Windows, VBoxClient on non-Windows).</desc>
     </const>
     <const name="All"                     value="999">
       <desc>All facilities selected.</desc>
