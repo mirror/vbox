@@ -4315,16 +4315,15 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
                         tr("Cannot unregister the machine '%s' because it has %d snapshots"),
                            mUserData->s.strName.c_str(), cSnapshots);
 
-    // this list collects the medium objects from all medium attachments
-    // which got detached from the machine and its snapshots, in the following
-    // order:
-    // 1) media from machine attachments (these have the "leaf" attachments with snapshots
-    //    and must be closed first, or closing the parents will fail because they will
-    //    children);
+    // This list collects the medium objects from all medium attachments
+    // which we will detach from the machine and its snapshots, in a specific
+    // order which allows for closing all media without getting "media in use"
+    // errors, simply by going through the list from the front to the back:
+    // 1) first media from machine attachments (these have the "leaf" attachments with snapshots
+    //    and must be closed before the parent media from the snapshots, or closing the parents
+    //    will fail because they still have children);
     // 2) media from the youngest snapshots followed by those from the parent snapshots until
-    //    the root ("first") snapshot of the machine
-    // This order allows for closing the media on this list from the beginning to the end
-    // without getting "media in use" errors.
+    //    the root ("first") snapshot of the machine.
     MediaList llMedia;
 
     if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
@@ -7748,6 +7747,10 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         /* associate the medium with this machine and snapshot */
         if (!medium.isNull())
         {
+            AutoCaller medCaller(medium);
+            if (FAILED(medCaller.rc())) return medCaller.rc();
+            AutoWriteLock mlock(medium COMMA_LOCKVAL_SRC_POS);
+
             if (isSnapshotMachine())
                 rc = medium->addBackReference(mData->mUuid, *puuidSnapshot);
             else
@@ -8776,6 +8779,10 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
     else
         uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
 
+    AutoCaller autoCaller(pMedium);
+    if (FAILED(autoCaller.rc())) return;
+    AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
     if (pMedium->addRegistry(uuid))
         // registry actually changed:
         mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
@@ -9033,8 +9040,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
  * Note that to delete hard disks created by #AttachMedium() this method is
  * called from #fixupMedia() when the changes are rolled back.
  *
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
  *
  * @note Locks this object for writing.
  */
@@ -9219,8 +9225,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
  * @param pAttach Medium attachment to detach.
  * @param writeLock Machine write lock which the caller must have locked once. This may be released temporarily in here.
  * @param pSnapshot If NULL, then the detachment is for the current machine. Otherwise this is for a SnapshotMachine, and this must be its snapshot.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
  * @return
  */
 HRESULT Machine::detachDevice(MediumAttachment *pAttach,
@@ -9250,7 +9255,8 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 
         writeLock.release();
 
-        HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
+        HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/,
+                                              true /*aWait*/,
                                               pllRegistriesThatNeedSaving);
 
         writeLock.acquire();
@@ -9282,14 +9288,21 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 }
 
 /**
- * Goes thru all medium attachments of the list and calls detachDevice() on each
- * of them and attaches all Medium objects found in the process to the given list,
- * depending on cleanupMode.
+ * Goes thru all media of the given list and
+ *
+ * 1) calls detachDevice() on each of them for this machine and
+ * 2) adds all Medium objects found in the process to the given list,
+ *    depending on cleanupMode.
+ *
+ * If cleanupMode is CleanupMode_DetachAllReturnHardDisksOnly, this only
+ * adds hard disks to the list. If it is CleanupMode_Full, this adds all
+ * media to the list.
  *
  * This gets called from Machine::Unregister, both for the actual Machine and
  * the SnapshotMachine objects that might be found in the snapshots.
  *
- * Requires caller and locking.
+ * Requires caller and locking. The machine lock must be passed in because it
+ * will be passed on to detachDevice which needs it for temporary unlocking.
  *
  * @param writeLock Machine lock from top-level caller; this gets passed to detachDevice.
  * @param pSnapshot Must be NULL when called for a "real" Machine or a snapshot object if called for a SnapshotMachine.
@@ -9315,7 +9328,7 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
          it != llAttachments2.end();
          ++it)
     {
-        ComObjPtr<MediumAttachment> pAttach = *it;
+        ComObjPtr<MediumAttachment> &pAttach = *it;
         ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
         if (!pMedium.isNull())

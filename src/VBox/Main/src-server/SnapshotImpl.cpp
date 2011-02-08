@@ -811,7 +811,7 @@ HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
  * they should go thru the list from the beginning to the end because media
  * cannot be closed if they have children.
  *
- * This calls uninit() on itself, so the snapshots tree becomes invalid after this.
+ * This calls uninit() on itself, so the snapshots tree (beginning with a machine's pFirstSnapshot) becomes invalid after this.
  * It does not alter the main machine's snapshot pointers (pFirstSnapshot, pCurrentSnapshot).
  *
  * Caller must hold the machine write lock (which protects the snapshots tree!)
@@ -897,7 +897,7 @@ void SnapshotMachine::FinalRelease()
     LogFlowThisFunc(("\n"));
 
     uninit();
- 
+
     BaseFinalRelease();
 }
 

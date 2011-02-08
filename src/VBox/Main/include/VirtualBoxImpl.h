@@ -274,7 +274,7 @@ public:
                            const Utf8Str &strMachineFolder);
     HRESULT saveSettings();
 
-    void addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving, Guid uuid);
+    void addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving, const Guid &uuid);
     HRESULT saveRegistries(const GuidList &llRegistriesThatNeedSaving);
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);

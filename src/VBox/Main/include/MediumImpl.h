@@ -175,6 +175,7 @@ public:
     Utf8Str getName();
 
     bool addRegistry(const Guid& id);
+    bool removeRegistry(const Guid& id);
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
     HRESULT addToRegistryIDList(GuidList &llRegistryIDs);
