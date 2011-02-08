@@ -21,6 +21,7 @@
 #define ____H_PCIDEVICEATTACHMENTIMPL
 
 #include "VirtualBoxBase.h"
+#include <VBox/settings.h>
 
 class ATL_NO_VTABLE PciAddress :
     public VirtualBoxBase,
@@ -108,7 +109,13 @@ public:
                  LONG          aHostAddess,
                  LONG          aGuestAddress,
                  BOOL          fPhysical);
+
     void uninit();
+
+    // settings
+    HRESULT loadSettings(IMachine * aParent,
+                         const settings::HostPciDeviceAttachment& aHpda);
+    HRESULT saveSettings(settings::HostPciDeviceAttachment &data);
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -121,7 +128,7 @@ public:
 
 private:
     struct Data;
-    Data *m;
+    Data*  m;
 };
 
 #endif // ____H_PCIDEVICEATTACHMENTIMPL

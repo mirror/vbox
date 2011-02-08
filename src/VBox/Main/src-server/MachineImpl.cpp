@@ -5828,8 +5828,8 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        //HRESULT rc = checkStateDependency(MutableStateDep);
-        //if (FAILED(rc)) return rc;
+        HRESULT rc = checkStateDependency(MutableStateDep);
+        if (FAILED(rc)) return rc;
 
         ComObjPtr<PciDeviceAttachment> pda;
         char name[32];
@@ -5842,10 +5842,6 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
         mHWData.backup();
         mHWData->mPciDeviceAssignments.push_back(pda);
     }
-
-    // do we need it?
-    //saveSettings(NULL);
-    mHWData.commit();
 
     return S_OK;
 }
@@ -5886,11 +5882,6 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
                 break;
             }
         }
-        // Indeed under lock?
-        mHWData.commit();
-
-        // do we need it?
-        // saveSettings(NULL);
     }
 
 
@@ -7451,6 +7442,19 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         rc = mBandwidthControl->loadSettings(data.ioSettings);
         if (FAILED(rc)) return rc;
 
+        // Host PCI devices
+        for (settings::HostPciDeviceAttachmentList::const_iterator it = data.pciAttachments.begin();
+             it != data.pciAttachments.end();
+             ++it)
+        {
+            const settings::HostPciDeviceAttachment &hpda = *it;
+            ComObjPtr<PciDeviceAttachment> pda;
+
+            pda.createObject();
+            pda->loadSettings(this, hpda);
+            mHWData->mPciDeviceAssignments.push_back(pda);
+        }
+
 #ifdef VBOX_WITH_GUEST_PROPS
         /* Guest properties (optional) */
         for (settings::GuestPropertiesList::const_iterator it = data.llGuestProperties.begin();
@@ -8529,6 +8533,21 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         /* BandwidthControl (required) */
         rc = mBandwidthControl->saveSettings(data.ioSettings);
         if (FAILED(rc)) throw rc;
+
+        /* Host PCI devices */
+        for (HWData::PciDeviceAssignmentList::const_iterator it = mHWData->mPciDeviceAssignments.begin();
+             it != mHWData->mPciDeviceAssignments.end();
+             ++it)
+        {
+            ComObjPtr<PciDeviceAttachment> pda = *it;
+            settings::HostPciDeviceAttachment hpda;
+
+            rc = pda->saveSettings(hpda);
+            if (FAILED(rc)) throw rc;
+
+            data.pciAttachments.push_back(hpda);
+        }
+
 
         // guest properties
         data.llGuestProperties.clear();

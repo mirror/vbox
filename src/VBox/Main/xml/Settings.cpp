@@ -90,7 +90,7 @@ using namespace settings;
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION        "1.11"
+#define VBOX_XML_VERSION        "1.12"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -319,7 +319,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_10;
                 else if (ulMinor == 11)
                     m->sv = SettingsVersion_v1_11;
-                else if (ulMinor > 11)
+                else if (ulMinor == 12)
+                    m->sv = SettingsVersion_v1_12;
+                else if (ulMinor > 12)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -339,7 +341,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     {
         // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_11;
+        m->sv = SettingsVersion_v1_12;
     }
 }
 
@@ -817,11 +819,15 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.11";
             break;
 
+        case SettingsVersion_v1_12:
+            pcszVersion = "1.12";
+            break;
+
         case SettingsVersion_Future:
             // can be set if this code runs on XML files that were created by a future version of VBox;
             // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.11";
-            m->sv = SettingsVersion_v1_10;
+            pcszVersion = "1.12";
+            m->sv = SettingsVersion_v1_12;
         break;
 
         default:
@@ -845,7 +851,7 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
  * Before calling this, it is the responsibility of the caller to
  * set the "sv" member to the required settings version that is to
  * be written. For newly created files, the settings version will be
- * the latest (1.11); for files read in from disk earlier, it will be
+ * the latest (1.12); for files read in from disk earlier, it will be
  * the settings version indicated in the file. However, this method
  * will silently make sure that the settings version is always
  * at least 1.7 and change it if necessary, since there is no write
@@ -1647,6 +1653,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (llGuestProperties         == h.llGuestProperties)
                   && (strNotificationPatterns   == h.strNotificationPatterns)
                   && (ioSettings                == h.ioSettings)
+                  && (pciAttachments            == h.pciAttachments)
                 )
             );
 }
@@ -2716,6 +2723,29 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
                     pelmBandwidthGroup->getAttributeValue("maxMbPerSec", gr.cMaxMbPerSec);
                     hw.ioSettings.llBandwidthGroups.push_back(gr);
+                }
+            }
+        }  else if (pelmHwChild->nameEquals("HostPci")) {
+            const xml::ElementNode *pelmDevices;
+
+            if ((pelmDevices = pelmHwChild->findChildElement("Devices")))
+            {
+                xml::NodesLoop nl2(*pelmDevices, "Device");
+                const xml::ElementNode *pelmDevice;
+                while ((pelmDevice = nl2.forAllNodes()))
+                {
+                    HostPciDeviceAttachment hpda;
+
+                    if (!pelmDevice->getAttributeValue("host", hpda.uHostAddress))
+                         throw ConfigFileError(this, pelmDevice, N_("Missing Device/@host attribute"));
+
+                    if (!pelmDevice->getAttributeValue("host", hpda.uGuestAddress))
+                         throw ConfigFileError(this, pelmDevice, N_("Missing Device/@guest attribute"));
+
+                    /* name is optional */
+                    pelmDevice->getAttributeValue("name", hpda.strDeviceName);
+
+                    hw.pciAttachments.push_back(hpda);
                 }
             }
         }
@@ -3862,6 +3892,25 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
+    if (m->sv >= SettingsVersion_v1_12)
+    {
+        xml::ElementNode *pelmPci = pelmHardware->createChild("HostPci");
+        xml::ElementNode *pelmPciDevices = pelmPci->createChild("Devices");
+
+        for (HostPciDeviceAttachmentList::const_iterator it = hw.pciAttachments.begin();
+             it != hw.pciAttachments.end();
+             ++it)
+        {
+            const HostPciDeviceAttachment &hpda = *it;
+
+            xml::ElementNode *pelmThis = pelmPciDevices->createChild("Device");
+
+            pelmThis->setAttribute("host",  hpda.uHostAddress);
+            pelmThis->setAttribute("guest", hpda.uGuestAddress);
+            pelmThis->setAttribute("name",  hpda.strDeviceName);
+        }
+    }
+
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
     pelmGuest->setAttribute("memoryBalloonSize", hw.ulMemoryBalloonSize);
 
@@ -4417,6 +4466,13 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_12)
+    {
+        // VirtualBox 4.1 adds PCI passthrough
+        if (hardwareMachine.pciAttachments.size())
+            m->sv = SettingsVersion_v1_12;
+    }
+
     if (m->sv < SettingsVersion_v1_11)
     {
         // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,

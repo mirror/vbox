@@ -3102,6 +3102,13 @@ def lspci(ctx, console):
             print "%s: virtual, guest %s" %(colDev(ctx, a.name), pciAddr(ctx, a.guestAddress))
     return
 
+def parsePci(str):
+    pcire = re.compile(r'(?P<b>\d+):(?P<d>\d+)\.(?P<f>\d)')
+    m = pcire.search(str)
+    if m is None:
+        return -1
+    dict = m.groupdict()
+    return ((int(dict['b'])) << 8) | ((int(dict['d'])) << 3) | int(dict['f'])
 
 def lspciCmd(ctx, args):
     if (len(args) < 2):
@@ -3111,6 +3118,43 @@ def lspciCmd(ctx, args):
     if mach == None:
         return 0
     cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  lspci(ctx, console)])
+    return 0
+
+def attachpciCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: attachpci vm hostpci <guestpci>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    hostaddr = parsePci(args[2])
+    if hostaddr == -1:
+        print "invalid host PCI %s, accepted format 01:02.3 for bus 1, device 2, function 3" %(args[2])
+        return 0
+
+    if (len(args) > 3):
+        guestaddr = parsePci(args[3])
+        if guestaddr == -1:
+            print "invalid guest PCI %s, accepted format 01:02.3 for bus 1, device 2, function 3" %(args[3])
+            return 0
+    else:
+        guestaddr = hostaddr
+    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.attachHostPciDevice(hostaddr, guestaddr, True))
+    return 0
+
+def detachpciCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: detachpci vm hostpci"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    hostaddr = parsePci(args[2])
+    if hostaddr == -1:
+        print "invalid host PCI %s, accepted format 01:02.3 for bus 1, device 2, function 3" %(args[2])
+        return 0
+
+    cmdClosedVm(ctx, mach, 'guestlambda', lambda ctx,mach,a: mach.detachHostPciDevice(hostaddr))
     return 0
 
 aliases = {'s':'start',
@@ -3199,7 +3243,9 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm[@OSTypeId=\'MacOS\'] "print obj.name"', foreachCmd, 0],
             'recordDemo':['Record demo: recordDemo Win32 file.dmo 10', recordDemoCmd, 0],
             'playbackDemo':['Playback demo: playbackDemo Win32 file.dmo 10', playbackDemoCmd, 0],
-            'lspci': ['List PCI devices attached to the VM: lspci Win32', lspciCmd]
+            'lspci': ['List PCI devices attached to the VM: lspci Win32', lspciCmd, 0],
+            'attachpci': ['Attach host PCI device to the VM: attachpci Win32 01:00.0', attachpciCmd, 0],
+            'detachpci': ['Detach host PCI device from the VM: detachpci Win32 01:00.0', detachpciCmd, 0]
             }
 
 def runCommandArgs(ctx, args):

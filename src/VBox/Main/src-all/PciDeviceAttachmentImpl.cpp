@@ -32,6 +32,7 @@ struct PciDeviceAttachment::Data
         : HostAddress(aHostAddress), GuestAddress(aGuestAddress),
           fPhysical(afPhysical)
     {
+        (void)aParent;
         DevName = aDevName;
     }
 
@@ -68,6 +69,24 @@ HRESULT PciDeviceAttachment::init(IMachine      *aParent,
     m = new Data(aParent, aDevName, aHostAddress, aGuestAddress, fPhysical);
 
     return m != NULL ? S_OK : E_FAIL;
+}
+
+HRESULT PciDeviceAttachment::loadSettings(IMachine *aParent,
+                                          const settings::HostPciDeviceAttachment &hpda)
+{
+    Bstr bname(hpda.strDeviceName);
+    return init(aParent, bname,  hpda.uHostAddress, hpda.uGuestAddress, TRUE);
+}
+
+
+HRESULT PciDeviceAttachment::saveSettings(settings::HostPciDeviceAttachment &data)
+{
+    Assert(m);
+    data.uHostAddress = m->HostAddress;
+    data.uGuestAddress = m->GuestAddress;
+    data.strDeviceName = m->DevName;
+
+    return S_OK;
 }
 
 /**

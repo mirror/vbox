@@ -86,6 +86,11 @@
 # include "../Storage/DevLsiLogicSCSI.cpp"
 #endif
 
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+# undef LOG_GROUP
+# include "../Bus/DevPciRaw.cpp"
+#endif
+
 #include <stdio.h>
 
 
@@ -316,6 +321,9 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VPCISTATE, led, 4);
     CHECK_MEMBER_ALIGNMENT(VPCISTATE, Queues, 8);
 #endif
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+    CHECK_MEMBER_ALIGNMENT(PCIRAWSENDREQ, u.aGetRegionInfo.u64RegionSize, 8);
+#endif
 
 #ifdef VBOX_WITH_RAW_MODE
     /*
@@ -334,4 +342,3 @@ int main()
         printf("tstDeviceStructSize: SUCCESS\n");
     return rc;
 }
-

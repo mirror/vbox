@@ -1733,7 +1733,13 @@ STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAt
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
+    if (mBusMgr)
+        mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
+    else
+    {
+        com::SafeIfaceArray<IPciDeviceAttachment> result(0);
+        result.detachTo(ComSafeArrayOutArg(aAttachments));            
+    }
 
     return S_OK;
 }

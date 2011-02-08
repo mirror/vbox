@@ -119,6 +119,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_PC_BIOS,
     /** PCI Device group. */
     LOG_GROUP_DEV_PCI,
+    /** PCI Raw Device group. */
+    LOG_GROUP_DEV_PCI_RAW,
     /** PCNet Device group. */
     LOG_GROUP_DEV_PCNET,
     /** PIC Device group. */
@@ -394,6 +396,7 @@ typedef enum LOGGROUP
     "DEV_PC_ARCH",  \
     "DEV_PC_BIOS",  \
     "DEV_PCI",      \
+    "DEV_PCI_RAW",  \
     "DEV_PCNET",    \
     "DEV_PIC",      \
     "DEV_PIT",      \

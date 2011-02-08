@@ -160,6 +160,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VDE
   VBoxDD_DEFS           += VBOX_WITH_VDE
  endif
+ ifdef VBOX_WITH_PCI_PASSTHROUGH
+  VBoxDD_DEFS           += VBOX_WITH_PCI_PASSTHROUGH
+ endif
 
  VBoxDD_LIBS             = \
  	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
@@ -260,7 +263,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DevicesR3_DEFS         += \
  	VBOX_HGCM_HOST_CODE \
  	VBOX_WITH_HGCM \
- 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,)
+ 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,)
+
  DevicesR3_DEFS.linux   += _GNU_SOURCE
  DevicesR3_DEFS.l4      += _GNU_SOURCE
 
@@ -540,7 +545,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
- 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/DevPciRaw.cpp,) \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
   	PC/DevACPI.cpp \
