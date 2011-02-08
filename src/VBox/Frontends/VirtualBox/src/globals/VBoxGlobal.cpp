@@ -2633,14 +2633,13 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
                                                  bool fUseLastFolder /* = false */)
 {
     /* Initialize variables: */
-    QString strHomeFolder = fUseLastFolder && !m_strLastFolder.isEmpty() ? m_strLastFolder :
-                            strDefaultFolder.isEmpty() ? vboxGlobal().virtualBox().GetHomeFolder() : strDefaultFolder;
     QList < QPair <QString, QString> > filters;
     QStringList backends;
     QStringList prefixes;
     QString strFilter;
     QString strTitle;
     QString allType;
+    QString strLastFolder;
     switch (mediumType)
     {
         case VBoxDefs::MediumType_HardDisk:
@@ -2648,6 +2647,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
             filters = vboxGlobal().HDDBackends();
             strTitle = tr ("Choose a virtual hard disk file");
             allType = tr ("hard disk");
+            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
             break;
         }
         case VBoxDefs::MediumType_DVD:
@@ -2655,6 +2659,11 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
             filters = vboxGlobal().DVDBackends();
             strTitle = tr ("Choose a virtual CD/DVD disk file");
             allType = tr ("CD/DVD-ROM disk");
+            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
             break;
         }
         case VBoxDefs::MediumType_Floppy:
@@ -2662,11 +2671,18 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
             filters = vboxGlobal().FloppyBackends();
             strTitle = tr ("Choose a virtual floppy disk file");
             allType = tr ("floppy disk");
+            strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderFD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderCD);
+            if (strLastFolder.isEmpty())
+                strLastFolder = virtualBox().GetExtraData(VBoxDefs::GUI_RecentFolderHD);
             break;
         }
         default:
             break;
     }
+    QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder :
+                            strDefaultFolder.isEmpty() ? vboxGlobal().virtualBox().GetHomeFolder() : strDefaultFolder;
 
     /* Prepare filters and backends: */
     for (int i = 0; i < filters.count(); ++i)
@@ -2702,19 +2718,23 @@ QString VBoxGlobal::openMedium(VBoxDefs::MediumType mediumType, QString strMediu
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Remember the path of the last chosen medium: */
-    m_strLastFolder = QFileInfo(strMediumLocation).absolutePath();
+    QString strRecentFolderKey = mediumType == VBoxDefs::MediumType_HardDisk ? VBoxDefs::GUI_RecentFolderHD :
+                                 mediumType == VBoxDefs::MediumType_DVD ? VBoxDefs::GUI_RecentFolderCD :
+                                 mediumType == VBoxDefs::MediumType_Floppy ? VBoxDefs::GUI_RecentFolderFD :
+                                 QString();
+    vbox.SetExtraData(strRecentFolderKey, QFileInfo(strMediumLocation).absolutePath());
 
     /* Update recently used list: */
-    QString strRecentAddress = mediumType == VBoxDefs::MediumType_HardDisk ? VBoxDefs::GUI_RecentListHD :
+    QString strRecentListKey = mediumType == VBoxDefs::MediumType_HardDisk ? VBoxDefs::GUI_RecentListHD :
                                mediumType == VBoxDefs::MediumType_DVD ? VBoxDefs::GUI_RecentListCD :
                                mediumType == VBoxDefs::MediumType_Floppy ? VBoxDefs::GUI_RecentListFD :
                                QString();
-    QStringList recentMediumList = virtualBox().GetExtraData(strRecentAddress).split(';');
+    QStringList recentMediumList = vbox.GetExtraData(strRecentListKey).split(';');
     if (recentMediumList.contains(strMediumLocation))
         recentMediumList.removeAll(strMediumLocation);
     recentMediumList.prepend(strMediumLocation);
     while(recentMediumList.size() > 5) recentMediumList.removeLast();
-    virtualBox().SetExtraData(strRecentAddress, recentMediumList.join(";"));
+    vbox.SetExtraData(strRecentListKey, recentMediumList.join(";"));
 
     /* Open corresponding medium: */
     CMedium comMedium = vbox.OpenMedium(strMediumLocation, mediumTypeToGlobal(mediumType), KAccessMode_ReadWrite);
