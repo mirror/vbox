@@ -29,7 +29,7 @@
 
 int hlpReportStatus(VBoxGuestStatusCurrent statusCurrent)
 {
-    int rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxTray,
+    int rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxTrayClient,
                                          statusCurrent,
                                          0 /* Flags */);
     if (RT_FAILURE(rc))

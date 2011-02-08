@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -437,6 +437,43 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
     return S_OK;
 }
 
+/**
+ * Returns the status of a specified Guest Additions facility.
+ *
+ * @return  aStatus         Current status of specified facility.
+ * @param   aType           Facility to get the status from.
+ * @param   aTimestamp      Timestamp of last facility status update in ms (optional).
+ */
+STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType aType, LONGLONG *aTimestamp, AdditionsFacilityStatus *aStatus)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    CheckComArgNotNull(aStatus);
+    /* Not checking for aTimestamp is intentional; it's optional. */
+
+    FacilityMapIter it = mData.mFacilityMap.find(aType);
+    if (it != mData.mFacilityMap.end())
+    {
+        *aStatus = it->second.curStatus;
+        if (aTimestamp)
+            *aTimestamp = RTTimeSpecGetMilli(&it->second.tsLastUpdated);
+    }
+    else
+    {
+        /*
+         * Do not fail here -- could be that the facility never has been brought up (yet) but
+         * the host wants to have its status anyway. So just tell we don't know at this point.
+         */
+        *aStatus = AdditionsFacilityStatus_Unknown;
+        if (aTimestamp)
+            *aTimestamp = RTTimeMilliTS();
+    }
+    return S_OK;
+}
+
 STDMETHODIMP Guest::GetAdditionsStatus(AdditionsRunLevelType_T aLevel, BOOL *aActive)
 {
     AutoCaller autoCaller(this);
@@ -599,9 +636,12 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uCurFacility = Facility + (Status == VBoxGuestStatusCurrent_Active ? 0 : -1);
+    /*
+     * Set overall additions run level.
+     */
 
     /* First check for disabled status. */
+    uint32_t uCurFacility = Facility + (Status == VBoxGuestStatusCurrent_Active ? 0 : -1);
     if (   Facility < VBoxGuestStatusFacility_VBoxGuestDriver
         || (   Facility == VBoxGuestStatusFacility_All
             && (   Status   == VBoxGuestStatusCurrent_Inactive
@@ -612,7 +652,7 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
     }
-    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxTray)
+    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxTrayClient)
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_Desktop;
     }
@@ -626,6 +666,22 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
     }
     else /* Should never happen! */
         AssertMsgFailed(("Invalid facility status/run level detected! uCurFacility=%ld\n", uCurFacility));
+
+    /*
+     * Set a specific facility status.
+     */
+    if (Facility)
+    {
+        Assert(Facility < UINT32_MAX);
+        FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)Facility];
+        AssertPtr(pData);
+
+        RTTimeNow(&pData->tsLastUpdated);
+        pData->curStatus = (AdditionsFacilityStatus_T)Status;
+
+        LogFlowFunc(("Setting guest facility %u = %u (%u)\n",
+                     Facility, pData->curStatus, pData->tsLastUpdated));
+    }
 }
 
 /**

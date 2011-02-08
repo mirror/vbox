@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 
 #include "VirtualBoxBase.h"
 #include <iprt/list.h>
+#include <iprt/time.h>
 #include <VBox/ostypes.h>
 
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -87,6 +88,7 @@ public:
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
+    STDMETHOD(GetFacilityStatus)(AdditionsFacilityType aType, LONGLONG *aTimestamp, AdditionsFacilityStatus *aStatus);
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
@@ -128,13 +130,13 @@ public:
     }
 
 private:
-
-    // Internal tasks
-    struct TaskGuest; /* Worker thread helper. */
 #ifdef VBOX_WITH_GUEST_CONTROL
+    // Internal tasks.
+    struct TaskGuest; /* Worker thread helper. */
     HRESULT taskCopyFile(TaskGuest *aTask);
     HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
 
+    // Internal callback context handling.
     struct CallbackContext
     {
         eVBoxGuestCtrlCallbackType  mType;
@@ -182,6 +184,14 @@ private:
     HRESULT waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
 # endif
 
+    struct FacilityData
+    {
+        RTTIMESPEC                  tsLastUpdated;
+        AdditionsFacilityStatus_T   curStatus;
+    };
+    typedef std::map< AdditionsFacilityType_T, FacilityData > FacilityMap;
+    typedef std::map< AdditionsFacilityType_T, FacilityData >::iterator FacilityMapIter;
+
     struct Data
     {
         Data() : mAdditionsRunLevel (AdditionsRunLevelType_None),
@@ -189,6 +199,8 @@ private:
                  mSupportsGraphics (FALSE) {}
 
         Bstr                    mOSTypeId;
+
+        FacilityMap             mFacilityMap;
         AdditionsRunLevelType_T mAdditionsRunLevel;
         Bstr                    mAdditionsVersion;
         Bstr                    mInterfaceVersion;
