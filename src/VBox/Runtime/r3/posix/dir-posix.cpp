@@ -253,7 +253,7 @@ static int rtDirReadMore(PRTDIR pDir)
             if (rc)
             {
                 rc = RTErrConvertFromErrno(rc);
-                AssertRC(rc);
+                //AssertRC(rc);
                 return rc;
             }
             if (!pResult)
