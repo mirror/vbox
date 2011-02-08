@@ -2058,7 +2058,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 /* Print information about important Guest Additions parts: */
                 /** @todo Add a makeFacilityStatusStr() to translate facility states into a human readable string! */
                 AdditionsFacilityStatus faStatus;
-                LONGLONG lLastUpdatedMS = 0;
+                LONG64 lLastUpdatedMS = 0;
                 char szLastUpdated[32];
                 rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxGuestDriver, &lLastUpdatedMS, &faStatus);
                 if (SUCCEEDED(rc))
