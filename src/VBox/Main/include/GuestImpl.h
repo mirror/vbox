@@ -88,7 +88,7 @@ public:
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
-    STDMETHOD(GetFacilityStatus)(AdditionsFacilityType aType, LONGLONG *aTimestamp, AdditionsFacilityStatus *aStatus);
+    STDMETHOD(GetFacilityStatus)(AdditionsFacilityType aType, LONG64 *aTimestamp, AdditionsFacilityStatus *aStatus);
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
@@ -115,8 +115,8 @@ public:
                                     ULONG aMode, ULONG aFlags, IProgress **aProgress, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
-    void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
-    void setSupportedFeatures(uint32_t fCaps, uint32_t fActive);
+    void setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestStatusCurrent enmStatus, ULONG aFlags);
+    void setSupportedFeatures(uint32_t aCaps);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL isPageFusionEnabled();
 # ifdef VBOX_WITH_GUEST_CONTROL

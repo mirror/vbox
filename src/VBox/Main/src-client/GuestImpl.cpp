@@ -444,7 +444,7 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
  * @param   aType           Facility to get the status from.
  * @param   aTimestamp      Timestamp of last facility status update in ms (optional).
  */
-STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType aType, LONGLONG *aTimestamp, AdditionsFacilityStatus *aStatus)
+STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType aType, LONG64 *aTimestamp, AdditionsFacilityStatus *aStatus)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -625,11 +625,11 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
  * Sets the status of a certain Guest Additions facility.
  * Gets called by vmmdevUpdateGuestStatus.
  *
- * @param Facility
- * @param Status
- * @param ulFlags
+ * @param enmFacility
+ * @param enmStatus
+ * @param aFlags
  */
-void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
+void Guest::setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestStatusCurrent enmStatus, ULONG aFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
@@ -641,11 +641,11 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
      */
 
     /* First check for disabled status. */
-    uint32_t uCurFacility = Facility + (Status == VBoxGuestStatusCurrent_Active ? 0 : -1);
-    if (   Facility < VBoxGuestStatusFacility_VBoxGuestDriver
-        || (   Facility == VBoxGuestStatusFacility_All
-            && (   Status   == VBoxGuestStatusCurrent_Inactive
-                || Status   == VBoxGuestStatusCurrent_Disabled
+    uint32_t uCurFacility = enmFacility + (enmStatus == VBoxGuestStatusCurrent_Active ? 0 : -1);
+    if (   enmFacility < VBoxGuestStatusFacility_VBoxGuestDriver
+        || (   enmFacility == VBoxGuestStatusFacility_All
+            && (   enmStatus   == VBoxGuestStatusCurrent_Inactive
+                || enmStatus   == VBoxGuestStatusCurrent_Disabled
                )
            )
        )
@@ -670,17 +670,17 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
     /*
      * Set a specific facility status.
      */
-    if (Facility)
+    if (enmFacility)
     {
-        Assert(Facility < UINT32_MAX);
-        FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)Facility];
+        Assert(enmFacility < UINT32_MAX);
+        FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility];
         AssertPtr(pData);
 
         RTTimeNow(&pData->tsLastUpdated);
-        pData->curStatus = (AdditionsFacilityStatus_T)Status;
+        pData->curStatus = (AdditionsFacilityStatus_T)enmStatus;
 
         LogFlowFunc(("Setting guest facility %u = %u (%u)\n",
-                     Facility, pData->curStatus, pData->tsLastUpdated));
+                     enmFacility, pData->curStatus, pData->tsLastUpdated));
     }
 }
 
@@ -688,18 +688,16 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
  * Sets the supported features (and whether they are active or not).
  *
  * @param   fCaps       Guest capability bit mask (VMMDEV_GUEST_SUPPORTS_XXX).
- * @param   fActive     No idea what this is supposed to be, it's always 0 and
- *                      not references by this method.
  */
-void Guest::setSupportedFeatures(uint32_t fCaps, uint32_t fActive)
+void Guest::setSupportedFeatures(uint32_t aCaps)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mSupportsSeamless = (fCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    mData.mSupportsSeamless = (aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
-    mData.mSupportsGraphics = (fCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    mData.mSupportsGraphics = (aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
