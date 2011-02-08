@@ -254,9 +254,8 @@ int vboxNetAdpOsInit(PVBOXNETADP pThis)
     return VINF_SUCCESS;;
 }
 
-int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac, const char *pcszName)
+int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac)
 {
-    /* TODO: Use pcszName */
     struct ifnet *ifp;
 
     ifp = if_alloc(IFT_ETHER);
