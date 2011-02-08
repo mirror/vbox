@@ -7889,13 +7889,13 @@
       <desc>No/invalid facility.</desc>
     </const>
     <const name="VBoxGuestDriver"         value="20">
-      <desc>VBoxGuest base driver.</desc>
+      <desc>VirtualBox base driver (VBoxGuest).</desc>
     </const>
     <const name="VBoxService"             value="100">
-      <desc>VBoxService.</desc>
+      <desc>VirtualBox system service (VBoxService).</desc>
     </const>
     <const name="VBoxTrayClient"          value="101">
-      <desc>VBoxTray (Windows) / VBoxClient (Non-Windows).</desc>
+      <desc>VirtualBox VBoxTray (Windows) / VBoxClient (Non-Windows).</desc>
     </const>
     <const name="All"                     value="999">
       <desc>All facilities selected.</desc>
@@ -7904,7 +7904,7 @@
 
   <enum
     name="AdditionsFacilityStatus"
-    uuid="f49bf8c0-e40b-44dd-9db5-8f4196bfda94"
+    uuid="730a42a1-dac6-4194-b394-744a5ea487f3"
     >
     <desc>
       Guest Additions facility states.
@@ -7933,6 +7933,9 @@
     </const>
     <const name="Terminated"              value="101">
       <desc>Facility successfully shut down.</desc>
+    </const>
+    <const name="Failed"                  value="800">
+      <desc>Facility failed to start.</desc>
     </const>
     <const name="Unknown"                 value="999">
       <desc>Facility status is unknown.</desc>

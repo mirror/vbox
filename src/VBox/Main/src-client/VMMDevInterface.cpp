@@ -293,18 +293,19 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const
 DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    AssertPtr(pDrv);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* store that information in IGuest */
-    Guest* guest = pConsole->getGuest();
-    Assert(guest);
-    if (!guest)
+    Guest* pGuest = pConsole->getGuest();
+    AssertPtr(pGuest);
+    if (!pGuest)
         return;
 
     /*
      * Report our current capabilities (and assume none is active yet).
      */
-    guest->setSupportedFeatures(newCapabilities, 0 /* Active capabilities, not used here. */);
+    pGuest->setSupportedFeatures(newCapabilities);
 
     /*
      * Tell the console interface about the event
