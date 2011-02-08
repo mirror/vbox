@@ -146,6 +146,8 @@
 # define INTNETR0DECL(type) DECLIMPORT(type) VBOXCALL
 #endif
 
+
+
 /** @def IN_PCIRAW_R3
  * Used to indicate whether we're inside the same link module as the Ring-3
  * PCI passthrough support.
@@ -173,6 +175,7 @@
 #else
 # define PCIRAWR0DECL(type) DECLIMPORT(type) VBOXCALL
 #endif
+
 
 
 /** @def IN_REM_R3
