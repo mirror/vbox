@@ -8135,46 +8135,46 @@
 
     <method name="internalGetStatistics">
       <desc>
-        Internal method; do not use as it might change at any time
+        Internal method; do not use as it might change at any time.
       </desc>
       <param name="cpuUser" type="unsigned long" dir="out">
-        <desc>Percentage of processor time spent in user mode as seen by the guest</desc>
+        <desc>Percentage of processor time spent in user mode as seen by the guest.</desc>
       </param>
       <param name="cpuKernel" type="unsigned long" dir="out">
-        <desc>Percentage of processor time spent in kernel mode as seen by the guest</desc>
+        <desc>Percentage of processor time spent in kernel mode as seen by the guest.</desc>
       </param>
       <param name="cpuIdle" type="unsigned long" dir="out">
-        <desc>Percentage of processor time spent idling as seen by the guest</desc>
+        <desc>Percentage of processor time spent idling as seen by the guest.</desc>
       </param>
       <param name="memTotal" type="unsigned long" dir="out">
-        <desc>Total amount of physical guest RAM</desc>
+        <desc>Total amount of physical guest RAM.</desc>
       </param>
       <param name="memFree" type="unsigned long" dir="out">
-        <desc>Free amount of physical guest RAM</desc>
+        <desc>Free amount of physical guest RAM.</desc>
       </param>
       <param name="memBalloon" type="unsigned long" dir="out">
-        <desc>Amount of ballooned physical guest RAM</desc>
+        <desc>Amount of ballooned physical guest RAM.</desc>
       </param>
       <param name="memShared" type="unsigned long" dir="out">
-        <desc>Amount of shared physical guest RAM</desc>
+        <desc>Amount of shared physical guest RAM.</desc>
       </param>
       <param name="memCache" type="unsigned long" dir="out">
-        <desc>Total amount of guest (disk) cache memory</desc>
+        <desc>Total amount of guest (disk) cache memory.</desc>
       </param>
       <param name="pagedTotal" type="unsigned long" dir="out">
-        <desc>Total amount of space in the page file</desc>
+        <desc>Total amount of space in the page file.</desc>
       </param>
       <param name="memAllocTotal" type="unsigned long" dir="out">
-        <desc>Total amount of memory allocated by the hypervisor</desc>
+        <desc>Total amount of memory allocated by the hypervisor.</desc>
       </param>
       <param name="memFreeTotal" type="unsigned long" dir="out">
-        <desc>Total amount of free memory available in the hypervisor</desc>
+        <desc>Total amount of free memory available in the hypervisor.</desc>
       </param>
       <param name="memBalloonTotal" type="unsigned long" dir="out">
-        <desc>Total amount of memory ballooned by the hypervisor</desc>
+        <desc>Total amount of memory ballooned by the hypervisor.</desc>
       </param>
       <param name="memSharedTotal" type="unsigned long" dir="out">
-        <desc>Total amount of shared memory in the hypervisor</desc>
+        <desc>Total amount of shared memory in the hypervisor.</desc>
       </param>
     </method>
 
