@@ -156,11 +156,13 @@ VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long iCmd, caddr_t data, int flag
     switch (iCmd)
     {
         case VBOXNETADP_CTL_ADD:
-            if (   !(iCmd & IOC_OUT)   /* paranoia*/
+            if (   !(iCmd & IOC_INOUT)   /* paranoia*/
                 || IOCPARM_LEN(iCmd) < sizeof(*pReq))
                 return EINVAL;
 
-            rc = vboxNetAdpCreate(&pAdp, NULL);
+            rc = vboxNetAdpCreate(&pAdp,
+                                  pReq->szName[0] && RTStrEnd(pReq->szName, RT_MIN(cbReq, sizeof(pReq->szName))) ?
+                                  pReq->szName : NULL);
             if (RT_FAILURE(rc))
                 return EINVAL;
 
