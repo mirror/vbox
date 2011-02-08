@@ -5229,8 +5229,8 @@
 
     <method name="unregister">
       <desc>
-        Unregisters the machine, which must have been previously registered using
-        <link to="IVirtualBox::registerMachine"/>, and optionally do additional
+        Unregisters a machine previously registered with
+        <link to="IVirtualBox::registerMachine"/> and optionally do additional
         cleanup before the machine is unregistered.
 
         This method does not delete any files. It only changes the machine configuration and
@@ -5245,14 +5245,16 @@
         <ul>
           <li>With "UnregisterOnly", the machine will only be unregistered, but no additional
             cleanup will be performed. The call will fail if the machine is in "Saved" state
-            or has any snapshots or any media attached (see <link to="IMediumAttachment" />.
+            or has any snapshots or any media attached (see <link to="IMediumAttachment" />).
             It is the responsibility of the caller to delete all such configuration in this mode.
             In this mode, the API behaves like the former @c IVirtualBox::unregisterMachine() API
             which it replaces.</li>
           <li>With "DetachAllReturnNone", the call will succeed even if the machine is in "Saved"
             state or if it has snapshots or media attached. All media attached to the current machine
-            state or in snapshots will be detached. No medium objects will be returned; all of the
-            machine's media will remain open.</li>
+            state or in snapshots will be detached. For machines created with VirtualBox 4.0 or
+            later, media which are registered in this machine's media registry which are still
+            attached to another machine besides this machine will be moved a another machine's
+            registry. No medium objects will be returned; all of the machine's media will remain open.</li>
           <li>With "DetachAllReturnHardDisksOnly", the call will behave like with "DetachAllReturnNone",
             except that all the hard disk medium objects which were detached from the machine will
             be returned as an array. This allows for quickly passing them to the <link to="#delete" />

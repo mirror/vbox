@@ -1625,7 +1625,8 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     // we access mParent and members
-    AutoMultiWriteLock2 mlock(&m->pVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 mlock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                              this->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -3075,16 +3076,14 @@ Utf8Str Medium::getName()
  * one registry, which causes trouble with keeping diff images in sync.
  * See getFirstRegistryMachineId() for details.
  *
+ * Must have caller + locking!
+ *
  * @param id
  * @return true if the registry was added; false if the given id was already on the list.
  */
 bool Medium::addRegistry(const Guid& id)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return false;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+    // hard disks cannot be in more than one registry
     if (    m->devType == DeviceType_HardDisk
          && m->llRegistryIDs.size() > 0
        )
@@ -3104,7 +3103,35 @@ bool Medium::addRegistry(const Guid& id)
 }
 
 /**
+ * Removes the given UUID from the list of media registry UUIDs. Returns true
+ * if found or false if not.
+ *
+ * Must have caller + locking!
+ *
+ * @param id
+ * @return
+ */
+bool Medium::removeRegistry(const Guid& id)
+{
+    for (GuidList::iterator it = m->llRegistryIDs.begin();
+         it != m->llRegistryIDs.end();
+         ++it)
+    {
+        if ((*it) == id)
+        {
+            m->llRegistryIDs.erase(it);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Returns true if id is in the list of media registries for this medium.
+ *
+ * Must have caller + locking!
+ *
  * @param id
  * @return
  */

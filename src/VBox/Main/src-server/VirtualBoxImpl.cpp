@@ -344,7 +344,7 @@ HRESULT VirtualBox::FinalConstruct()
     LogFlowThisFunc(("\n"));
 
     HRESULT rc = init();
-   
+
     BaseFinalConstruct();
 
     return rc;
@@ -3191,52 +3191,42 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         m->llPendingMachineRenames.clear();
     }
 
+    struct {
+        MediaOList &llSource;
+        settings::MediaList &llTarget;
+    } s[] =
+    {
+        // hard disks
+        { m->allHardDisks, mediaRegistry.llHardDisks },
+        // CD/DVD images
+        { m->allDVDImages, mediaRegistry.llDvdImages },
+        // floppy images
+        { m->allFloppyImages, mediaRegistry.llFloppyImages }
+    };
+
     HRESULT rc;
-    // hard disks
-    mediaRegistry.llHardDisks.clear();
-    for (MediaList::const_iterator it = m->allHardDisks.begin();
-         it != m->allHardDisks.end();
-         ++it)
-    {
-        Medium *pMedium = *it;
-        if (pMedium->isInRegistry(uuidRegistry))
-        {
-            settings::Medium med;
-            rc = pMedium->saveSettings(med, strMachineFolder);     // this recurses into its children
-            if (FAILED(rc)) throw rc;
-            mediaRegistry.llHardDisks.push_back(med);
-        }
-    }
 
-    // CD/DVD images
-    mediaRegistry.llDvdImages.clear();
-    for (MediaList::const_iterator it = m->allDVDImages.begin();
-         it != m->allDVDImages.end();
-         ++it)
+    for (size_t i = 0; i < RT_ELEMENTS(s); ++i)
     {
-        Medium *pMedium = *it;
-        if (pMedium->isInRegistry(uuidRegistry))
+        MediaOList &llSource = s[i].llSource;
+        settings::MediaList &llTarget = s[i].llTarget;
+        llTarget.clear();
+        for (MediaList::const_iterator it = llSource.begin();
+             it != llSource.end();
+             ++it)
         {
-            settings::Medium med;
-            rc = pMedium->saveSettings(med, strMachineFolder);
-            if (FAILED(rc)) throw rc;
-            mediaRegistry.llDvdImages.push_back(med);
-        }
-    }
+            Medium *pMedium = *it;
+            AutoCaller autoCaller(pMedium);
+            if (FAILED(autoCaller.rc())) throw autoCaller.rc();
+            AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-    // floppy images
-    mediaRegistry.llFloppyImages.clear();
-    for (MediaList::const_iterator it = m->allFloppyImages.begin();
-         it != m->allFloppyImages.end();
-         ++it)
-    {
-        Medium *pMedium = *it;
-        if (pMedium->isInRegistry(uuidRegistry))
-        {
-            settings::Medium med;
-            rc = pMedium->saveSettings(med, strMachineFolder);
-            if (FAILED(rc)) throw rc;
-            mediaRegistry.llFloppyImages.push_back(med);
+            if (pMedium->isInRegistry(uuidRegistry))
+            {
+                settings::Medium med;
+                rc = pMedium->saveSettings(med, strMachineFolder);     // this recurses into child hard disks
+                if (FAILED(rc)) throw rc;
+                llTarget.push_back(med);
+            }
         }
     }
 }
@@ -3663,12 +3653,16 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
     MediaList llMedia2Close;
 
     {
-        AutoWriteLock mlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock tlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
         for (MediaOList::iterator it = m->allHardDisks.getList().begin();
              it != m->allHardDisks.getList().end();
              ++it)
         {
             ComObjPtr<Medium> pMedium = *it;
+            AutoCaller medCaller(pMedium);
+            if (FAILED(medCaller.rc())) return medCaller.rc();
+            AutoReadLock medlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
             if (pMedium->isInRegistry(uuidMachine))
                 // recursively with children first
@@ -3701,15 +3695,51 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
 HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
                                       const Guid &id)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     // remove from the collection of registered machines
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->allMachines.removeChild(pMachine);
-
     // save the global registry
     HRESULT rc = saveSettings();
-
     alock.release();
+
+    /*
+     * Now go over all known media and checks if they were registered in the
+     * media registry of the given machine. Each such medium is then moved to
+     * a different media registry to make sure it doesn't get lost since its
+     * media registry is about to go away.
+     *
+     * This fixes the following use case: Image A.vdi of machine A is also used
+     * by machine B, but registered in the media registry of machine A. If machine
+     * A is deleted, A.vdi must be moved to the registry of B, or else B will
+     * become inaccessible.
+     */
+    GuidList llRegistriesThatNeedSaving;
+    {
+        AutoWriteLock tlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        for (MediaOList::iterator it = m->allHardDisks.getList().begin();
+             it != m->allHardDisks.getList().end();
+             ++it)
+        {
+            ComObjPtr<Medium> &pMedium = *it;
+            AutoCaller medCaller(pMedium);
+            if (FAILED(medCaller.rc())) return medCaller.rc();
+            AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+            if (pMedium->removeRegistry(id))
+            {
+                // ID was found in medium's registry list:
+                // add a new one then
+                const Guid *puuidBetter = pMedium->getFirstMachineBackrefId();
+                if (puuidBetter)
+                {
+                    pMedium->addRegistry(*puuidBetter);
+                    addGuidToListUniquely(llRegistriesThatNeedSaving, *puuidBetter);
+                }
+            }
+        }
+    }
+
+    saveRegistries(llRegistriesThatNeedSaving);
 
     /* fire an event */
     onMachineRegistered(id, FALSE);
@@ -3726,7 +3756,7 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
  * @param uuid
  */
 void VirtualBox::addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving,
-                                       Guid uuid)
+                                       const Guid &uuid)
 {
     for (GuidList::const_iterator it = llRegistriesThatNeedSaving.begin();
          it != llRegistriesThatNeedSaving.end();
@@ -4391,7 +4421,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
     LogFlowFuncEnter();
 
     AssertReturn(pvUser, VERR_INVALID_POINTER);
-    
+
     com::Initialize();
 
     // create an event queue for the current thread
