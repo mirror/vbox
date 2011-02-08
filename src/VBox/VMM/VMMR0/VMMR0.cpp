@@ -30,7 +30,7 @@
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-#include <VBox/vmm/pdmpci.h>
+# include <VBox/vmm/pdmpci.h>
 #endif
 
 #include <VBox/vmm/gvmm.h>
@@ -41,7 +41,6 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
-
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
@@ -141,17 +140,19 @@ VMMR0DECL(int) ModuleInit(void)
                                     LogFlow(("ModuleInit: returns success.\n"));
                                     return VINF_SUCCESS;
                                 }
-                            }
 
-                            /* bail out */
-                            LogFlow(("ModuleTerm: returns %Rrc\n", rc));
+                                /*
+                                 * Bail out.
+                                 */
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-                            PciRawR0Term();
+                                PciRawR0Term();
 #endif
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                            PGMR0DynMapTerm();
-#endif
+                            }
+                            IntNetR0Term();
                         }
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                        PGMR0DynMapTerm();
+#endif
                     }
                     PGMDeregisterStringFormatTypes();
                 }
@@ -186,16 +187,12 @@ VMMR0DECL(void) ModuleTerm(void)
     IntNetR0Term();
 
     /*
-     * PGM (Darwin) and HWACCM global cleanup.
+     * PGM (Darwin), HWACCM and PciRaw global cleanup.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
 #endif
-
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    /*
-     * Terminate PCI passthrough service.
-     */
     PciRawR0Term();
 #endif
     PGMDeregisterStringFormatTypes();
@@ -1555,3 +1552,4 @@ DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
      */
     RTAssertMsg2V(pszFormat, va);
 }
+
