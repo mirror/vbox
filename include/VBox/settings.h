@@ -692,6 +692,32 @@ struct IoSettings
 };
 
 /**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct HostPciDeviceAttachment
+{
+    HostPciDeviceAttachment()
+        : uHostAddress(0),
+          uGuestAddress(0)
+    {}
+
+    bool operator==(const HostPciDeviceAttachment &a) const
+    {
+        return (   (uHostAddress   == a.uHostAddress)
+                && (uGuestAddress  == a.uGuestAddress)
+                && (strDeviceName  == a.strDeviceName)
+               );
+    }
+
+    com::Utf8Str    strDeviceName;
+    uint32_t        uHostAddress;
+    uint32_t        uGuestAddress;
+};
+typedef std::list<HostPciDeviceAttachment> HostPciDeviceAttachmentList;
+
+/**
  * Representation of Machine hardware; this is used in the MachineConfigFile.hardwareMachine
  * field.
  *
@@ -760,6 +786,7 @@ struct Hardware
     com::Utf8Str        strNotificationPatterns;
 
     IoSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
+    HostPciDeviceAttachmentList pciAttachments; // requires settings version 1.12 (VirtualBox 4.1)
 };
 
 /**

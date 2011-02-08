@@ -142,7 +142,7 @@ VMMR0DECL(int) ModuleInit(void)
                                     return VINF_SUCCESS;
                                 }
                             }
-                            
+
                             /* bail out */
                             LogFlow(("ModuleTerm: returns %Rrc\n", rc));
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
@@ -191,7 +191,7 @@ VMMR0DECL(void) ModuleTerm(void)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
 #endif
-        
+
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     /*
      * Terminate PCI passthrough service.
