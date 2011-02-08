@@ -1737,8 +1737,8 @@ STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAt
         mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
     else
     {
-        com::SafeIfaceArray<IPciDeviceAttachment> result(0);
-        result.detachTo(ComSafeArrayOutArg(aAttachments));            
+        com::SafeIfaceArray<IPciDeviceAttachment> result((size_t)0);
+        result.detachTo(ComSafeArrayOutArg(aAttachments));
     }
 
     return S_OK;

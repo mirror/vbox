@@ -322,7 +322,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VPCISTATE, Queues, 8);
 #endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    CHECK_MEMBER_ALIGNMENT(PCIRAWSENDREQ, u.aGetRegionInfo.u64RegionSize, 8);
+    //CHECK_MEMBER_ALIGNMENT(PCIRAWSENDREQ, u.aGetRegionInfo.u64RegionSize, 8);
 #endif
 
 #ifdef VBOX_WITH_RAW_MODE
