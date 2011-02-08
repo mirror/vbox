@@ -7878,6 +7878,68 @@
   </interface>
 
   <enum
+    name="AdditionsFacilityType"
+    uuid="bcf4f5e7-86d6-4b8c-99cd-449a79114fb4"
+    >
+    <desc>
+      Guest Additions facility IDs.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No/invalid facility.</desc>
+    </const>
+    <const name="VBoxGuestDriver"         value="20">
+      <desc>VBoxGuest base driver.</desc>
+    </const>
+    <const name="VBoxService"             value="100">
+      <desc>VBoxService.</desc>
+    </const>
+    <const name="VBoxTrayClient"          value="101">
+      <desc>VBoxTray (Windows) / VBoxClient (Non-Windows).</desc>
+    </const>
+    <const name="All"                     value="999">
+      <desc>All facilities selected.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="AdditionsFacilityStatus"
+    uuid="f49bf8c0-e40b-44dd-9db5-8f4196bfda94"
+    >
+    <desc>
+      Guest Additions facility states.
+    </desc>
+
+    <const name="Disabled"                value="0">
+      <desc>Facility is disabled.</desc>
+    </const>
+    <const name="Inactive"                value="1">
+      <desc>Facility is enabled but inactive.</desc>
+    </const>
+    <const name="Paused"                  value="2">
+      <desc>Facility has been paused.</desc>
+    </const>
+    <const name="PreInit"                 value="20">
+      <desc>Facility is preparing to initialize.</desc>
+    </const>
+    <const name="Init"                    value="30">
+      <desc>Facility is initializing.</desc>
+    </const>
+    <const name="Active"                  value="50">
+      <desc>Facility is up and running.</desc>
+    </const>
+    <const name="Terminating"             value="100">
+      <desc>Facility is shutting down.</desc>
+    </const>
+    <const name="Terminated"              value="101">
+      <desc>Facility successfully shut down.</desc>
+    </const>
+    <const name="Unknown"                 value="999">
+      <desc>Facility status is unknown.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="AdditionsRunLevelType"
     uuid="a25417ee-a9dd-4f5b-b0dc-377860087754"
     >
@@ -8003,7 +8065,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="7ce7e4d8-cdaa-4d83-a0f4-510c8ee70aea"
+    uuid="09c2e2e0-f6f9-45ec-91a1-aaab3fad9f1f"
     wsmap="managed"
     >
     <desc>
@@ -8110,6 +8172,21 @@
       </param>
       <param name="memSharedTotal" type="unsigned long" dir="out">
         <desc>Total amount of shared memory in the hypervisor</desc>
+      </param>
+    </method>
+
+    <method name="getFacilityStatus">
+      <desc>
+        Get the current status of a Guest Additions facility.
+      </desc>
+      <param name="facility" type="AdditionsFacilityType" dir="in">
+        <desc>Facility to check status for.</desc>
+      </param>
+      <param name="timestamp" type="long long" dir="out">
+        <desc>Timestamp (in ms) of last status update of this facility seen by the host.</desc>
+      </param>
+      <param name="status" type="AdditionsFacilityStatus" dir="return">
+        <desc>The current (latest) facility status.</desc>
       </param>
     </method>
 

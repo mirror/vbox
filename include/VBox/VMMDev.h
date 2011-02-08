@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -669,17 +669,19 @@ AssertCompileSize(VMMDevReportGuestInfo2, 24+144);
 
 /**
  * Guest status facility.
+ * This needs to be kept in sync with AdditionsFacility of the Main API!
  */
 typedef enum
 {
     VBoxGuestStatusFacility_Unknown         = 0,
     VBoxGuestStatusFacility_VBoxGuestDriver = 20,
     VBoxGuestStatusFacility_VBoxService     = 100,
-    VBoxGuestStatusFacility_VBoxTray        = 101,
+    VBoxGuestStatusFacility_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
     VBoxGuestStatusFacility_All             = 999,
     VBoxGuestStatusFacility_SizeHack        = 0x7fffffff
 } VBoxGuestStatusFacility;
 AssertCompileSize(VBoxGuestStatusFacility, 4);
+
 
 /**
  * The current guest status of a facility.
@@ -688,11 +690,13 @@ typedef enum
 {
     VBoxGuestStatusCurrent_Disabled    = 0,
     VBoxGuestStatusCurrent_Inactive    = 1,
+    VBoxGuestStatusCurrent_Paused      = 2,
     VBoxGuestStatusCurrent_PreInit     = 20,
     VBoxGuestStatusCurrent_Init        = 30,
     VBoxGuestStatusCurrent_Active      = 50,
     VBoxGuestStatusCurrent_Terminating = 100,
     VBoxGuestStatusCurrent_Terminated  = 101,
+    VBoxGuestStatusCurrent_Unknown     = 999,
     VBoxGuestStatusCurrent_SizeHack    = 0x7fffffff
 } VBoxGuestStatusCurrent;
 AssertCompileSize(VBoxGuestStatusCurrent, 4);

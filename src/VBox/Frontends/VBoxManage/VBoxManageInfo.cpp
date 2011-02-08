@@ -110,7 +110,6 @@ static void makeTimeStr(char *s, int cb, int64_t millies)
                         t.u8Hour, t.u8Minute, t.u8Second);
 }
 
-
 const char *stateToName(MachineState_T machineState, bool fShort)
 {
     switch (machineState)
@@ -786,9 +785,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         }
     }
 
-    /* get the maximum amount of NICS */    
+    /* get the maximum amount of NICS */
     ULONG maxNICs = getMaxNics(virtualBox, machine);
-   
+
     for (ULONG currentNIC = 0; currentNIC < maxNICs; currentNIC++)
     {
         ComPtr<INetworkAdapter> nic;
@@ -2004,6 +2003,16 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
 
+    ULONG guestVal;
+    rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
+    if (SUCCEEDED(rc))
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("GuestMemoryBalloon=%d\n", guestVal);
+        else
+            RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
+    }
+
     if (console)
     {
         ComPtr<IGuest> guest;
@@ -2042,19 +2051,54 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     else
                         RTPrintf("Additions version:                   %lS\n\n", guestString.raw());
                 }
+
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf("\nGuest Components:\n\n");
+
+                /* Print information about important Guest Additions parts: */
+                /** @todo Add a makeFacilityStatusStr() to translate facility states into a human readable string! */
+                AdditionsFacilityStatus faStatus;
+                LONGLONG lLastUpdatedMS = 0;
+                char szLastUpdated[32];
+                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxGuestDriver, &lLastUpdatedMS, &faStatus);
+                if (SUCCEEDED(rc))
+                {
+                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("GuestAdditionsFacilityStatusGuestDriver=%u,%ld\n",
+                                 faStatus, lLastUpdatedMS);
+                    else
+                        RTPrintf("Guest driver:                        %u (last update: %s)\n",
+                                 faStatus, szLastUpdated);
+                }
+
+                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxService, &lLastUpdatedMS, &faStatus);
+                if (SUCCEEDED(rc))
+                {
+                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("GuestAdditionsFacilityStatusVBoxService=%u,%ld\n",
+                                 faStatus, lLastUpdatedMS);
+                    else
+                        RTPrintf("VBoxService:                         %u (last update: %s)\n",
+                                 faStatus, szLastUpdated);
+                }
+
+                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxTrayClient, &lLastUpdatedMS, &faStatus);
+                if (SUCCEEDED(rc))
+                {
+                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("GuestAdditionsFacilityStatusVBoxTrayClient=%u,%ld\n",
+                                 faStatus, lLastUpdatedMS);
+                    else
+                        RTPrintf("VBoxTray / VBoxClient:               %u (last update: %s)\n",
+                                 faStatus, szLastUpdated);
+                }
             }
         }
     }
 
-    ULONG guestVal;
-    rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
-    if (SUCCEEDED(rc))
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("GuestMemoryBalloon=%d\n", guestVal);
-        else
-            RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
-    }
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
 
