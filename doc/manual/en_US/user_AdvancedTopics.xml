@@ -373,6 +373,111 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
     </sect2>
   </sect1>
 
+  <sect1>
+    <title>Advanced configuration for Linux and Solaris guests</title>
+
+      <sect2>
+        <title>Manual setup of selected guest services on Linux</title>
+
+        <para>The VirtualBox Guest Additions contain several different
+        drivers. If for any reason you do not wish to set them all up, you can
+        install the Guest Additions using the following command:</para>
+
+        <screen>  sh ./VBoxLinuxAdditions.run no_setup</screen>
+
+        <para>After this, you will need to at least compile the kernel modules
+        by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
+        as root (you will need to replace <emphasis>lib</emphasis> by
+        <emphasis>lib64</emphasis> on some 64bit guests), and on older guests
+        without the udev service you will need to add the
+        <emphasis>vboxadd</emphasis> service to the default runlevel to ensure
+        that the modules get loaded.</para>
+
+        <para>To setup the time synchronization service, run the command
+        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-service setup</screen>
+        and add the service vboxadd-service to the default runlevel. To set up
+        the X11 and OpenGL part of the Guest Additions, run the command
+        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-x11 setup</screen> (you
+        do not need to enable any services for this).</para>
+
+        <para>To recompile the guest kernel modules, use this command:
+        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen> After
+        compilation you should reboot your guest to ensure that the new
+        modules are actually used.</para>
+      </sect2>
+
+    <sect2 id="guestxorgsetup">
+      <title>Guest graphics and mouse driver setup in depth</title>
+
+        <para>This section assumes that you are familiar with configuring
+        the X.Org server using xorg.conf and optionally the newer mechanisms
+        using hal or udev and xorg.conf.d. If not you can learn about
+        them by studying the documentation which comes with X.Org.</para>
+
+        <para>The VirtualBox Guest Additions come with drivers for X.Org
+        versions
+          <itemizedlist>
+            <listitem>X11R6.8/X11R6.9 and XFree86 version 4.3
+            (vboxvideo_drv_68.o and vboxmouse_drv_68.o)</listitem>
+            <listitem>X11R7.0 (vboxvideo_drv_70.so and vboxmouse_drv_70.so)
+            </listitem>
+            <listitem>X11R7.1 (vboxvideo_drv_71.so and vboxmouse_drv_71.so)
+            </listitem>
+            <listitem>X.Org Server versions 1.3 and later (vboxvideo_drv_13.so
+            and vboxmouse_drv_13.so and so on).</listitem>
+          </itemizedlist>
+        By default these drivers can be found in the directory</para>
+        <para>
+        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/lib/VBoxGuestAdditions</computeroutput>
+        </para>
+        <para>and the correct versions for the X server are symbolically linked
+        into the X.Org driver directories.</para>
+
+        <para>For graphics integration to work correctly, the X server must
+        load the vboxvideo driver (many recent X server versions look for it
+        automatically if they see that they are running in VirtualBox) and for
+        an optimal user experience the guest kernel drivers must be loaded and
+        the Guest Additions tool VBoxClient must be running as a client in the
+        X session. For mouse integration to work correctly, the guest kernel
+        drivers must be loaded and in addition, in X servers from X.Org X11R6.8
+        to X11R7.1 and in XFree86 version 4.3 the right vboxmouse driver must
+        be loaded and associated with /dev/mouse or /dev/psaux; in X.Org server
+        1.3 or later a driver for a PS/2 mouse must be loaded and the right
+        vboxmouse driver must be associated with /dev/vboxguest.</para>
+
+        <para>The VirtualBox guest graphics driver can use any graphics
+        configuration for which the virtual resolution fits into the virtual
+        video memory allocated to the virtual machine (minus a small amount
+        used by the guest driver) as described in
+        <xref linkend="settings-display" />. The driver will offer a range of
+        standard modes at least up to the default guest resolution for all
+        active guest monitors.  In X.Org Server 1.3 and later the default mode
+        can be changed by setting the output property VBOX_MODE to
+        "&lt;width&gt;x&lt;height&gt;" for any guest monitor. When VBoxClient
+        and the kernel drivers are active this is done automatically when the
+        host requests a mode change. The driver for older versions can only
+        receive new modes by querying the host for requests at regular
+        intervals.</para>
+
+        <para>With pre-1.3 X Servers you can also add your own modes to the X
+        server configuration file. You simply need to add them to the "Modes"
+        list in the "Display" subsection of the "Screen" section. For example,
+        the section shown here has a custom 2048x800 resolution mode added:
+        </para>
+
+        <screen>Section "Screen"
+        Identifier    "Default Screen"
+        Device        "VirtualBox graphics card"
+        Monitor       "Generic Monitor"
+        DefaultDepth  24
+        SubSection "Display"
+                Depth         24
+                Modes         "2048x800" "800x600" "640x480"
+        EndSubSection
+EndSection</screen>
+    </sect2>
+  </sect1>
+
   <sect1 id="cpuhotplug">
     <title>CPU hot-plugging</title>
 

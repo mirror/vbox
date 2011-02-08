@@ -407,9 +407,8 @@
       <title>Guest Additions for Linux</title>
 
       <para>Like the Windows Guest Additions, the VirtualBox Guest Additions
-      for Linux take the form of a set of device drivers and system
-      applications which may be installed in the guest operating
-      system.</para>
+      for Linux are a set of device drivers and system applications which may
+      be installed in the guest operating system.</para>
 
       <para>The following Linux distributions are officially supported:</para>
 
@@ -440,25 +439,25 @@
       it is run in a virtual machine. The Guest Additions work in those
       distributions.</para>
 
-      <para>Note that some Linux distributions already come with VirtualBox
-      Guest Additions or a part thereof. You may keep the distribution's
-      version of the Guest Additions but often, these are not up to date and
-      limited in functionality. Therefore, you can choose the install the
-      Guest Additions that come with VirtualBox, overriding the already
-      installed version. The VirtualBox Linux Guest Additions installer tries
-      to detect existing installation and replace them but depending on how
-      the distribution integrates the Guest Additions, they may require some
-      manual interaction. It is highly recommended to take a snapshot of the
-      virtual machine before overriding the installation.</para>
+      <para>Note that some Linux distributions already come with all or part of
+      the VirtualBox Guest Additions. You may choose to keep the distribution's
+      version of the Guest Additions but these are often not up to date and
+      limited in functionality, so we recommend replacing them with the
+      Guest Additions that come with VirtualBox. The VirtualBox Linux Guest
+      Additions installer tries to detect existing installation and replace
+      them but depending on how the distribution integrates the Guest
+      Additions, this may require some manual interaction. It is highly
+      recommended to take a snapshot of the virtual machine before replacing
+      pre-installed Guest Additions.</para>
 
       <sect3>
         <title>Installing the Linux Guest Additions</title>
 
         <para>The VirtualBox Guest Additions for Linux are provided on the
-        same ISO CD-ROM as the Additions for Windows described above. They
-        also come with an installation program guiding you through the setup
-        process, although, due to the significant differences between Linux
-        distributions, installation may be slightly more complex.</para>
+        same virtual CD-ROM file as the Guest Additions for Windows described
+        above. They also come with an installation program guiding you through
+        the setup process, although, due to the significant differences between
+        Linux distributions, installation may be slightly more complex.</para>
 
         <para>Installation generally involves the following steps:</para>
 
@@ -471,20 +470,25 @@
             be performed in your Linux <emphasis>guest</emphasis> instead of
             on a Linux host system, as described there.</para>
 
-            <para>Again, as with Linux hosts, we recommend using DKMS for
-            Linux guests as well. If it is not installed, use this command for
-            Ubuntu/Debian systems:<screen>sudo apt-get install dkms</screen>
+            <para>Again, as with Linux hosts, we recommend using DKMS if it is
+            available for the guest system. If it is not installed, use this
+            command for Ubuntu/Debian systems:
+            <screen>sudo apt-get install dkms</screen>
             or for Fedora systems: <screen>yum install dkms</screen></para>
 
-            <para>Make sure to nstall DKMS <emphasis>before</emphasis>
-            installing the Linux Guest Additions.</para>
+            <para>Be sure to install DKMS <emphasis>before</emphasis>
+            installing the Linux Guest Additions. If DKMS is not available
+            or not installed, the guest kernel modules will need to be
+            recreated manually whenever the guest kernel is updated using
+            the command <screen>/etc/init.d/vboxadd setup</screen> as root.
+            </para>
           </listitem>
 
           <listitem>
-            <para>Mount the
-            <computeroutput>VBoxGuestAdditions.iso</computeroutput> file as
-            your Linux guest's virtual CD-ROM drive, exactly the same way as
-            described for a Windows guest in <xref
+            <para>Insert the
+            <computeroutput>VBoxGuestAdditions.iso</computeroutput> CD file
+            into your Linux guest's virtual CD-ROM drive, exactly the same way
+            as described for a Windows guest in <xref
             linkend="mountingadditionsiso" />.</para>
           </listitem>
 
@@ -497,19 +501,19 @@
           </listitem>
         </orderedlist>
 
-        <para>For your convenience, the following step-by-step instructions
-        have been verified to work for freshly installed copies of the most
+        <para>For your convenience, we provide the following step-by-step
+        instructions for freshly installed copies of recent versions of the most
         popular Linux distributions. After these preparational steps, you can
         execute the VirtualBox Guest Additions installer as described
         above.</para>
 
         <sect4>
-          <title>Ubuntu 10.04 ("Lucid Lynx")</title>
+          <title>Ubuntu</title>
 
           <para><orderedlist>
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root, execute <screen>apt-get update</screen>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>apt-get update</screen> as root
                 followed by <screen>apt-get upgrade</screen></para>
               </listitem>
 
@@ -525,12 +529,12 @@
         </sect4>
 
         <sect4>
-          <title>Fedora 13 ("Goddard")</title>
+          <title>Fedora</title>
 
           <para><orderedlist>
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root, execute <screen>yum update</screen></para>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>yum update</screen></para> as root.
               </listitem>
 
               <listitem>
@@ -546,12 +550,12 @@
         </sect4>
 
         <sect4>
-          <title>openSUSE 11.2</title>
+          <title>openSUSE</title>
 
           <para><orderedlist>
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root, execute <screen>zypper update</screen></para>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>zypper update</screen></para> as root.
               </listitem>
 
               <listitem>
@@ -584,12 +588,12 @@
         </sect4>
 
         <sect4>
-          <title>SuSE Linux Enterprise Desktop (SLED) 11</title>
+          <title>SuSE Linux Enterprise Desktop (SLED)</title>
 
           <para><orderedlist>
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root, execute <screen>zypper update</screen></para>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>zypper update</screen></para> as root.
               </listitem>
 
               <listitem>
@@ -621,7 +625,7 @@
         </sect4>
 
         <sect4>
-          <title>Mandrake 2010</title>
+          <title>Mandrake</title>
 
           <para><orderedlist>
               <listitem>
@@ -630,8 +634,9 @@
               </listitem>
 
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root and execute <screen>urpmi --auto-update</screen></para>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>urpmi --auto-update</screen></para>
+                as root.
               </listitem>
 
               <listitem>
@@ -649,20 +654,20 @@
         </sect4>
 
         <sect4>
-          <title>CentOS 5.5, Red Hat Enterprise Linux 5.5 and Oracle
-          Enterprise Linux 5.5</title>
+          <title>CentOS, Red Hat Enterprise Linux and Oracle
+          Enterprise Linux</title>
 
           <para><orderedlist>
               <listitem>
-                <para>Add <computeroutput>divider=10</computeroutput> to the
-                kernel boot options in
+                <para>For versions prior to 6, add <computeroutput>divider=10</computeroutput>
+                to the kernel boot options in
                 <computeroutput>/etc/grub.conf</computeroutput> to reduce the
                 idle CPU load.</para>
               </listitem>
 
               <listitem>
-                <para>To update your system to the latest version of the
-                packets, open a terminal and as root, execute <screen>yum update</screen></para>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>yum update</screen></para> as root.
               </listitem>
 
               <listitem>
@@ -677,9 +682,6 @@
               </listitem>
 
               <listitem>
-                <para>Note that OpenGL support is not available unless you
-                update to a later Linux kernel.</para>
-
                 <para>In case Oracle Enterprise Linux does not find the
                 required packages, you either have to install them from a
                 different source (e.g. DVD) or use Oracle's public Yum server
@@ -690,12 +692,12 @@
         </sect4>
 
         <sect4>
-          <title>Debian 5 ("Lenny")</title>
+          <title>Debian</title>
 
           <para><orderedlist>
               <listitem>
-                <para>In order to update your system to the latest version of
-                the packets, open a terminal and as root, execute <screen>apt-get update</screen>
+                <para>In order to fully update your guest system, open a
+                terminal and run <screen>apt-get update</screen> as root
                 followed by <screen>apt-get upgrade</screen></para>
               </listitem>
 
@@ -714,87 +716,39 @@
                 <computeroutput>uname -a</computeroutput> and install the
                 correct version of the linux-headers package, e.g. using
                 <screen>apt-get install linux-headers-2.6.26-2-686</screen></para>
-
-                <para>Note that OpenGL support is not available unless you
-                update to a later Linux kernel.</para>
               </listitem>
             </orderedlist></para>
         </sect4>
       </sect3>
 
       <sect3>
-        <title>Manual setup of selected guest services</title>
+        <title>Graphics and mouse integration</title>
 
-        <para>The VirtualBox Guest Additions contain several different
-        drivers. If for any reason you do not wish to set them all up, you can
-        install the Guest Additions using the following command:</para>
+        <para>In Linux and Solaris guests, VirtualBox graphics and mouse
+        integration goes through the X Window System.  VirtualBox can use
+        the X.Org variant of the system (or XFree86 version 4.3 which is
+        identical to the first X.Org release). During the installation process,
+        the X.Org display server will be set up to use the graphics and mouse
+        drivers which come with the Guest Additions.</para>
 
-        <screen>  sh ./VBoxLinuxAdditions.run no_setup</screen>
+        <para>After installing the Guest Additions into a fresh installation of
+        a supported Linux distribution or Solaris system (many unsupported
+        systems will work correctly too), the guest's graphics
+        mode will change to fit the size of the VirtualBox window
+        on the host when it is resized.  You can also ask the guest system to
+        switch to a particular resolution by sending a "video mode hint" using
+        the <computeroutput>VBoxManage</computeroutput> tool.</para>
 
-        <para>After this, you will need to at least compile the kernel modules
-        by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
-        as root (you will need to replace <emphasis>lib</emphasis> by
-        <emphasis>lib64</emphasis> on some 64bit guests), and on older guests
-        without the udev service you will need to add the
-        <emphasis>vboxadd</emphasis> service to the default runlevel to ensure
-        that the modules get loaded.</para>
-
-        <para>To setup the time synchronization service, run the command
-        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-service setup</screen>
-        and add the service vboxadd-service to the default runlevel. To set up
-        the X11 and OpenGL part of the Guest Additions, run the command
-        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-x11 setup</screen> (you
-        do not need to enable any services for this).</para>
-
-        <para>To recompile the guest kernel modules, use this command:
-        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen> After
-        compilation you should reboot your guest to ensure that the new
-        modules are actually used.</para>
-      </sect3>
-
-      <sect3>
-        <title>Video acceleration and high resolution graphics modes</title>
-
-        <para>In Linux guests, VirtualBox video acceleration is available
-        through the X Window System. Typically, in today's Linux
-        distributions, this will be the X.Org server. During the installation
-        process, X will be set up to use the VirtualBox video driver shipped
-        with the Guest Additions.</para>
-
-        <para>For Linux and Solaris guests, the X.org server version 1.3 or
-        later is required for automatic resizing (the feature has been
-        disabled on Fedora 9 guests due to a bug in the X server they supply).
-        The server version can be checked with <computeroutput>Xorg
-        -version</computeroutput>.</para>
-
-        <para>You can also send video mode hints using the
-        <computeroutput>VBoxManage</computeroutput> tool.</para>
-
-        <para>If you are only using recent Linux guests systems, you can skip
-        the rest of this section. On older guest systems, whatever graphics
-        modes were set up before the installation will be used. If these modes
-        do not suit your requirements, you can change your setup by editing
-        the configuration file of the X server, usually found in
-        <computeroutput>/etc/X11/xorg.conf</computeroutput>.</para>
-
-        <para>VirtualBox can use any default X graphics mode which fits into
-        the virtual video memory allocated to the virtual machine, as
-        described in <xref linkend="generalsettings" />. You can also add your
-        own modes to the X server configuration file. You simply need to add
-        them to the "Modes" list in the "Display" subsection of the "Screen"
-        section. For example, the section shown here has a custom 2048x800
-        resolution mode added:</para>
-
-        <screen>Section "Screen"
-        Identifier    "Default Screen"
-        Device        "VirtualBox graphics card"
-        Monitor       "Generic Monitor"
-        DefaultDepth  24
-        SubSection "Display"
-                Depth         24
-                Modes         "2048x800" "800x600" "640x480"
-        EndSubSection
-EndSection</screen>
+        <para>Multiple guest monitors are supported in guests using the X.Org
+        server version 1.3 (which is part of release 7.3 of the X Window System
+        version 11) or a later version. The layout of the guest screens can
+        be adjusted as needed using the tools which come with the guest
+        operating system.</para>
+        
+        <para>If you want to understand more about the details of how the
+        X.Org drivers are set up (in particular if you wish to use them in a
+        setting which our installer doesn't handle correctly), you should read
+        <xref linkend="guestxorgsetup" />.</para>
       </sect3>
 
       <sect3>
@@ -1318,14 +1272,8 @@ $</screen>
         </listitem>
 
         <listitem>
-          <para>Linux or Solaris guests with an X.org server version 1.3 or
-          higher<footnote>
-              <para>The X server version is not the same as the version of the
-              entire X.org suite. You can type <computeroutput>X
-              -version</computeroutput> in a terminal to find out about the
-              X.org server version level that is currently installed.</para>
-            </footnote> (support added with VirtualBox 1.6). The exception is
-          Fedora 9, due to a bug in its X server.</para>
+          <para>Supported Linux or Solaris guests running the X Window System
+          (added with VirtualBox 1.6).</para>
         </listitem>
       </itemizedlist></para>
 
