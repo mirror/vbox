@@ -154,6 +154,9 @@ struct VBoxDefs
     static const char* GUI_Export_Bucket;
     static const char* GUI_PreventBetaWarning;
 
+    static const char* GUI_RecentFolderHD;
+    static const char* GUI_RecentFolderCD;
+    static const char* GUI_RecentFolderFD;
     static const char* GUI_RecentListHD;
     static const char* GUI_RecentListCD;
     static const char* GUI_RecentListFD;

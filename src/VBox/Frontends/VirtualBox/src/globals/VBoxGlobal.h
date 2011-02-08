@@ -861,8 +861,6 @@ private:
 
     QString mUserDefinedPortName;
 
-    mutable QString m_strLastFolder;
-
     QPixmap mWarningIcon, mErrorIcon;
 
     QFileIconProvider m_globalIconProvider;
