@@ -444,7 +444,7 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
  * @param   aType           Facility to get the status from.
  * @param   aTimestamp      Timestamp of last facility status update in ms (optional).
  */
-STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType aType, LONG64 *aTimestamp, AdditionsFacilityStatus *aStatus)
+STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType_T aType, LONG64 *aTimestamp, AdditionsFacilityStatus_T *aStatus)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
