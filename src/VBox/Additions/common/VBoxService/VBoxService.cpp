@@ -228,6 +228,23 @@ void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
 
 
 /**
+ * Reports the current VBoxService status to the host.
+ *
+ * @return  IPRT status code.
+ * @param   enmStatus               Status to report to the host.
+ */
+int VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus)
+{
+    /* Report the host that we're up and running! */
+    int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService,
+                                         enmStatus, 0 /* Flags */);
+    if (RT_FAILURE(rc))
+        VBoxServiceError("Could not report VBoxService status (%u), rc=%Rrc\n", enmStatus, rc);
+    return rc;
+}
+
+
+/**
  * Gets a 32-bit value argument.
  *
  * @returns 0 on success, non-zero exit code on error.
@@ -310,6 +327,8 @@ int VBoxServiceStartServices(void)
 {
     int rc;
 
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Init);
+
     /*
      * Initialize the services.
      */
@@ -371,7 +390,10 @@ int VBoxServiceStartServices(void)
     if (RT_SUCCESS(rc))
         VBoxServiceVerbose(1, "All services started.\n");
     else
+    {
         VBoxServiceError("An error occcurred while the services!\n");
+        VBoxServiceReportStatus(VBoxGuestFacilityStatus_Failed);
+    }
     return rc;
 }
 
@@ -385,6 +407,8 @@ int VBoxServiceStartServices(void)
 int VBoxServiceStopServices(void)
 {
     int rc = VINF_SUCCESS;
+
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminating);
 
     /*
      * Signal all the services.
@@ -444,6 +468,8 @@ int VBoxServiceStopServices(void)
 #endif
 
     VBoxServiceVerbose(2, "Stopping services returned: rc=%Rrc\n", rc);
+    VBoxServiceReportStatus(RT_SUCCESS(rc)
+                            ? VBoxGuestFacilityStatus_Paused : VBoxGuestFacilityStatus_Failed);
     return rc;
 }
 
@@ -455,13 +481,7 @@ void VBoxServiceMainWait(void)
 {
     int rc;
 
-    /* Report the host that we're up and running! */
-    rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxService,
-                                     VBoxGuestStatusCurrent_Active,
-                                     0 /* Flags */);
-    if (RT_FAILURE(rc))
-        VBoxServiceError("Could not report facility (%u) status %u, rc=%Rrc\n",
-                         VBoxGuestStatusFacility_VBoxService, VBoxGuestStatusCurrent_Active, rc);
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Active);
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -556,6 +576,8 @@ int main(int argc, char **argv)
         return VBoxServicePageSharingInitFork();
 #endif
 
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_PreInit);
+
     /*
      * Do pre-init of services.
      */
@@ -563,7 +585,10 @@ int main(int argc, char **argv)
     {
         rc = g_aServices[j].pDesc->pfnPreInit();
         if (RT_FAILURE(rc))
+        {
+            VBoxServiceReportStatus(VBoxGuestFacilityStatus_Failed);
             return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
+        }
     }
 #ifdef RT_OS_WINDOWS
     /*
@@ -767,6 +792,7 @@ int main(int argc, char **argv)
 #endif
 
     VBoxServiceVerbose(0, "Ended.\n");
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
     return rcExit;
 }
 

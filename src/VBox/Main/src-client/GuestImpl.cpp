@@ -236,34 +236,6 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     return hr;
 }
 
-STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
-{
-    CheckComArgOutPointerValid(aSupportsSeamless);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aSupportsSeamless = mData.mSupportsSeamless;
-
-    return S_OK;
-}
-
-STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
-{
-    CheckComArgOutPointerValid(aSupportsGraphics);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aSupportsGraphics = mData.mSupportsGraphics;
-
-    return S_OK;
-}
-
 BOOL Guest::isPageFusionEnabled()
 {
     AutoCaller autoCaller(this);
@@ -584,10 +556,11 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 
     /*
      * Older Additions didn't have this finer grained capability bit,
-     * so enable it by default.  Newer Additions will not enable this here
+     * so enable it by default. Newer Additions will not enable this here
      * and use the setSupportedFeatures function instead.
      */
-    mData.mSupportsGraphics = mData.mAdditionsRunLevel > AdditionsRunLevelType_None;
+    updateFacility(VBoxGuestFacilityType_Graphics, facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver) ?
+                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
 
     /*
      * Note! There is a race going on between setting mAdditionsRunLevel and
@@ -621,15 +594,33 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
         mData.mAdditionsVersion = aAdditionsVersion;
 }
 
+bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
+{
+    return mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility].curStatus == AdditionsFacilityStatus_Active;
+}
+
+void Guest::updateFacility(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus)
+{
+    Assert(enmFacility < UINT32_MAX);
+    FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility];
+    AssertPtr(pData);
+
+    RTTimeNow(&pData->tsLastUpdated);
+    pData->curStatus = (AdditionsFacilityStatus_T)enmStatus;
+
+    LogFlowFunc(("Setting guest facility %u = %u (%u)\n",
+                 enmFacility, pData->curStatus, pData->tsLastUpdated));
+}
+
 /**
  * Sets the status of a certain Guest Additions facility.
  * Gets called by vmmdevUpdateGuestStatus.
  *
- * @param enmFacility
- * @param enmStatus
+ * @param enmFacility   Facility to set the status for.
+ * @param enmStatus     Actual status to set.
  * @param aFlags
  */
-void Guest::setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestStatusCurrent enmStatus, ULONG aFlags)
+void Guest::setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
@@ -641,26 +632,23 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestSta
      */
 
     /* First check for disabled status. */
-    uint32_t uCurFacility = enmFacility + (enmStatus == VBoxGuestStatusCurrent_Active ? 0 : -1);
-    if (   enmFacility < VBoxGuestStatusFacility_VBoxGuestDriver
-        || (   enmFacility == VBoxGuestStatusFacility_All
-            && (   enmStatus   == VBoxGuestStatusCurrent_Inactive
-                || enmStatus   == VBoxGuestStatusCurrent_Disabled
-               )
-           )
+    uint32_t uCurFacility = enmFacility + (enmStatus == VBoxGuestFacilityStatus_Active ? 0 : -1);
+    if (   enmFacility < VBoxGuestFacilityType_VBoxGuestDriver
+        || (   enmFacility == VBoxGuestFacilityType_All
+            && enmStatus   == VBoxGuestFacilityStatus_Inactive)
        )
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
     }
-    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxTrayClient)
+    else if (uCurFacility >= VBoxGuestFacilityType_VBoxTrayClient)
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_Desktop;
     }
-    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxService)
+    else if (uCurFacility >= VBoxGuestFacilityType_VBoxService)
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_Userland;
     }
-    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxGuestDriver)
+    else if (uCurFacility >= VBoxGuestFacilityType_VBoxGuestDriver)
     {
         mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
     }
@@ -672,15 +660,17 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestSta
      */
     if (enmFacility)
     {
-        Assert(enmFacility < UINT32_MAX);
-        FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility];
-        AssertPtr(pData);
-
-        RTTimeNow(&pData->tsLastUpdated);
-        pData->curStatus = (AdditionsFacilityStatus_T)enmStatus;
-
-        LogFlowFunc(("Setting guest facility %u = %u (%u)\n",
-                     enmFacility, pData->curStatus, pData->tsLastUpdated));
+        if (enmFacility == VBoxGuestFacilityType_All)
+        {
+            FacilityMapIter it = mData.mFacilityMap.begin();
+            while (it != mData.mFacilityMap.end())
+            {
+                updateFacility((VBoxGuestFacilityType)it->first, enmStatus);
+                it++;
+            }
+        }
+        else /* Update one facility only. */
+            updateFacility(enmFacility, enmStatus);
     }
 }
 
@@ -696,8 +686,10 @@ void Guest::setSupportedFeatures(uint32_t aCaps)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mSupportsSeamless = (aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    updateFacility(VBoxGuestFacilityType_Seamless, aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ?
+                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
-    mData.mSupportsGraphics = (aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    updateFacility(VBoxGuestFacilityType_Graphics, aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ?
+                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

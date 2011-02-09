@@ -196,7 +196,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                    ComPtr<IMachine> machine,
                    VMINFO_DETAILS details = VMINFO_NONE,
                    ComPtr <IConsole> console = ComPtr<IConsole>());
-const char *stateToName(MachineState_T machineState, bool fShort);
+const char *machineStateToName(MachineState_T machineState, bool fShort);
 
 /* VBoxManageList.cpp */
 int handleList(HandlerArg *a);

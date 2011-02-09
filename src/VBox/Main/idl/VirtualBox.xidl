@@ -7881,7 +7881,7 @@
 
   <enum
     name="AdditionsFacilityType"
-    uuid="bcf4f5e7-86d6-4b8c-99cd-449a79114fb4"
+    uuid="98f7f957-89fb-49b6-a3b1-31e3285eb1d8"
     >
     <desc>
       Guest Additions facility IDs.
@@ -7899,26 +7899,32 @@
     <const name="VBoxTrayClient"          value="101">
       <desc>VirtualBox desktop integration (VBoxTray on Windows, VBoxClient on non-Windows).</desc>
     </const>
-    <const name="All"                     value="999">
+    <const name="Seamless"                value="1000">
+      <desc>Seamless guest desktop integration.</desc>
+    </const>
+    <const name="Graphics"                value="1100">
+      <desc>Guest graphics mode. If not enabled, seamless rendering will not work, resize hints
+        are not immediately acted on and guest display resizes are probably not initiated by
+        the guest additions.
+      </desc>
+    </const>
+    <const name="All"                     value="2147483646">
       <desc>All facilities selected.</desc>
     </const>
   </enum>
 
   <enum
     name="AdditionsFacilityStatus"
-    uuid="730a42a1-dac6-4194-b394-744a5ea487f3"
+    uuid="ce06f9e1-394e-4fe9-9368-5a88c567dbde"
     >
     <desc>
       Guest Additions facility states.
     </desc>
 
-    <const name="Disabled"                value="0">
-      <desc>Facility is disabled.</desc>
+    <const name="Inactive"                value="0">
+      <desc>Facility is not active.</desc>
     </const>
-    <const name="Inactive"                value="1">
-      <desc>Facility is enabled but inactive.</desc>
-    </const>
-    <const name="Paused"                  value="2">
+    <const name="Paused"                  value="1">
       <desc>Facility has been paused.</desc>
     </const>
     <const name="PreInit"                 value="20">
@@ -8070,7 +8076,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="09c2e2e0-f6f9-45ec-91a1-aaab3fad9f1f"
+    uuid="4db4f806-0a20-4772-9419-14563b662f93"
     wsmap="managed"
     >
     <desc>
@@ -8108,22 +8114,6 @@
         Version of the Guest Additions including the revision (3 decimal numbers
         separated by dots + revision number) installed on the guest or empty
         when the Additions are not installed.
-      </desc>
-    </attribute>
-
-    <attribute name="supportsSeamless" type="boolean" readonly="yes">
-      <desc>
-        Flag whether seamless guest display rendering (seamless desktop
-        integration) is supported.
-      </desc>
-    </attribute>
-
-    <attribute name="supportsGraphics" type="boolean" readonly="yes">
-      <desc>
-        Flag whether the guest is in graphics mode.  If it is not, then
-        seamless rendering will not work, resize hints are not immediately
-        acted on and guest display resizes are probably not initiated by
-        the guest additions.
       </desc>
     </attribute>
 
@@ -8188,7 +8178,7 @@
         <desc>Facility to check status for.</desc>
       </param>
       <param name="timestamp" type="long long" dir="out">
-        <desc>Timestamp (in ms) of last status update of this facility seen by the host.</desc>
+        <desc>Timestamp (in ms) of last status update seen by the host.</desc>
       </param>
       <param name="status" type="AdditionsFacilityStatus" dir="return">
         <desc>The current (latest) facility status.</desc>

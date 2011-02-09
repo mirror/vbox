@@ -75,13 +75,6 @@ public:
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsRunLevel)) (AdditionsRunLevelType_T *aRunLevel);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
-    /** @todo Remove later by replacing it by AdditionsFeatureAvailable(). */
-    STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
-    STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
-#if 0
-    /** @todo Will replace SupportsSeamless, SupportsGraphics, ... */
-    STDMETHOD(COMGETTER(AdditionsFeatureAvailable)) (LONG64 aFeature, BOOL *aActive, BOOL *aAvailable);
-#endif
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
@@ -115,7 +108,9 @@ public:
                                     ULONG aMode, ULONG aFlags, IProgress **aProgress, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
-    void setAdditionsStatus(VBoxGuestStatusFacility enmFacility, VBoxGuestStatusCurrent enmStatus, ULONG aFlags);
+    bool facilityIsActive(VBoxGuestFacilityType enmFacility);
+    void updateFacility(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
+    void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
     void setSupportedFeatures(uint32_t aCaps);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL isPageFusionEnabled();
@@ -194,18 +189,13 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsRunLevel (AdditionsRunLevelType_None),
-                 mSupportsSeamless (FALSE),
-                 mSupportsGraphics (FALSE) {}
+        Data() : mAdditionsRunLevel (AdditionsRunLevelType_None) {}
 
         Bstr                    mOSTypeId;
-
         FacilityMap             mFacilityMap;
         AdditionsRunLevelType_T mAdditionsRunLevel;
         Bstr                    mAdditionsVersion;
         Bstr                    mInterfaceVersion;
-        BOOL                    mSupportsSeamless;
-        BOOL                    mSupportsGraphics;
     };
 
     ULONG mMemoryBalloonSize;

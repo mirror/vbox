@@ -146,8 +146,8 @@ static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
  * @param   enmStatus       The new status of the facility.
  * @param   fReserved       Reserved for future use (what?).
  */
-VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility enmFacility,
-                                            VBoxGuestStatusCurrent enmStatusCurrent,
+VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
+                                            VBoxGuestFacilityStatus enmStatusCurrent,
                                             uint32_t fReserved)
 {
     VMMDevReportGuestStatus Report;
