@@ -582,7 +582,7 @@ static int vboxTrayServiceMain(void)
                 if (RT_SUCCESS(rc))
                 {
                     /* Report the host that we're up and running! */
-                    rc = hlpReportStatus(VBoxGuestStatusCurrent_Active);
+                    hlpReportStatus(VBoxGuestFacilityStatus_Active);
                 }
             }
 
@@ -684,42 +684,37 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             rc = vboxTrayOpenBaseDriver();
     }
 
-    if (RT_FAILURE(rc))
-    {
-        CloseHandle (hMutexAppRunning);
-        hMutexAppRunning = NULL;
-        return 1;
-    }
-
     if (RT_SUCCESS(rc))
     {
         /* Save instance handle. */
         ghInstance = hInstance;
 
-        rc = hlpReportStatus(VBoxGuestStatusCurrent_Init);
+        hlpReportStatus(VBoxGuestFacilityStatus_Init);
+        rc = vboxTrayCreateToolWindow();
         if (RT_SUCCESS(rc))
         {
-            rc = vboxTrayCreateToolWindow();
+            rc = vboxTraySetupSeamless();
             if (RT_SUCCESS(rc))
             {
-                rc = vboxTraySetupSeamless();
+                Log(("VBoxTray: Init successful\n"));
+                rc = vboxTrayServiceMain();
                 if (RT_SUCCESS(rc))
-                {
-                    Log(("VBoxTray: Init successful\n"));
-                    rc = vboxTrayServiceMain();
-                    hlpReportStatus(VBoxGuestStatusCurrent_Terminating);
-                    vboxTrayShutdownSeamless();
-                }
-                vboxTrayDestroyToolWindow();
+                    hlpReportStatus(VBoxGuestFacilityStatus_Terminating);
+                vboxTrayShutdownSeamless();
             }
-            rc = hlpReportStatus(VBoxGuestStatusCurrent_Inactive);
+            vboxTrayDestroyToolWindow();
         }
+        if (RT_SUCCESS(rc))
+            hlpReportStatus(VBoxGuestFacilityStatus_Terminated);
     }
-    else
-        Log(("VBoxTray: Could not report VBoxTray status \"Init\", rc=%Rrc\n", rc));
+
 	if (RT_FAILURE(rc))
-    	LogRel(("VBoxTray: Error while starting, rc=%Rrc\n", rc));
+    {
+        LogRel(("VBoxTray: Error while starting, rc=%Rrc\n", rc));
+        hlpReportStatus(VBoxGuestFacilityStatus_Failed);
+    }
     LogRel(("VBoxTray: Ended\n"));
+    vboxTrayCloseBaseDriver();
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL)
@@ -729,7 +724,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     }
 
     VbglR3Term();
-    return 0;
+    return RT_SUCCESS(rc) ? 0 : 1;
 }
 
 /**

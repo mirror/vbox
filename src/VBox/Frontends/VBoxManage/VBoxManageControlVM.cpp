@@ -190,7 +190,7 @@ int handleControlVM(HandlerArg *a)
                     if (machineState != MachineState_Paused)
                     {
                         RTMsgError("Machine in invalid state %d -- %s\n",
-                                   machineState, stateToName(machineState, false));
+                                   machineState, machineStateToName(machineState, false));
                         break;
                     }
                 }

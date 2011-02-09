@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,7 +110,7 @@ static void makeTimeStr(char *s, int cb, int64_t millies)
                         t.u8Hour, t.u8Minute, t.u8Second);
 }
 
-const char *stateToName(MachineState_T machineState, bool fShort)
+const char *machineStateToName(MachineState_T machineState, bool fShort)
 {
     switch (machineState)
     {
@@ -155,8 +155,36 @@ const char *stateToName(MachineState_T machineState, bool fShort)
         case MachineState_SettingUp:
             return fShort ? "settingup"           : "setting up";
         default:
-            return "unknown";
+            break;
     }
+    return "unknown";
+}
+
+const char *facilityStateToName(AdditionsFacilityStatus_T faStatus, bool fShort)
+{
+    switch (faStatus)
+    {
+        case AdditionsFacilityStatus_Inactive:
+            return fShort ? "inactive" : "not active";
+        case AdditionsFacilityStatus_Paused:
+            return "paused";
+        case AdditionsFacilityStatus_PreInit:
+            return fShort ? "preinit" : "pre-initializing";
+        case AdditionsFacilityStatus_Init:
+            return fShort ? "init"    : "initializing";
+        case AdditionsFacilityStatus_Active:
+            return fShort ? "active"  : "active/running";
+        case AdditionsFacilityStatus_Terminating:
+            return "terminating";
+        case AdditionsFacilityStatus_Terminated:
+            return "terminated";
+        case AdditionsFacilityStatus_Failed:
+            return "failed";
+        case AdditionsFacilityStatus_Unknown:
+        default:
+            break;
+    }
+    return "unknown";
 }
 
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
@@ -567,7 +595,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
     MachineState_T machineState;
     rc = machine->COMGETTER(State)(&machineState);
-    const char *pszState = stateToName(machineState, details == VMINFO_MACHINEREADABLE /*=fShort*/);
+    const char *pszState = machineStateToName(machineState, details == VMINFO_MACHINEREADABLE /*=fShort*/);
 
     LONG64 stateSince;
     machine->COMGETTER(LastStateChange)(&stateSince);
@@ -2069,7 +2097,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                  faStatus, lLastUpdatedMS);
                     else
                         RTPrintf("Guest driver:                        %u (last update: %s)\n",
-                                 faStatus, szLastUpdated);
+                                 facilityStateToName(faStatus, false /* No short naming */), szLastUpdated);
                 }
 
                 rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxService, &lLastUpdatedMS, &faStatus);
@@ -2080,8 +2108,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         RTPrintf("GuestAdditionsFacilityStatusVBoxService=%u,%ld\n",
                                  faStatus, lLastUpdatedMS);
                     else
-                        RTPrintf("VBoxService:                         %u (last update: %s)\n",
-                                 faStatus, szLastUpdated);
+                        RTPrintf("VBoxService:                         %s (last update: %s)\n",
+                                 facilityStateToName(faStatus, false /* No short naming */), szLastUpdated);
                 }
 
                 rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxTrayClient, &lLastUpdatedMS, &faStatus);
@@ -2090,7 +2118,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("GuestAdditionsFacilityStatusVBoxTrayClient=%u,%ld\n",
-                                 faStatus, lLastUpdatedMS);
+                                 facilityStateToName(faStatus, false /* No short naming */), lLastUpdatedMS);
                     else
                         RTPrintf("VBoxTray / VBoxClient:               %u (last update: %s)\n",
                                  faStatus, szLastUpdated);

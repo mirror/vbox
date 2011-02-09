@@ -232,8 +232,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
         guest->setAdditionsInfo2(Bstr(), Bstr(), Bstr()); /* Clear Guest Additions version. */
-        guest->setAdditionsStatus(VBoxGuestStatusFacility_All,
-                                  VBoxGuestStatusCurrent_Inactive,
+        guest->setAdditionsStatus(VBoxGuestFacilityType_All,
+                                  VBoxGuestFacilityStatus_Inactive,
                                   0); /* Flags; not used. */
         pConsole->onAdditionsStateChange();
     }

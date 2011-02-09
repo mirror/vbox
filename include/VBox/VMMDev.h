@@ -668,38 +668,41 @@ AssertCompileSize(VMMDevReportGuestInfo2, 24+144);
 
 
 /**
- * Guest status facility.
- * This needs to be kept in sync with AdditionsFacility of the Main API!
+ * The guest facility.
+ * This needs to be kept in sync with AdditionsFacilityType of the Main API!
  */
 typedef enum
 {
-    VBoxGuestStatusFacility_Unknown         = 0,
-    VBoxGuestStatusFacility_VBoxGuestDriver = 20,
-    VBoxGuestStatusFacility_VBoxService     = 100,
-    VBoxGuestStatusFacility_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
-    VBoxGuestStatusFacility_All             = 999,
-    VBoxGuestStatusFacility_SizeHack        = 0x7fffffff
-} VBoxGuestStatusFacility;
-AssertCompileSize(VBoxGuestStatusFacility, 4);
+    VBoxGuestFacilityType_Unknown         = 0,
+    VBoxGuestFacilityType_VBoxGuestDriver = 20,
+    VBoxGuestFacilityType_VBoxService     = 100,
+    VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
+    VBoxGuestFacilityType_Seamless        = 1000,
+    VBoxGuestFacilityType_Graphics        = 1001,
+    VBoxGuestFacilityType_All             = 0xfffffffe,
+    VBoxGuestFacilityType_SizeHack        = 0x7fffffff
+} VBoxGuestFacilityType;
+AssertCompileSize(VBoxGuestFacilityType, 4);
 
 
 /**
  * The current guest status of a facility.
+ * This needs to be kept in sync with AdditionsFacilityStatus of the Main API!
  */
 typedef enum
 {
-    VBoxGuestStatusCurrent_Disabled    = 0,
-    VBoxGuestStatusCurrent_Inactive    = 1,
-    VBoxGuestStatusCurrent_Paused      = 2,
-    VBoxGuestStatusCurrent_PreInit     = 20,
-    VBoxGuestStatusCurrent_Init        = 30,
-    VBoxGuestStatusCurrent_Active      = 50,
-    VBoxGuestStatusCurrent_Terminating = 100,
-    VBoxGuestStatusCurrent_Terminated  = 101,
-    VBoxGuestStatusCurrent_Unknown     = 999,
-    VBoxGuestStatusCurrent_SizeHack    = 0x7fffffff
-} VBoxGuestStatusCurrent;
-AssertCompileSize(VBoxGuestStatusCurrent, 4);
+    VBoxGuestFacilityStatus_Inactive    = 0,
+    VBoxGuestFacilityStatus_Paused      = 1,
+    VBoxGuestFacilityStatus_PreInit     = 20,
+    VBoxGuestFacilityStatus_Init        = 30,
+    VBoxGuestFacilityStatus_Active      = 50,
+    VBoxGuestFacilityStatus_Terminating = 100,
+    VBoxGuestFacilityStatus_Terminated  = 101,
+    VBoxGuestFacilityStatus_Failed  =     800,
+    VBoxGuestFacilityStatus_Unknown     = 999,
+    VBoxGuestFacilityStatus_SizeHack    = 0x7fffffff
+} VBoxGuestFacilityStatus;
+AssertCompileSize(VBoxGuestFacilityStatus, 4);
 
 /**
  * Guest status structure.
@@ -709,9 +712,9 @@ AssertCompileSize(VBoxGuestStatusCurrent, 4);
 typedef struct VBoxGuestStatus
 {
     /** Facility the status is indicated for. */
-    VBoxGuestStatusFacility facility;
+    VBoxGuestFacilityType facility;
     /** Current guest status. */
-    VBoxGuestStatusCurrent status;
+    VBoxGuestFacilityStatus status;
     /** Flags, not used at the moment. */
     uint32_t flags;
 } VBoxGuestStatus;

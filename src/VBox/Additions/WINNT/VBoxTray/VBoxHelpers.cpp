@@ -27,9 +27,9 @@
 #include "resource.h"
 
 
-int hlpReportStatus(VBoxGuestStatusCurrent statusCurrent)
+int hlpReportStatus(VBoxGuestFacilityStatus statusCurrent)
 {
-    int rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxTrayClient,
+    int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxTrayClient,
                                          statusCurrent,
                                          0 /* Flags */);
     if (RT_FAILURE(rc))

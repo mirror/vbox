@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -115,10 +115,10 @@ int VBoxGuestReportDriverStatus(bool fActive)
     Log(("VBoxGuestReportDriverStatus: VbglGRAlloc VMMDevReportGuestStatus completed with rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc))
     {
-        pReq2->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
+        pReq2->guestStatus.facility = VBoxGuestFacilityType_VBoxGuestDriver;
         pReq2->guestStatus.status = fActive ?
-                                    VBoxGuestStatusCurrent_Active
-                                  : VBoxGuestStatusCurrent_Inactive;
+                                    VBoxGuestFacilityStatus_Active
+                                  : VBoxGuestFacilityStatus_Inactive;
         pReq2->guestStatus.flags = 0;
         rc = VbglGRPerform(&pReq2->header);
         Log(("VBoxGuestReportDriverStatus: VbglGRPerform VMMDevReportGuestStatus completed with fActive=%d, rc=%Rrc\n",
