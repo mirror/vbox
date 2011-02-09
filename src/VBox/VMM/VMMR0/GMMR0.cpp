@@ -2994,7 +2994,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
                 else
                 {
                     Log(("GMMR0BalloonedPages: cBasePages=%#llx Total=%#llx cBalloonedPages=%#llx Reserved=%#llx\n",
-                         pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cBallonedPages, pGVM->gmm.s.Reserved.cBasePages));
+                         pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cBalloonedPages, pGVM->gmm.s.Reserved.cBasePages));
                     rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
                 }
                 break;
