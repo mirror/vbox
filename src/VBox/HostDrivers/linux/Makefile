@@ -26,7 +26,9 @@ endif
 ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetadp/Makefile),)
  obj-m += vboxnetadp/
 endif
-
+ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxpci/Makefile),)
+ obj-m += vboxpci/
+endif
 else # ! KBUILD_EXTMOD
 
 # convenience Makefile without DKMS
@@ -56,6 +58,15 @@ all:
 	    cp vboxnetadp/vboxnetadp.ko .; \
 	    echo; \
 	fi
+	@if [ -d vboxpci ]; then \
+	    if [ -f vboxdrv/Module.symvers ]; then \
+	        cp vboxdrv/Module.symvers vboxpci; \
+	    fi; \
+	    echo "*** Building 'vboxpci' module ***"; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxpci; \
+	    cp vboxpci/vboxpci.ko .; \
+	    echo; \
+	fi
 
 
 install:
@@ -66,6 +77,9 @@ install:
 	@if [ -d vboxnetadp ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp install; \
 	fi
+	@if [ -d vboxpci ]; then \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxpci install; \
+	fi
 
 clean:
 	@$(MAKE) -C vboxdrv clean
@@ -75,10 +89,13 @@ clean:
 	@if [ -d vboxnetadp ]; then \
 	    $(MAKE) -C vboxnetadp clean; \
 	fi
-	rm -f vboxdrv.ko vboxnetflt.ko vboxnetadp.ko
+	@if [ -d vboxpci ]; then \
+	    $(MAKE) -C vboxpci clean; \
+	fi
+	rm -f vboxdrv.ko vboxnetflt.ko vboxnetadp.ko vboxpci.ko 
 
 unload:
-	@for module in vboxnetadp vboxnetflt vboxdrv; do \
+	@for module in vboxnetadp vboxnetflt vboxdrv vboxpci; do \
 		if grep "^$$module " /proc/modules >/dev/null; then \
 			echo "Removing previously installed $$module module"; \
 			/sbin/rmmod $$module; \
@@ -86,7 +103,7 @@ unload:
 	done
 
 load: unload
-	@for module in vboxdrv vboxnetflt vboxnetadp; do \
+	@for module in vboxdrv vboxnetflt vboxnetadp vboxpci; do \
 		if test -f $$module.ko; then \
 			echo "Installing $$module module"; \
 			/sbin/insmod $$module.ko; \
