@@ -1871,18 +1871,6 @@
         The format of the location string is storage format specific. See
         <link to="IMedium::location"/> and IMedium for more details.
 
-        Prior to VirtualBox 4.0, opening a medium added it to a global media
-        registry in the VirtualBox.xml file, which was shared between all machines
-        and made transporting machines and their media from one host to another
-        difficult.
-
-        Starting with VirtualBox 4.0, media are only added to a registry when
-        they are attached to a machine. Machines created with VirtualBox 4.0
-        or later can have their own media registry. As a result, a medium attached
-        to such a machine will be remembered in that machine's XML settings file.
-        Media attached to older machines will continue to be added to the global
-        registry.
-
         <result name="VBOX_E_FILE_ERROR">
           Invalid medium storage file location or could not find the medium
           at the specified location.
@@ -3420,7 +3408,7 @@
       <desc>Delete all snapshots and detach all media but return none; this will keep all media registered.</desc>
     </const>
     <const name="DetachAllReturnHardDisksOnly"    value="3">
-      <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removeable media.</desc>
+      <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removable media.</desc>
     </const>
     <const name="Full"                            value="4">
       <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
@@ -4395,7 +4383,7 @@
 
         This method is intended for managing storage devices in general while a
         machine is powered off. It can be used to attach and detach fixed
-        and removeable media. The following kind of media can be attached
+        and removable media. The following kind of media can be attached
         to a machine:
 
         <ul>
@@ -4408,7 +4396,7 @@
             indicate an empty drive or one of the medium objects listed
             in the <link to="IHost::DVDDrives" /> and <link to="IHost::floppyDrives"/>
             arrays to indicate a host drive.
-            For removeable devices, you can also use <link to="IMachine::mountMedium"/>
+            For removable devices, you can also use <link to="IMachine::mountMedium"/>
             to change the media while the machine is running.
           </li>
         </ul>
@@ -5251,37 +5239,44 @@
             which it replaces.</li>
           <li>With "DetachAllReturnNone", the call will succeed even if the machine is in "Saved"
             state or if it has snapshots or media attached. All media attached to the current machine
-            state or in snapshots will be detached. For machines created with VirtualBox 4.0 or
-            later, media which are registered in this machine's media registry which are still
-            attached to another machine besides this machine will be moved a another machine's
-            registry. No medium objects will be returned; all of the machine's media will remain open.</li>
+            state or in snapshots will be detached. No medium objects will be returned;
+            all of the machine's media will remain open.</li>
           <li>With "DetachAllReturnHardDisksOnly", the call will behave like with "DetachAllReturnNone",
             except that all the hard disk medium objects which were detached from the machine will
             be returned as an array. This allows for quickly passing them to the <link to="#delete" />
             API for closing and deletion.</li>
           <li>With "Full", the call will behave like with "DetachAllReturnHardDisksOnly", except
-            that all media will be returned in the array, including removeable media like DVDs and
+            that all media will be returned in the array, including removable media like DVDs and
             floppies. This might be useful if the user wants to inspect in detail which media were
             attached to the machine. Be careful when passing the media array to <link to="#delete" />
             in that case because users will typically want to preserve ISO and RAW image files.</li>
         </ul>
+
+        A typical implementation will use "DetachAllReturnHardDisksOnly" and then pass the
+        resulting IMedium array to <link to="#delete"/>. This way, the machine is completely
+        deleted with all its saved states and hard disk images, but images for removable
+        drives (such as ISO and RAW files) will remain on disk.
 
         This API does not verify whether the media files returned in the array are still
         attached to other machines (i.e. shared between several machines). If such a shared
         image is passed to <link to="#delete" /> however, closing the image will fail there
         and the image will be silently skipped.
 
-        A typical implementation will use "DetachAllReturnHardDisksOnly" and then pass the
-        resulting IMedia array to <link to="#delete"/>. This way, the machine is completely
-        deleted with all its saved states and hard disk images, but images for removeable
-        drives (such as ISO and RAW files) will remain on disk.
+        This API may, however, move media from this machine's media registry to other media
+        registries (see <link to="IMedium" /> for details on media registries). For machines
+        created with VirtualBox 4.0 or later, if media from this machine's media registry
+        are also attached to another machine (shared attachments), each such medium will be
+        moved to another machine's registry. This is because without this machine's media
+        registry, the other machine cannot find its media any more and would become inaccessible.
 
-        The call will fail if the machine is currently locked (see <link to="ISession" />).
-        It implicitly calls <link to="#saveSettings"/> to save all current machine settings
-        before unregistering it.
+        This API implicitly calls <link to="#saveSettings"/> to save all current machine settings
+        before unregistering it. It may also silently call saveSettings() on other machines
+        if media are moved to other machines' media registries.
 
         After successful method invocation, the <link to="IMachineRegisteredEvent"/> event
         is fired.
+
+        The call will fail if the machine is currently locked (see <link to="ISession" />).
 
         <note>
           If the given machine is inaccessible (see <link to="#accessible"/>), it
@@ -8952,8 +8947,10 @@
     uuid="fe663fb5-c244-4e1b-9d81-c628b417dd04"
     >
     <desc>
-      Virtual medium type.
-      <see>IMedium</see>
+      Virtual medium type. For each <link to="IMedium" />, this defines how the medium is
+      attached to a virtual machine (see <link to="IMediumAttachment" />) and what happens
+      when a snapshot (see <link to="ISnapshot" />) is taken of a virtual machine which has
+      the medium attached. At the moment DVD and floppy media are always of type "writethrough".
     </desc>
 
     <const name="Normal"            value="0">
@@ -9056,233 +9053,18 @@
       port and device number and the IMedium instance representing a virtual
       hard disk or floppy or DVD image.
 
-      For removeable media (DVDs or floppies), there are two additional
+      For removable media (DVDs or floppies), there are two additional
       options. For one, the IMedium instance can be @c null to represent
       an empty drive with no media inserted (see <link to="IMachine::mountMedium" />);
       secondly, the medium can be one of the pseudo-media for host drives
       listed in <link to="IHost::DVDDrives"/> or <link to="IHost::floppyDrives"/>.
-    </desc>
-
-    <attribute name="medium" type="IMedium" readonly="yes">
-      <desc>Medium object associated with this attachment; it
-        can be @c null for removable devices.</desc>
-    </attribute>
-
-    <attribute name="controller" type="wstring" readonly="yes">
-      <desc>Name of the storage controller of this attachment; this
-        refers to one of the controllers in <link to="IMachine::storageControllers" />
-        by name.</desc>
-    </attribute>
-
-    <attribute name="port" type="long" readonly="yes">
-      <desc>Port number of this attachment.
-        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
-      </desc>
-    </attribute>
-
-    <attribute name="device" type="long" readonly="yes">
-      <desc>Device slot number of this attachment.
-        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
-      </desc>
-    </attribute>
-
-    <attribute name="type" type="DeviceType" readonly="yes">
-      <desc>Device type of this attachment.</desc>
-    </attribute>
-
-    <attribute name="passthrough" type="boolean" readonly="yes">
-      <desc>Pass I/O requests through to a device on the host.</desc>
-    </attribute>
-
-    <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">
-      <desc>The bandwidth group this medium attachment is assigned to.</desc>
-    </attribute>
-
-  </interface>
-
-  <interface
-    name="IMedium" extends="$unknown"
-    uuid="9edda847-1279-4b0a-9af7-9d66251ccc18"
-    wsmap="managed"
-    >
-    <desc>
-      The IMedium interface represents virtual storage for a machine's
-      hard disks, CD/DVD or floppy drives. It will typically represent
-      a disk image on the host, for example a VDI or VMDK file representing
-      a virtual hard disk, or an ISO or RAW file representing virtual
-      removable media, but can also point to a network location (e.g.
-      for iSCSI targets).
-
-      Instances of IMedium are connected to virtual machines by way of
-      medium attachments (see <link to="IMediumAttachment" />), which link
-      the storage medium to a particular device slot of a storage controller
-      of the virtual machine.
-      In the VirtualBox API, virtual storage is therefore always represented
-      by the following chain of object links:
-
-      <ul>
-        <li><link to="IMachine::storageControllers"/> contains an array of
-          storage controllers (IDE, SATA, SCSI, SAS or a floppy controller;
-          these are instances of <link to="IStorageController"/>).</li>
-        <li><link to="IMachine::mediumAttachments"/> contains an array of
-          medium attachments (instances of <link to="IMediumAttachment"/>),
-          each containing a storage controller from the above array, a
-          port/device specification, and an instance of IMedium representing
-          the medium storage (image file).
-
-          For removable media, the storage medium is optional; a medium
-          attachment with no medium represents a CD/DVD or floppy drive
-          with no medium inserted. By contrast, hard disk attachments
-          will always have an IMedium object attached.</li>
-        <li>Each IMedium in turn points to a storage unit (such as a file
-          on the host computer or a network resource) that holds actual
-          data. This location is represented by the <link to="#location"/>
-          attribute.</li>
-      </ul>
-
-      Existing media are opened using <link to="IVirtualBox::openMedium"/>;
-      new hard disk media can be created with the VirtualBox API using the
-      <link to="IVirtualBox::createHardDisk"/> method.
-
-      CD/DVD and floppy images (ISO and RAW files) are usually created outside
-      VirtualBox, e.g. by storing a copy of the real medium of the corresponding
-      type in a regular file.
-
-      Only for CD/DVDs and floppies, an IMedium instance can also represent a host
-      drive; in that case the <link to="#id" /> attribute contains the UUID of
-      one of the drives in <link to="IHost::DVDDrives" /> or <link to="IHost::floppyDrives" />.
-
-      <h3>Known media</h3>
-
-      When an existing medium is opened and attached to a virtual machine, it
-      is automatically added to a media registry. If the medium has first
-      been attached to a machine which was created by VirtualBox 4.0 or later,
-      it is added to that machine's media registry (in the machine XML settings
-      file; this way all information about a machine's media attachments is
-      contained in a single file). For older media attachments (i.e. if the
-      medium was first attached to a machine which was created with a VirtualBox
-      version before 4.0), media continue to be registered in the global
-      VirtualBox settings file, for backwards compatibility.
-
-      See <link to="IVirtualBox::openMedium" /> for more information.
-
-      All known media can be enumerated using
-      <link to="IVirtualBox::hardDisks"/>,
-      <link to="IVirtualBox::DVDImages"/> and
-      <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found using the <link to="IVirtualBox::findMedium"/> method.
-
-      Only known media can be attached to virtual machines.
-
-      Removing known media from the media registry is performed when the given
-      medium is closed using the <link to="#close"/> method or when its
-      associated storage unit is deleted.
-
-      <h3>Accessibility checks</h3>
-
-      VirtualBox defers media accessibility checks until the <link to="#refreshState" />
-      method is called explicitly on a medium. This is done to make the VirtualBox object
-      ready for serving requests as fast as possible and let the end-user
-      application decide if it needs to check media accessibility right away or not.
-
-      As a result, when VirtualBox starts up (e.g. the VirtualBox
-      object gets created for the first time), all known media are in the
-      "Inaccessible" state, but the value of the <link to="#lastAccessError"/>
-      attribute is an empty string because no actual accessibility check has
-      been made yet.
-
-      After calling <link to="#refreshState" />, a medium is considered
-      <i>accessible</i> if its storage unit can be read. In that case, the
-      <link to="#state"/> attribute has a value of "Created". If the storage
-      unit cannot be read (for example, because it is located on a disconnected
-      network resource, or was accidentally deleted outside VirtualBox),
-      the medium is considered <i>inaccessible</i>, which is indicated by the
-      "Inaccessible" state. The exact reason why the medium is inaccessible can be
-      obtained by reading the <link to="#lastAccessError"/> attribute.
-
-      <h3>Medium types</h3>
-
-      There are four types of medium behavior (see <link to="MediumType" />):
-      "normal", "immutable", "writethrough" and "shareable", represented by the
-      <link to="#type"/> attribute. The type of the medium defines how the
-      medium is attached to a virtual machine and what happens when a
-      <link to="ISnapshot">snapshot</link> of the virtual machine with the
-      attached medium is taken. At the moment DVD and floppy media are always
-      of type "writethrough".
-
-      All media can be also divided in two groups: <i>base</i> media and
-      <i>differencing</i> media. A base medium contains all sectors of the
-      medium data in its own storage and therefore can be used independently.
-      In contrast, a differencing medium is a "delta" to some other medium and
-      contains only those sectors which differ from that other medium, which is
-      then called a <i>parent</i>. The differencing medium is said to be
-      <i>linked to</i> that parent. The parent may be itself a differencing
-      medium, thus forming a chain of linked media. The last element in that
-      chain must always be a base medium. Note that several differencing
-      media may be linked to the same parent medium.
-
-      Differencing media can be distinguished from base media by querying the
-      <link to="#parent"/> attribute: base media do not have parents they would
-      depend on, so the value of this attribute is always @c null for them.
-      Using this attribute, it is possible to walk up the medium tree (from the
-      child medium to its parent). It is also possible to walk down the tree
-      using the <link to="#children"/> attribute.
-
-      Note that the type of all differencing media is "normal"; all other
-      values are meaningless for them. Base media may be of any type.
-
-      <h3>Creating hard disks</h3>
-
-      New base hard disks are created using
-      <link to="IVirtualBox::createHardDisk"/>. Existing hard disks are
-      opened using <link to="IVirtualBox::openMedium"/>. Differencing hard
-      disks are usually implicitly created by VirtualBox when needed but may
-      also be created explicitly using <link to="#createDiffStorage"/>.
-
-      After the hard disk is successfully created (including the storage unit)
-      or opened, it becomes a known hard disk (remembered in the internal media
-      registry). Known hard disks can be attached to a virtual machine, accessed
-      through <link to="IVirtualBox::findMedium"/> or enumerated using the
-      <link to="IVirtualBox::hardDisks"/> array (only for base hard disks).
-
-      The following methods, besides <link to="IMedium::close"/>,
-      automatically remove the hard disk from the media registry:
-      <ul>
-        <li><link to="#deleteStorage"/></li>
-        <li><link to="#mergeTo"/></li>
-      </ul>
-
-      If the storage unit of the hard disk is a regular file in the host's
-      file system then the rules stated in the description of the
-      <link to="IMedium::location"/> attribute apply when setting its value.
-
-      <h4>Automatic composition of the file name part</h4>
-
-      Another extension to the <link to="IMedium::location"/> attribute is that
-      there is a possibility to cause VirtualBox to compose a unique value for
-      the file name part of the location using the UUID of the hard disk. This
-      applies only to hard disks in <link to="MediumState_NotCreated"/> state,
-      e.g. before the storage unit is created, and works as follows. You set the
-      value of the <link to="IMedium::location"/> attribute to a location
-      specification which only contains the path specification but not the file
-      name part and ends with either a forward slash or a backslash character.
-      In response, VirtualBox will generate a new UUID for the hard disk and
-      compose the file name using the following pattern:
-      <pre>
-        &lt;path&gt;/{&lt;uuid&gt;}.&lt;ext&gt;
-      </pre>
-      where <tt>&lt;path&gt;</tt> is the supplied path specification,
-      <tt>&lt;uuid&gt;</tt> is the newly generated UUID and <tt>&lt;ext&gt;</tt>
-      is the default extension for the storage format of this hard disk. After
-      that, you may call any of the methods that create a new hard disk storage
-      unit and they will use the generated UUID and file name.
 
       <h3>Attaching Hard Disks</h3>
 
       Hard disks are attached to virtual machines using the
       <link to="IMachine::attachDevice"/> method and detached using the
-      <link to="IMachine::detachDevice"/> method. Depending on their
-      <link to="#type"/>, hard disks are attached either
+      <link to="IMachine::detachDevice"/> method. Depending on a medium's
+      type (see <link to="IMedium::type" />), hard disks are attached either
       <i>directly</i> or <i>indirectly</i>.
 
       When a hard disk is being attached directly, it is associated with the
@@ -9305,7 +9087,7 @@
             Otherwise, they are attached <b>indirectly</b> because having
             dependent children or being part of the snapshot makes it impossible
             to modify hard disk contents without breaking the integrity of the
-            dependent party. The <link to="#readOnly"/> attribute allows to
+            dependent party. The <link to="IMedium::readOnly"/> attribute allows to
             quickly determine the kind of the attachment for the given hard
             disk. Note that if a normal base hard disk is to be indirectly
             attached to a virtual machine with snapshots then a special
@@ -9363,7 +9145,7 @@
       <b>not</b> implicitly delete them as they may already contain some data
       (for example, as a result of virtual machine execution). If these hard
       disks are no more necessary, the caller can always delete them explicitly
-      using <link to="#deleteStorage"/> after they are actually de-associated
+      using <link to="IMedium::deleteStorage"/> after they are actually de-associated
       from this machine by the <link to="IMachine::saveSettings"/> call.
 
       <h3>Smart Attachment</h3>
@@ -9435,6 +9217,203 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       base or immutable hard disk to a different bus, channel or device slot
       without losing the contents of the differencing hard disk actually
       attached to the machine in place of it.
+
+    </desc>
+
+    <attribute name="medium" type="IMedium" readonly="yes">
+      <desc>Medium object associated with this attachment; it
+        can be @c null for removable devices.</desc>
+    </attribute>
+
+    <attribute name="controller" type="wstring" readonly="yes">
+      <desc>Name of the storage controller of this attachment; this
+        refers to one of the controllers in <link to="IMachine::storageControllers" />
+        by name.</desc>
+    </attribute>
+
+    <attribute name="port" type="long" readonly="yes">
+      <desc>Port number of this attachment.
+        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
+      </desc>
+    </attribute>
+
+    <attribute name="device" type="long" readonly="yes">
+      <desc>Device slot number of this attachment.
+        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
+      </desc>
+    </attribute>
+
+    <attribute name="type" type="DeviceType" readonly="yes">
+      <desc>Device type of this attachment.</desc>
+    </attribute>
+
+    <attribute name="passthrough" type="boolean" readonly="yes">
+      <desc>Pass I/O requests through to a device on the host.</desc>
+    </attribute>
+
+    <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">
+      <desc>The bandwidth group this medium attachment is assigned to.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IMedium" extends="$unknown"
+    uuid="9edda847-1279-4b0a-9af7-9d66251ccc18"
+    wsmap="managed"
+    >
+    <desc>
+      The IMedium interface represents virtual storage for a machine's
+      hard disks, CD/DVD or floppy drives. It will typically represent
+      a disk image on the host, for example a VDI or VMDK file representing
+      a virtual hard disk, or an ISO or RAW file representing virtual
+      removable media, but can also point to a network location (e.g.
+      for iSCSI targets).
+
+      Instances of IMedium are connected to virtual machines by way of medium
+      attachments, which link the storage medium to a particular device slot
+      of a storage controller of the virtual machine.
+      In the VirtualBox API, virtual storage is therefore always represented
+      by the following chain of object links:
+
+      <ul>
+        <li><link to="IMachine::storageControllers"/> contains an array of
+          storage controllers (IDE, SATA, SCSI, SAS or a floppy controller;
+          these are instances of <link to="IStorageController"/>).</li>
+        <li><link to="IMachine::mediumAttachments"/> contains an array of
+          medium attachments (instances of <link to="IMediumAttachment"/>
+          created by <link to="IMachine::attachDevice" />),
+          each containing a storage controller from the above array, a
+          port/device specification, and an instance of IMedium representing
+          the medium storage (image file).
+
+          For removable media, the storage medium is optional; a medium
+          attachment with no medium represents a CD/DVD or floppy drive
+          with no medium inserted. By contrast, hard disk attachments
+          will always have an IMedium object attached.</li>
+        <li>Each IMedium in turn points to a storage unit (such as a file
+          on the host computer or a network resource) that holds actual
+          data. This location is represented by the <link to="#location"/>
+          attribute.</li>
+      </ul>
+
+      Existing media are opened using <link to="IVirtualBox::openMedium"/>;
+      new hard disk media can be created with the VirtualBox API using the
+      <link to="IVirtualBox::createHardDisk"/> method. Differencing hard
+      disks (see below) are usually implicitly created by VirtualBox as
+      needed, but may also be created explicitly using <link to="#createDiffStorage"/>.
+      VirtualBox cannot create CD/DVD or floppy images (ISO and RAW files); these
+      should be created with external tools and then opened from within VirtualBox.
+
+      Only for CD/DVDs and floppies, an IMedium instance can also represent a host
+      drive. In that case the <link to="#id" /> attribute contains the UUID of
+      one of the drives in <link to="IHost::DVDDrives" /> or <link to="IHost::floppyDrives" />.
+
+      <h3>Media registries</h3>
+
+      When a medium has been opened or created using one of the aforementioned
+      APIs, it becomes "known" to VirtualBox. Known media can be attached
+      to virtual machines and accessed through <link to="IVirtualBox::findMedium"/>.
+      They also appear in the global
+      <link to="IVirtualBox::hardDisks" />,
+      <link to="IVirtualBox::DVDImages" /> and
+      <link to="IVirtualBox::floppyImages" /> arrays.
+
+      Prior to VirtualBox 4.0, opening a medium added it to a global media registry
+      in the VirtualBox.xml file, which was shared between all machines and made
+      transporting machines and their media from one host to another difficult.
+
+      Starting with VirtualBox 4.0, media are only added to a registry when they are
+      <i>attached</i> to a machine using <link to="IMachine::attachDevice" />. For
+      backwards compatibility, which registry a medium is added to depends on which
+      VirtualBox version created a machine:
+
+      <ul>
+        <li>If the medium has first been attached to a machine which was created by
+          VirtualBox 4.0 or later, it is added to that machine's media registry in
+          the machine XML settings file. This way all information about a machine's
+          media attachments is contained in a single file and can be transported
+          easily.</li>
+        <li>For older media attachments (i.e. if the medium was first attached to a
+          machine which was created with a VirtualBox version before 4.0), media
+          continue to be registered in the global VirtualBox settings file, for
+          backwards compatibility.</li>
+      </ul>
+
+      See <link to="IVirtualBox::openMedium" /> for more information.
+
+      Media are removed from media registries by the <link to="#close"/>,
+      <link to="#deleteStorage"/> and  <link to="#mergeTo"/> methods.
+
+      <h3>Accessibility checks</h3>
+
+      VirtualBox defers media accessibility checks until the <link to="#refreshState" />
+      method is called explicitly on a medium. This is done to make the VirtualBox object
+      ready for serving requests as fast as possible and let the end-user
+      application decide if it needs to check media accessibility right away or not.
+
+      As a result, when VirtualBox starts up (e.g. the VirtualBox
+      object gets created for the first time), all known media are in the
+      "Inaccessible" state, but the value of the <link to="#lastAccessError"/>
+      attribute is an empty string because no actual accessibility check has
+      been made yet.
+
+      After calling <link to="#refreshState" />, a medium is considered
+      <i>accessible</i> if its storage unit can be read. In that case, the
+      <link to="#state"/> attribute has a value of "Created". If the storage
+      unit cannot be read (for example, because it is located on a disconnected
+      network resource, or was accidentally deleted outside VirtualBox),
+      the medium is considered <i>inaccessible</i>, which is indicated by the
+      "Inaccessible" state. The exact reason why the medium is inaccessible can be
+      obtained by reading the <link to="#lastAccessError"/> attribute.
+
+      <h3>Medium types</h3>
+
+      There are five types of medium behavior which are stored in the
+      <link to="#type"/> attribute (see <link to="MediumType" />) and
+      which define the medium's behavior with attachments and snapshots.
+
+      All media can be also divided in two groups: <i>base</i> media and
+      <i>differencing</i> media. A base medium contains all sectors of the
+      medium data in its own storage and therefore can be used independently.
+      In contrast, a differencing medium is a "delta" to some other medium and
+      contains only those sectors which differ from that other medium, which is
+      then called a <i>parent</i>. The differencing medium is said to be
+      <i>linked to</i> that parent. The parent may be itself a differencing
+      medium, thus forming a chain of linked media. The last element in that
+      chain must always be a base medium. Note that several differencing
+      media may be linked to the same parent medium.
+
+      Differencing media can be distinguished from base media by querying the
+      <link to="#parent"/> attribute: base media do not have parents they would
+      depend on, so the value of this attribute is always @c null for them.
+      Using this attribute, it is possible to walk up the medium tree (from the
+      child medium to its parent). It is also possible to walk down the tree
+      using the <link to="#children"/> attribute.
+
+      Note that the type of all differencing media is "normal"; all other
+      values are meaningless for them. Base media may be of any type.
+
+      <h3>Automatic composition of the file name part</h3>
+
+      Another extension to the <link to="IMedium::location"/> attribute is that
+      there is a possibility to cause VirtualBox to compose a unique value for
+      the file name part of the location using the UUID of the hard disk. This
+      applies only to hard disks in <link to="MediumState_NotCreated"/> state,
+      e.g. before the storage unit is created, and works as follows. You set the
+      value of the <link to="IMedium::location"/> attribute to a location
+      specification which only contains the path specification but not the file
+      name part and ends with either a forward slash or a backslash character.
+      In response, VirtualBox will generate a new UUID for the hard disk and
+      compose the file name using the following pattern:
+      <pre>
+        &lt;path&gt;/{&lt;uuid&gt;}.&lt;ext&gt;
+      </pre>
+      where <tt>&lt;path&gt;</tt> is the supplied path specification,
+      <tt>&lt;uuid&gt;</tt> is the newly generated UUID and <tt>&lt;ext&gt;</tt>
+      is the default extension for the storage format of this hard disk. After
+      that, you may call any of the methods that create a new hard disk storage
+      unit and they will use the generated UUID and file name.
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
