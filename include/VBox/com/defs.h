@@ -136,13 +136,13 @@ typedef const OLECHAR *CBSTR;
  * @param aType Array element type.
  * @param aArg  Parameter/attribute name.
  */
-#define ComSafeArrayIn(aType, aArg)     SAFEARRAY **aArg
+#define ComSafeArrayIn(aType, aArg)     SAFEARRAY *aArg
 
 /**
  * Expands to @true if the given input safearray parameter is a "null pointer"
  * which makes it impossible to use it for reading safearray data.
  */
-#define ComSafeArrayInIsNull(aArg)      ((aArg) == NULL || *(aArg) == NULL)
+#define ComSafeArrayInIsNull(aArg)      ((aArg) == NULL)
 
 /**
  * Wraps the given parameter name to generate an expression that is suitable for
@@ -193,7 +193,7 @@ typedef const OLECHAR *CBSTR;
  * Version of ComSafeArrayIn for GUID.
  * @param aArg Parameter name to wrap.
  */
-#define ComSafeGUIDArrayIn(aArg)        SAFEARRAY **aArg
+#define ComSafeGUIDArrayIn(aArg)        SAFEARRAY *aArg
 
 /**
  * Version of ComSafeArrayInIsNull for GUID.
