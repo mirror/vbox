@@ -125,8 +125,23 @@ struct uma_zone
     LIST_HEAD(RT_NOTHING, item) free_items;
     uma_zone_t master_zone;
     void *area;
+    bool fPending;  /* has some sense only in case master_zone == NULL */
 };
 
+static inline bool slirp_zone_has_pending(uma_zone_t zone)
+{
+    return (   zone->master_zone == NULL
+            && zone->fPending);
+}
+
+static inline void slirp_zone_check_and_send_pending(uma_zone_t zone)
+{
+    if (slirp_zone_has_pending(zone))
+    {
+        zone->fPending = false;
+        slirp_output_pending(zone->pData->pvUser);
+    }
+}
 
 static void *slirp_uma_alloc(uma_zone_t zone,
                              int size, uint8_t *pflags, int fWait)
@@ -151,10 +166,12 @@ static void *slirp_uma_alloc(uma_zone_t zone,
                 zone->cur_items++;
                 LIST_REMOVE(it, list);
                 LIST_INSERT_HEAD(&zone->used_items, it, list);
+                slirp_zone_check_and_send_pending(zone);
                 ret = (void *)&it[1];
             }
             else
             {
+                AssertMsgFailed(("NAT: item initialization failed for zone %s\n", zone->name));
                 ret = NULL;
             }
             break;
@@ -164,7 +181,8 @@ static void *slirp_uma_alloc(uma_zone_t zone,
         {
             /* We're on master zone and we cant allocate more */
             Log2(("NAT: no room on %s zone\n", zone->name));
-            AssertMsgFailed(("NAT: OOM!"));
+            /* AssertMsgFailed(("NAT: OOM!")); */
+            zone->fPending = true;
             break;
         }
 
@@ -224,6 +242,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     }
     LIST_INSERT_HEAD(&zone->free_items, it, list);
     zone->cur_items--;
+    slirp_zone_check_and_send_pending(zone);
     RTCritSectLeave(&zone->csZone);
 }
 
@@ -377,6 +396,7 @@ void zone_drain(uma_zone_t zone)
         LIST_INSERT_HEAD(&master_zone->free_items, it, list);
         master_zone->cur_items--;
         RTCritSectLeave(&master_zone->csZone);
+        slirp_zone_check_and_send_pending(master_zone);
     }
 }
 
