@@ -1487,6 +1487,12 @@ void STATE_APIENTRY crStateUnlockArraysEXT()
     CRClientState *c = &(g->client);
     int i;
 
+    if (!c->array.locked)
+    {
+        crDebug("crStateUnlockArraysEXT ignored because arrays aren't locked");
+        return;
+    }
+
     c->array.locked = GL_FALSE;
 #ifdef IN_GUEST
     c->array.synced = GL_FALSE;
@@ -1623,6 +1629,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
 {
     CRClientState *from = &(fromCtx->client);
     const CRClientState *to = &(toCtx->client);
+    GLint curClientTextureUnit = from->curClientTextureUnit;
     int i;
 
     if (CHECKDIRTY(cb->clientPointer, bitID)) {
@@ -1694,6 +1701,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.t[i].stride != to->array.t[i].stride ||
                         from->array.t[i].buffer != to->array.t[i].buffer) {
                     diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                    curClientTextureUnit = i;
                     diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type,
                                                                 to->array.t[i].stride, to->array.t[i].p);
                     from->array.t[i].size = to->array.t[i].size;
@@ -1797,6 +1805,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
         for (i = 0; (unsigned int)i < toCtx->limits.maxTextureUnits; i++) {
             if (from->array.t[i].enabled != to->array.t[i].enabled) {
                 diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                curClientTextureUnit = i;
                 able[to->array.t[i].enabled](GL_TEXTURE_COORD_ARRAY);
                 from->array.t[i].enabled = to->array.t[i].enabled;
             }
@@ -1824,6 +1833,11 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
         }
         CLEARDIRTY2(cb->enableClientState, bitID);
     }
+
+    if (to->curClientTextureUnit != curClientTextureUnit)
+    {
+        diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
+    }
 }
 
 
@@ -1833,6 +1847,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
 {
     const CRClientState *from = &(fromCtx->client);
     const CRClientState *to = &(toCtx->client);
+    GLint curClientTextureUnit = from->curClientTextureUnit;
     int i;
 
     if (CHECKDIRTY(cb->clientPointer, bitID)) {
@@ -1898,6 +1913,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.t[i].stride != to->array.t[i].stride ||
                         from->array.t[i].buffer != to->array.t[i].buffer) {
                     diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                    curClientTextureUnit = i;
                     diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type,
                                                                 to->array.t[i].stride, to->array.t[i].p);
                     FILLDIRTY(cb->t[i]);
@@ -1997,6 +2013,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         for (i = 0; (unsigned int)i < toCtx->limits.maxTextureUnits; i++) {
             if (from->array.t[i].enabled != to->array.t[i].enabled) {
                 diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                curClientTextureUnit = i;
                 able[to->array.t[i].enabled](GL_TEXTURE_COORD_ARRAY);
                 FILLDIRTY(cb->enableClientState);
                 FILLDIRTY(cb->dirty);
@@ -2028,6 +2045,11 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             }
         }
         CLEARDIRTY2(cb->enableClientState, bitID);
+    }
+
+    if (to->curClientTextureUnit != curClientTextureUnit)
+    {
+        diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
     }
 
     CLEARDIRTY2(cb->dirty, bitID);

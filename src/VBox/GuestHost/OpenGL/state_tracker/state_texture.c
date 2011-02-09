@@ -790,6 +790,8 @@ void STATE_APIENTRY crStateClientActiveTextureARB( GLenum texture )
     }
 
     c->curClientTextureUnit = texture - GL_TEXTURE0_ARB;
+
+    DIRTY(GetCurrentBits()->client.dirty, g->neg_bitid);
 }
 
 void STATE_APIENTRY crStateActiveTextureARB( GLenum texture )
