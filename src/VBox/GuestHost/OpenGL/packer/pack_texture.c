@@ -521,8 +521,10 @@ crPackTexParameterfv(GLenum target, GLenum pname, const GLfloat * params)
 {
     CR_GET_PACKER_CONTEXT(pc);
     if (__handleTexParameterData(target, pname, params))
+    {
         WRITE_OPCODE(pc, CR_TEXPARAMETERFV_OPCODE);
-    CR_UNLOCK_PACKER_CONTEXT(pc);
+        CR_UNLOCK_PACKER_CONTEXT(pc);
+    }
 }
 
 void PACK_APIENTRY
@@ -530,8 +532,10 @@ crPackTexParameteriv(GLenum target, GLenum pname, const GLint * params)
 {
     CR_GET_PACKER_CONTEXT(pc);
     if (__handleTexParameterData(target, pname, (GLfloat *) params))
+    {
         WRITE_OPCODE(pc, CR_TEXPARAMETERIV_OPCODE);
-    CR_UNLOCK_PACKER_CONTEXT(pc);
+        CR_UNLOCK_PACKER_CONTEXT(pc);
+    }
 }
 
 void PACK_APIENTRY
