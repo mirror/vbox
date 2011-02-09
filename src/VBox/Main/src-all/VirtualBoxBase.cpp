@@ -793,6 +793,9 @@ void MultiResult::decCounter()
 /*static*/
 bool MultiResult::isMultiEnabled()
 {
+    if (sCounter == NIL_RTTLS)
+       return false;
+
     return ((uintptr_t)RTTlsGet(MultiResult::sCounter)) > 0;
 }
 
