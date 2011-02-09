@@ -2992,7 +2992,11 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
                     }
                 }
                 else
+                {
+                    Log(("GMMR0BalloonedPages: cBasePages=%#llx Total=%#llx cBalloonedPages=%#llx Reserved=%#llx\n",
+                         pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cBallonedPages, pGVM->gmm.s.Reserved.cBasePages));
                     rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+                }
                 break;
             }
 
@@ -3023,7 +3027,10 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
                              cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
                 }
                 else
+                {
+                    Log(("GMMR0BalloonedPages: Total=%#llx cBalloonedPages=%#llx\n", pGVM->gmm.s.cBalloonedPages, cBalloonedPages));
                     rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
+                }
                 break;
             }
 
