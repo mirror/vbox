@@ -991,10 +991,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 UDP_DETACH(pData, so, so_next);
                 CONTINUE_NO_UNLOCK(udp);
             }
-            else
-            {
-                do_slowtimo = 1; /* Let socket expire */
-            }
         }
 
         /*
