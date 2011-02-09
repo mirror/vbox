@@ -195,8 +195,6 @@ static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser
 
     pThread->m_fu32ThreadFlags |= HGCMMSG_TF_TERMINATED;
 
-    hgcmObjDeleteHandle (pThread->Handle ());
-
     pThread->m_thread = NIL_RTTHREAD;
 
     LogFlow(("MAIN::hgcmWorkerThreadFunc: completed HGCM thread %p\n", pThread));
@@ -688,6 +686,8 @@ int hgcmThreadWait (HGCMTHREADHANDLE hThread)
 
         hgcmObjDereference (pThread);
     }
+
+    hgcmObjDeleteHandle (hThread);
 
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
