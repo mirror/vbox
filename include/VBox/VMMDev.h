@@ -679,7 +679,7 @@ typedef enum
     VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
     VBoxGuestFacilityType_Seamless        = 1000,
     VBoxGuestFacilityType_Graphics        = 1001,
-    VBoxGuestFacilityType_All             = 0xfffffffe,
+    VBoxGuestFacilityType_All             = 0x7ffffffe,
     VBoxGuestFacilityType_SizeHack        = 0x7fffffff
 } VBoxGuestFacilityType;
 AssertCompileSize(VBoxGuestFacilityType, 4);
