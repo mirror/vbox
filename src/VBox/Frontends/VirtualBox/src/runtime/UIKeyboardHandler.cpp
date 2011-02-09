@@ -1132,8 +1132,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     /* Check if we are currently holding FULL host-combo: */
     bool fIsFullHostComboPresent = allHostComboKeys == m_pressedHostComboKeys.keys().toSet();
     /* Check if currently pressed/released key had changed host-combo state: */
-    const bool isHostComboStateChanged = (!m_bIsHostComboPressed && fIsFullHostComboPresent) ||
-                                         (m_bIsHostComboPressed && !fIsFullHostComboPresent);
+    const bool isHostComboStateChanged = (!m_bIsHostComboPressed &&  fIsFullHostComboPresent) ||
+                                         ( m_bIsHostComboPressed && !fIsFullHostComboPresent);
 
 #ifdef Q_WS_WIN
     if (m_bIsHostComboPressed || isHostComboStateChanged)
@@ -1172,8 +1172,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     LONG aCodesBuffer[16];
     LONG *pCodes = aCodesBuffer;
     uint uCodesCount = 0;
-    if (!m_bIsHostComboPressed && !isHostComboStateChanged ||
-        m_bIsHostComboPressed && isHostComboStateChanged)
+    if ((!m_bIsHostComboPressed && !isHostComboStateChanged) ||
+        ( m_bIsHostComboPressed &&  isHostComboStateChanged))
     {
         /* Special flags handling (KeyPrint): */
         if (fFlags & KeyPrint)
