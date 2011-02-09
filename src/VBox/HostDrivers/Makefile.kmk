@@ -41,6 +41,12 @@ if  !defined(VBOX_ONLY_DOCS) \
   include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
  endif
 
+ if1of ($(KBUILD_TARGET), linux)
+  ifdef VBOX_WITH_PCI_PASSTHROUGH
+   include $(PATH_SUB_CURRENT)/VBoxPci/Makefile.kmk
+  endif
+ endif
+
  if1of ($(KBUILD_TARGET),linux freebsd)
   #
   # Install the Makefile for module compilation on Linux and FreeBSD hosts
