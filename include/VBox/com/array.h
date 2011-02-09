@@ -618,7 +618,7 @@ public:
 #else /* defined (VBOX_WITH_XPCOM) */
 
         AssertReturnVoid (aArg != NULL);
-        SAFEARRAY *arg = *aArg;
+        SAFEARRAY *arg = aArg;
 
         if (arg)
         {
@@ -1024,7 +1024,7 @@ public:
 #else /* defined (VBOX_WITH_XPCOM) */
 
     /** Internal function Never call it directly. */
-    SAFEARRAY ** __asInParam() { return &m.arr; }
+    SAFEARRAY * __asInParam() { return m.arr; }
 
     /** Internal function Never call it directly. */
     OutSafeArrayDipper __asOutParam()
@@ -1518,7 +1518,7 @@ public:
 #else /* defined (VBOX_WITH_XPCOM) */
 
         AssertReturnVoid (aArg != NULL);
-        SAFEARRAY *arg = *aArg;
+        SAFEARRAY *arg = aArg;
 
         if (arg)
         {

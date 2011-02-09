@@ -293,7 +293,7 @@
            </xsl:call-template>
          </xsl:variable>
          <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
-         <xsl:value-of select="       '              SAFEARRAY **    aPtr = va_arg(args, SAFEARRAY **);&#10;'"/>
+         <xsl:value-of select="       '              SAFEARRAY *    aPtr = va_arg(args, SAFEARRAY *);&#10;'"/>
          <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr(aPtr);&#10;')"/>
          <xsl:value-of select="       '#else&#10;'"/>
          <xsl:value-of select="       '              PRUint32 aArrSize = va_arg(args, PRUint32);&#10;'"/>

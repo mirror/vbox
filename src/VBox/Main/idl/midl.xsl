@@ -686,10 +686,6 @@
     <xsl:when test="@dir='return'">out, retval</xsl:when>
     <xsl:otherwise>in</xsl:otherwise>
   </xsl:choose>
-  <xsl:if test="@safearray='yes'">
-    <!-- VB supports only [in, out], [out] and [out, retval] arrays -->
-    <xsl:if test="@dir='in'">, out</xsl:if>
-  </xsl:if>
   <xsl:text>] </xsl:text>
   <xsl:if test="@safearray='yes'">
     <xsl:text>SAFEARRAY(</xsl:text>
@@ -698,7 +694,7 @@
   <xsl:if test="@safearray='yes'">
     <xsl:text>)</xsl:text>
   </xsl:if>
-  <xsl:if test="@dir='out' or @dir='return' or @safearray='yes'">
+  <xsl:if test="@dir='out' or @dir='return'">
     <xsl:text> *</xsl:text>
   </xsl:if>
   <xsl:text> a</xsl:text>
