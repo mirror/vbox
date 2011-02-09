@@ -6207,7 +6207,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     MediumVariant_T variant = MediumVariant_Standard;
     bool fGenerateUuid = false;
 
-    GuidList llRegistriesThatNeedSaving;
+    GuidList llRegistriesThatNeedSaving;        // gets copied to task pointer later in synchronous mode
 
     try
     {

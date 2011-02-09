@@ -1488,6 +1488,11 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                stateTo.c_str(),
                                vrc);
         }
+
+        // if we got this far without an error, then save the media registries
+        // that got modified for the diff images
+        alock.release();
+        mParent->saveRegistries(llRegistriesThatNeedSaving);
     }
     catch (HRESULT hrc)
     {
@@ -1513,10 +1518,6 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         strStateFilePath.cloneTo(aStateFilePath);
     else
         *aStateFilePath = NULL;
-
-    // @todo r=dj normally we would need to save the settings if fNeedsGlobalSaveSettings was set to true,
-    // but since we have no error handling that cleans up the diff image that might have gotten created,
-    // there's no point in saving the disk registry at this point either... this needs fixing.
 
     LogFlowThisFunc(("LEAVE - %Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
     return rc;
