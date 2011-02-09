@@ -11465,7 +11465,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         integration) mode.
         <note>
           Calling this method has no effect if <link
-          to="IGuest::supportsSeamless"/> returns @c false.
+          to="IGuest::getFacilityStatus"/> with facility <link to="AdditionsFacilityType::Seamless"/>
+          does not return <link to="AdditionsFacilityStatus::Active"/>.
         </note>
       </desc>
       <param name="enabled" type="boolean" dir="in"/>
