@@ -596,6 +596,13 @@ void PACKSPU_APIENTRY packspu_LockArraysEXT(GLint first, GLint count)
 
 void PACKSPU_APIENTRY packspu_UnlockArraysEXT()
 {
+    GET_CONTEXT(ctx);
+    CRClientState *clientState = &(ctx->clientState->client);
+
+    if (clientState->array.locked && clientState->array.synced)
+    {
+        crPackUnlockArraysEXT();
+    }
+
     crStateUnlockArraysEXT();
-    crPackUnlockArraysEXT();
 }
