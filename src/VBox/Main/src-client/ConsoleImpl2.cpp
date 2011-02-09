@@ -3709,7 +3709,7 @@ int Console::configNetwork(const char *pszDevice,
 # if defined(RT_OS_DARWIN)
                 /* The name is on the form 'ifX: long name', chop it off at the colon. */
                 char szTrunk[8];
-                strncpy(szTrunk, pszHifName, sizeof(szTrunk));
+                RTStrCopy(szTrunk, sizeof(szTrunk), pszHifName);
                 char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
                 if (!pszColon)
                 {
