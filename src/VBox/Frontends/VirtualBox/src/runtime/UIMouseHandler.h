@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QPoint>
 #include <QMap>
+#include <QRect>
 
 /* Local includes */
 #include "UIMachineDefs.h"
@@ -109,6 +110,7 @@ protected:
     /* This method is actually required only because under win-host
      * we do not really grab the mouse in case of capturing it: */
     void updateMouseCursorClipping();
+    QRect m_mouseCursorClippingRect;
 #endif /* Q_WS_WIN */
 
     /* Machine logic parent: */

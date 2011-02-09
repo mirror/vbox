@@ -177,6 +177,11 @@ public:
 
     const QRect availableGeometry(int iScreen = 0) const;
 
+#ifdef Q_WS_WIN
+    static QList<QRect> m_sTopMostRects;
+    static const QRegion areaCoveredByTopMostWindows();
+#endif /* Q_WS_WIN */
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled(CMachine &aMachine);
     bool isDebuggerAutoShowEnabled(CMachine &aMachine);

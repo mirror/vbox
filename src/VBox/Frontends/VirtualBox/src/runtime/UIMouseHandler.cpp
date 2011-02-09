@@ -691,14 +691,11 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 #ifdef Q_WS_WIN
         /* Bringing mouse to the opposite side to simulate the endless moving: */
 
-        /* Acquiring visible viewport rectangle in local coordinates: */
-        QRect viewportRectangle = m_viewports[uScreenId]->visibleRegion().boundingRect();
+        /* Get visible-viewport-rectangle in global coordinates: */
+        QRect viewportRectangle = m_mouseCursorClippingRect;
+        /* Get top-left point of full-viewport-rectangle in global coordinates: */
         QPoint viewportRectangleGlobalPos = m_views[uScreenId]->mapToGlobal(m_viewports[uScreenId]->pos());
-        /* Shift viewport rectangle to global position to bound by available geometry: */
-        viewportRectangle.translate(viewportRectangleGlobalPos);
-        /* Acquiring viewport rectangle cropped by available geometry: */
-        viewportRectangle = viewportRectangle.intersected(QApplication::desktop()->availableGeometry());
-        /* Shift remaining viewport rectangle to local position as relative position is in local coordinates: */
+        /* Shift visible-viewport-rectangle to local position because relative position is in local coordinates: */
         viewportRectangle.translate(-viewportRectangleGlobalPos);
 
         /* Get boundaries: */
@@ -872,13 +869,35 @@ void UIMouseHandler::updateMouseCursorClipping()
 
     if (uisession()->isMouseCaptured())
     {
-        /* Acquiring visible viewport rectangle: */
+        /* Get full-viewport-rectangle in local coordinates: */
         QRect viewportRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
+        /* Get top-left point of full-viewport-rectangle in global coordinates: */
         QPoint viewportRectangleGlobalPos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
+        /* Get full-viewport-rectangle in global coordinates: */
         viewportRectangle.translate(viewportRectangleGlobalPos);
+        /* Trim full-viewport-rectangle by available geometry: */
         viewportRectangle = viewportRectangle.intersected(QApplication::desktop()->availableGeometry());
+        /* Trim partial-viewport-rectangle by top-most windows: */
+        QRegion viewportRegion(viewportRectangle);
+        QRegion topMostRegion(VBoxGlobal::areaCoveredByTopMostWindows());
+        viewportRegion -= topMostRegion;
+        /* Check if partial-viewport-region consists of 1 rectangle: */
+        if (viewportRegion.rectCount() > 1)
+        {
+            /* Choose the largest rectangle: */
+            QVector<QRect> rects = viewportRegion.rects();
+            QRect largestRect;
+            for (int i = 0; i < rects.size(); ++i)
+                largestRect = largestRect.width() * largestRect.height() < rects[i].width() * rects[i].height() ? rects[i] : largestRect;
+            /* Assign the partial-viewport-region to the largest rect: */
+            viewportRegion = largestRect;
+        }
+        /* Assign the partial-viewport-rectangle to the partial-viewport-region: */
+        viewportRectangle = viewportRegion.boundingRect();
+        /* Assign the visible-viewport-rectangle to the partial-viewport-rectangle: */
+        m_mouseCursorClippingRect = viewportRectangle;
         /* Prepare clipping area: */
-        RECT rect = { viewportRectangle.left() + 1, viewportRectangle.top() + 1, viewportRectangle.right(), viewportRectangle.bottom() };
+        RECT rect = { m_mouseCursorClippingRect.left() + 1, m_mouseCursorClippingRect.top() + 1, m_mouseCursorClippingRect.right(), m_mouseCursorClippingRect.bottom() };
         ::ClipCursor(&rect);
     }
     else

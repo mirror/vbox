@@ -843,6 +843,59 @@ const QRect VBoxGlobal::availableGeometry(int iScreen) const
     return result;
 }
 
+#ifdef Q_WS_WIN
+/* Enumerate visible top-most windows: */
+BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM /* lParam */)
+{
+    /* Ignore NULL HWNDs: */
+    if (!hWnd)
+        return TRUE;
+
+    /* Ignore hidden windows: */
+    if (!IsWindowVisible(hWnd))
+        return TRUE;
+
+    /* Get window style: */
+    LONG uStyle = GetWindowLong(hWnd, GWL_STYLE);
+    /* Ignore minimized windows: */
+    if (uStyle & WS_MINIMIZE)
+        return TRUE;
+
+    /* Get extended window style: */
+    LONG uExtendedStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+    /* Ignore non-top-most windows: */
+    if (!(uExtendedStyle & WS_EX_TOPMOST))
+        return TRUE;
+
+    /* Get that window rectangle: */
+    RECT rect;
+    GetWindowRect(hWnd, &rect);
+    VBoxGlobal::m_sTopMostRects << QRect(QPoint(rect.left, rect.top), QPoint(rect.right - 1, rect.bottom - 1));
+
+    /* Proceed to the next window: */
+    return TRUE;
+}
+
+/* static */
+QList<QRect> VBoxGlobal::m_sTopMostRects = QList<QRect>();
+
+/* static */
+const QRegion VBoxGlobal::areaCoveredByTopMostWindows()
+{
+    /* Prepare the top-most region: */
+    QRegion topMostRegion;
+    /* Initialize the list of the top-most rectangles: */
+    m_sTopMostRects.clear();
+    /* Populate the list of top-most rectangles: */
+    EnumWindows((WNDENUMPROC)EnumWindowsProc, 0);
+    /* Update the top-most region with top-most rectangles: */
+    for (int iRectIndex = 0; iRectIndex < m_sTopMostRects.size(); ++iRectIndex)
+        topMostRegion += m_sTopMostRects[iRectIndex];
+    /* Return top-most region: */
+    return topMostRegion;
+}
+#endif /* Q_WS_WIN */
+
 /**
  *  Returns the list of few guest OS types, queried from
  *  IVirtualBox corresponding to every family id.
