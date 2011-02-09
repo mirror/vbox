@@ -227,14 +227,15 @@ static void ctrlUninitVM(HandlerArg *pArg)
 }
 
 /**
- * Initializes the VM, that is checks whether it's up and
- * running, if it can be locked (shared only) and returns a
- * valid IGuest pointer on success.
+ * Initializes the VM for IGuest operations.
+ *
+ * That is, checks whether it's up and running, if it can be locked (shared
+ * only) and returns a valid IGuest pointer on success.
  *
  * @return  IPRT status code.
  * @param   pArg            Our command line argument structure.
- * @param   pszNameOrId     The VM's name or UUID to use.
- * @param   pGuest          Pointer where to store the IGuest interface.
+ * @param   pszNameOrId     The VM's name or UUID.
+ * @param   pGuest          Where to return the IGuest interface pointer.
  */
 static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> *pGuest)
 {
@@ -279,11 +280,11 @@ static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
+/* <Missing docuemntation> */
 static int handleCtrlExecProgram(HandlerArg *a)
 {
     /*
-     * Check the syntax.  We can deduce the correct syntax from the number of
-     * arguments.
+     * Parse arguments.
      */
     if (a->argc < 2) /* At least the command we want to execute in the guest should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
@@ -300,26 +301,25 @@ static int handleCtrlExecProgram(HandlerArg *a)
         { "--wait-for",            'w',         RTGETOPT_REQ_STRING  }
     };
 
-    int ch;
-    RTGETOPTUNION ValueUnion;
-    RTGETOPTSTATE GetState;
+    int                     ch;
+    RTGETOPTUNION           ValueUnion;
+    RTGETOPTSTATE           GetState;
     RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
 
-    Utf8Str Utf8Cmd;
-    uint32_t uFlags = 0;
-    /* Note: this uses IN_BSTR as it must be BSTR on COM and CBSTR on XPCOM */
+    Utf8Str                 Utf8Cmd;
+    uint32_t                fFlags = 0;
     com::SafeArray<IN_BSTR> args;
     com::SafeArray<IN_BSTR> env;
-    Utf8Str Utf8UserName;
-    Utf8Str Utf8Password;
-    uint32_t u32TimeoutMS = 0;
-    bool fWaitForExit = false;
-    bool fWaitForStdOut = false;
-    bool fWaitForStdErr = false;
-    bool fVerbose = false;
+    Utf8Str                 Utf8UserName;
+    Utf8Str                 Utf8Password;
+    uint32_t                u32TimeoutMS    = 0;
+    bool                    fWaitForExit    = false;
+    bool                    fWaitForStdOut  = false;
+    bool                    fWaitForStdErr  = false;
+    bool                    fVerbose        = false;
 
-    int vrc = VINF_SUCCESS;
-    bool fUsageOK = true;
+    int                     vrc             = VINF_SUCCESS;
+    bool                    fUsageOK        = true;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(vrc))
     {
@@ -359,10 +359,16 @@ static int handleCtrlExecProgram(HandlerArg *a)
             }
 
             case 'f': /* Flags */
+                /** @todo r=bird: As stated before, this generic flags stuff
+                 *        does NOT make sense!  The IgnoreOprphanedProcesses
+                 *        features should have been added as:
+                 *  { "--ignore-operhaned-processes", DEFINE, RTGETOPT_REQ_NOTHING }
+                 *
+                 *  Please, remove -f in 4.1, replace it with above. */
                 /** @todo Needs a bit better processing as soon as we have more flags. */
                 /** @todo Add a hidden flag. */
                 if (!RTStrICmp(ValueUnion.psz, "ignoreorphanedprocesses"))
-                    uFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+                    fFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 else
                     fUsageOK = false;
                 break;
@@ -385,6 +391,13 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
             case 'w': /* Wait for ... */
             {
+                /** @todo r=bird: Same as for -f: Use individual options for
+                 * indicating what to wait for.  This is unix tradition and
+                 * much simpler to write code for.  It also avoids people
+                 * finding out that the following sequence does not work
+                 * (contrary to what one would expect):
+                 *      -w stdout,stderr
+                 *  */
                 if (!RTStrICmp(ValueUnion.psz, "exit"))
                     fWaitForExit = true;
                 else if (!RTStrICmp(ValueUnion.psz, "stdout"))
@@ -404,6 +417,17 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
             case VINF_GETOPT_NOT_OPTION:
             {
+                /** @todo r=bird: Guess what the following does:
+                 * VBoxManage guestcontrol exec myvm /bin/ls 1 2 3 4;
+                 *
+                 * In 4.1 this SHALL be changed to treat 1 2 3 4 as arguments
+                 * to /bin/ls.  Drop --arguments and replace it with --image
+                 * <guest-file>.  The --image defaults to the first argument if
+                 * not specified.  Users should be encouraged to use '--' to
+                 * separate 'exec' options from options to the guest
+                 * program:
+                 *      VBoxManage guestcontrol myvm exec --image /bin/busybox -- ln -s /foo /bar
+                 */
                 /* The actual command we want to execute on the guest. */
                 Utf8Cmd = ValueUnion.psz;
                 break;
@@ -414,25 +438,30 @@ static int handleCtrlExecProgram(HandlerArg *a)
         }
     }
 
-    if (!fUsageOK)
+    if (!fUsageOK) /** @todo r=bird: there is no clean up, so just return directly on failure with a specific message. */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     if (Utf8Cmd.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No command to execute specified!");
+        return errorSyntax(USAGE_GUESTCONTROL, "No command to execute specified!");
 
     if (Utf8UserName.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No user name specified!");
+        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
+    /** @todo r=bird: You don't check vrc here, so if RTGetOptArgvFromString
+     *  or RTGetOptArgvFromString failed above, you'll ignore it.
+     *
+     *  Just simplify the argument parsing to not use unnecessary state
+     *  variables and instead return directly on error with a specific error
+     *  message. (See fUsageOk comment above.) */
+
+    /*
+     * <comment missing>
+     */
     HRESULT rc = S_OK;
     ComPtr<IGuest> guest;
     vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
     if (RT_SUCCESS(vrc))
     {
-        ComPtr<IProgress> progress;
-        ULONG uPID = 0;
-
         if (fVerbose)
         {
             if (u32TimeoutMS == 0)
@@ -445,12 +474,17 @@ static int handleCtrlExecProgram(HandlerArg *a)
         uint64_t u64StartMS = RTTimeMilliTS();
 
         /* Execute the process. */
-        rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
+        ComPtr<IProgress> progress;
+        ULONG uPID = 0;
+        rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
+                                   fFlags,
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    Bstr(Utf8UserName).raw(),
-                                   Bstr(Utf8Password).raw(), u32TimeoutMS,
-                                   &uPID, progress.asOutParam());
+                                   Bstr(Utf8Password).raw(),
+                                   u32TimeoutMS,
+                                   &uPID,
+                                   progress.asOutParam());
         if (FAILED(rc))
             vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
         else
@@ -489,9 +523,9 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     ctrlSignalHandlerInstall();
 
                 /* Wait for process to exit ... */
-                BOOL fCompleted = FALSE;
-                BOOL fCanceled = FALSE;
-                int cMilliesSleep = 0;
+                BOOL fCompleted    = FALSE;
+                BOOL fCanceled     = FALSE;
+                int  cMilliesSleep = 0;
                 while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                 {
                     SafeArray<BYTE> aOutputData;
@@ -516,6 +550,13 @@ static int handleCtrlExecProgram(HandlerArg *a)
                             cbOutputData = aOutputData.size();
                             if (cbOutputData > 0)
                             {
+/** @todo r=bird: cat'ing binary data from the guest is not going to work
+ *        reliably if we do conversions like this.  Should probably just
+ *        write the output as it is by default, but bypassing RTStrWrite and
+ *        it's automatic translation.  Adding exec options to convert unix2dos
+ *        and dos2unix.  Use a VFS I/O stream filter for doing this, it's a
+ *        generic problem and the new VFS APIs will handle it more
+ *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
                                 /* aOutputData has a platform dependent line ending, standardize on
                                  * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
                                  * Windows. Otherwise we end up with CR/CR/LF on Windows. */
@@ -564,9 +605,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     /* Progress canceled by Main API? */
                     if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
                         && fCanceled)
-                    {
                         break;
-                    }
 
                     /* Did we run out of time? */
                     if (   u32TimeoutMS
@@ -577,6 +616,9 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     }
 
                     /* Don't hog the CPU in a busy loop! */
+/** @todo r=bird: I believe I already mentioned that this problem is better
+ * solved by using WaitForCompletion and GetProcessOutput with timeouts.  The
+ * 1ms hack above is not what I had in mind.  This quick fix must go away.  */
                     if (cbOutputData <= 0)
                     {
                         if (cMilliesSleep < 100)
@@ -585,12 +627,13 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     }
                     else
                         cMilliesSleep = 0;
-                }
+                } /* while */
 
                 /* Undo signal handling */
                 if (fCancelable)
                     ctrlSignalHandlerUninstall();
 
+                /* Report status back to the user. */
                 if (fCanceled)
                 {
                     if (fVerbose)
@@ -602,15 +645,25 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     LONG iRc;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                     if (FAILED(iRc))
-                    {
                         vrc = ctrlPrintProgressError(progress);
-                    }
                     else if (fVerbose)
                     {
                         ULONG uRetStatus, uRetExitCode, uRetFlags;
                         rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
                         if (SUCCEEDED(rc))
                             RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
+                        /** @todo r=bird: The guest application exit code
+                         *        should by default be returned by the command.
+                         *        Non-normal exits and exit codes outside
+                         *        the portable range (0..127) should be
+                         *        translated to more portable values.
+                         *
+                         *  Alternatively, we could return say exit code 16 if
+                         *  the guest command failed, 17 if it terminated on a
+                         *  signal, 18 if it abended and exit code 19 if it
+                         *  timed out.  This is possibly a better solution.
+                         *
+                         *  Think about people using VBoxManage for scripting. */
                     }
                 }
                 else
@@ -623,9 +676,9 @@ static int handleCtrlExecProgram(HandlerArg *a)
         ctrlUninitVM(a);
     }
 
-    if (RT_FAILURE(vrc))
-        rc = VBOX_E_IPRT_ERROR;
-    return SUCCEEDED(rc) ? 0 : 1;
+    if (RT_FAILURE(vrc) || FAILED(rc))
+        return RTEXITCODE_FAILURE;
+    return RTEXITCODE_SUCCESS;
 }
 
 /**
@@ -708,14 +761,14 @@ static void ctrlDirectoryListDestroy(PRTLISTNODE pList)
  *                              directory; needed for recursion.
  * @param   pszFilter           Search filter (e.g. *.pdf).
  * @param   pszDest             Destination directory.
- * @param   uFlags              Copy flags.
+ * @param   fFlags              Copy flags.
  * @param   pcObjects           Where to store the overall objects to
  *                              copy found.
  * @param   pList               Pointer to the object list to use.
  */
 static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                                  const char *pszFilter, const char *pszDest,
-                                 uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
+                                 uint32_t fFlags, uint32_t *pcObjects, PRTLISTNODE pList)
 {
     AssertPtrReturn(pszRootDir, VERR_INVALID_POINTER);
     /* Sub directory is optional. */
@@ -761,7 +814,7 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                     {
                         break;
                     }
-                    if (uFlags & CopyFileFlag_Recursive)
+                    if (fFlags & CopyFileFlag_Recursive)
                     {
                         char *pszNewSub = NULL;
                         if (pszSubDir)
@@ -773,7 +826,7 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                         {
                             rc = ctrlCopyDirectoryRead(pszRootDir, pszNewSub,
                                                        pszFilter, pszDest,
-                                                       uFlags, pcObjects, pList);
+                                                       fFlags, pcObjects, pList);
                             RTStrFree(pszNewSub);
                         }
                         else
@@ -782,8 +835,8 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                     break;
 
                 case RTDIRENTRYTYPE_SYMLINK:
-                    if (   (uFlags & CopyFileFlag_Recursive)
-                        && (uFlags & CopyFileFlag_FollowLinks))
+                    if (   (fFlags & CopyFileFlag_Recursive)
+                        && (fFlags & CopyFileFlag_FollowLinks))
                     {
                         /* Fall through to next case is intentional. */
                     }
@@ -851,11 +904,11 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
  * @return  IPRT status code.
  * @param   pszSource           Source path on host to use.
  * @param   pszDest             Destination path on guest to use.
- * @param   uFlags              Copy flags.
+ * @param   fFlags              Copy flags.
  * @param   pcObjects           Where to store the count of objects to be copied.
  * @param   pList               Where to store the object list.
  */
-static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
+static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t fFlags,
                         uint32_t *pcObjects, PRTLISTNODE pList)
 {
     AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
@@ -957,7 +1010,7 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFl
                     RTListInit(pList);
                     rc = ctrlCopyDirectoryRead(pszSourceAbsRoot, NULL /* Sub directory */,
                                                pszFilter, pszDestAbs,
-                                               uFlags, pcObjects, pList);
+                                               fFlags, pcObjects, pList);
                     if (RT_SUCCESS(rc) && *pcObjects == 0)
                         rc = VERR_NOT_FOUND;
                 }
@@ -987,11 +1040,11 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFl
  * @param   pszDest         Destination path on guest to copy the file to.
  * @param   pszUserName     User name on guest to use for the copy operation.
  * @param   pszPassword     Password of user account.
- * @param   uFlags          Copy flags.
+ * @param   fFlags          Copy flags.
  */
 static int ctrlCopyFileToGuest(IGuest *pGuest, bool fVerbose, const char *pszSource, const char *pszDest,
                                const char *pszUserName, const char *pszPassword,
-                               uint32_t uFlags)
+                               uint32_t fFlags)
 {
     AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
@@ -1002,7 +1055,7 @@ static int ctrlCopyFileToGuest(IGuest *pGuest, bool fVerbose, const char *pszSou
     ComPtr<IProgress> progress;
     HRESULT rc = pGuest->CopyToGuest(Bstr(pszSource).raw(), Bstr(pszDest).raw(),
                                      Bstr(pszUserName).raw(), Bstr(pszPassword).raw(),
-                                     uFlags, progress.asOutParam());
+                                     fFlags, progress.asOutParam());
     if (FAILED(rc))
         vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
     else
@@ -1042,7 +1095,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
     Utf8Str Utf8Dest;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
-    uint32_t uFlags = CopyFileFlag_None;
+    uint32_t fFlags = CopyFileFlag_None;
     bool fVerbose = false;
     bool fCopyRecursive = false;
     bool fDryRun = false;
@@ -1061,7 +1114,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 break;
 
             case 'F': /* Follow symlinks */
-                uFlags |= CopyFileFlag_FollowLinks;
+                fFlags |= CopyFileFlag_FollowLinks;
                 break;
 
             case 'p': /* Password */
@@ -1069,7 +1122,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 break;
 
             case 'R': /* Recursive processing */
-                uFlags |= CopyFileFlag_Recursive;
+                fFlags |= CopyFileFlag_Recursive;
                 break;
 
             case 'u': /* User name */
@@ -1138,7 +1191,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
         RTLISTNODE listToCopy;
         uint32_t cObjects = 0;
-        vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
+        vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), fFlags,
                            &cObjects, &listToCopy);
         if (RT_FAILURE(vrc))
         {
@@ -1183,7 +1236,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                         /* Finally copy the desired file (if no dry run selected). */
                         if (!fDryRun)
                             vrc = ctrlCopyFileToGuest(guest, fVerbose, pNode->pszSourcePath, pNode->pszDestPath,
-                                                      Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                                                      Utf8UserName.c_str(), Utf8Password.c_str(), fFlags);
                     }
                     if (RT_FAILURE(vrc))
                         break;
@@ -1227,7 +1280,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
 
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
-    uint32_t uFlags = CreateDirectoryFlag_None;
+    uint32_t fFlags = CreateDirectoryFlag_None;
     uint32_t uMode = 0;
     bool fVerbose = false;
 
@@ -1248,7 +1301,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                 break;
 
             case 'P': /* Create parents */
-                uFlags |= CreateDirectoryFlag_Parents;
+                fFlags |= CreateDirectoryFlag_Parents;
                 break;
 
             case 'p': /* Password */
@@ -1313,7 +1366,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
             ComPtr<IProgress> progress;
             rc = guest->CreateDirectory(Bstr(pNode->pszDestPath).raw(),
                                         Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                        uMode, uFlags, progress.asOutParam());
+                                        uMode, fFlags, progress.asOutParam());
             if (FAILED(rc))
             {
                 vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
@@ -1444,6 +1497,17 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
  */
 int handleGuestControl(HandlerArg *a)
 {
+    /** @todo This command does not follow the syntax where the <uuid|vmname>
+     * comes between the command and subcommand.  The commands controlvm,
+     * snapshot and debugvm puts it between.  The commands guestproperty,
+     * guestcontrol and sharedfolder puts it after (the latter is
+     * questionable).
+     *
+     * I would propose changing guestcontrol and guestproperty to the controlvm
+     * syntax in 4.1.  Whether sharedfolder should be changed as well is a bit
+     * more open.
+     */
+
     HandlerArg arg = *a;
     arg.argc = a->argc - 1;
     arg.argv = a->argv + 1;
@@ -1452,28 +1516,25 @@ int handleGuestControl(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
+    /** @todo r=bird: Subcommands are not case insensitive for other commands
+     *        like controlvm.  Drop it. */
     if (   !RTStrICmp(a->argv[0], "exec")
         || !RTStrICmp(a->argv[0], "execute"))
-    {
         return handleCtrlExecProgram(&arg);
-    }
-    else if (   !RTStrICmp(a->argv[0], "copyto")
-             || !RTStrICmp(a->argv[0], "cp"))
-    {
+
+    if (   !RTStrICmp(a->argv[0], "copyto")
+        || !RTStrICmp(a->argv[0], "cp"))
         return handleCtrlCopyTo(&arg);
-    }
-    else if (   !RTStrICmp(a->argv[0], "createdirectory")
-             || !RTStrICmp(a->argv[0], "createdir")
-             || !RTStrICmp(a->argv[0], "mkdir")
-             || !RTStrICmp(a->argv[0], "md"))
-    {
+
+    if (   !RTStrICmp(a->argv[0], "createdirectory")
+        || !RTStrICmp(a->argv[0], "createdir")
+        || !RTStrICmp(a->argv[0], "mkdir")
+        || !RTStrICmp(a->argv[0], "md"))
         return handleCtrlCreateDirectory(&arg);
-    }
-    else if (   !RTStrICmp(a->argv[0], "updateadditions")
-             || !RTStrICmp(a->argv[0], "updateadds"))
-    {
+
+    if (   !RTStrICmp(a->argv[0], "updateadditions")
+        || !RTStrICmp(a->argv[0], "updateadds"))
         return handleCtrlUpdateAdditions(&arg);
-    }
 
     /* default: */
     return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
