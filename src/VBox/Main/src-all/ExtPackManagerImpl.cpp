@@ -644,7 +644,7 @@ STDMETHODIMP ExtPackFile::Install(BOOL a_fReplace, IN_BSTR a_bstrDisplayInfo, IP
             {
                 pJob = new EXTPACKINSTALLJOB;
                 pJob->ptrExtPackFile    = this;
-                pJob->fReplace          = a_fReplace ? true : false;
+                pJob->fReplace          = a_fReplace != FALSE;
                 pJob->strDisplayInfo    = a_bstrDisplayInfo;
                 pJob->ptrExtPackMgr     = m->ptrExtPackMgr;
                 hrc = pJob->ptrProgress.createObject();
