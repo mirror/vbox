@@ -611,9 +611,9 @@ void UISession::sltAdditionsChange()
     ULONG ulGuestAdditionsRunLevel = guest.GetAdditionsRunLevel();
     LONG64 lLastUpdatedIgnored;
     bool fIsGuestSupportsGraphics = guest.GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
-                                    == AdditionsFacilityStatus_Active;
+                                    == KAdditionsFacilityStatus_Active;
     bool fIsGuestSupportsSeamless = guest.GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
-                                    == AdditionsFacilityStatus_Active;
+                                    == KAdditionsFacilityStatus_Active;
     /* Check if something had changed: */
     if (m_ulGuestAdditionsRunLevel != ulGuestAdditionsRunLevel ||
         m_fIsGuestSupportsGraphics != fIsGuestSupportsGraphics ||
