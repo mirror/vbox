@@ -1437,28 +1437,15 @@ virtualBoxManager = VirtualBoxManager("WEBSERVICE",
         perform operations on the IVirtualBox class. For example, the
         following code will a start virtual machine by name or ID:</para>
 
-        <screen>vbox = virtualBoxManager.vbox
-mgr = virtualBoxManager.mgr
-print "Version is",vbox.version
-
-def machById(id):
-    mach = None
-    for m in virtualBoxManager.getArray(vbox, 'machines'):
-        if m.name == id or mach.id == id:
-            mach = m
-            break
-    return mach
-
+        <screen>from vboxapi import VirtualBoxManager
+mgr = VirtualBoxManager(None, None)
+vbox = mgr.vbox
 name = "Linux"
-mach = machById(name)
-if mach is None:
-    print "cannot find machine",name
-else:
-    session = mgr.getSessionObject(vbox)
-    # one can also start headless session with "headless" instead of "gui"
-    progress = vb.openRemoteSession(session, mach.id, "gui", "")
-    progress.waitForCompletion(-1)
-    session.close()
+mach = vbox.findMachine(name)
+session = mgr.mgr.getSessionObject(vbox)
+progress = mach.launchVMProcess(session, "gui", "")
+progress.waitForCompletion(-1)
+mgr.closeMachineSession(session)
         </screen>
 
         <para>This code also shows cross-platform access to array properties
