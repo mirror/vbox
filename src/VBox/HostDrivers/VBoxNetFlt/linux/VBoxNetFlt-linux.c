@@ -94,7 +94,8 @@
 # endif
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13)
+#ifdef VBOXNETFLT_WITH_QDISC
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13)
 static inline int qdisc_drop(struct sk_buff *skb, struct Qdisc *sch)
 {
     kfree_skb(skb);
@@ -102,7 +103,8 @@ static inline int qdisc_drop(struct sk_buff *skb, struct Qdisc *sch)
 
     return NET_XMIT_DROP;
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13) */
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13) */
+#endif /* VBOXNETFLT_WITH_QDISC */
 
 #ifndef NET_IP_ALIGN
 # define NET_IP_ALIGN 2
