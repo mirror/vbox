@@ -62,9 +62,6 @@
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
 
-/* All drivers implementing backing store need this */
-#include "mibstore.h"
-
 /* Colormap handling */
 #include "micmap.h"
 #include "xf86cmap.h"
@@ -1029,8 +1026,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     fbPictureInit(pScreen, 0, 0);
 
     xf86SetBlackWhitePixels(pScreen);
-    miInitializeBackingStore(pScreen);
-    xf86SetBackingStore(pScreen);
 
     /* We need to keep track of whether we are currently switched to a virtual
      * terminal to know whether a mode set operation is currently safe to do.
