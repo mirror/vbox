@@ -784,6 +784,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
+    if (!pVBox)
+        return FALSE;
 
     /* Initialise the guest library */
     vbox_init(pScrn->scrnIndex, pVBox);
@@ -801,7 +803,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return (FALSE);
 
     /* The framebuffer module. */
-    if (xf86LoadSubModule(pScrn, "fb") == NULL)
+    if (!xf86LoadSubModule(pScrn, "fb"))
         return (FALSE);
 
     if (!xf86LoadSubModule(pScrn, "shadowfb"))
@@ -830,10 +832,10 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
        capabilities to X. */
 
     pScrn->chipset = "vbox";
+    /** @note needed during colourmap initialisation */
     pScrn->rgbBits = 8;
 
-    /* Let's create a nice, capable virtual monitor.
-     * This *is* still needed, at least for server version 1.3 */
+    /* Let's create a nice, capable virtual monitor. */
     pScrn->monitor = pScrn->confScreen->monitor;
     pScrn->monitor->DDC = NULL;
     pScrn->monitor->nHsync = 1;
@@ -925,8 +927,14 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Set the DPI.  Perhaps we should read this from the host? */
     xf86SetDpi(pScrn, 96, 96);
 
-    /* Framebuffer-related setup */
-    pScrn->bitmapBitOrder = BITMAP_BIT_ORDER;
+    if (pScrn->memPhysBase == 0) {
+#ifdef PCIACCESS
+        pScrn->memPhysBase = pVBox->pciInfo->regions[0].base_addr;
+#else
+        pScrn->memPhysBase = pVBox->pciInfo->memBase[0];
+#endif
+        pScrn->fbOffset = 0;
+    }
 
     TRACE_EXIT();
     return (TRUE);
@@ -979,15 +987,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
                                        | RESTORE_BIOS_SCRATCH)) == NULL)
         return (FALSE);
 
-    if (pScrn->memPhysBase == 0) {
-#ifdef PCIACCESS
-        pScrn->memPhysBase = pVBox->pciInfo->regions[0].base_addr;
-#else
-        pScrn->memPhysBase = pVBox->pciInfo->memBase[0];
-#endif
-        pScrn->fbOffset = 0;
-    }
-
     if (!VBOXMapVidMem(pScrn))
         return (FALSE);
 
@@ -996,8 +995,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     /* mi layer - reset the visual list (?)*/
     miClearVisualTypes();
-    if (!xf86SetDefaultVisual(pScrn, -1))
-        return (FALSE);
     if (!miSetVisualTypes(pScrn->depth, TrueColorMask,
                           pScrn->rgbBits, TrueColor))
         return (FALSE);
@@ -1008,8 +1005,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
 #endif
 
-    /* I checked in the sources, and XFree86 4.2 does seem to support
-       this function for 32bpp. */
     if (!fbScreenInit(pScreen, pVBox->base,
                       pScrn->virtualX, pScrn->virtualY,
                       pScrn->xDpi, pScrn->yDpi,
@@ -1017,6 +1012,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
 
     /* Fixup RGB ordering */
+    /** @note the X server uses this even in true colour. */
     visual = pScreen->visuals + pScreen->numVisuals;
     while (--visual >= pScreen->visuals) {
         if ((visual->class | DynamicClass) == DirectColor) {
