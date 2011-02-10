@@ -130,8 +130,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (mlen < sizeof(struct ip))
     {
         ipstat.ips_toosmall++;
-        STAM_PROFILE_STOP(&pData->StatIP_input, a);
-        return;
+        goto bad_free_m;
     }
 
     ip = mtod(m, struct ip *);
@@ -193,7 +192,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_ttl==0 || ip->ip_ttl == 1)
     {
         icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
-        goto bad_free_m;
+        goto no_free_m;
     }
 
     ip->ip_ttl--;
@@ -209,10 +208,7 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         m = ip_reass(pData, m);
         if (m == NULL)
-        {
-             STAM_PROFILE_STOP(&pData->StatIP_input, a);
-             return;
-        }
+            goto no_free_m;
         ip = mtod(m, struct ip *);
         hlen = ip->ip_hl << 2;
     }
@@ -238,13 +234,13 @@ ip_input(PNATState pData, struct mbuf *m)
             ipstat.ips_noproto++;
             m_freem(pData, m);
     }
-    STAM_PROFILE_STOP(&pData->StatIP_input, a);
-    return;
+    goto no_free_m;
 
 bad_free_m:
     Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n",
         &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
+no_free_m:
     STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
 }

@@ -536,7 +536,7 @@ done:
  * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
  * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
  *
- * @note This function will NOT free msrc!
+ * @note This function will free msrc!
  */
 
 #define ICMP_MAXDATALEN (IP_MSS-28)
@@ -590,25 +590,15 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
     if (new_m_size < MSIZE)
-    {
         size = MCLBYTES;
-    }
     else if (new_m_size < MCLBYTES)
-    {
         size = MCLBYTES;
-    }
     else if(new_m_size < MJUM9BYTES)
-    {
         size = MJUM9BYTES;
-    }
     else if (new_m_size < MJUM16BYTES)
-    {
         size = MJUM16BYTES;
-    }
     else
-    {
         AssertMsgFailed(("Unsupported size"));
-    }
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
     if (!m)
         goto end_error;
@@ -644,6 +634,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     icp->icmp_seq = 0;
 
     memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
+    m_freem(pData, msrc);
 
     HTONS(icp->icmp_ip.ip_len);
     HTONS(icp->icmp_ip.ip_id);
