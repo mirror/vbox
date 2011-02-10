@@ -634,7 +634,6 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     icp->icmp_seq = 0;
 
     memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
-    m_freem(pData, msrc);
 
     HTONS(icp->icmp_ip.ip_len);
     HTONS(icp->icmp_ip.ip_id);
@@ -672,12 +671,21 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     icmpstat.icps_reflect++;
 
+    /* clear source datagramm in positive branch */
+    m_freem(pData, msrc);
     return;
 
 end_error_free_m:
     m_freem(pData, m);
 
 end_error:
+
+    /*
+     * clear source datagramm in case if some of requirement haven't been met.
+     */
+    if (!msrc)
+        m_freem(pData, msrc);
+
     {
         static bool fIcmpErrorReported;
         if (!fIcmpErrorReported)
