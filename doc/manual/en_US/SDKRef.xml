@@ -1447,13 +1447,23 @@ progress = mach.launchVMProcess(session, "gui", "")
 progress.waitForCompletion(-1)
 mgr.closeMachineSession(session)
         </screen>
+        <para>
+          Following code will print all registered machines and their log folders
+        </para>
+        <screen>from vboxapi import VirtualBoxManager
+mgr = VirtualBoxManager(None, None)
+vbox = mgr.vbox
 
-        <para>This code also shows cross-platform access to array properties
+for m in mgr.getArray(vbox, 'machines'):
+print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
+        </screen>
+
+        <para>Code above demonstartes cross-platform access to array properties
         (certain limitations prevent one from using
         <computeroutput>vbox.machines</computeroutput> to access a list of
         available virtual machines in case of XPCOM), and a mechanism of
-        uniform session creation
-        (<computeroutput>virtualBoxManager.mgr.getSessionObject()</computeroutput>).</para>
+        uniform session creation and closing
+        (<computeroutput>mgr.mgr.getSessionObject()</computeroutput>).</para>
 
         <para>In case you want to use the glue layer with a different Python
         installation, use these steps in a shell to add the necessary
