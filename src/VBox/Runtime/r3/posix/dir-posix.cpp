@@ -253,7 +253,10 @@ static int rtDirReadMore(PRTDIR pDir)
             if (rc)
             {
                 rc = RTErrConvertFromErrno(rc);
-                //AssertRC(rc);
+                /** @todo Consider translating ENOENT (The current
+                 *        position of the directory stream is invalid)
+                 *        differently. */
+                AssertMsg(rc == VERR_FILE_NOT_FOUND, ("%Rrc\n", rc));
                 return rc;
             }
             if (!pResult)
