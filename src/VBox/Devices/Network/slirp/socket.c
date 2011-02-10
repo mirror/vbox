@@ -814,7 +814,6 @@ sorecvfrom(PNATState pData, struct socket *so)
 
             Log2((" rx error, tx icmp ICMP_UNREACH:%i\n", code));
             icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
-            m_freem(pData, so->so_m);
             so->so_m = NULL;
         }
         else
@@ -1367,7 +1366,6 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
             case IP_DEST_PORT_UNREACHABLE:
                 code = (code != ~0 ? code : ICMP_UNREACH_PORT);
                 icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occurred!!!");
-                m_freem(pData, so->so_m);
                 so->so_m = NULL;
                 break;
             case IP_SUCCESS: /* echo replied */
@@ -1486,7 +1484,6 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 
         LogRel((" udp icmp rx errno = %d (%s)\n", errno, strerror(errno)));
         icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
-        m_freem(pData, so->so_m);
         so->so_m = NULL;
         Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm\n"));
         return;

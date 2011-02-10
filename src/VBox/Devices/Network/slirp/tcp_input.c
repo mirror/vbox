@@ -789,7 +789,6 @@ findso:
                     m->m_len  += sizeof(struct tcpiphdr)+off-sizeof(struct tcphdr);
                     *ip = save_ip;
                     icmp_error(pData, m, ICMP_UNREACH, code, 0, strerror(errno));
-                    m_freem(pData, m);
                     tp->t_socket->so_m = NULL;
                 }
                 tp = tcp_close(pData, tp);
