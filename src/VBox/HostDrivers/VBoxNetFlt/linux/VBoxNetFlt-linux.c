@@ -50,8 +50,9 @@
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
 
+#define VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
 #ifdef CONFIG_NET_SCHED
-# define VBOXNETFLT_WITH_QDISC /* Comment this out to disable qdisc support */
+/*# define VBOXNETFLT_WITH_QDISC  Comment this out to disable qdisc support */
 # ifdef VBOXNETFLT_WITH_QDISC
 # include <net/pkt_sched.h>
 # endif /* VBOXNETFLT_WITH_QDISC */
