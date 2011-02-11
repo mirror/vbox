@@ -266,8 +266,8 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
                                           unsigned clientId)
 {
     /* Validate input */
-    AssertPtrReturn(pszUser, AuthResultAccessDenied);
-    AssertPtrReturn(pszPassword, AuthResultAccessDenied);
+    AssertPtrReturn(szUser, AuthResultAccessDenied);
+    AssertPtrReturn(szPassword, AuthResultAccessDenied);
 
     /* Result to a default value */
     AuthResult result = AuthResultAccessDenied;
@@ -298,11 +298,11 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
                  * specify a long user name even if the name which is used to
                  * authenticate has the short form. */
                 tDataListPtr pAuthNodeList = NULL;
-                dsErr = userAuthInfo(pDirRef, pSearchNodeRef, pszUser, &pAuthNodeList);
+                dsErr = userAuthInfo(pDirRef, pSearchNodeRef, szUser, &pAuthNodeList);
                 if (dsErr == eDSNoErr)
                 {
                     /* Open the authentication node and do the authentication. */
-                    dsErr = authWithNode(pDirRef, pAuthNodeList, pszUser, pszPassword);
+                    dsErr = authWithNode(pDirRef, pAuthNodeList, szUser, szPassword);
                     if (dsErr == eDSNoErr)
                         result = AuthResultAccessGranted;
                     dsCleanErr = dsDataListDeallocate(pDirRef, pAuthNodeList);
