@@ -188,6 +188,87 @@ typedef enum PCIRAWR0OPERATION
     PCIRAWR0_DO_32BIT_HACK = 0x7fffffff
 } PCIRAWR0OPERATION;
 
+/** Forward declarations. */
+typedef struct RAWPCIFACTORY *PRAWPCIFACTORY;
+typedef struct RAWPCIDEVPORT *PRAWPCIDEVPORT;
+
+/**
+ * This is the port on the device interface, i.e. the driver side which the
+ * host device is connected to.
+ *
+ * This is only used for the in-kernel PCI device connections.
+ */
+typedef struct RAWPCIDEVPORT
+{
+    /** Structure version number. (RAWPCIDEVPORT_VERSION) */
+    uint32_t u32Version;
+
+    /**
+     * Retain the object.
+     *
+     * It will normally be called while owning the internal semaphore.
+     *
+     * @param   pPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRetain,(PRAWPCIDEVPORT pPort));
+
+    /**
+     * Releases the object.
+     *
+     * This must be called for every pfnRetain call.
+     *
+     *
+     * @param   pPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRelease,(PRAWPCIDEVPORT pPort));
+    
+    /** Structure version number. (RAWPCIDEVPORT_VERSION) */
+    uint32_t u32VersionEnd;
+} RAWPCIDEVPORT;
+/** Version number for the RAWPCIDEVPORT::u32Version and RAWPCIIFPORT::u32VersionEnd fields. */
+#define RAWPCIDEVPORT_VERSION   UINT32_C(0xAFBDCC01)
+
+/**
+ * The component factory interface for create a raw PCI interfaces.
+ */
+typedef struct RAWPCIFACTORY
+{
+    /**
+     * Release this factory.
+     *
+     * SUPR0ComponentQueryFactory (SUPDRVFACTORY::pfnQueryFactoryInterface to be precise)
+     * will retain a reference to the factory and the caller has to call this method to
+     * release it once the pfnCreateAndConnect call(s) has been done.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnRelease,(PRAWPCIFACTORY pFactory));
+
+    /**
+     * Create an instance for the specfied host PCI card and connects it
+     * to the driver.
+     *
+     *
+     * @returns VBox status code.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     * @param   u32HostAddress      Address of PCI device on the host.
+     * @param   fFlags              Creation flags.
+     * @param   ppDevPort           Where to store the pointer to the device port
+     *                              on success.
+     *
+     */
+    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory, 
+                                                   uint32_t             u32HostAddress, 
+                                                   uint32_t             fFlags,
+                                                   PRAWPCIDEVPORT       *ppDevPort));
+
+
+} RAWPCIFACTORY;
+
+
+#define RAWPCIFACTORY_UUID_STR "c0268f49-e1e4-402b-b7e0-eb8d09659a9b"
+
 RT_C_DECLS_END
 
 #endif
