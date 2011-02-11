@@ -15,10 +15,6 @@ MakeAtom
 PixmapWidthPaddingInfo
 RRChangeOutputProperty
 ShadowFBInit2
-VBEExtendedInit
-VBEGetVBEMode
-VBESaveRestore
-VBESetVBEMode
 XNFcalloc
 XNFstrdup
 Xalloc
@@ -126,8 +122,10 @@ unsetenv
 utimes
 vgaHWFreeHWRec
 vgaHWGetHWRec
-vgaHWRestoreFonts
-vgaHWSaveFonts
+vgaHWGetIndex
+vgaHWGetIOBase
+vgaHWRestore
+vgaHWSave
 write
 xf86AddDriver
 xf86ConfigPciEntity
