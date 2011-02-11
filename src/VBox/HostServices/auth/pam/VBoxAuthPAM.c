@@ -1,12 +1,11 @@
 /** @file
  *
- * VBox Remote Desktop Protocol:
- * External Authentication Library:
+ * VirtualBox External Authentication Library:
  * Linux PAM Authentication.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,23 +27,26 @@
  * service must be lowercase. See PAM documentation for details.
  *
  * The Auth module takes the PAM service name from the
- * environment variable VRDP_AUTH_PAM_SERVICE. If the variable
+ * environment variable VBOX_AUTH_PAM_SERVICE. If the variable
  * is not specified, then the 'login' PAM service is used.
  */
-#define VRDP_AUTH_PAM_SERVICE_NAME_ENV "VRDP_AUTH_PAM_SERVICE"
-#define VRDP_AUTH_PAM_DEFAULT_SERVICE_NAME "login"
+#define VBOX_AUTH_PAM_SERVICE_NAME_ENV_OLD "VRDP_AUTH_PAM_SERVICE"
+#define VBOX_AUTH_PAM_SERVICE_NAME_ENV "VBOX_AUTH_PAM_SERVICE"
+#define VBOX_AUTH_PAM_DEFAULT_SERVICE_NAME "login"
 
 
 /* The debug log file name.
  *
  * If defined, debug messages will be written to the file specified in the
- * VRDP_AUTH_DEBUG_FILENAME environment variable:
+ * VBOX_AUTH_DEBUG_FILENAME (or deprecated VRDP_AUTH_DEBUG_FILENAME) environment
+ * variable:
  *
- * export VRDP_AUTH_DEBUG_FILENAME=pam.log
+ * export VBOX_AUTH_DEBUG_FILENAME=pam.log
  *
  * The above will cause writing to the pam.log.
  */
-#define VRDP_AUTH_DEBUG_FILENAME_ENV "VRDP_AUTH_DEBUG_FILENAME"
+#define VBOX_AUTH_DEBUG_FILENAME_ENV_OLD "VRDP_AUTH_DEBUG_FILENAME"
+#define VBOX_AUTH_DEBUG_FILENAME_ENV "VBOX_AUTH_DEBUG_FILENAME"
 
 
 /* Dynamic loading of the PAM library.
@@ -53,17 +55,17 @@
  * Enabled by default since it is often required,
  * and does not harm.
  */
-#define VRDP_PAM_DLLOAD
+#define VBOX_AUTH_USE_PAM_DLLOAD
 
 
-#ifdef VRDP_PAM_DLLOAD
+#ifdef VBOX_AUTH_USE_PAM_DLLOAD
 /* The name of the PAM library */
 # ifdef RT_OS_SOLARIS
-#  define VRDP_PAM_LIB "libpam.so.1"
+#  define PAM_LIB_NAME "libpam.so.1"
 # else
-#  define VRDP_PAM_LIB "libpam.so.0"
+#  define PAM_LIB_NAME "libpam.so.0"
 # endif
-#endif /* VRDP_PAM_DLLOAD */
+#endif /* VBOX_AUTH_USE_PAM_DLLOAD */
 
 
 #include <stdio.h>
@@ -78,7 +80,7 @@
 
 #include <VBox/VBoxAuth.h>
 
-#ifdef VRDP_PAM_DLLOAD
+#ifdef VBOX_AUTH_USE_PAM_DLLOAD
 #include <dlfcn.h>
 
 static int (*fn_pam_start)(const char *service_name,
@@ -95,18 +97,29 @@ static const char * (*fn_pam_strerror)(pam_handle_t *pamh, int errnum);
 #define fn_pam_acct_mgmt    pam_acct_mgmt
 #define fn_pam_end          pam_end
 #define fn_pam_strerror     pam_strerror
-#endif /* VRDP_PAM_DLLOAD */
+#endif /* VBOX_AUTH_USE_PAM_DLLOAD */
 
 static void debug_printf(const char *fmt, ...)
 {
-#ifdef VRDP_AUTH_DEBUG_FILENAME_ENV
+#if defined(VBOX_AUTH_DEBUG_FILENAME_ENV) || defined(VBOX_AUTH_DEBUG_FILENAME_ENV_OLD)
     va_list va;
 
     char buffer[1024];
 
-    const char *filename = getenv (VRDP_AUTH_DEBUG_FILENAME_ENV);
+    const char *filename = NULL;
 
     va_start(va, fmt);
+
+#if defined(VBOX_AUTH_DEBUG_FILENAME_ENV)
+    filename = getenv (VBOX_AUTH_DEBUG_FILENAME_ENV);
+#endif /* VBOX_AUTH_DEBUG_FILENAME_ENV */
+
+#if defined(VBOX_AUTH_DEBUG_FILENAME_ENV_OLD)
+    if (filename == NULL)
+    {
+        filename = getenv (VBOX_AUTH_DEBUG_FILENAME_ENV_OLD);
+    }
+#endif /* VBOX_AUTH_DEBUG_FILENAME_ENV_OLD */
 
     if (filename)
     {
@@ -123,10 +136,10 @@ static void debug_printf(const char *fmt, ...)
     }
 
     va_end (va);
-#endif /* VRDP_AUTH_DEBUG_FILENAME_ENV */
+#endif /* VBOX_AUTH_DEBUG_FILENAME_ENV || VBOX_AUTH_DEBUG_FILENAME_ENV_OLD */
 }
 
-#ifdef VRDP_PAM_DLLOAD
+#ifdef VBOX_AUTH_USE_PAM_DLLOAD
 
 static void *gpvLibPam = NULL;
 
@@ -150,11 +163,11 @@ static int auth_pam_init(void)
 {
     SymMap *iter;
 
-    gpvLibPam = dlopen(VRDP_PAM_LIB, RTLD_LAZY | RTLD_GLOBAL);
+    gpvLibPam = dlopen(PAM_LIB_NAME, RTLD_LAZY | RTLD_GLOBAL);
 
     if (!gpvLibPam)
     {
-        debug_printf("auth_pam_init: dlopen %s failed\n", VRDP_PAM_LIB);
+        debug_printf("auth_pam_init: dlopen %s failed\n", PAM_LIB_NAME);
         return PAM_SYSTEM_ERR;
     }
 
@@ -202,15 +215,20 @@ static void auth_pam_close(void)
 {
     return;
 }
-#endif /* VRDP_PAM_DLLOAD */
+#endif /* VBOX_AUTH_USE_PAM_DLLOAD */
 
 static const char *auth_get_pam_service (void)
 {
-    const char *service = getenv (VRDP_AUTH_PAM_SERVICE_NAME_ENV);
+    const char *service = getenv (VBOX_AUTH_PAM_SERVICE_NAME_ENV);
 
     if (service == NULL)
     {
-        service = VRDP_AUTH_PAM_DEFAULT_SERVICE_NAME;
+        service = service = getenv (VBOX_AUTH_PAM_SERVICE_NAME_ENV_OLD);
+
+        if (service == NULL)
+        {
+            service = VBOX_AUTH_PAM_DEFAULT_SERVICE_NAME;
+        }
     }
 
     debug_printf ("Using PAM service: %s\n", service);
@@ -284,16 +302,22 @@ static int conv (int num_msg, const struct pam_message **msg,
 #endif
 
 /* prototype to prevent gcc warning */
-DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+                                          PAUTHUUID pUuid,
                                           AuthGuestJudgement guestJudgement,
                                           const char *szUser,
                                           const char *szPassword,
-                                          const char *szDomain);
-DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
+                                          const char *szDomain,
+                                          int fLogon,
+                                          unsigned clientId);
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+                                          PAUTHUUID pUuid,
                                           AuthGuestJudgement guestJudgement,
                                           const char *szUser,
                                           const char *szPassword,
-                                          const char *szDomain)
+                                          const char *szDomain,
+                                          int fLogon,
+                                          unsigned clientId)
 {
     AuthResult result = AuthResultAccessDenied;
 
@@ -303,6 +327,10 @@ DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
     struct pam_conv pam_conversation;
 
     pam_handle_t *pam_handle = NULL;
+
+    /* Only process logon requests. */
+    if (!fLogon)
+        return result; /* Return value is ignored by the caller. */
 
     debug_printf("u[%s], d[%s], p[%d]\n", szUser, szDomain, szPassword? strlen (szPassword): 0);
 
@@ -375,4 +403,4 @@ DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
 }
 
 /* Verify the function prototype. */
-static PAUTHENTRY gpfnAuthEntry = VRDPAuth;
+static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;

@@ -1,13 +1,12 @@
 /** @file
  *
- * VBox Remote Desktop Protocol:
- * External Authentication Library:
+ * VirtualBox External Authentication Library:
  * Mac OS X Authentication. This is based on
  * http://developer.apple.com/mac/library/samplecode/CryptNoMore/
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -257,11 +256,14 @@ tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const
 }
 
 RT_C_DECLS_BEGIN
-DECLEXPORT(AuthResult) AUTHCALL VRDPAuth(PAUTHUUID pUuid,
-                                         AuthGuestJudgement guestJudgement,
-                                         const char *pszUser,
-                                         const char *pszPassword,
-                                         const char *pszDomain)
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+                                          PAUTHUUID pUuid,
+                                          AuthGuestJudgement guestJudgement,
+                                          const char *szUser,
+                                          const char *szPassword,
+                                          const char *szDomain,
+                                          int fLogon,
+                                          unsigned clientId)
 {
     /* Validate input */
     AssertPtrReturn(pszUser, AuthResultAccessDenied);
@@ -269,6 +271,10 @@ DECLEXPORT(AuthResult) AUTHCALL VRDPAuth(PAUTHUUID pUuid,
 
     /* Result to a default value */
     AuthResult result = AuthResultAccessDenied;
+
+    /* Only process logon requests. */
+    if (!fLogon)
+        return result; /* Return value is ignored by the caller. */
 
     tDirStatus dsErr = eDSNoErr;
     tDirStatus dsCleanErr = eDSNoErr;
@@ -316,5 +322,5 @@ DECLEXPORT(AuthResult) AUTHCALL VRDPAuth(PAUTHUUID pUuid,
 }
 RT_C_DECLS_END
 
-static PAUTHENTRY gpfnAuthEntry = VRDPAuth;
+static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
 
