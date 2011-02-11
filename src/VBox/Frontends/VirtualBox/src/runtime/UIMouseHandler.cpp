@@ -32,6 +32,10 @@
 #include "UIMachineView.h"
 #include "UIFrameBuffer.h"
 
+#ifdef Q_WS_WIN
+# include "VBoxUtils-win.h"
+#endif /* Q_WS_WIN */
+
 #ifdef Q_WS_X11
 # include <X11/XKBlib.h>
 # ifdef KeyPress
@@ -879,7 +883,7 @@ void UIMouseHandler::updateMouseCursorClipping()
         viewportRectangle = viewportRectangle.intersected(QApplication::desktop()->availableGeometry());
         /* Trim partial-viewport-rectangle by top-most windows: */
         QRegion viewportRegion(viewportRectangle);
-        QRegion topMostRegion(VBoxGlobal::areaCoveredByTopMostWindows());
+        QRegion topMostRegion(NativeWindowSubsystem::areaCoveredByTopMostWindows());
         viewportRegion -= topMostRegion;
         /* Check if partial-viewport-region consists of 1 rectangle: */
         if (viewportRegion.rectCount() > 1)
