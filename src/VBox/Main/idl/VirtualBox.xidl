@@ -15105,7 +15105,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="maxMbPerSec" type="unsigned long">
-      <desc>The maximum number of MB which can be transfered by all
+      <desc>The maximum number of MBytes which can be transfered by all
         entities attached to this group during one second.</desc>
     </attribute>
 
@@ -15142,8 +15142,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="type" type="BandwidthGroupType" dir="in">
         <desc>The type of the bandwidth group (network or disk).</desc>
       </param>
-      <param name="maxBytesPerSec" type="unsigned long" dir="in">
-        <desc>The maximum number of bytes which can be transfered by all
+      <param name="maxMbPerSec" type="unsigned long" dir="in">
+        <desc>The maximum number of MBytes which can be transfered by all
           entities attached to this group during one second.</desc>
       </param>
     </method>
