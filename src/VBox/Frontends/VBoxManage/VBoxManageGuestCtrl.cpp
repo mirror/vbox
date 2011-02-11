@@ -96,6 +96,8 @@ enum RTEXITCODE_EXEC
 enum RTGETOPTDEF_EXEC
 {
     RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES = 1000,
+    RTGETOPTDEF_EXEC_OUTPUTFORMAT,
+    RTGETOPTDEF_EXEC_OUTPUTTYPE,
     RTGETOPTDEF_EXEC_WAITFOREXIT,
     RTGETOPTDEF_EXEC_WAITFORSTDOUT,
     RTGETOPTDEF_EXEC_WAITFORSTDERR,
@@ -112,7 +114,9 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            --username <name> --password <password>\n"
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                            [--timeout <msec>] [--verbose]\n"
-                 "                            [--wait-exit] [--wait-stdout] [--wait-stdout]\n"
+                 "                            [--wait-exit] [--wait-stdout] [--wait-stdout]"
+                 //"                          [--output-format=<dos>|<unix>]\n"
+                 "                            [--output-type=<binary>|<text>]\n"
                  "                            [-- [<argument1>] ... [<argumentN>]\n"
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
@@ -363,6 +367,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         { "--flags",                        'f',                                        RTGETOPT_REQ_STRING  },
         { "--ignore-operhaned-processes",   RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
         { "--image",                        'i',                                        RTGETOPT_REQ_STRING  },
+        //{ "--output-format",                RTGETOPTDEF_EXEC_OUTPUTFORMAT,              RTGETOPT_REQ_STRING  },
+        { "--output-type",                  RTGETOPTDEF_EXEC_OUTPUTTYPE,                RTGETOPT_REQ_STRING  },
         { "--password",                     'p',                                        RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                        RTGETOPT_REQ_UINT32  },
         { "--username",                     'u',                                        RTGETOPT_REQ_STRING  },
@@ -385,13 +391,13 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     Utf8Str                 Utf8UserName;
     Utf8Str                 Utf8Password;
     uint32_t                u32TimeoutMS    = 0;
+    bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
     bool                    fWaitForStdOut  = false;
     bool                    fWaitForStdErr  = false;
     bool                    fVerbose        = false;
 
     int                     vrc             = VINF_SUCCESS;
-    bool                    fUsageOK        = true;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(vrc))
     {
@@ -416,12 +422,29 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
             }
 
+            case RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
+                fFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+                break;
+
             case 'i':
                 Utf8Cmd = ValueUnion.psz;
                 break;
 
-            case RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
-                fFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+            /*case RTGETOPTDEF_EXEC_OUTPUTFORMAT:
+                /** todo Add DOS2UNIX and vice versa handling!
+                break;*/
+
+            case RTGETOPTDEF_EXEC_OUTPUTTYPE:
+                if (!RTStrICmp(ValueUnion.psz, "binary"))
+                    fOutputBinary = true;
+                else if (!RTStrICmp(ValueUnion.psz, "text"))
+                    fOutputBinary = false;
+                else
+                {
+                    AssertPtr(GetState.pDef->pszLong);
+                    return errorSyntax(USAGE_GUESTCONTROL, "Unknown value for '%s' specified! Use either 'binary' or 'text'",
+                                       GetState.pDef->pszLong);
+                }
                 break;
 
             /** @todo Add a hidden flag. */
@@ -601,31 +624,36 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                         cbOutputData = aOutputData.size();
                         if (cbOutputData > 0)
                         {
-/** @todo r=bird: cat'ing binary data from the guest is not going to work
-*        reliably if we do conversions like this.  Should probably just
-*        write the output as it is by default, but bypassing RTStrWrite and
-*        it's automatic translation.  Adding exec options to convert unix2dos
-*        and dos2unix.  Use a VFS I/O stream filter for doing this, it's a
-*        generic problem and the new VFS APIs will handle it more
-*        transparently. (requires writing dos2unix/unix2dos filters ofc) */
-                            /* aOutputData has a platform dependent line ending, standardize on
-                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-                            ULONG cbOutputDataPrint = cbOutputData;
-                            for (BYTE *s = aOutputData.raw(), *d = s;
-                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                 s++, d++)
+                            /** @todo r=bird: Adding exec options to convert unix2dos
+                            *        and dos2unix.  Use a VFS I/O stream filter for doing this, it's a
+                            *        generic problem and the new VFS APIs will handle it more
+                            *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
+                            if (!fOutputBinary)
                             {
-                                if (*s == '\r')
+                                /*
+                                 * If aOutputData is text data from the guest process' stdout or stderr,
+                                 * it has a platform dependent line ending. So standardize on
+                                 * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                                 * Windows. Otherwise we end up with CR/CR/LF on Windows.
+                                 */
+                                ULONG cbOutputDataPrint = cbOutputData;
+                                for (BYTE *s = aOutputData.raw(), *d = s;
+                                     s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                     s++, d++)
                                 {
-                                    /* skip over CR, adjust destination */
-                                    d--;
-                                    cbOutputDataPrint--;
+                                    if (*s == '\r')
+                                    {
+                                        /* skip over CR, adjust destination */
+                                        d--;
+                                        cbOutputDataPrint--;
+                                    }
+                                    else if (s != d)
+                                        *d = *s;
                                 }
-                                else if (s != d)
-                                    *d = *s;
+                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
                             }
-                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                            else /* Just dump all data as we got it ... */
+                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputData);
                         }
                     }
                 }
