@@ -1337,7 +1337,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     {
         if (cDisplay == 0)
             VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
-                                      vboxBPP(pScrn), x, y);
+                                      vboxBPP(pScrn), 0, x, y);
         /* Tell the host we support graphics */
         if (vbox_device_available(pVBox))
             vboxEnableGraphicsCap(pVBox);

@@ -84,34 +84,116 @@ RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 /**
  * Set a video mode using port registers.  This must be done for the first
  * screen before every HGSMI modeset and also works when HGSM is not enabled.
- * @param  cWidth    the mode width
- * @param  cHeight   the mode height
- * @param  cBPP      the colour depth of the mode
- * @param  cx        the horizontal panning offset
- * @param  cy        the vertical panning offset
+ * @param  cWidth      the mode width
+ * @param  cHeight     the mode height
+ * @param  cVirtWidth  the mode pitch
+ * @param  cBPP        the colour depth of the mode
+ * @param  fFlags      flags for the mode.  These will be or-ed with the
+ *                     default _ENABLED flag, so unless you are restoring
+ *                     a saved mode or have special requirements you can pass
+ *                     zero here.
+ * @param  cx          the horizontal panning offset
+ * @param  cy          the vertical panning offset
  */
 RTDECL(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
                                        uint16_t cVirtWidth, uint16_t cBPP,
-                                       uint16_t cx, uint16_t cy)
+                                       uint16_t fFlags, uint16_t cx,
+                                       uint16_t cy)
 {
     /* set the mode characteristics */
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cWidth);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cHeight);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_INDEX_VIRT_WIDTH);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cVirtWidth);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cBPP);
     /* enable the mode */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_INDEX_ENABLE | VBE_DISPI_LFB_ENABLED);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA,
+                                fFlags | VBE_DISPI_ENABLED);
     /* Panning registers */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_X_OFFSET);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_INDEX_X_OFFSET);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cx);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_Y_OFFSET);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_INDEX_Y_OFFSET);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cy);
     /** @todo read from the port to see if the mode switch was successful */
+}
+
+
+/**
+ * Get the video mode for the first screen using the port registers.  All
+ * parameters are optional
+ * @returns  true if the VBE mode returned is active, false if we are in VGA
+ *           mode
+ * @note  If anyone else needs additional register values just extend the
+ *        function with additional parameters and fix any existing callers.
+ * @param  pcWidth      where to store the mode width
+ * @param  pcHeight     where to store the mode height
+ * @param  pcVirtWidth  where to store the mode pitch
+ * @param  pcBPP        where to store the colour depth of the mode
+ * @param  pfFlags      where to store the flags for the mode
+ */
+RTDECL(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
+                                       uint16_t *pcVirtWidth, uint16_t *pcBPP,
+                                       uint16_t *pfFlags)
+{
+    uint16_t fFlags;
+
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_ENABLED);
+    fFlags = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    if (pcWidth)
+    {
+        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                    VBE_DISPI_INDEX_XRES);
+        *pcWidth = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    }
+    if (pcHeight)
+    {
+        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                    VBE_DISPI_INDEX_YRES);
+        *pcHeight = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    }
+    if (pcVirtWidth)
+    {
+        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                    VBE_DISPI_INDEX_VIRT_WIDTH);
+        *pcVirtWidth = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    }
+    if (pcBPP)
+    {
+        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                    VBE_DISPI_INDEX_BPP);
+        *pcBPP = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    }
+    if (pfFlags)
+        *pfFlags = fFlags;
+    return RT_BOOL(fFlags & VBE_DISPI_ENABLED);
+}
+
+
+/**
+ * Get the video mode for the first screen using the port registers.  All
+ * parameters are optional
+ * @note  If anyone else needs additional values just extend the function with
+ *        additional parameters and fix any existing callers.
+ * @param  pcWidth      where to store the mode width
+ * @param  pcHeight     where to store the mode height
+ * @param  pcVirtWidth  where to store the mode pitch
+ * @param  pcBPP        where to store the colour depth of the mode
+ * @param  pfFlags      where to store the flags for the mode
+ */
+RTDECL(void) VBoxVideoDisableVBE(void)
+{
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+                                VBE_DISPI_INDEX_ENABLE);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, 0);
 }
 
 

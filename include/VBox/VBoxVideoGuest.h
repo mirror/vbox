@@ -281,7 +281,14 @@ RTDECL(int)      VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                        void *pvData);
 RTDECL(void)     VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
                                            uint16_t cVirtWidth, uint16_t cBPP,
+                                           uint16_t fFlags,
                                            uint16_t cx, uint16_t cy);
+RTDECL(bool)     VBoxVideoGetModeRegisters(uint16_t *pcWidth,
+                                           uint16_t *pcHeight,
+                                           uint16_t *pcVirtWidth,
+                                           uint16_t *pcBPP,
+                                           uint16_t *pfFlags);
+RTDECL(void)     VBoxVideoDisableVBE(void);
 RTDECL(void)     VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cDisplay,
                                              int32_t  cOriginX,
