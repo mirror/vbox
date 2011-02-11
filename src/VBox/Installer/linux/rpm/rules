@@ -32,7 +32,7 @@ endif
 verpkg   := VirtualBox-4.0
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../../; pwd)
-pkgdir   := $(shell cd ../../../../..; pwd)
+pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
 builddir := $(current)/rpm/builddir
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
 arch     := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "i386"; fi)
@@ -187,7 +187,7 @@ binary: rpm/build-stamp
 	rm -f /usr/src/packages/RPMS/*/VirtualBox*rpm
 	rm -f /usr/src/packages/SPECS/*
 	rpmbuild -tb --clean rpm/VirtualBox.tar.bz2
-	mv /usr/src/packages/RPMS/*/$(verpkg)-debug* $(vboxroot)/.. || true
+	mv /usr/src/packages/RPMS/*/$(verpkg)-debug* $(pkgdir) || true
 	file=`find /usr/src/packages/RPMS -name $(verpkg)*rpm -print`; \
 	    mv $$file $(pkgdir)
 # Note! if rpmbuild fails: sudo chmod a+rw /usr/src/redhat/* /usr/src/redhat/RPMS/*

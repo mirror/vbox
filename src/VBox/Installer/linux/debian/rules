@@ -36,13 +36,14 @@ export DH_COMPAT=4
 #  HEADLESS=1       build the headless version
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  PKGDIR=<path>    where to store the final package(s)
 #  BLEEDING_EDGE=xyz
 
 package  := virtualbox
 verpkg   := virtualbox-4.0
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../..; pwd)
-pkgdir   := $(shell cd ../../../../..; pwd)
+pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
 builddir := $(current)/debian/builddir
 moddir   := $(current)/debian/modules
 prefix   := $(current)/debian/$(verpkg)
