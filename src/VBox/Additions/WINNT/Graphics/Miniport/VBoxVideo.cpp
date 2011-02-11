@@ -4105,8 +4105,8 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
 #else
     ULONG xOffset = 0, yOffset = 0;
 #endif
-    VBoxVideoSetModeRegisters(width, height, width, bpp, (uint16_t)xOffset,
-                              (uint16_t)yOffset);
+    VBoxVideoSetModeRegisters(width, height, width, bpp, 0,
+                              (uint16_t)xOffset, (uint16_t)yOffset);
     /** @todo read from the port to see if the mode switch was successful */
 
     return TRUE;
