@@ -600,7 +600,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
 #ifdef IN_GUEST
 
 # ifdef RT_OS_WINDOWS
-    DWORD cbReturned;
+    DWORD cbReturned, lerr;
 
     if (DeviceIoControl (g_crvboxhgcm.hGuestDrv,
                          VBOXGUEST_IOCTL_HGCM_CALL(cbData),
@@ -611,8 +611,19 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
     {
         return VINF_SUCCESS;
     }
-    crDebug("vboxCall failed with %x\n", GetLastError());
-    return VERR_NOT_SUPPORTED;
+    lerr=GetLastError();
+    crDebug("vboxCall failed with %x\n", lerr);
+    /*On windows if we exceed max buffer len, we only get ERROR_GEN_FAILURE, and parms.hdr.result isn't changed.
+     *Before every call here we set it to VERR_WRONG_ORDER, so checking it here as well.
+     */
+    if (ERROR_GEN_FAILURE==lerr && VERR_WRONG_ORDER==((VBoxGuestHGCMCallInfo*)pvData)->result)
+    {
+        return VERR_OUT_OF_RANGE;
+    }
+    else
+    {
+        return VERR_NOT_SUPPORTED;
+    }
 # else
     int rc;
 #  if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -945,7 +956,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
 
     rc = crVBoxHGCMCall(&parms, sizeof(parms));
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     if (VERR_OUT_OF_RANGE==rc && CR_VBOXHGCM_USERALLOCATED==bufferKind)
     {
         /*Buffer is too big, so send it in split chunks*/
