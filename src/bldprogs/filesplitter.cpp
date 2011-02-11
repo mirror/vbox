@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if (fread(pBuffer, 1, lStat.st_size, pFileIn) != lStat.st_size)
+        if (fread(pBuffer, 1, lStat.st_size, pFileIn) != (size_t)lStat.st_size)
         {
             fprintf(stderr, "filesplitter: Failed to read %ld bytes from input file.\n", (long)lStat.st_size);
             rc = 2;
