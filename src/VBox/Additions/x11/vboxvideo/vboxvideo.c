@@ -103,15 +103,14 @@ static Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
                         unsigned cHeight, int x, int y);
 static void VBOXAdjustFrame(int scrnIndex, int x, int y, int flags);
 static void VBOXFreeScreen(int scrnIndex, int flags);
-static void VBOXFreeRec(ScrnInfoPtr pScrn);
 static void VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
                                           int flags);
 
 /* locally used functions */
 static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
 static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
-static Bool VBOXSaveRestore(ScrnInfoPtr pScrn,
-                            vbeSaveRestoreFunction function);
+static void VBOXSaveMode(ScrnInfoPtr pScrn);
+static void VBOXRestoreMode(ScrnInfoPtr pScrn);
 static Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height);
 
 enum GenericTypes
@@ -199,14 +198,6 @@ static const char *shadowfbSymbols[] = {
     NULL
 };
 
-static const char *vbeSymbols[] = {
-    "VBEExtendedInit",
-    "VBEGetVBEMode",
-    "VBESaveRestore",
-    "VBESetVBEMode",
-    NULL
-};
-
 static const char *ramdacSymbols[] = {
     "xf86InitCursor",
     "xf86CreateCursorInfoRec",
@@ -214,10 +205,12 @@ static const char *ramdacSymbols[] = {
 };
 
 static const char *vgahwSymbols[] = {
-    "vgaHWGetHWRec",
     "vgaHWFreeHWRec",
-    "vgaHWSaveFonts",
-    "vgaHWRestoreFonts",
+    "vgaHWGetHWRec",
+    "vgaHWGetIOBase",
+    "vgaHWGetIndex",
+    "vgaHWRestore",
+    "vgaHWSave",
     NULL
 };
 #endif /* !XORG_7X */
@@ -231,16 +224,6 @@ VBOXGetRec(ScrnInfoPtr pScrn)
     }
 
     return ((VBOXPtr)pScrn->driverPrivate);
-}
-
-static void
-VBOXFreeRec(ScrnInfoPtr pScrn)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    free(pVBox->savedPal);
-    free(pVBox->fonts);
-    free(pScrn->driverPrivate);
-    pScrn->driverPrivate = NULL;
 }
 
 #ifdef VBOXVIDEO_13
@@ -568,7 +551,6 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
 #ifndef XORG_7X
         LoaderRefSymLists(fbSymbols,
                           shadowfbSymbols,
-                          vbeSymbols,
                           ramdacSymbols,
                           vgahwSymbols,
                           NULL);
@@ -794,11 +776,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "ramdac"))
         return FALSE;
 
-    /* We need the vbe module because we use VBE code to save and restore
-       text mode, in order to keep our code simple. */
-    if (!xf86LoadSubModule(pScrn, "vbe"))
-        return (FALSE);
-
     /* The framebuffer module. */
     if (!xf86LoadSubModule(pScrn, "fb"))
         return (FALSE);
@@ -910,6 +887,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86PrintModes(pScrn);
 
+    /* VGA hardware initialisation */
+    if (!vgaHWGetHWRec(pScrn))
+        return FALSE;
+    /* Must be called before any VGA registers are saved or restored */
+    vgaHWGetIOBase(VGAHWPTR(pScrn));
+
     /* Colour weight - we always call this, since we are always in
        truecolour. */
     if (!xf86SetWeight(pScrn, rzeros, rzeros))
@@ -973,22 +956,11 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     TRACE_ENTRY();
 
-    /* VGA hardware initialisation */
-    if (!vgaHWGetHWRec(pScrn))
-        return FALSE;
-
-    /* We make use of the X11 VBE code to save and restore text mode, in
-       order to keep our code simple. */
-    if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
-                                       SET_BIOS_SCRATCH
-                                       | RESTORE_BIOS_SCRATCH)) == NULL)
-        return (FALSE);
-
     if (!VBOXMapVidMem(pScrn))
         return (FALSE);
 
     /* save current video state */
-    VBOXSaveRestore(pScrn, MODE_SAVE);
+    VBOXSaveMode(pScrn);
 
     /* mi layer - reset the visual list (?)*/
     miClearVisualTypes();
@@ -1218,7 +1190,7 @@ VBOXLeaveVT(int scrnIndex, int flags)
     if (pVBox->fHaveHGSMI)
         vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
-    VBOXSaveRestore(pScrn, MODE_RESTORE);
+    VBOXRestoreMode(pScrn);
     vboxDisableGraphicsCap(pVBox);
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
@@ -1244,15 +1216,12 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 #endif
 
     if (pScrn->vtSema) {
-        VBOXSaveRestore(xf86Screens[scrnIndex], MODE_RESTORE);
+        VBOXRestoreMode(xf86Screens[scrnIndex]);
         VBOXUnmapVidMem(pScrn);
     }
     pScrn->vtSema = FALSE;
 
-    /* Destroy the VGA hardware record */
-    vgaHWFreeHWRec(pScrn);
-
-    /* And do additional bits which are separate for historical reasons */
+    /* Do additional bits which are separate for historical reasons */
     vbox_close(pScrn, pVBox);
 
     /* Remove our observer functions from the X server call chains. */
@@ -1419,7 +1388,13 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
 static void
 VBOXFreeScreen(int scrnIndex, int flags)
 {
-    VBOXFreeRec(xf86Screens[scrnIndex]);
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+
+    /* Destroy the VGA hardware record */
+    vgaHWFreeHWRec(pScrn);
+    /* And our private record */
+    free(pScrn->driverPrivate);
+    pScrn->driverPrivate = NULL;
 }
 
 static Bool
@@ -1478,67 +1453,37 @@ VBOXSaveScreen(ScreenPtr pScreen, int mode)
     return TRUE;
 }
 
-Bool
-VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
+void
+VBOXSaveMode(ScrnInfoPtr pScrn)
 {
-    VBOXPtr pVBox;
-    Bool rc = TRUE;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    vgaRegPtr vgaReg;
 
     TRACE_ENTRY();
-    if (MODE_QUERY < 0 || function > MODE_RESTORE)
-	rc = FALSE;
+    vgaReg = &VGAHWPTR(pScrn)->SavedReg;
+    vgaHWSave(pScrn, vgaReg, VGA_SR_ALL);
+    pVBox->fSavedVBEMode = VBoxVideoGetModeRegisters(&pVBox->cSavedWidth,
+                                                     &pVBox->cSavedHeight,
+                                                     &pVBox->cSavedPitch,
+                                                     &pVBox->cSavedBPP,
+                                                     &pVBox->fSavedFlags);
+}
 
-    if (rc)
-    {
-        pVBox = VBOXGetRec(pScrn);
+void
+VBOXRestoreMode(ScrnInfoPtr pScrn)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    vgaRegPtr vgaReg;
 
-        /* Query amount of memory to save state */
-        if (function == MODE_QUERY ||
-    	    (function == MODE_SAVE && pVBox->state == NULL))
-        {
-
-	    /* Make sure we save at least this information in case of failure */
-            (void)VBEGetVBEMode(pVBox->pVbe, &pVBox->stateMode);
-            vgaHWSaveFonts(pScrn, &pVBox->vgaRegs);
-
-            if (!VBESaveRestore(pVBox->pVbe,function,(pointer)&pVBox->state,
-                                &pVBox->stateSize,&pVBox->statePage)
-               )
-                rc = FALSE;
-        }
-    }
-    if (rc)
-    {
-        /* Save/Restore Super VGA state */
-        if (function != MODE_QUERY) {
-
-            if (function == MODE_RESTORE)
-                memcpy(pVBox->state, pVBox->pstate,
-                       (unsigned) pVBox->stateSize);
-
-            if (   (rc = VBESaveRestore(pVBox->pVbe,function,
-                                        (pointer)&pVBox->state,
-                                        &pVBox->stateSize,&pVBox->statePage)
-                   )
-                && (function == MODE_SAVE)
-               )
-            {
-                /* don't rely on the memory not being touched */
-                if (pVBox->pstate == NULL)
-                    pVBox->pstate = malloc(pVBox->stateSize);
-                memcpy(pVBox->pstate, pVBox->state,
-                       (unsigned) pVBox->stateSize);
-            }
-
-            if (function == MODE_RESTORE)
-            {
-                VBESetVBEMode(pVBox->pVbe, pVBox->stateMode, NULL);
-                vgaHWRestoreFonts(pScrn, &pVBox->vgaRegs);
-            }
-        }
-    }
-    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
-    return rc;
+    TRACE_ENTRY();
+    vgaReg = &VGAHWPTR(pScrn)->SavedReg;
+    vgaHWRestore(pScrn, vgaReg, VGA_SR_ALL);
+    if (pVBox->fSavedVBEMode)
+        VBoxVideoSetModeRegisters(pVBox->cSavedWidth, pVBox->cSavedHeight,
+                                  pVBox->cSavedPitch, pVBox->cSavedBPP,
+                                  pVBox->fSavedFlags, 0, 0);
+    else
+        VBoxVideoDisableVBE();
 }
 
 static void

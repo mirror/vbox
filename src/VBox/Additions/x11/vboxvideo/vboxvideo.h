@@ -116,11 +116,6 @@ if (!(expr)) \
 # include "xf86Pci.h"
 #endif
 
-#include "vgaHW.h"
-
-/* VBE/DDC support */
-#include "vbe.h"
-
 /* ShadowFB support */
 #include "shadowfb.h"
 
@@ -168,7 +163,6 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 
 typedef struct VBOXRec
 {
-    vbeInfoPtr pVbe;  /** @todo do the VBE bits ourselves? */
     EntityInfoPtr pEnt;
 #ifdef PCIACCESS
     struct pci_device *pciInfo;
@@ -184,11 +178,11 @@ typedef struct VBOXRec
     unsigned long cbView;
     /** The current line size in bytes */
     uint32_t cbLine;
-    CARD8 *state, *pstate;	/* SVGA state */
-    int statePage, stateSize, stateMode;
-    CARD32 *savedPal;
-    CARD8 *fonts;
-    vgaRegRec vgaRegs;  /* Space for saving VGA information */
+    /** Whether the pre-X-server mode was a VBE mode */
+    bool fSavedVBEMode;
+    /** Paramters of the saved pre-X-server VBE mode, invalid if there is none
+     */
+    uint16_t cSavedWidth, cSavedHeight, cSavedPitch, cSavedBPP, fSavedFlags;
     CloseScreenProcPtr CloseScreen;
     /** Default X server procedure for enabling and disabling framebuffer access */
     xf86EnableDisableFBAccessProc *EnableDisableFBAccess;
