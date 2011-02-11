@@ -95,7 +95,7 @@ clean:
 	rm -f vboxdrv.ko vboxnetflt.ko vboxnetadp.ko vboxpci.ko 
 
 unload:
-	@for module in vboxnetadp vboxnetflt vboxdrv vboxpci; do \
+	@for module in vboxpci vboxnetadp vboxnetflt vboxdrv; do \
 		if grep "^$$module " /proc/modules >/dev/null; then \
 			echo "Removing previously installed $$module module"; \
 			/sbin/rmmod $$module; \
