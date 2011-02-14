@@ -101,7 +101,11 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
 
 RTDECL(bool) RTThreadYield(void)
 {
+#if __FreeBSD_version >= 900032
+    kern_yield(curthread->td_user_pri);
+#else
     uio_yield();
+#endif
     return false; /** @todo figure this one ... */
 }
 
