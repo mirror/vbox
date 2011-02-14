@@ -79,6 +79,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("igb", "Intel 82575 PCI-E Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
+        SolarisNICMap.insert(NICPair("ixgbe", "Intel 10 Gigabit PCI-E Ethernet"));
         SolarisNICMap.insert(NICPair("mxfe", "Macronix 98715 Fast Ethernet"));
         SolarisNICMap.insert(NICPair("nfo", "Nvidia Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("nge", "Nvidia Gigabit Ethernet"));
