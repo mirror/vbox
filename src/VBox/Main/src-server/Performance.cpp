@@ -314,10 +314,6 @@ void HostRamUsage::init(ULONG period, ULONG length)
     mTotal->init(mLength);
     mUsed->init(mLength);
     mAvailable->init(mLength);
-    mAllocVMM->init(mLength);
-    mFreeVMM->init(mLength);
-    mBalloonVMM->init(mLength);
-    mSharedVMM->init(mLength);
 }
 
 void HostRamUsage::preCollect(CollectorHints& hints, uint64_t /* iTick */)
@@ -336,6 +332,25 @@ void HostRamUsage::collect()
         mAvailable->put(available);
 
     }
+}
+
+void HostRamVmm::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mAllocVMM->init(mLength);
+    mFreeVMM->init(mLength);
+    mBalloonVMM->init(mLength);
+    mSharedVMM->init(mLength);
+}
+
+void HostRamVmm::preCollect(CollectorHints& hints, uint64_t /* iTick */)
+{
+    /* Guest RAM metrics do not use hints */
+}
+
+void HostRamVmm::collect()
+{
     ULONG allocVMM, freeVMM, balloonVMM, sharedVMM;
 
     mHAL->getMemHypervisorStats(&allocVMM, &freeVMM, &balloonVMM, &sharedVMM);

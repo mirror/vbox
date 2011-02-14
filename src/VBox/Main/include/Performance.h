@@ -342,9 +342,9 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM, SubMetric *sharedVMM)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM), mSharedVMM(sharedVMM) {};
-        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; delete mSharedVMM; };
+    HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -357,6 +357,23 @@ namespace pm
         SubMetric *mTotal;
         SubMetric *mUsed;
         SubMetric *mAvailable;
+    };
+
+    class HostRamVmm : public BaseMetric
+    {
+    public:
+        HostRamVmm(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM, SubMetric *sharedVMM)
+        : BaseMetric(hal, "RAM/VMM", object), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM), mSharedVMM(sharedVMM) {};
+        ~HostRamVmm() { delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; delete mSharedVMM; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "kB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
         SubMetric *mAllocVMM;
         SubMetric *mFreeVMM;
         SubMetric *mBalloonVMM;
