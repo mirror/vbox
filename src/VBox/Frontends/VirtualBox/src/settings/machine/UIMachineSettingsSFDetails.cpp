@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,61 +17,56 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "UIMachineSettingsSFDetails.h"
-#include "VBoxGlobal.h"
-
 /* Qt includes */
 #include <QDir>
 #include <QPushButton>
 
-UIMachineSettingsSFDetails::UIMachineSettingsSFDetails (DialogType aType,
-                                                  bool aEnableSelector, /* for "permanent" checkbox */
-                                                  const SFoldersNameList &aUsedNames,
-                                                  QWidget *aParent /* = NULL */)
-   : QIWithRetranslateUI2<QIDialog> (aParent)
-   , mType (aType)
-   , mUsePermanent (aEnableSelector)
-   , mUsedNames (aUsedNames)
+/* Other includes */
+#include "UIMachineSettingsSFDetails.h"
+#include "VBoxGlobal.h"
+
+UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(DialogType type,
+                                                       bool fEnableSelector, /* for "permanent" checkbox */
+                                                       const SFoldersNameList &usedNames,
+                                                       QWidget *pParent /* = 0 */)
+   : QIWithRetranslateUI2<QIDialog>(pParent)
+   , m_type(type)
+   , m_fUsePermanent(fEnableSelector)
+   , m_usedNames(usedNames)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsSFDetails::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsSFDetails::setupUi(this);
 
-    mCbPermanent->setHidden (!aEnableSelector);
-
-    /* No reset button */
-    mPsPath->setResetEnabled (false);
+    /* Setup widgets: */
+    mPsPath->setResetEnabled(false);
+    mPsPath->setHomeDir(QDir::homePath());
+    mCbPermanent->setHidden(!fEnableSelector);
 
     /* Setup connections: */
-    connect (mPsPath, SIGNAL (currentIndexChanged (int)),
-             this, SLOT (onSelectPath()));
-    connect (mPsPath, SIGNAL (pathChanged (const QString &)),
-             this, SLOT (onSelectPath()));
-    connect (mLeName, SIGNAL (textChanged (const QString &)),
-             this, SLOT (validate()));
+    connect(mPsPath, SIGNAL(currentIndexChanged(int)), this, SLOT(sltSelectPath()));
+    connect(mPsPath, SIGNAL(pathChanged(const QString &)), this, SLOT(sltSelectPath()));
+    connect(mLeName, SIGNAL(textChanged(const QString &)), this, SLOT(sltValidate()));
+    if (fEnableSelector)
+        connect(mCbPermanent, SIGNAL(toggled(bool)), this, SLOT(sltValidate()));
 
-    if (aEnableSelector)
-    {
-        connect (mCbPermanent, SIGNAL (toggled (bool)),
-                 this, SLOT (validate()));
-    }
-
-     /* Applying language settings */
+     /* Applying language settings: */
     retranslateUi();
 
-    /* Validate the initial fields */
-    validate();
+    /* Validate the initial field values: */
+    sltValidate();
 
+    /* Adjust dialog size: */
     adjustSize();
 
 #ifdef Q_WS_MAC
-    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setFixedSize (minimumSize());
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedSize(minimumSize());
 #endif /* Q_WS_MAC */
 }
 
-void UIMachineSettingsSFDetails::setPath (const QString &aPath)
+void UIMachineSettingsSFDetails::setPath(const QString &strPath)
 {
-    mPsPath->setPath (aPath);
+    mPsPath->setPath(strPath);
 }
 
 QString UIMachineSettingsSFDetails::path() const
@@ -79,9 +74,9 @@ QString UIMachineSettingsSFDetails::path() const
     return mPsPath->path();
 }
 
-void UIMachineSettingsSFDetails::setName (const QString &aName)
+void UIMachineSettingsSFDetails::setName(const QString &strName)
 {
-    mLeName->setText (aName);
+    mLeName->setText(strName);
 }
 
 QString UIMachineSettingsSFDetails::name() const
@@ -89,9 +84,9 @@ QString UIMachineSettingsSFDetails::name() const
     return mLeName->text();
 }
 
-void UIMachineSettingsSFDetails::setWriteable (bool aWritable)
+void UIMachineSettingsSFDetails::setWriteable(bool fWritable)
 {
-    mCbReadonly->setChecked (!aWritable);
+    mCbReadonly->setChecked(!fWritable);
 }
 
 bool UIMachineSettingsSFDetails::isWriteable() const
@@ -99,9 +94,9 @@ bool UIMachineSettingsSFDetails::isWriteable() const
     return !mCbReadonly->isChecked();
 }
 
-void UIMachineSettingsSFDetails::setAutoMount (bool aAutoMount)
+void UIMachineSettingsSFDetails::setAutoMount(bool fAutoMount)
 {
-    mCbAutoMount->setChecked (aAutoMount);
+    mCbAutoMount->setChecked(fAutoMount);
 }
 
 bool UIMachineSettingsSFDetails::isAutoMounted() const
@@ -109,77 +104,77 @@ bool UIMachineSettingsSFDetails::isAutoMounted() const
     return mCbAutoMount->isChecked();
 }
 
-void UIMachineSettingsSFDetails::setPermanent (bool aPermanent)
+void UIMachineSettingsSFDetails::setPermanent(bool fPermanent)
 {
-    mCbPermanent->setChecked (aPermanent);
+    mCbPermanent->setChecked(fPermanent);
 }
 
 bool UIMachineSettingsSFDetails::isPermanent() const
 {
-    return mUsePermanent ? mCbPermanent->isChecked() : true;
+    return m_fUsePermanent ? mCbPermanent->isChecked() : true;
 }
 
 void UIMachineSettingsSFDetails::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIMachineSettingsSFDetails::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIMachineSettingsSFDetails::retranslateUi(this);
 
-    switch (mType)
+    switch (m_type)
     {
         case AddType:
-            setWindowTitle (tr ("Add Share"));
+            setWindowTitle(tr("Add Share"));
             break;
         case EditType:
-            setWindowTitle (tr ("Edit Share"));
+            setWindowTitle(tr("Edit Share"));
             break;
         default:
-            AssertMsgFailed (("Incorrect SF Dialog type\n"));
+            AssertMsgFailed(("Incorrect shared-folders dialog type: %d\n", m_type));
     }
 }
 
-void UIMachineSettingsSFDetails::validate()
+void UIMachineSettingsSFDetails::sltValidate()
 {
-    UISharedFolderType resultType =
-        mUsePermanent && !mCbPermanent->isChecked() ? ConsoleType : MachineType;
-    SFolderName pair = qMakePair (mLeName->text(), resultType);
+    UISharedFolderType resultType = m_fUsePermanent && !mCbPermanent->isChecked() ? ConsoleType : MachineType;
+    SFolderName pair = qMakePair(mLeName->text(), resultType);
 
-    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!mPsPath->path().isEmpty() &&
-                                                           QDir(mPsPath->path()).exists() &&
-                                                           !mLeName->text().trimmed().isEmpty() &&
-                                                           !mLeName->text().contains(" ") &&
-                                                           !mUsedNames.contains (pair));
+    mButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!mPsPath->path().isEmpty() &&
+                                                         QDir(mPsPath->path()).exists() &&
+                                                         !mLeName->text().trimmed().isEmpty() &&
+                                                         !mLeName->text().contains(" ") &&
+                                                         !m_usedNames.contains (pair));
 }
 
-void UIMachineSettingsSFDetails::onSelectPath()
+void UIMachineSettingsSFDetails::sltSelectPath()
 {
     if (!mPsPath->isPathSelected())
         return;
 
-    QString folderName (mPsPath->path());
-#if defined (Q_OS_WIN) || defined (Q_OS_OS2)
-    if (folderName[0].isLetter() && folderName[1] == ':' && folderName[2] == 0)
+    QString strFolderName(mPsPath->path());
+#if defined (Q_WS_WIN) || defined (Q_OS_OS2)
+    if (strFolderName[0].isLetter() && strFolderName[1] == ':' && strFolderName[2] == 0)
     {
         /* VBoxFilePathSelectorWidget returns root path as 'X:', which is invalid path.
-         * Append the trailing backslash to get a valid root path 'X:\'.
-         */
-        folderName += "\\";
-        mPsPath->setPath(folderName);
+         * Append the trailing backslash to get a valid root path 'X:\': */
+        strFolderName += "\\";
+        mPsPath->setPath(strFolderName);
     }
-#endif
-    QDir folder (folderName);
+#endif /* Q_WS_WIN || Q_OS_OS2 */
+    QDir folder(strFolderName);
     if (!folder.isRoot())
+    {
         /* Processing non-root folder */
-        mLeName->setText (folder.dirName().replace(' ', '_'));
+        mLeName->setText(folder.dirName().replace(' ', '_'));
+    }
     else
     {
-        /* Processing root folder */
-#if defined (Q_OS_WIN) || defined (Q_OS_OS2)
-        mLeName->setText (folderName.toUpper()[0] + "_DRIVE");
-#elif defined (Q_OS_UNIX)
-        mLeName->setText ("ROOT");
+        /* Processing root folder: */
+#if defined (Q_WS_WIN) || defined (Q_OS_OS2)
+        mLeName->setText(strFolderName.toUpper()[0] + "_DRIVE");
+#elif defined (Q_WS_X11)
+        mLeName->setText("ROOT");
 #endif
     }
-    /* Validate the fields */
-    validate();
+    /* Validate the field values: */
+    sltValidate();
 }
 

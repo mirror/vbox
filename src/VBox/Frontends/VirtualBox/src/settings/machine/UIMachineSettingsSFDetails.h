@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,13 +19,15 @@
 #ifndef __UIMachineSettingsSFDetails_h__
 #define __UIMachineSettingsSFDetails_h__
 
+/* Includes */
 #include "UIMachineSettingsSFDetails.gen.h"
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMachineSettingsSF.h"
 
+/* Shared folders details dialog: */
 class UIMachineSettingsSFDetails : public QIWithRetranslateUI2<QIDialog>,
-                                public Ui::UIMachineSettingsSFDetails
+                                   public Ui::UIMachineSettingsSFDetails
 {
     Q_OBJECT;
 
@@ -37,24 +39,24 @@ public:
         EditType
     };
 
-    UIMachineSettingsSFDetails (DialogType aType,
-                             bool aEnableSelector, /* for "permanent" checkbox */
-                             const SFoldersNameList &aUsedNames,
-                             QWidget *aParent = NULL);
+    UIMachineSettingsSFDetails(DialogType type,
+                               bool fEnableSelector, /* for "permanent" checkbox */
+                               const SFoldersNameList &usedNames,
+                               QWidget *pParent = 0);
 
-    void setPath (const QString &aPath);
+    void setPath(const QString &strPath);
     QString path() const;
 
-    void setName (const QString &aName);
+    void setName(const QString &strName);
     QString name() const;
 
-    void setWriteable (bool aWriteable);
+    void setWriteable(bool fWriteable);
     bool isWriteable() const;
 
-    void setAutoMount (bool aAutoMount);
+    void setAutoMount(bool fAutoMount);
     bool isAutoMounted() const;
 
-    void setPermanent (bool aPermanent);
+    void setPermanent(bool fPermanent);
     bool isPermanent() const;
 
 protected:
@@ -63,15 +65,14 @@ protected:
 
 private slots:
 
-    void onSelectPath();
-    void validate();
+    void sltSelectPath();
+    void sltValidate();
 
 private:
 
-    /* Private member vars */
-    DialogType       mType;
-    bool             mUsePermanent;
-    SFoldersNameList mUsedNames;
+    DialogType       m_type;
+    bool             m_fUsePermanent;
+    SFoldersNameList m_usedNames;
 };
 
 #endif // __UIMachineSettingsSFDetails_h__
