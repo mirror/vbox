@@ -666,9 +666,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                      * has been marked as complete. */
                     if (fCompleted)
                         break;
-
-                    /* Then wait a little while ... */
-                    progress->WaitForCompletion(1 /* ms */);
                 }
 
                 /* Process async cancelation */
@@ -693,19 +690,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     progress->Cancel();
                     break;
                 }
-
-                /* Don't hog the CPU in a busy loop! */
-/** @todo r=bird: I believe I already mentioned that this problem is better
-* solved by using WaitForCompletion and GetProcessOutput with timeouts.  The
-* 1ms hack above is not what I had in mind.  This quick fix must go away.  */
-                if (cbOutputData <= 0)
-                {
-                    if (cMilliesSleep < 100)
-                        cMilliesSleep++;
-                    RTThreadSleep(cMilliesSleep);
-                }
-                else
-                    cMilliesSleep = 0;
             } /* while */
 
             /* Undo signal handling */
