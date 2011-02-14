@@ -46,6 +46,15 @@ using namespace guestControl;
 
 extern RTLISTNODE g_GuestControlExecThreads;
 
+static int VBoxServiceControlExecPipeInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe);
+static int VBoxServiceControlExecPipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                             uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+static int VBoxServiceControlExecPipeBufWrite(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                              uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
+static bool VBoxServiceControlExecPipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
+static int VBoxServiceControlExecPipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled);
+static void VBoxServiceControlExecPipeBufDestroy(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
+
 
 /**
  * Handle an error event on standard input.
