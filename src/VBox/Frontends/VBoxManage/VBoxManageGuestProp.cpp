@@ -372,6 +372,11 @@ int handleGuestProperty(HandlerArg *a)
     arg.argc = a->argc - 1;
     arg.argv = a->argv + 1;
 
+    /** @todo This command does not follow the syntax where the <uuid|vmname>
+     * comes between the command and subcommand.  The commands controlvm,
+     * snapshot and debugvm puts it between.
+     */
+
     if (a->argc == 0)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
