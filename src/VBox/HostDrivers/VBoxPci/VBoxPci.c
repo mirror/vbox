@@ -84,6 +84,14 @@ DECLHIDDEN(void) vboxPciDevRelease(PRAWPCIDEVPORT pThis)
 {
 }
 
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnRelease
+ */
+DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pThis, uint32_t fFlags)
+{
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Creates a new instance.
@@ -112,12 +120,23 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->DevPort.u32Version            = RAWPCIDEVPORT_VERSION;
     pNew->DevPort.pfnRetain             = vboxPciDevRetain;
     pNew->DevPort.pfnRelease            = vboxPciDevRelease;
+    pNew->DevPort.pfnInit               = vboxPciDevInit;
     pNew->DevPort.u32VersionEnd         = RAWPCIDEVPORT_VERSION;
     
     rc = RTSpinlockCreate(&pNew->hSpinlock);
+
     if (RT_SUCCESS(rc))
     {
-        *ppDevPort = &pNew->DevPort;
+        rc = pNew->DevPort.pfnInit(&pNew->DevPort, fFlags);
+        if (RT_SUCCESS(rc))
+        {
+            *ppDevPort = &pNew->DevPort;
+        }
+        else
+        {
+            RTSpinlockDestroy(pNew->hSpinlock);
+            RTMemFree(pNew);
+        }
         return rc;
     }
 

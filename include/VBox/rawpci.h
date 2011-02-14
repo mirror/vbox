@@ -47,7 +47,7 @@ typedef struct
 typedef struct
 {
     /* in */
-    RTHCPHYS             StartAddress;
+    RTGCPHYS             StartAddress;
     uint64_t             iRegionSize;
     uint32_t             fFlags;
     /* out */
@@ -129,6 +129,12 @@ typedef struct
     PCIRAWMEMLOC         Value;
 } PCIRAWREQPCICFGREAD;
 
+
+/**
+ * Handle for the raw PCI device.
+ */
+typedef RTR0PTR PCIRAWDEVHANDLE;
+
 /**
  * Request buffer use for communication with the driver.
  */
@@ -143,7 +149,7 @@ typedef struct PCIRAWSENDREQ
     /** Request type. */
     int32_t         iRequest;
     /** Host device request targetted to. */
-    uint32_t        TargetDevice;
+    PCIRAWDEVHANDLE TargetDevice;
     /** Call parameters. */
     union
     {
@@ -159,7 +165,6 @@ typedef struct PCIRAWSENDREQ
     } u;
 } PCIRAWSENDREQ;
 typedef PCIRAWSENDREQ *PPCIRAWSENDREQ;
-
 
 /**
  * Operations performed by the driver.
@@ -221,7 +226,18 @@ typedef struct RAWPCIDEVPORT
      * @param   pPort     Pointer to this structure.
      */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PRAWPCIDEVPORT pPort));
+
+    /**
+     * Init device.
+     *
+     * @param   pPort     Pointer to this structure.
+     * @param   fFlags    Initialization flags.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnInit,(PRAWPCIDEVPORT pPort, 
+                                        uint32_t       fFlags));
     
+    
+
     /** Structure version number. (RAWPCIDEVPORT_VERSION) */
     uint32_t u32VersionEnd;
 } RAWPCIDEVPORT;
@@ -265,7 +281,6 @@ typedef struct RAWPCIFACTORY
 
 
 } RAWPCIFACTORY;
-
 
 #define RAWPCIFACTORY_UUID_STR "c0268f49-e1e4-402b-b7e0-eb8d09659a9b"
 
