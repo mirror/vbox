@@ -125,21 +125,33 @@ struct uma_zone
     LIST_HEAD(RT_NOTHING, item) free_items;
     uma_zone_t master_zone;
     void *area;
-    bool fPending;  /* has some sense only in case master_zone == NULL */
+    /** Needs call pfnXmitPending when memory becomes available if @c true.
+     * @remarks Only applies to the master zone (master_zone == NULL) */
+    bool fDoXmitPending;
 };
 
-static inline bool slirp_zone_has_pending(uma_zone_t zone)
-{
-    return (   zone->master_zone == NULL
-            && zone->fPending);
-}
 
-static inline void slirp_zone_check_and_send_pending(uma_zone_t zone)
+/**
+ * Called when memory becomes available, works pfnXmitPending.
+ *
+ * @note    This will LEAVE the critical section of the zone and RE-ENTER it
+ *          again.  Changes to the zone data should be expected across calls to
+ *          this function!
+ *
+ * @param   zone        The zone.
+ */
+DECLINLINE(void) slirp_zone_check_and_send_pending(uma_zone_t zone)
 {
-    if (slirp_zone_has_pending(zone))
+    if (   zone->fDoXmitPending
+        && zone->master_zone == NULL)
     {
-        zone->fPending = false;
+        int rc2;
+        zone->fDoXmitPending = false;
+        rc2 = RTCritSectLeave(&zone->csZone); AssertRC(rc2);
+
         slirp_output_pending(zone->pData->pvUser);
+
+        rc2 = RTCritSectLeave(&zone->csZone); AssertRC(rc2);
     }
 }
 
@@ -166,7 +178,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
                 zone->cur_items++;
                 LIST_REMOVE(it, list);
                 LIST_INSERT_HEAD(&zone->used_items, it, list);
-                slirp_zone_check_and_send_pending(zone);
+                slirp_zone_check_and_send_pending(zone); /* may exit+enter the cs! */
                 ret = (void *)&it[1];
             }
             else
@@ -179,15 +191,15 @@ static void *slirp_uma_alloc(uma_zone_t zone,
 
         if (!zone->master_zone)
         {
-            /* We're on master zone and we cant allocate more */
+            /* We're on the master zone and we can't allocate more. */
             Log2(("NAT: no room on %s zone\n", zone->name));
             /* AssertMsgFailed(("NAT: OOM!")); */
-            zone->fPending = true;
+            zone->fDoXmitPending = true;
             break;
         }
 
-        /* we're on sub-zone we need get chunk of master zone and split
-         * it for sub-zone conforming chunks.
+        /* we're on a sub-zone, we need get a chunk from the master zone and split
+         * it into sub-zone conforming chunks.
          */
         sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
         if (!sub_area)
@@ -198,15 +210,16 @@ static void *slirp_uma_alloc(uma_zone_t zone,
         }
         zone->max_items++;
         it = &((struct item *)sub_area)[-1];
-        /* it's chunk descriptor of master zone we should remove it
-         *  from the master list first
+        /* It's the chunk descriptor of the master zone, we should remove it
+         * from the master list first.
          */
         Assert((it->zone && it->zone->magic == ZONE_MAGIC));
         RTCritSectEnter(&it->zone->csZone);
-        /* @todo should we alter count of master counters? */
+        /** @todo should we alter count of master counters? */
         LIST_REMOVE(it, list);
         RTCritSectLeave(&it->zone->csZone);
-        /* @todo '+ zone->size' should be depend on flag */
+
+        /** @todo '+ zone->size' should be depend on flag */
         memset(it, 0, sizeof(struct item));
         it->zone = zone;
         it->magic = ITEM_MAGIC;
@@ -223,12 +236,14 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     struct item *it;
     uma_zone_t zone;
     uma_zone_t master_zone;
+
     Assert(item);
     it = &((struct item *)item)[-1];
     Assert(it->magic == ITEM_MAGIC);
     zone = it->zone;
-    /* check bourder magic */
+    /* check border magic */
     Assert((*(uint32_t *)(((uint8_t *)&it[1]) + zone->size) == 0xabadbabe));
+
     RTCritSectEnter(&zone->csZone);
     Assert(zone->magic == ZONE_MAGIC);
     LIST_REMOVE(it, list);
@@ -242,7 +257,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     }
     LIST_INSERT_HEAD(&zone->free_items, it, list);
     zone->cur_items--;
-    slirp_zone_check_and_send_pending(zone);
+    slirp_zone_check_and_send_pending(zone); /* may exit+enter the cs! */
     RTCritSectLeave(&zone->csZone);
 }
 
@@ -319,7 +334,7 @@ void uma_zone_set_freef(uma_zone_t zone, uma_free_t pfFree)
 
 uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 {
-    /*@todo (vvl) this function supposed to work with special zone storing
+    /** @todo (vvl) this function supposed to work with special zone storing
     reference counters */
     struct item *it = (struct item *)mem; /* 1st element */
     Assert(mem != NULL);
@@ -380,29 +395,33 @@ void zone_drain(uma_zone_t zone)
 {
     struct item *it;
     uma_zone_t master_zone;
+
     /* vvl: Huh? What to do with zone which hasn't got backstore ? */
     Assert((zone->master_zone));
     master_zone = zone->master_zone;
-    while(!LIST_EMPTY(&zone->free_items))
+    while (!LIST_EMPTY(&zone->free_items))
     {
         it = LIST_FIRST(&zone->free_items);
         Assert((it->magic == ITEM_MAGIC));
+
         RTCritSectEnter(&zone->csZone);
         LIST_REMOVE(it, list);
         zone->max_items--;
         RTCritSectLeave(&zone->csZone);
+
         it->zone = master_zone;
+
         RTCritSectEnter(&master_zone->csZone);
         LIST_INSERT_HEAD(&master_zone->free_items, it, list);
         master_zone->cur_items--;
+        slirp_zone_check_and_send_pending(master_zone); /* may exit+enter the cs! */
         RTCritSectLeave(&master_zone->csZone);
-        slirp_zone_check_and_send_pending(master_zone);
     }
 }
 
 void slirp_null_arg_free(void *mem, void *arg)
 {
-    /*@todo (r=vvl) make it wiser*/
+    /** @todo (vvl) make it wiser  */
     Assert(mem);
     RTMemFree(mem);
 }
@@ -468,7 +487,7 @@ void m_fini(PNATState pData)
     zone_destroy(pData->zone_jumbop);
     zone_destroy(pData->zone_jumbo9);
     zone_destroy(pData->zone_jumbo16);
-    /*@todo do finalize here.*/
+    /** @todo do finalize here.*/
 }
 
 void
