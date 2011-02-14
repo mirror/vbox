@@ -444,7 +444,8 @@ private:
     HRESULT powerUp(IProgress **aProgress, bool aPaused);
     HRESULT powerDown(IProgress *aProgress = NULL);
 
-#if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
+/* Note: FreeBSD needs this whether netflt is used or not. */
+#if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))
     HRESULT attachToTapInterface(INetworkAdapter *networkAdapter);
     HRESULT detachFromTapInterface(INetworkAdapter *networkAdapter);
 #endif
@@ -696,7 +697,8 @@ private:
     PPDMLED      mapNetworkLeds[SchemaDefs::NetworkAdapterCount];
     PPDMLED      mapSharedFolderLed;
     PPDMLED      mapUSBLed[2];
-#if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
+/* Note: FreeBSD needs this whether netflt is used or not. */
+#if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))
     Utf8Str      maTAPDeviceName[8];
     RTFILE       maTapFD[8];
 #endif
