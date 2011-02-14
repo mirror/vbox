@@ -151,7 +151,7 @@ DECLINLINE(void) slirp_zone_check_and_send_pending(uma_zone_t zone)
 
         slirp_output_pending(zone->pData->pvUser);
 
-        rc2 = RTCritSectLeave(&zone->csZone); AssertRC(rc2);
+        rc2 = RTCritSectEnter(&zone->csZone); AssertRC(rc2);
     }
 }
 
