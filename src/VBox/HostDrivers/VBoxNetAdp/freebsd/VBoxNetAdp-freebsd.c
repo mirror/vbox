@@ -161,7 +161,7 @@ VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long iCmd, caddr_t data, int flag
                 return EINVAL;
 
             rc = vboxNetAdpCreate(&pAdp,
-                                  pReq->szName[0] && RTStrEnd(pReq->szName, RT_MIN(cbReq, sizeof(pReq->szName))) ?
+                                  pReq->szName[0] && RTStrEnd(pReq->szName, RT_MIN(IOCPARM_LEN(iCmd), sizeof(pReq->szName))) ?
                                   pReq->szName : NULL);
             if (RT_FAILURE(rc))
                 return EINVAL;
