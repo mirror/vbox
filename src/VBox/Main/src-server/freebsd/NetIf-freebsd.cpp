@@ -180,11 +180,15 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     char *pBuf, *pNext;
     int aiMib[6];
     unsigned short u16DefaultIface;
+    bool fDefaultIfaceExistent = true;
 
     /* Get the index of the interface associated with default route. */
     rc = getDefaultIfaceIndex(&u16DefaultIface, PF_INET);
     if (RT_FAILURE(rc))
-        return rc;
+    {
+        fDefaultIfaceExistent = false;
+        rc = VINF_SUCCESS;
+    }
 
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
@@ -286,7 +290,8 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
             IfObj.createObject();
             if (SUCCEEDED(IfObj->init(Bstr(pNew->szName), enmType, pNew)))
                 /* Make sure the default interface gets to the beginning. */
-                if (pIfMsg->ifm_index == u16DefaultIface)
+                if (   fDefaultIfaceExistent
+                    && pIfMsg->ifm_index == u16DefaultIface)
                     list.push_front(IfObj);
                 else
                     list.push_back(IfObj);
