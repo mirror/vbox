@@ -9,7 +9,8 @@
     <itemizedlist>
 
       <listitem>
-        <para>placeholder</para>
+        <para>Guest Additions: modules and features now are represented as facilities
+          to have a common interface for frontends.</para>
       </listitem>
 
     </itemizedlist>
@@ -19,7 +20,17 @@
     <itemizedlist>
 
       <listitem>
-        <para>placeholder</para>
+        <para>VBoxManage: changed syntax of the guestcontrol command group, fixed
+          various bugs.</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: improved driver installation on Windows guests.</para>
+      </listitem>
+
+       <listitem>
+        <para>Guest Additions: fixed high CPU usage while executing guest programs
+          from the host.</para>
       </listitem>
 
     </itemizedlist>
