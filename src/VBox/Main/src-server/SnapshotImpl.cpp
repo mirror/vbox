@@ -349,6 +349,12 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     HRESULT rc = S_OK;
     CheckComArgStrNotEmptyOrNull(aName);
 
+    // prohibit setting a UUID only as the machine name, or else it can
+    // never be found by findMachine()
+    Guid test(aName);
+    if (test.isNotEmpty())
+        return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

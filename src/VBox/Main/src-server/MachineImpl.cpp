@@ -937,6 +937,12 @@ STDMETHODIMP Machine::COMSETTER(Name)(IN_BSTR aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    // prohibit setting a UUID only as the machine name, or else it can
+    // never be found by findMachine()
+    Guid test(aName);
+    if (test.isNotEmpty())
+        return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
