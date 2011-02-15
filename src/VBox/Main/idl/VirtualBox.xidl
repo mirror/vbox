@@ -7986,23 +7986,23 @@
     </desc>
 
     <attribute name="classType" type="AdditionsFacilityClass" readonly="yes">
-      <desc>Additions facility class.</desc>
+      <desc>The class this facility is part of.</desc>
     </attribute>
 
     <attribute name="lastUpdated" type="long long" readonly="yes">
-      <desc>Timestamp of last updated status.</desc>
+      <desc>Timestamp (in ms) of last updated status.</desc>
     </attribute>
 
     <attribute name="name" type="wstring" readonly="yes">
-      <desc>Additions facility name.</desc>
+      <desc>The facility's friendly name.</desc>
     </attribute>
 
     <attribute name="status" type="AdditionsFacilityStatus" readonly="yes">
-      <desc>Additions facility status.</desc>
+      <desc>The current status.</desc>
     </attribute>
 
     <attribute name="type" type="AdditionsFacilityType" readonly="yes">
-      <desc>Additions facility type.</desc>
+      <desc>The facility's type ID.</desc>
     </attribute>
   </interface>
 
