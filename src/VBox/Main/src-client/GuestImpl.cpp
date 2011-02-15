@@ -568,7 +568,16 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
         if (aInterfaceVersion.isEmpty())
             mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
         else
+        {
             mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
+
+            /*
+             * To keep it compatible with the old Guest Additions behavior we need to set the
+             * "graphics" (feature) facility to active as soon as we got the Guest Additions
+             * interface version.
+             */
+            facilityUpdate(VBoxGuestFacilityType_Graphics, VBoxGuestFacilityStatus_Active);
+        }
     }
 
     /*
@@ -699,7 +708,7 @@ void Guest::setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacil
     /*
      * Set a specific facility status.
      */
-    if (enmFacility)
+    if (enmFacility > VBoxGuestFacilityType_Unknown)
     {
         if (enmFacility == VBoxGuestFacilityType_All)
         {
