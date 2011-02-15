@@ -75,7 +75,6 @@
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
 #include <HostNetworkInterfaceImpl.h>
-#include <AdditionsFacilityImpl.h>
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
 #include <NATEngineImpl.h>
@@ -156,9 +155,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)
 
 NS_DECL_CLASSINFO(DHCPServer)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DHCPServer, IDHCPServer)
-
-NS_DECL_CLASSINFO(AdditionsFacility)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AdditionsFacility, IAdditionsFacility)
 
 NS_DECL_CLASSINFO(GuestOSType)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestOSType, IGuestOSType)
