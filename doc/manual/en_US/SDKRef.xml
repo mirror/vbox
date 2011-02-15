@@ -3442,6 +3442,75 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 4.1</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>This version introduces the guest facilities concept. A guest
+          facility either represents a module or feature the guest is running or
+          offering, which is defined by <xref linked="AdditionsFacilityType"
+          xreflabel="AdditionsFacilityType"/>. Each facility is member of a
+          <xref linked="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/>
+          and has a current status indicated by <xref linked="AdditionsFacilityStatus"
+          xreflabel="AdditionsFacilityStatus"/>, together with a timestamp (in ms) of
+          the last status update.</para>
+          <para>To address the above concept, the following changes were made:
+            <itemizedlist>
+              <listitem>
+                <para>
+                  In the <xref linked="IGuest" xreflabel="IGuest"/> interface, the following were removed:
+                  <itemizedlist>
+                    <listitem>
+                      <para>the <computeroutput>supportsSeamless</computeroutput> attribute;</para>
+                    </listitem>
+                    <listitem>
+                      <para>the <computeroutput>supportsGraphics</computeroutput> attribute;</para>
+                    </listitem>
+                  </itemizedlist>
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  The function <xref linked="IGuest__getFacilityStatus" xreflabel="IGuest::getFacilityStatus()"/>
+                  was added. It quickly provides a facility's status without the need to get the facility
+                  collection with <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  The attribute <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>
+                  was added to provide an easy to access collection of all currently known guest
+                  facilities, that is, it contains all facilies where at least one status update was
+                  made since the guest was started.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  The interface <xref linked="IAdditionsFacility" xreflabel="IAdditionsFacility"/>
+                  was added to represent a single facility returned by
+                  <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  <xref linked="AdditionsFacilityStatus" xreflabel="AdditionsFacilityStatus"/>
+                  was added to represent a facility's overall status.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  <xref linked="AdditionsFacilityType" xreflabel="AdditionsFacilityType"/> and
+                  <xref linked="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/> were
+                  added to represent the facility's type and class.
+                </para>
+              </listitem>
+            </itemizedlist>
+          </para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 4.0</title>
 
       <itemizedlist>
