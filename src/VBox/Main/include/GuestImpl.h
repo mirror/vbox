@@ -22,6 +22,7 @@
 #include <iprt/time.h>
 #include <VBox/ostypes.h>
 
+#include "AdditionsFacilityImpl.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <VBox/HostServices/GuestControlSvc.h>
 # include "HGCM.h"
@@ -75,6 +76,7 @@ public:
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsRunLevel)) (AdditionsRunLevelType_T *aRunLevel);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
+    STDMETHOD(COMGETTER(Facilities)) (ComSafeArrayOut(IAdditionsFacility*, aFacilities));
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
@@ -109,7 +111,7 @@ public:
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
-    void updateFacility(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
+    HRESULT facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
     void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
     void setSupportedFeatures(uint32_t aCaps);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
@@ -179,13 +181,9 @@ private:
     HRESULT waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
 # endif
 
-    struct FacilityData
-    {
-        RTTIMESPEC                  tsLastUpdated;
-        AdditionsFacilityStatus_T   curStatus;
-    };
-    typedef std::map< AdditionsFacilityType_T, FacilityData > FacilityMap;
-    typedef std::map< AdditionsFacilityType_T, FacilityData >::iterator FacilityMapIter;
+    typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;
+    typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::iterator FacilityMapIter;
+    typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::const_iterator FacilityMapIterConst;
 
     struct Data
     {

@@ -2068,62 +2068,53 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Additions run level:                 %u\n", guestRunLevel);
             }
 
-            if (details == VMINFO_FULL)
+            rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+            if (   SUCCEEDED(rc)
+                && !guestString.isEmpty())
             {
-                rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
-                if (   SUCCEEDED(rc)
-                    && !guestString.isEmpty())
-                {
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("GuestAdditionsVersion=\"%lS\"\n", guestString.raw());
-                    else
-                        RTPrintf("Additions version:                   %lS\n\n", guestString.raw());
-                }
-
-                if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf("\nGuest Components:\n\n");
-
-                /* Print information about important Guest Additions parts: */
-                /** @todo Add a makeFacilityStatusStr() to translate facility states into a human readable string! */
-                AdditionsFacilityStatus_T faStatus;
-                LONG64 lLastUpdatedMS = 0;
-                char szLastUpdated[32];
-                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxGuestDriver, &lLastUpdatedMS, &faStatus);
-                if (SUCCEEDED(rc))
-                {
-                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("GuestAdditionsFacilityStatusGuestDriver=%u,%ld\n",
-                                 faStatus, lLastUpdatedMS);
-                    else
-                        RTPrintf("Guest driver:                        %u (last update: %s)\n",
-                                 facilityStateToName(faStatus, false /* No short naming */), szLastUpdated);
-                }
-
-                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxService, &lLastUpdatedMS, &faStatus);
-                if (SUCCEEDED(rc))
-                {
-                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("GuestAdditionsFacilityStatusVBoxService=%u,%ld\n",
-                                 faStatus, lLastUpdatedMS);
-                    else
-                        RTPrintf("VBoxService:                         %s (last update: %s)\n",
-                                 facilityStateToName(faStatus, false /* No short naming */), szLastUpdated);
-                }
-
-                rc = guest->GetFacilityStatus(AdditionsFacilityType_VBoxTrayClient, &lLastUpdatedMS, &faStatus);
-                if (SUCCEEDED(rc))
-                {
-                    makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("GuestAdditionsFacilityStatusVBoxTrayClient=%u,%ld\n",
-                                 facilityStateToName(faStatus, false /* No short naming */), lLastUpdatedMS);
-                    else
-                        RTPrintf("VBoxTray / VBoxClient:               %u (last update: %s)\n",
-                                 faStatus, szLastUpdated);
-                }
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("GuestAdditionsVersion=\"%lS\"\n", guestString.raw());
+                else
+                    RTPrintf("Additions version:                   %lS\n\n", guestString.raw());
             }
+
+            if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("\nGuest Facilities:\n\n");
+
+            /* Print information about known Guest Additions facilities: */
+            SafeIfaceArray <IAdditionsFacility> collFac;
+            CHECK_ERROR_RET(guest, COMGETTER(Facilities)(ComSafeArrayAsOutParam(collFac)), rc);
+            LONG64 lLastUpdatedMS;
+            char szLastUpdated[32];
+            AdditionsFacilityStatus_T curStatus;
+            for (size_t index = 0; index < collFac.size(); ++index)
+            {
+                ComPtr<IAdditionsFacility> fac = collFac[index];
+                if (fac)
+                {
+                    CHECK_ERROR_RET(fac, COMGETTER(Name)(guestString.asOutParam()), rc);
+                    if (!guestString.isEmpty())
+                    {
+                        CHECK_ERROR_RET(fac, COMGETTER(Status)(&curStatus), rc);
+                        CHECK_ERROR_RET(fac, COMGETTER(LastUpdated)(&lLastUpdatedMS), rc);
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("GuestAdditionsFacility_%lS=%u,%lld\n",
+                                     guestString.raw(), curStatus, lLastUpdatedMS);
+                        else
+                        {
+                            makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
+                            RTPrintf("Facility \"%lS\": %s (last update: %s)\n",
+                                     guestString.raw(), facilityStateToName(curStatus, false /* No short naming */), szLastUpdated);
+                        }
+                    }
+                    else
+                        AssertMsgFailed(("Facility with undefined name retrieved!\n"));
+                }
+                else
+                    AssertMsgFailed(("Invalid facility returned!\n"));
+            }
+            if (!collFac.size() && details != VMINFO_MACHINEREADABLE)
+                RTPrintf("No active facilities.\n");
         }
     }
 

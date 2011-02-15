@@ -678,7 +678,7 @@ typedef enum
     VBoxGuestFacilityType_VBoxService     = 100,
     VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
     VBoxGuestFacilityType_Seamless        = 1000,
-    VBoxGuestFacilityType_Graphics        = 1001,
+    VBoxGuestFacilityType_Graphics        = 1100,
     VBoxGuestFacilityType_All             = 0x7ffffffe,
     VBoxGuestFacilityType_SizeHack        = 0x7fffffff
 } VBoxGuestFacilityType;
@@ -703,6 +703,24 @@ typedef enum
     VBoxGuestFacilityStatus_SizeHack    = 0x7fffffff
 } VBoxGuestFacilityStatus;
 AssertCompileSize(VBoxGuestFacilityStatus, 4);
+
+
+/**
+ * The facility class.
+ * This needs to be kept in sync with AdditionsFacilityClass of the Main API!
+ */
+typedef enum
+{
+    VBoxGuestFacilityClass_None       = 0,
+    VBoxGuestFacilityClass_Driver     = 10,
+    VBoxGuestFacilityClass_Service    = 30,
+    VBoxGuestFacilityClass_Program    = 50,
+    VBoxGuestFacilityClass_Feature    = 100,
+    VBoxGuestFacilityClass_ThirdParty = 999,
+    VBoxGuestFacilityClass_SizeHack   = 0x7fffffff
+} VBoxGuestFacilityClass;
+AssertCompileSize(VBoxGuestFacilityClass, 4);
+
 
 /**
  * Guest status structure.
