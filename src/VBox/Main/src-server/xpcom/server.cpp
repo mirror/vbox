@@ -60,42 +60,42 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include <nsIGenericFactory.h>
-
 #include <VirtualBox_XPCOM.h>
-#include <VirtualBoxImpl.h>
-#include <MachineImpl.h>
-#include <VFSExplorerImpl.h>
-#include <ApplianceImpl.h>
-#include <SnapshotImpl.h>
-#include <MediumImpl.h>
-#include <MediumFormatImpl.h>
-#include <ProgressCombinedImpl.h>
-#include <ProgressProxyImpl.h>
-#include <VRDEServerImpl.h>
-#include <SharedFolderImpl.h>
-#include <HostImpl.h>
-#include <HostNetworkInterfaceImpl.h>
-#include <GuestOSTypeImpl.h>
-#include <NetworkAdapterImpl.h>
-#include <NATEngineImpl.h>
-#include <SerialPortImpl.h>
-#include <ParallelPortImpl.h>
-#include <USBControllerImpl.h>
+
+#include "ApplianceImpl.h"
+#include "AudioAdapterImpl.h"
+#include "BandwidthControlImpl.h"
+#include "BandwidthGroupImpl.h"
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
+#include "GuestOSTypeImpl.h"
+#include "HostImpl.h"
+#include "HostNetworkInterfaceImpl.h"
+#include "MachineImpl.h"
+#include "MediumFormatImpl.h"
+#include "MediumImpl.h"
+#include "NATEngineImpl.h"
+#include "NetworkAdapterImpl.h"
+#include "ParallelPortImpl.h"
+#include "ProgressCombinedImpl.h"
+#include "ProgressProxyImpl.h"
+#include "SerialPortImpl.h"
+#include "SharedFolderImpl.h"
+#include "SnapshotImpl.h"
+#include "StorageControllerImpl.h"
+#include "SystemPropertiesImpl.h"
+#include "USBControllerImpl.h"
+#include "VFSExplorerImpl.h"
+#include "VirtualBoxImpl.h"
+#include "VRDEServerImpl.h"
 #ifdef VBOX_WITH_USB
+# include "HostUSBDeviceImpl.h"
 # include "USBDeviceFilterImpl.h"
-# include <HostUSBDeviceImpl.h>
-# include <USBDeviceImpl.h>
+# include "USBDeviceImpl.h"
 #endif
-#include <StorageControllerImpl.h>
-#include <AudioAdapterImpl.h>
-#include <SystemPropertiesImpl.h>
 #ifdef VBOX_WITH_EXTPACK
-# include <ExtPackManagerImpl.h>
+# include "ExtPackManagerImpl.h"
 #endif
-#include <BandwidthGroupImpl.h>
-#include <BandwidthControlImpl.h>
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
 
