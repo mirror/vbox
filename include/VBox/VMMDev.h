@@ -241,9 +241,9 @@ typedef struct
     /** Mouse feature mask. See VMMDEV_MOUSE_*. */
     uint32_t mouseFeatures;
     /** Mouse x position. */
-    uint32_t pointerXPos;
+    int32_t pointerXPos;
     /** Mouse y position. */
-    uint32_t pointerYPos;
+    int32_t pointerYPos;
 } VMMDevReqMouseStatus;
 AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 

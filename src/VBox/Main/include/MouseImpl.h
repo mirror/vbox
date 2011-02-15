@@ -98,8 +98,8 @@ private:
                                  int32_t dw, uint32_t fButtons);
     HRESULT reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                                  int32_t dz, int32_t dw, uint32_t fButtons);
-    HRESULT reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
-    HRESULT reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
+    HRESULT reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs);
+    HRESULT reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
                            int32_t dz, int32_t dw, uint32_t fButtons,
                            bool fUsesVMMDevEvent);
     HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
@@ -122,8 +122,8 @@ private:
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
     uint32_t mfVMMDevGuestCaps;  /** We cache this to avoid access races */
-    uint32_t mcLastAbsX;
-    uint32_t mcLastAbsY;
+    int32_t mcLastAbsX;
+    int32_t mcLastAbsY;
     uint32_t mfLastButtons;
 
 #ifndef VBOXBFE_WITHOUT_COM

@@ -348,7 +348,7 @@ HRESULT Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
+HRESULT Mouse::reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs)
 {
     VMMDev *pVMMDev = mParent->getVMMDev();
     ComAssertRet(pVMMDev, E_FAIL);
@@ -374,7 +374,7 @@ HRESULT Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
+HRESULT Mouse::reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
                               int32_t dz, int32_t dw, uint32_t fButtons,
                               bool fUsesVMMDevEvent)
 {
@@ -535,13 +535,6 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
      *        this object and not really bad as far as I can see. */
     HRESULT rc = convertDisplayRes(x, y, &mouseXAbs, &mouseYAbs, &fValid);
     if (FAILED(rc)) return rc;
-
-    /** @todo multi-monitor Windows guests expect this to be unbounded.
-     * Understand the issues involved and fix for the rest. */
-    /* if (mouseXAbs > 0xffff)
-        mouseXAbs = mcLastAbsX;
-    if (mouseYAbs > 0xffff)
-        mouseYAbs = mcLastAbsY; */
 
     fButtons = mouseButtonsToPDM(buttonState);
     /* If we are doing old-style (IRQ-less) absolute reporting to the VMM
