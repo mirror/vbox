@@ -717,6 +717,7 @@ typedef enum
     VBoxGuestFacilityClass_Program    = 50,
     VBoxGuestFacilityClass_Feature    = 100,
     VBoxGuestFacilityClass_ThirdParty = 999,
+    VBoxGuestFacilityClass_All        = 0x7ffffffe,
     VBoxGuestFacilityClass_SizeHack   = 0x7fffffff
 } VBoxGuestFacilityClass;
 AssertCompileSize(VBoxGuestFacilityClass, 4);
