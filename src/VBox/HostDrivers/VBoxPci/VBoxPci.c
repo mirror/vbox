@@ -38,6 +38,10 @@
 #include "VBoxPciInternal.h"
 
 
+#define DEVPORT_2_VBOXRAWPCIINS(pPort) \
+    ( (PVBOXRAWPCIINS)((uint8_t *)pPort - RT_OFFSETOF(VBOXRAWPCIINS, DevPort)) )
+
+
 /**
  * Implements the SUPDRV component factor interface query method.
  *
@@ -73,23 +77,27 @@ static DECLCALLBACK(void *) vboxPciQueryFactoryInterface(PCSUPDRVFACTORY pSupDrv
 /**
  * @copydoc RAWPCIDEVPORT:: pfnRetain
  */
-DECLHIDDEN(void) vboxPciDevRetain(PRAWPCIDEVPORT pThis)
+DECLHIDDEN(void) vboxPciDevRetain(PRAWPCIDEVPORT pPort)
 {
 }
 
 /**
  * @copydoc RAWPCIDEVPORT:: pfnRelease
  */
-DECLHIDDEN(void) vboxPciDevRelease(PRAWPCIDEVPORT pThis)
+DECLHIDDEN(void) vboxPciDevRelease(PRAWPCIDEVPORT pPort)
 {
 }
 
 /**
- * @copydoc RAWPCIDEVPORT:: pfnRelease
+ * @copydoc RAWPCIDEVPORT:: pfnInit
  */
-DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pThis, uint32_t fFlags)
+DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 {
-    return VINF_SUCCESS;
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevInit(pThis, fFlags);
+
+    return rc;
 }
 
 
@@ -142,7 +150,6 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 
     return rc;
 }
-
 
 /**
  * @copydoc RAWPCIFACTORY::pfnCreateAndConnect
