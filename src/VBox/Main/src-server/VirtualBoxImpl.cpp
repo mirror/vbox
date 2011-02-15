@@ -3715,7 +3715,8 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
      */
     GuidList llRegistriesThatNeedSaving;
     {
-        AutoWriteLock tlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock tlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        // iterate over the list of *base* images
         for (MediaOList::iterator it = m->allHardDisks.getList().begin();
              it != m->allHardDisks.getList().end();
              ++it)
@@ -3725,14 +3726,17 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->removeRegistry(id))
+            if (pMedium->removeRegistry(id, true /* fRecurse */))
             {
-                // ID was found in medium's registry list:
-                // add a new one then
-                const Guid *puuidBetter = pMedium->getFirstMachineBackrefId();
+                // machine ID was found in base medium's registry list:
+                // move this base image and all its children to another registry then
+                // 1) first, find a better registry to add things to
+                const Guid *puuidBetter = pMedium->getAnyMachineBackref();
                 if (puuidBetter)
                 {
-                    pMedium->addRegistry(*puuidBetter);
+                    // 2) better registry found: then use that
+                    pMedium->addRegistry(*puuidBetter, true /* fRecurse */);
+                    // 3) and make sure the registry is saved below
                     addGuidToListUniquely(llRegistriesThatNeedSaving, *puuidBetter);
                 }
             }
