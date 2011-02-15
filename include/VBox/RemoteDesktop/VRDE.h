@@ -965,7 +965,7 @@ typedef struct _VRDEENTRYPOINTS_2
 } VRDEENTRYPOINTS_2;
 
 /** The VRDE server entry points. Interface version 3.
- *  A new entry point VRDE has been added relative to version 2.
+ *  New entry points VRDEAudioInOpen and VRDEAudioInClose has been added relative to version 2.
  */
 typedef struct _VRDEENTRYPOINTS_3
 {
@@ -1415,6 +1415,62 @@ typedef struct _VRDECALLBACKS_3
                                                     const void *pvData,
                                                     uint32_t cbData));
 } VRDECALLBACKS_3;
+
+/** The VRDE server entry points. Interface version 4.
+ *  New entry point VRDEGetInterface has been added relative to version 3.
+ */
+typedef struct _VRDEENTRYPOINTS_4
+{
+    /* The header. */
+    VRDEINTERFACEHDR header;
+
+    /*
+     * Same as version 3. See comment in VRDEENTRYPOINTS_3.
+     */
+
+    DECLR3CALLBACKMEMBER(void, VRDEDestroy,(HVRDESERVER hServer));
+    DECLR3CALLBACKMEMBER(int,  VRDEEnableConnections,(HVRDESERVER hServer, bool fEnable));
+    DECLR3CALLBACKMEMBER(void, VRDEDisconnect,(HVRDESERVER hServer, uint32_t u32ClientId, bool fReconnect));
+    DECLR3CALLBACKMEMBER(void, VRDEResize,(HVRDESERVER hServer));
+    DECLR3CALLBACKMEMBER(void, VRDEUpdate,(HVRDESERVER hServer, unsigned uScreenId, void *pvUpdate,
+                                           uint32_t cbUpdate));
+    DECLR3CALLBACKMEMBER(void, VRDEColorPointer,(HVRDESERVER hServer, const VRDECOLORPOINTER *pPointer));
+    DECLR3CALLBACKMEMBER(void, VRDEHidePointer,(HVRDESERVER hServer));
+    DECLR3CALLBACKMEMBER(void, VRDEAudioSamples,(HVRDESERVER hServer, const void *pvSamples, uint32_t cSamples,
+                                                 VRDEAUDIOFORMAT format));
+    DECLR3CALLBACKMEMBER(void, VRDEAudioVolume,(HVRDESERVER hServer, uint16_t u16Left, uint16_t u16Right));
+    DECLR3CALLBACKMEMBER(void, VRDEUSBRequest,(HVRDESERVER hServer, uint32_t u32ClientId, void *pvParm,
+                                               uint32_t cbParm));
+    DECLR3CALLBACKMEMBER(void, VRDEClipboard,(HVRDESERVER hServer, uint32_t u32Function, uint32_t u32Format,
+                                              void *pvData, uint32_t cbData, uint32_t *pcbActualRead));
+    DECLR3CALLBACKMEMBER(void, VRDEQueryInfo,(HVRDESERVER hServer, uint32_t index, void *pvBuffer, uint32_t cbBuffer,
+                                              uint32_t *pcbOut));
+    DECLR3CALLBACKMEMBER(void, VRDERedirect,(HVRDESERVER hServer, uint32_t u32ClientId, const char *pszServer,
+                                             const char *pszUser, const char *pszDomain, const char *pszPassword,
+                                             uint32_t u32SessionId, const char *pszCookie));
+    DECLR3CALLBACKMEMBER(void, VRDEAudioInOpen,(HVRDESERVER hServer, void *pvCtx, uint32_t u32ClientId,
+                                                VRDEAUDIOFORMAT audioFormat, uint32_t u32SamplesPerBlock));
+    DECLR3CALLBACKMEMBER(void, VRDEAudioInClose,(HVRDESERVER hServer, uint32_t u32ClientId));
+
+    /**
+     * Generic interface query. An interface is a set of entry points and callbacks.
+     * It is not a reference counted interface.
+     *
+     * @param hServer    Handle of VRDE server instance.
+     * @param pszId      String identifier of the interface, like uuid.
+     * @param pInterface The interface structure to be initialized by the VRDE server.
+     *                   Only VRDEINTERFACEHDR is initialized by the caller.
+     * @param pCallbacks Callbacks required by the interface. The server makes a local copy.
+     * @param pvContext  The context to be used in callbacks.
+     */
+
+    int VRDEGetInterface(HVRDESERVER hServer,
+                         const char *pszId,
+                         VRDEINTERFACEHDR *pInterface,
+                         const VRDEINTERFACEHDR *pCallbacks,
+                         void *pvContext);
+} VRDEENTRYPOINTS_4;
+
 
 /**
  * Create a new VRDE server instance. The instance is fully functional but refuses
