@@ -344,7 +344,7 @@ void HostRamVmm::init(ULONG period, ULONG length)
     mSharedVMM->init(mLength);
 }
 
-void HostRamVmm::preCollect(CollectorHints& hints, uint64_t /* iTick */)
+void HostRamVmm::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
 {
     /* Guest RAM metrics do not use hints */
 }
