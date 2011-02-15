@@ -110,6 +110,12 @@ class HardwareItem: public ModelItem
     friend class VirtualSystemSortProxyModel;
 public:
 
+    enum
+    {
+        TypeRole = Qt::UserRole,
+        ModifiedRole
+    };
+
     HardwareItem (int aNumber,
                   KVirtualSystemDescriptionType aType,
                   const QString &aRef,
@@ -146,6 +152,7 @@ private:
     QString mConfigDefaultValue;
     QString mExtraConfigValue;
     Qt::CheckState mCheckState;
+    bool m_fModified;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

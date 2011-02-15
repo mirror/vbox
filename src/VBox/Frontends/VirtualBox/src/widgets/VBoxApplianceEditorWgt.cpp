@@ -129,6 +129,7 @@ HardwareItem::HardwareItem (int aNumber,
   , mConfigDefaultValue (aConfigValue)
   , mExtraConfigValue (aExtraConfigValue)
   , mCheckState (Qt::Checked)
+  , m_fModified(false)
 {}
 
 void HardwareItem::putBack (QVector<BOOL>& aFinalStates, QVector<QString>& aFinalValues, QVector<QString>& aFinalExtraValues)
@@ -158,6 +159,14 @@ bool HardwareItem::setData (int aColumn, const QVariant &aValue, int aRole)
                 }
                 break;
             }
+        case Qt::EditRole:
+            {
+                if (aColumn == OriginalValueSection)
+                    mOrigValue = aValue.toString();
+                else if (aColumn == ConfigValueSection)
+                    mConfigValue = aValue.toString();
+                break;
+            }
         default: break;
     }
     return fDone;
@@ -168,6 +177,14 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
     QVariant v;
     switch (aRole)
     {
+        case Qt::EditRole:
+            {
+                if (aColumn == OriginalValueSection)
+                    v = mOrigValue;
+                else if (aColumn == ConfigValueSection)
+                    v = mConfigValue;
+                break;
+            }
         case Qt::DisplayRole:
             {
                 if (aColumn == DescriptionSection)
@@ -302,6 +319,17 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                      mType == KVirtualSystemDescriptionType_SoundCard ||
                      mType == KVirtualSystemDescriptionType_NetworkAdapter))
                     v = mCheckState;
+                break;
+            }
+        case HardwareItem::TypeRole:
+            {
+                v = mType;
+                break;
+            }
+        case HardwareItem::ModifiedRole:
+            {
+                if (aColumn == ConfigValueSection)
+                    v = m_fModified;
                 break;
             }
     }
@@ -542,7 +570,7 @@ bool HardwareItem::setEditorData (QWidget *aEditor, const QModelIndex & /* aInde
     return fDone;
 }
 
-bool HardwareItem::setModelData (QWidget *aEditor, QAbstractItemModel * /* aModel */, const QModelIndex & /* aIndex */)
+bool HardwareItem::setModelData (QWidget *aEditor, QAbstractItemModel *aModel, const QModelIndex & aIndex)
 {
     bool fDone = false;
     switch (mType)
@@ -576,6 +604,34 @@ bool HardwareItem::setModelData (QWidget *aEditor, QAbstractItemModel * /* aMode
                 break;
             }
         case KVirtualSystemDescriptionType_Name:
+            {
+                if (QLineEdit *e = qobject_cast<QLineEdit*> (aEditor))
+                {
+                    /* When the VM name is changed the path of the disk images
+                     * should be also changed. So first of all find all disk
+                     * images corresponding to this appliance. Next check if
+                     * they are modified by the user already. If not change the
+                     * path to the new path. */
+                    /* Create an index of this position, but in column 0. */
+                    QModelIndex c0Index = aModel->index(aIndex.row(), 0, aIndex.parent());
+                    /* Query all items with the type HardDiskImage and which
+                     * are child's of this item. */
+                    QModelIndexList list = aModel->match(c0Index, HardwareItem::TypeRole, KVirtualSystemDescriptionType_HardDiskImage, -1, Qt::MatchExactly | Qt::MatchWrap | Qt::MatchRecursive);
+                    for (int i = 0; i < list.count(); ++i)
+                    {
+                        /* Get the index for the config value column. */
+                        QModelIndex hdIndex = aModel->index(list.at(i).row(), ConfigValueSection, list.at(i).parent());
+                        /* Ignore it if was already modified by the user. */
+                        if (!hdIndex.data(ModifiedRole).toBool())
+                            /* Replace any occurrence of the old VM name with
+                             * the new VM name. */
+                            aModel->setData(hdIndex, hdIndex.data(Qt::EditRole).toString().replace(mConfigValue, e->text()), Qt::EditRole);
+                    }
+                    mConfigValue = e->text();
+                    fDone = true;
+                }
+                break;
+            }
         case KVirtualSystemDescriptionType_Product:
         case KVirtualSystemDescriptionType_ProductUrl:
         case KVirtualSystemDescriptionType_Vendor:
@@ -626,6 +682,9 @@ bool HardwareItem::setModelData (QWidget *aEditor, QAbstractItemModel * /* aMode
             }
         default: break;
     }
+    if (fDone)
+        m_fModified = true;
+
     return fDone;
 }
 
@@ -888,7 +947,7 @@ void VirtualSystemDelegate::setModelData (QWidget *aEditor, QAbstractItemModel *
         index = mProxy->mapToSource (aIndex);
 
     ModelItem *item = static_cast<ModelItem*> (index.internalPointer());
-    if (!item->setModelData (aEditor, aModel, index))
+    if (!item->setModelData (aEditor, aModel, aIndex))
         QItemDelegate::setModelData (aEditor, aModel, aIndex);
 }
 
