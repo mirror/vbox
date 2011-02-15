@@ -174,8 +174,11 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
-    bool addRegistry(const Guid& id);
-    bool removeRegistry(const Guid& id);
+    bool addRegistry(const Guid& id, bool fRecurse);
+private:
+    void addRegistryImpl(const Guid& id, bool fRecurse);
+public:
+    bool removeRegistry(const Guid& id, bool fRecurse);
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
     HRESULT addToRegistryIDList(GuidList &llRegistryIDs);
@@ -186,6 +189,7 @@ public:
                                 const Guid &aSnapshotId = Guid::Empty);
 
     const Guid* getFirstMachineBackrefId() const;
+    const Guid* getAnyMachineBackref() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
 
 #ifdef DEBUG

@@ -7758,7 +7758,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->addRegistry(*puuidRegistry);
+                medium->addRegistry(*puuidRegistry, false /* fRecurse */);
         }
 
         if (FAILED(rc))
@@ -8783,7 +8783,7 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
     if (FAILED(autoCaller.rc())) return;
     AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-    if (pMedium->addRegistry(uuid))
+    if (pMedium->addRegistry(uuid, false /* fRecurse */))
         // registry actually changed:
         mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
 

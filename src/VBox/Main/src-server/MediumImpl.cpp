@@ -3078,10 +3078,13 @@ Utf8Str Medium::getName()
  *
  * Must have caller + locking!
  *
+ * If fRecurse == true, then additionally the media tree lock must be held for reading.
+ *
  * @param id
+ * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
  * @return true if the registry was added; false if the given id was already on the list.
  */
-bool Medium::addRegistry(const Guid& id)
+bool Medium::addRegistry(const Guid& id, bool fRecurse)
 {
     // hard disks cannot be in more than one registry
     if (    m->devType == DeviceType_HardDisk
@@ -3098,8 +3101,31 @@ bool Medium::addRegistry(const Guid& id)
             return false;
     }
 
-    m->llRegistryIDs.push_back(id);
+    addRegistryImpl(id, fRecurse);
+
     return true;
+}
+
+/**
+ * Private implementation for addRegistry() so we can recurse more efficiently.
+ * @param id
+ * @param fRecurse
+ */
+void Medium::addRegistryImpl(const Guid& id, bool fRecurse)
+{
+    m->llRegistryIDs.push_back(id);
+
+    if (fRecurse)
+    {
+        for (MediaList::iterator it = m->llChildren.begin();
+             it != m->llChildren.end();
+             ++it)
+        {
+            Medium *pChild = *it;
+            // recurse!
+            pChild->addRegistryImpl(id, fRecurse);
+        }
+    }
 }
 
 /**
@@ -3108,10 +3134,13 @@ bool Medium::addRegistry(const Guid& id)
  *
  * Must have caller + locking!
  *
+ * If fRecurse == true, then additionally the media tree lock must be held for reading.
+ *
  * @param id
+ * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
  * @return
  */
-bool Medium::removeRegistry(const Guid& id)
+bool Medium::removeRegistry(const Guid& id, bool fRecurse)
 {
     for (GuidList::iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
@@ -3120,6 +3149,18 @@ bool Medium::removeRegistry(const Guid& id)
         if ((*it) == id)
         {
             m->llRegistryIDs.erase(it);
+
+            if (fRecurse)
+            {
+                for (MediaList::iterator it = m->llChildren.begin();
+                     it != m->llChildren.end();
+                     ++it)
+                {
+                    Medium *pChild = *it;
+                    pChild->removeRegistry(id, true);
+                }
+            }
+
             return true;
         }
     }
@@ -3358,6 +3399,33 @@ const Guid* Medium::getFirstMachineBackrefId() const
         return NULL;
 
     return &m->backRefs.front().machineId;
+}
+
+/**
+ * Internal method which returns a machine that either this medium or one of its children
+ * is attached to. This is used for finding a replacement media registry when an existing
+ * media registry is about to be deleted in VirtualBox::unregisterMachine().
+ *
+ * Must have caller + locking, *and* caller must hold the media tree lock!
+ * @return
+ */
+const Guid* Medium::getAnyMachineBackref() const
+{
+    if (m->backRefs.size())
+        return &m->backRefs.front().machineId;
+
+    for (MediaList::iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        Medium *pChild = *it;
+        // recurse for this child
+        const Guid* puuid;
+        if ((puuid = pChild->getAnyMachineBackref()))
+            return puuid;
+    }
+
+    return NULL;
 }
 
 const Guid* Medium::getFirstMachineBackrefSnapshotId() const
