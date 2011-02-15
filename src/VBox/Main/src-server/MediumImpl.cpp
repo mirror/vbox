@@ -7494,7 +7494,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
                              0 /* cbSize */,
                              task.mVariant,
                              NULL /* pDstUuid */,
-                             VD_OPEN_FLAGS_NORMAL,
+                             VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL,
                              NULL /* pVDIfsOperation */,
                              task.mVDImageIfaces,
                              task.mVDOperationIfaces);
