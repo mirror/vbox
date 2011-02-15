@@ -1970,7 +1970,7 @@ typedef struct PDMIVMMDEVPORT
      * @param   pxAbs           Pointer of result value, can be NULL
      * @param   pyAbs           Pointer of result value, can be NULL
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t *pxAbs, uint32_t *pyAbs));
+    DECLR3CALLBACKMEMBER(int, pfnQueryAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, int32_t *pxAbs, int32_t *pyAbs));
 
     /**
      * Set the new absolute mouse position in pixels
@@ -1980,7 +1980,7 @@ typedef struct PDMIVMMDEVPORT
      * @param   xabs            New absolute X position
      * @param   yAbs            New absolute Y position
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t xAbs, uint32_t yAbs));
+    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs));
 
     /**
      * Return the current mouse capability flags
