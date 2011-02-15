@@ -227,6 +227,8 @@ typedef struct {
     GLuint currentSerialNo;
 
     PFNCRSERVERPRESENTFBO pfnPresentFBO;
+    GLboolean             bForceOffscreenRendering; /*Force server to render 3d data offscreen
+                                                     *using callback above to update vbox framebuffers*/
 } CRServer;
 
 
@@ -256,6 +258,8 @@ extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t 
 extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects);
 
 extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);
+
+extern DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value);
 
 #ifdef __cplusplus
 }

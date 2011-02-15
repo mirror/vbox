@@ -1234,3 +1234,22 @@ DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO
 {
     cr_server.pfnPresentFBO = pfnPresentFBO;
 }
+
+DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
+{
+    if (cr_server.bForceOffscreenRendering==value)
+    {
+        return VINF_SUCCESS;
+    }
+
+    if (value && !crServerSupportRedirMuralFBO())
+    {
+        return VERR_NOT_SUPPORTED;
+    }
+
+    cr_server.bForceOffscreenRendering=value;
+
+    crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
+
+    return VINF_SUCCESS;
+}

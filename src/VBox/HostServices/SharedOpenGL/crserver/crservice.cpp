@@ -1240,6 +1240,8 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                     }
 
                     g_pConsole = pConsole;
+
+                    /*rc = crVBoxServerSetOffscreenRendering(GL_TRUE);*/
                     rc = VINF_SUCCESS;
                 }
             }
