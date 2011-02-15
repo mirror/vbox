@@ -7910,7 +7910,7 @@
 
   <enum
     name="AdditionsFacilityClass"
-    uuid="9cff7275-9a5b-4dcd-b164-523e001a5a9e"
+    uuid="446451b2-c88d-4e5d-84c9-91bc7f533f5f"
     >
     <desc>
       Guest Additions facility classes.
@@ -7933,6 +7933,9 @@
     </const>
     <const name="ThirdParty"              value="999">
       <desc>Third party.</desc>
+    </const>
+    <const name="All"                     value="2147483646">
+      <desc>All facility classes selected.</desc>
     </const>
   </enum>
 
