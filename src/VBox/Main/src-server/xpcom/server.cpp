@@ -75,6 +75,7 @@
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
 #include <HostNetworkInterfaceImpl.h>
+#include <AdditionsFacilityImpl.h>
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
 #include <NATEngineImpl.h>
