@@ -28,26 +28,26 @@
 // generated file
 #include "VirtualBox_XPCOM.h"
 
-#include "GuestImpl.h"
-#include "KeyboardImpl.h"
-#include "MouseImpl.h"
+#include "AdditionsFacilityImpl.h"
+#include "ConsoleImpl.h"
+#include "ConsoleVRDPServer.h"
 #include "DisplayImpl.h"
-#include "ProgressCombinedImpl.h"
-#include "MachineDebuggerImpl.h"
-#include "USBDeviceImpl.h"
-#include "RemoteUSBDeviceImpl.h"
-#include "SharedFolderImpl.h"
-#include "ProgressImpl.h"
-#include "NetworkAdapterImpl.h"
-#include "NATEngineImpl.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
-
-#include "VirtualBoxClientImpl.h"
+#include "GuestImpl.h"
+#include "KeyboardImpl.h"
+#include "MachineDebuggerImpl.h"
+#include "MouseImpl.h"
+#include "NATEngineImpl.h"
+#include "NetworkAdapterImpl.h"
+#include "ProgressCombinedImpl.h"
+#include "ProgressImpl.h"
+#include "RemoteUSBDeviceImpl.h"
 #include "SessionImpl.h"
-#include "ConsoleImpl.h"
-#include "ConsoleVRDPServer.h"
+#include "SharedFolderImpl.h"
+#include "USBDeviceImpl.h"
+#include "VirtualBoxClientImpl.h"
 
 #include "Logging.h"
 
@@ -83,6 +83,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPack, IExtPack)
 NS_DECL_CLASSINFO(ExtPackManager)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
 #endif
+NS_DECL_CLASSINFO(AdditionsFacility)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AdditionsFacility, IAdditionsFacility)
 
 NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
