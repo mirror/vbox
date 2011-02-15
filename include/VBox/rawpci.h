@@ -31,6 +31,30 @@
 
 RT_C_DECLS_BEGIN
 
+/**
+ * Handle for the raw PCI device.
+ */
+typedef RTR0PTR PCIRAWDEVHANDLE;
+
+
+/** Parameters buffer for PCIRAWR0_DO_OPEN_DEVICE call */
+typedef struct
+{
+    /* in */
+    uint32_t PciAddress;
+    uint32_t fFlags;
+    /* out */
+    PCIRAWDEVHANDLE Device;
+} PCIRAWREQOPENDEVICE;
+
+/** Parameters buffer for PCIRAWR0_DO_CLOSE_DEVICE call */
+typedef struct
+{
+    /* in */
+    uint32_t fFlags;
+} PCIRAWREQCLOSEDEVICE;
+
+
 /** Parameters buffer for PCIRAWR0_DO_GET_REGION_INFO call */
 typedef struct
 {
@@ -129,12 +153,6 @@ typedef struct
     PCIRAWMEMLOC         Value;
 } PCIRAWREQPCICFGREAD;
 
-
-/**
- * Handle for the raw PCI device.
- */
-typedef RTR0PTR PCIRAWDEVHANDLE;
-
 /**
  * Request buffer use for communication with the driver.
  */
@@ -153,6 +171,8 @@ typedef struct PCIRAWSENDREQ
     /** Call parameters. */
     union
     {
+        PCIRAWREQOPENDEVICE    aOpenDevice;
+        PCIRAWREQCLOSEDEVICE   aCloseDevice;
         PCIRAWREQGETREGIONINFO aGetRegionInfo;
         PCIRAWREQMAPREGION     aMapRegion;
         PCIRAWREQUNMAPREGION   aUnmapRegion;
@@ -171,6 +191,10 @@ typedef PCIRAWSENDREQ *PPCIRAWSENDREQ;
  */
 typedef enum PCIRAWR0OPERATION
 {
+    /* Open device. */
+    PCIRAWR0_DO_OPEN_DEVICE,
+    /* Close device. */
+    PCIRAWR0_DO_CLOSE_DEVICE,
     /* Get PCI region info. */
     PCIRAWR0_DO_GET_REGION_INFO,
     /* Map PCI region into VM address space. */
