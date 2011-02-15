@@ -613,7 +613,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
 
 bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
 {
-    Assert(enmFacility < UINT32_MAX);
+    Assert(enmFacility < INT32_MAX);
     FacilityMapIterConst it = mData.mFacilityMap.find((AdditionsFacilityType_T)enmFacility);
     if (it != mData.mFacilityMap.end())
     {
@@ -625,7 +625,7 @@ bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
 
 HRESULT Guest::facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus)
 {
-    ComAssertRet(enmFacility < UINT32_MAX, E_INVALIDARG);
+    ComAssertRet(enmFacility < INT32_MAX, E_INVALIDARG);
 
     HRESULT rc;
     RTTIMESPEC tsNow;

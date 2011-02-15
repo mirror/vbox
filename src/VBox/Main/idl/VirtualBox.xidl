@@ -7978,14 +7978,14 @@
 
   <interface
     name="IAdditionsFacility" extends="$unknown"
-    uuid="5b681761-e865-4bdd-9d6e-135aa8f26e66"
+    uuid="54992946-6af1-4e49-98ec-58b558b7291e"
     wsmap="struct"
     >
     <desc>
       Structure representing a Guest Additions facility.
     </desc>
 
-    <attribute name="class" type="AdditionsFacilityClass" readonly="yes">
+    <attribute name="classType" type="AdditionsFacilityClass" readonly="yes">
       <desc>Additions facility class.</desc>
     </attribute>
 
