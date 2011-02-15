@@ -7909,6 +7909,34 @@
   </enum>
 
   <enum
+    name="AdditionsFacilityClass"
+    uuid="9cff7275-9a5b-4dcd-b164-523e001a5a9e"
+    >
+    <desc>
+      Guest Additions facility classes.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No/invalid class.</desc>
+    </const>
+    <const name="Driver"                  value="10">
+      <desc>Driver.</desc>
+    </const>
+    <const name="Service"                 value="30">
+      <desc>System service.</desc>
+    </const>
+    <const name="Program"                 value="50">
+      <desc>Program.</desc>
+    </const>
+    <const name="Feature"                 value="100">
+      <desc>Feature.</desc>
+    </const>
+    <const name="ThirdParty"              value="999">
+      <desc>Third party.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="AdditionsFacilityStatus"
     uuid="ce06f9e1-394e-4fe9-9368-5a88c567dbde"
     >
@@ -7944,6 +7972,36 @@
       <desc>Facility status is unknown.</desc>
     </const>
   </enum>
+
+  <interface
+    name="IAdditionsFacility" extends="$unknown"
+    uuid="5b681761-e865-4bdd-9d6e-135aa8f26e66"
+    wsmap="struct"
+    >
+    <desc>
+      Structure representing a Guest Additions facility.
+    </desc>
+
+    <attribute name="class" type="AdditionsFacilityClass" readonly="yes">
+      <desc>Additions facility class.</desc>
+    </attribute>
+
+    <attribute name="lastUpdated" type="long long" readonly="yes">
+      <desc>Timestamp of last updated status.</desc>
+    </attribute>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>Additions facility name.</desc>
+    </attribute>
+
+    <attribute name="status" type="AdditionsFacilityStatus" readonly="yes">
+      <desc>Additions facility status.</desc>
+    </attribute>
+
+    <attribute name="type" type="AdditionsFacilityType" readonly="yes">
+      <desc>Additions facility type.</desc>
+    </attribute>
+  </interface>
 
   <enum
     name="AdditionsRunLevelType"
@@ -8109,6 +8167,13 @@
         Version of the Guest Additions including the revision (3 decimal numbers
         separated by dots + revision number) installed on the guest or empty
         when the Additions are not installed.
+      </desc>
+    </attribute>
+
+    <attribute name="facilities" type="IAdditionsFacility" readonly="yes" safearray="yes">
+      <desc>
+        Array of current known facilities. Only returns facilities where a status is known,
+        e.g. facilities with an unknown status will not be returned.
       </desc>
     </attribute>
 

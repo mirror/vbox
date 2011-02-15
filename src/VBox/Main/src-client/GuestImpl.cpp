@@ -236,6 +236,21 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     return hr;
 }
 
+STDMETHODIMP Guest::COMGETTER(Facilities)(ComSafeArrayOut(IAdditionsFacility*, aFacilities))
+{
+    CheckComArgOutPointerValid(aFacilities);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    SafeIfaceArray<IAdditionsFacility> fac(mData.mFacilityMap);
+    fac.detachTo(ComSafeArrayOutArg(aFacilities));
+
+    return S_OK;
+}
+
 BOOL Guest::isPageFusionEnabled()
 {
     AutoCaller autoCaller(this);
@@ -246,7 +261,7 @@ BOOL Guest::isPageFusionEnabled()
     return mfPageFusionEnabled;
 }
 
-STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
+STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize)(ULONG *aMemoryBalloonSize)
 {
     CheckComArgOutPointerValid(aMemoryBalloonSize);
 
@@ -260,7 +275,7 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
+STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize)(ULONG aMemoryBalloonSize)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -426,12 +441,14 @@ STDMETHODIMP Guest::GetFacilityStatus(AdditionsFacilityType_T aType, LONG64 *aTi
     CheckComArgNotNull(aStatus);
     /* Not checking for aTimestamp is intentional; it's optional. */
 
-    FacilityMapIter it = mData.mFacilityMap.find(aType);
+    FacilityMapIterConst it = mData.mFacilityMap.find(aType);
     if (it != mData.mFacilityMap.end())
     {
-        *aStatus = it->second.curStatus;
+        AdditionsFacility *pFacility = it->second;
+        ComAssert(pFacility);
+        *aStatus = pFacility->getStatus();
         if (aTimestamp)
-            *aTimestamp = RTTimeSpecGetMilli(&it->second.tsLastUpdated);
+            *aTimestamp = pFacility->getLastUpdated();
     }
     else
     {
@@ -559,7 +576,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * so enable it by default. Newer Additions will not enable this here
      * and use the setSupportedFeatures function instead.
      */
-    updateFacility(VBoxGuestFacilityType_Graphics, facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver) ?
+    facilityUpdate(VBoxGuestFacilityType_Graphics, facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver) ?
                    VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
 
     /*
@@ -596,20 +613,44 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
 
 bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
 {
-    return mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility].curStatus == AdditionsFacilityStatus_Active;
+    Assert(enmFacility < UINT32_MAX);
+    FacilityMapIterConst it = mData.mFacilityMap.find((AdditionsFacilityType_T)enmFacility);
+    if (it != mData.mFacilityMap.end())
+    {
+        AdditionsFacility *pFac = it->second;
+        return (pFac->getStatus() == AdditionsFacilityStatus_Active);
+    }
+    return false;
 }
 
-void Guest::updateFacility(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus)
+HRESULT Guest::facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus)
 {
-    Assert(enmFacility < UINT32_MAX);
-    FacilityData *pData = &mData.mFacilityMap[(AdditionsFacilityType_T)enmFacility];
-    AssertPtr(pData);
+    ComAssertRet(enmFacility < UINT32_MAX, E_INVALIDARG);
 
-    RTTimeNow(&pData->tsLastUpdated);
-    pData->curStatus = (AdditionsFacilityStatus_T)enmStatus;
+    HRESULT rc;
+    RTTIMESPEC tsNow;
+    RTTimeNow(&tsNow);
 
-    LogFlowFunc(("Setting guest facility %u = %u (%u)\n",
-                 enmFacility, pData->curStatus, pData->tsLastUpdated));
+    FacilityMapIter it = mData.mFacilityMap.find((AdditionsFacilityType_T)enmFacility);
+    if (it != mData.mFacilityMap.end())
+    {
+        AdditionsFacility *pFac = it->second;
+        rc = pFac->update((AdditionsFacilityStatus_T)enmStatus, tsNow);
+    }
+    else
+    {
+        ComObjPtr<AdditionsFacility> pFacility;
+        pFacility.createObject();
+        ComAssert(!pFacility.isNull());
+        rc = pFacility->init(this,
+                             (AdditionsFacilityType_T)enmFacility,
+                             (AdditionsFacilityStatus_T)enmStatus);
+        if (SUCCEEDED(rc))
+            mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)enmFacility, pFacility));
+    }
+
+    LogFlowFunc(("Returned with rc=%Rrc\n"));
+    return rc;
 }
 
 /**
@@ -665,12 +706,12 @@ void Guest::setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacil
             FacilityMapIter it = mData.mFacilityMap.begin();
             while (it != mData.mFacilityMap.end())
             {
-                updateFacility((VBoxGuestFacilityType)it->first, enmStatus);
+                facilityUpdate((VBoxGuestFacilityType)it->first, enmStatus);
                 it++;
             }
         }
         else /* Update one facility only. */
-            updateFacility(enmFacility, enmStatus);
+            facilityUpdate(enmFacility, enmStatus);
     }
 }
 
@@ -686,10 +727,10 @@ void Guest::setSupportedFeatures(uint32_t aCaps)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    updateFacility(VBoxGuestFacilityType_Seamless, aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ?
+    facilityUpdate(VBoxGuestFacilityType_Seamless, aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ?
                    VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
-    updateFacility(VBoxGuestFacilityType_Graphics, aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ?
+    facilityUpdate(VBoxGuestFacilityType_Graphics, aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ?
                    VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
