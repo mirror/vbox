@@ -50,7 +50,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     int tlS, brS, trS, blS;
     int overlappingScreenCount, primaryS, i;
 
-    if (cr_server.screenCount<2)
+    if (cr_server.screenCount<2 && !cr_server.bForceOffscreenRendering)
     {
         CRASSERT(cr_server.screenCount>0);
 
@@ -104,7 +104,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     mural->hX = mural->gX-cr_server.screen[primaryS].x;
     mural->hY = mural->gY-cr_server.screen[primaryS].y;
 
-    if (overlappingScreenCount<2)
+    if (overlappingScreenCount<2 && !cr_server.bForceOffscreenRendering)
     {
         if (mural->bUseFBO)
         {
