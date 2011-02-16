@@ -356,18 +356,19 @@
               </listitem>
 
               <listitem>
-                <para>Alternatively, if you have built your own kernel,
-                <computeroutput>/usr/src/linux</computeroutput> should point
-                to your kernel sources. If you have not removed the files
-                created during the build process, then your system will
-                already be set up correctly.</para>
+                <para>If you have built your own kernel, you will need to make
+                sure that you also installed all the required header and other
+                files for building external modules to the right locations. The
+                details of how to do this will depend on how you built your
+                kernel, and if you are unsure you should consult the documentation
+                which you followed to do so.</para>
               </listitem>
             </itemizedlist>
           </listitem>
 
           <listitem>
-            <para>The kernel of your Linux host was updated and DKMS is not
-            installed. In that case, the kernel module will need to be
+            <para>If the kernel of your Linux host gets updated and DKMS is
+            not installed, the kernel module will need to be
             reinstalled by executing (as root):</para>
 
             <screen>/etc/init.d/vboxdrv setup</screen>
