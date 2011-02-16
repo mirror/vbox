@@ -133,7 +133,7 @@ endif
 
 # Pack it all up using a temporary staging directory.
 $(VBOX_PATH_PACKAGES)/$(VBOX_SKELETON_MANGLED_NAME)-$(VBOX_VERSION_STRING)r$(VBOX_SVN_REV).vbox-extpack: \
-		$$(foreach file, $(VBOX_SKELETON_FILES), $(firstword $(subst =>,$(SP),$(file)))) \
+		$$(foreach file, $$(VBOX_SKELETON_FILES), $$(firstword $$(subst =>,$$(SP),$$(file)))) \
 		| $(VBOX_PATH_PACKAGES)/
 	$(RM) -f $(wildcard $(VBOX_PATH_PACKAGES)/$(VBOX_SKELETON_MANGLED_NAME)-*.vbox-extpack) \
 		$(VBoxSkeletonIns_0_OUTDIR)/ExtPack.manifest \
