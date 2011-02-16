@@ -431,6 +431,8 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
         else
             pAioMgrNew->enmMgrType = pEpClass->enmMgrTypeOverride;
 
+        pAioMgrNew->msBwLimitExpired = RT_INDEFINITE_WAIT;
+
         rc = RTSemEventCreate(&pAioMgrNew->EventSem);
         if (RT_SUCCESS(rc))
         {
@@ -862,10 +864,20 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     PDMACEPFILEMGRTYPE enmMgrType = pEpClassFile->enmMgrTypeOverride;
     PDMACFILEEPBACKEND enmEpBackend = pEpClassFile->enmEpBackendDefault;
 
-    AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_DONT_LOCK)) == 0,
+    AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_DONT_LOCK | PDMACEP_FILE_FLAGS_HOST_CACHE_ENABLED)) == 0,
                     ("PDMAsyncCompletion: Invalid flag specified\n"), VERR_INVALID_PARAMETER);
 
     unsigned fFileFlags = RTFILE_O_OPEN;
+
+    /*
+     * Revert to the simple manager and the buffered backend if
+     * the host cache should be enabled.
+     */
+    if (fFlags & PDMACEP_FILE_FLAGS_HOST_CACHE_ENABLED)
+    {
+        enmMgrType   = PDMACEPFILEMGRTYPE_SIMPLE;
+        enmEpBackend = PDMACFILEEPBACKEND_BUFFERED;
+    }
 
     if (fFlags & PDMACEP_FILE_FLAGS_READ_ONLY)
         fFileFlags |= RTFILE_O_READ | RTFILE_O_DENY_NONE;
