@@ -3154,7 +3154,7 @@ def detachpciCmd(ctx, args):
         print "invalid host PCI %s, accepted format 01:02.3 for bus 1, device 2, function 3" %(args[2])
         return 0
 
-    cmdClosedVm(ctx, mach, 'guestlambda', lambda ctx,mach,a: mach.detachHostPciDevice(hostaddr))
+    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.detachHostPciDevice(hostaddr))
     return 0
 
 aliases = {'s':'start',
