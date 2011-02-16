@@ -366,9 +366,19 @@ VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 #define CPUM_CHANGED_SYSENTER_MSR               RT_BIT(9)
 #define CPUM_CHANGED_HIDDEN_SEL_REGS            RT_BIT(10)
 #define CPUM_CHANGED_CPUID                      RT_BIT(11)
-#define CPUM_CHANGED_ALL                        \
-    ( CPUM_CHANGED_FPU_REM | CPUM_CHANGED_CR0 | CPUM_CHANGED_CR3 | CPUM_CHANGED_CR4 | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR \
-     | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_CPUID )
+/** All except CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID.  */
+#define CPUM_CHANGED_ALL                        (  CPUM_CHANGED_FPU_REM \
+                                                 | CPUM_CHANGED_CR0 \
+                                                 | CPUM_CHANGED_GLOBAL_TLB_FLUSH \
+                                                 | CPUM_CHANGED_CR3 \
+                                                 | CPUM_CHANGED_CR4 \
+                                                 | CPUM_CHANGED_GDTR \
+                                                 | CPUM_CHANGED_IDTR \
+                                                 | CPUM_CHANGED_LDTR \
+                                                 | CPUM_CHANGED_TR \
+                                                 | CPUM_CHANGED_SYSENTER_MSR \
+                                                 | CPUM_CHANGED_HIDDEN_SEL_REGS \
+                                                 | CPUM_CHANGED_CPUID )
 /** This one is used by raw-mode to indicate that the hidden register
  * information is not longer reliable and have to be re-determined.
  *
