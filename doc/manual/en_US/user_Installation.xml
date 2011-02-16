@@ -367,8 +367,8 @@
           </listitem>
 
           <listitem>
-            <para>If the kernel of your Linux host gets updated and DKMS is
-            not installed, the kernel module will need to be
+            <para>The kernel of your Linux host was updated and DKMS is not
+            installed. In that case, the kernel module will need to be
             reinstalled by executing (as root):</para>
 
             <screen>/etc/init.d/vboxdrv setup</screen>
