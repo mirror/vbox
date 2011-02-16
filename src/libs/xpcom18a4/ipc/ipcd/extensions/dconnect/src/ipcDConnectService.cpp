@@ -2221,7 +2221,7 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
 DConnectStub::~DConnectStub()
 {
 #ifdef IPC_LOGGING
-  const char *name;
+  const char *name = NULL;
   mIInfo->GetNameShared(&name);
   LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=0x%Lx {%s}\n",
        this, mPeerID, mInstance, name));
