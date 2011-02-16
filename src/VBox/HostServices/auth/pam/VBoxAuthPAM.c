@@ -223,7 +223,7 @@ static const char *auth_get_pam_service (void)
 
     if (service == NULL)
     {
-        service = service = getenv (VBOX_AUTH_PAM_SERVICE_NAME_ENV_OLD);
+        service = getenv (VBOX_AUTH_PAM_SERVICE_NAME_ENV_OLD);
 
         if (service == NULL)
         {
