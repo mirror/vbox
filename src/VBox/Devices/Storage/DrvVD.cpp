@@ -190,6 +190,8 @@ typedef struct VBOXDISK
     uint8_t            *pbData;
     /** Bandwidth group the disk is assigned to. */
     char               *pszBwGroup;
+    /** Flag whether async I/O using the host cache is enabled. */
+    bool                fAsyncIoWithHostCache;
 
     /** I/O interface for a cache image. */
     VDINTERFACE         VDIIOCache;
@@ -371,6 +373,8 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
 
                     fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
                 }
+                if (pThis->fAsyncIoWithHostCache)
+                    fFlags |= PDMACEP_FILE_FLAGS_HOST_CACHE_ENABLED;
 
                 rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
                                                          pszLocation, fFlags,
@@ -2377,6 +2381,16 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdINIPSelectOneEx;
             pThis->VDITcpNetCallbacks.pfnPoke = drvvdINIPPoke;
 #endif /* VBOX_WITH_INIP */
+        }
+
+        /*
+         * The image has a bandwidth group but the host cache is enabled.
+         * Use the async I/O framework but tell it to enable the host cache.
+         */
+        if (!fUseNewIo && pThis->pszBwGroup)
+        {
+            pThis->fAsyncIoWithHostCache = true;
+            fUseNewIo = true;
         }
 
         /** @todo quick hack to work around problems in the async I/O
