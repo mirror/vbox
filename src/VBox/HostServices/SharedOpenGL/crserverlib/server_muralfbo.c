@@ -339,6 +339,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
             /* rect in window relative coords */
             crServerTransformRect(&rectwr, &rect, -mural->gX, -mural->gY);
 
+#if 0 /*@todo recheck with compiz on guests, as we could sometimes have main compiz windows without visible rects*/
             if (!mural->pVisibleRects)
             {
                 tmppixels = crAlloc(4*(rect.x2-rect.x1)*(rect.y2-rect.y1));
@@ -353,27 +354,25 @@ void crServerPresentFBO(CRMuralInfo *mural)
                 /*Note: pfnPresentFBO would free tmppixels*/
                 cr_server.pfnPresentFBO(tmppixels, i, rect.x1-cr_server.screen[i].x, rect.y1-cr_server.screen[i].y, rect.x2-rect.x1, rect.y2-rect.y1);
             }
-            else
+#endif
+            for (j=0; j<mural->cVisibleRects; ++j)
             {
-                for (j=0; j<mural->cVisibleRects; ++j)
+                if (crServerIntersectRect(&rectwr, (CRrecti*) &mural->pVisibleRects[4*j], &sectr))
                 {
-                    if (crServerIntersectRect(&rectwr, (CRrecti*) &mural->pVisibleRects[4*j], &sectr))
+                    tmppixels = crAlloc(4*(sectr.x2-sectr.x1)*(sectr.y2-sectr.y1));
+                    if (!tmppixels)
                     {
-                        tmppixels = crAlloc(4*(sectr.x2-sectr.x1)*(sectr.y2-sectr.y1));
-                        if (!tmppixels)
-                        {
-                            crWarning("Out of memory in crServerPresentFBO");
-                            crFree(pixels);
-                            return;
-                        }
-
-                        crServerCopySubImage(tmppixels, pixels, &sectr, mural->fboWidth, mural->fboHeight);
-                        /*Note: pfnPresentFBO would free tmppixels*/
-                        cr_server.pfnPresentFBO(tmppixels, i,
-                                                sectr.x1+mural->gX-cr_server.screen[i].x,
-                                                sectr.y1+mural->gY-cr_server.screen[i].y,
-                                                sectr.x2-sectr.x1, sectr.y2-sectr.y1);
+                        crWarning("Out of memory in crServerPresentFBO");
+                        crFree(pixels);
+                        return;
                     }
+
+                    crServerCopySubImage(tmppixels, pixels, &sectr, mural->fboWidth, mural->fboHeight);
+                    /*Note: pfnPresentFBO would free tmppixels*/
+                    cr_server.pfnPresentFBO(tmppixels, i,
+                                            sectr.x1+mural->gX-cr_server.screen[i].x,
+                                            sectr.y1+mural->gY-cr_server.screen[i].y,
+                                            sectr.x2-sectr.x1, sectr.y2-sectr.y1);
                 }
             }
         }
