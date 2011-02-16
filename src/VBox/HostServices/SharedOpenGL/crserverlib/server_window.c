@@ -85,6 +85,7 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
 
         mural->cVisibleRects = 0;
         mural->pVisibleRects = NULL;
+        mural->bReceivedRects = GL_FALSE;
 
         /* generate ID for this new window/mural (special-case for file conns) */
         if (cr_server.curClient && cr_server.curClient->conn->type == CR_FILE)
@@ -281,6 +282,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
     }
 
     mural->cVisibleRects = cRects;
+    mural->bReceivedRects = GL_TRUE;
     if (cRects)
     {
         mural->pVisibleRects = (GLint*) crAlloc(4*sizeof(GLint)*cRects);

@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define SHCROGL_SSM_VERSION 24
+#define SHCROGL_SSM_VERSION 25
 
 #define CR_MAX_WINDOWS 100
 #define CR_MAX_CLIENTS 64
@@ -63,8 +63,9 @@ typedef struct {
     GLboolean bVisible;      /*guest window is visible*/
     GLboolean bUseFBO;       /*redirect to FBO instead of real host window*/
 
-    GLint  cVisibleRects;    /*count of visible rects*/
-    GLint *pVisibleRects;    /*visible rects left, top, right, bottom*/
+    GLint       cVisibleRects;    /*count of visible rects*/
+    GLint      *pVisibleRects;    /*visible rects left, top, right, bottom*/
+    GLboolean   bReceivedRects;   /*indicates if guest did any updates for visible regions*/
 
     GLuint idFBO, idColorTex, idDepthStencilRB;
     GLuint fboWidth, fboHeight;
