@@ -26,15 +26,50 @@
 
 #include "PDMAsyncCompletionFileInternal.h"
 
+/**
+ * Put a list of tasks in the pending request list of an endpoint.
+ */
+DECLINLINE(void) pdmacFileAioMgrEpAddTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTaskHead)
+{
+    /* Add the rest of the tasks to the pending list */
+    if (!pEndpoint->AioMgr.pReqsPendingHead)
+    {
+        Assert(!pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingHead = pTaskHead;
+    }
+    else
+    {
+        Assert(pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingTail->pNext = pTaskHead;
+    }
 
-static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+    /* Update the tail. */
+    while (pTaskHead->pNext)
+        pTaskHead = pTaskHead->pNext;
+
+    pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
+    pTaskHead->pNext = NULL;
+}
+
+/**
+ * Processes a given task list for assigned to the given endpoint.
+ */
+static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMACEPFILEMGR pAioMgr,
+                                                          PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                                           PPDMACTASKFILE pTasks)
 {
     int rc = VINF_SUCCESS;
 
     while (pTasks)
     {
+        RTMSINTERVAL msWhenNext;
         PPDMACTASKFILE pCurr = pTasks;
+
+        if (!pdmacEpIsTransferAllowed(&pEndpoint->Core, (uint32_t)pCurr->DataSeg.cbSeg, &msWhenNext))
+        {
+            pAioMgr->msBwLimitExpired = RT_MIN(pAioMgr->msBwLimitExpired, msWhenNext);
+            break;
+        }
 
         pTasks = pTasks->pNext;
 
@@ -79,10 +114,17 @@ static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONEND
         pdmacFileTaskFree(pEndpoint, pCurr);
     }
 
+    if (pTasks)
+    {
+        /* Add the rest of the tasks to the pending list */
+        pdmacFileAioMgrEpAddTaskList(pEndpoint, pTasks);
+    }
+
     return VINF_SUCCESS;
 }
 
-static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMACEPFILEMGR pAioMgr,
+                                                  PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
     int rc = VINF_SUCCESS;
     PPDMACTASKFILE pTasks = pEndpoint->AioMgr.pReqsPendingHead;
@@ -92,14 +134,14 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
 
     /* Process the request pending list first in case the endpoint was migrated due to an error. */
     if (pTasks)
-        rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pEndpoint, pTasks);
+        rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pAioMgr, pEndpoint, pTasks);
 
     if (RT_SUCCESS(rc))
     {
         pTasks = pdmacFileEpGetNewTasks(pEndpoint);
 
         if (pTasks)
-            rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pEndpoint, pTasks);
+            rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pAioMgr, pEndpoint, pTasks);
     }
 
     return rc;
@@ -119,9 +161,9 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
     {
         ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, true);
         if (!ASMAtomicReadBool(&pAioMgr->fWokenUp))
-            rc = RTSemEventWait(pAioMgr->EventSem, RT_INDEFINITE_WAIT);
+            rc = RTSemEventWait(pAioMgr->EventSem, pAioMgr->msBwLimitExpired);
         ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, false);
-        AssertRC(rc);
+        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
 
         LogFlow(("Got woken up\n"));
         ASMAtomicWriteBool(&pAioMgr->fWokenUp, false);
@@ -130,7 +172,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
         PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint = pAioMgr->pEndpointsHead;
         while (pEndpoint)
         {
-            rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpoint);
+            pAioMgr->msBwLimitExpired = RT_INDEFINITE_WAIT;
+            rc = pdmacFileAioMgrFailsafeProcessEndpoint(pAioMgr, pEndpoint);
             AssertRC(rc);
             pEndpoint = pEndpoint->AioMgr.pEndpointNext;
         }
@@ -159,7 +202,7 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                      * Process the task list the first time. There might be pending requests
                      * if the endpoint was migrated from another endpoint.
                      */
-                    rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpointNew);
+                    rc = pdmacFileAioMgrFailsafeProcessEndpoint(pAioMgr, pEndpointNew);
                     AssertRC(rc);
                     break;
                 }
@@ -192,7 +235,7 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                     pEndpointClose->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_CLOSING;
 
                     /* Make sure all tasks finished. */
-                    rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpointClose);
+                    rc = pdmacFileAioMgrFailsafeProcessEndpoint(pAioMgr, pEndpointClose);
                     AssertRC(rc);
                     break;
                 }

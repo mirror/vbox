@@ -61,7 +61,6 @@ int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
         pAioMgr->iFreeEntry       = 0;
         pAioMgr->cReqEntries      = pAioMgr->cRequestsActiveMax;
         pAioMgr->pahReqsFree      = (RTFILEAIOREQ *)RTMemAllocZ(pAioMgr->cReqEntries * sizeof(RTFILEAIOREQ));
-        pAioMgr->msBwLimitExpired = RT_INDEFINITE_WAIT;
 
         if (pAioMgr->pahReqsFree)
         {
