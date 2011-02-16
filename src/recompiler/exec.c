@@ -1922,11 +1922,19 @@ DECLINLINE(void) tlb_flush_jmp_cache(CPUState *env, target_ulong addr)
 #endif /* VBOX */
 }
 
+static CPUTLBEntry s_cputlb_empty_entry = {
+    .addr_read  = -1,
+    .addr_write = -1,
+    .addr_code  = -1,
+    .addend     = -1,
+};
+
 /* NOTE: if flush_global is true, also flush global entries (not
    implemented yet) */
 void tlb_flush(CPUState *env, int flush_global)
 {
     int i;
+
 #if defined(DEBUG_TLB)
     printf("tlb_flush:\n");
 #endif
@@ -1935,32 +1943,10 @@ void tlb_flush(CPUState *env, int flush_global)
     env->current_tb = NULL;
 
     for(i = 0; i < CPU_TLB_SIZE; i++) {
-        env->tlb_table[0][i].addr_read = -1;
-        env->tlb_table[0][i].addr_write = -1;
-        env->tlb_table[0][i].addr_code = -1;
-        env->tlb_table[1][i].addr_read = -1;
-        env->tlb_table[1][i].addr_write = -1;
-        env->tlb_table[1][i].addr_code = -1;
-#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
-        env->phys_addends[0][i] = -1;
-        env->phys_addends[1][i] = -1;
-#endif
-#if (NB_MMU_MODES >= 3)
-        env->tlb_table[2][i].addr_read = -1;
-        env->tlb_table[2][i].addr_write = -1;
-        env->tlb_table[2][i].addr_code = -1;
-#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
-        env->phys_addends[2][i] = -1;
-#endif
-#if (NB_MMU_MODES == 4)
-        env->tlb_table[3][i].addr_read = -1;
-        env->tlb_table[3][i].addr_write = -1;
-        env->tlb_table[3][i].addr_code = -1;
-#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
-        env->phys_addends[3][i] = -1;
-#endif
-#endif
-#endif
+        int mmu_idx;
+        for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
+            env->tlb_table[mmu_idx][i] = s_cputlb_empty_entry;
+        }
     }
 
     memset (env->tb_jmp_cache, 0, TB_JMP_CACHE_SIZE * sizeof (void *));
