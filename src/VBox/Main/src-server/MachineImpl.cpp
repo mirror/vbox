@@ -5836,6 +5836,15 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
         HRESULT rc = checkStateDependency(MutableStateDep);
         if (FAILED(rc)) return rc;
 
+        ChipsetType_T aChipset = ChipsetType_PIIX3;
+        COMGETTER(ChipsetType)(&aChipset);
+
+        if (aChipset != ChipsetType_ICH9)
+        {
+            return setError(E_INVALIDARG,
+                            tr("Host PCI attachment only supported with ICH9 chipset"));
+        }
+
         ComObjPtr<PciDeviceAttachment> pda;
         char name[32];
 

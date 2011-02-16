@@ -53,6 +53,11 @@ typedef struct VBOXRAWPCIINS
     /* Host PCI address of this device. */
     uint32_t           HostPciAddress;
 
+    /** The session this interface is associated with. */
+    PSUPDRVSESSION     pSession;
+    /** The SUPR0 object id. */
+    void               *pvObj;
+    
     /** Port, given to the outside world. */
     RAWPCIDEVPORT      DevPort;
 } VBOXRAWPCIINS;
