@@ -1358,8 +1358,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                         paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
                                 }
 
-                                PGM_PAGE_SET_STATE(&pCur->aPages[iPage], PGM_PAGE_STATE_WRITE_MONITORED);
-                                pVM->pgm.s.cMonitoredPages++;
+                                pgmPhysPageWriteMonitor(pVM, &pCur->aPages[iPage], 
+                                                        pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                                 paLSPages[iPage].fWriteMonitored        = 1;
                                 paLSPages[iPage].fWriteMonitoredJustNow = 1;
                                 paLSPages[iPage].fDirty                 = 1;
@@ -2657,7 +2657,8 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                         }
                         /* Free it only if it's not part of a previously
                            allocated large page (no need to clear the page). */
-                        else if (PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE)
+                        else if (   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
+                                 && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED)
                         {
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
                             AssertRCReturn(rc, rc);

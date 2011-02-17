@@ -382,6 +382,9 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
 # ifdef PGM_WITH_LARGE_PAGES
+    /*
+     * Try allocate a large page if applicable.
+     */
     if (    PGMIsUsingLargePages(pVM)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
@@ -498,6 +501,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 }
 
 #ifdef PGM_WITH_LARGE_PAGES
+
 /**
  * Replace a 2 MB range of zero pages with new pages that we can write to.
  *
@@ -525,73 +529,70 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
     Assert(PGMIsLocked(pVM));
     Assert(PGMIsUsingLargePages(pVM));
 
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
+    PPGMPAGE pFirstPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pFirstPage);
     if (    RT_SUCCESS(rc)
-        &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
+        &&  PGM_PAGE_GET_TYPE(pFirstPage) == PGMPAGETYPE_RAM)
     {
-        unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pPage);
+        unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pFirstPage);
 
         /* Don't call this function for already allocated pages. */
         Assert(uPDEType != PGM_PAGE_PDE_TYPE_PDE);
 
-        if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
-             && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
+        if (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
+            && PGM_PAGE_GET_STATE(pFirstPage) == PGM_PAGE_STATE_ZERO)
         {
-            unsigned iPage;
-
-            GCPhys = GCPhysBase;
-
             /* Lazy approach: check all pages in the 2 MB range.
-             * The whole range must be ram and unallocated
-             */
+             * The whole range must be ram and unallocated. */ 
+            GCPhys = GCPhysBase;
+            unsigned iPage;
             for (iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
             {
-                rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+                PPGMPAGE pSubPage;
+                rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pSubPage);
                 if  (   RT_FAILURE(rc)
-                     || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM        /* Anything other than ram implies monitoring. */
-                     || PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ZERO)   /* allocated, monitored or shared means we can't use a large page here */
+                     || PGM_PAGE_GET_TYPE(pSubPage)  != PGMPAGETYPE_RAM      /* Anything other than ram implies monitoring. */
+                     || PGM_PAGE_GET_STATE(pSubPage) != PGM_PAGE_STATE_ZERO) /* Allocated, monitored or shared means we can't use a large page here */
                 {
-                    LogFlow(("Found page %RGp with wrong attributes (type=%d; state=%d); cancel check. rc=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage), PGM_PAGE_GET_STATE(pPage), rc));
+                    LogFlow(("Found page %RGp with wrong attributes (type=%d; state=%d); cancel check. rc=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pSubPage), PGM_PAGE_GET_STATE(pSubPage), rc));
                     break;
                 }
-                Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
+                Assert(PGM_PAGE_GET_PDE_TYPE(pSubPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
                 GCPhys += PAGE_SIZE;
             }
-            /* Fetch the start page of the 2 MB range again. */
-            rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
-            AssertRC(rc);   /* can't fail */
-
             if (iPage != _2M/PAGE_SIZE)
             {
                 /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
                 STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
-                PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
+                PGM_PAGE_SET_PDE_TYPE(pFirstPage, PGM_PAGE_PDE_TYPE_PT);
                 return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
             }
-            else
-            {
-# ifdef IN_RING3
-                rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhysBase);
-# else
-                rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
-# endif
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                    STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageAlloc);
-                    return VINF_SUCCESS;
-                }
-                LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
 
-                /* If we fail once, it most likely means the host's memory is too fragmented; don't bother trying again. */
-                PGMSetLargePageUsage(pVM, false);
-                return rc;
+            /*
+             * Do the allocation.
+             */
+# ifdef IN_RING3
+            rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhysBase);
+# else
+            rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
+# endif
+            if (RT_SUCCESS(rc))
+            {
+                Assert(PGM_PAGE_GET_STATE(pFirstPage) == PGM_PAGE_STATE_ALLOCATED);
+                pVM->pgm.s.cLargePages++;
+                return VINF_SUCCESS;
             }
+
+            /* If we fail once, it most likely means the host's memory is too
+               fragmented; don't bother trying again. */
+            LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
+            PGMSetLargePageUsage(pVM, false);
+            return rc;
         }
     }
     return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
 }
+
 
 /**
  * Recheck the entire 2 MB range to see if we can use it again as a large page.
@@ -604,10 +605,8 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
  * @param   GCPhys      The address of the page.
  * @param   pLargePage  Page structure of the base page
  */
-int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
+int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 {
-    unsigned i;
-
     STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRecheck);
 
     GCPhys &= X86_PDE2M_PAE_PG_MASK;
@@ -618,12 +617,13 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
         ||  PGM_PAGE_GET_TYPE(pLargePage) != PGMPAGETYPE_RAM
         ||  PGM_PAGE_GET_HNDL_PHYS_STATE(pLargePage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
     {
-        LogFlow(("pgmPhysIsValidLargePage: checks failed for base page %x %x %x\n", PGM_PAGE_GET_STATE(pLargePage), PGM_PAGE_GET_TYPE(pLargePage), PGM_PAGE_GET_HNDL_PHYS_STATE(pLargePage)));
+        LogFlow(("pgmPhysRecheckLargePage: checks failed for base page %x %x %x\n", PGM_PAGE_GET_STATE(pLargePage), PGM_PAGE_GET_TYPE(pLargePage), PGM_PAGE_GET_HNDL_PHYS_STATE(pLargePage)));
         return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
     }
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,IsValidLargePage), a);
     /* Check all remaining pages in the 2 MB range. */
+    unsigned i;
     GCPhys += PAGE_SIZE;
     for (i = 1; i < _2M/PAGE_SIZE; i++)
     {
@@ -636,7 +636,7 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
             ||  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
             ||  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
         {
-            LogFlow(("pgmPhysIsValidLargePage: checks failed for page %d; %x %x %x\n", i, PGM_PAGE_GET_STATE(pPage), PGM_PAGE_GET_TYPE(pPage), PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)));
+            LogFlow(("pgmPhysRecheckLargePage: checks failed for page %d; %x %x %x\n", i, PGM_PAGE_GET_STATE(pPage), PGM_PAGE_GET_TYPE(pPage), PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)));
             break;
         }
 
@@ -647,7 +647,8 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
     if (i == _2M/PAGE_SIZE)
     {
         PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE);
-        Log(("pgmPhysIsValidLargePage: page %RGp can be reused!\n", GCPhys - _2M));
+        pVM->pgm.s.cLargePagesDisabled--;
+        Log(("pgmPhysRecheckLargePage: page %RGp can be reused!\n", GCPhys - _2M));
         return VINF_SUCCESS;
     }
 

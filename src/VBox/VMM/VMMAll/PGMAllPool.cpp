@@ -3443,29 +3443,29 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
     /* Is this page part of a large page? */
     if (PGM_PAGE_GET_PDE_TYPE(pPhysPage) == PGM_PAGE_PDE_TYPE_PDE)
     {
-        PPGMPAGE pPhysBase;
         RTGCPHYS GCPhysBase = GCPhysPage & X86_PDE2M_PAE_PG_MASK;
-
         GCPhysPage &= X86_PDE_PAE_PG_MASK;
 
         /* Fetch the large page base. */
+        PPGMPAGE pLargePage;
         if (GCPhysBase != GCPhysPage)
         {
-            pPhysBase = pgmPhysGetPage(&pVM->pgm.s, GCPhysBase);
-            AssertFatal(pPhysBase);
+            pLargePage = pgmPhysGetPage(&pVM->pgm.s, GCPhysBase);
+            AssertFatal(pLargePage);
         }
         else
-            pPhysBase = pPhysPage;
+            pLargePage = pPhysPage;
 
         Log(("pgmPoolTrackUpdateGCPhys: update large page PDE for %RGp (%RGp)\n", GCPhysBase, GCPhysPage));
 
-        if (PGM_PAGE_GET_PDE_TYPE(pPhysBase) == PGM_PAGE_PDE_TYPE_PDE)
+        if (PGM_PAGE_GET_PDE_TYPE(pLargePage) == PGM_PAGE_PDE_TYPE_PDE)
         {
             /* Mark the large page as disabled as we need to break it up to change a single page in the 2 MB range. */
-            PGM_PAGE_SET_PDE_TYPE(pPhysBase, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+            PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+            pVM->pgm.s.cLargePagesDisabled++;
 
             /* Update the base as that *only* that one has a reference and there's only one PDE to clear. */
-            rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pPhysBase, fFlushPTEs, pfFlushTLBs);
+            rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pLargePage, fFlushPTEs, pfFlushTLBs);
 
             *pfFlushTLBs = true;
             pgmUnlock(pVM);
