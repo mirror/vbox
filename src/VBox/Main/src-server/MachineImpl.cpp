@@ -1315,14 +1315,15 @@ STDMETHODIMP Machine::COMSETTER(CPUCount)(ULONG CPUCount)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* We cant go below the current number of CPUs if hotplug is enabled*/
+    /* We cant go below the current number of CPUs attached if hotplug is enabled*/
     if (mHWData->mCPUHotPlugEnabled)
     {
         for (unsigned idx = CPUCount; idx < SchemaDefs::MaxCPUCount; idx++)
         {
             if (mHWData->mCPUAttached[idx])
                 return setError(E_INVALIDARG,
-                                tr(": %lu (must be higher than or equal to %lu)"),
+                                tr("There is still a CPU attached to socket %lu."
+                                   "Detach the CPU before removing the socket"),
                                 CPUCount, idx+1);
         }
     }
