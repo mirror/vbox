@@ -1276,7 +1276,6 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
             unsigned cHeight, int x, int y)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    Bool rc = TRUE, fActive = !pVBox->afDisabled[cDisplay];
     uint32_t offStart, cwReal = cWidth;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
@@ -1291,35 +1290,34 @@ VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
      * VBOXPreInit. */
     if (   offStart + pVBox->cbLine * cHeight > pVBox->cbFBMax
         || pVBox->cbLine * pScrn->virtualY > pVBox->cbFBMax)
-        fActive = FALSE;
+        return FALSE;
     /* Deactivate the screen if it is outside of the virtual framebuffer and
      * clamp it to lie inside if it is partly outside. */
     if (x >= pScrn->displayWidth || x + (int) cWidth <= 0)
-        fActive = FALSE;
+        return FALSE;
     else
         cwReal = RT_MIN((int) cWidth, pScrn->displayWidth - x);
-    TRACE_LOG("pVBox->afDisabled[cDisplay]=%d, fActive=%d\n",
-              (int)pVBox->afDisabled[cDisplay], (int)fActive);
+    TRACE_LOG("pVBox->afDisabled[cDisplay]=%d\n",
+              (int)pVBox->afDisabled[cDisplay]);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
-    if (!pVBox->vtSwitch && fActive)
+    if (pVBox->vtSwitch)
+        return TRUE;
+    if (cDisplay == 0)
+        VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
+                                  vboxBPP(pScrn), 0, x, y);
+    /* Tell the host we support graphics */
+    if (vbox_device_available(pVBox))
+        vboxEnableGraphicsCap(pVBox);
+    if (pVBox->fHaveHGSMI)
     {
-        if (cDisplay == 0)
-            VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
-                                      vboxBPP(pScrn), 0, x, y);
-        /* Tell the host we support graphics */
-        if (vbox_device_available(pVBox))
-            vboxEnableGraphicsCap(pVBox);
-    }
-    if (   (pVBox->fHaveHGSMI)
-        && !pVBox->vtSwitch)
+        uint16_t fFlags = VBVA_SCREEN_F_ACTIVE;
+        fFlags |= (pVBox->afDisabled[cDisplay] ? VBVA_SCREEN_F_DISABLED : 0);
         VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
                                     offStart, pVBox->cbLine, cwReal, cHeight,
-                                    vboxBPP(pScrn),
-                                      VBVA_SCREEN_F_ACTIVE
-                                    | (fActive ? 0: VBVA_SCREEN_F_DISABLED));
-    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
-    return rc;
+                                    vboxBPP(pScrn), fFlags);
+    }
+    return TRUE;
 }
 
 /** Resize the virtual framebuffer.  After resizing we reset all modes
