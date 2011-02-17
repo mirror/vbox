@@ -56,15 +56,18 @@ protected:
 
 private slots:
 
+    /* Snapshot tree slots: */
     void onCurrentChanged (QTreeWidgetItem *aItem = 0);
     void onContextMenuRequested (const QPoint &aPoint);
     void onItemChanged (QTreeWidgetItem *aItem);
 
-    void restoreSnapshot();
-    void deleteSnapshot();
-    void showSnapshotDetails();
-    void takeSnapshot();
+    /* Snapshot functionality slots: */
+    void sltTakeSnapshot();
+    void sltRestoreSnapshot();
+    void sltDeleteSnapshot();
+    void sltShowSnapshotDetails();
 
+    /* Main API event handlers: */
     void machineDataChanged(QString strId);
     void machineStateChanged(QString strId, KMachineState state);
     void sessionStateChanged(QString strId, KSessionState state);
@@ -72,6 +75,12 @@ private slots:
     void updateSnapshotsAge();
 
 private:
+
+    /* Snapshot private functions: */
+    bool takeSnapshot();
+    //bool restoreSnapshot();
+    //bool deleteSnapshot();
+    //bool showSnapshotDetails();
 
     void refreshAll();
     SnapshotWgtItem* findItem (const QString &aSnapshotId);

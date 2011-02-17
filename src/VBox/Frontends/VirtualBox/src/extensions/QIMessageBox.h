@@ -69,7 +69,9 @@ public:
         ButtonMask = 0xFF,
 
         Default = 0x100, Escape = 0x200,
-        FlagMask = 0x300
+        FlagMask = 0x300,
+
+        OptionChosen = 0x400
     };
 
     QIMessageBox (const QString &aCaption, const QString &aText,
