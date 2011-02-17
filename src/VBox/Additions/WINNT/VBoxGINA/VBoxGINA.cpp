@@ -322,51 +322,17 @@ BOOL WINAPI WlxActivateUserShell(PVOID pWlxContext, PWSTR pszDesktopName,
 
 int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 {
-    HKEY hKey;
-    DWORD dwValue = 1;
-    DWORD dwSize = 0;
-    DWORD dwType = 0;
-    int iRet = WLX_SAS_ACTION_NONE;
-
     Log(("VBoxGINA::WlxLoggedOnSAS: SaSType = %ld\n", dwSasType));
 
-    /* Winlogon registry path */
-    static TCHAR szPath[] = TEXT("Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon");
+    /*
+     * We don't want to do anything special here since the OS should behave
+     * as VBoxGINA wouldn't have been installed. So pass all calls down
+     * to the original MSGINA.
+     */
 
-    if (!RegOpenKey(HKEY_LOCAL_MACHINE, szPath, &hKey))
-    {
-        dwSize = sizeof(DWORD);
-        RegQueryValueEx(hKey, TEXT("SAS_S"), 0, &dwType, (PBYTE)&dwValue, &dwSize);
-        RegCloseKey(hKey);
-    }
-    else
-    {
-        Log(("VBoxGINA::WlxLoggedOnSAS: Could not open registry key! Last error: %d\n", GetLastError()));
-    }
-
-    if (dwValue)
-    {
-        switch (dwSasType)
-        {
-
-        case WLX_SAS_TYPE_CTRL_ALT_DEL:     /* User pressed CTRL-ALT-DEL. */
-
-            /* Show the task list (or whatever the OS wants to do here). */
-            iRet = WLX_SAS_ACTION_TASKLIST;
-            break;
-
-        default:
-            break;
-        }
-    }
-    else
-    {
-        /* Forward call to MSGINA. */
-        Log(("VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n"));
-        return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
-    }
-
-    return iRet;
+    /* Forward call to MSGINA. */
+    Log(("VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n"));
+    return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
 }
 
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
