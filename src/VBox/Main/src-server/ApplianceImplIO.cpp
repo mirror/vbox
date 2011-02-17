@@ -92,10 +92,12 @@ typedef struct SHA1STORAGEINTERNAL
  *   Defined Constants And Macros                                             *
  ******************************************************************************/
 
-#define STATUS_WAIT  UINT32_C(0)
-#define STATUS_WRITE UINT32_C(1)
-#define STATUS_READ  UINT32_C(2)
-#define STATUS_END   UINT32_C(3)
+#define STATUS_WAIT    UINT32_C(0)
+#define STATUS_WRITE   UINT32_C(1)
+#define STATUS_WRITING UINT32_C(2)
+#define STATUS_READ    UINT32_C(3)
+#define STATUS_READING UINT32_C(4)
+#define STATUS_END     UINT32_C(5)
 
 /* Enable for getting some flow history. */
 #if 0
@@ -490,6 +492,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             }
             case STATUS_WRITE:
             {
+                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WRITING, STATUS_WRITE);
                 size_t cbAvail = RTCircBufUsed(pInt->pCircBuf);
                 size_t cbMemAllRead = 0;
                 /* First loop over all the free memory in the circular
@@ -535,12 +538,13 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 /* Reset the thread status and signal the main thread that we
                  * are finished. Use CmpXchg, so we not overwrite other states
                  * which could be signaled in the meantime. */
-                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_WRITE);
-                rc = RTSemEventSignal(pInt->workFinishedEvent);
+                if (ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_WRITING))
+                    rc = RTSemEventSignal(pInt->workFinishedEvent);
                 break;
             }
             case STATUS_READ:
             {
+                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_READING, STATUS_READ);
                 size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
                 size_t cbMemAllWrite = 0;
                 /* First loop over all the available memory in the circular
@@ -593,8 +597,8 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 /* Reset the thread status and signal the main thread that we
                  * are finished. Use CmpXchg, so we not overwrite other states
                  * which could be signaled in the meantime. */
-                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_READ);
-                rc = RTSemEventSignal(pInt->workFinishedEvent);
+                if (ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_READING))
+                    rc = RTSemEventSignal(pInt->workFinishedEvent);
                 break;
             }
             case STATUS_END:
@@ -605,6 +609,9 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             }
         }
     }
+    /* Cleanup any status changes to indicate we are finished. */
+    ASMAtomicWriteU32(&pInt->u32Status, STATUS_END);
+    rc = RTSemEventSignal(pInt->workFinishedEvent);
     return rc;
 }
 
@@ -622,7 +629,9 @@ DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
     {
 //        RTPrintf(" wait\n");
         if (!(   ASMAtomicReadU32(&pInt->u32Status) == STATUS_WRITE
-              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READ))
+              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_WRITING
+              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READ
+              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READING))
             break;
         rc = RTSemEventWait(pInt->workFinishedEvent, 100);
     }
@@ -677,6 +686,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
         pInt->pSha1Storage = pSha1Storage;
         pInt->fEOF         = false;
         pInt->fOpenMode    = fOpen;
+        pInt->u32Status    = STATUS_WAIT;
 
         /* Circular buffer in the read case. */
         rc = RTCircBufCreate(&pInt->pCircBuf, _1M * 2);
