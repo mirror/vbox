@@ -360,6 +360,7 @@ setup_modules()
 
     # Short cut out if a dkms build succeeds
     if $DODKMS install >> $LOG 2>&1; then
+        succ_msg
         return 0
     fi
 
