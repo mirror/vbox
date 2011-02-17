@@ -137,6 +137,19 @@ public:
                                 aAutoConfirmId, aOkText, aCancelText);
     }
 
+    int messageWithOption(QWidget *pParent,
+                          Type type,
+                          const QString &strMessage,
+                          const QString &strOptionText,
+                          bool fDefaultOptionValue = true,
+                          const QString &strDetails = QString::null,
+                          int iButton1 = 0,
+                          int iButton2 = 0,
+                          int iButton3 = 0,
+                          const QString &strButtonName1 = QString::null,
+                          const QString &strButtonName2 = QString::null,
+                          const QString &strButtonName3 = QString::null) const;
+
     bool showModalProgressDialog(CProgress &progress, const QString &strTitle,
                                  const QString &strImage = "", QWidget *pParent = 0,
                                  bool fSheetOnDarwin = false, int cMinDuration = 2000);
@@ -207,7 +220,7 @@ public:
     bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported);
     bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported);
 
-    bool askAboutSnapshotRestoring (const QString &aSnapshotName);
+    int askAboutSnapshotRestoring (const QString &aSnapshotName, bool fAlsoCreateNewSnapshot);
     bool askAboutSnapshotDeleting (const QString &aSnapshotName);
     bool askAboutSnapshotDeletingFreeSpace (const QString &aSnapshotName,
                                             const QString &aTargetImageName,

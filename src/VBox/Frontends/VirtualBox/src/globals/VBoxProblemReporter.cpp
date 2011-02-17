@@ -253,6 +253,107 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
  *  text (QString::null is assumed).
  */
 
+int VBoxProblemReporter::messageWithOption(QWidget *pParent,
+                                           Type type,
+                                           const QString &strMessage,
+                                           const QString &strOptionText,
+                                           bool fDefaultOptionValue /* = true */,
+                                           const QString &strDetails /* = QString::null */,
+                                           int iButton1 /* = 0 */,
+                                           int iButton2 /* = 0 */,
+                                           int iButton3 /* = 0 */,
+                                           const QString &strButtonName1 /* = QString::null */,
+                                           const QString &strButtonName2 /* = QString::null */,
+                                           const QString &strButtonName3 /* = QString::null */) const
+{
+    /* If no buttons are set, using single 'OK' button: */
+    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
+        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
+
+    /* Assign corresponding title and icon: */
+    QString strTitle;
+    QIMessageBox::Icon icon;
+    switch (type)
+    {
+        default:
+        case Info:
+            strTitle = tr("VirtualBox - Information", "msg box title");
+            icon = QIMessageBox::Information;
+            break;
+        case Question:
+            strTitle = tr("VirtualBox - Question", "msg box title");
+            icon = QIMessageBox::Question;
+            break;
+        case Warning:
+            strTitle = tr("VirtualBox - Warning", "msg box title");
+            icon = QIMessageBox::Warning;
+            break;
+        case Error:
+            strTitle = tr("VirtualBox - Error", "msg box title");
+            icon = QIMessageBox::Critical;
+            break;
+        case Critical:
+            strTitle = tr("VirtualBox - Critical Error", "msg box title");
+            icon = QIMessageBox::Critical;
+            break;
+        case GuruMeditation:
+            strTitle = "VirtualBox - Guru Meditation"; /* don't translate this */
+            icon = QIMessageBox::GuruMeditation;
+            break;
+    }
+
+    /* Create message-box: */
+    if (QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
+                                                       iButton1, iButton2, iButton3, pParent))
+    {
+        /* Append the list of all warnings with current: */
+        m_warnings << pBox;
+
+        /* Setup message-box connections: */
+        connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
+
+        /* Assign other text values: */
+        if (!strOptionText.isNull())
+        {
+            pBox->setFlagText(strOptionText);
+            pBox->setFlagChecked(fDefaultOptionValue);
+        }
+        if (!strButtonName1.isNull())
+            pBox->setButtonText(0, strButtonName1);
+        if (!strButtonName2.isNull())
+            pBox->setButtonText(1, strButtonName2);
+        if (!strButtonName3.isNull())
+            pBox->setButtonText(2, strButtonName3);
+        if (!strDetails.isEmpty())
+            pBox->setDetailsText(strDetails);
+
+        /* Show the message box: */
+        int iResultCode = pBox->exec();
+
+        /* Its possible what message-box will be deleted during some event-processing procedure,
+         * in that case pBox will be null right after pBox->exec() returns from it's event-pool,
+         * so we have to check this too: */
+        if (pBox)
+        {
+            /* Cleanup the list of all warnings from current: */
+            if (m_warnings.contains(pBox))
+                m_warnings.removeAll(pBox);
+
+            /* Check if option was chosen: */
+            if (pBox->isFlagChecked())
+                iResultCode |= QIMessageBox::OptionChosen;
+
+            /* Destroy message-box: */
+            if (pBox)
+                delete pBox;
+
+            /* Return final result: */
+            return iResultCode;
+        }
+    }
+    return 0;
+}
+
 /**
  *  Shows a modal progress dialog using a CProgress object passed as an
  *  argument to track the progress.
@@ -839,15 +940,24 @@ bool VBoxProblemReporter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSup
             tr ("Close VM"), tr ("Continue"));
 }
 
-bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotName)
+int VBoxProblemReporter::askAboutSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot)
 {
-    return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>Are you sure you want to restore snapshot <b>%1</b>? "
-            "This will cause you to lose your current machine state, which cannot be recovered.</p>")
-            .arg (aSnapshotName),
-        /* Do NOT allow this message to be disabled! */
-        NULL /* aAutoConfirmId */,
-        tr ("Restore"), tr ("Cancel"));
+    return fAlsoCreateNewSnapshot ?
+           messageWithOption(mainWindowShown(), Question,
+                             tr("<p>You are about to restore snapshot <b>%1</b>.</p>"
+                                "<p>You can create a snapshot of the current state of the virtual machine first by checking the box below; "
+                                "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
+                                .arg(strSnapshotName),
+                             tr("Create a snapshot of the current machine state"),
+                             true /* choose option by default */,
+                             QString::null /* details */,
+                             QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
+                             tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */) :
+           message(mainWindowShown(), Question,
+                   tr("<p>Are you sure you want to restore snapshot <b>%1</b>?</p>").arg(strSnapshotName),
+                   0 /* auto-confirmation token */,
+                   QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
+                   tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */);
 }
 
 bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName)
