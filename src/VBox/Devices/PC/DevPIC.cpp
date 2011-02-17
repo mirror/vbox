@@ -774,23 +774,20 @@ static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
      */
     for (int i=0;i<2;i++)
     {
+        PicState    *pPic;
+
+        pPic = &pThis->aPics[i];
         pHlp->pfnPrintf(pHlp, "PIC%d:\n", i);
-        pHlp->pfnPrintf(pHlp, "  last_irr                  = %02x\n", pThis->aPics[i].last_irr);
-        pHlp->pfnPrintf(pHlp, "  irr                       = %02x\n", pThis->aPics[i].irr);
-        pHlp->pfnPrintf(pHlp, "  imr                       = %02x\n", pThis->aPics[i].imr);
-        pHlp->pfnPrintf(pHlp, "  isr                       = %02x\n", pThis->aPics[i].isr);
-        pHlp->pfnPrintf(pHlp, "  priority_add              = %02x\n", pThis->aPics[i].priority_add);
-        pHlp->pfnPrintf(pHlp, "  irq_base                  = %02x\n", pThis->aPics[i].irq_base);
-        pHlp->pfnPrintf(pHlp, "  read_reg_select           = %02x\n", pThis->aPics[i].read_reg_select);
-        pHlp->pfnPrintf(pHlp, "  poll                      = %02x\n", pThis->aPics[i].poll);
-        pHlp->pfnPrintf(pHlp, "  special_mask              = %02x\n", pThis->aPics[i].special_mask);
-        pHlp->pfnPrintf(pHlp, "  init_state                = %02x\n", pThis->aPics[i].init_state);
-        pHlp->pfnPrintf(pHlp, "  auto_eoi                  = %02x\n", pThis->aPics[i].auto_eoi);
-        pHlp->pfnPrintf(pHlp, "  rotate_on_auto_eoi        = %02x\n", pThis->aPics[i].rotate_on_auto_eoi);
-        pHlp->pfnPrintf(pHlp, "  special_fully_nested_mode = %02x\n", pThis->aPics[i].special_fully_nested_mode);
-        pHlp->pfnPrintf(pHlp, "  init4                     = %02x\n", pThis->aPics[i].init4);
-        pHlp->pfnPrintf(pHlp, "  elcr                      = %02x\n", pThis->aPics[i].elcr);
-        pHlp->pfnPrintf(pHlp, "  elcr_mask                 = %02x\n", pThis->aPics[i].elcr_mask);
+        pHlp->pfnPrintf(pHlp, " IMR :%02x ISR   :%02x IRR   :%02x LIRR:%02x\n",
+                        pPic->imr, pPic->isr, pPic->irr, pPic->last_irr);
+        pHlp->pfnPrintf(pHlp, " Base:%02x PriAdd:%02x RegSel:%02x\n",
+                        pPic->irq_base, pPic->priority_add, pPic->read_reg_select);
+        pHlp->pfnPrintf(pHlp, " Poll:%02x SpMask:%02x IState:%02x\n",
+                        pPic->poll, pPic->special_mask, pPic->init_state);
+        pHlp->pfnPrintf(pHlp, " AEOI:%02x Rotate:%02x FNest :%02x Ini4:%02x\n",
+                        pPic->auto_eoi, pPic->rotate_on_auto_eoi, 
+                        pPic->special_fully_nested_mode, pPic->init4);
+        pHlp->pfnPrintf(pHlp, " ELCR:%02x ELMask:%02x\n", pPic->elcr, pPic->elcr_mask);
     }
 }
 
