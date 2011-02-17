@@ -994,31 +994,30 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                 ||  enmPageType == PGMPAGETYPE_MMIO2)
             {
                 /*
-                    * A RAM page.
-                    */
+                 * A RAM page.
+                 */
                 switch (PGM_PAGE_GET_STATE(pPage))
                 {
-                case PGM_PAGE_STATE_ALLOCATED:
-                    /** @todo Optimize this: Don't always re-enable write
-                        * monitoring if the page is known to be very busy. */
-                    if (PGM_PAGE_IS_WRITTEN_TO(pPage))
-                    {
-                        PGM_PAGE_CLEAR_WRITTEN_TO(pPage);
-                        /* Remember this dirty page for the next (memory) sync. */
-                        PGM_PAGE_SET_FT_DIRTY(pPage);
-                    }
-
-                    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_WRITE_MONITORED);
-                    pVM->pgm.s.cMonitoredPages++;
-                    break;
-
-                case PGM_PAGE_STATE_SHARED:
-                    AssertFailed();
-                    break;
-
-                case PGM_PAGE_STATE_WRITE_MONITORED:    /* nothing to change. */
-                default:
-                    break;
+                    case PGM_PAGE_STATE_ALLOCATED:
+                        /** @todo Optimize this: Don't always re-enable write
+                         * monitoring if the page is known to be very busy. */
+                        if (PGM_PAGE_IS_WRITTEN_TO(pPage))
+                        {
+                            PGM_PAGE_CLEAR_WRITTEN_TO(pPage);
+                            /* Remember this dirty page for the next (memory) sync. */
+                            PGM_PAGE_SET_FT_DIRTY(pPage);
+                        }
+    
+                        pgmPhysPageWriteMonitor(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        break;
+    
+                    case PGM_PAGE_STATE_SHARED:
+                        AssertFailed();
+                        break;
+    
+                    case PGM_PAGE_STATE_WRITE_MONITORED:    /* nothing to change. */
+                    default:
+                        break;
                 }
             }
         }
@@ -1661,22 +1660,22 @@ int pgmR3PhysRamReset(PVM pVM)
                 switch (PGM_PAGE_GET_TYPE(pPage))
                 {
                     case PGMPAGETYPE_RAM:
-                        /* Do not replace pages part of a 2 MB continuous range with zero pages, but zero them instead. */
-                        if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+                        /* Do not replace pages part of a 2 MB continuous range
+                           with zero pages, but zero them instead. */
+                        if (   PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE
+                            || PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
                         {
                             void *pvPage;
                             rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pvPage);
                             AssertLogRelRCReturn(rc, rc);
                             ASMMemZeroPage(pvPage);
                         }
-                        else
-                        if (PGM_PAGE_IS_BALLOONED(pPage))
+                        else if (PGM_PAGE_IS_BALLOONED(pPage))
                         {
                             /* Turn into a zero page; the balloon status is lost when the VM reboots. */
                             PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
                         }
-                        else
-                        if (!PGM_PAGE_IS_ZERO(pPage))
+                        else if (!PGM_PAGE_IS_ZERO(pPage))
                         {
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                             AssertLogRelRCReturn(rc, rc);
@@ -4139,7 +4138,10 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
         AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
         return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
     }
-    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
+
+    /** @todo What about ballooning of large pages??! */
+    Assert(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
+           && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED);
 
     if (    PGM_PAGE_IS_ZERO(pPage)
         ||  PGM_PAGE_IS_BALLOONED(pPage))

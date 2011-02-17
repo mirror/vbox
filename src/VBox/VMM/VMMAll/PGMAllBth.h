@@ -3073,14 +3073,12 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
     if (BTH_IS_NP_ACTIVE(pVM))
     {
-        PPGMPAGE pPage;
-
         /* Check if we allocated a big page before for this 2 MB range. */
+        PPGMPAGE pPage;
         rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & X86_PDE2M_PAE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
             RTHCPHYS HCPhys = NIL_RTHCPHYS;
-
             if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
             {
                 STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
@@ -3090,7 +3088,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             else if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
             {
                 /* Recheck the entire 2 MB range to see if we can use it again as a large page. */
-                rc = pgmPhysIsValidLargePage(pVM, GCPtrPage, pPage);
+                rc = pgmPhysRecheckLargePage(pVM, GCPtrPage, pPage);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);

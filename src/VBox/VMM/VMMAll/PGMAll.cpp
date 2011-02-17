@@ -2305,7 +2305,7 @@ VMMDECL(bool) PGMIsLockOwner(PVM pVM)
  */
 VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
 {
-      pVM->fUseLargePages = fUseLargePages;
+    pVM->fUseLargePages = fUseLargePages;
 }
 
 /**

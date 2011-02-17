@@ -3212,12 +3212,13 @@ typedef struct PGM
     uint32_t                        cBalloonedPages;    /**< The number of ballooned pages. */
     uint32_t                        cMappedChunks;      /**< Number of times we mapped a chunk. */
     uint32_t                        cUnmappedChunks;    /**< Number of times we unmapped a chunk. */
+    uint32_t                        cLargePages;        /**< The number of large pages. */
+    uint32_t                        cLargePagesDisabled;/**< The number of disabled large pages. */
 /*    uint32_t                        aAlignment4[1]; */
 
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;
 
-    STAMCOUNTER                     StatLargePageAlloc;                 /**< The number of large pages we've allocated.*/
     STAMCOUNTER                     StatLargePageReused;                /**< The number of large pages we've reused.*/
     STAMCOUNTER                     StatLargePageRefused;               /**< The number of times we couldn't use a large page.*/
     STAMCOUNTER                     StatLargePageRecheck;               /**< The number of times we rechecked a disabled large page.*/
@@ -3765,7 +3766,7 @@ int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
-int             pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
+int             pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
