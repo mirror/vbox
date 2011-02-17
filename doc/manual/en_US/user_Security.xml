@@ -27,8 +27,8 @@
           <para>When using the VirtualBox web service to control a VirtualBox
           host remotely, connections to the web service (through which the API
           calls are transferred via SOAP XML) are not encrypted, but use plain
-          HTTP. For details about the web service, please see <xref
-          linkend="VirtualBoxAPI" />.</para>
+          HTTP. This is a potential security risk! For details about the web
+          service, please see <xref linkend="VirtualBoxAPI" />.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
@@ -41,8 +41,9 @@
         <listitem>
           <para>When using the VirtualBox extension pack provided by Oracle
           for VRDP remote desktop support, you can optionally use various
-          methods to configure RDP authentication. See <xref
-          linkend="vbox-auth" /> for details.</para>
+          methods to configure RDP authentication. The "null" method is
+          very insecure and should be avoided in a public network.
+          See <xref linkend="vbox-auth" /> for details.</para>
         </listitem>
 
         <listitem>
