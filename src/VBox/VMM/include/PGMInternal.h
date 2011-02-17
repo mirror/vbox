@@ -926,6 +926,13 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_IS_BALLOONED(pPage)        ( (pPage)->uStateY == PGM_PAGE_STATE_BALLOONED )
 
 /**
+ * Checks if the page is allocated.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_ALLOCATED(pPage)        ( (pPage)->uStateY == PGM_PAGE_STATE_ALLOCATED )
+
+/**
  * Marks the page as written to (for GMM change monitoring).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
