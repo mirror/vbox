@@ -4685,76 +4685,6 @@ out:
 }
 
 /**
- * Internal. Flush image data (and metadata) to disk - async version.
- */
-static int vmdkFlushImageAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
-{
-    PVMDKEXTENT pExtent;
-    int rc = VINF_SUCCESS;
-
-    /* Update descriptor if changed. */
-    if (pImage->Descriptor.fDirty)
-    {
-        rc = vmdkWriteDescriptorAsync(pImage, pIoCtx);
-        if (   RT_FAILURE(rc)
-            && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-            goto out;
-    }
-
-    for (unsigned i = 0; i < pImage->cExtents; i++)
-    {
-        pExtent = &pImage->pExtents[i];
-        if (pExtent->pFile != NULL && pExtent->fMetaDirty)
-        {
-            switch (pExtent->enmType)
-            {
-                case VMDKETYPE_HOSTED_SPARSE:
-                    AssertMsgFailed(("Async I/O not supported for sparse images\n"));
-                    break;
-#ifdef VBOX_WITH_VMDK_ESX
-                case VMDKETYPE_ESX_SPARSE:
-                    /** @todo update the header. */
-                    break;
-#endif /* VBOX_WITH_VMDK_ESX */
-                case VMDKETYPE_VMFS:
-                case VMDKETYPE_FLAT:
-                    /* Nothing to do. */
-                    break;
-                case VMDKETYPE_ZERO:
-                default:
-                    AssertMsgFailed(("extent with type %d marked as dirty\n",
-                                     pExtent->enmType));
-                    break;
-            }
-        }
-        switch (pExtent->enmType)
-        {
-            case VMDKETYPE_HOSTED_SPARSE:
-#ifdef VBOX_WITH_VMDK_ESX
-            case VMDKETYPE_ESX_SPARSE:
-#endif /* VBOX_WITH_VMDK_ESX */
-            case VMDKETYPE_VMFS:
-            case VMDKETYPE_FLAT:
-                /** @todo implement proper path absolute check. */
-                if (   pExtent->pFile != NULL
-                    && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-                    && !(pExtent->pszBasename[0] == RTPATH_SLASH))
-                    rc = vmdkFileFlushAsync(pImage, pExtent->pFile, pIoCtx);
-                break;
-            case VMDKETYPE_ZERO:
-                /* No need to do anything for this extent. */
-                break;
-            default:
-                AssertMsgFailed(("unknown extent type %d\n", pExtent->enmType));
-                break;
-        }
-    }
-
-out:
-    return rc;
-}
-
-/**
  * Internal. Find extent corresponding to the sector number in the disk.
  */
 static int vmdkFindExtent(PVMDKIMAGE pImage, uint64_t offSector,
@@ -7258,6 +7188,20 @@ static int vmdkAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
     int rc = VINF_SUCCESS;
+
+    /* Update descriptor if changed. */
+    /** @todo: The descriptor is never updated because
+     * it remains unchanged during normal operation (only vmdkRename updates it).
+     * So this part is actually not tested so far and requires testing as soon
+     * as the descriptor might change during async I/O.
+     */
+    if (pImage->Descriptor.fDirty)
+    {
+        rc = vmdkWriteDescriptorAsync(pImage, pIoCtx);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+            goto out;
+    }
 
     for (unsigned i = 0; i < pImage->cExtents; i++)
     {
