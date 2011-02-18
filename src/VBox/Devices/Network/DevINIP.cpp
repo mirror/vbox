@@ -74,6 +74,8 @@ typedef struct DEVINTNETIP
     PDMIBASE                IBase;
     /** The network port this device provides (LUN\#0). */
     PDMINETWORKDOWN         INetworkDown;
+    /** Tzhe network configuration port this device provides (LUN\#0). */
+    PDMINETWORKCONFIG       INetworkConfig;
     /** The base interface of the network driver below us. */
     PPDMIBASE               pDrvBase;
     /** The connector of the network driver below us. */
@@ -101,6 +103,8 @@ typedef struct DEVINTNETIP
     /** hack: get linking right. remove this eventually, once the device
      * provides a proper interface to all IP stack functions. */
     const void             *pLinkHack;
+    /** Flag whether the link is up. */
+    bool                    fLnkUp;
 } DEVINTNETIP, *PDEVINTNETIP;
 
 
@@ -225,6 +229,11 @@ static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
     if (g_pDevINIPData)
     {
         PPDMSCATTERGATHER pSgBuf;
+
+        rc = g_pDevINIPData->pDrv->pfnBeginXmit(g_pDevINIPData->pDrv, true /* fOnWorkerThread */);
+        if (RT_FAILURE(rc))
+            return ERR_IF;
+
         rc = g_pDevINIPData->pDrv->pfnAllocBuf(g_pDevINIPData->pDrv, DEVINIP_MAX_FRAME, NULL /*pGso*/, &pSgBuf);
         if (RT_SUCCESS(rc))
         {
@@ -252,7 +261,10 @@ static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
                 }
             }
             if (cbBuf)
-                rc = g_pDevINIPData->pDrv->pfnSendBuf(g_pDevINIPData->pDrv, pSgBuf, false);
+            {
+                pSgBuf->cbUsed = cbBuf;
+                rc = g_pDevINIPData->pDrv->pfnSendBuf(g_pDevINIPData->pDrv, pSgBuf, true /* fOnWorkerThread */);
+            }
             else
                 rc = g_pDevINIPData->pDrv->pfnFreeBuf(g_pDevINIPData->pDrv, pSgBuf);
 
@@ -260,6 +272,8 @@ static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
             lwip_pbuf_header(p, ETH_PAD_SIZE);       /* reclaim the padding word */
 #endif
         }
+
+        g_pDevINIPData->pDrv->pfnEndXmit(g_pDevINIPData->pDrv);
     }
 
     err_t lrc = ERR_OK;
@@ -399,6 +413,68 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
     lwip_sys_sem_signal(*sem);
 }
 
+
+/**
+ * Gets the current Media Access Control (MAC) address.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   pMac            Where to store the MAC address.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) devINIPGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
+{
+    PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, INetworkConfig);
+    memcpy(pMac, pThis->MAC.au8, sizeof(RTMAC));
+    return VINF_SUCCESS;
+}
+
+/**
+ * Gets the new link state.
+ *
+ * @returns The current link state.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @thread  EMT
+ */
+static DECLCALLBACK(PDMNETWORKLINKSTATE) devINIPGetLinkState(PPDMINETWORKCONFIG pInterface)
+{
+    PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, INetworkConfig);
+    if (pThis->fLnkUp)
+        return PDMNETWORKLINKSTATE_UP;
+    return PDMNETWORKLINKSTATE_DOWN;
+}
+
+
+/**
+ * Sets the new link state.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   enmState        The new link state
+ */
+static DECLCALLBACK(int) devINIPSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
+{
+    PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, INetworkConfig);
+    bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
+
+    if (fNewUp != pThis->fLnkUp)
+    {
+        if (fNewUp)
+        {
+            LogFlowFunc(("Link is up\n"));
+            pThis->fLnkUp = true;
+        }
+        else
+        {
+            LogFlowFunc(("Link is down\n"));
+            pThis->fLnkUp = false;
+        }
+        if (pThis->pDrv)
+            pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
+    }
+    return VINF_SUCCESS;
+}
+
 /* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
@@ -410,6 +486,7 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
     PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     return NULL;
 }
 
@@ -490,6 +567,10 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     pThis->INetworkDown.pfnWaitReceiveAvail = devINIPNetworkDown_WaitInputAvail;
     pThis->INetworkDown.pfnReceive          = devINIPNetworkDown_Input;
     pThis->INetworkDown.pfnXmitPending      = devINIPNetworkDown_XmitPending;
+    /* INetworkConfig */
+    pThis->INetworkConfig.pfnGetMac         = devINIPGetMac;
+    pThis->INetworkConfig.pfnGetLinkState   = devINIPGetLinkState;
+    pThis->INetworkConfig.pfnSetLinkState   = devINIPSetLinkState;
 
     /*
      * Get the configuration settings.
