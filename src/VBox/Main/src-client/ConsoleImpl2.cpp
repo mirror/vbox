@@ -3348,15 +3348,15 @@ int Console::configMedium(PCFGMNODE pLunL0,
                         }
                     }
 
-                    /* Custom code: put marker to not use host IP stack to driver
-                     * configuration node. Simplifies life of DrvVD a bit. */
-                    if (!fHostIP)
-                        InsertConfigInteger(pCfg, "HostIPStack", 0);
-
                     /* next */
                     pParent = pCur;
                     pParentMedium = pMedium;
                 }
+
+                /* Custom code: put marker to not use host IP stack to driver
+                 * configuration node. Simplifies life of DrvVD a bit. */
+                if (!fHostIP)
+                    InsertConfigInteger(pCfg, "HostIPStack", 0);
             }
         }
 #undef H
