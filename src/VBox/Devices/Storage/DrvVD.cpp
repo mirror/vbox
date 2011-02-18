@@ -748,7 +748,7 @@ static DECLCALLBACK(int) drvvdINIPSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     fd_set fdsetR;
     FD_ZERO(&fdsetR);
-    FD_SET((uintptr_t)Sock, &fdsetR);
+    FD_SET((uintptr_t)pSocketInt->hSock, &fdsetR);
     fd_set fdsetE = fdsetR;
 
     int rc;
