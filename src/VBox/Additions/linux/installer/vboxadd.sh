@@ -521,7 +521,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|restart|status|setup}"
     exit 1
 esac
 
