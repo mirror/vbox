@@ -84,7 +84,7 @@
 #define PGM_STATE_REC_ROM_SHW_ZERO      UINT8_C(0x06)
 /** ROM protection (8-bit). */
 #define PGM_STATE_REC_ROM_PROT          UINT8_C(0x07)
-/** Ballooned page. */
+/** Ballooned page. No data. */
 #define PGM_STATE_REC_RAM_BALLOONED     UINT8_C(0x08)
 /** The last record type. */
 #define PGM_STATE_REC_LAST              PGM_STATE_REC_RAM_BALLOONED
@@ -513,7 +513,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     PGMROMPROT  enmProt = pRomPage->enmProt;
                     RTGCPHYS    GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
                     PPGMPAGE    pPage   = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow : pgmPhysGetPage(&pVM->pgm.s, GCPhys);
-                    bool        fZero   = PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_BALLOONED(pPage);  /* Do we ever balloon shadow ROM pages!? */
+                    bool        fZero   = PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_BALLOONED(pPage); Assert(!PGM_PAGE_IS_BALLOONED(pPage)); /* Shouldn't be ballooned. */
                     int         rc      = VINF_SUCCESS;
                     if (!fZero)
                     {
@@ -1363,7 +1363,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                         paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
                                 }
 
-                                pgmPhysPageWriteMonitor(pVM, &pCur->aPages[iPage], 
+                                pgmPhysPageWriteMonitor(pVM, &pCur->aPages[iPage],
                                                         pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                                 paLSPages[iPage].fWriteMonitored        = 1;
                                 paLSPages[iPage].fWriteMonitoredJustNow = 1;
@@ -1671,7 +1671,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     else
                     {
                         /*
-                         * Dirty zero page.
+                         * Dirty zero or ballooned page.
                          */
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                         if (paLSPages)
@@ -2565,12 +2565,13 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  *
  * @param   pVM                 The VM handle.
  * @param   pSSM                The SSM handle.
+ * @param   uVersion            The PGM saved state unit version.
  * @param   uPass               The pass number.
  *
  * @todo    This needs splitting up if more record types or code twists are
  *          added...
  */
-static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     /*
      * Process page records until we hit the terminator.
@@ -2649,9 +2650,20 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 {
                     case PGM_STATE_REC_RAM_ZERO:
                     {
-                        if (    PGM_PAGE_IS_ZERO(pPage)
-                            ||  PGM_PAGE_IS_BALLOONED(pPage))
+                        if (PGM_PAGE_IS_ZERO(pPage))
                             break;
+
+                        /* Ballooned pages must be unmarked (live snapshot and
+                           teleportation scenarios). */
+                        if (PGM_PAGE_IS_BALLOONED(pPage))
+                        {
+                            Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+                            if (uVersion == PGM_SAVED_STATE_VERSION_BALLOON_BROKEN)
+                                break;
+                            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
+                            break;
+                        }
+
                         AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
 
                         /* If this is a ROM page, we must clear it and not try
@@ -2678,13 +2690,12 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 
                     case PGM_STATE_REC_RAM_BALLOONED:
                     {
+                        Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
                         if (PGM_PAGE_IS_BALLOONED(pPage))
                             break;
 
-                        /*
-                         * We don't map ballooned pages in our shadow page tables, let's just free it if allocated and mark as ballooned.
-                         * See #5515.
-                         */
+                        /* We don't map ballooned pages in our shadow page tables, let's
+                           just free it if allocated and mark as ballooned.  See #5515. */
                         if (PGM_PAGE_IS_ALLOCATED(pPage))
                         {
                             /** @todo handle large pages + ballooning when it works. (see #5515, #5545). */
@@ -3029,7 +3040,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                 return rc;
         }
 
-        rc = pgmR3LoadMemory(pVM, pSSM, SSM_PASS_FINAL);
+        rc = pgmR3LoadMemory(pVM, pSSM, uVersion, SSM_PASS_FINAL);
     }
     else
         rc = pgmR3LoadMemoryOld(pVM, pSSM, uVersion);
@@ -3089,7 +3100,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     {
         pgmLock(pVM);
         if (uPass != 0)
-            rc = pgmR3LoadMemory(pVM, pSSM, uPass);
+            rc = pgmR3LoadMemory(pVM, pSSM, uVersion, uPass);
         else
         {
             pVM->pgm.s.LiveSave.fActive = true;
@@ -3102,7 +3113,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
             if (RT_SUCCESS(rc))
                 rc = pgmR3LoadMmio2Ranges(pVM, pSSM);
             if (RT_SUCCESS(rc))
-                rc = pgmR3LoadMemory(pVM, pSSM, uPass);
+                rc = pgmR3LoadMemory(pVM, pSSM, uVersion, uPass);
         }
         pgmUnlock(pVM);
     }
