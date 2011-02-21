@@ -1124,7 +1124,7 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_GC_FLAT:
                     pResult->enmType  = DBGCVAR_TYPE_GC_FLAT;
                     pResult->u.GCFlat = (RTGCPTR)InVar.u.u64Number;
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+                    return VINF_SUCCESS;
 
                 case DBGCVAR_TYPE_GC_FAR:
                     return VERR_PARSE_INCORRECT_ARG_TYPE;
@@ -1132,12 +1132,12 @@ static DECLCALLBACK(int) dbgcHlpVarConvert(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pInVar
                 case DBGCVAR_TYPE_GC_PHYS:
                     pResult->enmType  = DBGCVAR_TYPE_GC_PHYS;
                     pResult->u.GCPhys = (RTGCPHYS)InVar.u.u64Number;
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+                    return VINF_SUCCESS;
 
                 case DBGCVAR_TYPE_HC_FLAT:
                     pResult->enmType    = DBGCVAR_TYPE_HC_FLAT;
                     pResult->u.pvHCFlat = (void *)(uintptr_t)InVar.u.u64Number;
-                    return VERR_PARSE_INCORRECT_ARG_TYPE;
+                    return VINF_SUCCESS;
 
                 case DBGCVAR_TYPE_HC_PHYS:
                     pResult->enmType  = DBGCVAR_TYPE_HC_PHYS;
