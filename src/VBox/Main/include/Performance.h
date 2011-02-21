@@ -342,7 +342,7 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-    HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
+        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
         : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
         ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
 
