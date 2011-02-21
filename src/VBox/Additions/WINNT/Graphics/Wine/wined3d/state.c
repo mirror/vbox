@@ -3907,16 +3907,21 @@ static void transform_projection(DWORD state, IWineD3DStateBlockImpl *stateblock
             glOrtho(x, x + w, y + h, y, 0.0, -1.0);
         checkGLcall("glOrtho");
 
-        /* Window Coord 0 is the middle of the first pixel, so translate by 1/2 pixels */
-        glTranslatef(63.0f / 128.0f, 63.0f / 128.0f, 0.0f);
-        checkGLcall("glTranslatef(63.0f / 128.0f, 63.0f / 128.0f, 0.0f)");
-
         /* D3D texture coordinates are flipped compared to OpenGL ones, so
          * render everything upside down when rendering offscreen. */
         if (context->render_offscreen)
         {
+            /* Window Coord 0 is the middle of the first pixel, so translate by 1/2 pixels */
+            glTranslatef(63.0f / 128.0f, -63.0f / 128.0f, 0.0f);
+            checkGLcall("glTranslatef(63.0f / 128.0f, -63.0f / 128.0f, 0.0f)");
             glScalef(1.0f, -1.0f, 1.0f);
             checkGLcall("glScalef");
+        }
+        else
+        {
+            /* Window Coord 0 is the middle of the first pixel, so translate by 1/2 pixels */
+            glTranslatef(63.0f / 128.0f, 63.0f / 128.0f, 0.0f);
+            checkGLcall("glTranslatef(63.0f / 128.0f, 63.0f / 128.0f, 0.0f)");
         }
     } else {
         /* The rule is that the window coordinate 0 does not correspond to the
