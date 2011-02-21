@@ -556,10 +556,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Set the VM handle and do the rest of the job in an worker method so we
      * can easily reset the VM handle on failure.
      */
-    pConsole->mpVM = pVM;
+    PUVM pUVM = pConsole->mpUVM = VMR3GetUVM(pVM);
+    VMR3RetainUVM(pUVM);
     int vrc = pConsole->configConstructorInner(pVM, &alock);
     if (RT_FAILURE(vrc))
-        pConsole->mpVM = NULL;
+    {
+        pConsole->mpUVM = NULL;
+        VMR3ReleaseUVM(pUVM);
+    }
 
     return vrc;
 }
@@ -3168,13 +3172,13 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 {
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());               H();
-                    setVMRuntimeErrorCallbackF(mpVM,
-                                            this,
-                                            0,
-                                            "DvdOrFloppyImageInaccessible",
-                                            "The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
-                                            loc.raw(),
-                                            (enmType == DeviceType_DVD) ? "DVD" : "floppy");
+                    setVMRuntimeErrorCallbackF(VMR3GetVM(mpUVM),
+                                               this,
+                                               0,
+                                               "DvdOrFloppyImageInaccessible",
+                                               "The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
+                                               loc.raw(),
+                                               enmType == DeviceType_DVD ? "DVD" : "floppy");
                     pMedium = NULL;
                 }
             }
@@ -3390,7 +3394,8 @@ int Console::configMedium(PCFGMNODE pLunL0,
  *                               True if connection failures should be ignored
  *                               (makes only sense for bridged/host-only networks).
  *
- *  @note Locks this object for writing.
+ *  @note   Locks this object for writing.
+ *  @thread EMT
  */
 int Console::configNetwork(const char *pszDevice,
                            unsigned uInstance,
@@ -3421,7 +3426,7 @@ int Console::configNetwork(const char *pszDevice,
          */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVM pVM = mpVM;
+        PVM pVM = VMR3GetVM(mpUVM);     /* We're on an EMT, so this is safe. */
 
         ComPtr<IMachine> pMachine = machine();
 
@@ -3903,14 +3908,13 @@ int Console::configNetwork(const char *pszDevice,
                     if (iSock >= 0)
                     {
                         struct ifreq Req;
-
-                        memset(&Req, 0, sizeof(Req));
+                        RT_ZERO(Req);
                         strncpy(Req.ifr_name, pszHifName, sizeof(Req.ifr_name) - 1);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
-                            {
-                                setVMRuntimeErrorCallbackF(pVM, this, 0, "BridgedInterfaceDown", "Bridged interface %s is down. Guest will not be able to use this interface", pszHifName);
-                            }
+                                setVMRuntimeErrorCallbackF(pVM, this, 0, "BridgedInterfaceDown",
+                                                           "Bridged interface %s is down. Guest will not be able to use this interface",
+                                                           pszHifName);
 
                         close(iSock);
                     }

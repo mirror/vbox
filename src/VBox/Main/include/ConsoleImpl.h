@@ -270,7 +270,7 @@ private:
                 mThat->releaseVMCaller();
         }
         /** Decreases the number of callers before the instance is destroyed. */
-        void release()
+        void releaseCaller()
         {
             AssertReturnVoid(SUCCEEDED(mRC));
             mThat->releaseVMCaller();
@@ -278,7 +278,7 @@ private:
         }
         /** Restores the number of callers after by #release(). #rc() must be
          *  rechecked to ensure the operation succeeded. */
-        void add()
+        void addYY()
         {
             AssertReturnVoid(!SUCCEEDED(mRC));
             mRC = mThat->addVMCaller(taQuiet, taAllowNullVM);
@@ -292,9 +292,9 @@ private:
         HRESULT mRC;
     private:
         DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoVMCallerBase)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoVMCallerBase)
     };
 
+#if 0
     /**
      *  Helper class that protects sections of code using the mpVM pointer by
      *  automatically calling addVMCaller() on construction and
@@ -310,13 +310,16 @@ private:
      *  @note Temporarily locks the argument for writing.
      *
      *  @sa SafeVMPtr, SafeVMPtrQuiet
+     *  @obsolete Use SafeVMPtr
      */
     typedef AutoVMCallerBase<false, false> AutoVMCaller;
+#endif
 
     /**
      *  Same as AutoVMCaller but doesn't set extended error info on failure.
      *
      *  @note Temporarily locks the argument for writing.
+    *  @obsolete Use SafeVMPtrQuiet
      */
     typedef AutoVMCallerBase<true, false> AutoVMCallerQuiet;
 
@@ -325,6 +328,7 @@ private:
      *  instead of assertion).
      *
      *  @note Temporarily locks the argument for writing.
+     *  @obsolete Use SafeVMPtr
      */
     typedef AutoVMCallerBase<false, true> AutoVMCallerWeak;
 
@@ -334,6 +338,7 @@ private:
      *  assertion).
      *
      *  @note Temporarily locks the argument for writing.
+     *  @obsolete Use SafeVMPtrQuiet
      */
     typedef AutoVMCallerBase<true, true> AutoVMCallerQuietWeak;
 
@@ -345,23 +350,34 @@ private:
     {
         typedef AutoVMCallerBase<taQuiet, true> Base;
     public:
-        SafeVMPtrBase(Console *aThat) : Base(aThat), mpVM(NULL)
+        SafeVMPtrBase(Console *aThat) : Base(aThat), mpVM(NULL), mpUVM(NULL)
         {
             if (SUCCEEDED(Base::mRC))
-            {
-                mpVM = aThat->mpVM;
-                if (!mpVM)
-                    Base::mRC = E_FAIL; /** @todo use setError here. */
-            }
+                Base::mRC = aThat->safeVMPtrRetainer(&mpVM, &mpUVM, taQuiet);
+        }
+        ~SafeVMPtrBase()
+        {
+            if (SUCCEEDED(Base::mRC))
+                release();
         }
         /** Smart SaveVMPtr to PVM cast operator */
         operator PVM() const { return mpVM; }
         /** Direct PVM access for printf()-like functions */
         PVM raw() const { return mpVM; }
+        /** Direct PUVM access for printf()-like functions */
+        PUVM rawUVM() const { return mpUVM; }
+        /** Release the handles. */
+        void release()
+        {
+            AssertReturnVoid(SUCCEEDED(Base::mRC));
+            Base::mThat->safeVMPtrReleaser(&mpVM, &mpUVM);
+            Base::releaseCaller();
+        }
+
     private:
-        PVM mpVM;
+        PVM     mpVM;
+        PUVM    mpUVM;
         DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeVMPtrBase)
-        DECLARE_CLS_NEW_DELETE_NOOP(SafeVMPtrBase)
     };
 
 public:
@@ -437,7 +453,9 @@ private:
     typedef std::list <ComObjPtr<RemoteUSBDevice> > RemoteUSBDeviceList;
 
     HRESULT addVMCaller(bool aQuiet = false, bool aAllowNullVM = false);
-    void releaseVMCaller();
+    void    releaseVMCaller();
+    HRESULT safeVMPtrRetainer(PVM *a_ppVM, PUVM *a_ppUVM, bool aQuiet);
+    void    safeVMPtrReleaser(PVM *a_ppVM, PUVM *a_ppUVM);
 
     HRESULT consoleInitReleaseLog(const ComPtr<IMachine> aMachine);
 
@@ -514,6 +532,7 @@ private:
                                                          MachineState_T aMachineState,
                                                          HRESULT *phrc);
     static DECLCALLBACK(int) changeRemovableMedium(Console *pThis,
+                                                   PVM pVM,
                                                    const char *pcszDevice,
                                                    unsigned uInstance,
                                                    StorageBus_T enmBus,
@@ -530,15 +549,15 @@ private:
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);
-    static DECLCALLBACK(int) unplugCpu(Console *pThis, unsigned uCpu);
-    static DECLCALLBACK(int) plugCpu(Console *pThis, unsigned uCpu);
-    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce);
-    HRESULT doCPURemove(ULONG aCpu);
-    HRESULT doCPUAdd(ULONG aCpu);
+    static DECLCALLBACK(int) unplugCpu(Console *pThis, PVM pVM, unsigned uCpu);
+    static DECLCALLBACK(int) plugCpu(Console *pThis, PVM pVM, unsigned uCpu);
+    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce, PVM pVM);
+    HRESULT doCPURemove(ULONG aCpu, PVM pVM);
+    HRESULT doCPUAdd(ULONG aCpu, PVM pVM);
 
-    HRESULT doNetworkAdapterChange(const char *pszDevice, unsigned uInstance,
+    HRESULT doNetworkAdapterChange(PVM pVM, const char *pszDevice, unsigned uInstance,
                                    unsigned uLun, INetworkAdapter *aNetworkAdapter);
-    static DECLCALLBACK(int) changeNetworkAttachment(Console *pThis, const char *pszDevice,
+    static DECLCALLBACK(int) changeNetworkAttachment(Console *pThis, PVM pVM, const char *pszDevice,
                                                      unsigned uInstance, unsigned uLun,
                                                      INetworkAdapter *aNetworkAdapter);
 
@@ -546,9 +565,9 @@ private:
     HRESULT attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice(USBDeviceList::iterator &aIt);
 
-    static DECLCALLBACK(int) usbAttachCallback(Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid,
+    static DECLCALLBACK(int) usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
                        bool aRemote, const char *aAddress, ULONG aMaskedIfs);
-    static DECLCALLBACK(int) usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
+    static DECLCALLBACK(int) usbDetachCallback(Console *that, PVM pVM, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
 #endif
 
     static DECLCALLBACK(int)    fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
@@ -558,12 +577,10 @@ private:
     static DECLCALLBACK(void)   genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                                           const char *pszErrorFmt, va_list va);
 
-    static DECLCALLBACK(void) setVMRuntimeErrorCallbackF(PVM pVM, void *pvUser, uint32_t fFatal,
-                               const char *pszErrorId,
-                               const char *pszFormat, ...);
-    static DECLCALLBACK(void) setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFatal,
-                               const char *pszErrorId,
-                               const char *pszFormat, va_list va);
+    static void                 setVMRuntimeErrorCallbackF(PVM pVM, void *pvUser, uint32_t fFatal,
+                                                          const char *pszErrorId, const char *pszFormat, ...);
+    static DECLCALLBACK(void)   setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFatal,
+                                                          const char *pszErrorId, const char *pszFormat, va_list va);
 
     HRESULT                     captureUSBDevices(PVM pVM);
     void                        detachAllUSBDevices(bool aDone);
@@ -612,7 +629,7 @@ private:
     HRESULT                     teleporterSrc(TeleporterStateSrc *pState);
     HRESULT                     teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich, const char *pszNAckMsg = NULL);
     HRESULT                     teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand, bool fWaitForAck = true);
-    HRESULT                     teleporterTrg(PVM pVM, IMachine *pMachine, Utf8Str *pErrorMsg, bool fStartPaused,
+    HRESULT                     teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorMsg, bool fStartPaused,
                                               Progress *pProgress, bool *pfPowerOffOnFailure);
     static DECLCALLBACK(int)    teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
@@ -644,8 +661,8 @@ private:
     SharedFolderDataMap m_mapMachineSharedFolders;
     SharedFolderMap m_mapSharedFolders;             // the console instances
 
-    /** The VM instance handle. */
-    PVM mpVM;
+    /** The user mode VM handle. */
+    PUVM mpUVM;
     /** Holds the number of "readonly" mpVM callers (users) */
     uint32_t mVMCallers;
     /** Semaphore posted when the number of mpVM callers drops to zero */

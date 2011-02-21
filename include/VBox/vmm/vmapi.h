@@ -343,6 +343,16 @@ VMMR3DECL(int)  VMR3Destroy(PVM pVM);
 VMMR3DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(PVM)  VMR3EnumVMs(PVM pVMPrev);
 
+VMMR3DECL(PVM)          VMR3GetVM(PUVM pUVM);
+VMMR3DECL(PUVM)         VMR3GetUVM(PVM pVM);
+VMMR3DECL(uint32_t)     VMR3RetainUVM(PUVM pUVM);
+VMMR3DECL(uint32_t)     VMR3ReleaseUVM(PUVM pUVM);
+VMMR3DECL(const char *) VMR3GetName(PUVM pUVM);
+VMMR3DECL(PRTUUID)      VMR3GetUuid(PUVM pUVM, PRTUUID pUuid);
+VMMR3DECL(VMSTATE)      VMR3GetState(PVM pVM);
+VMMR3DECL(VMSTATE)      VMR3GetStateU(PUVM pUVM);
+VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState);
+
 /**
  * VM destruction callback.
  * @param   pVM     The VM which is about to be destroyed.
@@ -356,8 +366,6 @@ VMMR3DECL(int)      VMR3AtDtorRegister(PFNVMATDTOR pfnAtDtor, void *pvUser);
 VMMR3DECL(int)      VMR3AtDtorDeregister(PFNVMATDTOR pfnAtDtor);
 VMMR3DECL(int)      VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
 VMMR3DECL(int)      VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
-VMMR3DECL(VMSTATE)  VMR3GetState(PVM pVM);
-VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState);
 VMMR3DECL(bool)     VMR3TeleportedAndNotFullyResumedYet(PVM pVM);
 VMMR3DECL(int)      VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(int)      VMR3AtErrorRegisterU(PUVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
@@ -408,7 +416,7 @@ VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
 VMMR3DECL(int)              VMR3GetCpuCoreAndPackageIdFromCpuId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
 VMMR3DECL(int)              VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(int)              VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu);
-VMMR3DECL(int)              VMR3SetCpuExecutionCap(PVM pVM, unsigned ulExecutionCap);
+VMMR3DECL(int)              VMR3SetCpuExecutionCap(PVM pVM, uint32_t uCpuExecutionCap);
 /** @} */
 #endif /* IN_RING3 */
 

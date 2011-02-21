@@ -180,7 +180,10 @@ typedef struct VMINTUSERPERVM
     /** Number of free request packets. */
     volatile uint32_t               cReqFree;
     /** Array of pointers to lists of free request packets. Atomic. */
-    volatile PVMREQ                 apReqFree[9];
+    volatile PVMREQ                 apReqFree[16-4];
+
+    /** The reference count of the UVM handle. */
+    volatile uint32_t               cUvmRefs;
 
 #ifdef VBOX_WITH_STATISTICS
     /** Number of VMR3ReqAlloc returning a new packet. */
@@ -293,6 +296,11 @@ typedef struct VMINTUSERPERVM
 
     /** TLS index for the VMINTUSERPERVMCPU pointer. */
     RTTLS                           idxTLS;
+
+    /** The VM name. (Set after the config constructure has been called.) */
+    char                           *pszName;
+    /** The VM UUID. (Set after the config constructure has been called.) */
+    RTUUID                          Uuid;
 } VMINTUSERPERVM;
 
 /** Pointer to the VM internal data kept in the UVM. */

@@ -2086,6 +2086,7 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
 {
     LogFlow(("PDMR3QueryLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, ppBase));
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Find the LUN.
