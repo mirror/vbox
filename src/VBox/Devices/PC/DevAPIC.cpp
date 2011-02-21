@@ -2817,13 +2817,17 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     bool         fGCEnabled;
     bool         fR0Enabled;
     int          rc;
+    uint32_t     cCpus;
 
     Assert(iInstance == 0);
 
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg,
+                              "GCEnabled\0"
+                              "R0Enabled\0"
+                              "NumCPUs\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
@@ -2835,6 +2839,12 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
+
+    rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to query integer value \"NumCPUs\""));
+
     Log(("IOAPIC: fR0Enabled=%RTbool fGCEnabled=%RTbool\n", fR0Enabled, fGCEnabled));
 
     /*
@@ -2845,7 +2855,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     s->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     s->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     ioapic_reset(s);
-    s->id = 0;
+    s->id = cCpus;
 
     /*
      * Register the IOAPIC and get helpers.
