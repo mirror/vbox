@@ -628,10 +628,11 @@ DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
     for(;;)
     {
 //        RTPrintf(" wait\n");
-        if (!(   ASMAtomicReadU32(&pInt->u32Status) == STATUS_WRITE
-              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_WRITING
-              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READ
-              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READING))
+        uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
+        if (!(   u32Status == STATUS_WRITE
+              || u32Status == STATUS_WRITING
+              || u32Status == STATUS_READ
+              || u32Status == STATUS_READING))
             break;
         rc = RTSemEventWait(pInt->workFinishedEvent, 100);
     }
