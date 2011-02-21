@@ -100,6 +100,76 @@ DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     return rc;
 }
 
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnDeinit
+ */
+DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevDeinit(pThis, fFlags);
+
+    return rc;
+}
+
+
+DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
+                                        int32_t        iRegion,
+                                        RTHCPHYS       *pRegionStart,
+                                        uint64_t       *pu64RegionSize,
+                                        bool           *pfPresent,
+                                        bool           *pfMmio)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevGetRegionInfo(pThis, iRegion,
+                                       pRegionStart, pu64RegionSize,
+                                       pfPresent, pfMmio);
+
+    return rc;
+}
+
+DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
+                                    int32_t        iRegion,
+                                    RTHCPHYS       pRegionStart,
+                                    uint64_t       u64RegionSize,
+                                    RTR0PTR        *pRegionBase)
+{
+#if 0
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevMapRegion(pThis, iRegion, pRegionStart, pu64RegionSize, pRegionBase);
+
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnPciCfgRead
+ */
+DECLHIDDEN(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC      *pValue)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevPciCfgRead(pThis, Register, pValue);
+
+    return rc;
+}
+
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnPciCfgWrite
+ */
+DECLHIDDEN(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC *pValue)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevPciCfgWrite(pThis, Register, pValue);
+
+    return rc;
+}
 
 /**
  * Creates a new instance.
@@ -109,8 +179,8 @@ DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
  * @param   pszName             The instance name.
  * @param   ppDevPort           Where to store the pointer to our port interface.
  */
-static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals, 
-                              uint32_t           u32HostAddress, 
+static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
+                              uint32_t           u32HostAddress,
                               uint32_t           fFlags,
                               PRAWPCIDEVPORT     *ppDevPort)
 {
@@ -121,16 +191,23 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 
     pNew->pGlobals                      = pGlobals;
     pNew->hSpinlock                     = NIL_RTSPINLOCK;
-    pNew->cRefs                         = 1;    
+    pNew->cRefs                         = 1;
     pNew->pNext                         = NULL;
     pNew->HostPciAddress                = u32HostAddress;
 
     pNew->DevPort.u32Version            = RAWPCIDEVPORT_VERSION;
+
     pNew->DevPort.pfnRetain             = vboxPciDevRetain;
     pNew->DevPort.pfnRelease            = vboxPciDevRelease;
     pNew->DevPort.pfnInit               = vboxPciDevInit;
+    pNew->DevPort.pfnDeinit             = vboxPciDevDeinit;
+    pNew->DevPort.pfnGetRegionInfo      = vboxPciDevGetRegionInfo;
+    pNew->DevPort.pfnMapRegion          = vboxPciDevMapRegion;
+    pNew->DevPort.pfnPciCfgRead         = vboxPciDevPciCfgRead;
+    pNew->DevPort.pfnPciCfgWrite        = vboxPciDevPciCfgWrite;
+
     pNew->DevPort.u32VersionEnd         = RAWPCIDEVPORT_VERSION;
-    
+
     rc = RTSpinlockCreate(&pNew->hSpinlock);
 
     if (RT_SUCCESS(rc))
@@ -154,8 +231,8 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 /**
  * @copydoc RAWPCIFACTORY::pfnCreateAndConnect
  */
-static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFactory, 
-                                                        uint32_t             u32HostAddress, 
+static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFactory,
+                                                        uint32_t             u32HostAddress,
                                                         uint32_t             fFlags,
                                                         PRAWPCIDEVPORT       *ppDevPort)
 {
@@ -319,7 +396,7 @@ int  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals)
      */
     int rc = vboxPciInitGlobals(pGlobals);
     if (RT_SUCCESS(rc))
-    {     
+    {
         rc = vboxPciInitIdc(pGlobals);
         if (RT_SUCCESS(rc))
             return rc;
@@ -334,7 +411,7 @@ int  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals)
 void vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals)
 {
     int rc = vboxPciDeleteIdc(pGlobals);
-    
+
     if (RT_SUCCESS(rc))
         vboxPciDeleteGlobals(pGlobals);
 }

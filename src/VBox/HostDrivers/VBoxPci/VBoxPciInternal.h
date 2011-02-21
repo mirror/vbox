@@ -53,11 +53,15 @@ typedef struct VBOXRAWPCIINS
     /* Host PCI address of this device. */
     uint32_t           HostPciAddress;
 
+#ifdef RT_OS_LINUX
+    struct pci_dev  *  pPciDev;
+#endif
+
     /** The session this interface is associated with. */
     PSUPDRVSESSION     pSession;
     /** The SUPR0 object id. */
     void               *pvObj;
-    
+
     /** Port, given to the outside world. */
     RAWPCIDEVPORT      DevPort;
 } VBOXRAWPCIINS;
@@ -94,6 +98,14 @@ DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
 DECLHIDDEN(int)  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags);
+DECLHIDDEN(int)  vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
+                                           int32_t        iRegion,
+                                           RTHCPHYS       *pRegionStart,
+                                           uint64_t       *pu64RegionSize,
+                                           bool           *pfPresent,
+                                           bool           *pfMmio);
+DECLHIDDEN(int)  vboxPciOsDevPciCfgWrite(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue);
+DECLHIDDEN(int)  vboxPciOsDevPciCfgRead (PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue);
 
 RT_C_DECLS_END
 
