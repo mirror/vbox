@@ -1130,6 +1130,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
         }
 
         /*
