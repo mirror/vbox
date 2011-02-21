@@ -36,7 +36,7 @@ const AdditionsFacility::FacilityInfo AdditionsFacility::sFacilityInfo[8] =
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (AdditionsFacility)
+DEFINE_EMPTY_CTOR_DTOR(AdditionsFacility)
 
 HRESULT AdditionsFacility::FinalConstruct()
 {
@@ -63,9 +63,10 @@ HRESULT AdditionsFacility::init(Guest *aParent, AdditionsFacilityType_T enmFacil
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    RTTimeNow (&mData.mLastUpdated);
+    RTTimeNow(&mData.mLastUpdated);
     mData.mStatus = enmStatus;
     mData.mType = enmFacility;
+    /** @todo mClass is not initialized here. */
 
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
