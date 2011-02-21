@@ -139,15 +139,14 @@ AssertCompileMemberAlignment(UVM, aCpus, 32);
 #define UVM_MAGIC       0x19700823
 
 /** @def UVM_ASSERT_VALID_EXT_RETURN
- * Asserts a the VM handle is valid for external access, i.e. not being
- * destroy or terminated.
+ * Asserts a user mode VM handle is valid for external access.
  */
-#define UVM_ASSERT_VALID_EXT_RETURN(pVM, rc) \
-        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
-                        &&  (pUVM)->u32Magic == UVM_MAGIC, \
-                        ("pUVM=%p u32Magic=%#x\n", (pUVM), \
-                         RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) ? (pUVM)->u32Magic : 0), \
-                        (rc))
+#define UVM_ASSERT_VALID_EXT_RETURN(a_pUVM, a_rc) \
+        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) \
+                        &&  (a_pUVM)->u32Magic == UVM_MAGIC, \
+                        ("a_pUVM=%p u32Magic=%#x\n", (a_pUVM), \
+                         RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) ? (a_pUVM)->u32Magic : 0), \
+                        (a_rc))
 
 #endif
 
