@@ -1373,8 +1373,8 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
                                 strlen(pszAsUser) ? pszAsUser : NULL,
                                 strlen(pszPassword) ? pszPassword : NULL,
                                 phProcess);
+            RTGetOptArgvFree(papszArgsExp);
         }
-        RTGetOptArgvFree(papszArgsExp);
     }
     return rc;
 }
