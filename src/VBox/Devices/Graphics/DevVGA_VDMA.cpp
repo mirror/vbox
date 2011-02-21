@@ -313,9 +313,6 @@ int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     PVBOXVDMACMD_CHROMIUM_CTL_PRIVATE pCmdPrivate = VBOXVDMACMD_CHROMIUM_CTL_PRIVATE_FROM_CTL(pCmd);
     pCmdPrivate->rc = rc;
-#ifdef DEBUG_misha
-    AssertRC(rc);
-#endif
     if (pCmdPrivate->pfnCompletion)
     {
         pCmdPrivate->pfnCompletion(pVGAState, pCmd, pCmdPrivate->pvCompletion);
@@ -1097,17 +1094,11 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
                 }
 # if 0 //def VBOX_WITH_CRHGSMI
                 int tmpRc = vboxVDMACrCtlHgsmiSetup(pVdma);
-#  ifdef DEBUG_misha
-                AssertRC(tmpRc);
-#  endif
 # endif
 #endif
                 pVGAState->pVdma = pVdma;
 #ifdef VBOX_WITH_CRHGSMI
                 rc = vboxVDMACrCtlHgsmiSetup(pVdma);
-# ifdef DEBUG_misha
-                AssertRC(rc);
-# endif
 #endif
                 return VINF_SUCCESS;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
