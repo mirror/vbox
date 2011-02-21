@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -75,10 +75,12 @@ typedef struct DIRECTORYENTRY
     RTLISTNODE  Node;
 } DIRECTORYENTRY, *PDIRECTORYENTRY;
 
-/*
+/**
  * Special exit codes for returning errors/information of a
  * started guest process to the command line VBoxManage was started from.
  * Useful for e.g. scripting.
+ * @todo r=bird: RTEXITCODE is using the RT prefix, that is reserved for IPRT
+ *       use only.
  */
 enum RTEXITCODE_EXEC
 {
@@ -90,8 +92,10 @@ enum RTEXITCODE_EXEC
     RTEXITCODE_EXEC_CANCELED     = 20
 };
 
-/*
+/**
  * RTGetOpt-IDs for the guest execution control command line.
+ * @todo r=bird: RTGETOPTDEF_EXEC is using the RT prefix, that is reserved for
+ *       IPRT use only.
  */
 enum RTGETOPTDEF_EXEC
 {
@@ -209,10 +213,15 @@ static int ctrlExecProcessStatusToExitCode(ULONG uStatus)
     int rc = RTEXITCODE_EXEC_SUCCESS;
     switch (uStatus)
     {
+/** @todo r=bird: Why do you use guestControl status codes here? Is the Main
+ *        API not exposing these constants?  If so, it's something that
+ *        needs fixing. */
         case guestControl::PROC_STS_STARTED:
             rc = RTEXITCODE_EXEC_SUCCESS;
             break;
         case guestControl::PROC_STS_TEN:
+            /** @todo check the exit code, 0 is success, !0 should be indicated
+             *        by a specail VBoxManage exit code. */
             rc = RTEXITCODE_EXEC_SUCCESS;
             break;
         case guestControl::PROC_STS_TES:
@@ -230,7 +239,7 @@ static int ctrlExecProcessStatusToExitCode(ULONG uStatus)
         case guestControl::PROC_STS_DWN:
             /* Service/OS is stopping, process was killed, so
              * not exactly an error of the started process ... */
-            rc = RTEXITCODE_EXEC_SUCCESS;
+            rc = RTEXITCODE_EXEC_SUCCESS; /** @todo r=bird: return failure if you don't know what happend. No false positives, please. */
             break;
         case guestControl::PROC_STS_ERROR:
             rc = RTEXITCODE_EXEC_FAILED;
@@ -369,6 +378,17 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         { "--image",                        'i',                                        RTGETOPT_REQ_STRING  },
         //{ "--output-format",                RTGETOPTDEF_EXEC_OUTPUTFORMAT,              RTGETOPT_REQ_STRING  },
         { "--output-type",                  RTGETOPTDEF_EXEC_OUTPUTTYPE,                RTGETOPT_REQ_STRING  },
+        /** @todo r=bird: output-type and output-format are the same thing.
+         *        Please just call it --dos2unix and --unix2dos and
+         *        implement it them.   (If you insist on flexibility, it would
+         *        be --input-type <x> and --output-type <y>, where x and y
+         *        could indicate line ending styles (CR/LF/CRLF), encodings
+         *        (UTF-8, UTF-16, ++), code pages and plugin provided
+         *        conversions.  See the conv option of dd and iconv for
+         *        inspiration.)
+         *
+         *        The default must be no conversion at all, i.e.
+         *        --output-type=binary. */
         { "--password",                     'p',                                        RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                        RTGETOPT_REQ_UINT32  },
         { "--username",                     'u',                                        RTGETOPT_REQ_STRING  },
@@ -376,6 +396,31 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         { "--wait-exit",                    RTGETOPTDEF_EXEC_WAITFOREXIT,               RTGETOPT_REQ_NOTHING },
         { "--wait-stdout",                  RTGETOPTDEF_EXEC_WAITFORSTDOUT,             RTGETOPT_REQ_NOTHING },
         { "--wait-stderr",                  RTGETOPTDEF_EXEC_WAITFORSTDERR,             RTGETOPT_REQ_NOTHING },
+        /* @todo r=bird: '--' is interpreted by RTGetOpt() to indicate the
+         * end of arguments, you don't need to handle this specially.
+         * RTGetOpt() will return VINF_GETOPT_NOT_OPTION for anything following
+         * a '--' argument.  So, let me give you some other examples for illustrating
+         * what I mean should work now (all the same, userid/pw missing):
+         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp /foo /bar
+         *  VBoxManage guestcontrol myvm exec --image /bin/busybox -- cp /foo /bar
+         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp -- /foo /bar
+         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp /foo -- /bar
+         *
+         * Same, but with standard cp (image defaults to /bin/cp):
+         *  VBoxManage guestcontrol myvm exec /bin/cp /foo /bar
+         *  VBoxManage guestcontrol myvm exec -- /bin/cp /foo /bar
+         *  VBoxManage guestcontrol myvm exec /bin/cp -- /foo /bar
+         *  VBoxManage guestcontrol myvm exec /bin/cp /foo -- /bar
+         *
+         * The old example:
+         *  VBoxManage guestcontrol myvm exec --image /bin/busybox -- ln -s /foo /bar
+         *
+         * As an example of where '--' is used by standard linux utils, try delete a
+         * file named '-f' without specifying the directory:
+         *      > -f        # creates the file
+         *      rm -v -f    # does nothing because '-f' is a rm option.
+         *      rm -v -- -f # does the trick because '--' tells rm to not read '-f' as an option.
+         */
         { "--",                             RTGETOPTDEF_EXEC_ARGS,                      RTGETOPT_REQ_STRING }
     };
 
@@ -390,7 +435,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     com::SafeArray<IN_BSTR> env;
     Utf8Str                 Utf8UserName;
     Utf8Str                 Utf8Password;
-    uint32_t                u32TimeoutMS    = 0;
+    uint32_t                cMsTimeout      = 0;
     bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
     bool                    fWaitForStdOut  = false;
@@ -412,13 +457,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_GUESTCONTROL, "Failed to parse environment value, rc=%Rrc", vrc);
-                else
-                {
-                    for (int j = 0; j < cArgs; j++)
-                        env.push_back(Bstr(papszArg[j]).raw());
+                for (int j = 0; j < cArgs; j++)
+                    env.push_back(Bstr(papszArg[j]).raw());
 
-                    RTGetOptArgvFree(papszArg);
-                }
+                RTGetOptArgvFree(papszArg);
                 break;
             }
 
@@ -430,8 +472,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 Utf8Cmd = ValueUnion.psz;
                 break;
 
-            /*case RTGETOPTDEF_EXEC_OUTPUTFORMAT:
-                /** todo Add DOS2UNIX and vice versa handling!
+            /** @todo Add DOS2UNIX and vice versa handling!
+              case RTGETOPTDEF_EXEC_OUTPUTFORMAT:
                 break;*/
 
             case RTGETOPTDEF_EXEC_OUTPUTTYPE:
@@ -454,7 +496,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
 
             case 't': /* Timeout */
-                u32TimeoutMS = ValueUnion.u32;
+                cMsTimeout = ValueUnion.u32;
                 break;
 
             case 'u': /* User name */
@@ -522,7 +564,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         }
     }
 
-    if (RT_FAILURE(vrc))
+    if (RT_FAILURE(vrc)) /** @todo r=bird: You don't need to check vrc here or in any of the two while conditions above because you are now returning directly in those cases. Drop the checks, this will keep things simpler. */
     {
         RTMsgError("Failed to parse argument '%c', rc=%Rrc", ch, vrc);
         return RTEXITCODE_FAILURE;
@@ -534,20 +576,23 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
+    /*
+     * <missing comment indicating that we're done parsing args and started doing something else>
+     */
     HRESULT rc = S_OK;
     if (fVerbose)
     {
-        if (u32TimeoutMS == 0)
+        if (cMsTimeout == 0)
             RTPrintf("Waiting for guest to start process ...\n");
         else
-            RTPrintf("Waiting for guest to start process (within %ums)\n", u32TimeoutMS);
+            RTPrintf("Waiting for guest to start process (within %ums)\n", cMsTimeout);
     }
 
     /* Get current time stamp to later calculate rest of timeout left. */
     uint64_t u64StartMS = RTTimeMilliTS();
 
     /* Execute the process. */
-    int rcProc = RTEXITCODE_EXEC_SUCCESS;
+    int rcProc = RTEXITCODE_EXEC_SUCCESS;   /** @todo r=bird: Don't initialize this, please, set it explicitly in the various branches.  It's easier to see what it's going to be that way. */
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
     rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
@@ -556,35 +601,32 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                                ComSafeArrayAsInParam(env),
                                Bstr(Utf8UserName).raw(),
                                Bstr(Utf8Password).raw(),
-                               u32TimeoutMS,
+                               cMsTimeout,
                                &uPID,
                                progress.asOutParam());
     if (FAILED(rc))
-        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest)); /** @todo return straight away and drop state (e.g. rcProc) confusion. */
     else
     {
         if (fVerbose)
             RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
         if (fWaitForExit)
         {
-            if (u32TimeoutMS) /* Wait with a certain timeout. */
+            if (fVerbose)
             {
-                /* Calculate timeout value left after process has been started.  */
-                uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
-                /* Is timeout still bigger than current difference? */
-                if (u32TimeoutMS > u64Elapsed)
+                if (cMsTimeout) /* Wait with a certain timeout. */
                 {
-                    if (fVerbose)
-                        RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS - u64Elapsed);
+                    /* Calculate timeout value left after process has been started.  */
+                    uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+                    /* Is timeout still bigger than current difference? */
+                    if (cMsTimeout > u64Elapsed)
+                        RTPrintf("Waiting for process to exit (%ums left) ...\n", cMsTimeout - u64Elapsed);
+                    else
+                        RTPrintf("No time left to wait for process!\n"); /** @todo a bit misleading ... */
                 }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("No time left to wait for process!\n");
-                }
+                else /* Wait forever. */
+                    RTPrintf("Waiting for process to exit ...\n");
             }
-            else if (fVerbose) /* Wait forever. */
-                RTPrintf("Waiting for process to exit ...\n");
 
             /* Setup signal handling if cancelable. */
             ASSERT(progress);
@@ -611,8 +653,33 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 if (   fWaitForStdOut
                     || fWaitForStdErr)
                 {
+                    /** @todo r=bird: The timeout argument is bogus in several
+                     * ways:
+                     *  1. RT_MAX will evaluate the arguments twice, which may
+                     *     result in different values because RTTimeMilliTS()
+                     *     returns a higher value the 2nd time. Worst case:
+                     *     Imagine when RT_MAX calculates the remaining time
+                     *     out (first expansion) there is say 60 ms left.  Then
+                     *     we're preempted and rescheduled after, say, 120 ms.
+                     *     We call RTTimeMilliTS() again and ends up with a
+                     *     value -60 ms, which translate to a UINT32_MAX - 59
+                     *     ms timeout.
+                     *
+                     *  2. When the period expires, we will wait forever since
+                     *     both 0 and -1 mean indefinite timeout with this API,
+                     *     at least that's one way of reading the main code.
+                     *
+                     *  3. There is a signed/unsigned ambiguity in the
+                     *     RT_MAX expression.  The left hand side is signed
+                     *     integer (0), the right side is unsigned 64-bit. From
+                     *     what I can tell, the compiler will treat this as
+                     *     unsigned 64-bit and never return 0.
+                     */
+                    /** @todo r=bird: We must separate stderr and stdout
+                     *        output, seems bunched together here which
+                     *        won't do the trick for unix BOFHs. */
                     rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
-                                                 RT_MAX(0, u32TimeoutMS - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
+                                                 RT_MAX(0, cMsTimeout - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
                                                  _64K, ComSafeArrayAsOutParam(aOutputData));
                     if (FAILED(rc))
                     {
@@ -684,8 +751,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     break;
 
                 /* Did we run out of time? */
-                if (   u32TimeoutMS
-                    && RTTimeMilliTS() - u64StartMS > u32TimeoutMS)
+                if (   cMsTimeout
+                    && RTTimeMilliTS() - u64StartMS > cMsTimeout)
                 {
                     progress->Cancel();
                     break;
@@ -704,7 +771,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 rcProc = RTEXITCODE_EXEC_CANCELED;
             }
             else if (   fCompleted
-                     && SUCCEEDED(rc))
+                     && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
             {
                 LONG iRc;
                 CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
@@ -716,6 +783,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
                     if (SUCCEEDED(rc) && fVerbose)
                         RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecProcessStatusToText(uRetStatus), uRetFlags);
+                    /** @todo r=bird: This isn't taking uRetExitCode into
+                     *        account. We MUST give the users a way to indicate
+                     *        whether the guest program terminated with an 0 or
+                     *        non-zero exit code. */
                     rcProc = ctrlExecProcessStatusToExitCode(uRetStatus);
                 }
             }
@@ -723,6 +794,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
             {
                 if (fVerbose)
                     RTPrintf("Process execution aborted!\n");
+                /** @todo r=bird: Should set rcProc here, this is not a
+                 *        success branch. */
             }
         }
     }
@@ -1124,8 +1197,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
     /*
-     * Check the syntax.  We can deduce the correct syntax from the number of
-     * arguments.
+     * Check the syntax.
      */
     if (pArg->argc < 2) /* At least the source + destination should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
@@ -1155,7 +1227,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fDryRun = false;
 
     int vrc = VINF_SUCCESS;
-    uint32_t uNoOptionIdx = 0;
+    uint32_t idxNonOption = 0;
     bool fUsageOK = true;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(vrc))
@@ -1190,7 +1262,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
             case VINF_GETOPT_NOT_OPTION:
             {
                 /* Get the actual source + destination. */
-                switch (uNoOptionIdx)
+                switch (idxNonOption)
                 {
                     case 0:
                         Utf8Source = ValueUnion.psz;
@@ -1201,13 +1273,17 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                         break;
 
                     default:
+                        /** @todo r=bird: {2..UINT32_MAX-1} goes unnoticed
+                         *        to /dev/null? That doesn't make much
+                         *        sense... Why not just return with a syntax
+                         *        error straight away? */
                         break;
                 }
-                uNoOptionIdx++;
-                if (uNoOptionIdx == UINT32_MAX)
+                idxNonOption++;
+                if (idxNonOption == UINT32_MAX)
                 {
                     RTMsgError("Too many files specified! Aborting.\n");
-                    vrc = VERR_TOO_MUCH_DATA;
+                    vrc = VERR_TOO_MUCH_DATA; /** @todo r=bird: return straight away, drop the RT_SUCCESS(vrc) from the while condition.  Keep things simple. */
                 }
                 break;
             }
@@ -1217,7 +1293,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
         }
     }
 
-    if (!fUsageOK)
+    if (!fUsageOK) /** @todo r=bird: fUsageOK - never set to false, just drop it.  Keep the state simple. */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     if (Utf8Source.isEmpty())
@@ -1231,6 +1307,10 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
     if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
+
+    /*
+     * Done parsing arguments, do stuff.
+     */
     HRESULT rc = S_OK;
     if (fVerbose)
     {
@@ -1275,14 +1355,14 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                              Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
             }
 
-            uint32_t uCurObject = 1;
+            uint32_t iObject = 1;
             RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
             {
                 if (!fDryRun)
                 {
                     if (fVerbose)
                         RTPrintf("Copying \"%s\" to \"%s\" (%u/%u) ...\n",
-                                 pNode->pszSourcePath, pNode->pszDestPath, uCurObject, cObjects);
+                                 pNode->pszSourcePath, pNode->pszDestPath, iObject, cObjects);
                     /* Finally copy the desired file (if no dry run selected). */
                     if (!fDryRun)
                         vrc = ctrlCopyFileToGuest(guest, fVerbose, pNode->pszSourcePath, pNode->pszDestPath,
@@ -1290,7 +1370,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                 }
                 if (RT_FAILURE(vrc))
                     break;
-                uCurObject++;
+                iObject++;
             }
             if (RT_SUCCESS(vrc) && fVerbose)
                 RTPrintf("Copy operation successful!\n");
@@ -1335,7 +1415,7 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fVerbose = false;
 
     RTLISTNODE listDirs;
-    uint32_t uNumDirs = 0;
+    uint32_t cDirs = 0;
     RTListInit(&listDirs);
 
     int vrc = VINF_SUCCESS;
@@ -1373,8 +1453,8 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
                                                &listDirs);
                 if (RT_SUCCESS(vrc))
                 {
-                    uNumDirs++;
-                    if (uNumDirs == UINT32_MAX)
+                    cDirs++;
+                    if (cDirs == UINT32_MAX)
                     {
                         RTMsgError("Too many directories specified! Aborting.\n");
                         vrc = VERR_TOO_MUCH_DATA;
@@ -1391,7 +1471,7 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
     if (!fUsageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    if (!uNumDirs)
+    if (!cDirs)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No directory to create specified!");
 
@@ -1400,8 +1480,8 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
                            "No user name specified!");
 
     HRESULT rc = S_OK;
-    if (fVerbose && uNumDirs > 1)
-        RTPrintf("Creating %u directories ...\n", uNumDirs);
+    if (fVerbose && cDirs > 1)
+        RTPrintf("Creating %u directories ...\n", cDirs);
 
     PDIRECTORYENTRY pNode;
     RTListForEach(&listDirs, pNode, DIRECTORYENTRY, Node)
@@ -1415,7 +1495,7 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
                                     uMode, fFlags, progress.asOutParam());
         if (FAILED(rc))
         {
-            /* rc ignored */ ctrlPrintError(guest, COM_IIDOF(IGuest));
+            ctrlPrintError(guest, COM_IIDOF(IGuest)); /* (return code ignored, save original rc) */
             break;
         }
     }
@@ -1431,7 +1511,7 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
      */
-    if (pArg->argc < 1) /* At least the VM name should be present :-). */
+    if (pArg->argc < 1) /* At least the VM name should be present :-). */ /** @todo r=bird: This is no longer correct. Ditto for all other handlers. */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     Utf8Str Utf8Source;
@@ -1533,7 +1613,7 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 /**
  * Access the guest control store.
  *
- * @returns 0 on success, 1 on failure
+ * @returns program exit code.
  * @note see the command line API description for parameters
  */
 int handleGuestControl(HandlerArg *pArg)
