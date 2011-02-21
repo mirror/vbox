@@ -717,28 +717,19 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl: \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
 
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.xml: ChangeLog.xml
-	$(QUIET)$(CP) $< $@
-
-$(VBOX_PATH_MANUAL_OUTBASE)/user_ChangeLogImpl_1.xml: $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|para|simpara|g' \
-	               --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
-
+# This XSLT rule depends on $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml, which is build by the complex rule
+#    $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeLog.xml): ...
+# much further above. That rule takes en_US/user_ChangeLog.xml and replaces $VIRTUALBOX_CHANGELOG_IMPL
+# with the actual change log contained in user_ChangeLogImpl.xml
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
-		$(VBOX_PATH_MANUAL_OUTBASE)/user_ChangeLogImpl_1.xml \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.xml
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
 	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet --output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html \
 		$(@D)/docbook-changelog-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.xml
-
-$(PATH_BIN)/ChangeLog.html: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
-	$(QUIET)$(CP) $< $@
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
-cl-html: $(PATH_BIN)/ChangeLog.html
+cl-html: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
 
 include $(KBUILD_PATH)/subfooter.kmk
 
