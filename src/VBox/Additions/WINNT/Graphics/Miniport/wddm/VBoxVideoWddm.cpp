@@ -2421,7 +2421,8 @@ DxgkDdiSubmitCommand(
                     Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
                     VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags;
                     fBltFlags.Value = 0;
-                    if (!vboxVhwaHlpOverlayListIsEmpty(pDevExt, pDstAlloc->SurfDesc.VidPnSourceId))
+                    if (pDstAlloc->SurfDesc.VidPnSourceId != D3DDDI_ID_UNINITIALIZED &&
+                            !vboxVhwaHlpOverlayListIsEmpty(pDevExt, pDstAlloc->SurfDesc.VidPnSourceId))
                     {
                         fBltFlags.b2DRelated = 1;
                         Status = vboxWddmSubmitBltCmd(pDevExt, pContext, pSubmitCommand->SubmissionFenceId, pBlt, fBltFlags);

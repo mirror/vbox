@@ -66,21 +66,21 @@ static VBOXDISPDBG g_VBoxDispDbg = {0};
 
 PVBOXDISPDBG vboxDispDbgGet()
 {
-    if (ASMAtomicCmpXchgU32((volatile uint32_t *)g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_UNINITIALIZED, VBOXDISPDBG_STATE_INITIALIZING))
+    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZING, VBOXDISPDBG_STATE_UNINITIALIZED))
     {
         HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxDispDbg.KmtCallbacks);
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
-            ASMAtomicWriteU32((volatile uint32_t *)g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZED);
+            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZED);
             return &g_VBoxDispDbg;
         }
         else
         {
-            ASMAtomicWriteU32((volatile uint32_t *)g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_UNINITIALIZED);
+            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_UNINITIALIZED);
         }
     }
-    else if (ASMAtomicReadU32((volatile uint32_t *)g_VBoxDispDbg.enmState) == VBOXDISPDBG_STATE_INITIALIZED)
+    else if (ASMAtomicReadU32((volatile uint32_t *)&g_VBoxDispDbg.enmState) == VBOXDISPDBG_STATE_INITIALIZED)
     {
         return &g_VBoxDispDbg;
     }
@@ -140,6 +140,18 @@ void vboxDispLogDrvF(char * szString, ...)
 
     vboxDispLogDrv(szBuffer);
 }
+
+void vboxDispLogDbgPrintF(char * szString, ...)
+{
+    char szBuffer[4096] = {0};
+    va_list pArgList;
+    va_start(pArgList, szString);
+    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+    va_end(pArgList);
+
+    OutputDebugStringA(szBuffer);
+}
+
 
 VOID vboxVDbgDoDumpSurfRectByAlloc(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix)
 {
