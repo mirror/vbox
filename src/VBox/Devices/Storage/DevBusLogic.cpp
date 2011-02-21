@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Implemented looking at the driver source in the linux kernel (drivers/scsi/BusLogic.[ch]). 
+/* Implemented looking at the driver source in the linux kernel (drivers/scsi/BusLogic.[ch]).
  * See also: http://www.drdobbs.com/184410111
  */
 
@@ -404,6 +404,14 @@ typedef struct BUSLOGIC
     bool volatile                   fRedo;
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PBUSLOGICTASKSTATE) pTasksRedoHead;
+
+#ifdef LOG_ENABLED
+# if HC_ARCH_BITS == 64
+    uint32_t                        Alignment4;
+# endif
+
+    volatile uint32_t               cInMailboxesReady;
+#endif
 
 } BUSLOGIC, *PBUSLOGIC;
 
@@ -816,6 +824,23 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq)
 }
 
 #if defined(IN_RING3)
+
+/**
+ * Advances the mailbox pointer to the next slot.
+ */
+DECLINLINE(void) buslogicOutgoingMailboxAdvance(PBUSLOGIC pBusLogic)
+{
+    pBusLogic->uMailboxOutgoingPositionCurrent = (pBusLogic->uMailboxOutgoingPositionCurrent + 1) % pBusLogic->cMailbox;
+}
+
+/**
+ * Returns the physical address of the next outgoing mailbox to process.
+ */
+DECLINLINE(RTGCPHYS) buslogicOutgoingMailboxGetGCPhys(PBUSLOGIC pBusLogic)
+{
+    return pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox));
+}
+
 /**
  * Initialize local RAM of host adapter with default values.
  *
@@ -943,10 +968,18 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
     RTGCPHYS GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase + (pBusLogic->uMailboxIncomingPositionCurrent * sizeof(Mailbox));
     RTGCPHYS GCPhysAddrCCB = (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB;
 
+    LogFlowFunc(("Completing CCB %RGp\n", GCPhysAddrCCB));
+
     /* Update CCB. */
     pTaskState->CommandControlBlockGuest.uHostAdapterStatus = uHostAdapterStatus;
     pTaskState->CommandControlBlockGuest.uDeviceStatus = uDeviceStatus;
     PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, sizeof(CommandControlBlock));
+
+#ifdef RT_STRICT
+    Mailbox Tmp;
+    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &Tmp, sizeof(Mailbox));
+    Assert(Tmp.u.in.uCompletionCode == BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE);
+#endif
 
     /* Update mailbox. */
     PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &pTaskState->MailboxGuest, sizeof(Mailbox));
@@ -955,6 +988,10 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
     pBusLogic->uMailboxIncomingPositionCurrent++;
     if (pBusLogic->uMailboxIncomingPositionCurrent >= pBusLogic->cMailbox)
         pBusLogic->uMailboxIncomingPositionCurrent = 0;
+
+#ifdef LOG_ENABLED
+    ASMAtomicIncU32(&pBusLogic->cInMailboxesReady);
+#endif
 
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INCOMING_MAILBOX_LOADED;
     buslogicSetInterrupt(pBusLogic, false);
@@ -1610,6 +1647,11 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_HC_IOPORT_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
+
+#ifdef LOG_ENABLED
+            uint32_t cMailboxesReady = ASMAtomicXchgU32(&pBusLogic->cInMailboxesReady, 0);
+            Log(("%u incoming mailboxes are ready when this interrupt was cleared\n", cMailboxesReady));
+#endif
 
             if (uVal & BUSLOGIC_REGISTER_CONTROL_INTERRUPT_RESET)
                 buslogicClearInterrupt(pBusLogic);
@@ -2278,34 +2320,52 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 
     if (!pBusLogic->fStrictRoundRobinMode)
     {
-        /* Search for a filled mailbox. */
+        /* Search for a filled mailbox - stop if we have scanned all mailboxes. */
+        uint8_t uMailboxPosCur = pBusLogic->uMailboxOutgoingPositionCurrent;
+
         do
         {
             /* Fetch mailbox from guest memory. */
-            GCPhysAddrMailboxCurrent = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox));
+            GCPhysAddrMailboxCurrent = buslogicOutgoingMailboxGetGCPhys(pBusLogic);
 
             PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent,
                               &pTaskState->MailboxGuest, sizeof(Mailbox));
 
-            pBusLogic->uMailboxOutgoingPositionCurrent++;
-
-            /* Check if we reached the end and start from the beginning if so. */
-            if (pBusLogic->uMailboxOutgoingPositionCurrent >= pBusLogic->cMailbox)
-                pBusLogic->uMailboxOutgoingPositionCurrent = 0;
-        } while (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE);
+            /* Check the next mailbox. */
+            buslogicOutgoingMailboxAdvance(pBusLogic);
+        } while (   pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE
+                 && uMailboxPosCur != pBusLogic->uMailboxOutgoingPositionCurrent);
     }
     else
     {
         /* Fetch mailbox from guest memory. */
-        GCPhysAddrMailboxCurrent = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox));
+        GCPhysAddrMailboxCurrent = buslogicOutgoingMailboxGetGCPhys(pBusLogic);
 
         PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent,
                           &pTaskState->MailboxGuest, sizeof(Mailbox));
     }
 
+    /*
+     * Check if the mailbox is actually loaded.
+     * It might be possible that the guest notified us without
+     * a loaded mailbox. Do nothing in that case but leave a
+     * log entry.
+     */
+    if (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE)
+    {
+        Log(("No loaded mailbox left\n"));
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+        return VERR_NO_DATA;
+    }
+
+    LogFlow(("Got loaded mailbox at slot %u, CCB phys %RGp\n", pBusLogic->uMailboxOutgoingPositionCurrent, pTaskState->MailboxGuest.u32PhysAddrCCB));
 #ifdef DEBUG
     buslogicDumpMailboxInfo(&pTaskState->MailboxGuest, true);
 #endif
+
+    /* We got the mailbox, mark it as free in the guest. */
+    uint8_t uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
+    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent + RT_OFFSETOF(Mailbox, u.out.uActionCode), &uActionCode, sizeof(uActionCode));
 
     if (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
         rc = buslogicDeviceSCSIRequestSetup(pBusLogic, pTaskState);
@@ -2318,18 +2378,9 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 
     AssertRC(rc);
 
-    /* We got the mailbox, mark it as free in the guest. */
-    pTaskState->MailboxGuest.u.out.uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent, &pTaskState->MailboxGuest, sizeof(Mailbox));
-
+    /* Advance to the next mailbox. */
     if (pBusLogic->fStrictRoundRobinMode)
-    {
-        pBusLogic->uMailboxOutgoingPositionCurrent++;
-
-        /* Check if we reached the end and start from the beginning if so. */
-        if (pBusLogic->uMailboxOutgoingPositionCurrent >= pBusLogic->cMailbox)
-            pBusLogic->uMailboxOutgoingPositionCurrent = 0;
-    }
+        buslogicOutgoingMailboxAdvance(pBusLogic);
 
     return rc;
 }
@@ -2346,28 +2397,19 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 static DECLCALLBACK(bool) buslogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     PBUSLOGIC  pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    uint32_t cMailboxesReady = 0;
 
     /* Reset notification send flag now. */
     Assert(pBusLogic->fNotificationSend);
     ASMAtomicXchgBool(&pBusLogic->fNotificationSend, false);
-
-    /*
-     * It is possible that there is a notification send but that there is no mailbox ready
-     * in the SMP case. Just do nothing.
-     */
-    cMailboxesReady = ASMAtomicXchgU32(&pBusLogic->cMailboxesReady, 0);
-    if (!cMailboxesReady)
-        return true;
+    ASMAtomicXchgU32(&pBusLogic->cMailboxesReady, 0); /* @todo: Actually not required anymore but to stay compatible with older saved states. */
 
     /* Process mailboxes. */
+    int rc;
     do
     {
-        int rc;
-
         rc = buslogicProcessMailboxNext(pBusLogic);
-        AssertMsgRC(rc, ("Processing mailbox failed rc=%Rrc\n", rc));
-    } while (--cMailboxesReady > 0);
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
+    } while (RT_SUCCESS(rc));
 
     return true;
 }
