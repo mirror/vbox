@@ -4532,7 +4532,7 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName(IN_BSTR aName, IDHCPServer 
          ++it)
     {
         rc = (*it)->COMGETTER(NetworkName)(bstr.asOutParam());
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc)) return rc;
 
         if (bstr == aName)
         {
