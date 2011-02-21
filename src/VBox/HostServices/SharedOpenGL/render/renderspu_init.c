@@ -406,8 +406,34 @@ static int renderSPUCleanup(void)
 #ifdef RT_OS_WINDOWS
     if (render_spu.dwWinThreadId)
     {
-        PostThreadMessage(render_spu.dwWinThreadId, WM_QUIT, 0, 0);
-        WaitForSingleObject(render_spu.hWinThreadReadyEvent, INFINITE);
+        HANDLE hNative;
+
+        hNative = OpenThread(SYNCHRONIZE|THREAD_QUERY_INFORMATION|THREAD_TERMINATE,
+                             false, render_spu.dwWinThreadId);
+        if (!hNative)
+        {
+            crWarning("Failed to get handle for window thread(%#x)", GetLastError());
+        }
+
+        if (PostThreadMessage(render_spu.dwWinThreadId, WM_QUIT, 0, 0))
+        {
+            WaitForSingleObject(render_spu.hWinThreadReadyEvent, INFINITE);
+
+            /*wait for os thread to actually finish*/
+            if (hNative && WaitForSingleObject(hNative, 3000)==WAIT_TIMEOUT)
+            {
+                crDebug("Wait failed, terminating");
+                if (!TerminateThread(hNative, 1))
+                {
+                    crWarning("TerminateThread failed");
+                }
+            }
+        }
+
+        if (hNative)
+        {
+            CloseHandle(hNative);
+        }
     }
     CloseHandle(render_spu.hWinThreadReadyEvent);
     render_spu.hWinThreadReadyEvent = NULL;
