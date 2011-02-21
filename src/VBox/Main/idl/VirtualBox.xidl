@@ -7990,7 +7990,10 @@
     </attribute>
 
     <attribute name="lastUpdated" type="long long" readonly="yes">
-      <desc>Timestamp (in ms) of last updated status.</desc>
+      <desc>
+        Time stamp of the last status update,
+        in milliseconds since 1970-01-01 UTC.
+      </desc>
     </attribute>
 
     <attribute name="name" type="wstring" readonly="yes">
