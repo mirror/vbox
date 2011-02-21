@@ -1296,6 +1296,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     AssertPtrReturn(phProcess, VERR_INVALID_PARAMETER);
 
     int  rc = VINF_SUCCESS;
+    char szExecExp[RTPATH_MAX];
 #ifdef RT_OS_WINDOWS
     /*
      * If sysprep should be executed do this in the context of VBoxService, which
@@ -1304,8 +1305,13 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
      */
     if (RTStrICmp(pszExec, "sysprep") == 0)
     {
-        /* Get the predefined path of sysprep.exe (depending on Windows OS). */
+        /* Use a predefined sysprep path as default. */
         char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
+
+        /*
+         * On Windows Vista (and up) sysprep is located in "system32\\sysprep\\sysprep.exe",
+         * so detect the OS and use a different path.
+         */
         OSVERSIONINFOEX OSInfoEx;
         RT_ZERO(OSInfoEx);
         OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -1317,9 +1323,19 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
             if (RT_SUCCESS(rc))
                 rc = RTPathAppend(szSysprepCmd, sizeof(szSysprepCmd), "system32\\sysprep\\sysprep.exe");
         }
-        rc = RTProcCreateEx(szSysprepCmd, papszArgs, hEnv, 0 /* fFlags */,
-                            phStdIn, phStdOut, phStdErr, NULL /* pszAsUser */,
-                            NULL /* pszPassword */, phProcess);
+
+        if (RT_SUCCESS(rc))
+        {
+            char **papszArgsExp;
+            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd, papszArgs, &papszArgsExp);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
+                                    phStdIn, phStdOut, phStdErr, NULL /* pszAsUser */,
+                                    NULL /* pszPassword */, phProcess);
+            }
+            RTGetOptArgvFree(papszArgsExp);
+        }
         return rc;
     }
 #endif /* RT_OS_WINDOWS */
@@ -1327,7 +1343,6 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     /*
      * Do the environment variables expansion on executable and arguments.
      */
-    char szExecExp[RTPATH_MAX];
     rc = VBoxServiceControlExecResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
     if (RT_SUCCESS(rc))
     {
