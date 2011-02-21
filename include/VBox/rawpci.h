@@ -61,7 +61,7 @@ typedef struct
     /* in */
     int32_t  iRegion;
     /* out */
-    RTHCPHYS RegionStart;
+    RTGCPHYS RegionStart;
     uint64_t u64RegionSize;
     bool     fPresent;
     bool     fMmio;
@@ -257,10 +257,64 @@ typedef struct RAWPCIDEVPORT
      * @param   pPort     Pointer to this structure.
      * @param   fFlags    Initialization flags.
      */
-    DECLR0CALLBACKMEMBER(int,  pfnInit,(PRAWPCIDEVPORT pPort, 
+    DECLR0CALLBACKMEMBER(int,  pfnInit,(PRAWPCIDEVPORT pPort,
                                         uint32_t       fFlags));
-    
-    
+
+
+    /**
+     * Deinit device.
+     *
+     * @param   pPort     Pointer to this structure.
+     * @param   fFlags    Initialization flags.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnDeinit,(PRAWPCIDEVPORT pPort,
+                                          uint32_t       fFlags));
+
+
+    /**
+     * Get PCI region info.
+     *
+     * @param   pPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnGetRegionInfo,(PRAWPCIDEVPORT pPort,
+                                                 int32_t        iRegion,
+                                                 RTHCPHYS       *pRegionStart,
+                                                 uint64_t       *pu64RegionSize,
+                                                 bool           *pfPresent,
+                                                 bool           *pfMmio));
+
+
+    /**
+     * Map PCI region.
+     *
+     * @param   pPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnMapRegion,(PRAWPCIDEVPORT pPort,
+                                             int32_t        iRegion,
+                                             RTHCPHYS       pRegionStart,
+                                             uint64_t       u64RegionSize,
+                                             RTR0PTR        *pRegionBase));
+
+    /**
+     * Read device PCI register.
+     *
+     * @param   pPort     Pointer to this structure.
+     * @param   fFlags    Initialization flags.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnPciCfgRead,(PRAWPCIDEVPORT pPort,
+                                              uint32_t          Register,
+                                              PCIRAWMEMLOC      *pValue));
+
+
+    /**
+     * Write device PCI register.
+     *
+     * @param   pPort     Pointer to this structure.
+     * @param   fFlags    Initialization flags.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnPciCfgWrite,(PRAWPCIDEVPORT pPort,
+                                               uint32_t          Register,
+                                               PCIRAWMEMLOC      *pValue));
 
     /** Structure version number. (RAWPCIDEVPORT_VERSION) */
     uint32_t u32VersionEnd;
@@ -298,8 +352,8 @@ typedef struct RAWPCIFACTORY
      *                              on success.
      *
      */
-    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory, 
-                                                   uint32_t             u32HostAddress, 
+    DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory,
+                                                   uint32_t             u32HostAddress,
                                                    uint32_t             fFlags,
                                                    PRAWPCIDEVPORT       *ppDevPort));
 
