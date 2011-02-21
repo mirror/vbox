@@ -1539,10 +1539,10 @@ typedef struct VBOXVDMADDI_CMD_COMPLETED_CB
 static BOOLEAN vboxVdmaDdiCmdCompletedCb(PVOID Context)
 {
     PVBOXVDMADDI_CMD_COMPLETED_CB pdc = (PVBOXVDMADDI_CMD_COMPLETED_CB)Context;
-    BOOLEAN bNeedDps = vboxVdmaDdiCmdCompletedIrq(pdc->pDevExt, pdc->pQueue, pdc->pCmd, pdc->enmComplType);
-    pdc->pDevExt->bNotifyDxDpc |= bNeedDps;
+    BOOLEAN bNeedDpc = vboxVdmaDdiCmdCompletedIrq(pdc->pDevExt, pdc->pQueue, pdc->pCmd, pdc->enmComplType);
+    pdc->pDevExt->bNotifyDxDpc |= bNeedDpc;
 
-    return bNeedDps;
+    return bNeedDpc;
 }
 
 NTSTATUS vboxVdmaDdiCmdCompleted(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType)

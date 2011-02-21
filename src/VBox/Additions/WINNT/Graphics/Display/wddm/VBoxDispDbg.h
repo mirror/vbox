@@ -24,7 +24,9 @@
 /* for some reason when debugging with VirtualKD, user-mode DbgPrint's are discarded
  * the workaround so far is to pass the log info to the kernel driver and DbgPrint'ed from there,
  * which is enabled by this define */
-//#  define VBOXWDDMDISP_DEBUG_PRINTDRV
+#  define VBOXWDDMDISP_DEBUG_PRINTDRV
+/* use OutputDebugString */
+#  define VBOXWDDMDISP_DEBUG_PRINT
 /* adds vectored exception handler to be able to catch non-debug UM exceptions in kernel debugger */
 #  define VBOXWDDMDISP_DEBUG_VEHANDLER
 # endif
@@ -59,16 +61,29 @@ void vboxVDbgVEHandlerUnregister();
 # define DbgPrintDrvRel(_m) do { } while (0)
 # define DbgPrintDrvFlow(_m) do { } while (0)
 #endif
+
+#ifdef VBOXWDDMDISP_DEBUG_PRINT
+# define DbgPrintUsr(_m) do { vboxDispLogDbgPrintF _m; } while (0)
+# define DbgPrintUsrRel(_m) do { vboxDispLogDbgPrintF _m; } while (0)
+# define DbgPrintUsrFlow(_m) do { } while (0)
+#else
+# define DbgPrintUsr(_m) do { } while (0)
+# define DbgPrintUsrRel(_m) do { } while (0)
+# define DbgPrintUsrFlow(_m) do { } while (0)
+#endif
 #define vboxVDbgPrint(_m) do { \
         Log(_m); \
+        DbgPrintUsr(_m); \
         DbgPrintDrv(_m); \
     } while (0)
 #define vboxVDbgPrintF(_m)  do { \
         LogFlow(_m); \
+        DbgPrintUsrFlow(_m); \
         DbgPrintDrvFlow(_m); \
     } while (0)
 #define vboxVDbgPrintR(_m)  do { \
         LogRel(_m); \
+        DbgPrintUsrRel(_m); \
         DbgPrintDrvRel(_m); \
     } while (0)
 
@@ -80,6 +95,7 @@ extern bool g_bVBoxVDbgFDumpBlt;
 
 void vboxDispLogDrvF(char * szString, ...);
 void vboxDispLogDrv(char * szString);
+void vboxDispLogDbgPrintF(char * szString, ...);
 
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;
 typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;

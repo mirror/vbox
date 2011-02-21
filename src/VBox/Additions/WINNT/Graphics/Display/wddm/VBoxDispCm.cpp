@@ -37,7 +37,9 @@ static VBOXDISPCM_MGR g_pVBoxCmMgr;
 
 HRESULT vboxDispCmSessionTerm(PVBOXDISPCM_SESSION pSession)
 {
+#ifdef DEBUG_misha
     Assert(RTListIsEmpty(&pSession->CtxList));
+#endif
     BOOL bRc = CloseHandle(pSession->hEvent);
     Assert(bRc);
     if (bRc)
