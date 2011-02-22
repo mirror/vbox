@@ -146,9 +146,11 @@ DECLINLINE(Bstr) composeHardwareAddress(PRTMAC aMacPtr)
 DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
 {
     /* Get the index from the name */
-    int iInstance;
-    if (sscanf(Utf8Str(bstrIfName).c_str(), "vboxnet%d", &iInstance) != 1)
-        return Bstr("0.0.0.0");
+    Utf8Str strTmp = bstrIfName;
+    const char *pszIfName = strTmp.c_str();
+    int iInstance = 0, iPos = strcspn(pszIfName, "0123456789");
+    if (pszIfName[iPos])
+        iInstance = RTStrToUInt32(pszIfName + iPos);
 
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)
