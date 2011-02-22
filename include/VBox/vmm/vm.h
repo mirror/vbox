@@ -333,9 +333,13 @@ typedef struct VMCPU
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(17)
-/** Check for pending TLB shootdown actions. */
+/** Check for pending TLB shootdown actions.
+ * Consumer: HWACCM
+ * @todo rename to VMCPU_FF_HWACCM_TLB_SHOOTDOWN  */
 #define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(18)
-/** Check for pending TLB flush action. */
+/** Check for pending TLB flush action.
+ * Consumer: HWACCM
+ * @todo rename to VMCPU_FF_HWACCM_TLB_FLUSH  */
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
@@ -410,10 +414,12 @@ typedef struct VMCPU
 /** All the forced VMCPU flags. */
 #define VMCPU_FF_ALL_MASK                       (~0U)
 
-/** All the forced VM flags. */
-#define VM_FF_ALL_BUT_RAW_MASK                  (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NO_MEMORY)
-/** All the forced VMCPU flags. */
-#define VMCPU_FF_ALL_BUT_RAW_MASK               (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_PDM_CRITSECT))
+/** All the forced VM flags except those related to raw-mode and hardware
+ * assisted execution. */
+#define VM_FF_ALL_REM_MASK                      (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NO_MEMORY)
+/** All the forced VMCPU flags except those related to raw-mode and hardware
+ * assisted execution. */
+#define VMCPU_FF_ALL_REM_MASK                   (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_TLB_FLUSH | VMCPU_FF_TLB_SHOOTDOWN))
 
 /** @} */
 

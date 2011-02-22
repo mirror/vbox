@@ -988,9 +988,9 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPollVoid(pVM, pVCpu);
 #endif
-        AssertCompile((VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)) & VMCPU_FF_TIMER);
-        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)))
+        AssertCompile((VMCPU_FF_ALL_REM_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)) & VMCPU_FF_TIMER);
+        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)))
         {
 l_REMDoForcedActions:
             if (fInREMState)
@@ -1754,8 +1754,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             if (   !fFFDone
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
-                && (   VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK)
-                    || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_BUT_RAW_MASK)))
+                && (   VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
+                    || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 if (    (   rc == VINF_EM_RESCHEDULE_REM

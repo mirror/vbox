@@ -1063,6 +1063,202 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
 
 
 /**
+ * Used by REMR3Run to handle the case where CPU_EMULATE_SINGLE_STEP is set.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The Virtual CPU handle.
+ */
+static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
+{
+    int rc;
+    Assert(!pVM->rem.s.Env.singlestep_enabled);
+    Assert(pVM->rem.s.fInREM);
+/* #define REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING - slow (tb flushing?) */
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+    cpu_single_step(&pVM->rem.s.Env, 1);
+#endif
+
+    /*
+     * Now we set the execute single instruction flag and enter the cpu_exec loop.
+     */
+    for (;;)
+    {
+        char szBuf[256];
+
+        /*
+         * Log the current registers state and instruction.
+         */
+        remR3StateUpdate(pVM, pVCpu);
+        DBGFR3Info(pVM, "cpumguest", NULL, NULL);
+        szBuf[0] = '\0';
+        rc = DBGFR3DisasInstrEx(pVM,
+                                pVCpu->idCpu,
+                                0, /* Sel */
+                                0, /* GCPtr */
+                                DBGF_DISAS_FLAGS_CURRENT_GUEST
+                                | DBGF_DISAS_FLAGS_DEFAULT_MODE
+                                | DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID,
+                                szBuf,
+                                sizeof(szBuf),
+                                NULL);
+        if (RT_FAILURE(rc))
+            RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrEx failed with rc=%Rrc\n", rc);
+        RTLogPrintf("CPU%d: %s\n", pVCpu->idCpu, szBuf);
+
+        /*
+         * Execute the instruction.
+         */
+        TMNotifyStartOfExecution(pVCpu);
+
+        if (   pVM->rem.s.Env.exception_index < 0
+            || pVM->rem.s.Env.exception_index > 256)
+            pVM->rem.s.Env.exception_index = -1; /** @todo We need to do similar stuff elsewhere, I think. */
+
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+        pVM->rem.s.Env.interrupt_request = 0;
+#else
+        pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
+#endif
+        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+            pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
+        RTLogPrintf("remR3RunLoggingStep: interrupt_request=%#x halted=%d exception_index=%#x\n", rc,
+                    pVM->rem.s.Env.interrupt_request,
+                    pVM->rem.s.Env.halted,
+                    pVM->rem.s.Env.exception_index
+                    );
+
+        rc = cpu_exec(&pVM->rem.s.Env);
+
+        RTLogPrintf("remR3RunLoggingStep: cpu_exec -> %#x interrupt_request=%#x halted=%d exception_index=%#x\n", rc,
+                    pVM->rem.s.Env.interrupt_request,
+                    pVM->rem.s.Env.halted,
+                    pVM->rem.s.Env.exception_index
+                    );
+
+        TMNotifyEndOfExecution(pVCpu);
+
+        switch (rc)
+        {
+#ifndef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+            /*
+             * The normal exit.
+             */
+            case EXCP_SINGLE_INSTR:
+                if (   !VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
+                    && !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                    continue;
+                RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
+                            pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
+                rc = VINF_SUCCESS;
+                break;
+
+#else
+            /*
+             * The normal exit, check for breakpoints at PC just to be sure.
+             */
+#endif
+            case EXCP_DEBUG:
+                rc = VINF_EM_DBG_STEPPED;
+                if (pVM->rem.s.Env.nb_breakpoints > 0)
+                {
+                    RTGCPTR     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
+                    int         iBP;
+                    for (iBP = 0; iBP < pVM->rem.s.Env.nb_breakpoints; iBP++)
+                        if (pVM->rem.s.Env.breakpoints[iBP] == GCPtrPC)
+                        {
+                            rc = VINF_EM_DBG_BREAKPOINT;
+                            RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC);
+                            break;
+                        }
+                }
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+                if (rc == VINF_EM_DBG_STEPPED)
+                {
+                    if (   !VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
+                        && !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                        continue;
+
+                    RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
+                                pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
+                    rc = VINF_SUCCESS;
+                }
+#endif
+                break;
+
+            /*
+             * If we take a trap or start servicing a pending interrupt, we might end up here.
+             * (Timer thread or some other thread wishing EMT's attention.)
+             */
+            case EXCP_INTERRUPT:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_INTERRUPT rc=VINF_SUCCESS\n");
+                rc = VINF_SUCCESS;
+                break;
+
+            /*
+             * hlt instruction.
+             */
+            case EXCP_HLT:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_HLT rc=VINF_EM_HALT\n");
+                rc = VINF_EM_HALT;
+                break;
+
+            /*
+             * The VM has halted.
+             */
+            case EXCP_HALTED:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_HALTED rc=VINF_EM_HALT\n");
+                rc = VINF_EM_HALT;
+                break;
+
+            /*
+             * Switch to RAW-mode.
+             */
+            case EXCP_EXECUTE_RAW:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_EXECUTE_RAW rc=VINF_EM_RESCHEDULE_RAW\n");
+                rc = VINF_EM_RESCHEDULE_RAW;
+                break;
+
+            /*
+             * Switch to hardware accelerated RAW-mode.
+             */
+            case EXCP_EXECUTE_HWACC:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_EXECUTE_HWACC rc=VINF_EM_RESCHEDULE_HWACC\n");
+                rc = VINF_EM_RESCHEDULE_HWACC;
+                break;
+
+            /*
+             * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
+             */
+            case EXCP_RC:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_RC rc=%Rrc\n", pVM->rem.s.rc);
+                rc = pVM->rem.s.rc;
+                pVM->rem.s.rc = VERR_INTERNAL_ERROR;
+                break;
+
+            /*
+             * Figure out the rest when they arrive....
+             */
+            default:
+                AssertMsgFailed(("rc=%d\n", rc));
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> %d rc=VINF_EM_RESCHEDULE\n", rc);
+                rc = VINF_EM_RESCHEDULE;
+                break;
+        }
+        break;
+    }
+
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+    cpu_single_step(&pVM->rem.s.Env, 0);
+#else
+    pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_SINGLE_INSTR | CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
+#endif
+    return rc;
+}
+
+
+/**
  * Runs code in recompiled mode.
  *
  * Before calling this function the REM state needs to be in sync with
@@ -1078,8 +1274,12 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
 REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
 {
     int rc;
-    Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
+
+    if (RT_UNLIKELY(pVM->rem.s.Env.state & CPU_EMULATE_SINGLE_STEP))
+        return remR3RunLoggingStep(pVM, pVCpu);
+
     Assert(pVM->rem.s.fInREM);
+    Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
 
     TMNotifyStartOfExecution(pVCpu);
     rc = cpu_exec(&pVM->rem.s.Env);
@@ -1194,7 +1394,8 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
 /**
  * Check if the cpu state is suitable for Raw execution.
  *
- * @returns boolean
+ * @returns true if RAW/HWACC mode is ok, false if we should stay in REM.
+ *
  * @param   env         The CPU env struct.
  * @param   eip         The EIP to check this for (might differ from env->eip).
  * @param   fFlags      hflags OR'ed with IOPL, TF and VM from eflags.
@@ -1211,6 +1412,10 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
 
     /* Update counter. */
     env->pVM->rem.s.cCanExecuteRaw++;
+
+    /* Never when single stepping+logging guest code. */
+    if (env->state & CPU_EMULATE_SINGLE_STEP)
+        return false;
 
     if (HWACCMIsEnabled(env->pVM))
     {
@@ -3738,7 +3943,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     /*
      * Log registers if requested.
      */
-    if (!fLog2)
+    if (fLog2)
         DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
 
     /*
