@@ -113,6 +113,9 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 }
 
 
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnGetRegionInfo
+ */
 DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
                                         int32_t        iRegion,
                                         RTHCPHYS       *pRegionStart,
@@ -129,21 +132,35 @@ DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
     return rc;
 }
 
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnMapRegion
+ */
 DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
                                     int32_t        iRegion,
-                                    RTHCPHYS       pRegionStart,
+                                    RTHCPHYS       RegionStart,
                                     uint64_t       u64RegionSize,
                                     RTR0PTR        *pRegionBase)
 {
-#if 0
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
-    int rc = vboxPciOsDevMapRegion(pThis, iRegion, pRegionStart, pu64RegionSize, pRegionBase);
+    int rc = vboxPciOsDevMapRegion(pThis, iRegion, RegionStart, u64RegionSize, pRegionBase);
 
     return rc;
-#else
-    return VINF_SUCCESS;
-#endif
+}
+
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnUnapRegion
+ */
+DECLHIDDEN(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
+                                      RTHCPHYS       RegionStart,
+                                      uint64_t       u64RegionSize,
+                                      RTR0PTR        RegionBase)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevUnmapRegion(pThis, RegionStart, u64RegionSize, RegionBase);
+
+    return rc;
 }
 
 
@@ -203,6 +220,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->DevPort.pfnDeinit             = vboxPciDevDeinit;
     pNew->DevPort.pfnGetRegionInfo      = vboxPciDevGetRegionInfo;
     pNew->DevPort.pfnMapRegion          = vboxPciDevMapRegion;
+    pNew->DevPort.pfnUnmapRegion        = vboxPciDevUnmapRegion;
     pNew->DevPort.pfnPciCfgRead         = vboxPciDevPciCfgRead;
     pNew->DevPort.pfnPciCfgWrite        = vboxPciDevPciCfgWrite;
 
