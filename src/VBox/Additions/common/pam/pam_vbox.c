@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -209,8 +209,13 @@ static int pam_vbox_do_check(pam_handle_t *h)
             }
             else
             {
+#ifdef _DEBUG
                 pam_vbox_log(h, "pam_vbox_do_check: credentials retrieved: user=%s, password=%s, domain=%s\n",
                              pszUsername, pszPassword, pszDomain);
+#else
+                pam_vbox_log(h, "pam_vbox_do_check: credentials retrieved: user=%s, password=XXX, domain=%s\n",
+                             pszUsername, pszDomain);
+#endif
                 /* Fill credentials into PAM. */
                 pamrc = pam_set_item(h, PAM_USER, pszUsername);
                 if (pamrc != PAM_SUCCESS)
