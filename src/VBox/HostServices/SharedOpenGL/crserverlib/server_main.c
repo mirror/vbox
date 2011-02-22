@@ -338,6 +338,12 @@ GLboolean crVBoxServerInit(void)
     crServerInitDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
+    /*Check for PBO support*/
+    if (crStateGetCurrent()->extensions.ARB_pixel_buffer_object)
+    {
+        cr_server.bUsePBOForReadback=GL_TRUE;
+    }
+
     return GL_TRUE;
 }
 

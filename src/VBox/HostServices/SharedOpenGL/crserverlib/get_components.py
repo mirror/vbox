@@ -30,7 +30,7 @@ num_components = {
 	'GL_TEXTURE_WIDTH': 1,
 	'GL_TEXTURE_HEIGHT': 1,
 	'GL_TEXTURE_DEPTH': 1,
-	# 'GL_TEXTURE_INTERNAL_FORMAT': 1,  THIS CONFLICTS WITH SOMETHING?!
+	# 'GL_TEXTURE_INTERNAL_FORMAT': 1,  THIS CONFLICTS WITH GL_TEXTURE_COMPONENTS!
 	'GL_TEXTURE_BORDER': 1,
 	'GL_TEXTURE_RED_SIZE': 1,
 	'GL_TEXTURE_GREEN_SIZE': 1,
@@ -109,6 +109,7 @@ num_extended_components = {
 	'GL_QUERY_RESULT_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_CURRENT_QUERY_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_TEXTURE_COMPRESSED_IMAGE_SIZE': (1, 'CR_ARB_texture_compression'),
+    'GL_TEXTURE_COMPRESSED': (1, 'CR_ARB_texture_compression'),
 	'GL_COORD_REPLACE_ARB': (1, 'CR_ARB_point_sprite'),
 }
 
