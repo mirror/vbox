@@ -44,13 +44,14 @@ struct BackupableMediumAttachmentData
     { }
 
     ComObjPtr<Medium>   pMedium;
-    ComObjPtr<BandwidthGroup> pBwGroup;
     /* Since MediumAttachment is not a first class citizen when it
      * comes to managing settings, having a reference to the storage
      * controller will not work - when settings are changed it will point
      * to the old, uninitialized instance. Changing this requires
      * substantial changes to MediumImpl.cpp. */
     const Bstr          bstrControllerName;
+    /* Same counts for the assigned bandwidth group */
+    Utf8Str             strBandwidthGroup;
     const LONG          lPort;
     const LONG          lDevice;
     const DeviceType_T  type;
@@ -109,7 +110,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                LONG aDevice,
                                DeviceType_T aType,
                                bool aPassthrough,
-                               BandwidthGroup *aBandwidthGroup)
+                               const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aPassthrough=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aPassthrough));
@@ -127,9 +128,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
 
     m->bd.allocate();
     m->bd->pMedium = aMedium;
-    if (aBandwidthGroup)
-        aBandwidthGroup->reference();
-    m->bd->pBwGroup = aBandwidthGroup;
+    unconst(m->bd->strBandwidthGroup) = strBandwidthGroup;
     unconst(m->bd->bstrControllerName) = aControllerName;
     unconst(m->bd->lPort)   = aPort;
     unconst(m->bd->lDevice) = aDevice;
@@ -289,9 +288,19 @@ STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwG
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd->pBwGroup.queryInterfaceTo(aBwGroup);
+    HRESULT hrc = S_OK;
+    if (m->bd->strBandwidthGroup.isNotEmpty())
+    {
+        ComObjPtr<BandwidthGroup> pBwGroup;
+        hrc = m->pMachine->getBandwidthGroup(m->bd->strBandwidthGroup, pBwGroup, true /* fSetError */);
 
-    return S_OK;
+        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+
+        if (SUCCEEDED(hrc))
+            pBwGroup.queryInterfaceTo(aBwGroup);
+    }
+
+    return hrc;
 }
 
 /**
@@ -317,7 +326,7 @@ void MediumAttachment::rollback()
  */
 void MediumAttachment::commit()
 {
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("ENTER - %s\n", getLogName()));
 
     /* sanity */
     AutoCaller autoCaller(this);
@@ -328,7 +337,7 @@ void MediumAttachment::commit()
     if (m->bd.isBackedUp())
         m->bd.commit();
 
-    LogFlowThisFuncLeave();
+    LogFlowThisFunc(("LEAVE - %s\n", getLogName()));
 }
 
 bool MediumAttachment::isImplicit() const
@@ -372,9 +381,9 @@ bool MediumAttachment::getPassthrough() const
     return m->bd->fPassthrough;
 }
 
-const ComObjPtr<BandwidthGroup>& MediumAttachment::getBandwidthGroup() const
+const Utf8Str& MediumAttachment::getBandwidthGroup() const
 {
-    return m->bd->pBwGroup;
+    return m->bd->strBandwidthGroup;
 }
 
 bool MediumAttachment::matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
@@ -406,18 +415,14 @@ void MediumAttachment::updatePassthrough(bool aPassthrough)
     m->bd->fPassthrough = aPassthrough;
 }
 
-void MediumAttachment::updateBandwidthGroup(const ComObjPtr<BandwidthGroup> &aBandwidthGroup)
+void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
 {
+    LogFlowThisFuncEnter();
     Assert(isWriteLockOnCurrentThread());
 
     m->bd.backup();
-    if (!aBandwidthGroup.isNull())
-        aBandwidthGroup->reference();
+    m->bd->strBandwidthGroup = aBandwidthGroup;
 
-    if (!m->bd->pBwGroup.isNull())
-    {
-        m->bd->pBwGroup->release();
-    }
-    m->bd->pBwGroup = aBandwidthGroup;
+    LogFlowThisFuncLeave();
 }
 

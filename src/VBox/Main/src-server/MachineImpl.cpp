@@ -3708,7 +3708,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           aDevice,
                           aType,
                           fIndirect,
-                          NULL);
+                          Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
     if (associate && !medium.isNull())
@@ -3870,7 +3870,23 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
-    pAttach->updateBandwidthGroup(group);
+    const Utf8Str strBandwidthGroupOld = pAttach->getBandwidthGroup();
+    if (strBandwidthGroupOld.isNotEmpty())
+    {
+        /* Get the bandwidth group object and release it - this must not fail. */
+        ComObjPtr<BandwidthGroup> pBandwidthGroupOld;
+        rc = getBandwidthGroup(strBandwidthGroupOld, pBandwidthGroupOld, false);
+        Assert(SUCCEEDED(rc));
+
+        pBandwidthGroupOld->release();
+        pAttach->updateBandwidthGroup(Utf8Str::Empty);
+    }
+
+    if (!group.isNull())
+    {
+        group->reference();
+        pAttach->updateBandwidthGroup(group->getName());
+    }
 
     return S_OK;
 }
@@ -7745,6 +7761,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                 dev.strBwGroup.c_str(),
                                 mUserData->s.strName.c_str(),
                                 mData->m_strConfigFileFull.c_str());
+            pBwGroup->reference();
         }
 
         const Bstr controllerName = aStorageController->getName();
@@ -7757,7 +7774,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.lDevice,
                                dev.deviceType,
                                dev.fPassThrough,
-                               pBwGroup);
+                               pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
@@ -8685,7 +8702,6 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
 
         MediumAttachment *pAttach = *it;
         Medium *pMedium = pAttach->getMedium();
-        BandwidthGroup *pBwGroup = pAttach->getBandwidthGroup();
 
         dev.deviceType = pAttach->getType();
         dev.lPort = pAttach->getPort();
@@ -8699,10 +8715,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
             dev.fPassThrough = pAttach->getPassthrough();
         }
 
-        if (pBwGroup)
-        {
-            dev.strBwGroup = pBwGroup->getName();
-        }
+        dev.strBwGroup = pAttach->getBandwidthGroup();
 
         data.llAttachedDevices.push_back(dev);
     }

@@ -32,6 +32,7 @@
 #include "BIOSSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
+#include "BandwidthGroupImpl.h"
 #include "VBox/settings.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "Performance.h"
@@ -714,6 +715,15 @@ public:
                                MachineState_T *aState = NULL,
                                BOOL *aRegistered = NULL);
     void releaseStateDependency();
+
+    HRESULT getBandwidthGroup(const Utf8Str &strBandwidthGroup,
+                              ComObjPtr<BandwidthGroup> &pBandwidthGroup,
+                              bool fSetError = false)
+    {
+        return mBandwidthControl->getBandwidthGroupByName(strBandwidthGroup,
+                                                          pBandwidthGroup,
+                                                          fSetError);
+    }
 
 protected:
 
