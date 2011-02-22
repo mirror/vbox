@@ -3156,7 +3156,12 @@ static void gen_eob(DisasContext *s)
     gen_check_external_event(s);
 #endif /* VBOX */
 
-    if (s->singlestep_enabled) {
+    if (   s->singlestep_enabled
+#ifdef VBOX
+        && (   !(cpu_single_env->state & CPU_EMULATE_SINGLE_STEP)
+            || !(s->prefix & (PREFIX_REPNZ | PREFIX_REPZ) ))
+#endif
+       ) {
         tcg_gen_helper_0_0(helper_debug);
     } else if (s->tf) {
 	tcg_gen_helper_0_0(helper_single_step);

@@ -78,6 +78,9 @@ unsigned long get_phys_page_offset(target_ulong addr);
 #define REM_COPY_FPU_REG(pDst, pSrc) \
     do { *(PX86FPUMMX)(pDst) = *(const X86FPUMMX *)(pSrc); } while (0)
 
+/** How remR3RunLoggingStep operates. */
+#define REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -950,7 +953,11 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
         Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+        cpu_single_step(&pVM->rem.s.Env, 0);
+#endif
         Assert(!pVM->rem.s.Env.singlestep_enabled);
+
         /*
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
@@ -1073,11 +1080,12 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
 static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
 {
     int rc;
-    Assert(!pVM->rem.s.Env.singlestep_enabled);
+
     Assert(pVM->rem.s.fInREM);
-/* #define REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING - slow (tb flushing?) */
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
     cpu_single_step(&pVM->rem.s.Env, 1);
+#else
+    Assert(!pVM->rem.s.Env.singlestep_enabled);
 #endif
 
     /*
@@ -1250,7 +1258,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
     }
 
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
-    cpu_single_step(&pVM->rem.s.Env, 0);
+//    cpu_single_step(&pVM->rem.s.Env, 0);
 #else
     pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_SINGLE_INSTR | CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
 #endif
@@ -3850,6 +3858,9 @@ static DECLCALLBACK(int) remR3DisasEnableStepping(PVM pVM, bool fEnable)
         pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP;
     else
         pVM->rem.s.Env.state &= ~CPU_EMULATE_SINGLE_STEP;
+#ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
+    cpu_single_step(&pVM->rem.s.Env, fEnable);
+#endif
     return VINF_SUCCESS;
 }
 
