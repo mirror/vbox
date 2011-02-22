@@ -155,6 +155,7 @@ protected:
     bool m_fIsKeyboardCaptured : 1;
     bool m_bIsHostComboPressed : 1;
     bool m_bIsHostComboAlone : 1;
+    bool m_bIsHostComboProcessed : 1;
     bool m_fPassCAD : 1;
 
 #if defined(Q_WS_WIN)

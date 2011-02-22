@@ -638,7 +638,8 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_globalSettings(vboxGlobal().settings())
     , m_fIsKeyboardCaptured(false)
     , m_bIsHostComboPressed(false)
-    , m_bIsHostComboAlone (false)
+    , m_bIsHostComboAlone(false)
+    , m_bIsHostComboProcessed(false)
     , m_fPassCAD(false)
 #if defined(Q_WS_WIN)
     , m_bIsHostkeyInCapture(false)
@@ -1263,6 +1264,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             {
                 m_bIsHostComboPressed = true;
                 m_bIsHostComboAlone = true;
+                m_bIsHostComboProcessed = false;
                 if (uisession()->isRunning())
                     saveKeyStates();
             }
@@ -1274,6 +1276,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                 if (m_bIsHostComboAlone)
                 {
                     m_bIsHostComboAlone = false;
+                    m_bIsHostComboProcessed = true;
                     /* Process Host+<key> shortcuts.
                      * Currently, <key> is limited to alphanumeric chars.
                      * Other Host+<key> combinations are handled in Qt event(): */
@@ -1289,9 +1292,9 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             if (m_bIsHostComboPressed)
             {
                 m_bIsHostComboPressed = false;
-                if (m_bIsHostComboAlone)
+                /* Capturing/releasing keyboard/mouse if necessary: */
+                if (m_bIsHostComboAlone && !m_bIsHostComboProcessed)
                 {
-                    /* Capturing/releasing keyboard/mouse: */
                     if (uisession()->isRunning())
                     {
                         bool ok = true;
