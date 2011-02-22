@@ -180,6 +180,7 @@ def progressBar(ctx,p,wait=1000):
         return 1
     except KeyboardInterrupt:
         print "Interrupted."
+        ctx['interrupt'] = True
         if p.cancelable:
             print "Canceling task..."
             p.cancel()
@@ -488,6 +489,8 @@ def playbackDemo(ctx, console, file, dur):
                         mouse.putMouseEvent(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
 
     # We need to catch all exceptions here, to close file
+    except KeyboardInterrupt:
+        ctx['interrupt'] = True
     except:
         traceback.print_exc()
         pass
@@ -690,6 +693,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          }
     try:
         ops[cmd]()
+    except KeyboardInterrupt:
+        ctx['interrupt'] = True
     except Exception, e:
         printErr(ctx,e)
         if g_verbose:
@@ -1117,6 +1122,7 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo,inputPipe=None,outputPipe=N
 
         except KeyboardInterrupt:
             print "Interrupted."
+            ctx['interrupt'] = True
             if progress.cancelable:
                 progress.cancel()
         (reason, code, flags) = guest.getProcessStatus(pid)
@@ -1734,7 +1740,6 @@ def reloadExtCmd(ctx, args):
    autoCompletion(commands, ctx)
    return 0
 
-
 def runScriptCmd(ctx, args):
     if (len(args) != 2):
         print "usage: runScript <script>"
@@ -1746,9 +1751,16 @@ def runScriptCmd(ctx, args):
         return 0
 
     try:
-        for line in lf:
+        lines = lf.readlines()
+        ctx['scriptLine'] = 0
+        ctx['interrupt'] = False
+        while ctx['scriptLine'] < len(lines):
+            line = lines[ctx['scriptLine']]
+            ctx['scriptLine'] = ctx['scriptLine'] + 1
             done = runCommand(ctx, line)
-            if done != 0: break
+            if done != 0 or ctx['interrupt']:
+                break
+
     except Exception,e:
         printErr(ctx,e)
         if g_verbose:
@@ -3157,6 +3169,17 @@ def detachpciCmd(ctx, args):
     cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.detachHostPciDevice(hostaddr))
     return 0
 
+def gotoCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: goto line"
+        return 0
+
+    line = int(args[1])
+
+    ctx['scriptLine'] = line
+
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -3245,7 +3268,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'playbackDemo':['Playback demo: playbackDemo Win32 file.dmo 10', playbackDemoCmd, 0],
             'lspci': ['List PCI devices attached to the VM: lspci Win32', lspciCmd, 0],
             'attachpci': ['Attach host PCI device to the VM: attachpci Win32 01:00.0', attachpciCmd, 0],
-            'detachpci': ['Detach host PCI device from the VM: detachpci Win32 01:00.0', detachpciCmd, 0]
+            'detachpci': ['Detach host PCI device from the VM: detachpci Win32 01:00.0', detachpciCmd, 0],
+            'goto': ['Go to line in script (script-only)', gotoCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
@@ -3472,7 +3496,9 @@ def main(argv):
            'progressBar': lambda p: progressBar(ctx,p),
            'typeInGuest': typeInGuest,
            '_machlist': None,
-           'prompt': g_prompt
+           'prompt': g_prompt,
+           'scriptLine': 0,
+           'interrupt': False
            }
     interpret(ctx)
     g_virtualBoxManager.deinit()
