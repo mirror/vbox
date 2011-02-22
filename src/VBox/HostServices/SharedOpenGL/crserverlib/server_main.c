@@ -942,7 +942,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         crServerDispatchWindowSize(key, muralInfo.width, muralInfo.height);
         crServerDispatchWindowPosition(key, muralInfo.gX, muralInfo.gY);
         /* Same workaround as described in stub.c:stubUpdateWindowVisibileRegions for compiz on a freshly booted VM*/
-        if (muralInfo.cVisibleRects)
+        if (muralInfo.bReceivedRects)
         {
             crServerDispatchWindowVisibleRegion(key, muralInfo.cVisibleRects, muralInfo.pVisibleRects);
         }
