@@ -18,7 +18,6 @@
 #include "MediumAttachmentImpl.h"
 #include "MachineImpl.h"
 #include "MediumImpl.h"
-#include "BandwidthGroupImpl.h"
 #include "Global.h"
 
 #include "AutoStateDep.h"
