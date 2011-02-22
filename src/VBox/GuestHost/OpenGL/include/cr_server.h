@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define SHCROGL_SSM_VERSION 25
+#define SHCROGL_SSM_VERSION 26
 
 #define CR_MAX_WINDOWS 100
 #define CR_MAX_CLIENTS 64
@@ -69,6 +69,7 @@ typedef struct {
 
     GLuint idFBO, idColorTex, idDepthStencilRB;
     GLuint fboWidth, fboHeight;
+    GLuint idPBO;
 } CRMuralInfo;
 
 /**
@@ -230,6 +231,7 @@ typedef struct {
     PFNCRSERVERPRESENTFBO pfnPresentFBO;
     GLboolean             bForceOffscreenRendering; /*Force server to render 3d data offscreen
                                                      *using callback above to update vbox framebuffers*/
+    GLboolean             bUsePBOForReadback;       /*Use PBO's for data readback*/
 } CRServer;
 
 
