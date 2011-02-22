@@ -470,6 +470,41 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
     if (hrc != S_OK)
         return hrc;
 
+    PCFGMNODE pBridges = CFGMR3GetChild(pDevices, "ich9pcibridge");
+    Assert(pBridges);
+
+    /* Find required bridges, and add missing ones */
+    for (size_t iDev = 0; iDev < assignments.size(); iDev++)
+    {
+        ComPtr<IPciDeviceAttachment> assignment = assignments[iDev];
+        LONG guest = 0;
+        PciBusAddress GuestPciAddress;
+
+        assignment->COMGETTER(GuestAddress)(&guest);
+        GuestPciAddress.fromLong(guest);
+        Assert(GuestPciAddress.valid());
+
+        if (GuestPciAddress.iBus > 0)
+        {
+            int iBridgesMissed = 0;
+            int iBase = GuestPciAddress.iBus - 1;
+
+            while (!BusMgr->hasPciDevice("ich9pcibridge", iBase) && iBase > 0)
+            {
+                iBridgesMissed++; iBase--;
+            }
+            iBase++;
+
+            for (int iBridge = 0; iBridge < iBridgesMissed; iBridge++)
+            {
+                InsertConfigNode(pBridges, Utf8StrFmt("%d", iBase + iBridge).c_str(), &pInst);
+                InsertConfigInteger(pInst, "Trusted",              1);
+                hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);
+            }
+        }
+    }
+
+    /* Now actually add devices */
     for (size_t iDev = 0; iDev < assignments.size(); iDev++)
     {
         PciBusAddress HostPciAddress, GuestPciAddress;
@@ -499,6 +534,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         hrc = BusMgr->assignPciDevice("pciraw", pInst, GuestPciAddress, true);
         if (hrc != S_OK)
             return hrc;
+
         InsertConfigInteger(pCfg,      "GuestPCIBusNo",      GuestPciAddress.iBus);
         InsertConfigInteger(pCfg,      "GuestPCIDeviceNo",   GuestPciAddress.iDevice);
         InsertConfigInteger(pCfg,      "GuestPCIFunctionNo", GuestPciAddress.iFn);
