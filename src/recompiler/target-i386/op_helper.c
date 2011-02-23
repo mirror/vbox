@@ -1575,6 +1575,16 @@ void do_interrupt_user(int intno, int is_int, int error_code,
 void do_interrupt(int intno, int is_int, int error_code,
                   target_ulong next_eip, int is_hw)
 {
+    if (RT_UNLIKELY(env->state & CPU_EMULATE_SINGLE_STEP)) {
+        if (is_int) {
+            RTLogPrintf("do_interrupt: %#04x err=%#x pc=%#RGv%s\n",
+                        intno, error_code, env->eip, is_hw ? " hw" : "");
+        } else {
+            RTLogPrintf("do_interrupt: %#04x err=%#x pc=%#RGv next=%#RGv%s\n",
+                        intno, error_code, env->eip, next_eip, is_hw ? " hw" : "");
+        }
+    }
+
     if (loglevel & CPU_LOG_INT) {
         if ((env->cr[0] & CR0_PE_MASK)) {
             static int count;
