@@ -43,6 +43,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
   VBoxGuest_DEFS.win    += VBOX_WITH_GUEST_BUGCHECK_DETECTION
  endif
+ #VBoxGuest_DEFS.win     += LOG_ENABLED LOG_TO_BACKDOOR
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  VBoxGuest_DEPS.linux   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)

@@ -153,6 +153,8 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         case IRP_MN_START_DEVICE:
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: START_DEVICE\n"));
+
+            /* This must be handled first by the lower driver. */
             rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
 
             if (   NT_SUCCESS(rc)
@@ -183,16 +185,43 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             break;
         }
 
-        case IRP_MN_QUERY_PNP_DEVICE_STATE:
-        {
-            Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: QUERY_PNP_DEVICE_STATE\n"));
-            break;
-        }
-
         case IRP_MN_CANCEL_REMOVE_DEVICE:
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: CANCEL_REMOVE_DEVICE\n"));
+
+            /* This must be handled first by the lower driver. */
+            rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
+
+            if (NT_SUCCESS(rc) && pDevExt->win.s.devState == PENDINGREMOVE)
+            {
+                /* Return to the state prior to receiving the IRP_MN_QUERY_REMOVE_DEVICE request. */
+                pDevExt->win.s.devState = pDevExt->win.s.prevDevState;
+            }
+
+            /* Complete the IRP. */
             break;
+        }
+
+        case IRP_MN_SURPRISE_REMOVAL:
+        {
+            Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: IRP_MN_SURPRISE_REMOVAL\n"));
+
+            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, SURPRISEREMOVED);
+
+            /* Do nothing here actually. Cleanup is done in IRP_MN_REMOVE_DEVICE. 
+             * This request is not expected for VBoxGuest.
+             */
+            LogRel(("VBoxGuest: unexpected device removal\n"));
+
+            /* Pass to the lower driver. */
+            pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+            IoSkipCurrentIrpStackLocation(pIrp);
+
+            rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
+
+            /* Do not complete the IRP. */
+            return rc;
         }
 
         case IRP_MN_QUERY_REMOVE_DEVICE:
@@ -200,90 +229,114 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: QUERY_REMOVE_DEVICE\n"));
 
 #ifdef VBOX_REBOOT_ON_UNINSTALL
-            /* The device can not be removed without a reboot. */
-            if (pDevExt->win.s.devState == WORKING)
-            {
-                Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot!\n"));
-                pDevExt->win.s.devState = PENDINGREMOVE;
-            }
+            Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
             rc = STATUS_UNSUCCESSFUL;
-            Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_REMOVE_DEVICE: Refuse with rc = %Rrc\n", rc));
-#else
-            if (pDevExt->win.s.devState == WORKING)
-                pDevExt->win.s.devState = PENDINGREMOVE;
 #endif /* VBOX_REBOOT_ON_UNINSTALL */
+
+            if (NT_SUCCESS(rc))
+            {
+                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, PENDINGREMOVE);
+
+                /* This IRP passed down to lower driver. */
+                pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+                rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
+
+                /* Do not complete the IRP. */
+                return rc;
+            }
+
+            /* Complete the IRP on failure. */
             break;
         }
 
         case IRP_MN_REMOVE_DEVICE:
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: REMOVE_DEVICE\n"));
-            if (pDevExt->win.s.devState == PENDINGREMOVE)
-            {
-                rc = vboxguestwinCleanup(pDevObj);
-                if (NT_SUCCESS(rc))
-                {
-                    /*
-                     * We need to send the remove down the stack before we detach,
-                     * but we don't need to wait for the completion of this operation
-                     * (and to register a completion routine).
-                     */
-                    pIrp->IoStatus.Status = STATUS_SUCCESS;
-                    IoSkipCurrentIrpStackLocation(pIrp);
 
-                    if (pDevExt->win.s.pNextLowerDriver != NULL)
-                    {
-                        rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
-                        IoDetachDevice(pDevExt->win.s.pNextLowerDriver);
+            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, REMOVED);
 
-                        Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
-                    }
+            /* Free hardware resources. */
+            /* @todo this should actually free I/O ports, interrupts, etc. */
+            rc = vboxguestwinCleanup(pDevObj);
+            Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: vboxguestwinCleanup rc = 0x%08X\n", rc));
 
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Removing device ...\n"));
+            /*
+             * We need to send the remove down the stack before we detach,
+             * but we don't need to wait for the completion of this operation
+             * (and to register a completion routine).
+             */
+            pIrp->IoStatus.Status = STATUS_SUCCESS;
 
-                    /* Remove DOS device + symbolic link. */
-                    UNICODE_STRING win32Name;
-                    RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
-                    IoDeleteSymbolicLink(&win32Name);
+            IoSkipCurrentIrpStackLocation(pIrp);
 
-                    pDevExt->win.s.devState = REMOVED;
+            rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
+            Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
 
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Deleting device ...\n"));
+            IoDetachDevice(pDevExt->win.s.pNextLowerDriver);
 
-                    /* Last action: Delete our device! pDevObj is *not* failed
-                     * anymore after this call! */
-                    IoDeleteDevice(pDevObj);
+            Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Removing device ...\n"));
 
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Device removed!\n"));
-                    return rc; /* Make sure that we don't do anything below here anymore! */
-                }
-                else
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Error while cleaning up, rc = 0x%x\n", rc));
-            }
-            else
-                Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Devices state is not PENDINGREMOVE but %d\n",
-                     pDevExt->win.s.devState));
-            break;
+            /* Destroy device extension and clean up everything else. */
+            VBoxGuestDeleteDevExt(pDevExt);
+
+            /* Remove DOS device + symbolic link. */
+            UNICODE_STRING win32Name;
+            RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
+            IoDeleteSymbolicLink(&win32Name);
+
+            Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Deleting device ...\n"));
+
+            /* Last action: Delete our device! pDevObj is *not* failed
+             * anymore after this call! */
+            IoDeleteDevice(pDevObj);
+
+            Log(("VBoxGuest::vboxguestwinGuestPnp: REMOVE_DEVICE: Device removed!\n"));
+
+            /* Propagating rc from IoCallDriver. */
+            return rc; /* Make sure that we don't do anything below here anymore! */
         }
 
         case IRP_MN_CANCEL_STOP_DEVICE:
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: CANCEL_STOP_DEVICE\n"));
+
+            /* This must be handled first by the lower driver. */
+            rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
+
+            if (NT_SUCCESS(rc) && pDevExt->win.s.devState == PENDINGSTOP)
+            {
+                /* Return to the state prior to receiving the IRP_MN_QUERY_STOP_DEVICE request. */
+                pDevExt->win.s.devState = pDevExt->win.s.prevDevState;
+            }
+
+            /* Complete the IRP. */
             break;
         }
 
         case IRP_MN_QUERY_STOP_DEVICE:
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: QUERY_STOP_DEVICE\n"));
-            if (pDevExt->win.s.devState == WORKING)
-                pDevExt->win.s.devState = PENDINGSTOP;
-#ifdef VBOX_REBOOT_ON_UNINSTALL
-            Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_STOP_DEVICE: Device cannot be stopped!\n"));
 
-            /* The device can not be stopped without a reboot. */
+#ifdef VBOX_REBOOT_ON_UNINSTALL
+            Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_STOP_DEVICE: Device cannot be stopped without a reboot!\n"));
             pIrp->IoStatus.Status = STATUS_UNSUCCESSFUL;
-            Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_STOP_DEVICE: Refuse with rc = 0x%x\n", rc));
 #endif /* VBOX_REBOOT_ON_UNINSTALL */
+
+            if (NT_SUCCESS(rc))
+            {
+                VBOXGUEST_UPDATE_DEVSTATE(pDevExt, PENDINGSTOP);
+
+                /* This IRP passed down to lower driver. */
+                pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+                rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
+
+                /* Do not complete the IRP. */
+                return rc;
+            }
+
+            /* Complete the IRP on failure. */
             break;
         }
 
@@ -291,22 +344,22 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             Log(("VBoxGuest::vboxguestwinVBoxGuestPnP: STOP_DEVICE\n"));
 
-            if (pDevExt->win.s.devState == PENDINGSTOP)
-            {
-                rc = vboxguestwinCleanup(pDevObj);
-                if (NT_SUCCESS(rc))
-                {
-                    pDevExt->win.s.devState = STOPPED;
-                    IoInvalidateDeviceState(pDevObj);
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: STOP_DEVICE: Device has been disabled\n"));
-                }
-                else
-                    Log(("VBoxGuest::vboxguestwinGuestPnp: STOP_DEVICE: Error while cleaning up, rc = 0x%x\n", rc));
-            }
-            else
-                Log(("VBoxGuest::vboxguestwinGuestPnp: STOP_DEVICE: Devices state is not PENDINGSTOP but %d\n",
-                     pDevExt->win.s.devState));
-            break;
+            VBOXGUEST_UPDATE_DEVSTATE(pDevExt, STOPPED);
+
+            /* Free hardware resources. */
+            /* @todo this should actually free I/O ports, interrupts, etc. */
+            rc = vboxguestwinCleanup(pDevObj);
+            Log(("VBoxGuest::vboxguestwinGuestPnp: STOP_DEVICE: cleaning up, rc = 0x%x\n", rc));
+
+            /* Pass to the lower driver. */
+            pIrp->IoStatus.Status = STATUS_SUCCESS;
+
+            IoSkipCurrentIrpStackLocation(pIrp);
+
+            rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
+            Log(("VBoxGuest::vboxguestwinGuestPnp: STOP_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
+
+            return rc;
         }
 
         default:

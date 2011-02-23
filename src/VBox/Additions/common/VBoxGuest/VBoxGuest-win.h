@@ -103,6 +103,7 @@ typedef struct VBOXGUESTDEVEXTWIN
 
     /** Device state. */
     DEVSTATE devState;
+    DEVSTATE prevDevState;
 
     /** Last system power action set (see VBoxGuestPower). */
     POWER_ACTION LastSystemPowerAction;
@@ -115,6 +116,11 @@ typedef struct VBOXGUESTDEVEXTWIN
       * for handling kernel IOCtls. */
     PVBOXGUESTSESSION pKernelSession;
 } VBOXGUESTDEVEXTWIN, *PVBOXGUESTDEVEXTWIN;
+
+#define VBOXGUEST_UPDATE_DEVSTATE(_pDevExt, _newDevState) do {    \
+    (_pDevExt)->win.s.prevDevState =  (_pDevExt)->win.s.devState; \
+    (_pDevExt)->win.s.devState = (_newDevState);                  \
+} while (0)
 
 
 /*******************************************************************************
