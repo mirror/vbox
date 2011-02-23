@@ -222,6 +222,7 @@ static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDe
             RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
 
             pDevExt->win.s.pDeviceObject = pDeviceObject;
+            pDevExt->win.s.prevDevState = STOPPED;
             pDevExt->win.s.devState = STOPPED;
 
             pDevExt->win.s.pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
@@ -500,7 +501,7 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
     {
         /* Ready to rumble! */
         Log(("VBoxGuest::vboxguestwinInit: Device is ready!\n"));
-        pDevExt->win.s.devState = WORKING;
+        VBOXGUEST_UPDATE_DEVSTATE(pDevExt, WORKING);
     }
     else
     {
@@ -513,7 +514,8 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
 
 
 /**
- * Cleans up all data (like device extension and guest mapping).
+ * Cleans up hardware resources.
+ * Do not delete DevExt here.
  *
  * @param   pDrvObj     Driver object.
  */
@@ -529,9 +531,6 @@ NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj)
 #endif
         /* According to MSDN we have to unmap previously mapped memory. */
         vboxguestwinUnmapVMMDevMemory(pDevExt);
-
-        /* Destroy device extension and clean up everything else. */
-        VBoxGuestDeleteDevExt(pDevExt);
     }
     return STATUS_SUCCESS;
 }
@@ -547,6 +546,11 @@ void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
     Log(("VBoxGuest::vboxguestwinGuestUnload\n"));
 #ifdef TARGET_NT4
     vboxguestwinCleanup(pDrvObj->DeviceObject);
+
+    /* Destroy device extension and clean up everything else. */
+    if (pDrvObj->DeviceObject && pDrvObj->DeviceObject->DeviceExtension)
+        VBoxGuestDeleteDevExt((PVBOXGUESTDEVEXT)pDrvObj->DeviceObject->DeviceExtension);
+
     /*
      * I don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
@@ -581,12 +585,18 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PVBOXGUESTDEVEXT   pDevExt  = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     NTSTATUS           rc       = STATUS_SUCCESS;
 
-    /*
-     * We are not remotely similar to a directory...
-     * (But this is possible.)
-     */
-    if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
+    if (pDevExt->win.s.devState != WORKING)
     {
+        Log(("VBoxGuest::vboxguestwinGuestCreate: device is not working currently: %d!\n",
+             pDevExt->win.s.devState));
+        rc = STATUS_UNSUCCESSFUL;
+    }
+    else if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
+    {
+        /*
+         * We are not remotely similar to a directory...
+         * (But this is possible.)
+         */
         Log(("VBoxGuest::vboxguestwinGuestCreate: Uhm, we're not a directory!\n"));
         rc = STATUS_NOT_A_DIRECTORY;
     }
