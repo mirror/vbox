@@ -1679,7 +1679,20 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
         if (RTPathHavePath(filename.c_str()))
             rc = RTLdrLoad(filename.c_str(), &mAuthLibrary);
         else
+        {
             rc = RTLdrLoadAppPriv(filename.c_str(), &mAuthLibrary);
+            if (RT_FAILURE(rc))
+            {
+                /* Backward compatibility with old default 'VRDPAuth' name.
+                 * Try to load new default 'VBoxAuth' instead.
+                 */
+                if (filename == "VRDPAuth")
+                {
+                    LogRel(("AUTH: ConsoleVRDPServer::Authenticate: loading external authentication library VBoxAuth\n"));
+                    rc = RTLdrLoadAppPriv("VBoxAuth", &mAuthLibrary);
+                }
+            }
+        }
 
         if (RT_FAILURE(rc))
             LogRel(("AUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
