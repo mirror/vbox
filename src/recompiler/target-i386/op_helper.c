@@ -1578,10 +1578,10 @@ void do_interrupt(int intno, int is_int, int error_code,
     if (RT_UNLIKELY(env->state & CPU_EMULATE_SINGLE_STEP)) {
         if (is_int) {
             RTLogPrintf("do_interrupt: %#04x err=%#x pc=%#RGv%s\n",
-                        intno, error_code, env->eip, is_hw ? " hw" : "");
+                        intno, error_code, (RTGCPTR)env->eip, is_hw ? " hw" : "");
         } else {
             RTLogPrintf("do_interrupt: %#04x err=%#x pc=%#RGv next=%#RGv%s\n",
-                        intno, error_code, env->eip, next_eip, is_hw ? " hw" : "");
+                        intno, error_code, (RTGCPTR)env->eip, (RTGCPTR)next_eip, is_hw ? " hw" : "");
         }
     }
 
