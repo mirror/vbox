@@ -709,8 +709,8 @@ LOCAL void vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis)
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false); /** @todo Promisc */
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
             pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
-            vboxNetFltRelease(pThis, true /*fBusy*/);
             pThis->u.s.fReportedInfo = true;
+            vboxNetFltRelease(pThis, true /*fBusy*/);
         }
     }
 }
@@ -813,13 +813,13 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
     if (RT_UNLIKELY(!pVNIC))
         return NULL;
 
-    pVNIC->u32Magic = VBOXNETFLTVNIC_MAGIC;
-    pVNIC->fCreated = false;
-    pVNIC->pvIf = NULL;
-    pVNIC->hInterface = NULL;
-    pVNIC->hLinkId = DATALINK_INVALID_LINKID;
-    pVNIC->hClient = NULL;
-    pVNIC->hUnicast = NULL;
+    pVNIC->u32Magic     = VBOXNETFLTVNIC_MAGIC;
+    pVNIC->fCreated     = false;
+    pVNIC->pvIf         = NULL;
+    pVNIC->hInterface   = NULL;
+    pVNIC->hLinkId      = DATALINK_INVALID_LINKID;
+    pVNIC->hClient      = NULL;
+    pVNIC->hUnicast     = NULL;
     pVNIC->hPromiscuous = NULL;
     RT_ZERO(pVNIC->szName);
     list_link_init(&pVNIC->hNode);
