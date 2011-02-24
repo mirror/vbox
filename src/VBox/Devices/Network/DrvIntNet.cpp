@@ -1444,6 +1444,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
             OpenReq.fFlags |= INTNET_OPEN_FLAGS_ACCESS_RESTRICTED;
         else
             OpenReq.fFlags |= INTNET_OPEN_FLAGS_ACCESS_PUBLIC;
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_ACCESS_FIXED;
     }
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc,
