@@ -2087,9 +2087,9 @@ int CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr
         ULONG mMemTotal, mMemFree, mMemBalloon, mMemShared, mMemCache, mPageTotal;
         ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal;
 
-        ptrGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
+        CHECK_ERROR_RET(ptrGuest, InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
                                         &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
-                                        &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
+                                                        &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal), 1);
         RTPrintf("mCpuUser=%u mCpuKernel=%u mCpuIdle=%u\n"
                  "mMemTotal=%u mMemFree=%u mMemBalloon=%u mMemShared=%u mMemCache=%u\n"
                  "mPageTotal=%u ulMemAllocTotal=%u ulMemFreeTotal=%u ulMemBalloonTotal=%u ulMemSharedTotal=%u\n",
