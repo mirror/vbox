@@ -136,7 +136,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         "\n"
         "Commands:\n"
         "\n"
-        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
+        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
         "WARNING: This is a development tool and shall only be used to analyse\n"
         "         problems. It is completely unsupported and will change in\n"
         "         incompatible ways without warning.\n",
@@ -241,8 +241,13 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         ? "  passwordhash <passsword>\n"
           "       Generates a password hash.\n"
           "\n"
-        :
-          ""
+        : "",
+        (u64Cmd & USAGE_GUESTSTATS)
+        ? "  gueststats <vmname>|<uuid> [--interval <seconds>]\n"
+          "       Obtains and prints internal guest statistics.\n"
+          "       Sets the update interval if specified.\n"
+          "\n"
+        : ""
         );
 }
 
@@ -2017,6 +2022,88 @@ int CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 }
 
 /**
+ * Print internal guest statistics or
+ * set internal guest statistics update interval if specified
+ */
+int CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    /* one parameter, guest name */
+    if (argc < 1)
+        return errorSyntax(USAGE_GUESTSTATS, "Missing VM name/UUID");
+
+    /*
+     * Parse the command.
+     */
+    ULONG aUpdateInterval = 0;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--interval", 'i', RTGETOPT_REQ_UINT32  }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'i':
+                aUpdateInterval = ValueUnion.u32;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_GUESTSTATS , ch, &ValueUnion);
+        }
+    }
+
+    if (argc > 1 && aUpdateInterval == 0)
+        return errorSyntax(USAGE_GUESTSTATS, "Invalid update interval specified");
+
+    RTPrintf("argc=%d interval=%u\n", argc, aUpdateInterval);
+
+    ComPtr<IMachine> ptrMachine;
+    HRESULT rc;
+    CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                             ptrMachine.asOutParam()), 1);
+
+    CHECK_ERROR_RET(ptrMachine, LockMachine(aSession, LockType_Shared), 1);
+
+    /*
+     * Get the guest interface.
+     */
+    ComPtr<IConsole> ptrConsole;
+    CHECK_ERROR_RET(aSession, COMGETTER(Console)(ptrConsole.asOutParam()), 1);
+
+    ComPtr<IGuest> ptrGuest;
+    CHECK_ERROR_RET(ptrConsole, COMGETTER(Guest)(ptrGuest.asOutParam()), 1);
+
+    if (aUpdateInterval)
+        CHECK_ERROR_RET(ptrGuest, COMSETTER(StatisticsUpdateInterval)(aUpdateInterval), 1);
+    else
+    {
+        ULONG mCpuUser, mCpuKernel, mCpuIdle;
+        ULONG mMemTotal, mMemFree, mMemBalloon, mMemShared, mMemCache, mPageTotal;
+        ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal;
+
+        ptrGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
+                                        &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
+                                        &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
+        RTPrintf("mCpuUser=%u mCpuKernel=%u mCpuIdle=%u\n"
+                 "mMemTotal=%u mMemFree=%u mMemBalloon=%u mMemShared=%u mMemCache=%u\n"
+                 "mPageTotal=%u ulMemAllocTotal=%u ulMemFreeTotal=%u ulMemBalloonTotal=%u ulMemSharedTotal=%u\n",
+                 mCpuUser, mCpuKernel, mCpuIdle,
+                 mMemTotal, mMemFree, mMemBalloon, mMemShared, mMemCache,
+                 mPageTotal, ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal);
+
+    }
+
+    return 0;
+}
+
+
+/**
  * Wrapper for handling internal commands
  */
 int handleInternalCommands(HandlerArg *a)
@@ -2057,6 +2144,8 @@ int handleInternalCommands(HandlerArg *a)
         return CmdDebugLog(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "passwordhash"))
         return CmdGeneratePasswordHash(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+    if (!strcmp(pszCmd, "gueststats"))
+        return CmdGuestStats(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", a->argv[0]);
