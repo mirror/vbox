@@ -124,9 +124,8 @@ typedef struct PCIDEVICEINT
     /** Write config callback. */
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
 
-    /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants.
-     *  @todo s/uFlags/fFlags/g */
-    uint32_t                        uFlags;
+    /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants. */
+    uint32_t                        fFlags;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
 

@@ -136,7 +136,7 @@ int main()
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pBusRC);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnConfigRead);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnConfigWrite);
-    GEN_CHECK_OFF(PCIDEVICE, Int.s.uFlags);
+    GEN_CHECK_OFF(PCIDEVICE, Int.s.fFlags);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.uIrqPinState);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnBridgeConfigRead);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnBridgeConfigWrite);
