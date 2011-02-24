@@ -5043,7 +5043,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             pNetwork->MacTab.fHostPromiscuousEff  = (pNetwork->fFlags & INTNET_OPEN_FLAGS_TRUNK_HOST_PROMISC_MODE)
                                                  && (pNetwork->fFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST);
             pNetwork->MacTab.fHostActive          = false;
-            pNetwork->MacTab.fWirePromiscuousReal = pNetwork->fFlags & INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE;
+            pNetwork->MacTab.fWirePromiscuousReal = RT_BOOL(pNetwork->fFlags & INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE);
             pNetwork->MacTab.fWirePromiscuousEff  = pNetwork->MacTab.fWirePromiscuousReal
                                                  && (pNetwork->fFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE);
             pNetwork->MacTab.fWireActive          = false;
@@ -5340,7 +5340,7 @@ static int intnetR0AdaptOpenNetworkFlags(PINTNETNETWORK pNetwork, uint32_t fFlag
 
         pNetwork->MacTab.fWireActive         = fActiveTrunk
                                             && (fNetFlags & INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED);
-        pNetwork->MacTab.fWirePromiscuousReal= (fNetFlags & INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE);
+        pNetwork->MacTab.fWirePromiscuousReal= RT_BOOL(fNetFlags & INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE);
         pNetwork->MacTab.fWirePromiscuousEff = pNetwork->MacTab.fWirePromiscuousReal
                                             && (fNetFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE);
 
