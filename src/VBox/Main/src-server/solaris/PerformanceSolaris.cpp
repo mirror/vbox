@@ -260,4 +260,4 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     return rc;
 }
 
-
+}
