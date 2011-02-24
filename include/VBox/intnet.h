@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -828,30 +828,132 @@ typedef enum INTNETTRUNKTYPE
 } INTNETTRUNKTYPE;
 
 /** @name IntNetR0Open flags.
+ *
+ * The desired policy options must be specified explicitly, if omitted it is
+ * understood that whatever is current or default is fine with the caller.
+ *
+ * @todo Move the policies out of the flags, use three new parameters.
+ *
  * @{ */
 /** Share the MAC address with the host when sending something to the wire via the trunk.
  * This is typically used when the trunk is a NetFlt for a wireless interface. */
 #define INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE                    RT_BIT_32(0)
-/** Whether new participants should be subjected to access check or not. */
-#define INTNET_OPEN_FLAGS_PUBLIC                                RT_BIT_32(1)
-/** Ignore any requests for promiscuous mode. */
-#define INTNET_OPEN_FLAGS_IGNORE_PROMISC                        RT_BIT_32(2)
-/** Ignore any requests for promiscuous mode, quietly applied/ignored on open. */
-#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC                RT_BIT_32(3)
-/** Ignore any requests for promiscuous mode on the trunk wire connection. */
-#define INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE             RT_BIT_32(4)
-/** Ignore any requests for promiscuous mode on the trunk wire connection, quietly applied/ignored on open. */
-#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE     RT_BIT_32(5)
-/** Ignore any requests for promiscuous mode on the trunk host connection. */
-#define INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST             RT_BIT_32(6)
-/** Ignore any requests for promiscuous mode on the trunk host connection, quietly applied/ignored on open. */
-#define INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST     RT_BIT_32(7)
-/** The mask of flags which causes flag incompatibilities. */
-#define INTNET_OPEN_FLAGS_COMPATIBILITY_XOR_MASK                (RT_BIT_32(0) | RT_BIT_32(1) | RT_BIT_32(2) | RT_BIT_32(4) | RT_BIT_32(6))
-/** The mask of flags is always ORed in, even on open. (the quiet stuff) */
-#define INTNET_OPEN_FLAGS_SECURITY_OR_MASK                      (RT_BIT_32(3) | RT_BIT_32(5) | RT_BIT_32(7))
+/** Require that the current security and promiscuous policies of the network
+ * is exactly as the ones specified in this open network request.
+ *
+ * Use this with INTNET_OPEN_FLAGS_REQUIRE_AS_RESTRICTIVE_POLICIES to prevent
+ * restrictions from being lifted.  If no further policy changes are desired,
+ * apply the relevant _FIXED flags. */
+#define INTNET_OPEN_FLAGS_REQUIRE_EXACT                         RT_BIT_32(1)
+/** Require that the security and promiscuous policies of the network is at
+ * least as restrictive as specified this request specifies and prevent them
+ * being lifted later on. */
+#define INTNET_OPEN_FLAGS_REQUIRE_AS_RESTRICTIVE_POLICIES       RT_BIT_32(2)
+
+/** Network access policy: Fixed if set, changable if clear. */
+#define INTNET_OPEN_FLAGS_ACCESS_FIXED                          RT_BIT_32(3)
+/** Network access policy: Public network. */
+#define INTNET_OPEN_FLAGS_ACCESS_PUBLIC                         RT_BIT_32(4)
+/** Network access policy: Restricted network.  */
+#define INTNET_OPEN_FLAGS_ACCESS_RESTRICTED                     RT_BIT_32(5)
+
+/** Promiscuous mode policy: Is it fixed or changable by new participants? */
+#define INTNET_OPEN_FLAGS_PROMISC_FIXED                         RT_BIT_32(6)
+/** Promiscuous mode policy: Allow the clients to request it. */
+#define INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS                 RT_BIT_32(7)
+/** Promiscuous mode policy: Deny the clients from requesting it. */
+#define INTNET_OPEN_FLAGS_PROMISC_DENY_CLIENTS                  RT_BIT_32(8)
+/** Promiscuous mode policy: Allow the trunk-host to request it. */
+#define INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST              RT_BIT_32(9)
+/** Promiscuous mode policy: Deny the trunk-host from requesting it. */
+#define INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_HOST               RT_BIT_32(10)
+/** Promiscuous mode policy: Allow the trunk-wire to request it. */
+#define INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE              RT_BIT_32(11)
+/** Promiscuous mode policy: Deny the trunk-wire from requesting it. */
+#define INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_WIRE               RT_BIT_32(12)
+
+/** Interface policies: Is it fixed or changable (by admin).
+ * @note Per interface, not network wide. */
+#define INTNET_OPEN_FLAGS_IF_FIXED                              RT_BIT_32(13)
+/** Interface promiscuous mode policy: Allow the interface to request it. */
+#define INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW                      RT_BIT_32(14)
+/** Interface promiscuous mode policy: Deny the interface from requesting it. */
+#define INTNET_OPEN_FLAGS_IF_PROMISC_DENY                       RT_BIT_32(15)
+/** Interface promiscuous mode policy: See unrelated trunk traffic. */
+#define INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK                  RT_BIT_32(16)
+/** Interface promiscuous mode policy: No unrelated trunk traffic visible. */
+#define INTNET_OPEN_FLAGS_IF_PROMISC_NO_TRUNK                   RT_BIT_32(17)
+
+/** Trunk policy: Fixed if set, changable if clear.
+ * @remarks The DISABLED options are considered more restrictive by
+ *          INTNET_OPEN_FLAGS_REQUIRE_AS_RESTRICTIVE_POLICIES. */
+#define INTNET_OPEN_FLAGS_TRUNK_FIXED                           RT_BIT_32(18)
+/** Trunk policy: The host end should be enabled. */
+#define INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED                    RT_BIT_32(19)
+/** Trunk policy: The host end should be disabled. */
+#define INTNET_OPEN_FLAGS_TRUNK_HOST_DISABLED                   RT_BIT_32(20)
+/** Trunk policy: The host should only see packets destined for it. */
+#define INTNET_OPEN_FLAGS_TRUNK_HOST_CHASTE_MODE                RT_BIT_32(21)
+/** Trunk policy: The host should see all packets. */
+#define INTNET_OPEN_FLAGS_TRUNK_HOST_PROMISC_MODE               RT_BIT_32(22)
+/** Trunk policy: The wire end should be enabled. */
+#define INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED                    RT_BIT_32(23)
+/** Trunk policy: The wire end should be disabled. */
+#define INTNET_OPEN_FLAGS_TRUNK_WIRE_DISABLED                   RT_BIT_32(24)
+/** Trunk policy: The wire should only see packets destined for it. */
+#define INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE                RT_BIT_32(25)
+/** Trunk policy: The wire should see all packets. */
+#define INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE               RT_BIT_32(26)
+
+
 /** The mask of valid flags. */
-#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x000000ff)
+#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x03ffffff)
+/** The mask of all flags use to fix (lock) settings. */
+#define INTNET_OPEN_FLAGS_FIXED_MASK \
+    (  INTNET_OPEN_FLAGS_ACCESS_FIXED \
+     | INTNET_OPEN_FLAGS_PROMISC_FIXED \
+     | INTNET_OPEN_FLAGS_IF_FIXED \
+     | INTNET_OPEN_FLAGS_TRUNK_FIXED )
+
+/** The mask of all policy pairs. */
+#define INTNET_OPEN_FLAGS_PAIR_MASK \
+    (  INTNET_OPEN_FLAGS_ACCESS_PUBLIC             | INTNET_OPEN_FLAGS_ACCESS_RESTRICTED \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS     | INTNET_OPEN_FLAGS_PROMISC_DENY_CLIENTS \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST  | INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_HOST \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE  | INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_WIRE \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW          | INTNET_OPEN_FLAGS_IF_PROMISC_DENY \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK      | INTNET_OPEN_FLAGS_IF_PROMISC_NO_TRUNK \
+     | INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED        | INTNET_OPEN_FLAGS_TRUNK_HOST_DISABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_HOST_PROMISC_MODE   | INTNET_OPEN_FLAGS_TRUNK_HOST_CHASTE_MODE \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED        | INTNET_OPEN_FLAGS_TRUNK_WIRE_DISABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE   | INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE \
+     )
+/** The mask of all relaxed policy bits. */
+#define INTNET_OPEN_FLAGS_RELAXED_MASK \
+    (  INTNET_OPEN_FLAGS_ACCESS_PUBLIC \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST \
+     | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK \
+     | INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE \
+     )
+/** The mask of all strict policy bits. */
+#define INTNET_OPEN_FLAGS_STRICT_MASK \
+    (  INTNET_OPEN_FLAGS_ACCESS_RESTRICTED \
+     | INTNET_OPEN_FLAGS_PROMISC_DENY_CLIENTS \
+     | INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_HOST \
+     | INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_WIRE \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_DENY \
+     | INTNET_OPEN_FLAGS_IF_PROMISC_NO_TRUNK \
+     | INTNET_OPEN_FLAGS_TRUNK_HOST_DISABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_HOST_CHASTE_MODE \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_DISABLED \
+     | INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE \
+     )
 /** @} */
 
 /** The maximum length of a network name. */
