@@ -403,8 +403,11 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     }
     else
     {
-        *aMemFreeTotal = 0;
-        *aMemShared  = 0;
+        *aMemAllocTotal   = 0;
+        *aMemFreeTotal    = 0;
+        *aMemBalloonTotal = 0;
+        *aMemSharedTotal  = 0;
+        *aMemShared       = 0;
     }
 
     return S_OK;
