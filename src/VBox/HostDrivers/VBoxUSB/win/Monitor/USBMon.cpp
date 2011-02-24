@@ -312,22 +312,25 @@ NTSTATUS _stdcall VBoxUSBMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             RtlFreeUnicodeString(&UnicodeName);
         }
 
-        //
-        // Let us use remove lock to keep count of IRPs so that we don't
-        // detach and delete our deviceobject until all pending I/Os in our
-        // devstack are completed. Remlock is required to protect us from
-        // various race conditions where our driver can get unloaded while we
-        // are still running dispatch or completion code.
-        //
+        if (InterlockedCompareExchange(&pDevExt->fRemoveLockInitialized, 1, 0))
+        {
+            //
+            // Let us use remove lock to keep count of IRPs so that we don't
+            // detach and delete our deviceobject until all pending I/Os in our
+            // devstack are completed. Remlock is required to protect us from
+            // various race conditions where our driver can get unloaded while we
+            // are still running dispatch or completion code.
+            //
 
-        IoInitializeRemoveLock (&pDevExt->RemoveLock , POOL_TAG,
-                                1,      // MaxLockedMinutes
-                                100);   // HighWatermark, this parameter is
-                                        // used only on checked build. Specifies
-                                        // the maximum number of outstanding
-                                        // acquisitions allowed on the lock
+            IoInitializeRemoveLock (&pDevExt->RemoveLock , POOL_TAG,
+                                    1,      // MaxLockedMinutes
+                                    100);   // HighWatermark, this parameter is
+                                            // used only on checked build. Specifies
+                                            // the maximum number of outstanding
+                                            // acquisitions allowed on the lock
 
-        DebugPrint(("VBoxUSBMon: remove lock = %x\n", pDevExt->RemoveLock.Common.RemoveEvent));
+            DebugPrint(("VBoxUSBMon: remove lock = %x\n", pDevExt->RemoveLock.Common.RemoveEvent));
+        }
     }
 
     status = IoAcquireRemoveLock(&pDevExt->RemoveLock, ControlDeviceObject);

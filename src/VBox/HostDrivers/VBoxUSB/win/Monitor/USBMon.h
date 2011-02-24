@@ -82,6 +82,8 @@ typedef struct _DEVICE_EXTENSION
     //
     IO_REMOVE_LOCK      RemoveLock;
 
+    /* Whether the lock has been initialized. */
+    LONG                fRemoveLockInitialized;
 
     /* Number of times the device was opened. */
     LONG                cOpened;
