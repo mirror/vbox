@@ -3075,12 +3075,9 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
     LogFlowFunc(("fTakingSnapshotOnline = %d, mMachineState = %d\n", fTakingSnapshotOnline, mMachineState));
 
-    if (    fTakingSnapshotOnline
-         || mMachineState == MachineState_Saved
-       )
+    if (fTakingSnapshotOnline)
     {
         ++cOperations;
-
         ulTotalOperationsWeight += ulMemSize;
     }
 

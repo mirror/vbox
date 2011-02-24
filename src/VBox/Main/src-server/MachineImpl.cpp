@@ -2332,7 +2332,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath)(BSTR *aStateFilePath)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mSSData->mStateFilePath.cloneTo(aStateFilePath);
+    mSSData->strStateFilePath.cloneTo(aStateFilePath);
 
     return S_OK;
 }
@@ -4319,10 +4319,10 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     if (mData->mMachineState == MachineState_Saved)
     {
         // add the saved state file to the list of files the caller should delete
-        Assert(!mSSData->mStateFilePath.isEmpty());
-        mData->llFilesToDelete.push_back(mSSData->mStateFilePath);
+        Assert(!mSSData->strStateFilePath.isEmpty());
+        mData->llFilesToDelete.push_back(mSSData->strStateFilePath);
 
-        mSSData->mStateFilePath.setNull();
+        mSSData->strStateFilePath.setNull();
 
         // unconditionally set the machine state to powered off, we now
         // know no session has locked the machine
@@ -5426,7 +5426,7 @@ STDMETHODIMP Machine::QuerySavedGuestSize(ULONG uScreenId, ULONG *puWidth, ULONG
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedGuestSize(mSSData->mStateFilePath, uScreenId, &u32Width, &u32Height);
+    int vrc = readSavedGuestSize(mSSData->strStateFilePath, uScreenId, &u32Width, &u32Height);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Saved guest size is not available (%Rrc)"),
@@ -5459,7 +5459,7 @@ STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG aScreenId, ULONG *aSize, ULO
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5496,7 +5496,7 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULON
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5559,7 +5559,7 @@ STDMETHODIMP Machine::ReadSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidt
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5608,7 +5608,7 @@ STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5645,7 +5645,7 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG aScreenId, ULONG *aWid
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -6085,6 +6085,48 @@ Utf8Str Machine::queryLogFilename(ULONG idx)
         log = Utf8StrFmt("%s%cVBox.log.%d",
                          logFolder.c_str(), RTPATH_DELIMITER, idx);
     return log;
+}
+
+/**
+ * Composes a unique saved state filename based on the current system time. The filename is
+ * granular to the second so this will work so long as no more than one snapshot is taken on
+ * a machine per second.
+ *
+ * Before version 4.1, we used this formula for saved state files:
+ *      Utf8StrFmt("%s%c{%RTuuid}.sav", strFullSnapshotFolder.c_str(), RTPATH_DELIMITER, mData->mUuid.raw())
+ * which no longer works because saved state files can now be shared between the saved state of the
+ * "saved" machine and an online snapshot, and the following would cause problems:
+ * 1) save machine
+ * 2) create online snapshot from that machine state --> reusing saved state file
+ * 3) save machine again --> filename would be reused, breaking the online snapshot
+ *
+ * So instead we now use a timestamp.
+ *
+ * @param str
+ */
+void Machine::composeSavedStateFilename(Utf8Str &strStateFilePath)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        calculateFullPath(mUserData->s.strSnapshotFolder, strStateFilePath);
+    }
+
+    RTTIMESPEC ts;
+    RTTimeNow(&ts);
+    RTTIME time;
+    RTTimeExplode(&time, &ts);
+
+    strStateFilePath += RTPATH_DELIMITER;
+    strStateFilePath += Utf8StrFmt("%04ld-%02hd-%02hdT%02hd:%02hd:%02hdZ.sav",
+                                   time.i32Year,
+                                   (uint16_t)time.u8Month,
+                                   (uint16_t)time.u8MonthDay,
+                                   (uint16_t)time.u8Hour,
+                                   (uint16_t)time.u8Minute,
+                                   (uint16_t)time.u8Second);
 }
 
 /**
@@ -7114,7 +7156,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
 
     // stateFile (optional)
     if (config.strStateFile.isEmpty())
-        mSSData->mStateFilePath.setNull();
+        mSSData->strStateFilePath.setNull();
     else
     {
         Utf8Str stateFilePathFull(config.strStateFile);
@@ -7124,7 +7166,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
                             tr("Invalid saved state file path '%s' (%Rrc)"),
                             config.strStateFile.c_str(),
                             vrc);
-        mSSData->mStateFilePath = stateFilePathFull;
+        mSSData->strStateFilePath = stateFilePathFull;
     }
 
     // snapshot folder needs special processing so set it again
@@ -7190,13 +7232,13 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     /* set the machine state to Aborted or Saved when appropriate */
     if (config.fAborted)
     {
-        Assert(!mSSData->mStateFilePath.isEmpty());
-        mSSData->mStateFilePath.setNull();
+        Assert(!mSSData->strStateFilePath.isEmpty());
+        mSSData->strStateFilePath.setNull();
 
         /* no need to use setMachineState() during init() */
         mData->mMachineState = MachineState_Aborted;
     }
-    else if (!mSSData->mStateFilePath.isEmpty())
+    else if (!mSSData->strStateFilePath.isEmpty())
     {
         /* no need to use setMachineState() during init() */
         mData->mMachineState = MachineState_Saved;
@@ -8053,16 +8095,11 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                     *pfNeedsGlobalSaveSettings = true;
             }
 
-            /* update the saved state file path */
-            Utf8Str path = mSSData->mStateFilePath;
-            if (RTPathStartsWith(path.c_str(), configDir.c_str()))
-                mSSData->mStateFilePath = Utf8StrFmt("%s%s",
-                                                     newConfigDir.c_str(),
-                                                     path.c_str() + configDir.length());
+            // in the saved state file path, replace the old directory with the new directory
+            if (RTPathStartsWith(mSSData->strStateFilePath.c_str(), configDir.c_str()))
+                mSSData->strStateFilePath = newConfigDir.append(mSSData->strStateFilePath.c_str() + configDir.length());
 
-            /* Update saved state file paths of all online snapshots.
-             * Note that saveSettings() will recognize name change
-             * and will save all snapshots in this case. */
+            // and do the same thing for the saved state file paths of all the online snapshots
             if (mData->mFirstSnapshot)
                 mData->mFirstSnapshot->updateSavedStatePaths(configDir.c_str(),
                                                              newConfigDir.c_str());
@@ -8295,17 +8332,17 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
          || (    (   mData->mMachineState == MachineState_DeletingSnapshot
                   || mData->mMachineState == MachineState_DeletingSnapshotOnline
                   || mData->mMachineState == MachineState_DeletingSnapshotPaused)
-              && (!mSSData->mStateFilePath.isEmpty())
+              && (!mSSData->strStateFilePath.isEmpty())
             )
         )
     {
-        Assert(!mSSData->mStateFilePath.isEmpty());
+        Assert(!mSSData->strStateFilePath.isEmpty());
         /* try to make the file name relative to the settings file dir */
-        copyPathRelativeToMachine(mSSData->mStateFilePath, config.strStateFile);
+        copyPathRelativeToMachine(mSSData->strStateFilePath, config.strStateFile);
     }
     else
     {
-        Assert(mSSData->mStateFilePath.isEmpty() || mData->mMachineState == MachineState_Saving);
+        Assert(mSSData->strStateFilePath.isEmpty() || mData->mMachineState == MachineState_Saving);
         config.strStateFile.setNull();
     }
 
@@ -8402,7 +8439,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         /* The hardware version attribute (optional).
             Automatically upgrade from 1 to 2 when there is no saved state. (ugly!) */
         if (    mHWData->mHWVersion == "1"
-             && mSSData->mStateFilePath.isEmpty()
+             && mSSData->strStateFilePath.isEmpty()
            )
             mHWData->mHWVersion = "2";  /** @todo Is this safe, to update mHWVersion here? If not some other point needs to be found where this can be done. */
 
@@ -8754,9 +8791,9 @@ HRESULT Machine::saveStateSettings(int aFlags)
 
         if (aFlags & SaveSTS_StateFilePath)
         {
-            if (!mSSData->mStateFilePath.isEmpty())
+            if (!mSSData->strStateFilePath.isEmpty())
                 /* try to make the file name relative to the settings file dir */
-                copyPathRelativeToMachine(mSSData->mStateFilePath, mData->pMachineConfigFile->strStateFile);
+                copyPathRelativeToMachine(mSSData->strStateFilePath, mData->pMachineConfigFile->strStateFile);
             else
                 mData->pMachineConfigFile->strStateFile.setNull();
         }
@@ -8764,7 +8801,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
         if (aFlags & SaveSTS_StateTimeStamp)
         {
             Assert(    mData->mMachineState != MachineState_Aborted
-                    || mSSData->mStateFilePath.isEmpty());
+                    || mSSData->strStateFilePath.isEmpty());
 
             mData->pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
@@ -9553,6 +9590,8 @@ void Machine::commitMedia(bool aOnline /*= false*/)
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Locks this object for writing!
+ *
+ * @todo r=dj this needs a pllRegistriesThatNeedSaving as well
  */
 void Machine::rollbackMedia()
 {
@@ -10428,8 +10467,9 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         rollback(false /* aNotify */);
     }
 
-    Assert(mConsoleTaskData.mStateFilePath.isEmpty() || !mConsoleTaskData.mSnapshot);
-    if (!mConsoleTaskData.mStateFilePath.isEmpty())
+    Assert(    mConsoleTaskData.strStateFilePath.isEmpty()
+            || !mConsoleTaskData.mSnapshot);
+    if (!mConsoleTaskData.strStateFilePath.isEmpty())
     {
         LogWarningThisFunc(("canceling failed save state request!\n"));
         endSavingState(E_FAIL, tr("Machine terminated with pending save state!"));
@@ -10441,11 +10481,13 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         /* delete all differencing hard disks created (this will also attach
          * their parents back by rolling back mMediaData) */
         rollbackMedia();
-        /* delete the saved state file (it might have been already created) */
-        if (mConsoleTaskData.mSnapshot->stateFilePath().length())
-            RTFileDelete(mConsoleTaskData.mSnapshot->stateFilePath().c_str());
 
+        // delete the saved state file (it might have been already created)
+        // AFTER killing the snapshot so that releaseSavedStateFile() won't
+        // think it's still in use
+        Utf8Str strStateFile = mConsoleTaskData.mSnapshot->getStateFilePath();
         mConsoleTaskData.mSnapshot->uninit();
+        releaseSavedStateFile(strStateFile, NULL /* pSnapshotToIgnore */ );
     }
 
     if (!mData->mSession.mType.isEmpty())
@@ -11026,7 +11068,7 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
 
     AssertReturn(    mData->mMachineState == MachineState_Paused
                   && mConsoleTaskData.mLastState == MachineState_Null
-                  && mConsoleTaskData.mStateFilePath.isEmpty(),
+                  && mConsoleTaskData.strStateFilePath.isEmpty(),
                  E_FAIL);
 
     /* create a progress object to track operation completion */
@@ -11037,27 +11079,20 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
                     Bstr(tr("Saving the execution state of the virtual machine")).raw(),
                     FALSE /* aCancelable */);
 
-    Bstr stateFilePath;
+    Utf8Str strStateFilePath;
     /* stateFilePath is null when the machine is not running */
     if (mData->mMachineState == MachineState_Paused)
-    {
-        Utf8Str strFullSnapshotFolder;
-        calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
-        stateFilePath = Utf8StrFmt("%s%c{%RTuuid}.sav",
-                                   strFullSnapshotFolder.c_str(),
-                                   RTPATH_DELIMITER,
-                                   mData->mUuid.raw());
-    }
+        composeSavedStateFilename(strStateFilePath);
 
     /* fill in the console task data */
     mConsoleTaskData.mLastState = mData->mMachineState;
-    mConsoleTaskData.mStateFilePath = stateFilePath;
+    mConsoleTaskData.strStateFilePath = strStateFilePath;
     mConsoleTaskData.mProgress = pProgress;
 
     /* set the state to Saving (this is expected by Console::SaveState()) */
     setMachineState(MachineState_Saving);
 
-    stateFilePath.cloneTo(aStateFilePath);
+    strStateFilePath.cloneTo(aStateFilePath);
     pProgress.queryInterfaceTo(aProgress);
 
     return S_OK;
@@ -11079,7 +11114,7 @@ STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
     AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_Saved)
                       || (FAILED(iResult) && mData->mMachineState == MachineState_Saving))
                   && mConsoleTaskData.mLastState != MachineState_Null
-                  && !mConsoleTaskData.mStateFilePath.isEmpty(),
+                  && !mConsoleTaskData.strStateFilePath.isEmpty(),
                  E_FAIL);
 
     /*
@@ -11121,7 +11156,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState(IN_BSTR aSavedStateFile)
                         aSavedStateFile,
                         vrc);
 
-    mSSData->mStateFilePath = stateFilePathFull;
+    mSSData->strStateFilePath = stateFilePathFull;
 
     /* The below setMachineState() will detect the state transition and will
      * update the settings file */
@@ -11790,7 +11825,7 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
 
     if (SUCCEEDED(aRc))
     {
-        mSSData->mStateFilePath = mConsoleTaskData.mStateFilePath;
+        mSSData->strStateFilePath = mConsoleTaskData.strStateFilePath;
 
         /* save all VM settings */
         rc = saveSettings(NULL);
@@ -11799,8 +11834,10 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
     }
     else
     {
-        /* delete the saved state file (it might have been already created) */
-        RTFileDelete(mConsoleTaskData.mStateFilePath.c_str());
+        // delete the saved state file (it might have been already created);
+        // we need not check whether this is shared with a snapshot here because
+        // we certainly created this saved state file here anew
+        RTFileDelete(mConsoleTaskData.strStateFilePath.c_str());
     }
 
     /* notify the progress object about operation completion */
@@ -11820,11 +11857,38 @@ HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
 
     /* clear out the temporary saved state data */
     mConsoleTaskData.mLastState = MachineState_Null;
-    mConsoleTaskData.mStateFilePath.setNull();
+    mConsoleTaskData.strStateFilePath.setNull();
     mConsoleTaskData.mProgress.setNull();
 
     LogFlowThisFuncLeave();
     return rc;
+}
+
+/**
+ * Deletes the given file if it is no longer in use by either the current machine state
+ * (if the machine is "saved") or any of the machine's snapshots.
+ *
+ * Note: This checks mSSData->strStateFilePath, which is shared by the Machine and SessionMachine
+ * but is different for each SnapshotMachine. When calling this, the order of calling this
+ * function on the one hand and changing that variable OR the snapshots tree on the other hand
+ * is therefore critical. I know, it's all rather messy.
+ *
+ * @param strStateFile
+ * @param pSnapshotToIgnore  Passed to Snapshot::sharesSavedStateFile(); this snapshot is ignored in the test for whether the saved state file is in use.
+ */
+void SessionMachine::releaseSavedStateFile(const Utf8Str &strStateFile,
+                                           Snapshot *pSnapshotToIgnore)
+{
+    // it is safe to delete this saved state file if it is not currently in use by the machine ...
+    if (    (strStateFile.isNotEmpty())
+         && (strStateFile != mSSData->strStateFilePath)     // session machine's saved state
+       )
+        // ... and it must also not be shared with other snapshots
+        if (    !mData->mFirstSnapshot
+             || !mData->mFirstSnapshot->sharesSavedStateFile(strStateFile, pSnapshotToIgnore)
+                                // this checks the SnapshotMachine's state file paths
+           )
+            RTFileDelete(strStateFile.c_str());
 }
 
 /**
@@ -12078,10 +12142,17 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
     {
         if (mRemoveSavedState)
         {
-            Assert(!mSSData->mStateFilePath.isEmpty());
-            RTFileDelete(mSSData->mStateFilePath.c_str());
+            Assert(!mSSData->strStateFilePath.isEmpty());
+
+            // it is safe to delete the saved state file if ...
+            if (    !mData->mFirstSnapshot      // ... we have no snapshots or
+                 || !mData->mFirstSnapshot->sharesSavedStateFile(mSSData->strStateFilePath, NULL /* pSnapshotToIgnore */)
+                                                // ... none of the snapshots share the saved state file
+               )
+                RTFileDelete(mSSData->strStateFilePath.c_str());
         }
-        mSSData->mStateFilePath.setNull();
+
+        mSSData->strStateFilePath.setNull();
         stsFlags |= SaveSTS_StateFilePath;
     }
 
@@ -12105,7 +12176,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         && aMachineState == MachineState_Saved)
     {
         /* the saved state file was adopted */
-        Assert(!mSSData->mStateFilePath.isEmpty());
+        Assert(!mSSData->strStateFilePath.isEmpty());
         stsFlags |= SaveSTS_StateFilePath;
     }
 

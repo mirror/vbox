@@ -199,7 +199,7 @@ public:
      */
     struct SSData
     {
-        Utf8Str mStateFilePath;
+        Utf8Str strStateFilePath;
     };
 
     /**
@@ -644,6 +644,8 @@ public:
     void getLogFolder(Utf8Str &aLogFolder);
     Utf8Str queryLogFilename(ULONG idx);
 
+    void composeSavedStateFilename(Utf8Str &strStateFilePath);
+
     HRESULT openRemoteSession(IInternalSessionControl *aControl,
                               IN_BSTR aType, IN_BSTR aEnvironment,
                               ProgressProxy *aProgress);
@@ -1006,7 +1008,9 @@ private:
 
     struct ConsoleTaskData
     {
-        ConsoleTaskData() : mLastState(MachineState_Null) {}
+        ConsoleTaskData()
+            : mLastState(MachineState_Null)
+        { }
 
         MachineState_T mLastState;
         ComObjPtr<Progress> mProgress;
@@ -1015,7 +1019,7 @@ private:
         ComObjPtr<Snapshot> mSnapshot;
 
         // used when saving state (either as part of a snapshot or separate)
-        Utf8Str mStateFilePath;
+        Utf8Str strStateFilePath;
     };
 
     struct Uninit
@@ -1033,6 +1037,7 @@ private:
     void uninit(Uninit::Reason aReason);
 
     HRESULT endSavingState(HRESULT aRC, const Utf8Str &aErrMsg);
+    void releaseSavedStateFile(const Utf8Str &strSavedStateFile, Snapshot *pSnapshotToIgnore);
 
     void deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void restoreSnapshotHandler(RestoreSnapshotTask &aTask);
