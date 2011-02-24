@@ -8305,7 +8305,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     }
     else
     {
-        Assert(mSSData->mStateFilePath.isEmpty());
+        Assert(mSSData->mStateFilePath.isEmpty() || mData->mMachineState == MachineState_Saving);
         config.strStateFile.setNull();
     }
 
