@@ -86,7 +86,7 @@ typedef struct
     RTGCPHYS             StartAddress;
     uint64_t             iRegionSize;
     RTR3PTR              pvAddressR3;
-    RTR0PTR              pvAddressR0;    
+    RTR0PTR              pvAddressR0;
 } PCIRAWREQUNMAPREGION;
 
 /** Parameters buffer for PCIRAWR0_DO_PIO_WRITE call. */
@@ -125,7 +125,7 @@ typedef struct
 typedef struct
 {
     /* in */
-    RTGCPHYS             Address;
+    RTR0PTR              Address;
     PCIRAWMEMLOC         Value;
 } PCIRAWREQMMIOWRITE;
 
@@ -133,7 +133,7 @@ typedef struct
 typedef struct
 {
     /* in */
-    RTGCPHYS             Address;
+    RTR0PTR              Address;
     /* inout (Value.cb is in) */
     PCIRAWMEMLOC         Value;
 } PCIRAWREQMMIOREAD;
@@ -295,7 +295,7 @@ typedef struct RAWPCIDEVPORT
                                              int32_t        iRegion,
                                              RTHCPHYS       RegionStart,
                                              uint64_t       u64RegionSize,
-                                             RTR0PTR        *pRegionBase));
+                                             RTR0PTR        *pRegionBaseR0));
 
     /**
      * Unmap PCI region.

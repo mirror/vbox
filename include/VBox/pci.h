@@ -546,6 +546,9 @@ DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t
 
 DECLINLINE(uint8_t)  PCIDevGetByte(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
+#ifdef PCIDEVICEINT_DECLARED
+    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
+#endif
     return pPciDev->config[uOffset];
 }
 
@@ -556,6 +559,9 @@ DECLINLINE(void)     PCIDevSetWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint16_
 
 DECLINLINE(uint16_t) PCIDevGetWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
+#ifdef PCIDEVICEINT_DECLARED
+    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
+#endif
     uint16_t u16Value = *(uint16_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U16(u16Value);
 }
@@ -567,6 +573,9 @@ DECLINLINE(void)     PCIDevSetDWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint32
 
 DECLINLINE(uint32_t) PCIDevGetDWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
+#ifdef PCIDEVICEINT_DECLARED
+    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
+#endif
     uint32_t u32Value = *(uint32_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U32(u32Value);
 }
@@ -578,6 +587,9 @@ DECLINLINE(void)     PCIDevSetQWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint64
 
 DECLINLINE(uint64_t) PCIDevGetQWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
+#ifdef PCIDEVICEINT_DECLARED
+    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
+#endif
     uint64_t u64Value = *(uint64_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U64(u64Value);
 }
@@ -919,90 +931,84 @@ DECLINLINE(uint8_t) PCIDevGetInterruptPin(PPCIDEVICE pPciDev)
 }
 
 #ifdef PCIDEVICEINT_DECLARED
-/** @todo r=bird: These are internal methods and should start with lowercase
- *  prefix as well as including the 'Dev' bit: s/PCI\(Set|Get\)/pciDev\1/
- *
- *  Also: s/uFlags/fFlags/
- */
-
-DECLINLINE(void) PCISetRequestedDevfunc(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetRequestedDevfunc(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_REQUESTED_DEVFUNC;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_REQUESTED_DEVFUNC;
 }
 
-DECLINLINE(void) PCIClearRequestedDevfunc(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevClearRequestedDevfunc(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_REQUESTED_DEVFUNC;
+    pDev->Int.s.fFlags &= ~PCIDEV_FLAG_REQUESTED_DEVFUNC;
 }
 
-DECLINLINE(bool) PCIIsRequestedDevfunc(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsRequestedDevfunc(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_REQUESTED_DEVFUNC) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_REQUESTED_DEVFUNC) != 0;
 }
 
-DECLINLINE(void) PCISetPci2PciBridge(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetPci2PciBridge(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_PCI_TO_PCI_BRIDGE;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_PCI_TO_PCI_BRIDGE;
 }
 
-DECLINLINE(bool) PCIIsPci2PciBridge(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsPci2PciBridge(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PCI_TO_PCI_BRIDGE) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_PCI_TO_PCI_BRIDGE) != 0;
 }
 
-DECLINLINE(void) PCISetPciExpress(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetPciExpress(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_PCI_EXPRESS_DEVICE;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_PCI_EXPRESS_DEVICE;
 }
 
-DECLINLINE(bool) PCIIsPciExpress(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsPciExpress(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PCI_EXPRESS_DEVICE) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_PCI_EXPRESS_DEVICE) != 0;
 }
 
-DECLINLINE(void) PCISetMsiCapable(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetMsiCapable(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_MSI_CAPABLE;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_MSI_CAPABLE;
 }
 
-DECLINLINE(void) PCIClearMsiCapable(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevClearMsiCapable(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_MSI_CAPABLE;
+    pDev->Int.s.fFlags &= ~PCIDEV_FLAG_MSI_CAPABLE;
 }
 
-DECLINLINE(bool) PCIIsMsiCapable(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsMsiCapable(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_MSI_CAPABLE) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_MSI_CAPABLE) != 0;
 }
 
-DECLINLINE(void) PCISetMsixCapable(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetMsixCapable(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_MSIX_CAPABLE;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_MSIX_CAPABLE;
 }
 
-DECLINLINE(void) PCIClearMsixCapable(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevClearMsixCapable(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_MSIX_CAPABLE;
+    pDev->Int.s.fFlags &= ~PCIDEV_FLAG_MSIX_CAPABLE;
 }
 
-DECLINLINE(bool) PCIIsMsixCapable(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsMsixCapable(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_MSIX_CAPABLE) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_MSIX_CAPABLE) != 0;
 }
 
-DECLINLINE(void) PCISetPassthrough(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevSetPassthrough(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags |= PCIDEV_FLAG_PASSTHROUGH;
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_PASSTHROUGH;
 }
 
-DECLINLINE(void) PCIClearPassthrough(PPCIDEVICE pDev)
+DECLINLINE(void) pciDevClearPassthrough(PPCIDEVICE pDev)
 {
-    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_PASSTHROUGH;
+    pDev->Int.s.fFlags &= ~PCIDEV_FLAG_PASSTHROUGH;
 }
 
-DECLINLINE(bool) PCIIsPassthrough(PPCIDEVICE pDev)
+DECLINLINE(bool) pciDevIsPassthrough(PPCIDEVICE pDev)
 {
-    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PASSTHROUGH) != 0;
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) != 0;
 }
 
 #endif /* PCIDEVICEINT_DECLARED */

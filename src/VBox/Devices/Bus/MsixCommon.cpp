@@ -209,7 +209,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     PCIDevSetDWord(pDev,  iCapOffset + VBOX_MSIX_TABLE_BIROFFSET, offTable | iBar);
     PCIDevSetDWord(pDev,  iCapOffset + VBOX_MSIX_PBA_BIROFFSET,   offPBA   | iBar);
 
-    PCISetMsixCapable(pDev);
+    pciDevSetMsixCapable(pDev);
 
     return VINF_SUCCESS;
 }
@@ -217,7 +217,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 
 bool     MsixIsEnabled(PPCIDEVICE pDev)
 {
-    return PCIIsMsixCapable(pDev) && msixIsEnabled(pDev);
+    return pciDevIsMsixCapable(pDev) && msixIsEnabled(pDev);
 }
 
 void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel)
@@ -266,7 +266,7 @@ static void msixCheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPC
 void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsixCapOffset;
-    Assert(iOff >= 0 && (PCIIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
+    Assert(iOff >= 0 && (pciDevIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
 
     Log2(("MsixPciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
 
@@ -311,7 +311,7 @@ uint32_t MsixPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Add
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsixCapOffset;
 
-    Assert(iOff >= 0 && (PCIIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
+    Assert(iOff >= 0 && (pciDevIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
     uint32_t rv = 0;
 
     switch (len)
