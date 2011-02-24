@@ -25,7 +25,6 @@
 #include <kstat.h>
 #include <sys/sysinfo.h>
 #include <sys/time.h>
-#include <syslog.h>
 
 #include <iprt/err.h>
 #include <iprt/string.h>
