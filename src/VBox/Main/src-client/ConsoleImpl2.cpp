@@ -3478,6 +3478,12 @@ int Console::configNetwork(const char *pszDevice,
         hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
         H();
 
+        hrc = pMachine->GetExtraData(Bstr("AllowPromiscousGuests").raw(), bstr.asOutParam());
+        if (SUCCEEDED(hrc) && bstr.isEmpty())
+            hrc = virtualBox->GetExtraData(Bstr("AllowPromiscousGuests").raw(), bstr.asOutParam());
+        H();
+        const char * const pszPromiscuousGuestPolicy = bstr.isNotEmpty() ? "allow" : "deny";
+
         if (fAttachDetach && fSniffer)
         {
             const char *pszNetDriver = "IntNet";
@@ -3641,12 +3647,12 @@ int Console::configNetwork(const char *pszDevice,
         Log2((#res " %s pos:%d, ppos:%d\n", res.c_str(), pos, ppos)); \
         ppos = pos + 1; \
     } while (0)
-                ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
-                ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
-                ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
-                ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
-                ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
-                strGuestPort = utf.substr(ppos, utf.length() - ppos);
+                    ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
+                    ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
+                    ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
+                    ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
+                    ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
+                    strGuestPort = utf.substr(ppos, utf.length() - ppos);
 #undef ITERATE_TO_NEXT_TERM
 
                     uint32_t proto = strProto.toUInt32();
@@ -3965,6 +3971,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
                 InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
+                InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                 InsertConfigString(pCfg, "Network", szNetwork);
@@ -4102,12 +4109,12 @@ int Console::configNetwork(const char *pszDevice,
 
 # if defined(RT_OS_SOLARIS)
 #  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
-            /* Zone access restriction, don't allow snooping the global zone. */
-            zoneid_t ZoneId = getzoneid();
-            if (ZoneId != GLOBAL_ZONEID)
-            {
-                InsertConfigInteger(pCfg, "IgnoreAllPromisc", true);
-            }
+                /* Zone access restriction, don't allow snooping the global zone. */
+                zoneid_t ZoneId = getzoneid();
+                if (ZoneId != GLOBAL_ZONEID)
+                {
+                    InsertConfigInteger(pCfg, "IgnoreAllPromisc", true);
+                }
 #  endif
 # endif
 
@@ -4136,6 +4143,7 @@ int Console::configNetwork(const char *pszDevice,
                     InsertConfigNode(pLunL0, "Config", &pCfg);
                     InsertConfigString(pCfg, "Network", bstr);
                     InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone);
+                    InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                     networkName = bstr;
                     trunkType = Bstr(TRUNKTYPE_WHATEVER);
                 }
@@ -4228,7 +4236,7 @@ int Console::configNetwork(const char *pszDevice,
                     LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
                     H();
                 }
-#define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
+#  define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
                 char szTrunkName[INTNET_MAX_TRUNK_NAME];
                 char *pszTrunkName = szTrunkName;
                 wchar_t * pswzBindName;
@@ -4284,7 +4292,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigString(pCfg, "Network", szNetwork);
-                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
+                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure); /** @todo why is this windows only?? */
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;
@@ -4304,6 +4312,8 @@ int Console::configNetwork(const char *pszDevice,
                 trunkName   = Bstr(pszHifName);
                 trunkType   = TRUNKTYPE_NETFLT;
 #endif
+                InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 
                 Bstr tmpAddr, tmpMask;
