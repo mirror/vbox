@@ -6306,7 +6306,11 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
         /* Leave space for "--capture" arg. */
-        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0, 0 };
+        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(),
+                                       "--startvm", idStr.c_str(),
+                                       "--vrde", "config",
+                                       0, /* For "--capture". */
+                                       0 };
         if (strType == "capture")
         {
             unsigned pos = RT_ELEMENTS(args) - 2;
