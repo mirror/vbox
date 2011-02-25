@@ -1257,7 +1257,7 @@ static int drvIntNetR3CfgGetPolicy(PPDMDRVINS pDrvIns, const char *pszName, PCDR
      * Check for +fixed first, so it can be stripped off.
      */
     char *pszSep = strpbrk(szValue, "+,;");
-    if (*pszSep)
+    if (pszSep)
     {
         *pszSep++ = '\0';
         const char *pszFixed = RTStrStripL(pszSep);
