@@ -71,8 +71,7 @@ typedef struct INTNETMACTABENTRY
 {
     /** The MAC address of this entry. */
     RTMAC                   MacAddr;
-    /** Is it promiscuous.
-     * Shadows INTNETIF::fPromiscuousEff.  */
+    /** Is it is effectively promiscuous mode. */
     bool                    fPromiscuousEff;
     /** Is it promiscuous and should it see unrelated trunk traffic. */
     bool                    fPromiscuousSeeTrunk;
@@ -101,6 +100,12 @@ typedef struct INTNETMACTAB
     uint32_t                cEntriesAllocated;
     /** Table entries. */
     PINTNETMACTABENTRY      paEntries;
+
+    /** The number of interface entries currently in promicuous mode. */
+    uint32_t                cPromiscuousEntries;
+    /** The number of interface entries currently in promicuous mode that
+     * shall not see unrelated trunk traffic. */
+    uint32_t                cPromiscuousNoTrunkEntries;
 
     /** The host MAC address (reported). */
     RTMAC                   HostMac;
@@ -223,9 +228,6 @@ typedef struct INTNETIF
     RTMAC                   MacAddr;
     /** Set if the INTNET::MacAddr member has been explicitly set. */
     bool                    fMacSet;
-    /** Set if the interface is in promiscuous mode.
-     * This is shadowed by INTNETMACTABENTRY::fPromiscuous. */
-    bool                    fPromiscuousEff;
     /** Tracks the desired promiscuous setting of the interface. */
     bool                    fPromiscuousReal;
     /** Whether the interface is active or not.
@@ -1474,6 +1476,30 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
         }
     }
 
+    /* Network only promicuous mode ifs should see related trunk traffic. */
+    if (   cExactHits
+        && fSrc
+        && pNetwork->MacTab.cPromiscuousNoTrunkEntries)
+    {
+        iIfMac = pTab->cEntries;
+        while (iIfMac-- > 0)
+        {
+            if (   pTab->paEntries[iIfMac].fActive
+                && pTab->paEntries[iIfMac].fPromiscuousEff
+                && !pTab->paEntries[iIfMac].fPromiscuousSeeTrunk)
+            {
+                PINTNETIF pIf = pTab->paEntries[iIfMac].pIf;        AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+                if (intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmL3AddrType], pL3Addr, cbL3Addr) < 0)
+                {
+                    uint32_t iIfDst = pDstTab->cIfs++;
+                    pDstTab->aIfs[iIfDst].pIf            = pIf;
+                    pDstTab->aIfs[iIfDst].fReplaceDstMac = false;
+                    intnetR0BusyIncIf(pIf);
+                }
+            }
+        }
+    }
+
     /* Does it match the host, or is the host promiscuous? */
     if (pTab->fHostActive)
     {
@@ -1622,10 +1648,29 @@ static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, ui
             }
         }
     }
-    /** @todo Interfaces with fPromiscuousEff && !fPromiscuousSeeTrunk needs to
-     *        be added if there are exact matches and fSrc != 0.  This means
-     *        we need to count interfaces in this state to avoid traversing
-     *        the table a second time for no good reason. */
+
+    /* Network only promicuous mode ifs should see related trunk traffic. */
+    if (   cExactHits
+        && fSrc
+        && pNetwork->MacTab.cPromiscuousNoTrunkEntries)
+    {
+        iIfMac = pTab->cEntries;
+        while (iIfMac-- > 0)
+        {
+            if (   pTab->paEntries[iIfMac].fPromiscuousEff
+                && !pTab->paEntries[iIfMac].fPromiscuousSeeTrunk
+                && pTab->paEntries[iIfMac].fActive
+                && !intnetR0AreMacAddrsEqual(&pTab->paEntries[iIfMac].MacAddr, pDstAddr)
+                && !intnetR0IsMacAddrDummy(&pTab->paEntries[iIfMac].MacAddr) )
+            {
+                PINTNETIF pIf    = pTab->paEntries[iIfMac].pIf;     AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+                uint32_t  iIfDst = pDstTab->cIfs++;
+                pDstTab->aIfs[iIfDst].pIf            = pIf;
+                pDstTab->aIfs[iIfDst].fReplaceDstMac = false;
+                intnetR0BusyIncIf(pIf);
+            }
+        }
+    }
 
     /* Does it match the host, or is the host promiscuous? */
     if (   fSrc != INTNETTRUNKDIR_HOST
@@ -3663,18 +3708,35 @@ INTNETR0DECL(int) IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSIO
             const bool fPromiscuousEff = fPromiscuous
                                       && (pIf->fOpenFlags  & INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW)
                                       && (pNetwork->fFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS);
-            Log(("IntNetR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d (%d) -> %d (%d)\n",
-                 hIf, !fPromiscuous, pIf->fPromiscuousEff, !!fPromiscuous, fPromiscuousEff));
+            Log(("IntNetR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d (%d)\n",
+                 hIf, !fPromiscuous, !!fPromiscuous, fPromiscuousEff));
 
             pIf->fPromiscuousReal = fPromiscuous;
-            pIf->fPromiscuousEff  = fPromiscuousEff;
 
             PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
             if (RT_LIKELY(pEntry))
             {
+                if (pEntry->fPromiscuousEff)
+                {
+                    pNetwork->MacTab.cPromiscuousEntries--;
+                    if (!pEntry->fPromiscuousSeeTrunk)
+                        pNetwork->MacTab.cPromiscuousNoTrunkEntries--;
+                    Assert(pNetwork->MacTab.cPromiscuousEntries        < pNetwork->MacTab.cEntries);
+                    Assert(pNetwork->MacTab.cPromiscuousNoTrunkEntries < pNetwork->MacTab.cEntries);
+                }
+
                 pEntry->fPromiscuousEff      = fPromiscuousEff;
                 pEntry->fPromiscuousSeeTrunk = fPromiscuousEff
                                             && (pIf->fOpenFlags & INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK);
+
+                if (pEntry->fPromiscuousEff)
+                {
+                    pNetwork->MacTab.cPromiscuousEntries++;
+                    if (!pEntry->fPromiscuousSeeTrunk)
+                        pNetwork->MacTab.cPromiscuousNoTrunkEntries++;
+                }
+                Assert(pNetwork->MacTab.cPromiscuousEntries        <= pNetwork->MacTab.cEntries);
+                Assert(pNetwork->MacTab.cPromiscuousNoTrunkEntries <= pNetwork->MacTab.cEntries);
             }
         }
 
@@ -4235,6 +4297,15 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
         while (iIf-- > 0)
             if (pNetwork->MacTab.paEntries[iIf].pIf == pIf)
             {
+                if (pNetwork->MacTab.paEntries[iIf].fPromiscuousEff)
+                {
+                    pNetwork->MacTab.cPromiscuousEntries--;
+                    if (!pNetwork->MacTab.paEntries[iIf].fPromiscuousSeeTrunk)
+                        pNetwork->MacTab.cPromiscuousNoTrunkEntries--;
+                }
+                Assert(pNetwork->MacTab.cPromiscuousEntries        < pNetwork->MacTab.cEntries);
+                Assert(pNetwork->MacTab.cPromiscuousNoTrunkEntries < pNetwork->MacTab.cEntries);
+
                 if (iIf + 1 < pNetwork->MacTab.cEntries)
                     memmove(&pNetwork->MacTab.paEntries[iIf],
                             &pNetwork->MacTab.paEntries[iIf + 1],
@@ -4257,6 +4328,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
             }
             pNetwork->fMinFlags = fMinFlags;
         }
+
         PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
 
         RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
@@ -4401,7 +4473,6 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 
     memset(&pIf->MacAddr, 0xff, sizeof(pIf->MacAddr)); /* broadcast */
     //pIf->fMacSet          = false;
-    //pIf->fPromiscuousEff  = false;
     //pIf->fPromiscuousReal = false;
     //pIf->fActive          = false;
     //pIf->fDestroying      = false;
@@ -5350,6 +5421,9 @@ static int intnetR0AdaptOpenNetworkFlags(PINTNETNETWORK pNetwork, uint32_t fFlag
 
         if ((fOldNetFlags ^ fNetFlags) & INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS)
         {
+            pNetwork->MacTab.cPromiscuousEntries        = 0;
+            pNetwork->MacTab.cPromiscuousNoTrunkEntries = 0;
+
             uint32_t iIf = pNetwork->MacTab.cEntries;
             while (iIf-- > 0)
             {
@@ -5360,10 +5434,16 @@ static int intnetR0AdaptOpenNetworkFlags(PINTNETNETWORK pNetwork, uint32_t fFlag
                 {
                     bool fPromiscuousEff = (fNetFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS)
                                         && (pIf2->fOpenFlags & INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW);
-                    pIf2->fPromiscuousEff        = fPromiscuousEff;
                     pEntry->fPromiscuousEff      = fPromiscuousEff;
                     pEntry->fPromiscuousSeeTrunk = fPromiscuousEff
                                                 && (pIf2->fOpenFlags & INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK);
+
+                    if (pEntry->fPromiscuousEff)
+                    {
+                        pNetwork->MacTab.cPromiscuousEntries++;
+                        if (!pEntry->fPromiscuousSeeTrunk)
+                            pNetwork->MacTab.cPromiscuousNoTrunkEntries++;
+                    }
                 }
             }
         }
@@ -5540,6 +5620,8 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
     pNetwork->hAddrSpinlock                 = NIL_RTSPINLOCK;
     pNetwork->MacTab.cEntries               = 0;
     pNetwork->MacTab.cEntriesAllocated      = INTNET_GROW_DSTTAB_SIZE;
+    //pNetwork->MacTab.cPromiscuousEntries  = 0;
+    //pNetwork->MacTab.cPromiscuousNoTrunkEntries = 0;
     pNetwork->MacTab.paEntries              = NULL;
     pNetwork->MacTab.fHostPromiscuousReal   = false;
     pNetwork->MacTab.fHostPromiscuousEff    = false;
