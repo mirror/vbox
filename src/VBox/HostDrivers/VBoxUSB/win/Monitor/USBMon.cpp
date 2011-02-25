@@ -312,7 +312,7 @@ NTSTATUS _stdcall VBoxUSBMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             RtlFreeUnicodeString(&UnicodeName);
         }
 
-        if (InterlockedCompareExchange(&pDevExt->fRemoveLockInitialized, 1, 0))
+        if (InterlockedCompareExchange(&pDevExt->fRemoveLockInitialized, 1, 0) == 0)
         {
             //
             // Let us use remove lock to keep count of IRPs so that we don't
