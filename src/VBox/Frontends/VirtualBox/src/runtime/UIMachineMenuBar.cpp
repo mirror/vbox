@@ -143,6 +143,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool, UIM
     if (fOptions & UIMainMenuType_View)
     {
         QMenu *pMenuView = pActionsPool->action(UIActionIndex_Menu_View)->menu();
+        prepareMenuView(pMenuView, pActionsPool);
         preparedSubMenus << pMenuView;
     }
 
@@ -188,11 +189,8 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
         return;
 
     /* Machine submenu: */
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Fullscreen));
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Seamless));
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Scale));
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_GuestAutoresize));
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_AdjustWindow));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_TakeSnapshot));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_InformationDialog));
     pMenu->addSeparator();
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_MouseIntegration));
     pMenu->addSeparator();
@@ -201,10 +199,6 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_TypeCABS));
 #endif
     pMenu->addSeparator();
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_TakeSnapshot));
-    pMenu->addSeparator();
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_InformationDialog));
-    pMenu->addSeparator();
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Pause));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Reset));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Shutdown));
@@ -212,6 +206,21 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Close));
+}
+
+void UIMachineMenuBar::prepareMenuView(QMenu *pMenu, UIActionsPool *pActionsPool)
+{
+    /* Do not prepare if ready: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* View submenu: */
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Fullscreen));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Seamless));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Scale));
+    pMenu->addSeparator();
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_GuestAutoresize));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_AdjustWindow));
 }
 
 void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool)

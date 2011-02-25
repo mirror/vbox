@@ -48,25 +48,33 @@ UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
 UIMultiScreenLayout::~UIMultiScreenLayout()
 {
     delete m_pScreenMap;
+    while (!m_screenMenuList.isEmpty())
+    {
+        delete m_screenMenuList.first();
+        m_screenMenuList.removeFirst();
+    }
 }
 
 void UIMultiScreenLayout::initialize(QMenu *pMenu)
 {
-    pMenu->clear();
-    for (int i = 0; i < m_cGuestScreens; ++i)
+    if (m_cHostScreens > 1)
     {
-        QMenu *pScreenMenu = pMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
-        QActionGroup *pScreenGroup = new QActionGroup(pScreenMenu);
-        pScreenGroup->setExclusive(true);
-        connect(pScreenGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltScreenLayoutChanged(QAction*)));
-        for (int a = 0; a < m_cHostScreens; ++a)
+        pMenu->addSeparator();
+        for (int i = 0; i < m_cGuestScreens; ++i)
         {
-            QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
-            pAction->setCheckable(true);
-            pAction->setData(RT_MAKE_U32(i, a));
+            m_screenMenuList << pMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
+            m_screenMenuList.last()->menuAction()->setData(true);
+            QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
+            pScreenGroup->setExclusive(true);
+            connect(pScreenGroup, SIGNAL(triggered(QAction*)), this, SLOT(sltScreenLayoutChanged(QAction*)));
+            for (int a = 0; a < m_cHostScreens; ++a)
+            {
+                QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
+                pAction->setCheckable(true);
+                pAction->setData(RT_MAKE_U32(i, a));
+            }
+            m_screenMenuList.last()->addActions(pScreenGroup->actions());
         }
-        pScreenMenu->addActions(pScreenGroup->actions());
     }
 }
 
@@ -83,8 +91,7 @@ void UIMultiScreenLayout::update()
     QDesktopWidget *pDW = QApplication::desktop();
     for (int i = 0; i < m_cGuestScreens; ++i)
     {
-        /* If the user ever selected a combination in the view menu, we have
-         * the following entry: */
+        /* If the user ever selected a combination in the view menu, we have the following entry: */
         QString strTest = machine.GetExtraData(QString("%1%2").arg(VBoxDefs::GUI_VirtualScreenToHostScreen).arg(i));
         bool fOk;
         int cScreen = strTest.toInt(&fOk);
@@ -126,16 +133,25 @@ void UIMultiScreenLayout::update()
         availableScreens.removeOne(cScreen);
     }
 
-    QList<QAction*> actions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
-    for (int i = 0; i < m_pScreenMap->size(); ++i)
+    /* Get the list of all view-menu actions: */
+    QList<QAction*> viewMenuActions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
+    /* Get the list of all view related actions: */
+    QList<QAction*> viewActions;
+    for (int i = 0; i < viewMenuActions.size(); ++i)
     {
-        int hostScreen = m_pScreenMap->value(i);
-        QList<QAction*> actions1 = actions.at(i)->menu()->actions();
-        for (int w = 0; w < actions1.size(); ++w)
+        if (viewMenuActions[i]->data().toBool())
+            viewActions << viewMenuActions[i];
+    }
+    /* Mark currently chosen action: */
+    for (int i = 0; i < viewActions.size(); ++i)
+    {
+        int iHostScreen = m_pScreenMap->value(i);
+        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
+        for (int w = 0; w < screenActions.size(); ++w)
         {
-            QAction *pTmpAction = actions1.at(w);
+            QAction *pTmpAction = screenActions.at(w);
             pTmpAction->blockSignals(true);
-            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == hostScreen);
+            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
             pTmpAction->blockSignals(false);
         }
     }
@@ -221,20 +237,26 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
         m_pScreenMap = pTmpMap;
     }
 
-    /* Update the menu items. Even if we can't switch we have to revert the
-     * menu items. */
-    QList<QAction*> actions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
-    /* Update the settings. */
-    for (int i = 0; i < m_cGuestScreens; ++i)
+    /* Get the list of all view-menu actions: */
+    QList<QAction*> viewMenuActions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
+    /* Get the list of all view related actions: */
+    QList<QAction*> viewActions;
+    for (int i = 0; i < viewMenuActions.size(); ++i)
     {
-        int hostScreen = m_pScreenMap->value(i);
-        machine.SetExtraData(QString("%1%2").arg(VBoxDefs::GUI_VirtualScreenToHostScreen).arg(i), QString::number(hostScreen));
-        QList<QAction*> actions1 = actions.at(i)->menu()->actions();
-        for (int w = 0; w < actions1.size(); ++w)
+        if (viewMenuActions[i]->data().toBool())
+            viewActions << viewMenuActions[i];
+    }
+    /* Update the menu items. Even if we can't switch we have to revert the menu items. */
+    for (int i = 0; i < viewActions.size(); ++i)
+    {
+        int iHostScreen = m_pScreenMap->value(i);
+        machine.SetExtraData(QString("%1%2").arg(VBoxDefs::GUI_VirtualScreenToHostScreen).arg(i), QString::number(iHostScreen));
+        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
+        for (int w = 0; w < screenActions.size(); ++w)
         {
-            QAction *pTmpAction = actions1.at(w);
+            QAction *pTmpAction = screenActions.at(w);
             pTmpAction->blockSignals(true);
-            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == hostScreen);
+            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
             pTmpAction->blockSignals(false);
         }
     }

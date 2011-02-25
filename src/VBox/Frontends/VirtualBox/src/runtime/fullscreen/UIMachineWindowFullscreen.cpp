@@ -165,14 +165,10 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
 
 void UIMachineWindowFullscreen::prepareMenu()
 {
-    UIMainMenuType fMenus = UIMainMenuType_All;
-    /* Remove the view menu in the case there is one screen only. */
-    if (QApplication::desktop()->numScreens() == 1)
-        fMenus = UIMainMenuType(fMenus ^ UIMainMenuType_View);
 #ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar(fMenus));
+    setMenuBar(uisession()->newMenuBar());
 #endif /* Q_WS_MAC */
-    m_pMainMenu = uisession()->newMenu(fMenus);
+    m_pMainMenu = uisession()->newMenu();
 }
 
 void UIMachineWindowFullscreen::prepareMiniToolBar()
@@ -192,10 +188,7 @@ void UIMachineWindowFullscreen::prepareMiniToolBar()
                                              true, fIsAutoHide);
         m_pMiniToolBar->updateDisplay(true, true);
         QList<QMenu*> menus;
-        UIMainMenuType fMenu = UIMainMenuType(UIMainMenuType_Machine | UIMainMenuType_Devices);
-        if (QApplication::desktop()->numScreens() > 1)
-            fMenu = UIMainMenuType(fMenu | UIMainMenuType_View);
-        QList<QAction*> actions = uisession()->newMenu(fMenu)->actions();
+        QList<QAction*> actions = uisession()->newMenu()->actions();
         for (int i=0; i < actions.size(); ++i)
             menus << actions.at(i)->menu();
         *m_pMiniToolBar << menus;
