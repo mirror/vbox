@@ -1352,6 +1352,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                                   "|PromiscPolicyWire"
                                   "|PromiscPolicyFixed"
                                   "|IfPolicyPromisc"
+                                  "|IfPolicyPromiscTrunk"
                                   "|IfPolicyFixed"
                                   "|TrunkPolicyHost"
                                   "|TrunkPolicyWire"
