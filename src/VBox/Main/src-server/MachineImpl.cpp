@@ -2021,6 +2021,9 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
 
         case HWVirtExPropertyType_LargePages:
             *aVal = mHWData->mHWVirtExLargePagesEnabled;
+#if defined(DEBUG_bird) && defined(RT_OS_LINUX) /* This feature is deadly here */
+            *aVal = FALSE;
+#endif
             break;
 
         case HWVirtExPropertyType_Force:
