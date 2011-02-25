@@ -752,6 +752,54 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
     return S_OK;
 }
 
+
+STDMETHODIMP NetworkAdapter::COMGETTER(PromiscModePolicy)(NetworkAdapterPromiscModePolicy_T *aPromiscModePolicy)
+{
+    CheckComArgOutPointerValid(aPromiscModePolicy);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *aPromiscModePolicy = mData->mPromiscModePolicy;
+    }
+    return hrc;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(PromiscModePolicy)(NetworkAdapterPromiscModePolicy_T aPromiscModePolicy)
+{
+    switch (aPromiscModePolicy)
+    {
+        case NetworkAdapterPromiscModePolicy_Deny:
+        case NetworkAdapterPromiscModePolicy_AllowNetwork:
+        case NetworkAdapterPromiscModePolicy_AllowAll:
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("Invalid promiscuous mode policy (%d)"), aPromiscModePolicy);
+    }
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (aPromiscModePolicy != mData->mPromiscModePolicy)
+        {
+            mData.backup();
+            mData->mPromiscModePolicy = aPromiscModePolicy;
+            m_fModified = true;
+
+            alock.release();
+            mParent->setModifiedLock(Machine::IsModified_NetworkAdapters);
+            mParent->onNetworkAdapterChange(this, TRUE);
+        }
+    }
+
+    return hrc;
+}
+
 STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthLimit) (ULONG *aLimit)
 {
     CheckComArgOutPointerValid(aLimit);
@@ -1257,6 +1305,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mCableConnected = data.fCableConnected;
     /* line speed (defaults to 100 Mbps) */
     mData->mLineSpeed = data.ulLineSpeed;
+    mData->mPromiscModePolicy = data.enmPromiscModePolicy;
     /* tracing (defaults to false) */
     mData->mTraceEnabled = data.fTraceEnabled;
     mData->mTraceFile = data.strTraceFile;

@@ -43,6 +43,7 @@ public:
                  mAttachmentType(NetworkAttachmentType_Null),
                  mCableConnected(TRUE),
                  mLineSpeed(0),
+                 mPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
                  mTraceEnabled(FALSE),
                  mHostInterface("") /* cannot be null */,
 #ifdef VBOX_WITH_VDE
@@ -59,6 +60,7 @@ public:
         NetworkAttachmentType_T mAttachmentType;
         BOOL mCableConnected;
         ULONG mLineSpeed;
+        NetworkAdapterPromiscModePolicy_T mPromiscModePolicy;
         BOOL mTraceEnabled;
         Bstr mTraceFile;
         Bstr mHostInterface;
@@ -115,6 +117,8 @@ public:
     STDMETHOD(COMSETTER(TraceEnabled)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(LineSpeed)) (ULONG *aSpeed);
     STDMETHOD(COMSETTER(LineSpeed)) (ULONG aSpeed);
+    STDMETHOD(COMGETTER(PromiscModePolicy))(NetworkAdapterPromiscModePolicy_T *aPromiscModePolicy);
+    STDMETHOD(COMSETTER(PromiscModePolicy))(NetworkAdapterPromiscModePolicy_T aPromiscModePolicy);
     STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
     STDMETHOD(COMSETTER(TraceFile)) (IN_BSTR aTraceFile);
     STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);

@@ -5973,6 +5973,18 @@ void Machine::setModified(uint32_t fl)
 }
 
 /**
+ * Adds the given IsModified_* flag to the dirty flags of the machine, taking
+ * care of the write locking.
+ *
+ * @param   fModifications      The flag to add.
+ */
+void Machine::setModifiedLock(uint32_t fModification)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mData->flModifications |= fModification;
+}
+
+/**
  *  Saves the registry entry of this machine to the given configuration node.
  *
  *  @param aEntryNode Node to save the registry entry to.

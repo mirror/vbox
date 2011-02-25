@@ -1458,19 +1458,20 @@ bool USBController::operator==(const USBController &u) const
 bool NetworkAdapter::operator==(const NetworkAdapter &n) const
 {
     return (    (this == &n)
-             || (    (ulSlot            == n.ulSlot)
-                  && (type              == n.type)
-                  && (fEnabled          == n.fEnabled)
-                  && (strMACAddress     == n.strMACAddress)
-                  && (fCableConnected   == n.fCableConnected)
-                  && (ulLineSpeed       == n.ulLineSpeed)
-                  && (fTraceEnabled     == n.fTraceEnabled)
-                  && (strTraceFile      == n.strTraceFile)
-                  && (mode              == n.mode)
-                  && (nat               == n.nat)
-                  && (strName           == n.strName)
-                  && (ulBootPriority    == n.ulBootPriority)
-                  && (fHasDisabledNAT   == n.fHasDisabledNAT)
+             || (    (ulSlot                == n.ulSlot)
+                  && (type                  == n.type)
+                  && (fEnabled              == n.fEnabled)
+                  && (strMACAddress         == n.strMACAddress)
+                  && (fCableConnected       == n.fCableConnected)
+                  && (ulLineSpeed           == n.ulLineSpeed)
+                  && (enmPromiscModePolicy  == n.enmPromiscModePolicy)
+                  && (fTraceEnabled         == n.fTraceEnabled)
+                  && (strTraceFile          == n.strTraceFile)
+                  && (mode                  == n.mode)
+                  && (nat                   == n.nat)
+                  && (strName               == n.strName)
+                  && (ulBootPriority        == n.ulBootPriority)
+                  && (fHasDisabledNAT       == n.fHasDisabledNAT)
                 )
            );
 }
@@ -1931,6 +1932,20 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         pelmAdapter->getAttributeValue("MACAddress", nic.strMACAddress);
         pelmAdapter->getAttributeValue("cable", nic.fCableConnected);
         pelmAdapter->getAttributeValue("speed", nic.ulLineSpeed);
+
+        if (pelmAdapter->getAttributeValue("promiscuousModePolicy", strTemp))
+        {
+            if (strTemp == "Deny")
+                nic.enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_Deny;
+            else if (strTemp == "AllowNetwork")
+                nic.enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowNetwork;
+            else if (strTemp == "AllowAll")
+                nic.enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowAll;
+            else
+                throw ConfigFileError(this, pelmAdapter,
+                                      N_("Invalid value '%s' in Adapter/@promiscuousModePolicy attribute"), strTemp.c_str());
+        }
+
         pelmAdapter->getAttributeValue("trace", nic.fTraceEnabled);
         pelmAdapter->getAttributeValue("tracefile", nic.strTraceFile);
         pelmAdapter->getAttributeValue("bootPriority", nic.ulBootPriority);
@@ -3686,6 +3701,17 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (nic.ulBandwidthLimit)
             pelmAdapter->setAttribute("bandwidthLimit", nic.ulBandwidthLimit);
 
+        const char *pszPolicy;
+        switch (nic.enmPromiscModePolicy)
+        {
+            case NetworkAdapterPromiscModePolicy_Deny:          pszPolicy = NULL; break;
+            case NetworkAdapterPromiscModePolicy_AllowNetwork:  pszPolicy = "AllowNetwork"; break;
+            case NetworkAdapterPromiscModePolicy_AllowAll:      pszPolicy = "AllowAll"; break;
+            default:                                            pszPolicy = NULL; AssertFailed(); break;
+        }
+        if (pszPolicy)
+            pelmAdapter->setAttribute("promiscuousModePolicy", pszPolicy);
+
         const char *pcszType;
         switch (nic.type)
         {
@@ -4468,9 +4494,22 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_12)
     {
-        // VirtualBox 4.1 adds PCI passthrough
+        // VirtualBox 4.1 adds PCI passthrough.
         if (hardwareMachine.pciAttachments.size())
             m->sv = SettingsVersion_v1_12;
+
+        // VirtualBox 4.1 adds a promiscuous mode policy to the network adapters.
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            if (netit->enmPromiscModePolicy != NetworkAdapterPromiscModePolicy_Deny)
+            {
+                m->sv = SettingsVersion_v1_12;
+                break;
+            }
+        }
     }
 
     if (m->sv < SettingsVersion_v1_11)

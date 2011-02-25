@@ -436,6 +436,7 @@ struct NetworkAdapter
           fEnabled(false),
           fCableConnected(false),
           ulLineSpeed(0),
+          enmPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
           ulBootPriority(0),
@@ -447,22 +448,24 @@ struct NetworkAdapter
 
     uint32_t                ulSlot;
 
-    NetworkAdapterType_T    type;
-    bool                    fEnabled;
-    com::Utf8Str            strMACAddress;
-    bool                    fCableConnected;
-    uint32_t                ulLineSpeed;
-    bool                    fTraceEnabled;
-    com::Utf8Str            strTraceFile;
+    NetworkAdapterType_T                type;
+    bool                                fEnabled;
+    com::Utf8Str                        strMACAddress;
+    bool                                fCableConnected;
+    uint32_t                            ulLineSpeed;
+    NetworkAdapterPromiscModePolicy_T   enmPromiscModePolicy;
+    bool                                fTraceEnabled;
+    com::Utf8Str                        strTraceFile;
 
-    NetworkAttachmentType_T mode;
-    NAT                     nat;
-    com::Utf8Str            strName;            // NAT has own attribute
-                                                // with bridged: host interface or empty;
-                                                // otherwise: network name (required)
-    uint32_t                ulBootPriority;
-    bool                    fHasDisabledNAT;
-    uint32_t                ulBandwidthLimit;
+    NetworkAttachmentType_T             mode;
+    NAT                                 nat;
+    /**
+     * @remarks NAT has own attribute with bridged: host interface or empty;
+     *          otherwise: network name (required) */
+    com::Utf8Str                        strName;
+    uint32_t                            ulBootPriority;
+    bool                                fHasDisabledNAT;
+    uint32_t                            ulBandwidthLimit;
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 

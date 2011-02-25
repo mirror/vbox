@@ -103,6 +103,7 @@ enum
     MODIFYVM_NICTYPE,
     MODIFYVM_NICSPEED,
     MODIFYVM_NICBOOTPRIO,
+    MODIFYVM_NICPROMISC,
     MODIFYVM_NIC,
     MODIFYVM_CABLECONNECTED,
     MODIFYVM_BRIDGEADAPTER,
@@ -229,6 +230,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nicbootprio",              MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+    { "--nicpromisc",               MODIFYVM_NICPROMISC,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1078,6 +1080,31 @@ int handleModifyVM(HandlerArg *a)
                 {
                     CHECK_ERROR(nic, COMSETTER(BootPriority)(ValueUnion.u32));
                 }
+                break;
+            }
+
+            case MODIFYVM_NICPROMISC:
+            {
+                NetworkAdapterPromiscModePolicy_T enmPromiscModePolicy;
+                if (!strcmp(ValueUnion.psz, "deny"))
+                    enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_Deny;
+                else if (   !strcmp(ValueUnion.psz, "allow-vms")
+                         || !strcmp(ValueUnion.psz, "allow-network"))
+                    enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowNetwork;
+                else if (!strcmp(ValueUnion.psz, "allow-all"))
+                    enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowAll;
+                else
+                {
+                    errorArgument("Unknown promiscuous mode policy '%s'", ValueUnion.psz);
+                    rc = E_INVALIDARG;
+                    break;
+                }
+
+                ComPtr<INetworkAdapter> nic;
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMSETTER(PromiscModePolicy)(enmPromiscModePolicy));
                 break;
             }
 

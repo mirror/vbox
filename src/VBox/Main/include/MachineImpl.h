@@ -620,6 +620,7 @@ public:
     };
 
     void setModified(uint32_t fl);
+    void setModifiedLock(uint32_t fl);
 
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }

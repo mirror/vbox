@@ -848,6 +848,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         else
                             strAttachment = "none";
                         break;
+
                     case NetworkAttachmentType_NAT:
                     {
                         Bstr strNetwork;
@@ -945,6 +946,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         }
                         break;
                     }
+
                     case NetworkAttachmentType_Bridged:
                     {
                         Bstr strBridgeAdp;
@@ -958,6 +960,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             strAttachment = Utf8StrFmt("Bridged Interface '%lS'", strBridgeAdp.raw());
                         break;
                     }
+
                     case NetworkAttachmentType_Internal:
                     {
                         Bstr strNetwork;
@@ -971,6 +974,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).c_str());
                         break;
                     }
+
 #if defined(VBOX_WITH_NETFLT)
                     case NetworkAttachmentType_HostOnly:
                     {
@@ -1010,6 +1014,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 BOOL fConnected;
                 nic->COMGETTER(CableConnected)(&fConnected);
 
+                /* promisc policy */
+                NetworkAdapterPromiscModePolicy_T enmPromiscModePolicy;
+                CHECK_ERROR2_RET(nic, COMGETTER(PromiscModePolicy)(&enmPromiscModePolicy), hrcCheck);
+                const char *pszPromiscuousGuestPolicy;
+                switch (enmPromiscModePolicy)
+                {
+                    case NetworkAdapterPromiscModePolicy_Deny:          pszPromiscuousGuestPolicy = "deny"; break;
+                    case NetworkAdapterPromiscModePolicy_AllowNetwork:  pszPromiscuousGuestPolicy = "allow-vms"; break;
+                    case NetworkAdapterPromiscModePolicy_AllowAll:      pszPromiscuousGuestPolicy = "allow-all"; break;
+                    default: AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+                }
+
                 /* trace stuff */
                 BOOL fTraceEnabled;
                 nic->COMGETTER(TraceEnabled)(&fTraceEnabled);
@@ -1017,35 +1033,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 nic->COMGETTER(TraceFile)(traceFile.asOutParam());
 
                 /* NIC type */
-                Utf8Str strNICType;
                 NetworkAdapterType_T NICType;
                 nic->COMGETTER(AdapterType)(&NICType);
-                switch (NICType) {
-                case NetworkAdapterType_Am79C970A:
-                    strNICType = "Am79C970A";
-                    break;
-                case NetworkAdapterType_Am79C973:
-                    strNICType = "Am79C973";
-                    break;
+                const char *pszNICType;
+                switch (NICType)
+                {
+                    case NetworkAdapterType_Am79C970A:  pszNICType = "Am79C970A";   break;
+                    case NetworkAdapterType_Am79C973:   pszNICType = "Am79C973";    break;
 #ifdef VBOX_WITH_E1000
-                case NetworkAdapterType_I82540EM:
-                    strNICType = "82540EM";
-                    break;
-                case NetworkAdapterType_I82543GC:
-                    strNICType = "82543GC";
-                    break;
-                case NetworkAdapterType_I82545EM:
-                    strNICType = "82545EM";
-                    break;
+                    case NetworkAdapterType_I82540EM:   pszNICType = "82540EM";     break;
+                    case NetworkAdapterType_I82543GC:   pszNICType = "82543GC";     break;
+                    case NetworkAdapterType_I82545EM:   pszNICType = "82545EM";     break;
 #endif
 #ifdef VBOX_WITH_VIRTIO
-                case NetworkAdapterType_Virtio:
-                    strNICType = "virtio";
-                    break;
-#endif /* VBOX_WITH_VIRTIO */
-                default:
-                    strNICType = "unknown";
-                    break;
+                    case NetworkAdapterType_Virtio:     pszNICType = "virtio";      break;
+#endif
+                    default: AssertFailed();            pszNICType = "unknown";     break;
                 }
 
                 /* reported line speed */
@@ -1063,14 +1066,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.c_str());
                 }
                 else
-                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps, Boot priority: %d\n",
+                    RTPrintf("NIC %u:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps, Boot priority: %d, Promisc Policy: %s\n",
                              currentNIC + 1, strMACAddress.raw(), strAttachment.c_str(),
                              fConnected ? "on" : "off",
                              fTraceEnabled ? "on" : "off",
                              traceFile.isEmpty() ? Bstr("none").raw() : traceFile.raw(),
-                             strNICType.c_str(),
+                             pszNICType,
                              ulLineSpeed / 1000,
-                             (int)ulBootPriority);
+                             (int)ulBootPriority,
+                             pszPromiscuousGuestPolicy);
                 if (strNatSettings.length())
                     RTPrintf(strNatSettings.c_str());
                 if (strNatForwardings.length())

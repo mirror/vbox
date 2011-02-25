@@ -3467,22 +3467,24 @@ int Console::configNetwork(const char *pszDevice,
         ComPtr<IMachine> pMachine = machine();
 
         ComPtr<IVirtualBox> virtualBox;
-        hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-        H();
+        hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());                 H();
 
         ComPtr<IHost> host;
-        hrc = virtualBox->COMGETTER(Host)(host.asOutParam());
-        H();
+        hrc = virtualBox->COMGETTER(Host)(host.asOutParam());                       H();
 
         BOOL fSniffer;
-        hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
-        H();
+        hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);                  H();
 
-        hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/AllowPromiscousGuests").raw(), bstr.asOutParam());
-        if (SUCCEEDED(hrc) && bstr.isEmpty())
-            hrc = virtualBox->GetExtraData(Bstr("VBoxInternal2/AllowPromiscousGuests").raw(), bstr.asOutParam());
-        H();
-        const char * const pszPromiscuousGuestPolicy = bstr.isNotEmpty() ? "allow" : "deny";
+        NetworkAdapterPromiscModePolicy_T enmPromiscModePolicy;
+        hrc = aNetworkAdapter->COMGETTER(PromiscModePolicy)(&enmPromiscModePolicy); H();
+        const char *pszPromiscuousGuestPolicy;
+        switch (enmPromiscModePolicy)
+        {
+            case NetworkAdapterPromiscModePolicy_Deny:          pszPromiscuousGuestPolicy = "deny"; break;
+            case NetworkAdapterPromiscModePolicy_AllowNetwork:  pszPromiscuousGuestPolicy = "allow-network"; break;
+            case NetworkAdapterPromiscModePolicy_AllowAll:      pszPromiscuousGuestPolicy = "allow-all"; break;
+            default: AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+        }
 
         if (fAttachDetach && fSniffer)
         {
