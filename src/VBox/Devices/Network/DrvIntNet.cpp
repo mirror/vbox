@@ -1230,31 +1230,6 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
 
 
 /**
- * Queries the 'fixed' policy config value and sets the corresponding flag.
- *
- * @returns VBox status code (error set on failure).
- * @param   pDrvIns             The driver instance.
- * @param   pszName             The value name.
- * @param   fFixedFlag          The open network flag.
- * @param   pfFlags             The flags variable to update.
- */
-static int drvIntNetR3CfgFixedPolicy(PPDMDRVINS pDrvIns, const char *pszName, uint32_t fFixedFlag, uint32_t *pfFlags)
-{
-    bool fFixed;
-    int rc = CFGMR3QueryBoolDef(pDrvIns->pCfg, pszName, &fFixed, false /*fDef*/);
-    if (RT_SUCCESS(rc))
-    {
-        if (fFixed)
-            *pfFlags |= fFixedFlag;
-    }
-    else
-        rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                 N_("Configuration error: Failed to query the value of \"%s\""), pszName);
-    return rc;
-}
-
-
-/**
  * Queries a policy config value and translates it into open network flag.
  *
  * @returns VBox status code (error set on failure).
@@ -1262,33 +1237,62 @@ static int drvIntNetR3CfgFixedPolicy(PPDMDRVINS pDrvIns, const char *pszName, ui
  * @param   pszName             The value name.
  * @param   paFlags             The open network flag descriptors.
  * @param   cFlags              The number of descriptors.
+ * @param   fFlags              The fixed flag.
  * @param   pfFlags             The flags variable to update.
  */
-static int drvIntNetR3CfgGetPolicy(PPDMDRVINS pDrvIns, const char *pszName, PCDRVINTNETFLAG paFlags, size_t cFlags, uint32_t *pfFlags)
+static int drvIntNetR3CfgGetPolicy(PPDMDRVINS pDrvIns, const char *pszName, PCDRVINTNETFLAG paFlags, size_t cFlags,
+                                   uint32_t fFixedFlag, uint32_t *pfFlags)
 {
     char szValue[64];
     int rc = CFGMR3QueryString(pDrvIns->pCfg, pszName, szValue, sizeof(szValue));
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
-        size_t i = cFlags;
-        while (i-- > 0)
-            if (!strcmp(paFlags[i].pszChoice, szValue))
-            {
-                *pfFlags |= paFlags[i].fFlag;
-                return VINF_SUCCESS;
-            }
-        if (!strcmp(szValue, "none"))
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             return VINF_SUCCESS;
-
-        rc = PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                 N_("Configuration error: The value of \"%s\" is unknown: \"%s\""), pszName, szValue);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Failed to query value of \"%s\""), pszName);
     }
-    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+
+    /*
+     * Check for +fixed first, so it can be stripped off.
+     */
+    char *pszSep = strpbrk(szValue, "+,;");
+    if (*pszSep)
+    {
+        *pszSep++ = '\0';
+        const char *pszFixed = RTStrStripL(pszSep);
+        if (strcmp(pszFixed, "fixed"))
+        {
+            *pszSep = '+';
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                       N_("Configuration error: The value of \"%s\" is unknown: \"%s\""), pszName, szValue);
+        }
+        *pfFlags |= fFixedFlag;
+        RTStrStripR(szValue);
+    }
+
+    /*
+     * Match against the flag values.
+     */
+    size_t i = cFlags;
+    while (i-- > 0)
+        if (!strcmp(paFlags[i].pszChoice, szValue))
+        {
+            *pfFlags |= paFlags[i].fFlag;
+            return VINF_SUCCESS;
+        }
+
+    if (!strcmp(szValue, "none"))
         return VINF_SUCCESS;
-    else
-        rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                 N_("Configuration error: Failed to query value of \"%s\""), pszName);
-    return rc;
+
+    if (!strcmp(szValue, "fixed"))
+    {
+        *pfFlags |= fFixedFlag;
+        return VINF_SUCCESS;
+    }
+
+    return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                               N_("Configuration error: The value of \"%s\" is unknown: \"%s\""), pszName, szValue);
 }
 
 
@@ -1346,16 +1350,12 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                                   "|RequireExactPolicyMatch"
                                   "|RequireAsRestrictivePolicy"
                                   "|AccessPolicy"
-                                  "|AccessPolicyFixed"
                                   "|PromiscPolicyClients"
                                   "|PromiscPolicyHost"
                                   "|PromiscPolicyWire"
-                                  "|PromiscPolicyFixed"
                                   "|IfPolicyPromisc"
-                                  "|IfPolicyFixed"
                                   "|TrunkPolicyHost"
                                   "|TrunkPolicyWire"
-                                  "|TrunkPolicyFixed"
                                   "|IsService"
                                   "|IgnoreConnectFailure",
                                   "");
@@ -1452,8 +1452,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
 
     /** @cfgm{AccessPolicy, string, "none"}
-     * The access policy of the network: public, restricted or none.  A
-     * "public" network is accessible to everyone on the same host, while a
+     * The access policy of the network:
+     *      public, public+fixed, restricted, restricted+fixed, none or fixed.
+     *
+     * A "public" network is accessible to everyone on the same host, while a
      * "restricted" one is only accessible to VMs & services started by the
      * same user.  The "none" policy, which is the default, means no policy
      * change or choice is made and that the current (existing network) or
@@ -1464,98 +1466,86 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         { "restricted",     INTNET_OPEN_FLAGS_ACCESS_RESTRICTED         }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "AccessPolicy", &s_aAccessPolicyFlags[0], RT_ELEMENTS(s_aAccessPolicyFlags),
-                                 &OpenReq.fFlags);
-    AssertRCReturn(rc, rc);
-    /** @cfgm{AccessPolicyFixed, boolean, false}
-     * Whether the access policy is to be locked against further changes. */
-    rc = drvIntNetR3CfgFixedPolicy(pDrvIns, "AccessPolicyFixed", INTNET_OPEN_FLAGS_ACCESS_FIXED, &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_ACCESS_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{PromiscPolicyClients, string, "none"}
      * The network wide promiscuous mode policy for client (non-trunk)
-     * interfaces: allow, deny, none. */
+     * interfaces: allow, allow+fixed, deny, deny+fixed, none or fixed. */
     static const DRVINTNETFLAG s_aPromiscPolicyClient[] =
     {
         { "allow",         INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS      },
         { "deny",          INTNET_OPEN_FLAGS_PROMISC_DENY_CLIENTS       }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "PromiscPolicyClients", &s_aPromiscPolicyClient[0], RT_ELEMENTS(s_aPromiscPolicyClient),
-                                 &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_PROMISC_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
     /** @cfgm{PromiscPolicyHost, string, "none"}
      * The promiscuous mode policy for the trunk-host
-     * connection: allow, deny, none. */
+     * connection: allow, allow+fixed, deny, deny+fixed, none or fixed. */
     static const DRVINTNETFLAG s_aPromiscPolicyHost[] =
     {
         { "allow",         INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST   },
         { "deny",          INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_HOST    }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "PromiscPolicyHost", &s_aPromiscPolicyHost[0], RT_ELEMENTS(s_aPromiscPolicyHost),
-                                 &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_PROMISC_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
     /** @cfgm{PromiscPolicyWire, string, "none"}
      * The promiscuous mode policy for the trunk-host
-     * connection: allow, deny, none. */
+     * connection: allow, allow+fixed, deny, deny+fixed, none or fixed. */
     static const DRVINTNETFLAG s_aPromiscPolicyWire[] =
     {
         { "allow",         INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE   },
         { "deny",          INTNET_OPEN_FLAGS_PROMISC_DENY_TRUNK_WIRE    }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "PromiscPolicyWire", &s_aPromiscPolicyWire[0], RT_ELEMENTS(s_aPromiscPolicyWire),
-                                 &OpenReq.fFlags);
-    AssertRCReturn(rc, rc);
-    /** @cfgm{PromiscPolicyFixed, boolean, false}
-     * Whether the promiscuous mode policies are to be locked against further
-     * changes. */
-    rc = drvIntNetR3CfgFixedPolicy(pDrvIns, "PromiscPolicyFixed", INTNET_OPEN_FLAGS_PROMISC_FIXED, &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_PROMISC_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
 
 
     /** @cfgm{IfPolicyPromisc, string, "none"}
      * The promiscuous mode policy for this
-     * interface: deny, allow-all, allow-network, none. */
+     * interface: deny, deny+fixed, allow-all, allow-all+fixed, allow-network,
+     *      allow-network+fixed, none or fixed. */
     static const DRVINTNETFLAG s_aIfPolicyPromisc[] =
     {
         { "allow-all",     INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW | INTNET_OPEN_FLAGS_IF_PROMISC_SEE_TRUNK },
         { "allow-network", INTNET_OPEN_FLAGS_IF_PROMISC_ALLOW | INTNET_OPEN_FLAGS_IF_PROMISC_NO_TRUNK  },
-        { "deny",          INTNET_OPEN_FLAGS_IF_PROMISC_DENY            }
+        { "deny",          INTNET_OPEN_FLAGS_IF_PROMISC_DENY }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "IfPolicyPromisc", &s_aIfPolicyPromisc[0], RT_ELEMENTS(s_aIfPolicyPromisc),
-                                 &OpenReq.fFlags);
-    AssertRCReturn(rc, rc);
-
-    /** @cfgm{IfPolicyFixed, boolean, false}
-     * Whether the interface policies are to be locked against further
-     * changes. */
-    rc = drvIntNetR3CfgFixedPolicy(pDrvIns, "IfPolicyFixed", INTNET_OPEN_FLAGS_IF_FIXED, &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_IF_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
 
 
     /** @cfgm{TrunkPolicyHost, string, "none"}
-     * The trunk-host policy: enabled, disabled, non
+     * The trunk-host policy: promisc, promisc+fixed, enabled, enabled+fixed,
+     *      disabled, disabled+fixed, none or fixed
+     *
      * This can be used to prevent packages to be routed to the host. */
     static const DRVINTNETFLAG s_aTrunkPolicyHost[] =
     {
-        { "enabled",        INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED        },
-        { "disabled",       INTNET_OPEN_FLAGS_TRUNK_HOST_DISABLED       }
+        { "promisc",        INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED | INTNET_OPEN_FLAGS_TRUNK_HOST_PROMISC_MODE },
+        { "enabled",        INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED },
+        { "disabled",       INTNET_OPEN_FLAGS_TRUNK_HOST_DISABLED }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "TrunkPolicyHost", &s_aTrunkPolicyHost[0], RT_ELEMENTS(s_aTrunkPolicyHost),
-                                 &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_TRUNK_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
     /** @cfgm{TrunkPolicyWire, string, "none"}
-     * The trunk-host policy: enabled, disabled, non
-     * This can be used to prevent packages to be routed to the host. */
+     * The trunk-host policy: promisc, promisc+fixed, enabled, enabled+fixed,
+     *      disabled, disabled+fixed, none or fixed.
+     *
+     * This can be used to prevent packages to be routed to the wire. */
     static const DRVINTNETFLAG s_aTrunkPolicyWire[] =
     {
-        { "enabled",        INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED        },
-        { "disabled",       INTNET_OPEN_FLAGS_TRUNK_WIRE_DISABLED       }
+        { "promisc",        INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED | INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE },
+        { "enabled",        INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED },
+        { "disabled",       INTNET_OPEN_FLAGS_TRUNK_WIRE_DISABLED }
     };
     rc = drvIntNetR3CfgGetPolicy(pDrvIns, "TrunkPolicyWire", &s_aTrunkPolicyWire[0], RT_ELEMENTS(s_aTrunkPolicyWire),
-                                 &OpenReq.fFlags);
-    AssertRCReturn(rc, rc);
-    /** @cfgm{TrunkPolicyFixed, boolean, false}
-     * Whether the trunk policies are to be locked against further changes. */
-    rc = drvIntNetR3CfgFixedPolicy(pDrvIns, "TrunkPolicyFixed", INTNET_OPEN_FLAGS_TRUNK_FIXED, &OpenReq.fFlags);
+                                 INTNET_OPEN_FLAGS_TRUNK_FIXED, &OpenReq.fFlags);
     AssertRCReturn(rc, rc);
 
 
