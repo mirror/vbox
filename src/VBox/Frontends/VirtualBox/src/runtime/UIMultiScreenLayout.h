@@ -62,6 +62,7 @@ private:
     int m_cHostScreens;
 
     QMap<int, int> *m_pScreenMap;
+    QList<QMenu*> m_screenMenuList;
 };
 
 #endif /* __UIMultiScreenLayout_h__ */

@@ -44,6 +44,7 @@ protected:
 
     QList<QMenu*> prepareSubMenus(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
     void prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsPool);
+    void prepareMenuView(QMenu *pMenu, UIActionsPool *pActionsPool);
     void prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool);
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void prepareMenuDebug(QMenu *pMenu, UIActionsPool *pActionsPool);
