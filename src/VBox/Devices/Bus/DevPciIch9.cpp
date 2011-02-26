@@ -95,7 +95,6 @@ typedef struct
     /** PCI bus which is attached to the host-to-PCI bridge. */
     PCIBUS              aPciBus;
 
-
     /** I/O APIC irq levels */
     volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
 
@@ -182,7 +181,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
 static void ich9pciUpdateMappings(PCIDevice *pDev);
 static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32Address, unsigned len);
 DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus);
-static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions);
+static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn);
 #endif
 
 // See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
@@ -696,13 +695,14 @@ DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus)
          * Examine secondary and subordinate bus number.
          * If the target bus is in the range we pass the request on to the bridge.
          */
-        PPCIDEVICE pBridgeTemp = pBus->papBridgesR3[iBridge];
-        AssertMsg(pBridgeTemp && pciDevIsPci2PciBridge(pBridgeTemp),
+        PPCIDEVICE pBridge = pBus->papBridgesR3[iBridge];
+        AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
-
-        if (   iBus >= PCIDevGetByte(pBridgeTemp, VBOX_PCI_SECONDARY_BUS)
-            && iBus <= PCIDevGetByte(pBridgeTemp, VBOX_PCI_SUBORDINATE_BUS))
-            return pBridgeTemp;
+        uint32_t uSecondary   = PCIDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
+        uint32_t uSubordinate = PCIDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
+        Log2(("ich9pciFindBridge on bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, iBus, uSecondary, uSubordinate));
+        if (iBus >= uSecondary && iBus <= uSubordinate)
+            return pBridge;
     }
 
     /* Nothing found. */
@@ -1528,14 +1528,9 @@ static void ich9pciSetRegionAddress(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t 
 }
 
 
-static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
+static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn)
 {
-    ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus, 1);
-    /* Temporary until we know how many other bridges are behind this one. */
-    ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, 0xff, 1);
-
-    /* Add position of this bridge into the array. */
-    paBridgePositions[cBridgeDepth+1] = (uDevFn >> 3);
+    Log(("BIOS init device: %0x2::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
     /*
      * The I/O range for the bridge must be aligned to a 4KB boundary.
@@ -1563,10 +1558,7 @@ static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 
     /* Init devices behind the bridge and possibly other bridges as well. */
     for (int iDev = 0; iDev <= 255; iDev++)
-        ich9pciBiosInitDevice(pGlobals, uBus + 1, iDev, cBridgeDepth + 1, paBridgePositions);
-
-    /* The number of bridges behind the this one is now available. */
-    ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus, 1);
+        ich9pciBiosInitDevice(pGlobals, uBus + 1, iDev);
 
     /*
      * Set I/O limit register. If there is no device with I/O space behind the bridge
@@ -1601,7 +1593,7 @@ static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00, 4);
 }
 
-static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
+static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn)
 {
     uint32_t *paddr;
     uint16_t uDevClass, uVendor, uDevice;
@@ -1642,11 +1634,8 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
             break;
        case 0x0604:
             /* PCI-to-PCI bridge. */
-            ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_PRIMARY_BUS, uBus, 1);
-
             AssertMsg(pGlobals->uBus < 255, ("Too many bridges on the bus\n"));
-            pGlobals->uBus++;
-            ich9pciBiosInitBridge(pGlobals, uBus, uDevFn, cBridgeDepth, paBridgePositions);
+            ich9pciBiosInitBridge(pGlobals, uBus, uDevFn);
             break;
         default:
         default_map:
@@ -1700,22 +1689,76 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     uint32_t iPin = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_PIN, 1);
     if (iPin != 0)
     {
-        uint8_t uBridgeDevFn = uDevFn;
         iPin--;
 
-        /* We need to go up to the host bus to see which irq this device will assert there. */
-        while (cBridgeDepth != 0)
+        if (uBus != 0)
         {
-            /* Get the pin the device would assert on the bridge. */
-            iPin = ((uBridgeDevFn >> 3) + iPin) & 3;
-            uBridgeDevFn = paBridgePositions[cBridgeDepth];
-            cBridgeDepth--;
+            /* Find bus this device attached to. */
+            PPCIBUS pBus = &pGlobals->aPciBus;
+            while (1)
+            {
+                PPCIDEVICE pBridge = ich9pciFindBridge(pBus, uBus);
+                if (!pBridge)
+                {
+                    Assert(false);
+                    break;
+                }
+                if (uBus == PCIDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS))
+                {
+                    /* OK, found bus this device attached to. */
+                    break;
+                }
+                pBus = PDMINS_2_DATA(pBridge->pDevIns, PPCIBUS);
+            }
+
+            /* We need to go up to the host bus to see which irq pin this
+             * device will use there. See logic in ich9pcibridgeSetIrq().
+             */
+            while (pBus->iBus != 0)
+            {
+                /* Get the pin the device would assert on the bridge. */
+                iPin = ((pBus->aPciDev.devfn >> 3) + iPin) & 3;
+                pBus = pBus->aPciDev.Int.s.pBusR3;
+            };
         }
 
         int iIrq = aPciIrqs[ich9pciSlotGetPirq(uBus, uDevFn, iPin)];
+        Log(("Using pin %d and IRQ %d for device %02x:%02x.%d\n", 
+             iPin, iIrq, uBus, uDevFn>>3, uDevFn&7));
         ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_LINE, iIrq, 1);
     }
 }
+
+/* Initializes bridges registers used for routing. */
+static void ich9pciInitBridgeTopology(PPCIGLOBALS pGlobals, PPCIBUS pBus)
+{
+    PPCIDEVICE pBridgeDev = &pBus->aPciDev;
+    PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, pGlobals->uBus);
+
+    /* For simplicity, let's start numbering PCI bridges from 0,
+     * not 1, so don't increment count on Host->PCI bridge.
+     */
+    if (strcmp(pBridgeDev->name, "i82801") != 0)
+        pGlobals->uBus++;
+
+    PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus);
+    for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+    {
+        PPCIDEVICE pBridge = pBus->papBridgesR3[iBridge];
+        AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
+                  ("Device is not a PCI bridge but on the list of PCI bridges\n"));
+        PPCIBUS pChildBus = PDMINS_2_DATA(pBridge->pDevIns, PPCIBUS);
+        ich9pciInitBridgeTopology(pGlobals, pChildBus);
+    }
+    PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus);
+    Log2(("ich9pciInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
+          pBus,
+          PCIDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
+          PCIDevGetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS),
+          PCIDevGetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS)
+          ));
+}
+
 
 static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
@@ -1732,17 +1775,18 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
     pGlobals->uBus = 0;
 
-    /*
+    /**
+     * Assign bridge topology, for further routing to work.
+     */
+    PPCIBUS pBus = &pGlobals->aPciBus;
+    ich9pciInitBridgeTopology(pGlobals, pBus);
+
+    /**
      * Init the devices.
      */
     for (i = 0; i < 256; i++)
     {
-        uint8_t aBridgePositions[256];
-
-        memset(aBridgePositions, 0, sizeof(aBridgePositions));
-        Log2(("PCI: Initializing device %d (%#x)\n",
-              i, 0x80000000 | (i << 8)));
-        ich9pciBiosInitDevice(pGlobals, 0, i, 0, aBridgePositions);
+        ich9pciBiosInitDevice(pGlobals, 0, i);
     }
 
     return VINF_SUCCESS;
@@ -2127,6 +2171,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
         AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->apDevices), ("Number of bridges exceeds the number of possible devices on the bus\n"));
         AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
                   ("device is a bridge but does not implement read/write functions\n"));
+        Log2(("Setting bridge %d on bus %p\n", pBus->cBridges, pBus));
         pBus->papBridgesR3[pBus->cBridges] = pPciDev;
         pBus->cBridges++;
     }
