@@ -168,9 +168,9 @@ struct
     { "I128", 0x0 },
     { "I129", 0x7e },
     { "HNGL", 0xf2 },
-    { "HJCV", 0xf1 },
+    { "HJCV", 0xf1 }, */
     { "AE13", 0x7d },
-    { "LWIN", 0x15b },
+/*    { "LWIN", 0x15b },
     { "RWIN", 0x15c },
     { "COMP", 0x15d },
     { "STOP", 0x168 },
