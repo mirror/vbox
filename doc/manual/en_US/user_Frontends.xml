@@ -446,7 +446,7 @@
                         following command:<screen>VBoxManage internalcommands passwordhash "secret"</screen></para>
 
                         <para>This will print
-                        "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b".
+                        <screen>2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</screen>
                         You can then use VBoxManage setextradata to store this
                         value in the machine's "extradata" section.</para>
 
