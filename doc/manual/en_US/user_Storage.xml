@@ -744,7 +744,7 @@
     VM can access the data much faster.</para>
 
     <para>Note that this applies only to image files; buffering never occurred
-    virtual disks residing on remote iSCSI storage, which is the more common
+    for virtual disks residing on remote iSCSI storage, which is the more common
     scenario in enterprise-class setups (see <xref
     linkend="storage-iscsi" />).</para>
 

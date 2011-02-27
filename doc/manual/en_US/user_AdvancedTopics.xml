@@ -290,7 +290,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           top. Additionaly, in most Linux distributions there is a file called
           <computeroutput>/etc/pam.d/common-auth</computeroutput>. This file
           is included in many other services (like the GDM file mentioned
-          above). There you also have to add add the line <computeroutput>auth
+          above). There you also have to add the line <computeroutput>auth
           requisite pam_vbox.so</computeroutput>.</para>
         </listitem>
 
