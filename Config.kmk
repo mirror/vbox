@@ -159,7 +159,11 @@ VBOX_VERSION_MINOR = 0
 # will be published, odd numbers are set during development.
 VBOX_VERSION_BUILD = 51
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
-VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+VBOX_BUILD_PUBLISHER =
+if $(int-gt $(length $(VBOX_BUILD_PUBLISHER)),10)
+  $(error VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
+endif
+VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)$(VBOX_BUILD_PUBLISHER)
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
@@ -1008,7 +1012,11 @@ endif
 # Mark OSE builds clearly, helps figuring out limitations more easily.
 #
 ifdef VBOX_OSE
-VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)_OSE
+# This can be overridden (e.g. in LocalConfig.kmk) by whoever publishes a set
+# of VirtualBox binaries.  We request though that you always use something that
+# clearly identifies your build and makes it clear that it is not one done by
+# the VirtualBox team.
+ VBOX_BUILD_PUBLISHER = _OSE
 endif
 
 # Keep in sync with G_virtualBoxPackage in glue-jaxws.xsl and glue-java.xsl
