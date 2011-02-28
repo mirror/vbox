@@ -52,7 +52,7 @@ UIMachineShortcuts::UIMachineShortcuts()
     m_Shortcuts[CommandLineWindowShortcut]     = UIKeySequence("CommandLineWindow");
     m_Shortcuts[LoggingShortcut]               = UIKeySequence("Logging");
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    m_Shortcuts[HelpShortcut]                  = UIKeySequence("Help",                  QKeySequence::HelpContents);
+    m_Shortcuts[HelpShortcut]                  = UIKeySequence("Help");
     m_Shortcuts[WebShortcut]                   = UIKeySequence("Web");
     m_Shortcuts[ResetWarningsShortcut]         = UIKeySequence("ResetWarnings");
 #ifdef VBOX_WITH_REGISTRATION
