@@ -112,7 +112,6 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     return rc;
 }
 
-
 /**
  * @copydoc RAWPCIDEVPORT:: pfnGetRegionInfo
  */
@@ -162,7 +161,6 @@ DECLHIDDEN(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
 
     return rc;
 }
-
 
 /**
  * @copydoc RAWPCIDEVPORT:: pfnPciCfgRead
