@@ -2754,7 +2754,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     if (!pelmDevice->getAttributeValue("host", hpda.uHostAddress))
                          throw ConfigFileError(this, pelmDevice, N_("Missing Device/@host attribute"));
 
-                    if (!pelmDevice->getAttributeValue("host", hpda.uGuestAddress))
+                    if (!pelmDevice->getAttributeValue("guest", hpda.uGuestAddress))
                          throw ConfigFileError(this, pelmDevice, N_("Missing Device/@guest attribute"));
 
                     /* name is optional */
