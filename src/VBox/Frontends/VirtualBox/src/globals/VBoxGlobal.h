@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -481,6 +481,21 @@ public:
         return KNetworkAttachmentType (it.key());
     }
 
+    QString toString (KNetworkAdapterPromiscModePolicy t) const
+    {
+        AssertMsg (!mNetworkAdapterPromiscModePolicyTypes.value (t).isNull(), ("No text for %d", t));
+        return mNetworkAdapterPromiscModePolicyTypes.value (t);
+    }
+
+    KNetworkAdapterPromiscModePolicy toNetworkAdapterPromiscModePolicyType (const QString &s) const
+    {
+        QULongStringHash::const_iterator it =
+            qFind (mNetworkAdapterPromiscModePolicyTypes.begin(), mNetworkAdapterPromiscModePolicyTypes.end(), s);
+        AssertMsg (it != mNetworkAdapterPromiscModePolicyTypes.end(), ("No value for {%s}",
+                                                                       s.toLatin1().constData()));
+        return KNetworkAdapterPromiscModePolicy (it.key());
+    }
+
     QString toString (KNATProtocol t) const
     {
         AssertMsg (!mNATProtocolTypes.value (t).isNull(), ("No text for %d", t));
@@ -853,6 +868,7 @@ private:
     QULongStringHash mAudioControllerTypes;
     QULongStringHash mNetworkAdapterTypes;
     QULongStringHash mNetworkAttachmentTypes;
+    QULongStringHash mNetworkAdapterPromiscModePolicyTypes;
     QULongStringHash mNATProtocolTypes;
     QULongStringHash mClipboardTypes;
     QULongStringHash mStorageControllerTypes;

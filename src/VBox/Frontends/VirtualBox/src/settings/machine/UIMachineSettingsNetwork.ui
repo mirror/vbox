@@ -1,8 +1,8 @@
-<ui version="4.0" >
+<ui version="4.0">
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -13,8 +13,8 @@
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
  <class>UIMachineSettingsNetwork</class>
- <widget class="QWidget" name="UIMachineSettingsNetwork" >
-  <property name="geometry" >
+ <widget class="QWidget" name="UIMachineSettingsNetwork">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -24,20 +24,20 @@
   </property>
   <layout class="QGridLayout" name="VBoxVMSettingsNetworkGridLayout">
    <item row="0" column="0" colspan="2">
-    <widget class="QCheckBox" name="mCbEnableAdapter" >
-     <property name="whatsThis" >
+    <widget class="QCheckBox" name="mCbEnableAdapter">
+     <property name="whatsThis">
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>&amp;Enable Network Adapter</string>
      </property>
-     <property name="checked" >
+     <property name="checked">
       <bool>true</bool>
      </property>
     </widget>
    </item>
    <item row="1" column="0">
-    <spacer name="horizontalSpacer1">
+    <spacer name="m_pHorizontalSpacer1">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -52,71 +52,71 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1" >
-    <widget class="QWidget" name="mNetworkChild" native="1">
-     <layout class="QGridLayout" name="mNetworkChildGridLayout">
+   <item row="1" column="1">
+    <widget class="QWidget" name="m_pNetworkChild" native="1">
+     <layout class="QGridLayout" name="m_pNetworkChildGridLayout">
       <property name="margin">
        <number>0</number>
       </property>
-      <item row="0" column="0" >
-       <widget class="QLabel" name="mLbAttachmentType">
-        <property name="text" >
+      <item row="0" column="0">
+       <widget class="QLabel" name="m_pAttachmentTypeLabel">
+        <property name="text">
          <string>&amp;Attached to:</string>
         </property>
-        <property name="alignment" >
+        <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
-        <property name="buddy" >
-         <cstring>mCbAttachmentType</cstring>
+        <property name="buddy">
+         <cstring>m_pAttachmentTypeCombo</cstring>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="mCbAttachmentType">
+       <widget class="QComboBox" name="m_pAttachmentTypeCombo">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="whatsThis" >
+        <property name="whatsThis">
          <string>Controls how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" >
-       <widget class="QLabel" name="mLbAdapterName">
-        <property name="text" >
+      <item row="1" column="0">
+       <widget class="QLabel" name="m_pAdapterNameLabel">
+        <property name="text">
          <string>&amp;Name:</string>
         </property>
-        <property name="alignment" >
+        <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
-        <property name="buddy" >
-         <cstring>mCbAdapterName</cstring>
+        <property name="buddy">
+         <cstring>m_pAdapterNameCombo</cstring>
         </property>
        </widget>
       </item>
       <item row="1" column="1" colspan="3">
-       <widget class="QComboBox" name="mCbAdapterName">
+       <widget class="QComboBox" name="m_pAdapterNameCombo">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
           <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="whatsThis" >
+        <property name="whatsThis">
          <string>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <layout class="QHBoxLayout" name="mLtAdvancedBtn">
+       <layout class="QHBoxLayout" name="m_pAdvancedButtonLayout">
         <property name="margin">
          <number>0</number>
         </property>
         <item>
-         <spacer name="horizontalSpacer2">
+         <spacer name="m_pHorizontalSpacer2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -129,11 +129,11 @@
          </spacer>
         </item>
         <item>
-         <widget class="QIArrowButtonSwitch" native="1" name="mAbsAdvanced">
+         <widget class="QIArrowButtonSwitch" native="1" name="m_pAdvancedArrow">
           <property name="text">
            <string>A&amp;dvanced</string>
           </property>
-          <property name="whatsThis" >
+          <property name="whatsThis">
            <string>Shows or hides additional network adapter options.</string>
           </property>
          </widget>
@@ -141,7 +141,7 @@
        </layout>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="mLbAdapterType">
+       <widget class="QLabel" name="m_pAdapterTypeLabel">
         <property name="text">
          <string>Adapter &amp;Type:</string>
         </property>
@@ -149,12 +149,12 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy">
-         <cstring>mCbAdapterType</cstring>
+         <cstring>m_pAdapterTypeCombo</cstring>
         </property>
        </widget>
       </item>
       <item row="3" column="1" colspan="3">
-       <widget class="QComboBox" name="mCbAdapterType">
+       <widget class="QComboBox" name="m_pAdapterTypeCombo">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
           <horstretch>1</horstretch>
@@ -167,20 +167,46 @@
        </widget>
       </item>
       <item row="4" column="0">
-       <widget class="QLabel" name="mLbMAC">
+       <widget class="QLabel" name="m_pPromiscuousModeLabel">
         <property name="text">
-         <string>&amp;Mac Address:</string>
+         <string>&amp;Promiscuous Mode:</string>
         </property>
-        <property name="alignment" >
+        <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy">
-         <cstring>mLeMAC</cstring>
+         <cstring>m_pPromiscuousModeCombo</cstring>
         </property>
        </widget>
       </item>
-      <item row="4" column="1" colspan="2">
-       <widget class="QILineEdit" name="mLeMAC">
+      <item row="4" column="1" colspan="3">
+       <widget class="QComboBox" name="m_pPromiscuousModeCombo">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="whatsThis">
+         <string>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="m_pMACLabel">
+        <property name="text">
+         <string>&amp;Mac Address:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>m_pMACEditor</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1" colspan="2">
+       <widget class="QILineEdit" name="m_pMACEditor">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
           <horstretch>1</horstretch>
@@ -192,8 +218,8 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QIToolButton" name="mTbMAC">
+      <item row="5" column="3">
+       <widget class="QIToolButton" name="m_pMACButton">
         <property name="whatsThis">
          <string>Generates a new random MAC address.</string>
         </property>
@@ -206,8 +232,8 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="1" colspan="3">
-       <widget class="QCheckBox" name="mCbCableConnected">
+      <item row="6" column="1" colspan="3">
+       <widget class="QCheckBox" name="m_pCableConnectedCheckBox">
         <property name="whatsThis">
          <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
         </property>
@@ -216,8 +242,8 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
-       <widget class="QPushButton" name="mPbPortForwarding">
+      <item row="7" column="1">
+       <widget class="QPushButton" name="m_pPortForwardingButton">
         <property name="whatsThis">
          <string>Opens dialog to manage port forwarding rules.</string>
         </property>
@@ -226,8 +252,8 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="0" colspan="4">
-       <spacer name="verticalSpacer">
+      <item row="8" column="0" colspan="4">
+       <spacer name="m_pVerticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
         </property>
@@ -269,7 +295,7 @@
   <connection>
    <sender>mCbEnableAdapter</sender>
    <signal>toggled(bool)</signal>
-   <receiver>mNetworkChild</receiver>
+   <receiver>m_pNetworkChild</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
