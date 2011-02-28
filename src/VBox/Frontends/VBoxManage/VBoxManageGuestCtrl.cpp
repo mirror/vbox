@@ -189,7 +189,7 @@ static void ctrlSignalHandlerUninstall()
  * Translates a process status to a human readable
  * string.
  */
-static const char *ctrlExecProcessStatusToText(ExecuteProcessStatus enmStatus)
+static const char *ctrlExecProcessStatusToText(ExecuteProcessStatus_T enmStatus)
 {
     switch (enmStatus)
     {
@@ -215,7 +215,7 @@ static const char *ctrlExecProcessStatusToText(ExecuteProcessStatus enmStatus)
     return "unknown";
 }
 
-static int ctrlExecProcessStatusToExitCode(ExecuteProcessStatus enmStatus, ULONG uExitCode)
+static int ctrlExecProcessStatusToExitCode(ExecuteProcessStatus_T enmStatus, ULONG uExitCode)
 {
     int rc = EXITCODE_EXEC_SUCCESS;
     switch (enmStatus)
@@ -731,7 +731,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     vrc = ctrlPrintProgressError(progress);
                 else
                 {
-                    ExecuteProcessStatus retStatus;
+                    ExecuteProcessStatus_T retStatus;
                     ULONG uRetExitCode, uRetFlags;
                     rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                     if (SUCCEEDED(rc) && fVerbose)
