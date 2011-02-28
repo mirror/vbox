@@ -531,7 +531,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
 
         GuestPciAddress.fromLong(guest);
         Assert(GuestPciAddress.valid());
-        hrc = BusMgr->assignPciDevice("pciraw", pInst, GuestPciAddress, true);
+        hrc = BusMgr->assignHostPciDevice("pciraw", pInst, HostPciAddress, GuestPciAddress, true);
         if (hrc != S_OK)
             return hrc;
 

@@ -218,11 +218,18 @@ struct BusAssignmentManager::State
 {
     struct PciDeviceRecord
     {
-        char szDevName[32];
+        char          szDevName[32];
+        PciBusAddress HostAddress;
+
+        PciDeviceRecord(const char* pszName, PciBusAddress aHostAddress)
+        {
+            RTStrCopy(this->szDevName, sizeof(szDevName), pszName);
+            this->HostAddress = aHostAddress;
+        }
 
         PciDeviceRecord(const char* pszName)
         {
-            RTStrCopy(szDevName, sizeof(szDevName), pszName);
+            RTStrCopy(this->szDevName, sizeof(szDevName), pszName);
         }
 
         bool operator<(const PciDeviceRecord &a) const
@@ -254,7 +261,7 @@ struct BusAssignmentManager::State
 
     HRESULT init(ChipsetType_T chipsetType);
 
-    HRESULT record(const char* pszName, PciBusAddress& Address);
+    HRESULT record(const char* pszName, PciBusAddress& GuestAddress, PciBusAddress HostAddress);
     HRESULT autoAssign(const char* pszName, PciBusAddress& Address);
     bool    checkAvailable(PciBusAddress& Address);
     bool    findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
@@ -270,9 +277,9 @@ HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
     return S_OK;
 }
 
-HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address)
+HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address, PciBusAddress HostAddress)
 {
-    PciDeviceRecord devRec(pszName);
+    PciDeviceRecord devRec(pszName, HostAddress);
 
     /* Remember address -> device mapping */
     mPciMap.insert(PciMap::value_type(Address, devRec));
@@ -398,7 +405,9 @@ void BusAssignmentManager::State::listAttachedPciDevices(ComSafeArrayOut(IPciDev
     {
         dev.createObject();
         com::Bstr devname(it->second.szDevName);
-        dev->init(NULL, devname, -1, it->first.asLong(), FALSE);
+        dev->init(NULL, devname, 
+                  it->second.HostAddress.valid() ? it->second.HostAddress.asLong() : -1, 
+                  it->first.asLong(), it->second.HostAddress.valid());
         result.setElement(iIndex++, dev);
     }
 
@@ -448,42 +457,45 @@ DECLINLINE(HRESULT) InsertConfigInteger(PCFGMNODE pCfg,  const char* pszName, ui
     return S_OK;
 }
 
-HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE pCfg,
-                                              PciBusAddress& Address,    bool fAddressRequired)
+HRESULT BusAssignmentManager::assignPciDeviceImpl(const char* pszDevName,
+                                                  PCFGMNODE pCfg,
+                                                  PciBusAddress& GuestAddress,
+                                                  PciBusAddress HostAddress,
+                                                  bool fGuestAddressRequired)
 {
     HRESULT rc = S_OK;
 
-    if (!Address.valid())
-        rc = pState->autoAssign(pszDevName, Address);
+    if (!GuestAddress.valid())
+        rc = pState->autoAssign(pszDevName, GuestAddress);
     else
     {
-        bool fAvailable = pState->checkAvailable(Address);
+        bool fAvailable = pState->checkAvailable(GuestAddress);
 
         if (!fAvailable)
         {
-            if (fAddressRequired)
+            if (fGuestAddressRequired)
                 rc = E_ACCESSDENIED;
             else
-                rc = pState->autoAssign(pszDevName, Address);
+                rc = pState->autoAssign(pszDevName, GuestAddress);
         }
     }
 
     if (FAILED(rc))
         return rc;
 
-    Assert(Address.valid() && pState->checkAvailable(Address));
+    Assert(GuestAddress.valid() && pState->checkAvailable(GuestAddress));
 
-    rc = pState->record(pszDevName, Address);
+    rc = pState->record(pszDevName, GuestAddress, HostAddress);
     if (FAILED(rc))
         return rc;
 
-    rc = InsertConfigInteger(pCfg, "PCIBusNo",             Address.iBus);
+    rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.iBus);
     if (FAILED(rc))
         return rc;
-    rc = InsertConfigInteger(pCfg, "PCIDeviceNo",          Address.iDevice);
+    rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.iDevice);
     if (FAILED(rc))
         return rc;
-    rc = InsertConfigInteger(pCfg, "PCIFunctionNo",        Address.iFn);
+    rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.iFn);
     if (FAILED(rc))
         return rc;
 

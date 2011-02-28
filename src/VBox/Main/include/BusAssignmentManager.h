@@ -32,16 +32,29 @@ private:
     BusAssignmentManager();
     virtual ~BusAssignmentManager();
 
+    HRESULT assignPciDeviceImpl(const char* pszDevName, PCFGMNODE pCfg, PciBusAddress& GuestAddress, PciBusAddress HostAddress, bool fGuestAddressRequired = false);
+
 public:
     static BusAssignmentManager* createInstance(ChipsetType_T chipsetType);
     virtual void AddRef();
     virtual void Release();
 
-    virtual HRESULT assignPciDevice(const char* pszDevName, PCFGMNODE pCfg, PciBusAddress& Address, bool fAddressRequired = false);
+    virtual HRESULT assignHostPciDevice(const char* pszDevName, PCFGMNODE pCfg, PciBusAddress HostAddress, PciBusAddress& GuestAddress, bool fAddressRequired = false)
+    {
+        return assignPciDeviceImpl(pszDevName, pCfg, GuestAddress, HostAddress, fAddressRequired);
+    }
+
+    virtual HRESULT assignPciDevice(const char* pszDevName, PCFGMNODE pCfg, PciBusAddress& Address, bool fAddressRequired = false)
+    {
+        PciBusAddress HostAddress;
+        return assignPciDeviceImpl(pszDevName, pCfg, Address, HostAddress, fAddressRequired);
+    }
+
     virtual HRESULT assignPciDevice(const char* pszDevName, PCFGMNODE pCfg)
     {
-        PciBusAddress Address;
-        return assignPciDevice(pszDevName, pCfg, Address, false);
+        PciBusAddress GuestAddress;
+        PciBusAddress HostAddress;
+        return assignPciDeviceImpl(pszDevName, pCfg, GuestAddress, HostAddress, false);
     }
     virtual bool findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
     virtual bool hasPciDevice(const char* pszDevName, int iInstance)
