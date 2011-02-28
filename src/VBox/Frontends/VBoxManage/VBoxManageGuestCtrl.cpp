@@ -79,33 +79,39 @@ typedef struct DIRECTORYENTRY
  * Special exit codes for returning errors/information of a
  * started guest process to the command line VBoxManage was started from.
  * Useful for e.g. scripting.
- * @todo r=bird: RTEXITCODE is using the RT prefix, that is reserved for IPRT
- *       use only.
  */
-enum RTEXITCODE_EXEC
+enum EXITCODE_EXEC
 {
-    RTEXITCODE_EXEC_SUCCESS      = RTEXITCODE_SUCCESS,
-    RTEXITCODE_EXEC_FAILED       = 16,
-    RTEXITCODE_EXEC_TERM_SIGNAL  = 17,
-    RTEXITCODE_EXEC_TERM_ABEND   = 18,
-    RTEXITCODE_EXEC_TIMEOUT      = 19,
-    RTEXITCODE_EXEC_CANCELED     = 20
+    EXITCODE_EXEC_SUCCESS      = RTEXITCODE_SUCCESS,
+    /* Process exited normally but with an exit code <> 0. */
+    EXITCODE_EXEC_CODE         = 16,
+    EXITCODE_EXEC_FAILED       = 17,
+    EXITCODE_EXEC_TERM_SIGNAL  = 18,
+    EXITCODE_EXEC_TERM_ABEND   = 19,
+    EXITCODE_EXEC_TIMEOUT      = 20,
+    EXITCODE_EXEC_DOWN         = 21,
+    EXITCODE_EXEC_CANCELED     = 22
 };
 
 /**
  * RTGetOpt-IDs for the guest execution control command line.
- * @todo r=bird: RTGETOPTDEF_EXEC is using the RT prefix, that is reserved for
- *       IPRT use only.
  */
-enum RTGETOPTDEF_EXEC
+enum GETOPTDEF_EXEC
 {
-    RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES = 1000,
-    RTGETOPTDEF_EXEC_OUTPUTFORMAT,
-    RTGETOPTDEF_EXEC_OUTPUTTYPE,
-    RTGETOPTDEF_EXEC_WAITFOREXIT,
-    RTGETOPTDEF_EXEC_WAITFORSTDOUT,
-    RTGETOPTDEF_EXEC_WAITFORSTDERR,
-    RTGETOPTDEF_EXEC_ARGS
+    GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES = 1000,
+    GETOPTDEF_EXEC_OUTPUTFORMAT,
+    GETOPTDEF_EXEC_DOS2UNIX,
+    GETOPTDEF_EXEC_UNIX2DOS,
+    GETOPTDEF_EXEC_WAITFOREXIT,
+    GETOPTDEF_EXEC_WAITFORSTDOUT,
+    GETOPTDEF_EXEC_WAITFORSTDERR
+};
+
+enum OUTPUT_TYPE
+{
+    OUTPUT_TYPE_UNDEFINED = 0,
+    OUTPUT_TYPE_DOS2UNIX  = 10,
+    OUTPUT_TYPE_UNIX2DOS  = 20
 };
 
 #endif /* VBOX_ONLY_DOCS */
@@ -116,8 +122,9 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "VBoxManage guestcontrol     <vmname>|<uuid> exec[ute]\n"
                  "                            --image <path to program>\n"
                  "                            --username <name> --password <password>\n"
+                 "                            [--dos2unix]\n"
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-                 "                            [--timeout <msec>] [--verbose]\n"
+                 "                            [--timeout <msec>] [--unix2dos] [--verbose]\n"
                  "                            [--wait-exit] [--wait-stdout] [--wait-stdout]"
                  //"                          [--output-format=<dos>|<unix>]\n"
                  "                            [--output-type=<binary>|<text>]\n"
@@ -182,25 +189,25 @@ static void ctrlSignalHandlerUninstall()
  * Translates a process status to a human readable
  * string.
  */
-static const char *ctrlExecProcessStatusToText(ULONG uStatus)
+static const char *ctrlExecProcessStatusToText(ExecuteProcessStatus enmStatus)
 {
-    switch (uStatus)
+    switch (enmStatus)
     {
-        case guestControl::PROC_STS_STARTED:
+        case ExecuteProcessStatus_Started:
             return "started";
-        case guestControl::PROC_STS_TEN:
+        case ExecuteProcessStatus_TerminatedNormally:
             return "successfully terminated";
-        case guestControl::PROC_STS_TES:
+        case ExecuteProcessStatus_TerminatedSignal:
             return "terminated by signal";
-        case guestControl::PROC_STS_TEA:
+        case ExecuteProcessStatus_TerminatedAbnormally:
             return "abnormally aborted";
-        case guestControl::PROC_STS_TOK:
+        case ExecuteProcessStatus_TimedOutKilled:
             return "timed out";
-        case guestControl::PROC_STS_TOA:
+        case ExecuteProcessStatus_TimedOutAbnormally:
             return "timed out, hanging";
-        case guestControl::PROC_STS_DWN:
+        case ExecuteProcessStatus_Down:
             return "killed";
-        case guestControl::PROC_STS_ERROR:
+        case ExecuteProcessStatus_Error:
             return "error";
         default:
             break;
@@ -208,44 +215,39 @@ static const char *ctrlExecProcessStatusToText(ULONG uStatus)
     return "unknown";
 }
 
-static int ctrlExecProcessStatusToExitCode(ULONG uStatus)
+static int ctrlExecProcessStatusToExitCode(ExecuteProcessStatus enmStatus, ULONG uExitCode)
 {
-    int rc = RTEXITCODE_EXEC_SUCCESS;
-    switch (uStatus)
+    int rc = EXITCODE_EXEC_SUCCESS;
+    switch (enmStatus)
     {
-/** @todo r=bird: Why do you use guestControl status codes here? Is the Main
- *        API not exposing these constants?  If so, it's something that
- *        needs fixing. */
-        case guestControl::PROC_STS_STARTED:
-            rc = RTEXITCODE_EXEC_SUCCESS;
+        case ExecuteProcessStatus_Started:
+            rc = EXITCODE_EXEC_SUCCESS;
             break;
-        case guestControl::PROC_STS_TEN:
-            /** @todo check the exit code, 0 is success, !0 should be indicated
-             *        by a specail VBoxManage exit code. */
-            rc = RTEXITCODE_EXEC_SUCCESS;
+        case ExecuteProcessStatus_TerminatedNormally:
+            rc = !uExitCode ? EXITCODE_EXEC_SUCCESS : EXITCODE_EXEC_CODE;
             break;
-        case guestControl::PROC_STS_TES:
-            rc = RTEXITCODE_EXEC_TERM_SIGNAL;
+        case ExecuteProcessStatus_TerminatedSignal:
+            rc = EXITCODE_EXEC_TERM_SIGNAL;
             break;
-        case guestControl::PROC_STS_TEA:
-            rc = RTEXITCODE_EXEC_TERM_ABEND;
+        case ExecuteProcessStatus_TerminatedAbnormally:
+            rc = EXITCODE_EXEC_TERM_ABEND;
             break;
-        case guestControl::PROC_STS_TOK:
-            rc = RTEXITCODE_EXEC_TIMEOUT;
+        case ExecuteProcessStatus_TimedOutKilled:
+            rc = EXITCODE_EXEC_TIMEOUT;
             break;
-        case guestControl::PROC_STS_TOA:
-            rc = RTEXITCODE_EXEC_TIMEOUT;
+        case ExecuteProcessStatus_TimedOutAbnormally:
+            rc = EXITCODE_EXEC_TIMEOUT;
             break;
-        case guestControl::PROC_STS_DWN:
+        case ExecuteProcessStatus_Down:
             /* Service/OS is stopping, process was killed, so
              * not exactly an error of the started process ... */
-            rc = RTEXITCODE_EXEC_SUCCESS; /** @todo r=bird: return failure if you don't know what happend. No false positives, please. */
+            rc = EXITCODE_EXEC_DOWN;
             break;
-        case guestControl::PROC_STS_ERROR:
-            rc = RTEXITCODE_EXEC_FAILED;
+        case ExecuteProcessStatus_Error:
+            rc = EXITCODE_EXEC_FAILED;
             break;
         default:
-            AssertMsgFailed(("Unknown exit code (%u) from guest process returned!\n", uStatus));
+            AssertMsgFailed(("Unknown exit code (%u) from guest process returned!\n", enmStatus));
             break;
     }
     return rc;
@@ -372,56 +374,19 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--environment",                  'e',                                        RTGETOPT_REQ_STRING  },
-        { "--flags",                        'f',                                        RTGETOPT_REQ_STRING  },
-        { "--ignore-operhaned-processes",   RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
-        { "--image",                        'i',                                        RTGETOPT_REQ_STRING  },
-        //{ "--output-format",                RTGETOPTDEF_EXEC_OUTPUTFORMAT,              RTGETOPT_REQ_STRING  },
-        { "--output-type",                  RTGETOPTDEF_EXEC_OUTPUTTYPE,                RTGETOPT_REQ_STRING  },
-        /** @todo r=bird: output-type and output-format are the same thing.
-         *        Please just call it --dos2unix and --unix2dos and
-         *        implement it them.   (If you insist on flexibility, it would
-         *        be --input-type <x> and --output-type <y>, where x and y
-         *        could indicate line ending styles (CR/LF/CRLF), encodings
-         *        (UTF-8, UTF-16, ++), code pages and plugin provided
-         *        conversions.  See the conv option of dd and iconv for
-         *        inspiration.)
-         *
-         *        The default must be no conversion at all, i.e.
-         *        --output-type=binary. */
-        { "--password",                     'p',                                        RTGETOPT_REQ_STRING  },
-        { "--timeout",                      't',                                        RTGETOPT_REQ_UINT32  },
-        { "--username",                     'u',                                        RTGETOPT_REQ_STRING  },
-        { "--verbose",                      'v',                                        RTGETOPT_REQ_NOTHING },
-        { "--wait-exit",                    RTGETOPTDEF_EXEC_WAITFOREXIT,               RTGETOPT_REQ_NOTHING },
-        { "--wait-stdout",                  RTGETOPTDEF_EXEC_WAITFORSTDOUT,             RTGETOPT_REQ_NOTHING },
-        { "--wait-stderr",                  RTGETOPTDEF_EXEC_WAITFORSTDERR,             RTGETOPT_REQ_NOTHING },
-        /* @todo r=bird: '--' is interpreted by RTGetOpt() to indicate the
-         * end of arguments, you don't need to handle this specially.
-         * RTGetOpt() will return VINF_GETOPT_NOT_OPTION for anything following
-         * a '--' argument.  So, let me give you some other examples for illustrating
-         * what I mean should work now (all the same, userid/pw missing):
-         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp /foo /bar
-         *  VBoxManage guestcontrol myvm exec --image /bin/busybox -- cp /foo /bar
-         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp -- /foo /bar
-         *  VBoxManage guestcontrol myvm exec --image /bin/busybox cp /foo -- /bar
-         *
-         * Same, but with standard cp (image defaults to /bin/cp):
-         *  VBoxManage guestcontrol myvm exec /bin/cp /foo /bar
-         *  VBoxManage guestcontrol myvm exec -- /bin/cp /foo /bar
-         *  VBoxManage guestcontrol myvm exec /bin/cp -- /foo /bar
-         *  VBoxManage guestcontrol myvm exec /bin/cp /foo -- /bar
-         *
-         * The old example:
-         *  VBoxManage guestcontrol myvm exec --image /bin/busybox -- ln -s /foo /bar
-         *
-         * As an example of where '--' is used by standard linux utils, try delete a
-         * file named '-f' without specifying the directory:
-         *      > -f        # creates the file
-         *      rm -v -f    # does nothing because '-f' is a rm option.
-         *      rm -v -- -f # does the trick because '--' tells rm to not read '-f' as an option.
-         */
-        { "--",                             RTGETOPTDEF_EXEC_ARGS,                      RTGETOPT_REQ_STRING }
+        { "--dos2unix",                     GETOPTDEF_EXEC_DOS2UNIX,                  RTGETOPT_REQ_NOTHING },
+        { "--environment",                  'e',                                      RTGETOPT_REQ_STRING  },
+        { "--flags",                        'f',                                      RTGETOPT_REQ_STRING  },
+        { "--ignore-operhaned-processes",   GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
+        { "--image",                        'i',                                      RTGETOPT_REQ_STRING  },
+        { "--password",                     'p',                                      RTGETOPT_REQ_STRING  },
+        { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
+        { "--unix2dos",                     GETOPTDEF_EXEC_UNIX2DOS,                  RTGETOPT_REQ_NOTHING },
+        { "--username",                     'u',                                      RTGETOPT_REQ_STRING  },
+        { "--verbose",                      'v',                                      RTGETOPT_REQ_NOTHING },
+        { "--wait-exit",                    GETOPTDEF_EXEC_WAITFOREXIT,               RTGETOPT_REQ_NOTHING },
+        { "--wait-stdout",                  GETOPTDEF_EXEC_WAITFORSTDOUT,             RTGETOPT_REQ_NOTHING },
+        { "--wait-stderr",                  GETOPTDEF_EXEC_WAITFORSTDERR,             RTGETOPT_REQ_NOTHING }
     };
 
     int                     ch;
@@ -436,6 +401,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     Utf8Str                 Utf8UserName;
     Utf8Str                 Utf8Password;
     uint32_t                cMsTimeout      = 0;
+    OUTPUT_TYPE             eOutputType     = OUTPUT_TYPE_UNDEFINED;
     bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
     bool                    fWaitForStdOut  = false;
@@ -449,6 +415,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
+            case GETOPTDEF_EXEC_DOS2UNIX:
+                if (eOutputType != OUTPUT_TYPE_UNDEFINED)
+                    return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                eOutputType = OUTPUT_TYPE_DOS2UNIX;
+                break;
+
             case 'e': /* Environment */
             {
                 char **papszArg;
@@ -464,29 +436,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
             }
 
-            case RTGETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
+            case GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
                 fFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 break;
 
             case 'i':
                 Utf8Cmd = ValueUnion.psz;
-                break;
-
-            /** @todo Add DOS2UNIX and vice versa handling!
-              case RTGETOPTDEF_EXEC_OUTPUTFORMAT:
-                break;*/
-
-            case RTGETOPTDEF_EXEC_OUTPUTTYPE:
-                if (!RTStrICmp(ValueUnion.psz, "binary"))
-                    fOutputBinary = true;
-                else if (!RTStrICmp(ValueUnion.psz, "text"))
-                    fOutputBinary = false;
-                else
-                {
-                    AssertPtr(GetState.pDef->pszLong);
-                    return errorSyntax(USAGE_GUESTCONTROL, "Unknown value for '%s' specified! Use either 'binary' or 'text'",
-                                       GetState.pDef->pszLong);
-                }
                 break;
 
             /** @todo Add a hidden flag. */
@@ -499,6 +454,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 cMsTimeout = ValueUnion.u32;
                 break;
 
+            case GETOPTDEF_EXEC_UNIX2DOS:
+                if (eOutputType != OUTPUT_TYPE_UNDEFINED)
+                    return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                eOutputType = OUTPUT_TYPE_UNIX2DOS;
+                break;
+
             case 'u': /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
@@ -507,67 +468,59 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 fVerbose = true;
                 break;
 
-            case RTGETOPTDEF_EXEC_WAITFOREXIT:
+            case GETOPTDEF_EXEC_WAITFOREXIT:
                 fWaitForExit = true;
                 break;
 
-            case RTGETOPTDEF_EXEC_WAITFORSTDOUT:
+            case GETOPTDEF_EXEC_WAITFORSTDOUT:
                 fWaitForExit = true;
                 fWaitForStdOut = true;
                 break;
 
-            case RTGETOPTDEF_EXEC_WAITFORSTDERR:
+            case GETOPTDEF_EXEC_WAITFORSTDERR:
                 fWaitForExit = true;
                 fWaitForStdErr = true;
                 break;
 
-            case RTGETOPTDEF_EXEC_ARGS:
+            case VINF_GETOPT_NOT_OPTION:
             {
-                /* Push current parameter to vector. */
-                args.push_back(Bstr(ValueUnion.psz).raw());
-
-                /*
-                 * Add all following parameters after this one to our guest process
-                 * argument vector.
-                 */
-                while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-                       && RT_SUCCESS(vrc))
+                if (Utf8Cmd.isEmpty())
+                    Utf8Cmd = ValueUnion.psz;
+                else
                 {
+                    /* Push current parameter to vector. */
+                    args.push_back(Bstr(ValueUnion.psz).raw());
+
                     /*
-                     * Is this option unknown or not recognized an option? Then just
-                     * add the raw string value to our argument vector.
+                     * Add all following parameters after this one to our guest process
+                     * argument vector.
                      */
-                    if (   ch == VINF_GETOPT_NOT_OPTION
-                        || ch == VERR_GETOPT_UNKNOWN_OPTION)
-                        args.push_back(Bstr(ValueUnion.psz).raw());
-                    /*
-                     * If this is an option/parameter we already defined for our actual
-                     * execution command we need to take the pDef->pszLong value instead.
-                     */
-                    else if (ValueUnion.pDef)
-                        args.push_back(Bstr(ValueUnion.pDef->pszLong).raw());
-                    else
-                        AssertMsgFailed(("Unknown parameter type detected!\n"));
+                    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+                           && RT_SUCCESS(vrc))
+                    {
+                        /*
+                         * Is this option unknown or not recognized an option? Then just
+                         * add the raw string value to our argument vector.
+                         */
+                        if (   ch == VINF_GETOPT_NOT_OPTION
+                            || ch == VERR_GETOPT_UNKNOWN_OPTION)
+                            args.push_back(Bstr(ValueUnion.psz).raw());
+                        /*
+                         * If this is an option/parameter we already defined for our actual
+                         * execution command we need to take the pDef->pszLong value instead.
+                         */
+                        else if (ValueUnion.pDef)
+                            args.push_back(Bstr(ValueUnion.pDef->pszLong).raw());
+                        else
+                            AssertMsgFailed(("Unknown parameter type detected!\n"));
+                    }
                 }
                 break;
             }
 
-            case VINF_GETOPT_NOT_OPTION:
-                if (Utf8Cmd.isEmpty())
-                    Utf8Cmd = ValueUnion.psz;
-                else
-                    return RTGetOptPrintError(ch, &ValueUnion);
-                break;
-
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
-    }
-
-    if (RT_FAILURE(vrc)) /** @todo r=bird: You don't need to check vrc here or in any of the two while conditions above because you are now returning directly in those cases. Drop the checks, this will keep things simpler. */
-    {
-        RTMsgError("Failed to parse argument '%c', rc=%Rrc", ch, vrc);
-        return RTEXITCODE_FAILURE;
     }
 
     if (Utf8Cmd.isEmpty())
@@ -592,7 +545,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     uint64_t u64StartMS = RTTimeMilliTS();
 
     /* Execute the process. */
-    int rcProc = RTEXITCODE_EXEC_SUCCESS;   /** @todo r=bird: Don't initialize this, please, set it explicitly in the various branches.  It's easier to see what it's going to be that way. */
+    int rcProc;
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
     rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
@@ -605,7 +558,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                                &uPID,
                                progress.asOutParam());
     if (FAILED(rc))
-        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest)); /** @todo return straight away and drop state (e.g. rcProc) confusion. */
+        return ctrlPrintError(guest, COM_IIDOF(IGuest));
     else
     {
         if (fVerbose)
@@ -691,11 +644,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                         cbOutputData = aOutputData.size();
                         if (cbOutputData > 0)
                         {
-                            /** @todo r=bird: Adding exec options to convert unix2dos
-                            *        and dos2unix.  Use a VFS I/O stream filter for doing this, it's a
+                            /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
                             *        generic problem and the new VFS APIs will handle it more
                             *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
-                            if (!fOutputBinary)
+                            if (eOutputType != OUTPUT_TYPE_UNDEFINED)
                             {
                                 /*
                                  * If aOutputData is text data from the guest process' stdout or stderr,
@@ -768,7 +720,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
             {
                 if (fVerbose)
                     RTPrintf("Process execution canceled!\n");
-                rcProc = RTEXITCODE_EXEC_CANCELED;
+                rcProc = EXITCODE_EXEC_CANCELED;
             }
             else if (   fCompleted
                      && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
@@ -779,23 +731,19 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     vrc = ctrlPrintProgressError(progress);
                 else
                 {
-                    ULONG uRetStatus, uRetExitCode, uRetFlags;
-                    rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    ExecuteProcessStatus retStatus;
+                    ULONG uRetExitCode, uRetFlags;
+                    rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                     if (SUCCEEDED(rc) && fVerbose)
-                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecProcessStatusToText(uRetStatus), uRetFlags);
-                    /** @todo r=bird: This isn't taking uRetExitCode into
-                     *        account. We MUST give the users a way to indicate
-                     *        whether the guest program terminated with an 0 or
-                     *        non-zero exit code. */
-                    rcProc = ctrlExecProcessStatusToExitCode(uRetStatus);
+                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, retStatus, ctrlExecProcessStatusToText(retStatus), uRetFlags);
+                    rcProc = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
                 }
             }
             else
             {
                 if (fVerbose)
                     RTPrintf("Process execution aborted!\n");
-                /** @todo r=bird: Should set rcProc here, this is not a
-                 *        success branch. */
+                rcProc = EXITCODE_EXEC_TERM_ABEND;
             }
         }
     }
@@ -1196,12 +1144,6 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
-    /*
-     * Check the syntax.
-     */
-    if (pArg->argc < 2) /* At least the source + destination should be present :-). */
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
-
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING },
@@ -1228,9 +1170,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     int vrc = VINF_SUCCESS;
     uint32_t idxNonOption = 0;
-    bool fUsageOK = true;
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(vrc))
+    while (ch = RTGetOpt(&GetState, &ValueUnion))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -1273,18 +1213,13 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                         break;
 
                     default:
-                        /** @todo r=bird: {2..UINT32_MAX-1} goes unnoticed
-                         *        to /dev/null? That doesn't make much
-                         *        sense... Why not just return with a syntax
-                         *        error straight away? */
+                        return errorSyntax(USAGE_GUESTCONTROL, "Too many parameters specified, only source and destination allowed!");
+                        /* Never reached. */
                         break;
                 }
                 idxNonOption++;
                 if (idxNonOption == UINT32_MAX)
-                {
-                    RTMsgError("Too many files specified! Aborting.\n");
-                    vrc = VERR_TOO_MUCH_DATA; /** @todo r=bird: return straight away, drop the RT_SUCCESS(vrc) from the while condition.  Keep things simple. */
-                }
+                    return errorSyntax(USAGE_GUESTCONTROL, "Too many files specified!");
                 break;
             }
 
@@ -1292,9 +1227,6 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
-
-    if (!fUsageOK) /** @todo r=bird: fUsageOK - never set to false, just drop it.  Keep the state simple. */
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     if (Utf8Source.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
@@ -1386,13 +1318,6 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
-
-    /*
-     * Check the syntax.  We can deduce the correct syntax from the number of
-     * arguments.
-     */
-    if (pArg->argc < 2) /* At least the directory we want to create should be present :-). */
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1511,9 +1436,6 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
      */
-    if (pArg->argc < 1) /* At least the VM name should be present :-). */ /** @todo r=bird: This is no longer correct. Ditto for all other handlers. */
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
-
     Utf8Str Utf8Source;
     bool fVerbose = false;
 
@@ -1619,10 +1541,6 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 int handleGuestControl(HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
-
-    /* At least the VM name + sub command needs to be specified. */
-    if (pArg->argc <= 2)
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     HandlerArg arg = *pArg;
     arg.argc = pArg->argc - 2; /* Skip VM name and sub command. */

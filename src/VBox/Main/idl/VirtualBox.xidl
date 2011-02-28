@@ -8075,6 +8075,51 @@
   </enum>
 
   <enum
+    name="ExecuteProcessStatus"
+    uuid="153768d9-d971-4098-8b5a-c5cb1ab9ea88"
+    >
+    <desc>
+      Guest process execution status.
+    </desc>
+
+    <const name="Undefined"               value="0">
+      <desc>Process is in an undefined state.</desc>
+    </const>
+
+    <const name="Started"                 value="1">
+      <desc>Process has been started.</desc>
+    </const>
+
+    <const name="TerminatedNormally"      value="2">
+      <desc>Process terminated normally.</desc>
+    </const>
+
+    <const name="TerminatedSignal"        value="3">
+      <desc>Process terminated via signal.</desc>
+    </const>
+
+    <const name="TerminatedAbnormally"    value="4">
+      <desc>Process terminated abnormally.</desc>
+    </const>
+
+     <const name="TimedOutKilled"         value="5">
+      <desc>Process timed out and was killed.</desc>
+    </const>
+
+    <const name="TimedOutAbnormally"      value="6">
+      <desc>Process timed out and was not killed successfully.</desc>
+    </const>
+
+    <const name="Down"                    value="7">
+      <desc>Service/OS is stopping, process was killed.</desc>
+    </const>
+
+    <const name="Error"                   value="8">
+      <desc>Something went wrong (error code in flags).</desc>
+    </const>
+  </enum>
+
+  <enum
     name="ProcessInputFlag"
     uuid="5d38c1dd-2604-4ddf-92e5-0c0cdd3bdbd5"
     >
@@ -8085,6 +8130,7 @@
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
     </const>
+
     <const name="EndOfFile"               value="1">
       <desc>End of file (input) reached.</desc>
     </const>
@@ -8135,7 +8181,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="4db4f806-0a20-4772-9419-14563b662f93"
+    uuid="4e78f7dd-8ca1-47e5-a344-5207f793df71"
     wsmap="managed"
     >
     <desc>
@@ -8423,7 +8469,7 @@
           must be set to 0.
         </desc>
       </param>
-      <param name="reason" type="unsigned long" dir="return">
+      <param name="reason" type="ExecuteProcessStatus" dir="return">
         <desc>
           The current process status.
         </desc>

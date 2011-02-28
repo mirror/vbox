@@ -43,6 +43,7 @@ namespace guestControl {
 
 /**
  * Process status when executed in the guest.
+ * Note: Has to match Main's ExecuteProcessStatus_*!
  */
 enum eProcessStatus
 {

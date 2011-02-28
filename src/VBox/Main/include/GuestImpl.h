@@ -93,7 +93,7 @@ public:
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(SetProcessInput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten);
-    STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
+    STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus *aStatus);
     STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(CreateDirectory)(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aMode, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
@@ -153,7 +153,7 @@ private:
 
     struct GuestProcess
     {
-        uint32_t                    mStatus;
+        ExecuteProcessStatus        mStatus;
         uint32_t                    mFlags;
         uint32_t                    mExitCode;
     };
@@ -178,7 +178,7 @@ private:
     void notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText);
     void destroyCtrlCallbackContext(CallbackMapIter it);
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
-    HRESULT waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
+    HRESULT waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
 # endif
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;

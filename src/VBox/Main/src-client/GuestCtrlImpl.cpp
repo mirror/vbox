@@ -378,8 +378,9 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                              * If we got here this means the started process either was completed,
                              * canceled or we simply got all stuff transferred.
                              */
-                            ULONG uRetStatus, uRetExitCode;
-                            rc = pGuest->waitForProcessStatusChange(uPID, &uRetStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
+                            ExecuteProcessStatus retStatus;
+                            ULONG uRetExitCode;
+                            rc = pGuest->waitForProcessStatusChange(uPID, &retStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
                             if (FAILED(rc))
                             {
                                 rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
@@ -387,7 +388,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             else
                             {
                                 if (   uRetExitCode != 0
-                                    || uRetStatus   != PROC_STS_TEN)
+                                    || retStatus    != ExecuteProcessStatus_TerminatedNormally)
                                 {
                                     rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                          Guest::tr("Guest reported error %u while copying file \"%s\" to \"%s\""),
@@ -785,8 +786,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         RTThreadSleep(100);
                     }
 
-                    ULONG uRetStatus, uRetExitCode, uRetFlags;
-                    rc = pGuest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    ExecuteProcessStatus retStatus;
+                    ULONG uRetExitCode, uRetFlags;
+                    rc = pGuest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                     if (SUCCEEDED(rc))
                     {
                         if (fCompleted)
@@ -801,10 +803,10 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                             else
                             {
                                 LogRel(("Guest Additions update failed (Exit code=%u, Status=%u, Flags=%u)\n",
-                                        uRetExitCode, uRetStatus, uRetFlags));
+                                        uRetExitCode, retStatus, uRetFlags));
                                 rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                      Guest::tr("Guest Additions update failed with exit code=%u (status=%u, flags=%u)"),
-                                                                     uRetExitCode, uRetStatus, uRetFlags);
+                                                                     uRetExitCode, retStatus, uRetFlags);
                             }
                         }
                         else if (   SUCCEEDED(progressInstaller->COMGETTER(Canceled(&fCanceled)))
@@ -813,7 +815,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                             LogRel(("Guest Additions update was canceled\n"));
                             rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                                  Guest::tr("Guest Additions update was canceled by the guest with exit code=%u (status=%u, flags=%u)"),
-                                                                 uRetExitCode, uRetStatus, uRetFlags);
+                                                                 uRetExitCode, retStatus, uRetFlags);
                         }
                         else
                         {
@@ -1112,7 +1114,7 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                 {
                     /* Not found, add to map. */
                     GuestProcess newProcess;
-                    newProcess.mStatus = pCBData->u32Status;
+                    newProcess.mStatus = (ExecuteProcessStatus)pCBData->u32Status;
                     newProcess.mExitCode = pCBData->u32Flags; /* Contains exit code. */
                     newProcess.mFlags = 0;
 
@@ -1120,7 +1122,7 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                 }
                 else /* Update map. */
                 {
-                    it_proc->second.mStatus = pCBData->u32Status;
+                    it_proc->second.mStatus = (ExecuteProcessStatus)pCBData->u32Status;
                     it_proc->second.mExitCode = pCBData->u32Flags; /* Contains exit code. */
                     it_proc->second.mFlags = 0;
                 }
@@ -1424,9 +1426,9 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     return uNewContext;
 }
 
-HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
+HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
 {
-    AssertPtr(puRetStatus);
+    AssertPtr(pRetStatus);
     AssertPtr(puRetExitCode);
 
     if (uTimeoutMS == 0)
@@ -1449,11 +1451,11 @@ HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ULONG *puRetStatus, ULONG 
                            uPID, uTimeoutMS);
             break;
         }
-        hRC = GetProcessStatus(uPID, puRetExitCode, &uRetFlagsIgnored, puRetStatus);
+        hRC = GetProcessStatus(uPID, puRetExitCode, &uRetFlagsIgnored, pRetStatus);
         if (FAILED(hRC))
             break;
         RTThreadSleep(100);
-    } while(*puRetStatus == PROC_STS_STARTED && SUCCEEDED(hRC));
+    } while(*pRetStatus == ExecuteProcessStatus_Started && SUCCEEDED(hRC));
     return hRC;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -1848,7 +1850,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             if (itProc != mGuestProcessMap.end())
             {
                 /* PID exists; check if process is still running. */
-                if (itProc->second.mStatus != PROC_STS_STARTED)
+                if (itProc->second.mStatus != ExecuteProcessStatus_Started)
                     rc = setError(VBOX_E_IPRT_ERROR,
                                   Guest::tr("Cannot inject input to not running process (PID %u)"), aPID);
             }
@@ -2199,7 +2201,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 #endif
 }
 
-STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus)
+STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus *aStatus)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2439,10 +2441,11 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
 
             if (fCompleted)
             {
-                ULONG uRetStatus, uRetExitCode, uRetFlags;
+                ExecuteProcessStatus retStatus;
+                ULONG uRetExitCode, uRetFlags;
                 if (SUCCEEDED(rc))
                 {
-                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                     if (SUCCEEDED(rc) && uRetExitCode != 0)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR,
