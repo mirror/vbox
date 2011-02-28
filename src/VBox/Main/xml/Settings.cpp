@@ -4498,7 +4498,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         if (hardwareMachine.pciAttachments.size())
             m->sv = SettingsVersion_v1_12;
     }
-    
+
     if (m->sv < SettingsVersion_v1_12)
     {
         // VirtualBox 4.1 adds a promiscuous mode policy to the network adapters.
@@ -4724,6 +4724,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     }
 
     // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
+    // VirtualBox 4.0 adds network bandwitdth
     if (m->sv < SettingsVersion_v1_11)
     {
         NetworkAdaptersList::const_iterator netit;
