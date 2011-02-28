@@ -3104,12 +3104,12 @@ def lspci(ctx, console):
     assigned = ctx['global'].getArray(console.machine, 'pciDeviceAssignments')
     for a in assigned:
         if a.isPhysicalDevice:
-            print "%s: assigned host device %s" %(colDev(ctx, a.name), pciAddr(ctx, a.hostAddress))
+            print "%s: assigned host device %s guest %s" %(colDev(ctx, a.name), pciAddr(ctx, a.hostAddress), pciAddr(ctx, a.guestAddress))
 
     atts = ctx['global'].getArray(console, 'attachedPciDevices')
     for a in atts:
         if a.isPhysicalDevice:
-            print "%s: physical, guest %s, host %s" %(colDev(a.name), pciAddr(ctx, a.guestAddress), pciAddr(ctx, a.hostAddress))
+            print "%s: physical, guest %s, host %s" %(colDev(ctx, a.name), pciAddr(ctx, a.guestAddress), pciAddr(ctx, a.hostAddress))
         else:
             print "%s: virtual, guest %s" %(colDev(ctx, a.name), pciAddr(ctx, a.guestAddress))
     return
