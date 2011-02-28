@@ -661,11 +661,8 @@ vga = 864</screen>
         from a virtual machine.</para>
 
         <para>Just like with regular disk images, this does not automatically
-        register the newly created image in the internal registry of hard
-        disks. If you want this done automatically, add
-        <code>-register</code>: <screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda -register</screen>After registering, you can assign
-        the newly created image to a virtual machine with e.g. <screen>VBoxManage storageattach WindowsXP --storagectl "IDE Controller"
+        attach the newly created image to a virtual machine. This can be done
+        e.g. <screen>VBoxManage storageattach WindowsXP --storagectl "IDE Controller"
       --port 0 --device 0 --type hdd --medium /path/to/file.vmdk</screen>When
         this is done the selected virtual machine will boot from the specified
         physical disk.</para>
@@ -744,14 +741,8 @@ vga = 864</screen>
       -rawdisk /dev/sda -partitions 1,5 -mbr winxp.mbr</screen>The modified
         MBR will be stored inside the image, not on the host disk.</para>
 
-        <para>For each of the above variants, you can register the resulting
-        image for immediate use in VirtualBox by adding
-        <computeroutput>-register</computeroutput> to the respective command
-        line. The image will then immediately appear in the list of registered
-        disk images. An example is<screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda -partitions 1,5 -relative -register</screen> which
-        creates an image referring to individual partitions, and registers it
-        when the image is successfully created.</para>
+        <para>The created image can be attached to a storage controller in
+        a VM configuration as usual.</para>
       </sect3>
     </sect2>
 
