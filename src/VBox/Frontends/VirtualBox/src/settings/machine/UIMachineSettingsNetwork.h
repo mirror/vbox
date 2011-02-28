@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,13 +19,13 @@
 #ifndef __UIMachineSettingsNetwork_h__
 #define __UIMachineSettingsNetwork_h__
 
-/* VBox Includes */
+/* Local includes */
 #include "COMDefs.h"
 #include "UISettingsPage.h"
 #include "UIMachineSettingsNetwork.gen.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 
-/* VBox Forwards */
+/* Forward declarations */
 class UIMachineSettingsNetworkPage;
 class QITabWidget;
 
@@ -38,6 +38,7 @@ struct UINetworkAdapterData
     bool m_fAdapterEnabled;
     KNetworkAdapterType m_adapterType;
     KNetworkAttachmentType m_attachmentType;
+    KNetworkAdapterPromiscModePolicy m_promiscuousMode;
     QString m_strBridgedAdapterName;
     QString m_strInternalNetworkName;
     QString m_strHostInterfaceName;
@@ -55,60 +56,62 @@ struct UISettingsCacheMachineNetwork
     QList<UINetworkAdapterData> m_items;
 };
 
-class UIMachineSettingsNetwork : public QIWithRetranslateUI <QWidget>,
-                              public Ui::UIMachineSettingsNetwork
+/* Machine settings / Network page / Adapter tab: */
+class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
+                                 public Ui::UIMachineSettingsNetwork
 {
     Q_OBJECT;
 
 public:
 
-    UIMachineSettingsNetwork (UIMachineSettingsNetworkPage *aParent, bool aDisableStaticControls = false);
+    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent, bool fDisableStaticControls = false);
 
     void fetchAdapterData(const UINetworkAdapterData &data);
     void uploadAdapterData(UINetworkAdapterData &data);
 
-    void setValidator (QIWidgetValidator *aValidator);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
-    QWidget* setOrderAfter (QWidget *aAfter);
+    QWidget* setOrderAfter(QWidget *pAfter);
 
     QString pageTitle() const;
+
     KNetworkAttachmentType attachmentType() const;
-    QString alternativeName (int aType = -1) const;
+    QString alternativeName(int type = -1) const;
 
 protected:
 
-    void showEvent (QShowEvent *aEvent);
+    void showEvent(QShowEvent *pEvent);
 
     void retranslateUi();
 
 private slots:
 
-    void updateAttachmentAlternative();
-    void updateAlternativeName();
-    void toggleAdvanced();
-    void generateMac();
+    void sltUpdateAttachmentAlternative();
+    void sltUpdateAlternativeName();
+    void sltToggleAdvanced();
+    void sltGenerateMac();
     void sltOpenPortForwardingDlg();
 
 private:
 
     void populateComboboxes();
 
-    UIMachineSettingsNetworkPage *mParent;
-    QIWidgetValidator *mValidator;
+    UIMachineSettingsNetworkPage *m_pParent;
+    QIWidgetValidator *m_pValidator;
     int m_iSlot;
     CNetworkAdapter m_adapter;
 
-    QString mBrgName;
-    QString mIntName;
-    QString mHoiName;
+    QString m_strBrgName;
+    QString m_strIntName;
+    QString m_strHoiName;
 #ifdef VBOX_WITH_VDE
     QString mVDEName;
-#endif
+#endif /* VBOX_WITH_VDE */
 
-    bool mPolished;
-    bool mDisableStaticControls;
-    UIPortForwardingDataList mPortForwardingRules;
+    bool m_fPolished;
+    bool m_fDisableStaticControls;
+    UIPortForwardingDataList m_portForwardingRules;
 };
 
 /* Machine settings / Network page: */
@@ -118,15 +121,15 @@ class UIMachineSettingsNetworkPage : public UISettingsPageMachine
 
 public:
 
-    UIMachineSettingsNetworkPage (bool aDisableStaticControls = false);
+    UIMachineSettingsNetworkPage(bool fDisableStaticControls = false);
 
     void loadDirectlyFrom(const CMachine &machine);
     void saveDirectlyTo(CMachine &machine);
 
-    QStringList brgList (bool aRefresh = false);
-    QStringList intList (bool aRefresh = false);
-    QStringList fullIntList (bool aRefresh = false);
-    QStringList hoiList (bool aRefresh = false);
+    QStringList brgList(bool aRefresh = false);
+    QStringList intList(bool aRefresh = false);
+    QStringList fullIntList(bool aRefresh = false);
+    QStringList hoiList(bool aRefresh = false);
 
 protected:
 
@@ -144,8 +147,8 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    void setValidator (QIWidgetValidator *aValidator);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
     void retranslateUi();
 
@@ -155,14 +158,14 @@ private slots:
 
 private:
 
-    QIWidgetValidator *mValidator;
-    QITabWidget *mTwAdapters;
+    QIWidgetValidator *m_pValidator;
+    QITabWidget *m_pTwAdapters;
 
-    QStringList mBrgList;
-    QStringList mIntList;
-    QStringList mHoiList;
+    QStringList m_brgList;
+    QStringList m_intList;
+    QStringList m_hoiList;
 
-    bool mDisableStaticControls;
+    bool m_fDisableStaticControls;
 
     /* Cache: */
     UISettingsCacheMachineNetwork m_cache;
