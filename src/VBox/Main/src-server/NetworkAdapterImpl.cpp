@@ -1388,6 +1388,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
     data.strMACAddress = mData->mMACAddress;
     data.fCableConnected = !!mData->mCableConnected;
 
+    data.enmPromiscModePolicy = mData->mPromiscModePolicy;
     data.ulLineSpeed = mData->mLineSpeed;
 
     data.fTraceEnabled = !!mData->mTraceEnabled;
