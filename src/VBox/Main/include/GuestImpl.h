@@ -153,7 +153,7 @@ private:
 
     struct GuestProcess
     {
-        ExecuteProcessStatus        mStatus;
+        ExecuteProcessStatus_T      mStatus;
         uint32_t                    mFlags;
         uint32_t                    mExitCode;
     };
@@ -178,7 +178,7 @@ private:
     void notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText);
     void destroyCtrlCallbackContext(CallbackMapIter it);
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
-    HRESULT waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
+    HRESULT waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
 # endif
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;
