@@ -662,7 +662,7 @@ vga = 864</screen>
 
         <para>Just like with regular disk images, this does not automatically
         attach the newly created image to a virtual machine. This can be done
-        e.g. <screen>VBoxManage storageattach WindowsXP --storagectl "IDE Controller"
+        with e.g. <screen>VBoxManage storageattach WindowsXP --storagectl "IDE Controller"
       --port 0 --device 0 --type hdd --medium /path/to/file.vmdk</screen>When
         this is done the selected virtual machine will boot from the specified
         physical disk.</para>
