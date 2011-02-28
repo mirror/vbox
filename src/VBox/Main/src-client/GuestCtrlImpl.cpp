@@ -378,7 +378,7 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                              * If we got here this means the started process either was completed,
                              * canceled or we simply got all stuff transferred.
                              */
-                            ExecuteProcessStatus retStatus;
+                            ExecuteProcessStatus_T retStatus;
                             ULONG uRetExitCode;
                             rc = pGuest->waitForProcessStatusChange(uPID, &retStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
                             if (FAILED(rc))
@@ -786,7 +786,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         RTThreadSleep(100);
                     }
 
-                    ExecuteProcessStatus retStatus;
+                    ExecuteProcessStatus_T retStatus;
                     ULONG uRetExitCode, uRetFlags;
                     rc = pGuest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                     if (SUCCEEDED(rc))
@@ -1426,7 +1426,7 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     return uNewContext;
 }
 
-HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
+HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
 {
     AssertPtr(pRetStatus);
     AssertPtr(puRetExitCode);
@@ -2201,7 +2201,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 #endif
 }
 
-STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus *aStatus)
+STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus_T *aStatus)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2441,7 +2441,7 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
 
             if (fCompleted)
             {
-                ExecuteProcessStatus retStatus;
+                ExecuteProcessStatus_T retStatus;
                 ULONG uRetExitCode, uRetFlags;
                 if (SUCCEEDED(rc))
                 {
