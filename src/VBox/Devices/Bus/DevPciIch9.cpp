@@ -1530,7 +1530,7 @@ static void ich9pciSetRegionAddress(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t 
 
 static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn)
 {
-    Log(("BIOS init device: %0x2::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+    Log(("BIOS init bridge: %02x::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
     /*
      * The I/O range for the bridge must be aligned to a 4KB boundary.
@@ -1555,10 +1555,11 @@ static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     /* Save values to compare later to. */
     uint32_t u32IoAddressBase = pGlobals->uPciBiosIo;
     uint32_t u32MMIOAddressBase = pGlobals->uPciBiosMmio;
+    uint8_t uBridgeBus = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, 1);
 
     /* Init devices behind the bridge and possibly other bridges as well. */
     for (int iDev = 0; iDev <= 255; iDev++)
-        ich9pciBiosInitDevice(pGlobals, uBus + 1, iDev);
+        ich9pciBiosInitDevice(pGlobals, uBridgeBus, iDev);
 
     /*
      * Set I/O limit register. If there is no device with I/O space behind the bridge
@@ -1606,6 +1607,8 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     /* If device is present */
     if (uVendor == 0xffff)
         return;
+
+    Log(("BIOS init device: %02x::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
     switch (uDevClass)
     {
@@ -2440,7 +2443,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     PCIDevSetDeviceId(  &pBus->aPciDev, 0x244e); /* Desktop */
     PCIDevSetRevisionId(&pBus->aPciDev,   0x92); /* rev. A2 */
     PCIDevSetClassBase( &pBus->aPciDev,   0x06); /* bridge */
-    PCIDevSetClassSub(  &pBus->aPciDev,   0x04); /* Host/PCI bridge */
+    PCIDevSetClassSub(  &pBus->aPciDev,   0x00); /* Host/PCI bridge */
     PCIDevSetClassProg( &pBus->aPciDev,   0x01); /* Supports subtractive decoding. */
     PCIDevSetHeaderType(&pBus->aPciDev,   0x01); /* bridge */
     PCIDevSetWord(&pBus->aPciDev,  VBOX_PCI_SEC_STATUS, 0x0280);  /* secondary status */
