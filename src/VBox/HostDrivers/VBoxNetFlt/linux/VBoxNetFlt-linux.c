@@ -1004,7 +1004,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
             ASMAtomicWritePtr((void * volatile *)&pDev->hard_start_xmit, pOverride->pfnStartXmit);
 # endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
-            ASMAtomicWritePtr((void * volatile *)&pDev->OVR_OPS, pOverride->pOrgOps);
+            ASMAtomicWritePtr((void const * volatile *)&pDev->OVR_OPS, pOverride->pOrgOps);
             ASMAtomicWriteU32(&pOverride->u32Magic, 0);
         }
         else
