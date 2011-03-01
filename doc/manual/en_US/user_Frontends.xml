@@ -487,7 +487,7 @@
       symmetric cipher (with keys up to 128bit). The RC4 keys are being
       replaced in regular intervals (every 4096 packets).</para>
 
-      <para>RDP provides three different authentication methods:<orderedlist>
+      <para>RDP provides different authentication methods:<orderedlist>
           <listitem>
             <para>Historically, RDP4 authentication was used, with which the
             RDP client does not perform any checks in order to verify the
@@ -502,23 +502,11 @@
             the client possesses the public key. This way it is guaranteed
             that the server possess the corresponding private key. However, as
             this hard-coded private key became public some years ago, RDP5.1
-            authentication is also insecure and cannot be recommended.</para>
-          </listitem>
-
-          <listitem>
-            <para>RDP5.2 authentication is based on TLS 1.0 with
-            customer-supplied certificates. The server supplies a certificate
-            to the client which must be signed by a certificate authority (CA)
-            that the client trusts (for the Microsoft RDP Client 5.2, the CA
-            has to be added to the Windows Trusted Root Certificate
-            Authorities database). VirtualBox allows you to supply your own CA
-            and server certificate and uses OpenSSL for encryption.</para>
+            authentication is also insecure.</para>
           </listitem>
         </orderedlist></para>
 
-      <para>While VirtualBox supports all of the above, only RDP5.2
-      authentication should be used in environments where security is a
-      concern. As the client that connects to the server determines what type
+      <para>As the client that connects to the server determines what type
       of encryption will be used, with rdesktop, the Linux RDP viewer, use the
       <computeroutput>-4</computeroutput> or
       <computeroutput>-5</computeroutput> options.</para>
