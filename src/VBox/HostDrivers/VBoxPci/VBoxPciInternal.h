@@ -91,6 +91,10 @@ typedef struct VBOXRAWPCIGLOBALS
     bool fIDCOpen;
     /** The SUPDRV IDC handle (opaque struct). */
     SUPDRVIDCHANDLE SupDrvIDC;
+#ifdef RT_OS_LINUX
+    struct module    * pciStubModule;
+#endif
+
 } VBOXRAWPCIGLOBALS;
 
 DECLHIDDEN(int)  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals);

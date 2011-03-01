@@ -374,6 +374,19 @@ typedef struct RAWPCIFACTORY
 
 #define RAWPCIFACTORY_UUID_STR "c0268f49-e1e4-402b-b7e0-eb8d09659a9b"
 
+/**
+ * Flags passed to pfnPciDeviceConstructStart(), to notify driver
+ * about options to be used to open device.
+ */
+typedef enum PCIRAWDRIVERFLAGS
+{
+    /** If runtime shall  try to detach host driver. */
+    PCIRAWDRIVERRFLAG_DETACH_HOST_DRIVER   =  (1 << 0),
+    /** The usual 32-bit type blow up. */
+    PCIRAWDRIVERRFLAG_32BIT_HACK = 0x7fffffff
+} PCIRAWDRIVERFLAGS;
+
+
 RT_C_DECLS_END
 
 #endif

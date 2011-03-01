@@ -1726,7 +1726,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
         }
 
         int iIrq = aPciIrqs[ich9pciSlotGetPirq(uBus, uDevFn, iPin)];
-        Log(("Using pin %d and IRQ %d for device %02x:%02x.%d\n", 
+        Log(("Using pin %d and IRQ %d for device %02x:%02x.%d\n",
              iPin, iIrq, uBus, uDevFn>>3, uDevFn&7));
         ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_LINE, iIrq, 1);
     }
@@ -2570,18 +2570,26 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
         ich9pciUnmapRegion(pDev, iRegion);
     }
 
-    PCIDevSetCommand(pDev,
-                     PCIDevGetCommand(pDev)
-                     &
-                     ~(VBOX_PCI_COMMAND_IO |
-                       VBOX_PCI_COMMAND_MEMORY |
-                       VBOX_PCI_COMMAND_MASTER));
-
-    /* Bridge device reset handlers processed later */
-    if (!pciDevIsPci2PciBridge(pDev))
+    if (pciDevIsPassthrough(pDev))
     {
-        PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
-        PCIDevSetInterruptLine(pDev, 0x0);
+        // implement reset handler
+        AssertFailed();
+    }
+    else
+    {
+        PCIDevSetCommand(pDev,
+                         PCIDevGetCommand(pDev)
+                         &
+                         ~(VBOX_PCI_COMMAND_IO |
+                           VBOX_PCI_COMMAND_MEMORY |
+                           VBOX_PCI_COMMAND_MASTER));
+        
+        /* Bridge device reset handlers processed later */
+        if (!pciDevIsPci2PciBridge(pDev))
+        {
+            PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
+            PCIDevSetInterruptLine(pDev, 0x0);
+        }
     }
 }
 
