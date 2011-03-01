@@ -145,11 +145,7 @@ void UIMachineWindow::setMask(const QRegion &region)
 
 void UIMachineWindow::retranslateUi()
 {
-#ifdef VBOX_OSE
-    m_strWindowTitlePrefix = UIMachineLogic::tr("VirtualBox OSE");
-#else
     m_strWindowTitlePrefix = VBOX_PRODUCT;
-#endif
 #ifdef VBOX_BLEEDING_EDGE
     m_strWindowTitlePrefix += UIMachineLogic::tr(" EXPERIMENTAL build %1r%2 - %3")
                               .arg(RTBldCfgVersion())
