@@ -31,64 +31,40 @@
 
 int gen_new_label(void);
 
-#ifndef VBOX
 static inline void tcg_gen_op1(int opc, TCGv arg1)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op1(int opc, TCGv arg1)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV(arg1);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op1i(int opc, TCGArg arg1)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op1i(int opc, TCGArg arg1)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = arg1;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op2(int opc, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op2(int opc, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV(arg1);
     *gen_opparam_ptr++ = GET_TCGV(arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op2i(int opc, TCGv arg1, TCGArg arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op2i(int opc, TCGv arg1, TCGArg arg2)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV(arg1);
     *gen_opparam_ptr++ = arg2;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op2ii(int opc, TCGArg arg1, TCGArg arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op2ii(int opc, TCGArg arg1, TCGArg arg2)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = arg1;
     *gen_opparam_ptr++ = arg2;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op3(int opc, TCGv arg1, TCGv arg2, TCGv arg3)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op3(int opc, TCGv arg1, TCGv arg2, TCGv arg3)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV(arg1);
@@ -96,11 +72,7 @@ DECLINLINE(void) tcg_gen_op3(int opc, TCGv arg1, TCGv arg2, TCGv arg3)
     *gen_opparam_ptr++ = GET_TCGV(arg3);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op3i(int opc, TCGv arg1, TCGv arg2, TCGArg arg3)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op3i(int opc, TCGv arg1, TCGv arg2, TCGArg arg3)
-#endif /* VBOX */
 {
     *gen_opc_ptr++ = opc;
     *gen_opparam_ptr++ = GET_TCGV(arg1);
@@ -108,11 +80,7 @@ DECLINLINE(void) tcg_gen_op3i(int opc, TCGv arg1, TCGv arg2, TCGArg arg3)
     *gen_opparam_ptr++ = arg3;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op4(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op4(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
-#endif /* VBOX */
                                TCGv arg4)
 {
     *gen_opc_ptr++ = opc;
@@ -122,11 +90,7 @@ DECLINLINE(void) tcg_gen_op4(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
     *gen_opparam_ptr++ = GET_TCGV(arg4);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op4i(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op4i(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
-#endif /* VBOX */
                                 TCGArg arg4)
 {
     *gen_opc_ptr++ = opc;
@@ -136,11 +100,7 @@ DECLINLINE(void) tcg_gen_op4i(int opc, TCGv arg1, TCGv arg2, TCGv arg3,
     *gen_opparam_ptr++ = arg4;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op4ii(int opc, TCGv arg1, TCGv arg2, TCGArg arg3,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op4ii(int opc, TCGv arg1, TCGv arg2, TCGArg arg3,
-#endif /* VBOX */
                                  TCGArg arg4)
 {
     *gen_opc_ptr++ = opc;
@@ -150,11 +110,7 @@ DECLINLINE(void) tcg_gen_op4ii(int opc, TCGv arg1, TCGv arg2, TCGArg arg3,
     *gen_opparam_ptr++ = arg4;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op5(int opc, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op5(int opc, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                TCGv arg3, TCGv arg4,
                                TCGv arg5)
 {
@@ -166,11 +122,7 @@ DECLINLINE(void) tcg_gen_op5(int opc, TCGv arg1, TCGv arg2,
     *gen_opparam_ptr++ = GET_TCGV(arg5);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op5i(int opc, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op5i(int opc, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                 TCGv arg3, TCGv arg4,
                                 TCGArg arg5)
 {
@@ -182,11 +134,7 @@ DECLINLINE(void) tcg_gen_op5i(int opc, TCGv arg1, TCGv arg2,
     *gen_opparam_ptr++ = arg5;
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op6(int opc, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op6(int opc, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                TCGv arg3, TCGv arg4,
                                TCGv arg5, TCGv arg6)
 {
@@ -199,11 +147,7 @@ DECLINLINE(void) tcg_gen_op6(int opc, TCGv arg1, TCGv arg2,
     *gen_opparam_ptr++ = GET_TCGV(arg6);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_op6ii(int opc, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_op6ii(int opc, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                  TCGv arg3, TCGv arg4,
                                  TCGArg arg5, TCGArg arg6)
 {
@@ -216,39 +160,23 @@ DECLINLINE(void) tcg_gen_op6ii(int opc, TCGv arg1, TCGv arg2,
     *gen_opparam_ptr++ = arg6;
 }
 
-#ifndef VBOX
 static inline void gen_set_label(int n)
-#else /* VBOX */
-DECLINLINE(void) gen_set_label(int n)
-#endif /* VBOX */
 {
     tcg_gen_op1i(INDEX_op_set_label, n);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_br(int label)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_br(int label)
-#endif /* VBOX */
 {
     tcg_gen_op1i(INDEX_op_br, label);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_mov_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mov_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     if (GET_TCGV(ret) != GET_TCGV(arg))
         tcg_gen_op2(INDEX_op_mov_i32, ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_movi_i32(TCGv ret, int32_t arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_movi_i32(TCGv ret, int32_t arg)
-#endif /* VBOX */
 {
     tcg_gen_op2i(INDEX_op_movi_i32, ret, arg);
 }
@@ -256,11 +184,7 @@ DECLINLINE(void) tcg_gen_movi_i32(TCGv ret, int32_t arg)
 /* helper calls */
 #define TCG_HELPER_CALL_FLAGS 0
 
-#ifndef VBOX
 static inline void tcg_gen_helper_0_0(void *func)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_0_0(void *func)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_const_ptr((tcg_target_long)func);
@@ -270,11 +194,7 @@ DECLINLINE(void) tcg_gen_helper_0_0(void *func)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_0_1(void *func, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_0_1(void *func, TCGv arg)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_const_ptr((tcg_target_long)func);
@@ -284,11 +204,7 @@ DECLINLINE(void) tcg_gen_helper_0_1(void *func, TCGv arg)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_0_2(void *func, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_0_2(void *func, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv args[2];
     TCGv t0;
@@ -301,11 +217,7 @@ DECLINLINE(void) tcg_gen_helper_0_2(void *func, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_0_3(void *func,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_0_3(void *func,
-#endif /* VBOX */
                                       TCGv arg1, TCGv arg2, TCGv arg3)
 {
     TCGv args[3];
@@ -320,11 +232,7 @@ DECLINLINE(void) tcg_gen_helper_0_3(void *func,
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_0_4(void *func, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_0_4(void *func, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                       TCGv arg3, TCGv arg4)
 {
     TCGv args[4];
@@ -340,11 +248,7 @@ DECLINLINE(void) tcg_gen_helper_0_4(void *func, TCGv arg1, TCGv arg2,
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_1_0(void *func, TCGv ret)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_1_0(void *func, TCGv ret)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_const_ptr((tcg_target_long)func);
@@ -354,11 +258,7 @@ DECLINLINE(void) tcg_gen_helper_1_0(void *func, TCGv ret)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_1_1(void *func, TCGv ret, TCGv arg1)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_1_1(void *func, TCGv ret, TCGv arg1)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_const_ptr((tcg_target_long)func);
@@ -368,11 +268,7 @@ DECLINLINE(void) tcg_gen_helper_1_1(void *func, TCGv ret, TCGv arg1)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_1_2(void *func, TCGv ret,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_1_2(void *func, TCGv ret,
-#endif /* VBOX */
                                       TCGv arg1, TCGv arg2)
 {
     TCGv args[2];
@@ -386,11 +282,7 @@ DECLINLINE(void) tcg_gen_helper_1_2(void *func, TCGv ret,
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_1_3(void *func, TCGv ret,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_1_3(void *func, TCGv ret,
-#endif /* VBOX */
                                       TCGv arg1, TCGv arg2, TCGv arg3)
 {
     TCGv args[3];
@@ -405,11 +297,7 @@ DECLINLINE(void) tcg_gen_helper_1_3(void *func, TCGv ret,
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_helper_1_4(void *func, TCGv ret,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_helper_1_4(void *func, TCGv ret,
-#endif /* VBOX */
                                       TCGv arg1, TCGv arg2, TCGv arg3,
                                       TCGv arg4)
 {
@@ -428,92 +316,52 @@ DECLINLINE(void) tcg_gen_helper_1_4(void *func, TCGv ret,
 
 /* 32 bit ops */
 
-#ifndef VBOX
 static inline void tcg_gen_ld8u_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8u_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld8u_i32, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld8s_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8s_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld8s_i32, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16u_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16u_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld16u_i32, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16s_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16s_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld16s_i32, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld_i32(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld_i32, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st8_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st8_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_st8_i32, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st16_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st16_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_st16_i32, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st_i32(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_st_i32, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_add_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_add_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_add_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_addi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_addi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     /* some cases can be optimized here */
     if (arg2 == 0) {
@@ -525,20 +373,12 @@ DECLINLINE(void) tcg_gen_addi_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sub_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sub_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_sub_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_subi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_subi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     /* some cases can be optimized here */
     if (arg2 == 0) {
@@ -550,20 +390,12 @@ DECLINLINE(void) tcg_gen_subi_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_and_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_and_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_and_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_andi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_andi_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     /* some cases can be optimized here */
     if (arg2 == 0) {
@@ -577,20 +409,12 @@ DECLINLINE(void) tcg_gen_andi_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_or_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_or_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_or_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ori_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ori_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     /* some cases can be optimized here */
     if (arg2 == 0xffffffff) {
@@ -604,20 +428,12 @@ DECLINLINE(void) tcg_gen_ori_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xor_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xor_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_xor_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xori_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xori_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     /* some cases can be optimized here */
     if (arg2 == 0) {
@@ -629,20 +445,12 @@ DECLINLINE(void) tcg_gen_xori_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shl_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shl_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_shl_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shli_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shli_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i32(ret, arg1);
@@ -653,20 +461,12 @@ DECLINLINE(void) tcg_gen_shli_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shr_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shr_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_shr_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shri_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shri_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i32(ret, arg1);
@@ -677,20 +477,12 @@ DECLINLINE(void) tcg_gen_shri_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sar_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sar_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_sar_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sari_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sari_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i32(ret, arg1);
@@ -701,21 +493,13 @@ DECLINLINE(void) tcg_gen_sari_i32(TCGv ret, TCGv arg1, int32_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_brcond_i32(int cond, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_brcond_i32(int cond, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                       int label_index)
 {
     tcg_gen_op4ii(INDEX_op_brcond_i32, arg1, arg2, cond, label_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_brcondi_i32(int cond, TCGv arg1, int32_t arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_brcondi_i32(int cond, TCGv arg1, int32_t arg2,
-#endif /* VBOX */
                                        int label_index)
 {
     TCGv t0 = tcg_const_i32(arg2);
@@ -723,20 +507,12 @@ DECLINLINE(void) tcg_gen_brcondi_i32(int cond, TCGv arg1, int32_t arg2,
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_mul_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mul_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_mul_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_muli_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_muli_i32(TCGv ret, TCGv arg1, int32_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i32(arg2);
     tcg_gen_mul_i32(ret, arg1, t0);
@@ -744,47 +520,27 @@ DECLINLINE(void) tcg_gen_muli_i32(TCGv ret, TCGv arg1, int32_t arg2)
 }
 
 #ifdef TCG_TARGET_HAS_div_i32
-#ifndef VBOX
 static inline void tcg_gen_div_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_div_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_div_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_rem_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_rem_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_rem_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_divu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_divu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_divu_i32, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_remu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_remu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_remu_i32, ret, arg1, arg2);
 }
 #else
-#ifndef VBOX
 static inline void tcg_gen_div_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_div_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I32);
@@ -793,11 +549,7 @@ DECLINLINE(void) tcg_gen_div_i32(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_rem_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_rem_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I32);
@@ -806,11 +558,7 @@ DECLINLINE(void) tcg_gen_rem_i32(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_divu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_divu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I32);
@@ -819,11 +567,7 @@ DECLINLINE(void) tcg_gen_divu_i32(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_remu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_remu_i32(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I32);
@@ -835,11 +579,7 @@ DECLINLINE(void) tcg_gen_remu_i32(TCGv ret, TCGv arg1, TCGv arg2)
 
 #if TCG_TARGET_REG_BITS == 32
 
-#ifndef VBOX
 static inline void tcg_gen_mov_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mov_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     if (GET_TCGV(ret) != GET_TCGV(arg)) {
         tcg_gen_mov_i32(ret, arg);
@@ -847,81 +587,49 @@ DECLINLINE(void) tcg_gen_mov_i64(TCGv ret, TCGv arg)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_movi_i64(TCGv ret, int64_t arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_movi_i64(TCGv ret, int64_t arg)
-#endif /* VBOX */
 {
     tcg_gen_movi_i32(ret, arg);
     tcg_gen_movi_i32(TCGV_HIGH(ret), arg >> 32);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld8u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld8u_i32(ret, arg2, offset);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld8s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld8s_i32(ret, arg2, offset);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld16u_i32(ret, arg2, offset);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld16s_i32(ret, arg2, offset);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld32u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld32u_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld_i32(ret, arg2, offset);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld32s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld32s_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_ld_i32(ret, arg2, offset);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     /* since arg2 and ret have different types, they cannot be the
        same temporary */
@@ -934,38 +642,22 @@ DECLINLINE(void) tcg_gen_ld_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st8_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st8_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_st8_i32(arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st16_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st16_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_st16_i32(arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st32_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st32_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_st_i32(arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_WORDS_BIGENDIAN
     tcg_gen_st_i32(TCGV_HIGH(arg1), arg2, offset);
@@ -976,103 +668,63 @@ DECLINLINE(void) tcg_gen_st_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_add_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_add_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op6(INDEX_op_add2_i32, ret, TCGV_HIGH(ret),
                 arg1, TCGV_HIGH(arg1), arg2, TCGV_HIGH(arg2));
 }
 
-#ifndef VBOX
 static inline void tcg_gen_addi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_addi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_add_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sub_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sub_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op6(INDEX_op_sub2_i32, ret, TCGV_HIGH(ret),
                 arg1, TCGV_HIGH(arg1), arg2, TCGV_HIGH(arg2));
 }
 
-#ifndef VBOX
 static inline void tcg_gen_subi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_subi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_sub_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_and_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_and_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_and_i32(ret, arg1, arg2);
     tcg_gen_and_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), TCGV_HIGH(arg2));
 }
 
-#ifndef VBOX
 static inline void tcg_gen_andi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_andi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_andi_i32(ret, arg1, arg2);
     tcg_gen_andi_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_or_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_or_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_or_i32(ret, arg1, arg2);
     tcg_gen_or_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), TCGV_HIGH(arg2));
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_ori_i32(ret, arg1, arg2);
     tcg_gen_ori_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xor_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xor_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_xor_i32(ret, arg1, arg2);
     tcg_gen_xor_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), TCGV_HIGH(arg2));
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_xori_i32(ret, arg1, arg2);
     tcg_gen_xori_i32(TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
@@ -1080,65 +732,37 @@ DECLINLINE(void) tcg_gen_xori_i64(TCGv ret, TCGv arg1, int64_t arg2)
 
 /* XXX: use generic code when basic block handling is OK or CPU
    specific code (x86) */
-#ifndef VBOX
 static inline void tcg_gen_shl_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shl_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_shl_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_shifti_i64(ret, arg1, arg2, 0, 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shr_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shr_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_shr_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shri_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shri_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_shifti_i64(ret, arg1, arg2, 1, 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sar_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sar_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_sar_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sari_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sari_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     tcg_gen_shifti_i64(ret, arg1, arg2, 1, 1);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_brcond_i64(int cond, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_brcond_i64(int cond, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                       int label_index)
 {
     tcg_gen_op6ii(INDEX_op_brcond2_i32,
@@ -1146,11 +770,7 @@ DECLINLINE(void) tcg_gen_brcond_i64(int cond, TCGv arg1, TCGv arg2,
                   cond, label_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_mul_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mul_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0, t1;
 
@@ -1169,296 +789,176 @@ DECLINLINE(void) tcg_gen_mul_i64(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t1);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_muli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_muli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_mul_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_div_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_rem_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_divu_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_helper_1_2(tcg_helper_remu_i64, ret, arg1, arg2);
 }
 
 #else
 
-#ifndef VBOX
 static inline void tcg_gen_mov_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mov_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     if (GET_TCGV(ret) != GET_TCGV(arg))
         tcg_gen_op2(INDEX_op_mov_i64, ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_movi_i64(TCGv ret, int64_t arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_movi_i64(TCGv ret, int64_t arg)
-#endif /* VBOX */
 {
     tcg_gen_op2i(INDEX_op_movi_i64, ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld8u_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8u_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                     tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld8u_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld8s_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld8s_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                     tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld8s_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16u_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16u_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                      tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld16u_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld16s_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld16s_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                      tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld16s_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld32u_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld32u_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                      tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld32u_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld32s_i64(TCGv ret, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld32s_i64(TCGv ret, TCGv arg2,
-#endif /* VBOX */
                                      tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_ld32s_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ld_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ld_i64(TCGv ret, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_ld_i64, ret, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st8_i64(TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st8_i64(TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                    tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_st8_i64, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st16_i64(TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st16_i64(TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                     tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_st16_i64, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st32_i64(TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st32_i64(TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                     tcg_target_long offset)
 {
     tcg_gen_op3i(INDEX_op_st32_i64, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_st_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_st_i64(TCGv arg1, TCGv arg2, tcg_target_long offset)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_st_i64, arg1, arg2, offset);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_add_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_add_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_add_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_addi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_addi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_add_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sub_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sub_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_sub_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_subi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_subi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_sub_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_and_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_and_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_and_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_andi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_andi_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_and_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_or_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_or_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_or_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_or_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xor_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xor_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_xor_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_xori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_xori_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_xor_i64(ret, arg1, t0);
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shl_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shl_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_shl_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i64(ret, arg1);
@@ -1469,20 +969,12 @@ DECLINLINE(void) tcg_gen_shli_i64(TCGv ret, TCGv arg1, int64_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shr_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shr_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_shr_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_shri_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_shri_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i64(ret, arg1);
@@ -1493,20 +985,12 @@ DECLINLINE(void) tcg_gen_shri_i64(TCGv ret, TCGv arg1, int64_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sar_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sar_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_sar_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_sari_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_sari_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     if (arg2 == 0) {
         tcg_gen_mov_i64(ret, arg1);
@@ -1517,30 +1001,18 @@ DECLINLINE(void) tcg_gen_sari_i64(TCGv ret, TCGv arg1, int64_t arg2)
     }
 }
 
-#ifndef VBOX
 static inline void tcg_gen_brcond_i64(int cond, TCGv arg1, TCGv arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_brcond_i64(int cond, TCGv arg1, TCGv arg2,
-#endif /* VBOX */
                                       int label_index)
 {
     tcg_gen_op4ii(INDEX_op_brcond_i64, arg1, arg2, cond, label_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_mul_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_mul_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_mul_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_muli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_muli_i64(TCGv ret, TCGv arg1, int64_t arg2)
-#endif /* VBOX */
 {
     TCGv t0 = tcg_const_i64(arg2);
     tcg_gen_mul_i64(ret, arg1, t0);
@@ -1548,47 +1020,27 @@ DECLINLINE(void) tcg_gen_muli_i64(TCGv ret, TCGv arg1, int64_t arg2)
 }
 
 #ifdef TCG_TARGET_HAS_div_i64
-#ifndef VBOX
 static inline void tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_div_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_rem_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_divu_i64, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     tcg_gen_op3(INDEX_op_remu_i64, ret, arg1, arg2);
 }
 #else
-#ifndef VBOX
 static inline void tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I64);
@@ -1597,11 +1049,7 @@ DECLINLINE(void) tcg_gen_div_i64(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I64);
@@ -1610,11 +1058,7 @@ DECLINLINE(void) tcg_gen_rem_i64(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I64);
@@ -1623,11 +1067,7 @@ DECLINLINE(void) tcg_gen_divu_i64(TCGv ret, TCGv arg1, TCGv arg2)
     tcg_temp_free(t0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
-#endif /* VBOX */
 {
     TCGv t0;
     t0 = tcg_temp_new(TCG_TYPE_I64);
@@ -1639,11 +1079,7 @@ DECLINLINE(void) tcg_gen_remu_i64(TCGv ret, TCGv arg1, TCGv arg2)
 
 #endif
 
-#ifndef VBOX
 static inline void tcg_gen_brcondi_i64(int cond, TCGv arg1, int64_t arg2,
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_brcondi_i64(int cond, TCGv arg1, int64_t arg2,
-#endif /* VBOX */
                                        int label_index)
 {
     TCGv t0 = tcg_const_i64(arg2);
@@ -1654,11 +1090,7 @@ DECLINLINE(void) tcg_gen_brcondi_i64(int cond, TCGv arg1, int64_t arg2,
 /***************************************/
 /* optional operations */
 
-#ifndef VBOX
 static inline void tcg_gen_ext8s_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8s_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_ext8s_i32
     tcg_gen_op2(INDEX_op_ext8s_i32, ret, arg);
@@ -1668,11 +1100,7 @@ DECLINLINE(void) tcg_gen_ext8s_i32(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16s_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16s_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_ext16s_i32
     tcg_gen_op2(INDEX_op_ext16s_i32, ret, arg);
@@ -1684,30 +1112,18 @@ DECLINLINE(void) tcg_gen_ext16s_i32(TCGv ret, TCGv arg)
 
 /* These are currently just for convenience.
    We assume a target will recognise these automatically .  */
-#ifndef VBOX
 static inline void tcg_gen_ext8u_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8u_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i32(ret, arg, 0xffu);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16u_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16u_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i32(ret, arg, 0xffffu);
 }
 
 /* Note: we assume the two high bytes are set to zero */
-#ifndef VBOX
 static inline void tcg_gen_bswap16_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_bswap16_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_bswap16_i32
     tcg_gen_op2(INDEX_op_bswap16_i32, ret, arg);
@@ -1725,11 +1141,7 @@ DECLINLINE(void) tcg_gen_bswap16_i32(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_bswap_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_bswap_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_bswap_i32
     tcg_gen_op2(INDEX_op_bswap_i32, ret, arg);
@@ -1756,100 +1168,60 @@ DECLINLINE(void) tcg_gen_bswap_i32(TCGv ret, TCGv arg)
 }
 
 #if TCG_TARGET_REG_BITS == 32
-#ifndef VBOX
 static inline void tcg_gen_ext8s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_ext8s_i32(ret, arg);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_ext16s_i32(ret, arg);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext32s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext32s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext8u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_ext8u_i32(ret, arg);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_ext16u_i32(ret, arg);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext32u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext32u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_trunc_i64_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_trunc_i64_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_extu_i32_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_extu_i32_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
     tcg_gen_movi_i32(TCGV_HIGH(ret), 0);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext_i32_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext_i32_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
     tcg_gen_sari_i32(TCGV_HIGH(ret), ret, 31);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_bswap_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_bswap_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     TCGv t0, t1;
     t0 = tcg_temp_new(TCG_TYPE_I32);
@@ -1864,11 +1236,7 @@ DECLINLINE(void) tcg_gen_bswap_i64(TCGv ret, TCGv arg)
 }
 #else
 
-#ifndef VBOX
 static inline void tcg_gen_ext8s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_ext8s_i64
     tcg_gen_op2(INDEX_op_ext8s_i64, ret, arg);
@@ -1878,11 +1246,7 @@ DECLINLINE(void) tcg_gen_ext8s_i64(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_ext16s_i64
     tcg_gen_op2(INDEX_op_ext16s_i64, ret, arg);
@@ -1892,11 +1256,7 @@ DECLINLINE(void) tcg_gen_ext16s_i64(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext32s_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext32s_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_ext32s_i64
     tcg_gen_op2(INDEX_op_ext32s_i64, ret, arg);
@@ -1906,71 +1266,43 @@ DECLINLINE(void) tcg_gen_ext32s_i64(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext8u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext8u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i64(ret, arg, 0xffu);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext16u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext16u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i64(ret, arg, 0xffffu);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_ext32u_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext32u_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i64(ret, arg, 0xffffffffu);
 }
 
 /* Note: we assume the target supports move between 32 and 64 bit
    registers.  This will probably break MIPS64 targets.  */
-#ifndef VBOX
 static inline void tcg_gen_trunc_i64_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_trunc_i64_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_mov_i32(ret, arg);
 }
 
 /* Note: we assume the target supports move between 32 and 64 bit
    registers */
-#ifndef VBOX
 static inline void tcg_gen_extu_i32_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_extu_i32_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_andi_i64(ret, arg, 0xffffffffu);
 }
 
 /* Note: we assume the target supports move between 32 and 64 bit
    registers */
-#ifndef VBOX
 static inline void tcg_gen_ext_i32_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_ext_i32_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_ext32s_i64(ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_bswap_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_bswap_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_bswap_i64
     tcg_gen_op2(INDEX_op_bswap_i64, ret, arg);
@@ -2014,11 +1346,7 @@ DECLINLINE(void) tcg_gen_bswap_i64(TCGv ret, TCGv arg)
 
 #endif
 
-#ifndef VBOX
 static inline void tcg_gen_neg_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_neg_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_neg_i32
     tcg_gen_op2(INDEX_op_neg_i32, ret, arg);
@@ -2029,11 +1357,7 @@ DECLINLINE(void) tcg_gen_neg_i32(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_neg_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_neg_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
 #ifdef TCG_TARGET_HAS_neg_i64
     tcg_gen_op2(INDEX_op_neg_i64, ret, arg);
@@ -2044,59 +1368,35 @@ DECLINLINE(void) tcg_gen_neg_i64(TCGv ret, TCGv arg)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_not_i32(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_not_i32(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_xori_i32(ret, arg, -1);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_not_i64(TCGv ret, TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_not_i64(TCGv ret, TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_xori_i64(ret, arg, -1);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_discard_i32(TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_discard_i32(TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_op1(INDEX_op_discard, arg);
 }
 
 #if TCG_TARGET_REG_BITS == 32
-#ifndef VBOX
 static inline void tcg_gen_discard_i64(TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_discard_i64(TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_discard_i32(arg);
     tcg_gen_discard_i32(TCGV_HIGH(arg));
 }
 #else
-#ifndef VBOX
 static inline void tcg_gen_discard_i64(TCGv arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_discard_i64(TCGv arg)
-#endif /* VBOX */
 {
     tcg_gen_op1(INDEX_op_discard, arg);
 }
 #endif
 
-#ifndef VBOX
 static inline void tcg_gen_concat_i32_i64(TCGv dest, TCGv low, TCGv high)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_concat_i32_i64(TCGv dest, TCGv low, TCGv high)
-#endif /* VBOX */
 {
 #if TCG_TARGET_REG_BITS == 32
     tcg_gen_mov_i32(dest, low);
@@ -2113,11 +1413,7 @@ DECLINLINE(void) tcg_gen_concat_i32_i64(TCGv dest, TCGv low, TCGv high)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_concat32_i64(TCGv dest, TCGv low, TCGv high)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_concat32_i64(TCGv dest, TCGv low, TCGv high)
-#endif /* VBOX */
 {
 #if TCG_TARGET_REG_BITS == 32
     tcg_gen_concat_i32_i64(dest, low, high);
@@ -2138,11 +1434,7 @@ DECLINLINE(void) tcg_gen_concat32_i64(TCGv dest, TCGv low, TCGv high)
 #endif
 
 /* debug info: write the PC of the corresponding QEMU CPU instruction */
-#ifndef VBOX
 static inline void tcg_gen_debug_insn_start(uint64_t pc)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_debug_insn_start(uint64_t pc)
-#endif /* VBOX */
 {
     /* XXX: must really use a 32 bit size for TCGArg in all cases */
 #if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
@@ -2153,30 +1445,18 @@ DECLINLINE(void) tcg_gen_debug_insn_start(uint64_t pc)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_exit_tb(tcg_target_long val)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_exit_tb(tcg_target_long val)
-#endif /* VBOX */
 {
     tcg_gen_op1i(INDEX_op_exit_tb, val);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_goto_tb(int idx)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_goto_tb(int idx)
-#endif /* VBOX */
 {
     tcg_gen_op1i(INDEX_op_goto_tb, idx);
 }
 
 #if TCG_TARGET_REG_BITS == 32
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld8u, ret, addr, mem_index);
@@ -2186,11 +1466,7 @@ DECLINLINE(void) tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld8s, ret, addr, mem_index);
@@ -2200,11 +1476,7 @@ DECLINLINE(void) tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld16u, ret, addr, mem_index);
@@ -2214,11 +1486,7 @@ DECLINLINE(void) tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld16s, ret, addr, mem_index);
@@ -2228,11 +1496,7 @@ DECLINLINE(void) tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld32u, ret, addr, mem_index);
@@ -2242,11 +1506,7 @@ DECLINLINE(void) tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_ld32u, ret, addr, mem_index);
@@ -2256,11 +1516,7 @@ DECLINLINE(void) tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld64(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld64(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op4i(INDEX_op_qemu_ld64, ret, TCGV_HIGH(ret), addr, mem_index);
@@ -2270,11 +1526,7 @@ DECLINLINE(void) tcg_gen_qemu_ld64(TCGv ret, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_st8, arg, addr, mem_index);
@@ -2283,11 +1535,7 @@ DECLINLINE(void) tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_st16, arg, addr, mem_index);
@@ -2296,11 +1544,7 @@ DECLINLINE(void) tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op3i(INDEX_op_qemu_st32, arg, addr, mem_index);
@@ -2309,11 +1553,7 @@ DECLINLINE(void) tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st64(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st64(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
 #if TARGET_LONG_BITS == 32
     tcg_gen_op4i(INDEX_op_qemu_st64, arg, TCGV_HIGH(arg), addr, mem_index);
@@ -2328,101 +1568,57 @@ DECLINLINE(void) tcg_gen_qemu_st64(TCGv arg, TCGv addr, int mem_index)
 
 #else /* TCG_TARGET_REG_BITS == 32 */
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld8u, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld8s, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld16u, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld16s, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld32u, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld32s, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_ld64(TCGv ret, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_ld64(TCGv ret, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_ld64, ret, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_st8, arg, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_st16, arg, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_st32, arg, addr, mem_index);
 }
 
-#ifndef VBOX
 static inline void tcg_gen_qemu_st64(TCGv arg, TCGv addr, int mem_index)
-#else /* VBOX */
-DECLINLINE(void) tcg_gen_qemu_st64(TCGv arg, TCGv addr, int mem_index)
-#endif /* VBOX */
 {
     tcg_gen_op3i(INDEX_op_qemu_st64, arg, addr, mem_index);
 }

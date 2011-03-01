@@ -82,11 +82,7 @@ typedef struct TCGLabel {
 typedef struct TCGPool {
     struct TCGPool *next;
     int size;
-#ifndef VBOX
     uint8_t data[0] __attribute__ ((aligned));
-#else
-    ALIGNED_MEMBER_DEF(uint8_t, data[0]);
-#endif
 } TCGPool;
 
 #define TCG_POOL_CHUNK_SIZE 32768
@@ -283,11 +279,7 @@ void *tcg_malloc_internal(TCGContext *s, int size);
 void tcg_pool_reset(TCGContext *s);
 void tcg_pool_delete(TCGContext *s);
 
-#ifndef VBOX
 static inline void *tcg_malloc(int size)
-#else
-DECLINLINE(void *) tcg_malloc(int size)
-#endif
 {
     TCGContext *s = &tcg_ctx;
     uint8_t *ptr, *ptr_end;
@@ -316,19 +308,11 @@ TCGv tcg_global_reg2_new_hack(TCGType type, int reg1, int reg2,
 TCGv tcg_global_mem_new(TCGType type, int reg, tcg_target_long offset,
                         const char *name);
 TCGv tcg_temp_new_internal(TCGType type, int temp_local);
-#ifndef VBOX
 static inline TCGv tcg_temp_new(TCGType type)
-#else
-DECLINLINE(TCGv) tcg_temp_new(TCGType type)
-#endif
 {
     return tcg_temp_new_internal(type, 0);
 }
-#ifndef VBOX
 static inline TCGv tcg_temp_local_new(TCGType type)
-#else
-DECLINLINE(TCGv) tcg_temp_local_new(TCGType type)
-#endif
 {
     return tcg_temp_new_internal(type, 1);
 }

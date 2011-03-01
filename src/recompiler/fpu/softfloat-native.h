@@ -63,12 +63,6 @@
 #define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
 #define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
 #define isunordered(x,y)        unordered(x, y)
-#elif defined(_MSC_VER)
-#include <float.h>
-#define unordered(x1, x2)       ((_fpclass(x1) <= 2) || (_fpclass(x2) <= 2))
-#define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
-#define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
-#define isunordered(x,y)        unordered(x, y)
 #endif
 
 #if defined(__sun__) && !defined(NEED_LIBSUNMATH)
@@ -139,13 +133,6 @@ enum {
     float_round_down         = 1,
     float_round_up           = 2,
     float_round_to_zero      = 3
-};
-#elif defined(_MSC_VER)
-enum {
-    float_round_nearest_even = _FpRoundNearest,
-    float_round_down         = _FpRoundMinusInfinity,
-    float_round_up           = _FpRoundPlusInfinity,
-    float_round_to_zero      = _FpRoundChopped
 };
 #else
 enum {

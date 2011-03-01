@@ -95,54 +95,30 @@ static inline void tswap64s(uint64_t *s)
 
 #else
 
-#ifndef VBOX
 static inline uint16_t tswap16(uint16_t s)
-#else
-DECLINLINE(uint16_t) tswap16(uint16_t s)
-#endif
 {
     return s;
 }
 
-#ifndef VBOX
 static inline uint32_t tswap32(uint32_t s)
-#else
-DECLINLINE(uint32_t) tswap32(uint32_t s)
-#endif
 {
     return s;
 }
 
-#ifndef VBOX
 static inline uint64_t tswap64(uint64_t s)
-#else
-DECLINLINE(uint64_t) tswap64(uint64_t s)
-#endif
 {
     return s;
 }
 
-#ifndef VBOX
 static inline void tswap16s(uint16_t *s)
-#else
-DECLINLINE(void) tswap16s(uint16_t *s)
-#endif
 {
 }
 
-#ifndef VBOX
 static inline void tswap32s(uint32_t *s)
-#else
-DECLINLINE(void) tswap32s(uint32_t *s)
-#endif
 {
 }
 
-#ifndef VBOX
 static inline void tswap64s(uint64_t *s)
-#else
-DECLINLINE(void) tswap64s(uint64_t *s)
-#endif
 {
 }
 
@@ -374,7 +350,7 @@ DECLINLINE(void) stfq_le_p(void *ptr, float64 v)
     stl_le_p((uint8_t*)ptr + 4, u.l.upper);
 }
 
-#else  /* !(VBOX && REM_PHYS_ADDR_IN_TLB) */
+#else  /* !VBOX */
 
 static inline int ldub_p(void *ptr)
 {
@@ -574,7 +550,6 @@ static inline void stfq_le_p(void *ptr, float64 v)
 
 #if !defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
 
-#ifndef VBOX
 static inline int lduw_be_p(void *ptr)
 {
 #if defined(__i386__)
@@ -589,24 +564,7 @@ static inline int lduw_be_p(void *ptr)
     return ((b[0] << 8) | b[1]);
 #endif
 }
-#else /* VBOX */
-DECLINLINE(int) lduw_be_p(void *ptr)
-{
-#if defined(__i386__) && !defined(_MSC_VER)
-    int val;
-    asm volatile ("movzwl %1, %0\n"
-                  "xchgb %b0, %h0\n"
-                  : "=q" (val)
-                  : "m" (*(uint16_t *)ptr));
-    return val;
-#else
-    uint8_t *b = (uint8_t *) ptr;
-    return ((b[0] << 8) | b[1]);
-#endif
-}
-#endif
 
-#ifndef VBOX
 static inline int ldsw_be_p(void *ptr)
 {
 #if defined(__i386__)
@@ -621,24 +579,7 @@ static inline int ldsw_be_p(void *ptr)
     return (int16_t)((b[0] << 8) | b[1]);
 #endif
 }
-#else
-DECLINLINE(int) ldsw_be_p(void *ptr)
-{
-#if defined(__i386__) && !defined(_MSC_VER)
-    int val;
-    asm volatile ("movzwl %1, %0\n"
-                  "xchgb %b0, %h0\n"
-                  : "=q" (val)
-                  : "m" (*(uint16_t *)ptr));
-    return (int16_t)val;
-#else
-    uint8_t *b = (uint8_t *) ptr;
-    return (int16_t)((b[0] << 8) | b[1]);
-#endif
-}
-#endif
 
-#ifndef VBOX
 static inline int ldl_be_p(void *ptr)
 {
 #if defined(__i386__) || defined(__x86_64__)
@@ -653,28 +594,8 @@ static inline int ldl_be_p(void *ptr)
     return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
 #endif
 }
-#else
-DECLINLINE(int) ldl_be_p(void *ptr)
-{
-#if (defined(__i386__) || defined(__x86_64__)) && !defined(_MSC_VER)
-    int val;
-    asm volatile ("movl %1, %0\n"
-                  "bswap %0\n"
-                  : "=r" (val)
-                  : "m" (*(uint32_t *)ptr));
-    return val;
-#else
-    uint8_t *b = (uint8_t *) ptr;
-    return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
-#endif
-}
-#endif
 
-#ifndef VBOX
 static inline uint64_t ldq_be_p(void *ptr)
-#else
-DECLINLINE(uint64_t) ldq_be_p(void *ptr)
-#endif
 {
     uint32_t a,b;
     a = ldl_be_p(ptr);
@@ -682,7 +603,6 @@ DECLINLINE(uint64_t) ldq_be_p(void *ptr)
     return (((uint64_t)a<<32)|b);
 }
 
-#ifndef VBOX
 static inline void stw_be_p(void *ptr, int v)
 {
 #if defined(__i386__)
@@ -696,24 +616,7 @@ static inline void stw_be_p(void *ptr, int v)
     d[1] = v;
 #endif
 }
-#else
-DECLINLINE(void) stw_be_p(void *ptr, int v)
-{
-#if defined(__i386__) && !defined(_MSC_VER)
-    asm volatile ("xchgb %b0, %h0\n"
-                  "movw %w0, %1\n"
-                  : "=q" (v)
-                  : "m" (*(uint16_t *)ptr), "0" (v));
-#else
-    uint8_t *d = (uint8_t *) ptr;
-    d[0] = v >> 8;
-    d[1] = v;
-#endif
-}
 
-#endif /* VBOX */
-
-#ifndef VBOX
 static inline void stl_be_p(void *ptr, int v)
 {
 #if defined(__i386__) || defined(__x86_64__)
@@ -729,40 +632,15 @@ static inline void stl_be_p(void *ptr, int v)
     d[3] = v;
 #endif
 }
-#else
-DECLINLINE(void) stl_be_p(void *ptr, int v)
-{
-#if !defined(_MSC_VER) && (defined(__i386__) || defined(__x86_64__))
-    asm volatile ("bswap %0\n"
-                  "movl %0, %1\n"
-                  : "=r" (v)
-                  : "m" (*(uint32_t *)ptr), "0" (v));
-#else
-    uint8_t *d = (uint8_t *) ptr;
-    d[0] = v >> 24;
-    d[1] = v >> 16;
-    d[2] = v >> 8;
-    d[3] = v;
-#endif
-}
-#endif /* VBOX */
 
-#ifndef VBOX
 static inline void stq_be_p(void *ptr, uint64_t v)
-#else
-DECLINLINE(void) stq_be_p(void *ptr, uint64_t v)
-#endif
 {
     stl_be_p(ptr, v >> 32);
     stl_be_p((uint8_t*)ptr + 4, v);
 }
 
 /* float access */
-#ifndef VBOX
 static inline float32 ldfl_be_p(void *ptr)
-#else
-DECLINLINE(float32) ldfl_be_p(void *ptr)
-#endif
 {
     union {
         float32 f;
@@ -772,11 +650,7 @@ DECLINLINE(float32) ldfl_be_p(void *ptr)
     return u.f;
 }
 
-#ifndef VBOX
 static inline void stfl_be_p(void *ptr, float32 v)
-#else
-DECLINLINE(void) stfl_be_p(void *ptr, float32 v)
-#endif
 {
     union {
         float32 f;
@@ -786,11 +660,7 @@ DECLINLINE(void) stfl_be_p(void *ptr, float32 v)
     stl_be_p(ptr, u.i);
 }
 
-#ifndef VBOX
 static inline float64 ldfq_be_p(void *ptr)
-#else
-DECLINLINE(float64) ldfq_be_p(void *ptr)
-#endif
 {
     CPU_DoubleU u;
     u.l.upper = ldl_be_p(ptr);
@@ -798,11 +668,7 @@ DECLINLINE(float64) ldfq_be_p(void *ptr)
     return u.d;
 }
 
-#ifndef VBOX
 static inline void stfq_be_p(void *ptr, float64 v)
-#else
-DECLINLINE(void) stfq_be_p(void *ptr, float64 v)
-#endif
 {
     CPU_DoubleU u;
     u.d = v;
@@ -1193,7 +1059,7 @@ extern uint8_t *phys_ram_dirty;
 
 /* MMIO pages are identified by a combination of an IO device index and
    3 flags.  The ROMD code stores the page ram offset in iotlb entry,
-   so only a limited number of ids are available.  */
+   so only a limited number of ids are avaiable.  */
 
 #define IO_MEM_SHIFT       3
 #define IO_MEM_NB_ENTRIES  (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))
@@ -1236,23 +1102,13 @@ CPUReadMemoryFunc **cpu_get_io_memory_read(int io_index);
 
 void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                             int len, int is_write);
-#ifndef VBOX
 static inline void cpu_physical_memory_read(target_phys_addr_t addr,
                                             uint8_t *buf, int len)
-#else
-DECLINLINE(void) cpu_physical_memory_read(target_phys_addr_t addr,
-                                          uint8_t *buf, int len)
-#endif
 {
     cpu_physical_memory_rw(addr, buf, len, 0);
 }
-#ifndef VBOX
 static inline void cpu_physical_memory_write(target_phys_addr_t addr,
                                              const uint8_t *buf, int len)
-#else
-DECLINLINE(void) cpu_physical_memory_write(target_phys_addr_t addr,
-                                           const uint8_t *buf, int len)
-#endif
 {
     cpu_physical_memory_rw(addr, (uint8_t *)buf, len, 1);
 }
@@ -1353,7 +1209,7 @@ void dump_exec_info(FILE *f,
 
 DECLINLINE(int64_t) cpu_get_real_ticks(void)
 {
-    return  ASMReadTSC();
+    return ASMReadTSC();
 }
 
 #elif defined(__powerpc__)
@@ -1471,7 +1327,6 @@ extern int64_t dev_time;
 extern int64_t kqemu_ret_int_count;
 extern int64_t kqemu_ret_excp_count;
 extern int64_t kqemu_ret_intr_count;
-
 #endif
 
 #ifdef VBOX

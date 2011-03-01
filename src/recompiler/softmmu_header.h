@@ -225,11 +225,7 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
 
 /* generic load/store macros */
 
-#ifndef VBOX
 static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
-#else
-DECLINLINE(RES_TYPE) glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
-#endif
 {
 
     int page_index;
@@ -252,11 +248,7 @@ DECLINLINE(RES_TYPE) glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
 }
 
 #if DATA_SIZE <= 2
-#ifndef VBOX
 static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
-#else
-DECLINLINE(int) glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
-#endif
 {
     int res, page_index;
     target_ulong addr;
@@ -280,11 +272,7 @@ DECLINLINE(int) glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
 #if ACCESS_TYPE != (NB_MMU_MODES + 1)
 
 /* generic store macro */
-#ifndef VBOX
 static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
-#else
-DECLINLINE(void) glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
-#endif
 {
     int page_index;
     target_ulong addr;
@@ -310,11 +298,7 @@ DECLINLINE(void) glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
 #if ACCESS_TYPE != (NB_MMU_MODES + 1)
 
 #if DATA_SIZE == 8
-#ifndef VBOX
 static inline float64 glue(ldfq, MEMSUFFIX)(target_ulong ptr)
-#else
-DECLINLINE(float64) glue(ldfq, MEMSUFFIX)(target_ulong ptr)
-#endif
 {
     union {
         float64 d;
@@ -324,11 +308,7 @@ DECLINLINE(float64) glue(ldfq, MEMSUFFIX)(target_ulong ptr)
     return u.d;
 }
 
-#ifndef VBOX
 static inline void glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
-#else
-DECLINLINE(void) glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
-#endif
 {
     union {
         float64 d;
@@ -340,11 +320,7 @@ DECLINLINE(void) glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
 #endif /* DATA_SIZE == 8 */
 
 #if DATA_SIZE == 4
-#ifndef VBOX
 static inline float32 glue(ldfl, MEMSUFFIX)(target_ulong ptr)
-#else
-DECLINLINE(float32) glue(ldfl, MEMSUFFIX)(target_ulong ptr)
-#endif
 {
     union {
         float32 f;
@@ -354,11 +330,7 @@ DECLINLINE(float32) glue(ldfl, MEMSUFFIX)(target_ulong ptr)
     return u.f;
 }
 
-#ifndef VBOX
 static inline void glue(stfl, MEMSUFFIX)(target_ulong ptr, float32 v)
-#else
-DECLINLINE(void) glue(stfl, MEMSUFFIX)(target_ulong ptr, float32 v)
-#endif
 {
     union {
         float32 f;

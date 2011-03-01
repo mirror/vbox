@@ -70,15 +70,9 @@
 static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                         int mmu_idx,
                                                         void *retaddr);
-#ifndef VBOX
 static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
                                               target_ulong addr,
                                               void *retaddr)
-#else
-DECLINLINE(DATA_TYPE) glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
-                                            target_ulong addr,
-                                            void *retaddr)
-#endif
 {
     DATA_TYPE res;
     int index;
@@ -229,17 +223,10 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                    int mmu_idx,
                                                    void *retaddr);
 
-#ifndef VBOX
 static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
                                           DATA_TYPE val,
                                           target_ulong addr,
                                           void *retaddr)
-#else
-DECLINLINE(void) glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
-                                        DATA_TYPE val,
-                                        target_ulong addr,
-                                        void *retaddr)
-#endif
 {
     int index;
     index = (physaddr >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);

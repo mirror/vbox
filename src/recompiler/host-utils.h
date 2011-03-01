@@ -49,11 +49,7 @@ void mulu64(uint64_t *phigh, uint64_t *plow, uint64_t a, uint64_t b);
 
 /* Binary search for leading zeros.  */
 
-#ifndef VBOX
 static always_inline int clz32(uint32_t val)
-#else
-DECLALWAYSINLINE(int) clz32(uint32_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     if (val)
@@ -90,20 +86,12 @@ DECLALWAYSINLINE(int) clz32(uint32_t val)
 #endif
 }
 
-#ifndef VBOX
 static always_inline int clo32(uint32_t val)
-#else
-DECLALWAYSINLINE(int) clo32(uint32_t val)
-#endif
 {
     return clz32(~val);
 }
 
-#ifndef VBOX
 static always_inline int clz64(uint64_t val)
-#else
-DECLALWAYSINLINE(int) clz64(uint64_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     if (val)
@@ -123,20 +111,12 @@ DECLALWAYSINLINE(int) clz64(uint64_t val)
 #endif
 }
 
-#ifndef VBOX
 static always_inline int clo64(uint64_t val)
-#else
-DECLALWAYSINLINE(int) clo64(uint64_t val)
-#endif
 {
     return clz64(~val);
 }
 
-#ifndef VBOX
 static always_inline int ctz32 (uint32_t val)
-#else
-DECLALWAYSINLINE(int) ctz32 (uint32_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     if (val)
@@ -175,20 +155,12 @@ DECLALWAYSINLINE(int) ctz32 (uint32_t val)
 #endif
  }
 
-#ifndef VBOX
 static always_inline int cto32 (uint32_t val)
-#else
-DECLALWAYSINLINE(int) cto32 (uint32_t val)
-#endif
 {
     return ctz32(~val);
 }
 
-#ifndef VBOX
 static always_inline int ctz64 (uint64_t val)
-#else
-DECLALWAYSINLINE(int) ctz64 (uint64_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     if (val)
@@ -208,20 +180,12 @@ DECLALWAYSINLINE(int) ctz64 (uint64_t val)
 #endif
 }
 
-#ifndef VBOX
 static always_inline int cto64 (uint64_t val)
-#else
-DECLALWAYSINLINE(int) cto64 (uint64_t val)
-#endif
 {
     return ctz64(~val);
 }
 
-#ifndef VBOX
 static always_inline int ctpop8 (uint8_t val)
-#else
-DECLALWAYSINLINE(int) ctpop8 (uint8_t val)
-#endif
 {
     val = (val & 0x55) + ((val >> 1) & 0x55);
     val = (val & 0x33) + ((val >> 2) & 0x33);
@@ -230,11 +194,7 @@ DECLALWAYSINLINE(int) ctpop8 (uint8_t val)
     return val;
 }
 
-#ifndef VBOX
 static always_inline int ctpop16 (uint16_t val)
-#else
-DECLALWAYSINLINE(int) ctpop16 (uint16_t val)
-#endif
 {
     val = (val & 0x5555) + ((val >> 1) & 0x5555);
     val = (val & 0x3333) + ((val >> 2) & 0x3333);
@@ -244,11 +204,7 @@ DECLALWAYSINLINE(int) ctpop16 (uint16_t val)
     return val;
 }
 
-#ifndef VBOX
 static always_inline int ctpop32 (uint32_t val)
-#else
-DECLALWAYSINLINE(int) ctpop32 (uint32_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     return __builtin_popcount(val);
@@ -263,11 +219,7 @@ DECLALWAYSINLINE(int) ctpop32 (uint32_t val)
 #endif
 }
 
-#ifndef VBOX
 static always_inline int ctpop64 (uint64_t val)
-#else
-DECLALWAYSINLINE(int) ctpop64 (uint64_t val)
-#endif
 {
 #if QEMU_GNUC_PREREQ(3, 4)
     return __builtin_popcountll(val);

@@ -570,11 +570,7 @@ typedef struct CPUX86State {
     uint8_t fptags[8];   /* 0 = valid, 1 = empty */
     union {
 #ifdef USE_X86LDOUBLE
-#ifndef VBOX
         CPU86_LDouble d __attribute__((aligned(16)));
-#else
-	ALIGNED_MEMBER(CPU86_LDouble, d, 16);
-#endif
 #else
         CPU86_LDouble d;
 #endif
@@ -737,11 +733,7 @@ typedef struct CPUX86State_Ver16 {
     uint8_t fptags[8];   /* 0 = valid, 1 = empty */
     union {
 #ifdef USE_X86LDOUBLE
-#ifndef VBOX
         CPU86_LDouble d __attribute__((aligned(16)));
-#else
-	ALIGNED_MEMBER(CPU86_LDouble, d, 16);
-#endif
 #else
         CPU86_LDouble d;
 #endif
@@ -817,20 +809,11 @@ void cpu_set_ferr(CPUX86State *s);
 
 /* this function must always be used to load data in the segment
    cache: it synchronizes the hflags with the segment cache values */
-#ifndef VBOX
 static inline void cpu_x86_load_seg_cache(CPUX86State *env,
                                           int seg_reg, unsigned int selector,
                                           target_ulong base,
                                           unsigned int limit,
                                           unsigned int flags)
-#else
-DECLINLINE(void)  cpu_x86_load_seg_cache(CPUX86State *env,
-                                          int seg_reg, unsigned int selector,
-                                          target_ulong base,
-                                          unsigned int limit,
-                                          unsigned int flags)
-
-#endif
 {
     SegmentCache *sc;
     unsigned int new_hflags;
@@ -887,11 +870,7 @@ DECLINLINE(void)  cpu_x86_load_seg_cache(CPUX86State *env,
 }
 
 /* wrapper, just in case memory mappings must be changed */
-#ifndef VBOX
 static inline void cpu_x86_set_cpl(CPUX86State *s, int cpl)
-#else
-DECLINLINE(void) cpu_x86_set_cpl(CPUX86State *s, int cpl)
-#endif
 {
 #if HF_CPL_MASK == 3
     s->hflags = (s->hflags & ~HF_CPL_MASK) | cpl;
@@ -981,11 +960,7 @@ void save_raw_fp_state(CPUX86State *env, uint8_t *ptr);
 #define MMU_MODE0_SUFFIX _kernel
 #define MMU_MODE1_SUFFIX _user
 #define MMU_USER_IDX 1
-#ifndef VBOX
 static inline int cpu_mmu_index (CPUState *env)
-#else
-DECLINLINE(int) cpu_mmu_index (CPUState *env)
-#endif
 {
     return (env->hflags & HF_CPL_MASK) == 3 ? 1 : 0;
 }

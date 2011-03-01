@@ -5,30 +5,11 @@
 #ifdef VBOX
 
 # include <string.h>
-# if !defined(_MSC_VER)
-#  include <inttypes.h>
-# endif
+# include <inttypes.h>
 
 void pstrcpy(char *buf, int buf_size, const char *str);
 char *pstrcat(char *buf, int buf_size, const char *s);
 # define snprintf RTStrPrintf
-
-# ifdef _MSC_VER
-#  define PRId32 "d"
-#  define PRIx32 "x"
-#  define PRIu32 "u"
-#  define PRIo32 "o"
-#  ifdef DEBUG_TMP_LOGGING
-#   define PRId64 "I64d"
-#   define PRIx64 "I64x"
-#   define PRIu64 "I64u"
-#   define PRIo64 "I64o"
-#  else
-#   define PRId64 "RI64"
-#   define PRIx64 "RX64"
-#   define PRIu64 "RU64"
-#  endif
-# endif /* _MSC_VER */
 
 #else /* !VBOX */
 /* we put basic includes here to avoid repeating them in device drivers */

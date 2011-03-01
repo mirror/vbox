@@ -357,11 +357,7 @@ static void page_init(void)
 #endif
 }
 
-#ifndef VBOX
 static inline PageDesc **page_l1_map(target_ulong index)
-#else
-DECLINLINE(PageDesc **) page_l1_map(target_ulong index)
-#endif
 {
 #ifndef VBOX
 #if TARGET_LONG_BITS > 32
@@ -391,11 +387,7 @@ DECLINLINE(PageDesc **) page_l1_map(target_ulong index)
 #endif /* VBOX */
 }
 
-#ifndef VBOX
 static inline PageDesc *page_find_alloc(target_ulong index)
-#else
-DECLINLINE(PageDesc *) page_find_alloc(target_ulong index)
-#endif
 {
     PageDesc **lp, *p;
     lp = page_l1_map(index);
@@ -426,11 +418,7 @@ DECLINLINE(PageDesc *) page_find_alloc(target_ulong index)
     return p + (index & (L2_SIZE - 1));
 }
 
-#ifndef VBOX
 static inline PageDesc *page_find(target_ulong index)
-#else
-DECLINLINE(PageDesc *) page_find(target_ulong index)
-#endif
 {
     PageDesc **lp, *p;
     lp = page_l1_map(index);
@@ -496,11 +484,7 @@ static PhysPageDesc *phys_page_find_alloc(target_phys_addr_t index, int alloc)
     return ((PhysPageDesc *)pd) + (index & (L2_SIZE - 1));
 }
 
-#ifndef VBOX
 static inline PhysPageDesc *phys_page_find(target_phys_addr_t index)
-#else
-DECLINLINE(PhysPageDesc *) phys_page_find(target_phys_addr_t index)
-#endif
 {
     return phys_page_find_alloc(index, 0);
 }
@@ -715,11 +699,7 @@ void cpu_exec_init(CPUState *env)
 #endif // !VBOX
 }
 
-#ifndef VBOX
 static inline void invalidate_page_bitmap(PageDesc *p)
-#else
-DECLINLINE(void) invalidate_page_bitmap(PageDesc *p)
-#endif
 {
     if (p->code_bitmap) {
         qemu_free(p->code_bitmap);
@@ -851,13 +831,8 @@ static void tb_jmp_check(TranslationBlock *tb)
 #endif // DEBUG_TB_CHECK
 
 /* invalidate one TB */
-#ifndef VBOX
 static inline void tb_remove(TranslationBlock **ptb, TranslationBlock *tb,
                              int next_offset)
-#else
-DECLINLINE(void) tb_remove(TranslationBlock **ptb, TranslationBlock *tb,
-                           int next_offset)
-#endif
 {
     TranslationBlock *tb1;
     for(;;) {
@@ -870,11 +845,7 @@ DECLINLINE(void) tb_remove(TranslationBlock **ptb, TranslationBlock *tb,
     }
 }
 
-#ifndef VBOX
 static inline void tb_page_remove(TranslationBlock **ptb, TranslationBlock *tb)
-#else
-DECLINLINE(void) tb_page_remove(TranslationBlock **ptb, TranslationBlock *tb)
-#endif
 {
     TranslationBlock *tb1;
     unsigned int n1;
@@ -891,11 +862,7 @@ DECLINLINE(void) tb_page_remove(TranslationBlock **ptb, TranslationBlock *tb)
     }
 }
 
-#ifndef VBOX
 static inline void tb_jmp_remove(TranslationBlock *tb, int n)
-#else
-DECLINLINE(void) tb_jmp_remove(TranslationBlock *tb, int n)
-#endif
 {
     TranslationBlock *tb1, **ptb;
     unsigned int n1;
@@ -925,11 +892,7 @@ DECLINLINE(void) tb_jmp_remove(TranslationBlock *tb, int n)
 
 /* reset the jump entry 'n' of a TB so that it is not chained to
    another TB */
-#ifndef VBOX
 static inline void tb_reset_jump(TranslationBlock *tb, int n)
-#else
-DECLINLINE(void) tb_reset_jump(TranslationBlock *tb, int n)
-#endif
 {
     tb_set_jmp_target(tb, n, (unsigned long)(tb->tc_ptr + tb->tb_next_offset[n]));
 }
@@ -1036,11 +999,7 @@ unsigned long get_phys_page_offset(target_ulong addr)
 # endif /* VBOX_STRICT */
 #endif /* VBOX */
 
-#ifndef VBOX
 static inline void set_bits(uint8_t *tab, int start, int len)
-#else
-DECLINLINE(void) set_bits(uint8_t *tab, int start, int len)
-#endif
 {
     int end, mask, end1;
 
@@ -1253,11 +1212,7 @@ void tb_invalidate_phys_page_range(target_phys_addr_t start, target_phys_addr_t 
 
 
 /* len must be <= 8 and start must be a multiple of len */
-#ifndef VBOX
 static inline void tb_invalidate_phys_page_fast(target_phys_addr_t start, int len)
-#else
-DECLINLINE(void) tb_invalidate_phys_page_fast(target_phys_addr_t start, int len)
-#endif
 {
     PageDesc *p;
     int offset, b;
@@ -1355,13 +1310,8 @@ static void tb_invalidate_phys_page(target_phys_addr_t addr,
 #endif
 
 /* add the tb in the target page and protect it if necessary */
-#ifndef VBOX
 static inline void tb_alloc_page(TranslationBlock *tb,
                                  unsigned int n, target_ulong page_addr)
-#else
-DECLINLINE(void) tb_alloc_page(TranslationBlock *tb,
-                                 unsigned int n, target_ulong page_addr)
-#endif
 {
     PageDesc *p;
     TranslationBlock *last_first_tb;
@@ -1517,11 +1467,7 @@ TranslationBlock *tb_find_pc(unsigned long tc_ptr)
 
 static void tb_reset_jump_recursive(TranslationBlock *tb);
 
-#ifndef VBOX
 static inline void tb_reset_jump_recursive2(TranslationBlock *tb, int n)
-#else
-DECLINLINE(void) tb_reset_jump_recursive2(TranslationBlock *tb, int n)
-#endif
 {
     TranslationBlock *tb1, *tb_next, **ptb;
     unsigned int n1;
@@ -1898,11 +1844,7 @@ CPUState *cpu_copy(CPUState *env)
 
 #if !defined(CONFIG_USER_ONLY)
 
-#ifndef VBOX
 static inline void tlb_flush_jmp_cache(CPUState *env, target_ulong addr)
-#else
-DECLINLINE(void) tlb_flush_jmp_cache(CPUState *env, target_ulong addr)
-#endif
 {
     unsigned int i;
 
@@ -1963,11 +1905,7 @@ void tlb_flush(CPUState *env, int flush_global)
     tlb_flush_count++;
 }
 
-#ifndef VBOX
 static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
-#else
-DECLINLINE(void) tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
-#endif
 {
     if (addr == (tlb_entry->addr_read &
                  (TARGET_PAGE_MASK | TLB_INVALID_MASK)) ||
@@ -2036,13 +1974,8 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
     phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] |= CODE_DIRTY_FLAG;
 }
 
-#ifndef VBOX
 static inline void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
                                          unsigned long start, unsigned long length)
-#else
-DECLINLINE(void) tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
-                                       unsigned long start, unsigned long length)
-#endif
 {
     unsigned long addr;
 
@@ -2189,11 +2122,7 @@ void cpu_tlb_update_dirty(CPUState *env)
 #endif /* VBOX */
 }
 
-#ifndef VBOX
 static inline void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)
-#else
-DECLINLINE(void) tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)
-#endif
 {
     if (tlb_entry->addr_write == (vaddr | TLB_NOTDIRTY))
         tlb_entry->addr_write = vaddr;
@@ -2202,13 +2131,8 @@ DECLINLINE(void) tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)
 
 /* update the TLB corresponding to virtual page vaddr and phys addr
    addr so that it is no longer dirty */
-#ifndef VBOX
 static inline void tlb_set_dirty(CPUState *env,
                                  unsigned long addr, target_ulong vaddr)
-#else
-DECLINLINE(void) tlb_set_dirty(CPUState *env,
-                               unsigned long addr, target_ulong vaddr)
-#endif
 {
     int i;
 
