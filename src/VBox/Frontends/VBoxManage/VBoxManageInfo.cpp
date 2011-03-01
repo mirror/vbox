@@ -941,7 +941,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         else
                         {
                             strAttachment = "NAT";
-                            strNatSettings = Utf8StrFmt("NIC %d Settings:  MTU: %d, Socket( send: %d, receive: %d), TCP Window( send:%d, receive: %d)\n",
+                            strNatSettings = Utf8StrFmt("NIC %d Settings:  MTU: %d, Socket (send: %d, receive: %d), TCP Window (send:%d, receive: %d)\n",
                                 currentNIC + 1, mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64 , tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
                         }
                         break;
