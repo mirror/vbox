@@ -63,7 +63,7 @@ RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, PRTHANDLE ph)
      * best map on to?
      */
     HANDLE hNative = GetStdHandle(dwStdHandle);
-    if (hNative)
+    if (hNative == INVALID_HANDLE_VALUE)
         return RTErrConvertFromWin32(GetLastError());
 
     DWORD dwInfo;

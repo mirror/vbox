@@ -659,7 +659,13 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
      */
     BY_HANDLE_FILE_INFORMATION Data;
     if (!GetFileInformationByHandle((HANDLE)File, &Data))
-        return RTErrConvertFromWin32(GetLastError());
+    {
+        DWORD dwErr = GetLastError();
+        /* Only return if we *really* don't have a valid handle value,
+         * everything else is fine here ... */
+        if (dwErr != ERROR_INVALID_HANDLE)
+            return RTErrConvertFromWin32(dwErr);
+    }
 
     /*
      * Setup the returned data.
