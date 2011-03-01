@@ -32,8 +32,8 @@
 #include <windows.h>
 
 #ifdef VBOX_WITH_NETFLT
-#include "VBox/WinNetConfig.h"
-#include "devguid.h"
+# include "VBox/VBoxNetCfg-win.h"
+# include "devguid.h"
 #endif
 
 #include <iphlpapi.h>
@@ -1000,17 +1000,17 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
     IEnumNetCfgComponent  *pEnumComponent;
 
     /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg(FALSE,
+    hr = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE,
                        VBOX_APP_NAME,
-                       &pNc,
+                       10000,
                        &lpszApp);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
-        hr = VBoxNetCfgWinGetComponentEnum(pNc, &GUID_DEVCLASS_NET, &pEnumComponent);
+        hr = pNc->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent);
         if (hr == S_OK)
         {
-            while ((hr = VBoxNetCfgWinGetNextComponent(pEnumComponent, &pMpNcc)) == S_OK)
+            while ((hr = pEnumComponent->Next(1, &pMpNcc, NULL)) == S_OK)
             {
                 ULONG uComponentStatus;
                 hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
@@ -1031,15 +1031,15 @@ static int netIfListHostAdapters(std::list<ComObjPtr<HostNetworkInterface> > &li
                         }
                     }
                 }
-                VBoxNetCfgWinReleaseRef(pMpNcc);
+                pMpNcc->Release();
             }
             Assert(hr == S_OK || hr == S_FALSE);
 
-            VBoxNetCfgWinReleaseRef(pEnumComponent);
+            pEnumComponent->Release();
         }
         else
         {
-            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)", hr));
+            LogRel((__FUNCTION__": EnumComponents error (0x%x)", hr));
         }
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
@@ -1441,9 +1441,9 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     int                  iDefault = getDefaultInterfaceIndex();
 
     /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg(FALSE,
+    hr = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE,
                        VBOX_APP_NAME,
-                       &pNc,
+                       10000,
                        &lpszApp);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -1465,54 +1465,65 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
 
         if (hr == S_OK)
         {
-            hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
+            INetCfgComponentBindings *pBindings;
+            hr = pTcpIpNcc->QueryInterface(IID_INetCfgComponentBindings, (PVOID*)&pBindings);
             Assert(hr == S_OK);
             if (hr == S_OK)
             {
-                hr = VBoxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
-                Assert(hr == S_OK || hr == S_FALSE);
-                while (hr == S_OK)
+                hr = pBindings->EnumBindingPaths(EBP_BELOW, &pEnumBp);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
                 {
-                    /* S_OK == enabled, S_FALSE == disabled */
-                    if (pBp->IsEnabled() == S_OK)
+                    hr = pEnumBp->Reset();
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
                     {
-                        hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
-                        Assert(hr == S_OK);
-                        if ( hr == S_OK )
+                        while ((hr = pEnumBp->Next(1, &pBp, NULL)) == S_OK)
                         {
-                            hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
-                            Assert(hr == S_OK);
-                            while (hr == S_OK)
+                            /* S_OK == enabled, S_FALSE == disabled */
+                            if (pBp->IsEnabled() == S_OK)
                             {
-                                hr = pBi->GetLowerComponent( &pMpNcc );
+                                hr = pBp->EnumBindingInterfaces(&pEnumBi);
                                 Assert(hr == S_OK);
-                                if (hr == S_OK)
+                                if ( hr == S_OK )
                                 {
-                                    ULONG uComponentStatus;
-                                    hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+                                    hr = pEnumBi->Reset();
+                                    Assert(hr == S_OK);
                                     if (hr == S_OK)
                                     {
-                                        if (uComponentStatus == 0)
+                                        while ((hr = pEnumBi->Next(1, &pBi, NULL)) == S_OK)
                                         {
-                                            vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged, iDefault);
+                                            hr = pBi->GetLowerComponent( &pMpNcc );
+                                            Assert(hr == S_OK);
+                                            if (hr == S_OK)
+                                            {
+                                                ULONG uComponentStatus;
+                                                hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
+                                                if (hr == S_OK)
+                                                {
+                                                    if (uComponentStatus == 0)
+                                                    {
+                                                        vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged, iDefault);
+                                                    }
+                                                }
+                                                pMpNcc->Release();
+                                            }
+                                            pBi->Release();
                                         }
+                                        Assert(hr == S_OK || hr == S_FALSE);
                                     }
-                                    VBoxNetCfgWinReleaseRef( pMpNcc );
+                                    pEnumBi->Release();
                                 }
-                                VBoxNetCfgWinReleaseRef(pBi);
-
-                                hr = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
                             }
-                            VBoxNetCfgWinReleaseRef(pEnumBi);
+                            pBp->Release();
                         }
+                        Assert(hr == S_OK || hr == S_FALSE);
                     }
-                    VBoxNetCfgWinReleaseRef(pBp);
-
-                    hr = VBoxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
+                    pEnumBp->Release();
                 }
-                VBoxNetCfgWinReleaseRef(pEnumBp);
+                pBindings->Release();
             }
-            VBoxNetCfgWinReleaseRef(pTcpIpNcc);
+            pTcpIpNcc->Release();
         }
         else
         {

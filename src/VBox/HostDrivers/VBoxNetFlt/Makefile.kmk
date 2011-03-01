@@ -30,25 +30,25 @@ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
  VBoxNetFlt_NOINST = true
 endif
 VBoxNetFlt_DEFS = IN_RT_R0 IN_SUP_STATIC
-VBoxNetFlt_SDKS.win = W2K3DDK WINPSDKINCS
 VBoxNetFlt_INCS = .
 VBoxNetFlt_SOURCES.darwin = \
 	darwin/VBoxNetFlt-darwin.cpp
 #VBoxNetFlt_SOURCES.darwin += \
 #	darwin/VBoxNetAdapter-darwin.cpp
+VBoxNetFlt_SDKS.win = WINDDKWLH WINPSDKINCS
 VBoxNetFlt_SOURCES.win = \
-	win/VBoxNetFlt-win.c \
-	win/VBoxNetFltPt-win.c \
-	win/VBoxNetFlt-win.rc
-ifdef VBOX_NETFLT_ONDEMAND_BIND
- VBoxNetFlt_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
-else
- VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
- VBoxNetFlt_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
- VBoxNetFlt_DEFS.win += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
- VBoxNetFlt_DEFS.win += NDIS50_MINIPORT=1 NDIS50=1
- VBoxNetFlt_SOURCES.win += win/VBoxNetFltMp-win.c
-endif
+	win/drv/VBoxNetFltP-win.cpp \
+	win/drv/VBoxNetFltM-win.cpp \
+	win/drv/VBoxNetFltRt-win.cpp \
+	win/drv/VBoxNetFlt-win.rc
+# with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
+# otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition 
+# in ntoskrnl.lib and our object files
+VBoxNetFlt_DEFS.win += WIN9X_COMPAT_SPINLOCK=1
+VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
+VBoxNetFlt_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
+VBoxNetFlt_DEFS.win += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
+VBoxNetFlt_DEFS.win += NDIS50_MINIPORT=1 NDIS50=1
 ifdef VBOX_LOOPBACK_USEFLAGS
  VBoxNetFlt_DEFS.win += VBOX_LOOPBACK_USEFLAGS
 endif
@@ -57,9 +57,9 @@ VBoxNetFlt_SOURCES = VBoxNetFlt.c
 VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
 VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
 VBoxNetFlt_LIBS.win = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
+	$(PATH_SDK_WINDDKWLH_LIB)/ndis.lib \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetFlt_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
@@ -106,35 +106,35 @@ VBoxNetFlt-inf_INST = $(INST_BIN)
 VBoxNetFlt-inf_MODE = a+r,u+w
 VBoxNetFlt-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
-	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf
+	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf
 VBoxNetFlt-inf_CLEAN = $(VBoxNetFlt-inf_SOURCES)
 VBoxNetFlt-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetFltCat.dir
 
-$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf: $(PATH_SUB_CURRENT)/win/VBoxNetFlt.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetFlt.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf: $(PATH_SUB_CURRENT)/win/VBoxNetFlt_m.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetFltM.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
-
+	
  ifdef VBOX_SIGNING_MODE
 VBoxNetFlt-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys \
-	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll \
+	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat
 
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
-
-$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll: $$(TARGET_VBoxNetFltNotify) | $$(dir $$@)
+  
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll: $$(TARGET_VBoxNetFltNobj) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys \
-		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll \
+		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
-		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf
+		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
@@ -148,7 +148,7 @@ WinNetConfig_TEMPLATE = VBOXR3STATIC
 WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 WinNetConfig_SDKS     = WINPSDK W2K3DDK
 WinNetConfig_SOURCES  = \
-	win/WinNetConfig.cpp
+	win/cfg/VBoxNetCfg.cpp
 WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
 
 #
@@ -157,7 +157,7 @@ WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
 PROGRAMS.win  += NetFltInstall
 NetFltInstall_TEMPLATE = VBOXR3STATIC
 NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetFltInstall_SOURCES  = win/NetFltInstall.cpp
+NetFltInstall_SOURCES  = win/tools/VBoxNetFltInstall.cpp
 NetFltInstall_LIBS     = $(TARGET_WinNetConfig) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
@@ -169,7 +169,7 @@ NetFltInstall_LIBS     = $(TARGET_WinNetConfig) \
 PROGRAMS.win  += NetFltUninstall
 NetFltUninstall_TEMPLATE = VBOXR3STATIC
 NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetFltUninstall_SOURCES  = win/NetFltUninstall.cpp
+NetFltUninstall_SOURCES  = win/tools/VBoxNetFltUninstall.cpp
 NetFltUninstall_LIBS     = $(TARGET_WinNetConfig) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
@@ -180,7 +180,7 @@ NetFltUninstall_LIBS     = $(TARGET_WinNetConfig) \
 PROGRAMS.win  += NetAdpInstall
 NetAdpInstall_TEMPLATE = VBOXR3STATIC
 NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetAdpInstall_SOURCES  = win/NetAdpInstall.cpp
+NetAdpInstall_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
 NetAdpInstall_LIBS     = $(TARGET_WinNetConfig) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
@@ -192,53 +192,53 @@ NetAdpInstall_LIBS     = $(TARGET_WinNetConfig) \
 PROGRAMS.win  += NetAdpUninstall
 NetAdpUninstall_TEMPLATE = VBOXR3STATIC
 NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetAdpUninstall_SOURCES  = win/NetAdpUninstall.cpp
+NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
 NetAdpUninstall_LIBS     = $(TARGET_WinNetConfig) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
 #
-# VBoxNetFltNotify
+# VBoxNetFltNobj
 #
-DLLS.win += VBoxNetFltNotify
+DLLS.win += VBoxNetFltNobj
 if defined(VBOX_SIGNING_MODE)
-VBoxNetFltNotify_NOINST = true
+VBoxNetFltNobj_NOINST = true
 endif
-VBoxNetFltNotify_TEMPLATE   = VBOXR3STATIC
-VBoxNetFltNotify_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
-VBoxNetFltNotify_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
-VBoxNetFltNotify_INCS       = \
-	$(VBoxNetFltNotify_0_OUTDIR)
-VBoxNetFltNotify_SOURCES    = \
-	win/notifyobj/VBoxNetFltNotify.cpp \
-	win/notifyobj/VBoxNetFltNotify.def \
-	win/notifyobj/VBoxNetFltNotify.rc
-VBoxNetFltNotify_LIBS       = \
+VBoxNetFltNobj_TEMPLATE   = VBOXR3STATIC
+VBoxNetFltNobj_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
+VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
+VBoxNetFltNobj_INCS       = \
+	$(VBoxNetFltNobj_0_OUTDIR)
+VBoxNetFltNobj_SOURCES    = \
+	win/nobj/VBoxNetFltNobj.cpp \
+	win/nobj/VBoxNetFltNobj.def \
+	win/nobj/VBoxNetFltNobj.rc
+VBoxNetFltNobj_LIBS       = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
-#VBoxNetFltNotify_INTERMEDIATES =
-VBoxNetFltNotify_DEPS       = \
-	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_i.c \
-	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_p.c \
-	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.h \
-	$(VBoxNetFltNotify_0_OUTDIR)/dlldata.c \
-	$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.tlb
-VBoxNetFltNotify_CLEAN      = $(VBoxNetFltNotify_DEPS)
+#VBoxNetFltNobj_INTERMEDIATES =
+VBoxNetFltNobj_DEPS       = \
+	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
+	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
+	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.h \
+	$(VBoxNetFltNobj_0_OUTDIR)/dlldata.c \
+	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb
+VBoxNetFltNobj_CLEAN      = $(VBoxNetFltNobj_DEPS)
 
-VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
+VBOXNETFLT_NOBJ_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
-$$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_i.c \
-+ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn_p.c \
-+ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.h \
-+ $$(VBoxNetFltNotify_0_OUTDIR)/dlldata.c \
-+ $$(VBoxNetFltNotify_0_OUTDIR)/VBoxNetFltNotifyn.tlb: \
-		$(PATH_SUB_CURRENT)/win/notifyobj/VBoxNetFltNotifyn.idl \
+$$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
++ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
++ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.h \
++ $$(VBoxNetFltNobj_0_OUTDIR)/dlldata.c \
++ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb: \
+		$(PATH_SUB_CURRENT)/win/nobj/VBoxNetFltNobjT.idl \
 		| $$(dir $$@)
-	$(VBOXNETFLT_NOTIFY_IDL) /nologo \
-		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNotify_0_OUTDIR)) \
+	$(VBOXNETFLT_NOBJ_IDL) /nologo \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
@@ -253,13 +253,13 @@ VBoxNetAdp_TEMPLATE = VBOXR0DRV
 VBoxNetAdp_NOINST = true
  endif
 VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
-VBoxNetAdp_SDKS = W2K3DDK WINPSDKINCS
 VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
+VBoxNetAdp_SDKS = WINDDKWLH WINPSDKINCS
 VBoxNetAdp_SOURCES = \
 	VBoxNetFlt.c \
-	win/VBoxNetFlt-win.c \
-	win/VBoxNetFltMp-win.c \
-	win/VBoxNetFlt-win.rc
+	win/drv/VBoxNetFltM-win.cpp \
+	win/drv/VBoxNetFltRt-win.cpp \
+	win/drv/VBoxNetFlt-win.rc
 VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOXNETADP
 VBoxNetAdp_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
 VBoxNetAdp_DEFS += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
@@ -283,7 +283,7 @@ VBoxNetAdp-inf_SOURCES = \
 VBoxNetAdp-inf_CLEAN = $(VBoxNetAdp-inf_SOURCES)
 VBoxNetAdp-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdpCat.dir
 
-$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf: $(PATH_SUB_CURRENT)/win/VBoxNetAdp.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetAdp.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 

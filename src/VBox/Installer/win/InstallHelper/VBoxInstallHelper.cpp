@@ -16,7 +16,7 @@
  */
 
 #ifdef VBOX_WITH_NETFLT
-# include "VBox/WinNetConfig.h"
+# include "VBox/VBoxNetCfg-win.h"
 #endif /* VBOX_WITH_NETFLT */
 
 #include <VBox/version.h>
@@ -456,7 +456,7 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
 #define VBOX_NETCFG_APP_NAME L"VirtualBox Installer"
 #define VBOX_NETCFG_MAX_RETRIES 10
 #define NETFLT_PT_INF_REL_PATH L"drivers\\network\\netflt\\VBoxNetFlt.inf"
-#define NETFLT_MP_INF_REL_PATH L"drivers\\network\\netflt\\VBoxNetFlt_m.inf"
+#define NETFLT_MP_INF_REL_PATH L"drivers\\network\\netflt\\VBoxNetFltM.inf"
 #define NETFLT_ID  L"sun_VBoxNetFlt" /** @todo Needs to be changed (?). */
 #define NETADP_ID  L"sun_VBoxNetAdp" /** @todo Needs to be changed (?). */
 
@@ -546,7 +546,7 @@ static UINT doNetCfgInit(MSIHANDLE hModule, INetCfg **ppnc, BOOL bWrite)
     do
     {
         LPWSTR lpszLockedBy;
-        HRESULT hr = VBoxNetCfgWinQueryINetCfg(bWrite, VBOX_NETCFG_APP_NAME, ppnc, &lpszLockedBy);
+        HRESULT hr = VBoxNetCfgWinQueryINetCfg(ppnc, bWrite, VBOX_NETCFG_APP_NAME, 10000, &lpszLockedBy);
         if(hr != NETCFG_E_NO_WRITE_LOCK)
         {
             Assert(hr == S_OK);
@@ -897,7 +897,7 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
     /* make sure the inf file is installed */
     if(!!pInfPath && bIsFile)
     {
-        HRESULT tmpHr = VBoxNetCfgWinInstallInf(pInfPath);
+        HRESULT tmpHr = VBoxNetCfgWinInfInstall(pInfPath);
         Assert(tmpHr == S_OK);
     }
 
@@ -947,7 +947,7 @@ UINT __stdcall RemoveHostOnlyInterfaces(MSIHANDLE hModule)
     HRESULT hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(NETADP_ID);
     if(hr == S_OK)
     {
-        hr = VBoxNetCfgWinUninstallInfs(&GUID_DEVCLASS_NET, NETADP_ID, 0/* could be SUOI_FORCEDELETE */);
+        hr = VBoxNetCfgWinInfUninstallAll(&GUID_DEVCLASS_NET, NETADP_ID, L"Net", 0/* could be SUOI_FORCEDELETE */);
         if(hr != S_OK)
         {
             LogString(hModule, TEXT("NetAdp uninstalled successfully, but failed to remove infs\n"));

@@ -99,7 +99,7 @@
 #  include <net80211/ieee80211_ioctl.h>
 # endif
 # if defined(RT_OS_WINDOWS)
-#  include <VBox/WinNetConfig.h>
+#  include <VBox/VBoxNetCfg-win.h>
 #  include <Ntddndis.h>
 #  include <devguid.h>
 # else
@@ -3833,14 +3833,11 @@ int Console::configNetwork(const char *pszDevice,
                 }
                 Guid hostIFGuid(bstr);
 
-                INetCfg              *pNc;
+                INetCfg *pNc;
                 ComPtr<INetCfgComponent> pAdaptorComponent;
-                LPWSTR                pszApp;
+                LPWSTR pszApp;
 
-                hrc = VBoxNetCfgWinQueryINetCfg(FALSE /*fGetWriteLock*/,
-                                                L"VirtualBox",
-                                                &pNc,
-                                                &pszApp);
+                hrc = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE, L"VirtualBox", 10, &pszApp);
                 Assert(hrc == S_OK);
                 if (hrc != S_OK)
                 {
@@ -4218,11 +4215,7 @@ int Console::configNetwork(const char *pszDevice,
                 INetCfg *pNc;
                 ComPtr<INetCfgComponent> pAdaptorComponent;
                 LPWSTR pszApp;
-
-                hrc = VBoxNetCfgWinQueryINetCfg(FALSE,
-                                                L"VirtualBox",
-                                                &pNc,
-                                                &pszApp);
+                hrc = VBoxNetCfgWinQueryINetCfg(&pNc, FALSE, L"VirtualBox", 10, &pszApp);
                 Assert(hrc == S_OK);
                 if (hrc != S_OK)
                 {

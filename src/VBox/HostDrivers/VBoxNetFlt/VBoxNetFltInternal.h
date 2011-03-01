@@ -240,7 +240,7 @@ typedef struct VBOXNETFLTINS
             /** @name Windows instance data.
              * @{ */
             /** Filter driver device context. */
-            ADAPT IfAdaptor;
+            VBOXNETFLTWIN WinIf;
 
             volatile uint32_t cModeNetFltRefs;
             volatile uint32_t cModePassThruRefs;
@@ -250,8 +250,8 @@ typedef struct VBOXNETFLTINS
 #endif
             /** The MAC address of the interface. Caching MAC for performance reasons. */
             RTMAC MacAddr;
-            /** mutex used to synchronize ADAPT init/deinit */
-            RTSEMMUTEX hAdaptMutex;
+            /** mutex used to synchronize WinIf init/deinit */
+            RTSEMMUTEX hWinIfMutex;
             /** @}  */
 # else
 #  error "PORTME"
