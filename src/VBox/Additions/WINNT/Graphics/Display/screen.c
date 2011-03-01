@@ -43,7 +43,6 @@ const DEVINFO gDevInfoFrameBuffer = {
 #ifdef VBOX_WITH_DDRAW
     | GCAPS_DIRECTDRAW
 #endif
-    | GCAPS_MONO_DITHER
                    ), /* Graphics capabilities         */
     SYSTM_LOGFONT,    /* Default font description */
     HELVE_LOGFONT,    /* ANSI variable font description   */
