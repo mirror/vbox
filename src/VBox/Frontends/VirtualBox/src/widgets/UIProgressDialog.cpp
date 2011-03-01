@@ -37,11 +37,6 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#define VBOX_SECOND 1
-#define VBOX_MINUTE VBOX_SECOND * 60
-#define VBOX_HOUR VBOX_MINUTE * 60
-#define VBOX_DAY VBOX_HOUR * 24
-
 const char *UIProgressDialog::m_spcszOpDescTpl = "%1 ... (%2/%3)";
 
 UIProgressDialog::UIProgressDialog(CProgress &progress,
@@ -220,15 +215,18 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
         /* Update the progress dialog */
         /* First ETA */
         long newTime = m_progress.GetTimeRemaining();
-        QDateTime time;
-        time.setTime_t(newTime);
-        QDateTime refTime;
-        refTime.setTime_t(0);
+        long seconds;
+        long minutes;
+        long hours;
+        long days;
 
-        int days = refTime.daysTo(time);
-        int hours = time.addDays(-days).time().hour();
-        int minutes = time.addDays(-days).time().minute();
-        int seconds = time.addDays(-days).time().second();
+        seconds  = newTime < 0 ? 0 : newTime;
+        minutes  = seconds / 60;
+        seconds -= minutes * 60;
+        hours    = minutes / 60;
+        minutes -= hours   * 60;
+        days     = hours   / 24;
+        hours   -= days    * 24;
 
         QString strDays = VBoxGlobal::daysToString(days);
         QString strHours = VBoxGlobal::hoursToString(hours);
@@ -238,33 +236,31 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
         QString strTwoComp = tr("%1, %2 remaining", "You may wish to translate this more like \"Time remaining: %1, %2\"");
         QString strOneComp = tr("%1 remaining", "You may wish to translate this more like \"Time remaining: %1\"");
 
-        if (newTime > VBOX_DAY * 2 + VBOX_HOUR)
+        if      (days > 1 && hours > 0)
             m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strHours));
-        else if (newTime > VBOX_DAY * 2 + VBOX_MINUTE * 5)
-            m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strMinutes));
-        else if (newTime > VBOX_DAY * 2)
+        else if (days > 1)
             m_pEtaLbl->setText(strOneComp.arg(strDays));
-        else if (newTime > VBOX_DAY + VBOX_HOUR)
+        else if (days > 0 && hours > 0)
             m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strHours));
-        else if (newTime > VBOX_DAY + VBOX_MINUTE * 5)
+        else if (days > 0 && minutes > 5)
             m_pEtaLbl->setText(strTwoComp.arg(strDays).arg(strMinutes));
-        else if (newTime > VBOX_HOUR * 23 + VBOX_MINUTE * 55)
+        else if (days > 0)
             m_pEtaLbl->setText(strOneComp.arg(strDays));
-        else if (newTime >= VBOX_HOUR * 2)
+        else if (hours > 2)
+            m_pEtaLbl->setText(strTwoComp.arg(strHours));
+        else if (hours > 0 && minutes > 0)
             m_pEtaLbl->setText(strTwoComp.arg(strHours).arg(strMinutes));
-        else if (newTime > VBOX_HOUR + VBOX_MINUTE * 5)
-            m_pEtaLbl->setText(strTwoComp.arg(strHours).arg(strMinutes));
-        else if (newTime > VBOX_MINUTE * 55)
+        else if (hours > 0)
             m_pEtaLbl->setText(strOneComp.arg(strHours));
-        else if (newTime > VBOX_MINUTE * 2)
+        else if (minutes > 2)
             m_pEtaLbl->setText(strOneComp.arg(strMinutes));
-        else if (newTime > VBOX_MINUTE + VBOX_SECOND * 5)
+        else if (minutes > 0 && seconds > 5)
             m_pEtaLbl->setText(strTwoComp.arg(strMinutes).arg(strSeconds));
-        else if (newTime > VBOX_SECOND * 55)
+        else if (minutes > 0)
             m_pEtaLbl->setText(strOneComp.arg(strMinutes));
-        else if (newTime > VBOX_SECOND * 5)
+        else if (seconds > 5)
             m_pEtaLbl->setText(strOneComp.arg(strSeconds));
-        else if (newTime >= 0)
+        else if (seconds > 0)
             m_pEtaLbl->setText(tr("A few seconds remaining"));
         else
             m_pEtaLbl->clear();
