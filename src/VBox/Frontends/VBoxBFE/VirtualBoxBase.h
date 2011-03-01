@@ -306,7 +306,7 @@ namespace stdx
                 delete (*it);
         }
     };
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -518,9 +518,9 @@ public:
     };
 
     // sets the ready state of the object
-    void setReady(bool isReady)
+    void setReady(bool ready)
     {
-        mReady = isReady;
+        mReady = ready;
     }
     // get the ready state of the object
     bool isReady()
@@ -585,47 +585,47 @@ public:
         }
     }
 
-    void attach (D *data) {
-        AssertMsg (data, ("new data must not be NULL"));
-        if (data && mData != data) {
+    void attach (D *pData) {
+        AssertMsg (pData, ("new data must not be NULL"));
+        if (pData && mData != pData) {
             if (mData && !mIsShared)
                 delete mData;
-            mData = data;
+            mData = pData;
             mIsShared = false;
         }
     }
 
-    void attach (Shareable &data) {
+    void attach (Shareable &Data) {
         AssertMsg (
-            data.mData == mData || !data.mIsShared,
+            Data.mData == mData || !Data.mIsShared,
             ("new data must not be shared")
         );
-        if (this != &data && !data.mIsShared) {
-            attach (data.mData);
-            data.mIsShared = true;
+        if (this != &Data && !Data.mIsShared) {
+            attach (Data.mData);
+            Data.mIsShared = true;
         }
     }
 
-    void share (D *data) {
-        AssertMsg (data, ("new data must not be NULL"));
-        if (mData != data) {
+    void share (D *pData) {
+        AssertMsg (pData, ("new data must not be NULL"));
+        if (mData != pData) {
             if (mData && !mIsShared)
                 delete mData;
-            mData = data;
+            mData = pData;
             mIsShared = true;
         }
     }
 
-    void share (const Shareable &data) { share (data.mData); }
+    void share (const Shareable &Data) { share (Data.mData); }
 
-    void attachCopy (const D *data) {
-        AssertMsg (data, ("data to copy must not be NULL"));
-        if (data)
-            attach (new D (*data));
+    void attachCopy (const D *pData) {
+        AssertMsg (pData, ("data to copy must not be NULL"));
+        if (pData)
+            attach (new D (*pData));
     }
 
-    void attachCopy (const Shareable &data) {
-        attachCopy (data.mData);
+    void attachCopy (const Shareable &Data) {
+        attachCopy (Data.mData);
     }
 
     virtual D *detach() {
