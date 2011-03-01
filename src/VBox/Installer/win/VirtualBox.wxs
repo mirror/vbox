@@ -282,17 +282,17 @@
                                             <File Id="vboxnetfltsys" Name="VBoxNFlt.sys" LongName="VBoxNetFlt.sys" DiskId="1" Vital="yes" KeyPath="yes"
                                                   Source="$(env.PATH_OUT)\bin\VBoxNetFlt.sys"
                                                   Checksum="yes"/>
-                                            <File Id="vboxnetfltnotifydll" Name="VBoxNFN.dll" LongName="VBoxNetFltNotify.dll" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFltNotify.dll"
+                                            <File Id="vboxnetfltnobjdll" Name="VBoxNob.dll" LongName="VBoxNetFltNobj.dll" DiskId="1" Vital="yes"
+                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFltNobj.dll"
                                                   Checksum="yes"/>
+                                            <File Id="vboxnetfltminf" Name="VBoxNFlM.inf" LongName="VBoxNetFltM.inf" DiskId="1" Vital="yes"
+                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFltM.inf" />
                                             <File Id="vboxnetfltinf" Name="VBoxNFlt.inf" LongName="VBoxNetFlt.inf" DiskId="1" Vital="yes"
                                                   Source="$(env.PATH_OUT)\bin\VBoxNetFlt.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
                                             <File Id="vboxnetfltcat" Name="VBoxNFlt.cat" LongName="VBoxNetFlt.cat" DiskId="1" Vital="yes"
                                                   Source="$(env.PATH_OUT)\bin\VBoxNetFlt.cat" />
 <?endif ?>
-                                            <File Id="vboxnetflt_minf" Name="VBoxNFlM.inf" LongName="VBoxNetFlt_m.inf" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFlt_m.inf" />
                                 </Component>
                             </Directory> <!-- Directory "drivers\network\netflt" -->
                             <Directory Id="NetAdpDir" Name="netadp">

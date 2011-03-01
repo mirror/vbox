@@ -51,7 +51,7 @@
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <VBox/WinNetConfig.h>
+# include <VBox/VBoxNetCfg-win.h>
 #endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
 #ifdef RT_OS_LINUX
