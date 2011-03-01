@@ -56,10 +56,6 @@ enum {
 #define TCG_AREG1 TCG_REG_EDI
 #endif
 
-#ifndef VBOX
 static inline void flush_icache_range(unsigned long start, unsigned long stop)
-#else
-DECLINLINE(void) flush_icache_range(unsigned long start, unsigned long stop)
-#endif
 {
 }

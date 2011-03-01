@@ -3,11 +3,7 @@
 static TCGArg *icount_arg;
 static int icount_label;
 
-#ifndef VBOX
 static inline void gen_icount_start(void)
-#else /* VBOX */
-DECLINLINE(void) gen_icount_start(void)
-#endif /* VBOX */
 {
     TCGv count;
 
@@ -44,22 +40,14 @@ static void gen_icount_end(TranslationBlock *tb, int num_insns)
     }
 }
 
-#ifndef VBOX
 inline static void gen_io_start(void)
-#else
-DECLINLINE(void) gen_io_start(void)
-#endif
 {
     TCGv tmp = tcg_const_i32(1);
     tcg_gen_st_i32(tmp, cpu_env, offsetof(CPUState, can_do_io));
     tcg_temp_free(tmp);
 }
 
-#ifndef VBOX
 static inline void gen_io_end(void)
-#else /* VBOX */
-DECLINLINE(void) gen_io_end(void)
-#endif /* VBOX */
 {
     TCGv tmp = tcg_const_i32(0);
     tcg_gen_st_i32(tmp, cpu_env, offsetof(CPUState, can_do_io));

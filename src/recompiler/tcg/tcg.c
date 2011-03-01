@@ -91,30 +91,18 @@ TCGRegSet tcg_target_call_clobber_regs;
 uint16_t *gen_opc_ptr;
 TCGArg *gen_opparam_ptr;
 
-#ifndef VBOX
 static inline void tcg_out8(TCGContext *s, uint8_t v)
-#else /* VBOX */
-DECLINLINE(void) tcg_out8(TCGContext *s, uint8_t v)
-#endif /* VBOX */
 {
     *s->code_ptr++ = v;
 }
 
-#ifndef VBOX
 static inline void tcg_out16(TCGContext *s, uint16_t v)
-#else /* VBOX */
-DECLINLINE(void) tcg_out16(TCGContext *s, uint16_t v)
-#endif /* VBOX */
 {
     *(uint16_t *)s->code_ptr = v;
     s->code_ptr += 2;
 }
 
-#ifndef VBOX
 static inline void tcg_out32(TCGContext *s, uint32_t v)
-#else /* VBOX */
-DECLINLINE(void) tcg_out32(TCGContext *s, uint32_t v)
-#endif /* VBOX */
 {
     *(uint32_t *)s->code_ptr = v;
     s->code_ptr += 4;
@@ -294,11 +282,7 @@ void tcg_func_start(TCGContext *s)
     gen_opparam_ptr = gen_opparam_buf;
 }
 
-#ifndef VBOX
 static inline void tcg_temp_alloc(TCGContext *s, int n)
-#else /* VBOX */
-DECLINLINE(void) tcg_temp_alloc(TCGContext *s, int n)
-#endif /* VBOX */
 {
     if (n > TCG_MAX_TEMPS)
         tcg_abort();
@@ -536,11 +520,7 @@ void tcg_register_helper(void *func, const char *name)
     s->nb_helpers++;
 }
 
-#ifndef VBOX
 static inline TCGType tcg_get_base_type(TCGContext *s, TCGv arg)
-#else /* VBOX */
-DECLINLINE(TCGType) tcg_get_base_type(TCGContext *s, TCGv arg)
-#endif /* VBOX */
 {
     return s->temps[GET_TCGV(arg)].base_type;
 }
@@ -1073,11 +1053,7 @@ void tcg_add_target_add_op_defs(const TCGTargetOpDef *tdefs)
 #ifdef USE_LIVENESS_ANALYSIS
 
 /* set a nop for an operation using 'nb_args' */
-#ifndef VBOX
 static inline void tcg_set_nop(TCGContext *s, uint16_t *opc_ptr,
-#else /* VBOX */
-DECLINLINE(void) tcg_set_nop(TCGContext *s, uint16_t *opc_ptr,
-#endif /* VBOX */
                                TCGArg *args, int nb_args)
 {
     if (nb_args == 0) {
@@ -1093,11 +1069,7 @@ DECLINLINE(void) tcg_set_nop(TCGContext *s, uint16_t *opc_ptr,
    dead. */
 /* XXX: at this stage, not used as there would be little gains because
    most TBs end with a conditional jump. */
-#ifndef VBOX
 static inline void tcg_la_func_end(TCGContext *s, uint8_t *dead_temps)
-#else /* VBOX */
-DECLINLINE(void) tcg_la_func_end(TCGContext *s, uint8_t *dead_temps)
-#endif /* VBOX */
 {
     memset(dead_temps, 0, s->nb_globals);
     memset(dead_temps + s->nb_globals, 1, s->nb_temps - s->nb_globals);
@@ -1105,11 +1077,7 @@ DECLINLINE(void) tcg_la_func_end(TCGContext *s, uint8_t *dead_temps)
 
 /* liveness analysis: end of basic block: globals are live, temps are
    dead, local temps are live. */
-#ifndef VBOX
 static inline void tcg_la_bb_end(TCGContext *s, uint8_t *dead_temps)
-#else /* VBOX */
-DECLINLINE(void) tcg_la_bb_end(TCGContext *s, uint8_t *dead_temps)
-#endif /* VBOX */
 {
     int i;
     TCGTemp *ts;
@@ -1945,11 +1913,7 @@ void dump_op_count(void)
 #endif
 
 
-#ifndef VBOX
 static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
-#else /* VBOX */
-DECLINLINE(int) tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
-#endif /* VBOX */
                                       long search_pc)
 {
     int opc, op_index;

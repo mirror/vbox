@@ -192,11 +192,7 @@ void helper_dump_state()
 #endif
 
 /* return non zero if error */
-#ifndef VBOX
 static inline int load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
-#else /* VBOX */
-DECLINLINE(int) load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
-#endif /* VBOX */
                                int selector)
 {
     SegmentCache *dt;
@@ -225,11 +221,7 @@ DECLINLINE(int) load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
     return 0;
 }
 
-#ifndef VBOX
 static inline unsigned int get_seg_limit(uint32_t e1, uint32_t e2)
-#else /* VBOX */
-DECLINLINE(unsigned int) get_seg_limit(uint32_t e1, uint32_t e2)
-#endif /* VBOX */
 {
     unsigned int limit;
     limit = (e1 & 0xffff) | (e2 & 0x000f0000);
@@ -238,20 +230,12 @@ DECLINLINE(unsigned int) get_seg_limit(uint32_t e1, uint32_t e2)
     return limit;
 }
 
-#ifndef VBOX
 static inline uint32_t get_seg_base(uint32_t e1, uint32_t e2)
-#else /* VBOX */
-DECLINLINE(uint32_t) get_seg_base(uint32_t e1, uint32_t e2)
-#endif /* VBOX */
 {
     return ((e1 >> 16) | ((e2 & 0xff) << 16) | (e2 & 0xff000000));
 }
 
-#ifndef VBOX
 static inline void load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t e2)
-#else /* VBOX */
-DECLINLINE(void) load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t e2)
-#endif /* VBOX */
 {
     sc->base = get_seg_base(e1, e2);
     sc->limit = get_seg_limit(e1, e2);
@@ -259,11 +243,7 @@ DECLINLINE(void) load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t e
 }
 
 /* init the segment cache in vm86 mode. */
-#ifndef VBOX
 static inline void load_seg_vm(int seg, int selector)
-#else /* VBOX */
-DECLINLINE(void) load_seg_vm(int seg, int selector)
-#endif /* VBOX */
 {
     selector &= 0xffff;
 #ifdef VBOX
@@ -279,11 +259,7 @@ DECLINLINE(void) load_seg_vm(int seg, int selector)
 #endif
 }
 
-#ifndef VBOX
 static inline void get_ss_esp_from_tss(uint32_t *ss_ptr,
-#else /* VBOX */
-DECLINLINE(void) get_ss_esp_from_tss(uint32_t *ss_ptr,
-#endif /* VBOX */
                                        uint32_t *esp_ptr, int dpl)
 {
 #ifndef VBOX
@@ -652,14 +628,11 @@ static void switch_tss(int tss_selector,
 }
 
 /* check if Port I/O is allowed in TSS */
-#ifndef VBOX
 static inline void check_io(int addr, int size)
 {
+#ifndef VBOX
     int io_offset, val, mask;
-
-#else /* VBOX */
-DECLINLINE(void) check_io(int addr, int size)
-{
+#else
     int val, mask;
     unsigned int io_offset;
 #endif /* VBOX */
@@ -751,11 +724,7 @@ target_ulong helper_inl(uint32_t port)
     return cpu_inl(env, port);
 }
 
-#ifndef VBOX
 static inline unsigned int get_sp_mask(unsigned int e2)
-#else /* VBOX */
-DECLINLINE(unsigned int) get_sp_mask(unsigned int e2)
-#endif /* VBOX */
 {
     if (e2 & DESC_B_MASK)
         return 0xffffffff;
@@ -1036,6 +1005,7 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
 #endif
 }
+
 #ifdef VBOX
 
 /* check if VME interrupt redirection is enabled in TSS */
@@ -1133,6 +1103,7 @@ static void do_soft_interrupt_vme(int intno, int error_code, unsigned int next_e
     else
         env->eflags &= ~IF_MASK;
 }
+
 #endif /* VBOX */
 
 #ifdef TARGET_X86_64
@@ -1149,11 +1120,7 @@ static void do_soft_interrupt_vme(int intno, int error_code, unsigned int next_e
     sp += 8;\
 }
 
-#ifndef VBOX
 static inline target_ulong get_rsp_from_tss(int level)
-#else /* VBOX */
-DECLINLINE(target_ulong) get_rsp_from_tss(int level)
-#endif /* VBOX */
 {
     int index;
 
@@ -3174,11 +3141,7 @@ void helper_iret_real(int shift)
 #endif /* VBOX */
 }
 
-#ifndef VBOX
 static inline void validate_seg(int seg_reg, int cpl)
-#else /* VBOX */
-DECLINLINE(void) validate_seg(int seg_reg, int cpl)
-#endif /* VBOX */
 {
     int dpl;
     uint32_t e2;
@@ -3201,11 +3164,7 @@ DECLINLINE(void) validate_seg(int seg_reg, int cpl)
 }
 
 /* protected mode iret */
-#ifndef VBOX
 static inline void helper_ret_protected(int shift, int is_iret, int addend)
-#else /* VBOX */
-DECLINLINE(void) helper_ret_protected(int shift, int is_iret, int addend)
-#endif /* VBOX */
 {
     uint32_t new_cs, new_eflags, new_ss;
     uint32_t new_es, new_ds, new_fs, new_gs;
@@ -4075,11 +4034,7 @@ static void fpu_set_exception(int mask)
         env->fpus |= FPUS_SE | FPUS_B;
 }
 
-#ifndef VBOX
 static inline CPU86_LDouble helper_fdiv(CPU86_LDouble a, CPU86_LDouble b)
-#else /* VBOX */
-DECLINLINE(CPU86_LDouble) helper_fdiv(CPU86_LDouble a, CPU86_LDouble b)
-#endif /* VBOX */
 {
     if (b == 0.0)
         fpu_set_exception(FPUS_ZE);
@@ -4689,16 +4644,6 @@ void helper_fxtract(void)
     BIASEXPONENT(temp);
     ST0 = temp.d;
 }
-
-#ifdef VBOX
-#ifdef _MSC_VER
-/* MSC cannot divide by zero */
-extern double _Nan;
-#define NaN _Nan
-#else
-#define NaN  (0.0 / 0.0)
-#endif
-#endif /* VBOX */
 
 void helper_fprem1(void)
 {
@@ -5941,20 +5886,12 @@ int get_ss_esp_from_tss_raw(CPUX86State *env1, uint32_t *ss_ptr,
 //*****************************************************************************
 // Needs to be at the bottom of the file (overriding macros)
 
-#ifndef VBOX
 static inline CPU86_LDouble helper_fldt_raw(uint8_t *ptr)
-#else /* VBOX */
-DECLINLINE(CPU86_LDouble) helper_fldt_raw(uint8_t *ptr)
-#endif /* VBOX */
 {
     return *(CPU86_LDouble *)ptr;
 }
 
-#ifndef VBOX
 static inline void helper_fstt_raw(CPU86_LDouble f, uint8_t *ptr)
-#else /* VBOX */
-DECLINLINE(void) helper_fstt_raw(CPU86_LDouble f, uint8_t *ptr)
-#endif /* VBOX */
 {
     *(CPU86_LDouble *)ptr = f;
 }
@@ -6158,11 +6095,7 @@ void helper_svm_check_io(uint32_t port, uint32_t param,
 }
 #else
 
-#ifndef VBOX
 static inline void svm_save_seg(target_phys_addr_t addr,
-#else /* VBOX */
-DECLINLINE(void) svm_save_seg(target_phys_addr_t addr,
-#endif /* VBOX */
                                 const SegmentCache *sc)
 {
     stw_phys(addr + offsetof(struct vmcb_seg, selector),
@@ -6175,11 +6108,7 @@ DECLINLINE(void) svm_save_seg(target_phys_addr_t addr,
              ((sc->flags >> 8) & 0xff) | ((sc->flags >> 12) & 0x0f00));
 }
 
-#ifndef VBOX
 static inline void svm_load_seg(target_phys_addr_t addr, SegmentCache *sc)
-#else /* VBOX */
-DECLINLINE(void) svm_load_seg(target_phys_addr_t addr, SegmentCache *sc)
-#endif /* VBOX */
 {
     unsigned int flags;
 
@@ -6190,11 +6119,7 @@ DECLINLINE(void) svm_load_seg(target_phys_addr_t addr, SegmentCache *sc)
     sc->flags = ((flags & 0xff) << 8) | ((flags & 0x0f00) << 12);
 }
 
-#ifndef VBOX
 static inline void svm_load_seg_cache(target_phys_addr_t addr,
-#else /* VBOX */
-DECLINLINE(void) svm_load_seg_cache(target_phys_addr_t addr,
-#endif /* VBOX */
                                       CPUState *env, int seg_reg)
 {
     SegmentCache sc1, *sc = &sc1;

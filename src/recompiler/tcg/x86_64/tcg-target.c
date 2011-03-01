@@ -496,6 +496,7 @@ static void tcg_out_brcond(TCGContext *s, int cond,
 }
 
 #ifdef VBOX
+
 DECLINLINE(void) tcg_out_pushq(TCGContext *s, tcg_target_long val)
 {
      tcg_out8(s, 0x68); /* push imm32, subs 8 from rsp */
@@ -521,7 +522,7 @@ DECLINLINE(void) tcg_out_long_call(TCGContext *s, tcg_target_long dst)
     }
     else
     {
-#if 0
+# if 0
         /* Somewhat tricky, but allows long jump not touching registers */
         int off = 5 /* push imm32 */ + 5 /* push imm32 */ + 1 /* ret */;
         if ((((uint64_t)s->code_ptr) + 32) >> 32)
@@ -533,11 +534,11 @@ DECLINLINE(void) tcg_out_long_call(TCGContext *s, tcg_target_long dst)
         /* destination */
         tcg_out_pushq(s, dst);
         tcg_out8(s, 0xc3); /* ret, used as call */
-#else
+# else
         tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_RAX, dst);
         tcg_out8(s, 0xff); /* call *%eax */
         tcg_out8(s, 0xd0);
-#endif
+# endif
     }
 }
 
@@ -561,16 +562,17 @@ DECLINLINE(void) tcg_out_long_jmp(TCGContext *s, tcg_target_long dst)
         tcg_out32(s, (int32_t)disp);
         return;
     }
-#if 0
+# if 0
     tcg_out_pushq(s, dst);
     tcg_out8(s, 0xc3); /* ret */
-#else
+# else
     tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_RAX, dst);
     tcg_out8(s, 0xff); /* jmp *%eax */
     tcg_out8(s, 0xe0);
-#endif
+# endif
 }
-#endif
+
+#endif /* VBOX */
 
 #if defined(CONFIG_SOFTMMU)
 

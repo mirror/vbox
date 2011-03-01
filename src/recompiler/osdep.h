@@ -14,11 +14,7 @@
 
 #define VBOX_ONLY(x) x
 
-#ifndef _MSC_VER
 #define qemu_snprintf(pszBuf, cbBuf, ...) RTStrPrintf((pszBuf), (cbBuf), __VA_ARGS__)
-#else
-#define qemu_snprintf RTStrPrintf
-#endif
 #define qemu_vsnprintf(pszBuf, cbBuf, pszFormat, args) \
                                 RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
 #define qemu_vprintf(pszFormat, args) \
@@ -129,12 +125,7 @@ void *get_mmap_addr(unsigned long size);
 #endif
 
 #ifdef __i386__
-#ifdef _MSC_VER
-/** @todo: maybe wrong, or slow */
-#define REGPARM
-#else
 #define REGPARM __attribute((regparm(3)))
-#endif
 #else
 #define REGPARM
 #endif
@@ -168,25 +159,8 @@ typedef struct timeval qemu_timeval;
 #endif /* !VBOX */
 
 #ifdef VBOX
-#ifdef _MSC_VER
-#define ALIGNED_MEMBER(type, name, bytes) type name
-#define ALIGNED_MEMBER_DEF(type, name) type name
-#define PACKED_STRUCT(name) struct name
-#define REGISTER_BOUND_GLOBAL(type, var, reg) type var
-#define SAVE_GLOBAL_REGISTER(reg, var)
-#define RESTORE_GLOBAL_REGISTER(reg, var)
-#define DECLALWAYSINLINE(type) DECLINLINE(type)
+/** @todo why don't we go with dyngen-exec.h here? */
 #define FORCE_RET() ;
-#else /* ! _MSC_VER */
-#define ALIGNED_MEMBER(type, name, bytes) type name __attribute__((aligned(bytes)))
-#define ALIGNED_MEMBER_DEF(type, name) type name __attribute__((aligned()))
-#define PACKED_STRUCT(name) struct __attribute__ ((__packed__)) name
-#define REGISTER_BOUND_GLOBAL(type, var, reg) register type var asm(reg)
-#define SAVE_GLOBAL_REGISTER(reg, var)     __asm__ __volatile__ ("" : "=r" (var))
-#define RESTORE_GLOBAL_REGISTER(reg, var) __asm__ __volatile__ ("" : : "r" (var))
-#define DECLALWAYSINLINE(type) static always_inline type
-#define FORCE_RET() ;
-#endif /* !_MSC_VER */
 #endif /* VBOX */
 
 #endif

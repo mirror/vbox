@@ -83,11 +83,7 @@ DECLINLINE(void) tcg_gen_stack_alignment_check(TCGContext *s)
 #endif /* VBOX */
 
 /* maximum number of register used for input function arguments */
-#ifndef VBOX
 static inline int tcg_target_get_call_iarg_regs_count(int flags)
-#else /* VBOX */
-DECLINLINE(int) tcg_target_get_call_iarg_regs_count(int flags)
-#endif /* VBOX */
 {
     flags &= TCG_CALL_TYPE_MASK;
     switch(flags) {
@@ -158,11 +154,7 @@ static int target_parse_constraint(TCGArgConstraint *ct, const char **pct_str)
 }
 
 /* test if a constant matches the constraint */
-#ifndef VBOX
 static inline int tcg_target_const_match(tcg_target_long val,
-#else /* VBOX */
-DECLINLINE(int) tcg_target_const_match(tcg_target_long val,
-#endif /* VBOX */
                                          const TCGArgConstraint *arg_ct)
 {
     int ct;
@@ -235,33 +227,21 @@ static const uint8_t tcg_cond_to_jcc[10] = {
 };
 #endif
 
-#ifndef VBOX
 static inline void tcg_out_opc(TCGContext *s, int opc)
-#else /* VBOX */
-DECLINLINE(void) tcg_out_opc(TCGContext *s, int opc)
-#endif /* VBOX */
 {
     if (opc & P_EXT)
         tcg_out8(s, 0x0f);
     tcg_out8(s, opc);
 }
 
-#ifndef VBOX
 static inline void tcg_out_modrm(TCGContext *s, int opc, int r, int rm)
-#else /* VBOX */
-DECLINLINE(void) tcg_out_modrm(TCGContext *s, int opc, int r, int rm)
-#endif /* VBOX */
 {
     tcg_out_opc(s, opc);
     tcg_out8(s, 0xc0 | (r << 3) | rm);
 }
 
 /* rm == -1 means no register index */
-#ifndef VBOX
 static inline void tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
-#else /* VBOX */
-DECLINLINE(void) tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
-#endif /* VBOX */
                                         int32_t offset)
 {
     tcg_out_opc(s, opc);
@@ -294,21 +274,13 @@ DECLINLINE(void) tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
     }
 }
 
-#ifndef VBOX
 static inline void tcg_out_mov(TCGContext *s, int ret, int arg)
-#else /* VBOX */
-DECLINLINE(void) tcg_out_mov(TCGContext *s, int ret, int arg)
-#endif /* VBOX */
 {
     if (arg != ret)
         tcg_out_modrm(s, 0x8b, ret, arg);
 }
 
-#ifndef VBOX
 static inline void tcg_out_movi(TCGContext *s, TCGType type,
-#else /* VBOX */
-DECLINLINE(void) tcg_out_movi(TCGContext *s, TCGType type,
-#endif /* VBOX */
                                 int ret, int32_t arg)
 {
     if (arg == 0) {
@@ -320,51 +292,31 @@ DECLINLINE(void) tcg_out_movi(TCGContext *s, TCGType type,
     }
 }
 
-#ifndef VBOX
 static inline void tcg_out_push(TCGContext *s, int reg)
-#else /* VBOX */
-DECLINLINE(void) tcg_out_push(TCGContext *s, int reg)
-#endif /* VBOX */
 {
     tcg_out_opc(s, 0x50 + reg);
 }
 
-#ifndef VBOX
 static inline void tcg_out_pop(TCGContext *s, int reg)
-#else /* VBOX */
-DECLINLINE(void) tcg_out_pop(TCGContext *s, int reg)
-#endif /* VBOX */
 {
     tcg_out_opc(s, 0x58 + reg);
 }
 
-#ifndef VBOX
 static inline void tcg_out_ld(TCGContext *s, TCGType type, int ret,
-#else /* VBOX */
-DECLINLINE(void) tcg_out_ld(TCGContext *s, TCGType type, int ret,
-#endif /* VBOX */
                               int arg1, tcg_target_long arg2)
 {
     /* movl */
     tcg_out_modrm_offset(s, 0x8b, ret, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tcg_out_st(TCGContext *s, TCGType type, int arg,
-#else /* VBOX */
-DECLINLINE(void) tcg_out_st(TCGContext *s, TCGType type, int arg,
-#endif /* VBOX */
                               int arg1, tcg_target_long arg2)
 {
     /* movl */
     tcg_out_modrm_offset(s, 0x89, arg, arg1, arg2);
 }
 
-#ifndef VBOX
 static inline void tgen_arithi(TCGContext *s, int c, int r0, int32_t val)
-#else /* VBOX */
-DECLINLINE(void) tgen_arithi(TCGContext *s, int c, int r0, int32_t val)
-#endif /* VBOX */
 {
     if (val == (int8_t)val) {
         tcg_out_modrm(s, 0x83, c, r0);
@@ -443,8 +395,8 @@ static void tcg_out_brcond(TCGContext *s, int cond,
 }
 
 #ifdef VBOX
-DECLINLINE(void)
-tcg_out_long_call(TCGContext *s, void* dst)
+
+DECLINLINE(void) tcg_out_long_call(TCGContext *s, void* dst)
 {
     intptr_t disp;
 # ifdef VBOX
@@ -454,15 +406,15 @@ tcg_out_long_call(TCGContext *s, void* dst)
     tcg_out8(s,  0xe8); /* call disp32 */
     tcg_out32(s, disp); /* disp32 */
 }
-DECLINLINE(void)
-tcg_out_long_jmp(TCGContext *s, void* dst)
+
+DECLINLINE(void) tcg_out_long_jmp(TCGContext *s, void* dst)
 {
     intptr_t disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
     tcg_out8(s,  0xe9); /* jmp disp32 */
     tcg_out32(s, disp); /* disp32 */
 }
-#endif /* VBOX */
 
+#endif /* VBOX */
 
 /* XXX: we implement it at the target level to avoid having to
    handle cross basic blocks temporaries */
@@ -1125,11 +1077,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 #endif
 }
 
-#ifndef VBOX
 static inline void tcg_out_op(TCGContext *s, int opc,
-#else /* VBOX */
-DECLINLINE(void) tcg_out_op(TCGContext *s, int opc,
-#endif /* VBOX */
                               const TCGArg *args, const int *const_args)
 {
     int c;

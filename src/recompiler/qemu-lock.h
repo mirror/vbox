@@ -60,11 +60,7 @@ typedef int spinlock_t;
 
 #define SPIN_LOCK_UNLOCKED 0
 
-#ifndef VBOX
 static inline void resetlock (spinlock_t *p)
-#else
-DECLINLINE(void) resetlock (spinlock_t *p)
-#endif
 {
     *p = SPIN_LOCK_UNLOCKED;
 }
@@ -74,7 +70,6 @@ DECLINLINE(void) resetlock (spinlock_t *p)
 #ifdef VBOX
 DECLINLINE(int) testandset (int *p)
 {
-
     return ASMAtomicCmpXchgU32((volatile uint32_t *)p, 1, 0) ? 0 : 1;
 }
 #elif defined(__powerpc__)
@@ -251,27 +246,15 @@ static inline int spin_trylock(spinlock_t *lock)
     return !testandset(lock);
 }
 #else
-#ifndef VBOX
 static inline void spin_lock(spinlock_t *lock)
-#else
-DECLINLINE(void) spin_lock(spinlock_t *lock)
-#endif
 {
 }
 
-#ifndef VBOX
 static inline void spin_unlock(spinlock_t *lock)
-#else
-DECLINLINE(void) spin_unlock(spinlock_t *lock)
-#endif
 {
 }
 
-#ifndef VBOX
 static inline int spin_trylock(spinlock_t *lock)
-#else
-DECLINLINE(int) spin_trylock(spinlock_t *lock)
-#endif
 {
     return 1;
 }

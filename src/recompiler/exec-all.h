@@ -111,15 +111,9 @@ void tlb_flush(CPUState *env, int flush_global);
 int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
                       target_phys_addr_t paddr, int prot,
                       int mmu_idx, int is_softmmu);
-#ifndef VBOX
 static inline int tlb_set_page(CPUState *env1, target_ulong vaddr,
                                target_phys_addr_t paddr, int prot,
                                int mmu_idx, int is_softmmu)
-#else
-DECLINLINE(int) tlb_set_page(CPUState *env1, target_ulong vaddr,
-                               target_phys_addr_t paddr, int prot,
-                               int mmu_idx, int is_softmmu)
-#endif
 {
     if (prot & PAGE_READ)
         prot |= PAGE_EXEC;
@@ -192,23 +186,14 @@ struct TranslationBlock {
     uint32_t icount;
 };
 
-#ifndef VBOX
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
-#else
-DECLINLINE(unsigned int) tb_jmp_cache_hash_page(target_ulong pc)
-#endif
 {
     target_ulong tmp;
     tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
     return (tmp >> TB_JMP_PAGE_BITS) & TB_JMP_PAGE_MASK;
 }
 
-#ifndef VBOX
 static inline unsigned int tb_jmp_cache_hash_func(target_ulong pc)
-#else
-DECLINLINE(unsigned int) tb_jmp_cache_hash_func(target_ulong pc)
-#endif
-
 {
     target_ulong tmp;
     tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
@@ -216,11 +201,7 @@ DECLINLINE(unsigned int) tb_jmp_cache_hash_func(target_ulong pc)
 	    (tmp & TB_JMP_ADDR_MASK));
 }
 
-#ifndef VBOX
 static inline unsigned int tb_phys_hash_func(unsigned long pc)
-#else
-DECLINLINE(unsigned int) tb_phys_hash_func(unsigned long pc)
-#endif
 {
     return pc & (CODE_GEN_PHYS_HASH_SIZE - 1);
 }
@@ -280,26 +261,16 @@ static inline void tb_set_jmp_target(TranslationBlock *tb,
 #else
 
 /* set the jump target */
-#ifndef VBOX
 static inline void tb_set_jmp_target(TranslationBlock *tb,
                                      int n, unsigned long addr)
-#else
-DECLINLINE(void) tb_set_jmp_target(TranslationBlock *tb,
-                                   int n, unsigned long addr)
-#endif
 {
     tb->tb_next[n] = addr;
 }
 
 #endif
 
-#ifndef VBOX
 static inline void tb_add_jump(TranslationBlock *tb, int n,
                                TranslationBlock *tb_next)
-#else
-DECLINLINE(void) tb_add_jump(TranslationBlock *tb, int n,
-                             TranslationBlock *tb_next)
-#endif
 {
     /* NOTE: this test is only needed for thread safety */
     if (!tb->jmp_next[n]) {
@@ -383,11 +354,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 /* NOTE: this function can trigger an exception */
 /* NOTE2: the returned address is not exactly the physical address: it
    is the offset relative to phys_ram_base */
-#ifndef VBOX
 static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
-#else
-DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
-#endif
 {
     int mmu_idx, page_index, pd;
 
@@ -424,11 +391,7 @@ DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
 
 /* Deterministic execution requires that IO only be performed on the last
    instruction of a TB so that interrupts take effect immediately.  */
-#ifndef VBOX
 static inline int can_do_io(CPUState *env)
-#else
-DECLINLINE(int) can_do_io(CPUState *env)
-#endif
 {
     if (!use_icount)
         return 1;
