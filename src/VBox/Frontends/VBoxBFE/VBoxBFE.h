@@ -27,7 +27,7 @@
 enum
 {
  NetworkAdapterCount = 4,
- MaxSharedFolders = 16,
+ MaxSharedFolders = 16
 };
 
 

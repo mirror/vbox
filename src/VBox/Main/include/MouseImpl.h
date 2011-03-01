@@ -148,7 +148,7 @@ enum
     MouseButtonState_RightButton = 2,
     MouseButtonState_MiddleButton = 4,
     MouseButtonState_XButton1 = 8,
-    MouseButtonState_XButton2 = 16,
+    MouseButtonState_XButton2 = 16
 };
 #endif
 
