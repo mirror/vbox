@@ -1181,11 +1181,7 @@ bool VBoxSelectorWnd::eventFilter(QObject *pObject, QEvent *pEvent)
  */
 void VBoxSelectorWnd::retranslateUi()
 {
-#ifdef VBOX_OSE
-    QString title(tr("VirtualBox OSE"));
-#else
     QString title(VBOX_PRODUCT);
-#endif
     title += " " + tr("Manager", "Note: main window title which is pretended by the product name.");
 
 #ifdef VBOX_BLEEDING_EDGE
