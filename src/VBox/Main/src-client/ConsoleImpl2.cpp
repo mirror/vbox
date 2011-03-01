@@ -525,6 +525,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         InsertConfigNode(pInst,        "Config",  &pCfg);
         InsertConfigString(pCfg,       "DeviceName",  aDevName);
 
+        InsertConfigInteger(pCfg,      "DetachHostDriver",  1);
         InsertConfigInteger(pCfg,      "HostPCIBusNo",      HostPciAddress.iBus);
         InsertConfigInteger(pCfg,      "HostPCIDeviceNo",   HostPciAddress.iDevice);
         InsertConfigInteger(pCfg,      "HostPCIFunctionNo", HostPciAddress.iFn);
