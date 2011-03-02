@@ -16,7 +16,7 @@
 #
 
 # Init I/O RNG for generating random data for writes
-iorngcreate size=10M seed=1234567890
+iorngcreate size=10M mode=manual seed=1234567890
 
 # Create disk containers.
 createdisk name=shared1

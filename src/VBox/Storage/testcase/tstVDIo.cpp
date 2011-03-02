@@ -16,7 +16,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define LOGGROUP LOGGROUP_DEFAULT
-#define RTMEM_WRAP_TO_EF_APIS
 #include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -30,6 +29,7 @@
 #include <iprt/ctype.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/rand.h>
 
 #include "VDMemDisk.h"
 #include "VDIoBackendMem.h"
@@ -280,6 +280,7 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDTESTGLOB pGlob, PVDSCRIPTARG
 static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerDestroyDisk(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCompareDisks(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 
 /* create action */
 const VDSCRIPTARGDESC g_aArgCreate[] =
@@ -348,7 +349,8 @@ const VDSCRIPTARGDESC g_aArgIoRngCreate[] =
 {
     /* pcszName    chId enmType                          fFlags */
     {"size",       'd', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
-    {"seed",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY}
+    {"mode",       'm', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"seed",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, 0}
 };
 
 /* Sleep */
@@ -388,6 +390,13 @@ const VDSCRIPTARGDESC g_aArgCompareDisks[] =
     {"disk2",      '2', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY}
 };
 
+/* Dump disk info */
+const VDSCRIPTARGDESC g_aArgDumpDiskInfo[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
 const VDSCRIPTACTION g_aScriptActions[] =
 {
     /* pcszAction    paArgDesc            cArgDescs                        pfnHandler */
@@ -403,7 +412,8 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"dumpfile",     g_aArgDumpFile,      RT_ELEMENTS(g_aArgDumpFile),     vdScriptHandlerDumpFile},
     {"createdisk",   g_aArgCreateDisk,    RT_ELEMENTS(g_aArgCreateDisk),   vdScriptHandlerCreateDisk},
     {"destroydisk",  g_aArgDestroyDisk,   RT_ELEMENTS(g_aArgDestroyDisk),  vdScriptHandlerDestroyDisk},
-    {"comparedisks", g_aArgCompareDisks,  RT_ELEMENTS(g_aArgCompareDisks), vdScriptHandlerCompareDisks}
+    {"comparedisks", g_aArgCompareDisks,  RT_ELEMENTS(g_aArgCompareDisks), vdScriptHandlerCompareDisks},
+    {"dumpdiskinfo", g_aArgDumpDiskInfo,  RT_ELEMENTS(g_aArgDumpDiskInfo), vdScriptHandlerDumpDiskInfo},
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -981,6 +991,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPT
     int rc = VINF_SUCCESS;
     size_t cbPattern = 0;
     uint64_t uSeed = 0;
+    const char *pcszSeeder = NULL;
 
     for (unsigned i = 0; i < cScriptArgs; i++)
     {
@@ -996,6 +1007,11 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPT
                 uSeed = paScriptArgs[i].u.u64;
                 break;
             }
+            case 'm':
+            {
+                pcszSeeder = paScriptArgs[i].u.pcszString;
+                break;
+            }
             default:
                 AssertMsgFailed(("Invalid argument given!\n"));
         }
@@ -1007,7 +1023,27 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPT
         rc = VERR_INVALID_STATE;
     }
     else
-        rc = VDIoRndCreate(&pGlob->pIoRnd, cbPattern, uSeed);
+    {
+        uint64_t uSeedToUse = 0;
+
+        if (!RTStrICmp(pcszSeeder, "manual"))
+            uSeedToUse = uSeed;
+        else if (!RTStrICmp(pcszSeeder, "time"))
+            uSeedToUse = RTTimeSystemMilliTS();
+        else if (!RTStrICmp(pcszSeeder, "system"))
+        {
+            RTRAND hRand;
+            rc = RTRandAdvCreateSystemTruer(&hRand);
+            if (RT_SUCCESS(rc))
+            {
+                RTRandAdvBytes(hRand, &uSeedToUse, sizeof(uSeedToUse));
+                RTRandAdvDestroy(hRand);
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+            rc = VDIoRndCreate(&pGlob->pIoRnd, cbPattern, uSeed);
+    }
 
     return rc;
 }
@@ -1265,6 +1301,36 @@ static DECLCALLBACK(int) vdScriptHandlerCompareDisks(PVDTESTGLOB pGlob, PVDSCRIP
             rc = VERR_NO_MEMORY;
         }
     }
+    else
+        rc = VERR_NOT_FOUND;
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszDisk = NULL;
+    PVDDISK pDisk = NULL;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+
+    if (pDisk)
+        VDDumpImages(pDisk->pVD);
     else
         rc = VERR_NOT_FOUND;
 
