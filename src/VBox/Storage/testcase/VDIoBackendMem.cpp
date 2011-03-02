@@ -53,6 +53,8 @@ typedef struct VDIOBACKENDREQ
     RTSGSEG         aSegs[1];
 } VDIOBACKENDREQ, *PVDIOBACKENDREQ;
 
+typedef PVDIOBACKENDREQ *PPVDIOBACKENDREQ;
+
 /**
  * I/O memory backend
  */
@@ -68,6 +70,8 @@ typedef struct VDIOBACKENDMEM
     RTSEMEVENT  EventSem;
     /** Flag whether the the server should be still running. */
     volatile bool fRunning;
+    /** Number of requests waiting in the request buffer. */
+    volatile uint32_t cReqsWaiting;
 } VDIOBACKENDMEM;
 
 static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser);
@@ -92,7 +96,7 @@ int VDIoBackendMemCreate(PPVDIOBACKENDMEM ppIoBackend)
     pIoBackend = (PVDIOBACKENDMEM)RTMemAllocZ(sizeof(VDIOBACKENDMEM));
     if (pIoBackend)
     {
-        rc = RTCircBufCreate(&pIoBackend->pRequestRing, VDMEMIOBACKEND_REQS * sizeof(VDIOBACKENDREQ));
+        rc = RTCircBufCreate(&pIoBackend->pRequestRing, VDMEMIOBACKEND_REQS * sizeof(PVDIOBACKENDREQ));
         if (RT_SUCCESS(rc))
         {
             pIoBackend->cReqsRing = VDMEMIOBACKEND_REQS * sizeof(VDIOBACKENDREQ);
@@ -142,13 +146,23 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
                            unsigned cSegs, PFNVDIOCOMPLETE pfnComplete, void *pvUser)
 {
     PVDIOBACKENDREQ pReq = NULL;
+    PPVDIOBACKENDREQ ppReq = NULL;
     size_t cbData;
 
-    RTCircBufAcquireWriteBlock(pIoBackend->pRequestRing, RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]), (void **)&pReq, &cbData);
+    LogFlowFunc(("Queuing request\n"));
+
+    pReq = (PVDIOBACKENDREQ)RTMemAlloc(RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
     if (!pReq)
         return VERR_NO_MEMORY;
 
-    Assert(cbData == (size_t)RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
+    RTCircBufAcquireWriteBlock(pIoBackend->pRequestRing, sizeof(PVDIOBACKENDREQ), (void **)&ppReq, &cbData);
+    if (!pReq)
+    {
+        RTMemFree(pReq);
+        return VERR_NO_MEMORY;
+    }
+
+    Assert(cbData == sizeof(PVDIOBACKENDREQ));
     pReq->enmTxDir    = enmTxDir;
     pReq->cbTransfer  = cbTransfer;
     pReq->off         = off;
@@ -161,8 +175,12 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
         pReq->aSegs[i].pvSeg = paSegs[i].pvSeg;
         pReq->aSegs[i].cbSeg = paSegs[i].cbSeg;
     }
-    RTCircBufReleaseWriteBlock(pIoBackend->pRequestRing, RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
-    vdIoBackendMemThreadPoke(pIoBackend);
+
+    *ppReq = pReq;
+    RTCircBufReleaseWriteBlock(pIoBackend->pRequestRing, sizeof(PVDIOBACKENDREQ));
+    uint32_t cReqsWaiting = ASMAtomicIncU32(&pIoBackend->cReqsWaiting);
+    if (cReqsWaiting == 1)
+        vdIoBackendMemThreadPoke(pIoBackend);
 
     return VINF_SUCCESS;
 }
@@ -186,15 +204,23 @@ static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
             break;
 
         PVDIOBACKENDREQ pReq;
+        PPVDIOBACKENDREQ ppReq;
         size_t cbData;
+        uint32_t cReqsWaiting = ASMAtomicXchgU32(&pIoBackend->cReqsWaiting, 0);
 
-        RTCircBufAcquireReadBlock(pIoBackend->pRequestRing, sizeof(VDIOBACKENDREQ), (void **)&pReq, &cbData);
-        Assert(!pReq || cbData == sizeof(VDIOBACKENDREQ));
-
-        while (pReq)
+        while (cReqsWaiting)
         {
             int rcReq = VINF_SUCCESS;
 
+            /* Do we have another request? */
+            RTCircBufAcquireReadBlock(pIoBackend->pRequestRing, sizeof(PVDIOBACKENDREQ), (void **)&ppReq, &cbData);
+            Assert(!ppReq || cbData == sizeof(PVDIOBACKENDREQ));
+            RTCircBufReleaseReadBlock(pIoBackend->pRequestRing, cbData);
+
+            pReq = *ppReq;
+            cReqsWaiting--;
+
+            LogFlowFunc(("Processing request\n"));
             switch (pReq->enmTxDir)
             {
                 case VDIOTXDIR_READ:
@@ -219,12 +245,7 @@ static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
 
             /* Notify completion. */
             pReq->pfnComplete(pReq->pvUser, rcReq);
-
-            RTCircBufReleaseReadBlock(pIoBackend->pRequestRing, cbData);
-
-            /* Do we have another request? */
-            RTCircBufAcquireReadBlock(pIoBackend->pRequestRing, sizeof(VDIOBACKENDREQ), (void **)&pReq, &cbData);
-            Assert(!pReq || cbData == sizeof(VDIOBACKENDREQ));
+            RTMemFree(pReq);
         }
     }
 
