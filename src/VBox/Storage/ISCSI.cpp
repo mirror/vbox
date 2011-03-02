@@ -2218,7 +2218,7 @@ static void iscsiPDUTxAdd(PISCSIIMAGE pImage, PISCSIPDUTX pIScsiPDUTx, bool fFro
 {
     if (!fFront)
     {
-        /* Link the PDU at the tail of the list. */
+        /* Insert PDU at the tail of the list. */
         if (!pImage->pIScsiPDUTxHead)
             pImage->pIScsiPDUTxHead = pIScsiPDUTx;
         else
@@ -2227,7 +2227,7 @@ static void iscsiPDUTxAdd(PISCSIIMAGE pImage, PISCSIPDUTX pIScsiPDUTx, bool fFro
     }
     else
     {
-        /* Link PDU to at the front of the list. */
+        /* Insert PDU at the beginning of the list. */
         pIScsiPDUTx->pNext = pImage->pIScsiPDUTxHead;
         pImage->pIScsiPDUTxHead = pIScsiPDUTx;
         if (!pImage->pIScsiPDUTxTail)
@@ -2483,8 +2483,13 @@ static int iscsiRecvPDUProcess(PISCSIIMAGE pImage, PISCSIRES paRes, uint32_t cnR
                     pIScsiPDUTx->cbSgLeft = sizeof(pIScsiPDUTx->aBHS);
                     RTSgBufInit(&pIScsiPDUTx->SgBuf, pIScsiPDUTx->aISCSIReq, cnISCSIReq);
 
-                    /* Link the PDU to the list. */
-                    iscsiPDUTxAdd(pImage, pIScsiPDUTx, false /* fFront */);
+                    /*
+                     * Link the PDU to the list.
+                     * Insert at the front of the list to send the response as soon as possible
+                     * to avoid frequent reconnects for a slow connection when there are many PDUs
+                     * waiting.
+                     */
+                    iscsiPDUTxAdd(pImage, pIScsiPDUTx, true /* fFront */);
 
                     /* Start transfer of a PDU if there is no one active at the moment. */
                     if (!pImage->pIScsiPDUTxCur)
@@ -3218,6 +3223,9 @@ static void iscsiReattach(PISCSIIMAGE pImage)
         }
         RTMemFree(pIScsiPDUTx);
     }
+
+    /* Clear the tail pointer (safety precaution). */
+    pImage->pIScsiPDUTxTail = NULL;
 
     /* Clear the current PDU too. */
     if (pImage->pIScsiPDUTxCur)
