@@ -337,3 +337,65 @@ int VDMemDiskReadFromFile(PVDMEMDISK pMemDisk, const char *pcszFilename)
     return VERR_NOT_IMPLEMENTED;
 }
 
+int VDMemDiskCmp(PVDMEMDISK pMemDisk, uint64_t off, size_t cbCmp, PRTSGBUF pSgBuf)
+{
+    LogFlowFunc(("pMemDisk=%#p off=%llx cbCmp=%u pSgBuf=%#p\n",
+                 pMemDisk, off, cbCmp, pSgBuf));
+
+    /* Compare data */
+    size_t   cbLeft   = cbCmp;
+    uint64_t offCurr  = off;
+
+    while (cbLeft)
+    {
+        PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)RTAvlrU64Get(pMemDisk->pTreeSegments, offCurr);
+        size_t cbRange  = 0;
+        bool fCmp       = false;
+        unsigned offSeg = 0;
+
+        if (!pSeg)
+        {
+            /* Get next segment */
+            pSeg = (PVDMEMDISKSEG)RTAvlrU64GetBestFit(pMemDisk->pTreeSegments, offCurr, true);
+            if (!pSeg)
+            {
+                /* No data in the tree for this read. Assume everything is ok. */
+                cbRange = cbLeft;
+            }
+            else if (offCurr + cbLeft <= pSeg->Core.Key)
+                cbRange = cbLeft;
+            else
+                cbRange = pSeg->Core.Key - offCurr;
+        }
+        else
+        {
+            fCmp    = true;
+            offSeg  = offCurr - pSeg->Core.Key;
+            cbRange = RT_MIN(cbLeft, (size_t)(pSeg->Core.KeyLast + 1 - offCurr));
+        }
+
+        if (fCmp)
+        {
+            RTSGSEG Seg;
+            RTSGBUF SgBufCmp;
+            size_t cbOff = 0;
+            int rc = 0;
+
+            Seg.cbSeg = cbRange;
+            Seg.pvSeg = (uint8_t *)pSeg->pvSeg + offSeg;
+
+            RTSgBufInit(&SgBufCmp, &Seg, 1);
+            rc = RTSgBufCmpEx(pSgBuf, &SgBufCmp, cbRange, &cbOff, true);
+            if (rc)
+                return rc;
+        }
+        else
+            RTSgBufAdvance(pSgBuf, cbRange);
+
+        offCurr += cbRange;
+        cbLeft  -= cbRange;
+    }
+
+    return 0;
+}
+
