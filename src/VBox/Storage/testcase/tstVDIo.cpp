@@ -288,6 +288,7 @@ static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTA
 static DECLCALLBACK(int) vdScriptHandlerDestroyDisk(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCompareDisks(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerPrintMsg(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 
 /* create action */
 const VDSCRIPTARGDESC g_aArgCreate[] =
@@ -405,6 +406,13 @@ const VDSCRIPTARGDESC g_aArgDumpDiskInfo[] =
     {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
+/* Print message */
+const VDSCRIPTARGDESC g_aArgPrintMsg[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"msg",        'm', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
 const VDSCRIPTACTION g_aScriptActions[] =
 {
     /* pcszAction    paArgDesc            cArgDescs                        pfnHandler */
@@ -422,6 +430,7 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"destroydisk",  g_aArgDestroyDisk,   RT_ELEMENTS(g_aArgDestroyDisk),  vdScriptHandlerDestroyDisk},
     {"comparedisks", g_aArgCompareDisks,  RT_ELEMENTS(g_aArgCompareDisks), vdScriptHandlerCompareDisks},
     {"dumpdiskinfo", g_aArgDumpDiskInfo,  RT_ELEMENTS(g_aArgDumpDiskInfo), vdScriptHandlerDumpDiskInfo},
+    {"print",        g_aArgPrintMsg,      RT_ELEMENTS(g_aArgPrintMsg),     vdScriptHandlerPrintMsg}
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -1441,6 +1450,12 @@ static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDTESTGLOB pGlob, PVDSCRIP
     return rc;
 }
 
+static DECLCALLBACK(int) vdScriptHandlerPrintMsg(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    RTPrintf("%s\n", paScriptArgs[0].u.pcszString);
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
                                          uint32_t fOpen,
                                          PFNVDCOMPLETED pfnCompleted,
@@ -1540,6 +1555,16 @@ static DECLCALLBACK(int) tstVDIoFileDelete(void *pvUser, const char *pcszFilenam
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     bool fFound = false;
+
+    /*
+     * Some backends use ./ for paths, strip it.
+     * @todo: Implement proper directory support for the
+     * memory filesystem.
+     */
+    if (   strlen(pcszFilename) >= 2
+        && *pcszFilename == '.'
+        && pcszFilename[1] == '/')
+        pcszFilename += 2;
 
     /* Check if the file exists. */
     PVDFILE pIt = NULL;
