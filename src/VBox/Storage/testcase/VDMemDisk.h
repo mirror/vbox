@@ -114,4 +114,16 @@ int VDMemDiskWriteToFile(PVDMEMDISK pMemDisk, const char *pcszFilename);
  */
 int VDMemDiskReadFromFile(PVDMEMDISK pMemDisk, const char *pcszFilename);
 
+/**
+ * Compares the given range of the memory disk with a provided S/G buffer.
+ *
+ * @returns whatever memcmp returns.
+ *
+ * @param   pMemDisk   The memory disk handle.
+ * @param   off        Where to start comparing.
+ * @param   cbCmp      How many bytes to compare.
+ * @param   pSgBuf     The S/G buffer to compare with.
+ */
+int VDMemDiskCmp(PVDMEMDISK pMemDisk, uint64_t off, size_t cbCmp, PRTSGBUF pSgBuf);
+
 #endif /* __VDMemDisk_h__ */

@@ -30,6 +30,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/rand.h>
+#include <iprt/critsect.h>
 
 #include "VDMemDisk.h"
 #include "VDIoBackendMem.h"
@@ -74,6 +75,10 @@ typedef struct VDDISK
     char          *pszName;
     /** HDD handle to operate on. */
     PVBOXHDD       pVD;
+    /** Memory disk used for data verification. */
+    PVDMEMDISK     pMemDiskVerify;
+    /** Critical section to serialize access to the memory disk. */
+    RTCRITSECT     CritSectVerify;
     /** Physical CHS Geometry. */
     VDGEOMETRY     PhysGeom;
     /** Logical CHS geometry. */
@@ -138,6 +143,8 @@ typedef struct VDIOREQ
     volatile bool fOutstanding;
     /** Buffer to use for reads. */
     void          *pvBufRead;
+    /** Opaque user data. */
+    void          *pvUser;
 } VDIOREQ, *PVDIOREQ;
 
 /**
@@ -372,7 +379,8 @@ const VDSCRIPTARGDESC g_aArgDumpFile[] =
 const VDSCRIPTARGDESC g_aArgCreateDisk[] =
 {
     /* pcszName    chId enmType                          fFlags */
-    {"name",       'n', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY}
+    {"name",       'n', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"verify",     'v', VDSCRIPTARGTYPE_BOOL,            0}
 };
 
 /* Create virtual disk handle */
@@ -439,7 +447,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
 static void tstVDIoTestDestroy(PVDIOTEST pIoTest);
 static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq);
-static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq);
+static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser);
 static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk);
@@ -745,7 +753,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                     {
                         if (!tstVDIoTestReqOutstanding(&paIoReq[idx]))
                         {
-                            rc = tstVDIoTestReqInit(&IoTest, &paIoReq[idx]);
+                            rc = tstVDIoTestReqInit(&IoTest, &paIoReq[idx], pDisk);
                             AssertRC(rc);
 
                             if (RT_SUCCESS(rc))
@@ -757,11 +765,32 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                         case VDIOREQTXDIR_READ:
                                         {
                                             rc = VDRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+
+                                            if (RT_SUCCESS(rc)
+                                                && pDisk->pMemDiskVerify)
+                                            {
+                                                RTSGBUF SgBuf;
+                                                RTSgBufInit(&SgBuf, &paIoReq[idx].DataSeg, 1);
+
+                                                if (VDMemDiskCmp(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq, &SgBuf))
+                                                {
+                                                    RTPrintf("Corrupted disk at offset %llu!\n", paIoReq[idx].off);
+                                                    rc = VERR_INVALID_STATE;
+                                                }
+                                            }
                                             break;
                                         }
                                         case VDIOREQTXDIR_WRITE:
                                         {
                                             rc = VDWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+
+                                            if (RT_SUCCESS(rc)
+                                                && pDisk->pMemDiskVerify)
+                                            {
+                                                RTSGBUF SgBuf;
+                                                RTSgBufInit(&SgBuf, &paIoReq[idx].DataSeg, 1);
+                                                rc = VDMemDiskWrite(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq, &SgBuf);
+                                            }
                                             break;
                                         }
                                         case VDIOREQTXDIR_FLUSH:
@@ -804,8 +833,49 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                     }
                                     else if (rc == VINF_VD_ASYNC_IO_FINISHED)
                                     {
+                                        switch (paIoReq[idx].enmTxDir)
+                                        {
+                                            case VDIOREQTXDIR_READ:
+                                            {
+                                                rc = VDAsyncRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
+                                                                 tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
+                                                if (pDisk->pMemDiskVerify)
+                                                {
+                                                    RTCritSectEnter(&pDisk->CritSectVerify);
+                                                    RTSgBufReset(&paIoReq[idx].SgBuf);
+
+                                                    if (VDMemDiskCmp(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq,
+                                                                     &paIoReq[idx].SgBuf))
+                                                    {
+                                                        RTPrintf("Corrupted disk at offset %llu!\n", paIoReq[idx].off);
+                                                        rc = VERR_INVALID_STATE;
+                                                    }
+                                                    RTCritSectLeave(&pDisk->CritSectVerify);
+                                                }
+                                            }
+                                            case VDIOREQTXDIR_WRITE:
+                                            {
+                                                rc = VDAsyncWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
+                                                                  tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
+
+                                                if (pDisk->pMemDiskVerify)
+                                                {
+                                                    RTCritSectEnter(&pDisk->CritSectVerify);
+                                                    RTSgBufReset(&paIoReq[idx].SgBuf);
+
+                                                    rc = VDMemDiskWrite(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq,
+                                                                        &paIoReq[idx].SgBuf);
+                                                    RTCritSectLeave(&pDisk->CritSectVerify);
+                                                }
+                                                break;
+                                            }
+                                            case VDIOREQTXDIR_FLUSH:
+                                                break;
+                                        }
+
                                         ASMAtomicXchgBool(&paIoReq[idx].fOutstanding, false);
-                                        rc = VINF_SUCCESS;
+                                        if (rc != VERR_INVALID_STATE)
+                                            rc = VINF_SUCCESS;
                                     }
                                 }
 
@@ -1137,6 +1207,7 @@ static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTA
     int rc = VINF_SUCCESS;
     const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
+    bool fVerify = false;
 
     for (unsigned i = 0; i < cScriptArgs; i++)
     {
@@ -1145,6 +1216,11 @@ static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTA
             case 'n':
             {
                 pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'v':
+            {
+                fVerify = paScriptArgs[i].u.fFlag;
                 break;
             }
             default:
@@ -1163,12 +1239,35 @@ static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTA
             pDisk->pszName = RTStrDup(pcszDisk);
             if (pDisk->pszName)
             {
-                rc = VDCreate(pGlob->pInterfacesDisk, VDTYPE_HDD, &pDisk->pVD);
+                rc = VINF_SUCCESS;
+
+                if (fVerify)
+                {
+                    rc = VDMemDiskCreate(&pDisk->pMemDiskVerify, 0 /* Growing */);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTCritSectInit(&pDisk->CritSectVerify);
+                        if (RT_FAILURE(rc))
+                            VDMemDiskDestroy(pDisk->pMemDiskVerify);
+                    }
+                }
 
                 if (RT_SUCCESS(rc))
-                    RTListAppend(&pGlob->ListDisks, &pDisk->ListNode);
-                else
-                    RTStrFree(pDisk->pszName);
+                {
+                    rc = VDCreate(pGlob->pInterfacesDisk, VDTYPE_HDD, &pDisk->pVD);
+
+                    if (RT_SUCCESS(rc))
+                        RTListAppend(&pGlob->ListDisks, &pDisk->ListNode);
+                    else
+                    {
+                        if (fVerify)
+                        {
+                            RTCritSectDelete(&pDisk->CritSectVerify);
+                            VDMemDiskDestroy(pDisk->pMemDiskVerify);
+                        }
+                        RTStrFree(pDisk->pszName);
+                    }
+                }
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -1207,6 +1306,11 @@ static DECLCALLBACK(int) vdScriptHandlerDestroyDisk(PVDTESTGLOB pGlob, PVDSCRIPT
     {
         RTListNodeRemove(&pDisk->ListNode);
         VDDestroy(pDisk->pVD);
+        if (pDisk->pMemDiskVerify)
+        {
+            VDMemDiskDestroy(pDisk->pMemDiskVerify);
+            RTCritSectDelete(&pDisk->CritSectVerify);
+        }
         RTStrFree(pDisk->pszName);
         RTMemFree(pDisk);
     }
@@ -1682,7 +1786,7 @@ static bool tstVDIoTestIsTrue(PVDIOTEST pIoTest, int iPercentage)
     return (uRnd <= iPercentage); /* This should be enough for our purpose */
 }
 
-static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
+static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
@@ -1763,6 +1867,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq)
                                          : RT_MIN(pIoTest->offEnd, pIoTest->u.offNext + pIoTest->cbBlkIo);
                 }
             }
+            pIoReq->pvUser = pvUser;
             pIoReq->fOutstanding = true;
         }
     }
@@ -1776,6 +1881,37 @@ static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
     RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
+    PVDDISK pDisk = (PVDDISK)pIoReq->pvUser;
+
+    if (pDisk->pMemDiskVerify)
+    {
+        switch (pIoReq->enmTxDir)
+        {
+            case VDIOREQTXDIR_READ:
+            {
+                RTCritSectEnter(&pDisk->CritSectVerify);
+                RTSgBufReset(&pIoReq->SgBuf);
+
+                if (VDMemDiskCmp(pDisk->pMemDiskVerify, pIoReq->off, pIoReq->cbReq,
+                                 &pIoReq->SgBuf))
+                    RTPrintf("Corrupted disk at offset %llu!\n", pIoReq->off);
+                RTCritSectLeave(&pDisk->CritSectVerify);
+            }
+            case VDIOREQTXDIR_WRITE:
+            {
+                RTCritSectEnter(&pDisk->CritSectVerify);
+                RTSgBufReset(&pIoReq->SgBuf);
+
+                int rc = VDMemDiskWrite(pDisk->pMemDiskVerify, pIoReq->off, pIoReq->cbReq,
+                                        &pIoReq->SgBuf);
+                AssertRC(rc);
+                RTCritSectLeave(&pDisk->CritSectVerify);
+                break;
+            }
+            case VDIOREQTXDIR_FLUSH:
+                break;
+        }
+    }
 
     ASMAtomicXchgBool(&pIoReq->fOutstanding, false);
     RTSemEventSignal(hEventSem);
