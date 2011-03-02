@@ -75,16 +75,6 @@ int CollectorHAL::getProcessMemoryUsage(RTPROCESS /* process */, ULONG * /* used
     return E_NOTIMPL;
 }
 
-int CollectorHAL::enable()
-{
-    return E_NOTIMPL;
-}
-
-int  CollectorHAL::disable()
-{
-    return E_NOTIMPL;
-}
-
 /* Generic implementations */
 
 int CollectorHAL::getHostCpuMHz(ULONG *mhz)
@@ -120,28 +110,27 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
 
-uint32_t CollectorGuestHAL::cVMsEnabled = 0;
-
-CollectorGuestHAL::CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL)
-    : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL),
-      mGuest(NULL), mLastTick(0), mHostHAL(hostHAL), mCpuUser(0),
-      mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0),
-      mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0)
+CollectorGuest::CollectorGuest(Machine *machine, RTPROCESS process) :
+    mEnabled(false), mValid(false), mMachine(machine), mProcess(process),
+    mCpuUser(0), mCpuKernel(0), mCpuIdle(0),
+    mMemTotal(0), mMemFree(0), mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0),
+    mAllocVMM(0), mFreeVMM(0), mBalloonedVMM(0), mSharedVMM(0)
 {
     Assert(mMachine);
     /* cannot use ComObjPtr<Machine> in Performance.h, do it manually */
     mMachine->AddRef();
 }
 
-CollectorGuestHAL::~CollectorGuestHAL()
+CollectorGuest::~CollectorGuest()
 {
     /* cannot use ComObjPtr<Machine> in Performance.h, do it manually */
     mMachine->Release();
-    Assert(!cEnabled);
+    // Assert(!cEnabled); why?
 }
 
-int CollectorGuestHAL::enable()
+int CollectorGuest::enable()
 {
+    mEnabled = true;
     /* Must make sure that the machine object does not get uninitialized
      * in the middle of enabling this collector. Causes timing-related
      * behavior otherwise, which we don't want. In particular the
@@ -153,60 +142,150 @@ int CollectorGuestHAL::enable()
 
     HRESULT ret = S_OK;
 
-    if (ASMAtomicIncU32(&cEnabled) == 1)
+    ComPtr<IInternalSessionControl> directControl;
+
+    ret = mMachine->getDirectControl(&directControl);
+    if (ret != S_OK)
+        return ret;
+
+    /* get the associated console; this is a remote call (!) */
+    ret = directControl->GetRemoteConsole(mConsole.asOutParam());
+    if (ret != S_OK)
+        return ret;
+
+    ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
+    if (ret == S_OK)
     {
-        ASMAtomicIncU32(&cVMsEnabled);
-        ComPtr<IInternalSessionControl> directControl;
-
-        ret = mMachine->getDirectControl(&directControl);
-        if (ret != S_OK)
-            return ret;
-
-        /* get the associated console; this is a remote call (!) */
-        ret = directControl->GetRemoteConsole(mConsole.asOutParam());
-        if (ret != S_OK)
-            return ret;
-
-        ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
-        if (ret == S_OK)
-            mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
+        ret = mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
+        LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 1 sec (%s)\n",
+                    this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
     }
+
     return ret;
 }
 
-int CollectorGuestHAL::disable()
+int CollectorGuest::disable()
 {
-    if (ASMAtomicDecU32(&cEnabled) == 0)
+    mEnabled = false;
+    Assert(mGuest && mConsole);
+    HRESULT ret = mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
+    LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
+                this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
+    invalidateStats();
+
+    return S_OK;
+}
+
+int CollectorGuest::updateStats()
+{
+    if (mGuest)
     {
-        if (ASMAtomicDecU32(&cVMsEnabled) == 0)
+        HRESULT rc;
+        rc = mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
+                                           &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
+                                           &mPageTotal, &mAllocVMM, &mFreeVMM, &mBalloonedVMM, &mSharedVMM);
+        if (SUCCEEDED(rc))
         {
-            if (mHostHAL)
-                mHostHAL->setMemHypervisorStats(0 /* ulMemAllocTotal */, 0 /* ulMemFreeTotal */, 0 /* ulMemBalloonTotal */, 0 /* ulMemSharedTotal */);
+            mValid = true;
         }
-        Assert(mGuest && mConsole);
-        mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
+        LogAleksey(("{%p} " LOG_FN_FMT ": mValid=%s mCpuUser=%u mCpuKernel=%u mCpuIdle=%u\n"
+                    "mMemTotal=%u mMemFree=%u mMemBalloon=%u mMemShared=%u mMemCache=%u\n"
+                    "mPageTotal=%u mAllocVMM=%u mFreeVMM=%u mBalloonedVMM=%u mSharedVMM=%u\n",
+                    this, __PRETTY_FUNCTION__, mValid?"y":"n",
+                    mCpuUser, mCpuKernel, mCpuIdle,
+                    mMemTotal, mMemFree, mMemBalloon, mMemShared, mMemCache,
+                    mPageTotal, mAllocVMM, mFreeVMM, mBalloonedVMM, mSharedVMM));
     }
+
     return S_OK;
 }
 
-int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iTick)
+void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
-    if (    mGuest
-        &&  iTick != mLastTick)
+    CollectorGuestList::iterator it;
+
+    LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p ramvmm=%s\n",
+                this, __PRETTY_FUNCTION__, mVMMStatsProvider, hints.isHostRamVmmCollected()?"y":"n"));
+    for (it = mGuests.begin(); it != mGuests.end(); it++)
     {
-        ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal;
-
-        mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
-                                      &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
-                                      &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
-
-        if (mHostHAL)
-            mHostHAL->setMemHypervisorStats(ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal);
-
-        mLastTick = iTick;
+        LogAleksey(("{%p} " LOG_FN_FMT ": it=%p pid=%d gueststats=%s...\n",
+                    this, __PRETTY_FUNCTION__, *it, (*it)->getProcess(),
+                    hints.isGuestStatsCollected((*it)->getProcess())?"y":"n"));
+        if (  (hints.isHostRamVmmCollected() && *it == mVMMStatsProvider)
+            || hints.isGuestStatsCollected((*it)->getProcess()))
+        {
+            /* Guest stats collection needs to be enabled */
+            if ((*it)->isEnabled())
+            {
+                /* Already enabled, collect the data */
+                (*it)->updateStats();
+            }
+            else
+            {
+                (*it)->invalidateStats();
+                (*it)->enable();
+            }
+        }
+        else
+        {
+            /* Guest stats collection needs to be disabled */
+            if ((*it)->isEnabled())
+                (*it)->disable();
+        }
     }
-    return S_OK;
 }
+
+void CollectorGuestManager::registerGuest(CollectorGuest* pGuest)
+{
+    mGuests.push_back(pGuest);
+    /*
+     * If no VMM stats provider was elected previously than this is our
+     * candidate.
+     */
+    if (!mVMMStatsProvider)
+        mVMMStatsProvider = pGuest;
+    LogAleksey(("{%p} " LOG_FN_FMT ": Registered guest=%p provider=%p\n",
+                this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
+}
+
+void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
+{
+    LogAleksey(("{%p} " LOG_FN_FMT ": About to unregister guest=%p provider=%p\n",
+                this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
+    mGuests.remove(pGuest);
+    LogAleksey(("{%p} " LOG_FN_FMT ": Number of guests after remove is %d\n",
+                this, __PRETTY_FUNCTION__, mGuests.size()));
+    if (pGuest == mVMMStatsProvider)
+    {
+        /* This was our VMM stats provider, it is time to re-elect */
+        if (mGuests.empty())
+        {
+            /* Nobody can provide VMM stats */
+            mVMMStatsProvider = NULL;
+        }
+        else
+        {
+            /* First let's look for a guest already collecting stats */
+            CollectorGuestList::iterator it;
+
+            for (it = mGuests.begin(); it != mGuests.end(); it++)
+                if ((*it)->isEnabled())
+                {
+                    /* Found one, elect it */
+                    mVMMStatsProvider = *it;
+                    LogAleksey(("{%p} " LOG_FN_FMT ": LEAVE new provider=%p\n",
+                                this, __PRETTY_FUNCTION__, mVMMStatsProvider));
+                    return;
+                }
+
+            /* Nobody collects stats, take the first one */
+            mVMMStatsProvider = mGuests.front();
+        }
+    }
+    LogAleksey(("{%p} " LOG_FN_FMT ": LEAVE new provider=%p\n",
+                this, __PRETTY_FUNCTION__, mVMMStatsProvider));
+}
+
 
 #endif /* !VBOX_COLLECTOR_TEST_CASE */
 
@@ -224,12 +303,6 @@ bool BaseMetric::collectorBeat(uint64_t nowAt)
     }
     return false;
 }
-
-/*bool BaseMetric::associatedWith(ComPtr<IUnknown> object)
-{
-    LogFlowThisFunc(("mObject(%p) == object(%p) is %s.\n", mObject, object, mObject == object ? "true" : "false"));
-    return mObject == object;
-}*/
 
 void HostCpuLoad::init(ULONG period, ULONG length)
 {
@@ -344,27 +417,42 @@ void HostRamVmm::init(ULONG period, ULONG length)
     mSharedVMM->init(mLength);
 }
 
-void HostRamVmm::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
+void HostRamVmm::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
-    /*
-     * This is an ugly ugly hack to force VMM metrics to 0s if no VM is
-     * running. The reason it should work is that the VMM stats are
-     * stored in CollectorHAL in preCollect methods of guest base metrics
-     * which are always added after HostRamVmm. So each pass of collector
-     * first clears the metrics then gets new values.
-     */
-    mHAL->setMemHypervisorStats(0 /* ulMemAllocTotal */, 0 /* ulMemFreeTotal */, 0 /* ulMemBalloonTotal */, 0 /* ulMemSharedTotal */);
+    hints.collectHostRamVmm();
 }
 
 void HostRamVmm::collect()
 {
-    ULONG allocVMM, freeVMM, balloonVMM, sharedVMM;
-
-    mHAL->getMemHypervisorStats(&allocVMM, &freeVMM, &balloonVMM, &sharedVMM);
-    mAllocVMM->put(allocVMM);
-    mFreeVMM->put(freeVMM);
-    mBalloonVMM->put(balloonVMM);
-    mSharedVMM->put(sharedVMM);
+    CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
+    if (provider)
+    {
+        LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p enabled=%s valid=%s...\n",
+                    this, __PRETTY_FUNCTION__, provider, provider->isEnabled()?"y":"n",
+                    provider->isValid()?"y":"n"));
+        if (provider->isValid())
+        {
+            /* Provider is ready, get updated stats */
+            mAllocCurrent     = provider->getAllocVMM();
+            mFreeCurrent      = provider->getFreeVMM();
+            mBalloonedCurrent = provider->getBalloonedVMM();
+            mSharedCurrent    = provider->getSharedVMM();
+        }
+    }
+    else
+    {
+        mAllocCurrent     = 0;
+        mFreeCurrent      = 0;
+        mBalloonedCurrent = 0;
+        mSharedCurrent    = 0;
+    }
+    LogAleksey(("{%p} " LOG_FN_FMT ": mAllocCurrent=%u mFreeCurrent=%u mBalloonedCurrent=%u mSharedCurrent=%u\n",
+                this, __PRETTY_FUNCTION__,
+                mAllocCurrent, mFreeCurrent, mBalloonedCurrent, mSharedCurrent));
+    mAllocVMM->put(mAllocCurrent);
+    mFreeVMM->put(mFreeCurrent);
+    mBalloonVMM->put(mBalloonedCurrent);
+    mSharedVMM->put(mSharedCurrent);
 }
 
 
@@ -449,19 +537,19 @@ void GuestCpuLoad::init(ULONG period, ULONG length)
     mIdle->init(mLength);
 }
 
-void GuestCpuLoad::preCollect(CollectorHints& hints, uint64_t iTick)
+void GuestCpuLoad::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
-    mHAL->preCollect(hints, iTick);
+    hints.collectGuestStats(mCGuest->getProcess());
 }
 
 void GuestCpuLoad::collect()
 {
-    ULONG CpuUser = 0, CpuKernel = 0, CpuIdle = 0;
-
-    mGuestHAL->getGuestCpuLoad(&CpuUser, &CpuKernel, &CpuIdle);
-    mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuUser) / 100);
-    mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuKernel) / 100);
-    mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuIdle) / 100);
+    if (mCGuest->isValid())
+    {
+        mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuUser()) / 100);
+        mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuKernel()) / 100);
+        mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuIdle()) / 100);
+    }
 }
 
 void GuestRamUsage::init(ULONG period, ULONG length)
@@ -477,22 +565,22 @@ void GuestRamUsage::init(ULONG period, ULONG length)
     mPagedTotal->init(mLength);
 }
 
-void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t iTick)
+void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
 {
-    mHAL->preCollect(hints, iTick);
+    hints.collectGuestStats(mCGuest->getProcess());
 }
 
 void GuestRamUsage::collect()
 {
-    ULONG ulMemTotal = 0, ulMemFree = 0, ulMemBalloon = 0, ulMemShared = 0, ulMemCache = 0, ulPageTotal = 0;
-
-    mGuestHAL->getGuestMemLoad(&ulMemTotal, &ulMemFree, &ulMemBalloon, &ulMemShared, &ulMemCache, &ulPageTotal);
-    mTotal->put(ulMemTotal);
-    mFree->put(ulMemFree);
-    mBallooned->put(ulMemBalloon);
-    mShared->put(ulMemShared);
-    mCache->put(ulMemCache);
-    mPagedTotal->put(ulPageTotal);
+    if (mCGuest->isValid())
+    {
+        mTotal->put(mCGuest->getMemTotal());
+        mFree->put(mCGuest->getMemFree());
+        mBallooned->put(mCGuest->getMemBalloon());
+        mShared->put(mCGuest->getMemShared());
+        mCache->put(mCGuest->getMemCache());
+        mPagedTotal->put(mCGuest->getPageTotal());
+    }
 }
 
 void CircularBuffer::init(ULONG ulLength)
@@ -791,10 +879,10 @@ bool Filter::match(const ComPtr<IUnknown> object, const iprt::MiniString &name) 
 {
     ElementList::const_iterator it;
 
-    LogAleksey(("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str()));
+    //LogAleksey(("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str()));
     for (it = mElements.begin(); it != mElements.end(); it++)
     {
-        LogAleksey(("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str()));
+        //LogAleksey(("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str()));
         if ((*it).first.isNull() || (*it).first == object)
         {
             // Objects match, compare names
@@ -805,7 +893,7 @@ bool Filter::match(const ComPtr<IUnknown> object, const iprt::MiniString &name) 
             }
         }
     }
-    LogAleksey(("...no matches!\n"));
+    //LogAleksey(("...no matches!\n"));
     return false;
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

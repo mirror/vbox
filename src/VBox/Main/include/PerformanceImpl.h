@@ -35,6 +35,8 @@ namespace pm
     class Metric;
     class BaseMetric;
     class CollectorHAL;
+    class CollectorGuest;
+    class CollectorGuestManager;
 }
 
 #undef min
@@ -173,6 +175,8 @@ public:
     void registerMetric (pm::Metric *metric);
     void unregisterBaseMetricsFor (const ComPtr<IUnknown> &object);
     void unregisterMetricsFor (const ComPtr<IUnknown> &object);
+    void registerGuest(pm::CollectorGuest* pGuest);
+    void unregisterGuest(pm::CollectorGuest* pGuest);
 
     void suspendSampling();
     void resumeSampling();
@@ -180,7 +184,8 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
-    pm::CollectorHAL *getHAL() { return m.hal; };
+    pm::CollectorHAL          *getHAL()          { return m.hal; };
+    pm::CollectorGuestManager *getGuestManager() { return m.gm; };
 
 private:
     HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);
@@ -203,10 +208,11 @@ private:
     {
         Data() : hal(0) {};
 
-        BaseMetricList     baseMetrics;
-        MetricList         metrics;
-        RTTIMERLR          sampler;
-        pm::CollectorHAL  *hal;
+        BaseMetricList             baseMetrics;
+        MetricList                 metrics;
+        RTTIMERLR                  sampler;
+        pm::CollectorHAL          *hal;
+        pm::CollectorGuestManager *gm;
     };
 
     Data m;

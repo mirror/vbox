@@ -158,6 +158,7 @@ HRESULT PerformanceCollector::init()
     HRESULT rc = S_OK;
 
     m.hal = pm::createHAL();
+    m.gm = new pm::CollectorGuestManager;
 
     /* Let the sampler know it gets a valid collector.  */
     mMagic = MAGIC;
@@ -207,6 +208,8 @@ void PerformanceCollector::uninit()
     //delete m.factory;
     //m.factory = NULL;
 
+    delete m.gm;
+    m.gm = NULL;
     delete m.hal;
     m.hal = NULL;
 
@@ -564,6 +567,24 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject)
     //LogFlowThisFuncLeave();
 }
 
+void PerformanceCollector::registerGuest(pm::CollectorGuest* pGuest)
+{
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m.gm->registerGuest(pGuest);
+}
+
+void PerformanceCollector::unregisterGuest(pm::CollectorGuest* pGuest)
+{
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m.gm->unregisterGuest(pGuest);
+}
+
 void PerformanceCollector::suspendSampling()
 {
     AutoCaller autoCaller(this);
@@ -599,6 +620,22 @@ void PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUse
     NOREF (hTimerLR);
 }
 
+/*
+ * Metrics collection is a three stage process:
+ * 1) Pre-collection (hinting)
+ *    At this stage we compose the list of all metrics to be collected
+ *    If any metrics cannot be collected separately or if it is more
+ *    efficient to collect several metric at once, these metrics should
+ *    use hints to mark that they will need to be collected.
+ * 2) Pre-collection (bulk)
+ *    Using hints set at stage 1 platform-specific HAL
+ *    instance collects all marked host-related metrics.
+ *    Hinted guest-related metrics then get collected by CollectorGuestManager.
+ * 3) Collection
+ *    Metrics that are collected individually get collected and stored. Values
+ *    saved in HAL and CollectorGuestManager are extracted and stored to
+ *    individual metrics.
+ */
 void PerformanceCollector::samplerCallback(uint64_t iTick)
 {
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
@@ -617,10 +654,15 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
         }
 
     if (toBeCollected.size() == 0)
+    {
+        Log4(("{%p} " LOG_FN_FMT ": LEAVE (nothing to collect)\n", this, __PRETTY_FUNCTION__));
         return;
+    }
 
     /* Let know the platform specific code what is being collected */
     m.hal->preCollect(hints, iTick);
+    /* Collect the data in bulk from all hinted guests */
+    m.gm->preCollect(hints, iTick);
 
     /* Finally, collect the data */
     std::for_each (toBeCollected.begin(), toBeCollected.end(),

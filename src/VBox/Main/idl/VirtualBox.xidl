@@ -14483,6 +14483,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <li>CPU/Load</li>
       <li>CPU/MHz</li>
       <li>RAM/Usage</li>
+      <li>RAM/VMM</li>
       </ul>
 
       The general sequence for collecting and retrieving the metrics is:
