@@ -2220,20 +2220,13 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 # ifdef VBOX_WITH_EXTPACK
                     else
                     {
-                        /* Fatal if a saved state is being restored, otherwise ignorable. */
-                        if (mMachineState == MachineState_Restoring)
-                            return VMSetError(pVM, VERR_NOT_FOUND, RT_SRC_POS,
-                                    N_("Implementation of the USB 2.0 controller not found!\n"
-                                       "Because the USB 2.0 controller state is part of the saved "
-                                       "VM state, the VM cannot be started. To fix "
-                                       "this problem, either install the '%s' or disable USB 2.0 "
-                                       "support in the VM settings"),
-                                    s_pszUsbExtPackName);
-                        setVMRuntimeErrorCallbackF(pVM, this, 0, "ExtPackNoEhci",
+                        /* Always fatal! Up to VBox 4.0.4 we allowed to start the VM anyway
+                         * but this induced problems when the user saved + restored the VM! */
+                        return VMSetError(pVM, VERR_NOT_FOUND, RT_SRC_POS,
                                 N_("Implementation of the USB 2.0 controller not found!\n"
-                                   "The device will be disabled. You can ignore this warning "
-                                   "but there will be no USB 2.0 support in your VM. To fix "
-                                   "this issue, either install the '%s' or disable USB 2.0 "
+                                   "Because the USB 2.0 controller state is part of the saved "
+                                   "VM state, the VM cannot be started. To fix "
+                                   "this problem, either install the '%s' or disable USB 2.0 "
                                    "support in the VM settings"),
                                 s_pszUsbExtPackName);
                     }
