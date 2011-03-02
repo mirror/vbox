@@ -20,17 +20,41 @@
     <itemizedlist>
 
       <listitem>
-        <para>VBoxManage: changed syntax of the guestcontrol command group, fixed
-          various bugs.</para>
+        <para>GUI: when reverting to a snapshot, ask for taking a snapshot
+          of the current state</para>
       </listitem>
 
       <listitem>
-        <para>Guest Additions: improved driver installation on Windows guests.</para>
+        <para>GUI: added <emphasis>View</emphasis> menu</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: added setting for the promiscuous mode policy for
+          internal networks, bridged networks and host-only networks</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: changed syntax of the <emphasis>guestcontrol</emphasis>
+          command group, fixed various bugs</para>
+      </listitem>
+
+      <listitem>
+        <para>Settings: machine names and snapshot names are not allowed to
+          be a valid UUID</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial: announce the serial devices in the ACPI tables to make
+          Windows guests find the virtual hardware (bug #7411)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: improved driver installation on Windows guests</para>
       </listitem>
 
        <listitem>
         <para>Guest Additions: fixed high CPU usage while executing guest programs
-          from the host.</para>
+          from the host</para>
       </listitem>
 
     </itemizedlist>
