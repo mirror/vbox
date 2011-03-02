@@ -1221,7 +1221,8 @@ int main(int argc, char *argv[])
 
 
         // Fill base metrics array
-        Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
+        //Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
+        Bstr baseMetricNames[] = { L"RAM/VMM" };
         com::SafeArray<BSTR> baseMetrics(1);
         baseMetricNames[0].cloneTo(&baseMetrics[0]);
 
@@ -1234,27 +1235,26 @@ int main(int argc, char *argv[])
         Bstr name = argc > 1 ? argv[1] : "dsl";
         Bstr sessionType = argc > 2 ? argv[2] : "headless";
         RTPrintf("Getting a machine object named '%ls'...\n", name.raw());
-        CHECK_RC_BREAK(virtualBox->FindMachine(name, machine.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, FindMachine(name.raw(), machine.asOutParam()));
 
         // Open session
-        Guid guid;
-        CHECK_RC_BREAK(machine->COMGETTER(Id)(guid.asOutParam()));
-        RTPrintf("Opening a remote session for this machine...\n");
         ComPtr<IProgress> progress;
-        CHECK_RC_BREAK(virtualBox->OpenRemoteSession(session, guid, sessionType,
-                                                       NULL, progress.asOutParam()));
-        RTPrintf("Waiting for the session to open...\n");
-        CHECK_RC_BREAK(progress->WaitForCompletion(-1));
-        ComPtr<IMachine> sessionMachine;
-        RTPrintf("Getting machine session object...\n");
-        CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
+        RTPrintf("Launching VM process...\n");
+        CHECK_ERROR_BREAK(machine, LaunchVMProcess(session, sessionType.raw(),
+                                                   NULL, progress.asOutParam()));
+        RTPrintf("Waiting for the VM to power on...\n");
+        CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
+
+        // ComPtr<IMachine> sessionMachine;
+        // RTPrintf("Getting machine session object...\n");
+        // CHECK_ERROR_BREAK(session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         // Setup base metrics
         // Note that one needs to set up metrics after a session is open for a machine.
         com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
-        com::SafeIfaceArray<IUnknown> objects(2);
+        com::SafeIfaceArray<IUnknown> objects(1);
         host.queryInterfaceTo(&objects[0]);
-        machine.queryInterfaceTo(&objects[1]);
+        //machine.queryInterfaceTo(&objects[1]);
         CHECK_ERROR_BREAK(collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
                                                    ComSafeArrayAsInParam(objects), 1u, 10u,
                                                    ComSafeArrayAsOutParam(affectedMetrics)));
@@ -1265,7 +1265,7 @@ int main(int argc, char *argv[])
         // Get console
         ComPtr<IConsole> console;
         RTPrintf("Getting console object...\n");
-        CHECK_RC_BREAK(session->COMGETTER(Console)(console.asOutParam()));
+        CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
 
         RTThreadSleep(5000); // Sleep for 5 seconds
 
@@ -1275,7 +1275,7 @@ int main(int argc, char *argv[])
         // Pause
         //RTPrintf("Press enter to pause the VM execution in the remote session...");
         //getchar();
-        CHECK_RC(console->Pause());
+        CHECK_ERROR_BREAK(console, Pause());
 
         RTThreadSleep(5000); // Sleep for 5 seconds
 
@@ -1320,10 +1320,12 @@ int main(int argc, char *argv[])
         // Power off
         RTPrintf("Press enter to power off VM...");
         getchar();
-        CHECK_RC(console->PowerDown());
+        CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
+        RTPrintf("Waiting for the VM to power down...\n");
+        CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
         RTPrintf("Press enter to close this session...");
         getchar();
-        session->Close();
+        session->UnlockMachine();
     } while (false);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #if 0

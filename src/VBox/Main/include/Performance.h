@@ -72,11 +72,11 @@ namespace pm
     };
 
 
-    /* Collector Hardware Abstraction Layer *********************************/
     enum {
         COLLECT_NONE        = 0x0,
         COLLECT_CPU_LOAD    = 0x1,
-        COLLECT_RAM_USAGE   = 0x2
+        COLLECT_RAM_USAGE   = 0x2,
+        COLLECT_GUEST_STATS = 0x4
     };
     typedef int HintFlags;
     typedef std::pair<RTPROCESS, HintFlags> ProcessFlagsPair;
@@ -91,18 +91,26 @@ namespace pm
             { mHostFlags |= COLLECT_CPU_LOAD; }
         void collectHostRamUsage()
             { mHostFlags |= COLLECT_RAM_USAGE; }
+        void collectHostRamVmm()
+            { mHostFlags |= COLLECT_GUEST_STATS; }
         void collectProcessCpuLoad(RTPROCESS process)
             { findProcess(process).second |= COLLECT_CPU_LOAD; }
         void collectProcessRamUsage(RTPROCESS process)
             { findProcess(process).second |= COLLECT_RAM_USAGE; }
+        void collectGuestStats(RTPROCESS process)
+            { findProcess(process).second |= COLLECT_GUEST_STATS; }
         bool isHostCpuLoadCollected() const
             { return (mHostFlags & COLLECT_CPU_LOAD) != 0; }
         bool isHostRamUsageCollected() const
             { return (mHostFlags & COLLECT_RAM_USAGE) != 0; }
+        bool isHostRamVmmCollected() const
+            { return (mHostFlags & COLLECT_GUEST_STATS) != 0; }
         bool isProcessCpuLoadCollected(RTPROCESS process)
             { return (findProcess(process).second & COLLECT_CPU_LOAD) != 0; }
         bool isProcessRamUsageCollected(RTPROCESS process)
             { return (findProcess(process).second & COLLECT_RAM_USAGE) != 0; }
+        bool isGuestStatsCollected(RTPROCESS process)
+            { return (findProcess(process).second & COLLECT_GUEST_STATS) != 0; }
         void getProcesses(std::vector<RTPROCESS>& processes) const
         {
             processes.clear();
@@ -131,10 +139,76 @@ namespace pm
         }
     };
 
+    /* Guest Collector Classes  *********************************/
+    class CollectorGuest
+    {
+    public:
+        CollectorGuest(Machine *machine, RTPROCESS process);
+        ~CollectorGuest();
+
+        bool isEnabled()        { return mEnabled; };
+        bool isValid()          { return mValid; };
+        void invalidateStats()  { mValid = false; };
+        int updateStats();
+        int enable();
+        int disable();
+
+        RTPROCESS getProcess()  { return mProcess; };
+        ULONG getCpuUser()      { return mCpuUser; };
+        ULONG getCpuKernel()    { return mCpuKernel; };
+        ULONG getCpuIdle()      { return mCpuIdle; };
+        ULONG getMemTotal()     { return mMemTotal; };
+        ULONG getMemFree()      { return mMemFree; };
+        ULONG getMemBalloon()   { return mMemBalloon; };
+        ULONG getMemShared()    { return mMemShared; };
+        ULONG getMemCache()     { return mMemCache; };
+        ULONG getPageTotal()    { return mPageTotal; };
+        ULONG getAllocVMM()     { return mAllocVMM; };
+        ULONG getFreeVMM()      { return mFreeVMM; };
+        ULONG getBalloonedVMM() { return mBalloonedVMM; };
+        ULONG getSharedVMM()    { return mSharedVMM; };
+
+    private:
+        bool                 mEnabled;
+        bool                 mValid;
+        Machine             *mMachine;
+        RTPROCESS            mProcess;
+        ComPtr<IConsole>     mConsole;
+        ComPtr<IGuest>       mGuest;
+        ULONG                mCpuUser;
+        ULONG                mCpuKernel;
+        ULONG                mCpuIdle;
+        ULONG                mMemTotal;
+        ULONG                mMemFree;
+        ULONG                mMemBalloon;
+        ULONG                mMemShared;
+        ULONG                mMemCache;
+        ULONG                mPageTotal;
+        ULONG                mAllocVMM;
+        ULONG                mFreeVMM;
+        ULONG                mBalloonedVMM;
+        ULONG                mSharedVMM;
+    };
+
+    typedef std::list<CollectorGuest*> CollectorGuestList;
+    class CollectorGuestManager
+    {
+    public:
+        CollectorGuestManager() : mVMMStatsProvider(NULL) {};
+        void registerGuest(CollectorGuest* pGuest);
+        void unregisterGuest(CollectorGuest* pGuest);
+        CollectorGuest *getVMMStatsProvider() { return mVMMStatsProvider; };
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+    private:
+        CollectorGuestList mGuests;
+        CollectorGuest    *mVMMStatsProvider;
+    };
+
+    /* Collector Hardware Abstraction Layer *********************************/
     class CollectorHAL
     {
     public:
-                 CollectorHAL() : mMemAllocVMM(0), mMemFreeVMM(0), mMemBalloonedVMM(0), mMemSharedVMM(0) {};
+                 CollectorHAL() {};
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */, uint64_t /* iTick */) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
@@ -152,90 +226,6 @@ namespace pm
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
-
-        /** Enable metrics collecting (if applicable) */
-        virtual int enable();
-        /** Disable metrics collecting (if applicable) */
-        virtual int disable();
-
-        virtual int setMemHypervisorStats(ULONG memAlloc, ULONG memFree, ULONG memBallooned, ULONG memShared)
-        {
-            mMemAllocVMM     = memAlloc;
-            mMemFreeVMM      = memFree;
-            mMemBalloonedVMM = memBallooned;
-            mMemSharedVMM    = memShared;
-            return S_OK;
-        }
-
-        virtual void getMemHypervisorStats(ULONG *pMemAlloc, ULONG *pMemFree, ULONG *pMemBallooned, ULONG *pMemShared)
-        {
-            *pMemAlloc     = mMemAllocVMM;
-            *pMemFree      = mMemFreeVMM;
-            *pMemBallooned = mMemBalloonedVMM;
-            *pMemShared    = mMemSharedVMM;
-        }
-
-    private:
-        ULONG       mMemAllocVMM;
-        ULONG       mMemFreeVMM;
-        ULONG       mMemBalloonedVMM;
-        ULONG       mMemSharedVMM;
-    };
-
-    class CollectorGuestHAL : public CollectorHAL
-    {
-    public:
-        CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL);
-        ~CollectorGuestHAL();
-
-        virtual int preCollect(const CollectorHints& hints, uint64_t iTick);
-
-        /** Enable metrics collecting (if applicable) */
-        virtual int enable();
-        /** Disable metrics collecting (if applicable) */
-        virtual int disable();
-
-        /** Return guest cpu absolute load values (0-100). */
-        void getGuestCpuLoad(ULONG *pulCpuUser, ULONG *pulCpuKernel, ULONG *pulCpuIdle)
-        {
-            *pulCpuUser   = mCpuUser;
-            *pulCpuKernel = mCpuKernel;
-            *pulCpuIdle   = mCpuIdle;
-        }
-
-        /** Return guest memory information in KB. */
-        void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemShared, ULONG *pulMemCache, ULONG *pulPageTotal)
-        {
-            *pulMemTotal        = mMemTotal;
-            *pulMemFree         = mMemFree;
-            *pulMemBalloon      = mMemBalloon;
-            *pulMemShared       = mMemShared;
-            *pulMemCache        = mMemCache;
-            *pulPageTotal       = mPageTotal;
-        }
-
-
-    protected:
-        uint32_t             cEnabled;
-        Machine             *mMachine;
-        ComPtr<IConsole>     mConsole;
-        ComPtr<IGuest>       mGuest;
-        uint64_t             mLastTick;
-
-        CollectorHAL        *mHostHAL;
-
-        ULONG                mCpuUser;
-        ULONG                mCpuKernel;
-        ULONG                mCpuIdle;
-        ULONG                mMemTotal;
-        ULONG                mMemFree;
-        ULONG                mMemBalloon;
-        ULONG                mMemShared;
-        ULONG                mMemCache;
-        ULONG                mPageTotal;
-
-    private:
-        static uint32_t      cVMsEnabled;
     };
 
     extern CollectorHAL *createHAL();
@@ -258,16 +248,8 @@ namespace pm
 
         bool collectorBeat(uint64_t nowAt);
 
-        void enable()
-        {
-            mEnabled = true;
-            mHAL->enable();
-        };
-        void disable()
-        {
-            mHAL->disable();
-            mEnabled = false;
-        };
+        void enable()  { mEnabled = true; };
+        void disable() { mEnabled = false; };
 
         bool isEnabled() { return mEnabled; };
         ULONG getPeriod() { return mPeriod; };
@@ -284,6 +266,15 @@ namespace pm
         ComPtr<IUnknown> mObject;
         uint64_t         mLastSampleTaken;
         bool             mEnabled;
+    };
+
+    class BaseGuestMetric : public BaseMetric
+    {
+    public:
+        BaseGuestMetric(CollectorGuest *cguest, const char *name, ComPtr<IUnknown> object)
+            : BaseMetric(NULL, name, object), mCGuest(cguest) {};
+    protected:
+        CollectorGuest *mCGuest;
     };
 
     class HostCpuLoad : public BaseMetric
@@ -362,8 +353,10 @@ namespace pm
     class HostRamVmm : public BaseMetric
     {
     public:
-        HostRamVmm(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM, SubMetric *sharedVMM)
-        : BaseMetric(hal, "RAM/VMM", object), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM), mSharedVMM(sharedVMM) {};
+        HostRamVmm(CollectorGuestManager *gm, ComPtr<IUnknown> object, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM, SubMetric *sharedVMM)
+            : BaseMetric(NULL, "RAM/VMM", object), mCollectorGuestManager(gm),
+            mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM), mSharedVMM(sharedVMM),
+            mAllocCurrent(0), mFreeCurrent(0), mBalloonedCurrent(0), mSharedCurrent(0) {};
         ~HostRamVmm() { delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; delete mSharedVMM; };
 
         void init(ULONG period, ULONG length);
@@ -373,11 +366,17 @@ namespace pm
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
         ULONG getScale() { return 1; }
+
     private:
-        SubMetric *mAllocVMM;
-        SubMetric *mFreeVMM;
-        SubMetric *mBalloonVMM;
-        SubMetric *mSharedVMM;
+        CollectorGuestManager *mCollectorGuestManager;
+        SubMetric             *mAllocVMM;
+        SubMetric             *mFreeVMM;
+        SubMetric             *mBalloonVMM;
+        SubMetric             *mSharedVMM;
+        ULONG                  mAllocCurrent;
+        ULONG                  mFreeCurrent;
+        ULONG                  mBalloonedCurrent;
+        ULONG                  mSharedCurrent;
     };
 
     class MachineCpuLoad : public BaseMetric
@@ -433,11 +432,11 @@ namespace pm
     };
 
 
-    class GuestCpuLoad : public BaseMetric
+    class GuestCpuLoad : public BaseGuestMetric
     {
     public:
-        GuestCpuLoad(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-        : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle), mGuestHAL(hal) {};
+        GuestCpuLoad(CollectorGuest *cguest, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
+            : BaseGuestMetric(cguest, "Guest/CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
         ~GuestCpuLoad() { delete mUser; delete mKernel; delete mIdle; };
 
         void init(ULONG period, ULONG length);
@@ -451,14 +450,13 @@ namespace pm
         SubMetric *mUser;
         SubMetric *mKernel;
         SubMetric *mIdle;
-        CollectorGuestHAL *mGuestHAL;
     };
 
-    class GuestRamUsage : public BaseMetric
+    class GuestRamUsage : public BaseGuestMetric
     {
     public:
-        GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *shared, SubMetric *cache, SubMetric *pagedtotal)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mShared(shared), mGuestHAL(hal) {};
+        GuestRamUsage(CollectorGuest *cguest, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *shared, SubMetric *cache, SubMetric *pagedtotal)
+            : BaseGuestMetric(cguest, "Guest/RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mShared(shared) {};
         ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mShared; delete mCache; delete mPagedTotal; };
 
         void init(ULONG period, ULONG length);
@@ -470,7 +468,6 @@ namespace pm
         ULONG getScale() { return 1; }
     private:
         SubMetric *mTotal, *mFree, *mBallooned, *mCache, *mPagedTotal, *mShared;
-        CollectorGuestHAL *mGuestHAL;
     };
 
     /* Aggregate Functions **************************************************/

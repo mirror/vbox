@@ -226,7 +226,7 @@ Machine::MediaData::~MediaData()
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Machine()
-    : mGuestHAL(NULL),
+    : mCollectorGuest(NULL),
       mPeer(NULL),
       mParent(NULL)
 {}
@@ -10066,8 +10066,11 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
                                               new pm::AggregateMax()));
 
 
-    /* Guest metrics */
-    mGuestHAL = new pm::CollectorGuestHAL(this, hal);
+    /* Guest metrics collector */
+    mCollectorGuest = new pm::CollectorGuest(aMachine, pid);
+    aCollector->registerGuest(mCollectorGuest);
+    LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
+                this, __PRETTY_FUNCTION__, mCollectorGuest));
 
     /* Create sub metrics */
     pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/CPU/Load/User",
@@ -10087,10 +10090,13 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::SubMetric *guestPagedTotal = new pm::SubMetric("Guest/Pagefile/Usage/Total",    "Total amount of space in the page file.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
+    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(mCollectorGuest, aMachine,
+                                                        guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
-    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, guestMemShared,
+    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mCollectorGuest, aMachine,
+                                                        guestMemTotal, guestMemFree,
+                                                        guestMemBalloon, guestMemShared,
                                                         guestMemCache, guestPagedTotal);
     aCollector->registerBaseMetric(guestCpuMem);
 
@@ -10148,12 +10154,6 @@ void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMach
     {
         aCollector->unregisterMetricsFor(aMachine);
         aCollector->unregisterBaseMetricsFor(aMachine);
-    }
-
-    if (mGuestHAL)
-    {
-        delete mGuestHAL;
-        mGuestHAL = NULL;
     }
 }
 
@@ -10464,6 +10464,14 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     // and others need mParent lock, and USB needs host lock.
     AutoMultiWriteLock3 multilock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
+    LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
+                this, __PRETTY_FUNCTION__, mCollectorGuest));
+    if (mCollectorGuest)
+    {
+        mParent->performanceCollector()->unregisterGuest(mCollectorGuest);
+        delete mCollectorGuest;
+        mCollectorGuest = NULL;
+    }
     // Trigger async cleanup tasks, avoid doing things here which are not
     // vital to be done immediately and maybe need more locks. This calls
     // Machine::unregisterMetrics().

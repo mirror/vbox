@@ -2793,7 +2793,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
                                                     ramUsageUsed,
                                                     ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
-    pm::BaseMetric *ramVmm = new pm::HostRamVmm(hal, objptr, 
+    pm::BaseMetric *ramVmm = new pm::HostRamVmm(aCollector->getGuestManager(), objptr, 
                                                 ramVMMUsed,
                                                 ramVMMFree,
                                                 ramVMMBallooned,
