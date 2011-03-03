@@ -1218,6 +1218,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
 
         case PCI_ADDRESS_SPACE_MEM:
         case PCI_ADDRESS_SPACE_MEM_PREFETCH:
+        case PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64:
+        case PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_BAR64:
             /*
              * Sanity check: don't allow to register more than 512MB of the PCI MMIO space for
              * now. If this limit is increased beyond 2GB, adapt the aligned check below as well!
@@ -1249,7 +1251,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
         /*
          * We're currently restricted to page aligned MMIO regions.
          */
-        if (    (enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
+        if (    ((enmType & ~(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH)) == PCI_ADDRESS_SPACE_MEM)
             &&  cbRegion != RT_ALIGN_32(cbRegion, PAGE_SIZE))
         {
             Log(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: aligning cbRegion %#x -> %#x\n",

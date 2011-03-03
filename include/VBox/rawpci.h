@@ -64,7 +64,7 @@ typedef struct
     RTGCPHYS RegionStart;
     uint64_t u64RegionSize;
     bool     fPresent;
-    bool     fMmio;
+    uint32_t fFlags;
 } PCIRAWREQGETREGIONINFO;
 
 /** Parameters buffer for PCIRAWR0_DO_MAP_REGION call. */
@@ -283,7 +283,7 @@ typedef struct RAWPCIDEVPORT
                                                  RTHCPHYS       *pRegionStart,
                                                  uint64_t       *pu64RegionSize,
                                                  bool           *pfPresent,
-                                                 bool           *pfMmio));
+                                                 uint32_t       *pfFlags));
 
 
     /**
@@ -386,6 +386,25 @@ typedef enum PCIRAWDRIVERFLAGS
     PCIRAWDRIVERRFLAG_32BIT_HACK = 0x7fffffff
 } PCIRAWDRIVERFLAGS;
 
+/**
+ * Flags used to describe PCI region, matches to PCIADDRESSSPACE
+ * in pci.h.
+ */
+typedef enum PCIRAWADDRESSSPACE
+{
+    /** Memory. */
+    PCIRAW_ADDRESS_SPACE_MEM = 0x00,
+    /** I/O space. */
+    PCIRAW_ADDRESS_SPACE_IO = 0x01,
+    /** 32-bit BAR. */
+    PCIRAW_ADDRESS_SPACE_BAR32 = 0x00,
+    /** 64-bit BAR. */
+    PCIRAW_ADDRESS_SPACE_BAR64 = 0x04,
+    /** Prefetch memory. */
+    PCIRAW_ADDRESS_SPACE_MEM_PREFETCH = 0x08,
+    /** The usual 32-bit type blow up. */
+    PCIRAW_ADDRESS_SPACE_32BIT_HACK = 0x7fffffff
+} PCIRAWADDRESSSPACE;
 
 RT_C_DECLS_END
 

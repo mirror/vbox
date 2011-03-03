@@ -120,13 +120,13 @@ DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
                                         RTHCPHYS       *pRegionStart,
                                         uint64_t       *pu64RegionSize,
                                         bool           *pfPresent,
-                                        bool           *pfMmio)
+                                        uint32_t        *pfFlags)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
     int rc = vboxPciOsDevGetRegionInfo(pThis, iRegion,
                                        pRegionStart, pu64RegionSize,
-                                       pfPresent, pfMmio);
+                                       pfPresent, pfFlags);
 
     return rc;
 }

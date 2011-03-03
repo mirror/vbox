@@ -107,7 +107,7 @@ DECLHIDDEN(int)  vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
                                            RTHCPHYS       *pRegionStart,
                                            uint64_t       *pu64RegionSize,
                                            bool           *pfPresent,
-                                           bool           *pfMmio);
+                                           uint32_t       *pfFlags);
 DECLHIDDEN(int)  vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
                                        int32_t        iRegion,
                                        RTHCPHYS       pRegionStart,
