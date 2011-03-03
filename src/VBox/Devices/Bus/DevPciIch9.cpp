@@ -894,9 +894,12 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     /*
      * Validate.
      */
-    AssertMsgReturn(   enmType == PCI_ADDRESS_SPACE_MEM
-                    || enmType == PCI_ADDRESS_SPACE_IO
-                    || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH,
+    AssertMsgReturn(   enmType == (PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR32)
+                    || enmType == (PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_BAR32)
+                    || enmType == (PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64)
+                    || enmType == (PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_BAR64)
+                    || enmType ==  PCI_ADDRESS_SPACE_IO
+                    ,
                     ("Invalid enmType=%#x? Or was this a bitmask after all...\n", enmType),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn((unsigned)iRegion < PCI_NUM_REGIONS,
@@ -907,6 +910,9 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
                     &&  RT_BIT_32(iLastSet - 1) == cbRegion,
                     ("Invalid cbRegion=%#x iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
                     VERR_INVALID_PARAMETER);
+
+    Log(("ich9pciIORegionRegister: %s region %d size %d type %x\n",
+         pPciDev->name, iRegion, cbRegion, enmType));
 
     /*
      * Register the I/O region.
@@ -919,8 +925,9 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 
     /* Set type in the config space. */
     uint32_t u32Address = ich9pciGetRegionReg(iRegion);
-    uint32_t u32Value   =   (enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH ? (1 << 3) : 0)
-                          | (enmType == PCI_ADDRESS_SPACE_IO ? 1 : 0);
+    uint32_t u32Value   =
+          (((enmType & PCI_ADDRESS_SPACE_MEM_PREFETCH) != 0) ? (1 << 3) : 0)
+        | (((enmType & PCI_ADDRESS_SPACE_IO) != 0)  ? 1 : 0);
     PCIDevSetDWord(pPciDev, u32Address, u32Value);
 
     return VINF_SUCCESS;
@@ -1599,7 +1606,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     uint32_t *paddr;
     uint16_t uDevClass, uVendor, uDevice;
     uint8_t uCmd;
-
+    
     uDevClass  = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_CLASS_DEVICE, 2);
     uVendor    = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_VENDOR_ID, 2);
     uDevice    = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_DEVICE_ID, 2);
@@ -2583,7 +2590,7 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
                          ~(VBOX_PCI_COMMAND_IO |
                            VBOX_PCI_COMMAND_MEMORY |
                            VBOX_PCI_COMMAND_MASTER));
-        
+
         /* Bridge device reset handlers processed later */
         if (!pciDevIsPci2PciBridge(pDev))
         {
