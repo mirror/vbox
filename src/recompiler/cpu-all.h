@@ -36,7 +36,6 @@
 # endif
 # include <VBox/log.h>
 # include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
-# include <stdio.h> /* FILE */
 #endif
 
 #if defined(__arm__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
