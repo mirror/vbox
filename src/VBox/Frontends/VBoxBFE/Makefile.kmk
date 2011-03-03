@@ -17,6 +17,12 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
+
+#
+# Include sub-makefile(s).
+#
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+
 if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardened VBoxBFE on darwin (.m).
 
 #
