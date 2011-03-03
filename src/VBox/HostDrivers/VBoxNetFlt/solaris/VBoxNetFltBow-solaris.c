@@ -1272,7 +1272,7 @@ int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
          * Remove the VNIC from the list, destroy and free it.
          */
         list_remove(&pThis->u.s.hVNICs, pVNIC);
-        LogRel((DEVICE_NAME ":vboxNetFltPortOsDisconnectInterface destroying pVNIC=%p\n", pVNIC));
+        LogFlow((DEVICE_NAME ":vboxNetFltPortOsDisconnectInterface destroying pVNIC=%p\n", pVNIC));
         vboxNetFltSolarisDestroyVNIC(pVNIC);
         vboxNetFltSolarisFreeVNIC(pVNIC);
     }
