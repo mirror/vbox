@@ -484,8 +484,8 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ? ((x - 1) * 0xFFFF) / displayWidth: 0;
-        *pcY = displayHeight ? ((y - 1) * 0xFFFF) / displayHeight: 0;
+        *pcX = displayWidth ? ((x - 1) * 0xFFFF) / (LONG) displayWidth: 0;
+        *pcY = displayHeight ? ((y - 1) * 0xFFFF) / (LONG) displayHeight: 0;
     }
     else
     {
