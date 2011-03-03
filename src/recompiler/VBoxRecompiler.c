@@ -20,8 +20,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_REM
-#include "osdep.h"
 #include <stdio.h>      /* FILE */
+#include "osdep.h"
 #include "exec-all.h"
 #include "config.h"
 #include "cpu-all.h"
