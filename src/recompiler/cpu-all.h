@@ -36,6 +36,7 @@
 # endif
 # include <VBox/log.h>
 # include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+# include <stdio.h> /* FILE */
 #endif
 
 #if defined(__arm__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
@@ -877,72 +878,6 @@ int page_get_flags(target_ulong address);
 void page_set_flags(target_ulong start, target_ulong end, int flags);
 int page_check_range(target_ulong start, target_ulong len, int flags);
 void page_unprotect_range(target_ulong data, target_ulong data_size);
-
-#if 0 /* bird: Not there in the code I'm looking at. */
-#define SINGLE_CPU_DEFINES
-#ifdef SINGLE_CPU_DEFINES
-
-#if defined(TARGET_I386)
-
-#define CPUState CPUX86State
-#define cpu_init cpu_x86_init
-#define cpu_exec cpu_x86_exec
-#define cpu_gen_code cpu_x86_gen_code
-#define cpu_signal_handler cpu_x86_signal_handler
-
-#elif defined(TARGET_ARM)
-
-#define CPUState CPUARMState
-#define cpu_init cpu_arm_init
-#define cpu_exec cpu_arm_exec
-#define cpu_gen_code cpu_arm_gen_code
-#define cpu_signal_handler cpu_arm_signal_handler
-
-#elif defined(TARGET_SPARC)
-
-#define CPUState CPUSPARCState
-#define cpu_init cpu_sparc_init
-#define cpu_exec cpu_sparc_exec
-#define cpu_gen_code cpu_sparc_gen_code
-#define cpu_signal_handler cpu_sparc_signal_handler
-
-#elif defined(TARGET_PPC)
-
-#define CPUState CPUPPCState
-#define cpu_init cpu_ppc_init
-#define cpu_exec cpu_ppc_exec
-#define cpu_gen_code cpu_ppc_gen_code
-#define cpu_signal_handler cpu_ppc_signal_handler
-
-#elif defined(TARGET_M68K)
-#define CPUState CPUM68KState
-#define cpu_init cpu_m68k_init
-#define cpu_exec cpu_m68k_exec
-#define cpu_gen_code cpu_m68k_gen_code
-#define cpu_signal_handler cpu_m68k_signal_handler
-
-#elif defined(TARGET_MIPS)
-#define CPUState CPUMIPSState
-#define cpu_init cpu_mips_init
-#define cpu_exec cpu_mips_exec
-#define cpu_gen_code cpu_mips_gen_code
-#define cpu_signal_handler cpu_mips_signal_handler
-
-#elif defined(TARGET_SH4)
-#define CPUState CPUSH4State
-#define cpu_init cpu_sh4_init
-#define cpu_exec cpu_sh4_exec
-#define cpu_gen_code cpu_sh4_gen_code
-#define cpu_signal_handler cpu_sh4_signal_handler
-
-#else
-
-#error unsupported target CPU
-
-#endif
-
-#endif /* SINGLE_CPU_DEFINES */
-#endif /* bird: removed? */
 
 void cpu_dump_state(CPUState *env, FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
