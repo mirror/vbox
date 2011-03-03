@@ -1314,10 +1314,10 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
 
         if (rc == VERR_VD_BLOCK_FREE)
         {
-            for (pCurrImage =  pCurrImage->pPrev;
-                 pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
-                 pCurrImage = pCurrImage->pPrev)
+            while (   pCurrImage->pPrev != NULL
+                   && rc == VERR_VD_BLOCK_FREE)
             {
+                pCurrImage =  pCurrImage->pPrev;
                 rc = pCurrImage->Backend->pfnAsyncRead(pCurrImage->pBackendData,
                                                        uOffset, cbThisRead,
                                                        pIoCtx, &cbThisRead);
@@ -2989,6 +2989,8 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
+    Assert(cbRead > 0);
+
     /* Build the S/G array and spawn a new I/O task */
     while (cbRead)
     {
@@ -2998,6 +3000,8 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
         cbTaskRead = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, aSeg, &cSegments, cbRead);
 
+        Assert(cSegments > 0);
+        Assert(cbTaskRead > 0);
         AssertMsg(cbTaskRead <= cbRead, ("Invalid number of bytes to read\n"));
 
         LogFlow(("Reading %u bytes into %u segments\n", cbTaskRead, cSegments));
@@ -3057,6 +3061,8 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
+    Assert(cbWrite > 0);
+
     /* Build the S/G array and spawn a new I/O task */
     while (cbWrite)
     {
@@ -3066,6 +3072,8 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
         cbTaskWrite = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, aSeg, &cSegments, cbWrite);
 
+        Assert(cSegments > 0);
+        Assert(cbTaskWrite > 0);
         AssertMsg(cbTaskWrite <= cbWrite, ("Invalid number of bytes to write\n"));
 
         LogFlow(("Writing %u bytes from %u segments\n", cbTaskWrite, cSegments));
