@@ -2276,6 +2276,15 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
 
+    RT_ZERO(g_szCoreDumpDir);
+    if (pszOutputDir)
+    {
+        if (RTDirExists(pszOutputDir))
+            RTStrCopy(g_szCoreDumpDir, sizeof(g_szCoreDumpDir), pszOutputDir);
+        else
+            return VERR_NOT_A_DIRECTORY;
+    }
+
     /*
      * Install core dump signal handler only if the flags changed or if it's the first time.
      */
@@ -2307,10 +2316,6 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
         ASMAtomicWriteU32(&g_fCoreDumpFlags, fFlags);
         ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, true);
     }
-
-    RT_ZERO(g_szCoreDumpDir);
-    if (pszOutputDir)
-        RTStrCopy(g_szCoreDumpDir, sizeof(g_szCoreDumpDir), pszOutputDir);
 
     return VINF_SUCCESS;
 }
