@@ -23,8 +23,8 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 ifndef VBOX_ONLY_SDK
  if defined(VBOX_WITH_TESTCASES)
-#  PROGRAMS       += \
-#	tstMouseImpl
+  PROGRAMS       += \
+	tstMouseImpl
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
 
