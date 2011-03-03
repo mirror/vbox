@@ -32,10 +32,10 @@
 #include "host-utils.h"
 
 #ifdef VBOX
-#include "qemu-common.h"
-#include <math.h>
-#include "tcg.h"
-#endif
+# include "qemu-common.h"
+# include <math.h>
+# include "tcg.h"
+#endif /* VBOX */
 //#define DEBUG_PCALL
 
 #if 0
@@ -138,6 +138,7 @@ target_ulong helper_read_eflags(void)
 }
 
 #ifdef VBOX
+
 void helper_write_eflags_vme(target_ulong t0)
 {
     unsigned int new_eflags = t0;
@@ -189,7 +190,8 @@ void helper_dump_state()
             (uint32_t)env->regs[R_ESP], (uint32_t)env->regs[R_EBP],
             (uint32_t)env->regs[R_ESI], (uint32_t)env->regs[R_EDI]));
 }
-#endif
+
+#endif /* VBOX */
 
 /* return non zero if error */
 static inline int load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
@@ -206,7 +208,7 @@ static inline int load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
         Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
-#endif
+#endif /* VBOX */
 
     if (selector & 0x4)
         dt = &env->ldt;
@@ -253,10 +255,10 @@ static inline void load_seg_vm(int seg, int selector)
 
     cpu_x86_load_seg_cache(env, seg, selector,
                            (selector << 4), 0xffff, flags);
-#else
+#else  /* VBOX */
     cpu_x86_load_seg_cache(env, seg, selector,
                            (selector << 4), 0xffff, 0);
-#endif
+#endif /* VBOX */
 }
 
 static inline void get_ss_esp_from_tss(uint32_t *ss_ptr,
@@ -313,7 +315,7 @@ static void tss_load_seg(int seg_reg, int selector)
         Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
-#endif
+#endif /* VBOX */
 
     if ((selector & 0xfffc) != 0) {
         if (load_segment(&e1, &e2, selector) != 0)
@@ -357,12 +359,12 @@ static void tss_load_seg(int seg_reg, int selector)
         if (seg_reg == R_SS || seg_reg == R_CS)
             raise_exception_err(EXCP0A_TSS, selector & 0xfffc);
 #ifdef VBOX
-#if 0
+# if 0
         /** @todo: now we ignore loading 0 selectors, need to check what is correct once */
         cpu_x86_load_seg_cache(env, seg_reg, selector,
                                0, 0, 0);
-#endif
-#endif
+# endif
+#endif /* VBOX */
     }
 }
 
@@ -636,6 +638,7 @@ static inline void check_io(int addr, int size)
     int val, mask;
     unsigned int io_offset;
 #endif /* VBOX */
+
     /* TSS must be a valid 32 bit one */
     if (!(env->tr.flags & DESC_P_MASK) ||
         ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 9 ||
@@ -677,7 +680,7 @@ void helper_sync_seg(uint32_t reg)
     if (env->segs[reg].newselector)
         sync_seg(env, reg, env->segs[reg].newselector);
 }
-#endif
+#endif /* VBOX */
 
 void helper_check_iob(uint32_t t0)
 {
@@ -1270,14 +1273,14 @@ static void do_interrupt64(int intno, int is_int, int error_code,
 
 #ifndef VBOX
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK);
-#else
+#else  /* VBOX */
     /*
      * We must clear VIP/VIF too on interrupt entry, as otherwise FreeBSD
      * gets confused by seemingly changed EFLAGS. See #3491 and
      * public bug #2341.
      */
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
-#endif
+#endif /* VBOX */
 }
 #endif
 
@@ -1542,6 +1545,7 @@ void do_interrupt_user(int intno, int is_int, int error_code,
 void do_interrupt(int intno, int is_int, int error_code,
                   target_ulong next_eip, int is_hw)
 {
+#ifdef VBOX
     if (RT_UNLIKELY(env->state & CPU_EMULATE_SINGLE_STEP)) {
         if (is_int) {
             RTLogPrintf("do_interrupt: %#04x err=%#x pc=%#RGv%s\n",
@@ -1551,6 +1555,7 @@ void do_interrupt(int intno, int is_int, int error_code,
                         intno, error_code, (RTGCPTR)env->eip, (RTGCPTR)next_eip, is_hw ? " hw" : "");
         }
     }
+#endif
 
     if (loglevel & CPU_LOG_INT) {
         if ((env->cr[0] & CR0_PE_MASK)) {
@@ -2647,15 +2652,15 @@ void helper_load_seg(int seg_reg, int selector)
 
     selector &= 0xffff;
     cpl = env->hflags & HF_CPL_MASK;
-
 #ifdef VBOX
+
     /* Trying to load a selector with CPL=1? */
     if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
     {
         Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
-#endif
+#endif /* VBOX */
     if ((selector & 0xfffc) == 0) {
         /* null selector case */
         if (seg_reg == R_SS
@@ -3664,7 +3669,7 @@ void helper_rdtscp(void)
     else
         ECX = 0;
 }
-#endif
+#endif /* VBOX */
 
 void helper_rdpmc(void)
 {
@@ -3676,7 +3681,7 @@ void helper_rdpmc(void)
     /* Just return zero here; rather tricky to properly emulate this, especially as the specs are a mess. */
     EAX = 0;
     EDX = 0;
-#else
+#else  /* !VBOX */
     if ((env->cr[4] & CR4_PCE_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception(EXCP0D_GPF);
     }
@@ -3684,7 +3689,7 @@ void helper_rdpmc(void)
 
     /* currently unimplemented */
     raise_exception_err(EXCP06_ILLOP, 0);
-#endif
+#endif /* !VBOX */
 }
 
 #if defined(CONFIG_USER_ONLY)
@@ -3817,9 +3822,9 @@ void helper_rdmsr(void)
         /* tsc_increment_by_tick */
         val = 1000ULL;
         /* CPU multiplier */
-        val |= ((uint64_t)4ULL << 40);
+        val |= (((uint64_t)4ULL) << 40);
         break;
-#endif
+#endif /* !VBOX */
 #ifdef TARGET_X86_64
     case MSR_LSTAR:
         val = env->lstar;
@@ -3859,7 +3864,7 @@ void helper_rdmsr(void)
             /** @todo be a brave man and raise a \#GP(0) here as we should... */
             val = 0;
         }
-#endif
+#endif /* VBOX */
         break;
     }
     EAX = (uint32_t)(val);
@@ -4147,6 +4152,7 @@ uint64_t helper_fstl_ST0(void)
     u.f = floatx_to_float64(ST0, &env->fp_status);
     return u.i;
 }
+
 #ifndef VBOX
 int32_t helper_fist_ST0(void)
 #else
@@ -5317,10 +5323,10 @@ void helper_monitor(target_ulong ptr)
 #ifdef VBOX
     if ((uint32_t)ECX > 1)
         raise_exception(EXCP0D_GPF);
-#else
+#else  /* !VBOX */
     if ((uint32_t)ECX != 0)
         raise_exception(EXCP0D_GPF);
-#endif
+#endif /* !VBOX */
     /* XXX: store address ? */
     helper_svm_check_intercept_param(SVM_EXIT_MONITOR, 0);
 }
@@ -5331,7 +5337,7 @@ void helper_mwait(int next_eip_addend)
         raise_exception(EXCP0D_GPF);
 #ifdef VBOX
     helper_hlt(next_eip_addend);
-#else
+#else /* !VBOX */
     helper_svm_check_intercept_param(SVM_EXIT_MWAIT, 0);
     EIP += next_eip_addend;
 
@@ -5342,7 +5348,7 @@ void helper_mwait(int next_eip_addend)
     } else {
         do_hlt();
     }
-#endif
+#endif /* !VBOX */
 }
 
 void helper_debug(void)
@@ -5385,7 +5391,7 @@ void helper_sti_vme(void)
     }
     env->eflags |= VIF_MASK;
 }
-#endif
+#endif /* VBOX */
 
 #if 0
 /* vm86plus instructions */
@@ -5511,7 +5517,7 @@ void REGPARM __stq_vbox_phys(RTCCUINTREG addr, uint64_t val)
 {
     remR3PhysWriteU64(addr, val);
 }
-#endif
+#endif /* VBOX */
 
 /* try to fill the TLB and return an exception if error. If retaddr is
    NULL, it means that the function was called in C code (i.e. not
@@ -6427,24 +6433,12 @@ void helper_svm_check_intercept_param(uint32_t type, uint64_t param)
         return;
 #ifndef VBOX
     switch(type) {
-#ifndef VBOX
     case SVM_EXIT_READ_CR0 ... SVM_EXIT_READ_CR0 + 8:
-#else
-    case SVM_EXIT_READ_CR0:     case SVM_EXIT_READ_CR0 + 1: case SVM_EXIT_READ_CR0 + 2:
-    case SVM_EXIT_READ_CR0 + 3: case SVM_EXIT_READ_CR0 + 4: case SVM_EXIT_READ_CR0 + 5:
-    case SVM_EXIT_READ_CR0 + 6: case SVM_EXIT_READ_CR0 + 7: case SVM_EXIT_READ_CR0 + 8:
-#endif
         if (env->intercept_cr_read & (1 << (type - SVM_EXIT_READ_CR0))) {
             helper_vmexit(type, param);
         }
         break;
-#ifndef VBOX
     case SVM_EXIT_WRITE_CR0 ... SVM_EXIT_WRITE_CR0 + 8:
-#else
-    case SVM_EXIT_WRITE_CR0:     case SVM_EXIT_WRITE_CR0 + 1: case SVM_EXIT_WRITE_CR0 + 2:
-    case SVM_EXIT_WRITE_CR0 + 3: case SVM_EXIT_WRITE_CR0 + 4: case SVM_EXIT_WRITE_CR0 + 5:
-    case SVM_EXIT_WRITE_CR0 + 6: case SVM_EXIT_WRITE_CR0 + 7: case SVM_EXIT_WRITE_CR0 + 8:
-#endif
         if (env->intercept_cr_write & (1 << (type - SVM_EXIT_WRITE_CR0))) {
             helper_vmexit(type, param);
         }
@@ -6500,9 +6494,9 @@ void helper_svm_check_intercept_param(uint32_t type, uint64_t param)
         }
         break;
     }
-#else
+#else  /* VBOX */
      AssertMsgFailed(("We shouldn't be here, HWACCM supported differently!"));
-#endif
+#endif /* VBOX */
 }
 
 void helper_svm_check_io(uint32_t port, uint32_t param,
@@ -6745,7 +6739,6 @@ static int compute_c_eflags(void)
     return CC_SRC & CC_C;
 }
 
-#ifndef VBOX
 CCTable cc_table[CC_OP_NB] = {
     [CC_OP_DYNAMIC] = { /* should never happen */ },
 
@@ -6813,101 +6806,4 @@ CCTable cc_table[CC_OP_NB] = {
     [CC_OP_SARQ] = { compute_all_sarq, compute_c_sarl },
 #endif
 };
-#else /* VBOX */
-/* Sync carefully with cpu.h */
-CCTable cc_table[CC_OP_NB] = {
-    /* CC_OP_DYNAMIC */ { 0, 0 },
 
-    /* CC_OP_EFLAGS */ { compute_all_eflags, compute_c_eflags },
-
-    /* CC_OP_MULB */ { compute_all_mulb, compute_c_mull },
-    /* CC_OP_MULW */ { compute_all_mulw, compute_c_mull },
-    /* CC_OP_MULL */ { compute_all_mull, compute_c_mull },
-#ifdef TARGET_X86_64
-    /* CC_OP_MULQ */ { compute_all_mulq, compute_c_mull },
-#else
-    /* CC_OP_MULQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_ADDB */ { compute_all_addb, compute_c_addb },
-    /* CC_OP_ADDW */ { compute_all_addw, compute_c_addw  },
-    /* CC_OP_ADDL */ { compute_all_addl, compute_c_addl  },
-#ifdef TARGET_X86_64
-    /* CC_OP_ADDQ */ { compute_all_addq, compute_c_addq  },
-#else
-    /* CC_OP_ADDQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_ADCB */ { compute_all_adcb, compute_c_adcb },
-    /* CC_OP_ADCW */ { compute_all_adcw, compute_c_adcw  },
-    /* CC_OP_ADCL */ { compute_all_adcl, compute_c_adcl  },
-#ifdef TARGET_X86_64
-    /* CC_OP_ADCQ */ { compute_all_adcq, compute_c_adcq },
-#else
-    /* CC_OP_ADCQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_SUBB */ { compute_all_subb, compute_c_subb  },
-    /* CC_OP_SUBW */ { compute_all_subw, compute_c_subw  },
-    /* CC_OP_SUBL */ { compute_all_subl, compute_c_subl  },
-#ifdef TARGET_X86_64
-    /* CC_OP_SUBQ */ { compute_all_subq, compute_c_subq  },
-#else
-    /* CC_OP_SUBQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_SBBB */ { compute_all_sbbb, compute_c_sbbb  },
-    /* CC_OP_SBBW */ { compute_all_sbbw, compute_c_sbbw  },
-    /* CC_OP_SBBL */ { compute_all_sbbl, compute_c_sbbl  },
-#ifdef TARGET_X86_64
-    /* CC_OP_SBBQ */ { compute_all_sbbq, compute_c_sbbq  },
-#else
-    /* CC_OP_SBBQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_LOGICB */ { compute_all_logicb, compute_c_logicb },
-    /* CC_OP_LOGICW */ { compute_all_logicw, compute_c_logicw },
-    /* CC_OP_LOGICL */ { compute_all_logicl, compute_c_logicl },
-#ifdef TARGET_X86_64
-    /* CC_OP_LOGICQ */ { compute_all_logicq, compute_c_logicq  },
-#else
-    /* CC_OP_LOGICQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_INCB */ { compute_all_incb, compute_c_incl },
-    /* CC_OP_INCW */ { compute_all_incw, compute_c_incl },
-    /* CC_OP_INCL */ { compute_all_incl, compute_c_incl },
-#ifdef TARGET_X86_64
-    /* CC_OP_INCQ */ { compute_all_incq, compute_c_incl  },
-#else
-    /* CC_OP_INCQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_DECB */ { compute_all_decb, compute_c_incl },
-    /* CC_OP_DECW */ { compute_all_decw, compute_c_incl },
-    /* CC_OP_DECL */ { compute_all_decl, compute_c_incl },
-#ifdef TARGET_X86_64
-    /* CC_OP_DECQ */ { compute_all_decq, compute_c_incl  },
-#else
-    /* CC_OP_DECQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_SHLB */ { compute_all_shlb, compute_c_shlb },
-    /* CC_OP_SHLW */ { compute_all_shlw, compute_c_shlw },
-    /* CC_OP_SHLL */ { compute_all_shll, compute_c_shll },
-#ifdef TARGET_X86_64
-    /* CC_OP_SHLQ */ { compute_all_shlq, compute_c_shlq  },
-#else
-    /* CC_OP_SHLQ */ { 0, 0 },
-#endif
-
-    /* CC_OP_SARB */ { compute_all_sarb, compute_c_sarl },
-    /* CC_OP_SARW */ { compute_all_sarw, compute_c_sarl },
-    /* CC_OP_SARL */ { compute_all_sarl, compute_c_sarl },
-#ifdef TARGET_X86_64
-    /* CC_OP_SARQ */ { compute_all_sarq, compute_c_sarl},
-#else
-    /* CC_OP_SARQ */ { 0, 0 },
-#endif
-};
-#endif /* VBOX */

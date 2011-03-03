@@ -30,8 +30,8 @@
 #include <string.h>
 #include <inttypes.h>
 #else
-#include <stdio.h>
-#include "osdep.h"
+# include <stdio.h>
+# include "osdep.h"
 #endif
 
 #include "config.h"

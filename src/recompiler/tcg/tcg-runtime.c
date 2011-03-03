@@ -26,9 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifndef VBOX
 #include <inttypes.h>
-#endif
 
 #include "config.h"
 #include "osdep.h"

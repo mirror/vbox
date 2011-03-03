@@ -28,6 +28,7 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#error "VBOX: Obsolete file?"
 #ifdef MEM_WRITE
 
 #if MEM_WRITE == 0

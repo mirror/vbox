@@ -59,7 +59,7 @@ typedef struct TranslationBlock TranslationBlock;
 #define OPC_MAX_SIZE (OPC_BUF_SIZE - MAX_OP_PER_INSTR)
 
 /* Maximum size a TCG op can expand to.  This is complicated because a
-   single op may require several host instructions and register reloads.
+   single op may require several host instructions and regirster reloads.
    For now take a wild guess at 128 bytes, which should allow at least
    a couple of fixup instructions per argument.  */
 #define TCG_MAX_OP_SIZE 128
@@ -190,15 +190,15 @@ static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
 {
     target_ulong tmp;
     tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
-    return (tmp >> TB_JMP_PAGE_BITS) & TB_JMP_PAGE_MASK;
+    return (tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK;
 }
 
 static inline unsigned int tb_jmp_cache_hash_func(target_ulong pc)
 {
     target_ulong tmp;
     tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
-    return (((tmp >> TB_JMP_PAGE_BITS) & TB_JMP_PAGE_MASK) |
-	    (tmp & TB_JMP_ADDR_MASK));
+    return (((tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK)
+	    | (tmp & TB_JMP_ADDR_MASK));
 }
 
 static inline unsigned int tb_phys_hash_func(unsigned long pc)
@@ -214,35 +214,36 @@ void tb_link_phys(TranslationBlock *tb,
 void tb_phys_invalidate(TranslationBlock *tb, target_ulong page_addr);
 
 extern TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
-
 extern uint8_t *code_gen_ptr;
 extern int code_gen_max_blocks;
 
 #if defined(USE_DIRECT_JUMP)
 
 #if defined(__powerpc__)
-static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
-{
-    uint32_t val, *ptr;
-
-    /* patch the branch destination */
-    ptr = (uint32_t *)jmp_addr;
-    val = *ptr;
-    val = (val & ~0x03fffffc) | ((addr - jmp_addr) & 0x03fffffc);
-    *ptr = val;
-    /* flush icache */
-    asm volatile ("dcbst 0,%0" : : "r"(ptr) : "memory");
-    asm volatile ("sync" : : : "memory");
-    asm volatile ("icbi 0,%0" : : "r"(ptr) : "memory");
-    asm volatile ("sync" : : : "memory");
-    asm volatile ("isync" : : : "memory");
-}
-#elif defined(__i386__)
+extern void ppc_tb_set_jmp_target(unsigned long jmp_addr, unsigned long addr);
+#define tb_set_jmp_target1 ppc_tb_set_jmp_target
+#elif defined(__i386__) || defined(__x86_64__)
 static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
 {
     /* patch the branch destination */
     *(uint32_t *)jmp_addr = addr - (jmp_addr + 4);
-    /* no need to flush icache explicitely */
+    /* no need to flush icache explicitly */
+}
+#elif defined(__arm__)
+static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr)
+{
+    register unsigned long _beg __asm ("a1");
+    register unsigned long _end __asm ("a2");
+    register unsigned long _flg __asm ("a3");
+
+    /* we could use a ldr pc, [pc, #-4] kind of branch and avoid the flush */
+    *(uint32_t *)jmp_addr |= ((addr - (jmp_addr + 8)) >> 2) & 0xffffff;
+
+    /* flush icache */
+    _beg = jmp_addr;
+    _end = jmp_addr + 4;
+    _flg = 0;
+    __asm __volatile__ ("swi 0x9f0002" : : "r" (_beg), "r" (_end), "r" (_flg));
 }
 #endif
 
@@ -284,10 +285,6 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
 }
 
 TranslationBlock *tb_find_pc(unsigned long pc_ptr);
-
-#ifndef offsetof
-#define offsetof(type, field) ((size_t) &((type *)0)->field)
-#endif
 
 #if defined(_WIN32)
 #define ASM_DATA_SECTION ".section \".data\"\n"
@@ -343,7 +340,7 @@ void tlb_fill(target_ulong addr, int is_write, int mmu_idx,
 #endif
 
 #if defined(CONFIG_USER_ONLY)
-static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
+static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
 {
     return addr;
 }
@@ -388,7 +385,6 @@ static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
 # endif
 }
 
-
 /* Deterministic execution requires that IO only be performed on the last
    instruction of a TB so that interrupts take effect immediately.  */
 static inline int can_do_io(CPUState *env)
@@ -404,9 +400,10 @@ static inline int can_do_io(CPUState *env)
 }
 #endif
 
-
 #ifdef USE_KQEMU
 #define KQEMU_MODIFY_PAGE_MASK (0xff & ~(VGA_DIRTY_FLAG | CODE_DIRTY_FLAG))
+
+#define MSR_QPI_COMMBASE 0xfabe0010
 
 int kqemu_init(CPUState *env);
 int kqemu_cpu_exec(CPUState *env);
@@ -414,8 +411,12 @@ void kqemu_flush_page(CPUState *env, target_ulong addr);
 void kqemu_flush(CPUState *env, int global);
 void kqemu_set_notdirty(CPUState *env, ram_addr_t ram_addr);
 void kqemu_modify_page(CPUState *env, ram_addr_t ram_addr);
+void kqemu_set_phys_mem(uint64_t start_addr, ram_addr_t size,
+                        ram_addr_t phys_offset);
 void kqemu_cpu_interrupt(CPUState *env);
 void kqemu_record_dump(void);
+
+extern uint32_t kqemu_comm_base;
 
 static inline int kqemu_is_ok(CPUState *env)
 {

@@ -1,6 +1,8 @@
 #ifndef _QEMU_ELF_H
 #define _QEMU_ELF_H
 
+#include <inttypes.h>
+
 /* 32-bit ELF base types. */
 typedef uint32_t Elf32_Addr;
 typedef uint16_t Elf32_Half;
@@ -326,6 +328,9 @@ typedef struct {
 #define R_SPARC_11		31
 #define R_SPARC_64		32
 #define R_SPARC_OLO10           33
+#define R_SPARC_HH22            34
+#define R_SPARC_HM10            35
+#define R_SPARC_LM22            36
 #define R_SPARC_WDISP16		40
 #define R_SPARC_WDISP19		41
 #define R_SPARC_7		43
@@ -638,9 +643,9 @@ typedef struct {
 #define EFA_PARISC_1_1		    0x0210 /* PA-RISC 1.1 big-endian.  */
 #define EFA_PARISC_2_0		    0x0214 /* PA-RISC 2.0 big-endian.  */
 
-/* Additional section indices.  */
+/* Additional section indeces.  */
 
-#define SHN_PARISC_ANSI_COMMON	0xff00	   /* Section for tentatively declared
+#define SHN_PARISC_ANSI_COMMON	0xff00	   /* Section for tenatively declared
 					      symbols in ANSI C.  */
 #define SHN_PARISC_HUGE_COMMON	0xff01	   /* Common blocks in huge model.  */
 
@@ -1118,6 +1123,7 @@ typedef struct elf64_note {
   Elf64_Word n_type;	/* Content type */
 } Elf64_Nhdr;
 
+#ifdef ELF_CLASS
 #if ELF_CLASS == ELFCLASS32
 
 #define elfhdr		elf32_hdr
@@ -1125,6 +1131,7 @@ typedef struct elf64_note {
 #define elf_note	elf32_note
 #define elf_shdr	elf32_shdr
 #define elf_sym		elf32_sym
+#define elf_addr_t	Elf32_Off
 
 #ifdef ELF_USES_RELOCA
 # define ELF_RELOC      Elf32_Rela
@@ -1139,6 +1146,7 @@ typedef struct elf64_note {
 #define elf_note	elf64_note
 #define elf_shdr	elf64_shdr
 #define elf_sym		elf64_sym
+#define elf_addr_t	Elf64_Off
 
 #ifdef ELF_USES_RELOCA
 # define ELF_RELOC      Elf64_Rela
@@ -1157,6 +1165,8 @@ typedef struct elf64_note {
 #  define ELFW(x)  ELF64_ ## x
 # endif
 #endif
+
+#endif /* ELF_CLASS */
 
 
 #endif /* _QEMU_ELF_H */

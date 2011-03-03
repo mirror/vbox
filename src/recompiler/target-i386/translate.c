@@ -32,9 +32,9 @@
 #include <stdio.h>
 #include <string.h>
 #ifndef VBOX
-#include <inttypes.h>
-#include <signal.h>
-#include <assert.h>
+# include <inttypes.h>
+# include <signal.h>
+# include <assert.h>
 #endif /* !VBOX */
 
 #include "cpu.h"
@@ -51,11 +51,7 @@
 
 #ifdef TARGET_X86_64
 #define X86_64_ONLY(x) x
-#ifndef VBOX
 #define X86_64_DEF(x...) x
-#else
-#define X86_64_DEF(x...) x
-#endif
 #define CODE64(s) ((s)->code64)
 #define REX_X(s) ((s)->rex_x)
 #define REX_B(s) ((s)->rex_b)
@@ -65,11 +61,7 @@
 #endif
 #else
 #define X86_64_ONLY(x) NULL
-#ifndef VBOX
 #define X86_64_DEF(x...)
-#else
-#define X86_64_DEF(x)
-#endif
 #define CODE64(s) 0
 #define REX_X(s) 0
 #define REX_B(s) 0
@@ -120,7 +112,6 @@ uint32_t ldl_code_raw(target_ulong pc)
 
 #endif /* VBOX */
 
-
 typedef struct DisasContext {
     /* current insn context */
     int override; /* -1 if no override */
@@ -169,7 +160,7 @@ static void gen_jmp(DisasContext *s, target_ulong eip);
 static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num);
 
 #ifdef VBOX
-static void gen_check_external_event();
+static void gen_check_external_event(void);
 #endif
 
 /* i386 arith/logic operations */
@@ -718,13 +709,14 @@ static inline void gen_op_st_T1_A0(int idx)
 }
 
 #ifdef VBOX
-static void gen_check_external_event()
+
+static void gen_check_external_event(void)
 {
-#if 1
+# if 1
     /** @todo: once TCG codegen improves, we may want to use version
         from else version */
     tcg_gen_helper_0_0(helper_check_external_event);
-#else
+# else
     int skip_label;
     TCGv t0;
 
@@ -746,17 +738,17 @@ static void gen_check_external_event()
     tcg_gen_helper_0_0(helper_check_external_event);
 
    gen_set_label(skip_label);
-#endif
+# endif
 }
 
-#if 0 /* unused code? */
+# if 0 /* unused code? */
 static void gen_check_external_event2()
 {
     tcg_gen_helper_0_0(helper_check_external_event);
 }
-#endif
+# endif
 
-#endif
+#endif /* VBOX */
 
 static inline void gen_jmp_im(target_ulong pc)
 {
@@ -769,7 +761,7 @@ DECLINLINE(void) gen_update_eip(target_ulong pc)
 {
     gen_jmp_im(pc);
 # ifdef VBOX_DUMP_STATE
-     tcg_gen_helper_0_0(helper_dump_state);
+    tcg_gen_helper_0_0(helper_dump_state);
 # endif
 }
 #endif /* VBOX */
@@ -1134,7 +1126,7 @@ static int is_fast_jcc_case(DisasContext *s, int b)
 }
 
 /* generate a conditional jump to label 'l1' according to jump opcode
-   value 'b'. In the fast case, T0 is guaranteed not to be used. */
+   value 'b'. In the fast case, T0 is guaranted not to be used. */
 static inline void gen_jcc1(DisasContext *s, int cc_op, int b, int l1)
 {
     int inv, jcc_op, size, cond;
@@ -1431,7 +1423,7 @@ static inline void gen_outs(DisasContext *s, int ot)
 static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
                                  target_ulong cur_eip, target_ulong next_eip) \
 {                                                                             \
-    int l2;                                                                   \
+    int l2;\
     gen_update_cc_op(s);                                                      \
     l2 = gen_jz_ecx_string(s, next_eip);                                      \
     gen_ ## op(s, ot);                                                        \
@@ -1449,7 +1441,7 @@ static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
                                    target_ulong next_eip,                     \
                                    int nz)                                    \
 {                                                                             \
-    int l2;                                                                   \
+    int l2;\
     gen_update_cc_op(s);                                                      \
     l2 = gen_jz_ecx_string(s, next_eip);                                      \
     gen_ ## op(s, ot);                                                        \
@@ -2152,8 +2144,8 @@ static void gen_lea_modrm(DisasContext *s, int modrm, int *reg_ptr, int *offset_
                 gen_op_movl_A0_im(disp);
             }
         }
-        /* index == 4 means no index */
-        if (havesib && (index != 4)) {
+        /* XXX: index == 4 is always invalid */
+        if (havesib && (index != 4 || scale != 0)) {
 #ifdef TARGET_X86_64
             if (s->aflag == 2) {
                 gen_op_addq_A0_reg_sN(scale, index);
@@ -2400,7 +2392,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
     if ((pc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK) ||
         (pc & TARGET_PAGE_MASK) == ((s->pc - 1) & TARGET_PAGE_MASK))  {
 #ifdef VBOX
-        gen_check_external_event(s);
+        gen_check_external_event();
 #endif /* VBOX */
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tb_num);
@@ -2466,7 +2458,7 @@ static void gen_setcc(DisasContext *s, int b)
         tcg_temp_free(t0);
     } else {
         /* slow case: it is more efficient not to generate a jump,
-           although it is questionable whether this optimization is
+           although it is questionnable whether this optimization is
            worth to */
         inv = b & 1;
         jcc_op = (b >> 1) & 7;
@@ -2831,7 +2823,7 @@ static void gen_eob(DisasContext *s)
     }
 
 #ifdef VBOX
-    gen_check_external_event(s);
+    gen_check_external_event();
 #endif /* VBOX */
 
     if (   s->singlestep_enabled
@@ -3292,16 +3284,11 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
         case 0x1e7: /* movntdq */
         case 0x02b: /* movntps */
         case 0x12b: /* movntps */
-            if (mod == 3)
-                goto illegal_op;
-            gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
-            gen_sto_env_A0(s->mem_index, offsetof(CPUX86State,xmm_regs[reg]));
-            break;
         case 0x3f0: /* lddqu */
             if (mod == 3)
                 goto illegal_op;
             gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
-            gen_ldo_env_A0(s->mem_index, offsetof(CPUX86State,xmm_regs[reg]));
+            gen_sto_env_A0(s->mem_index, offsetof(CPUX86State,xmm_regs[reg]));
             break;
         case 0x6e: /* movd mm, ea */
 #ifdef TARGET_X86_64
@@ -3816,9 +3803,8 @@ static void gen_sse(DisasContext *s, int b, target_ulong pc_start, int rex_r)
                         break;
                     case 0x21: case 0x31: /* pmovsxbd, pmovzxbd */
                     case 0x24: case 0x34: /* pmovsxwq, pmovzxwq */
-                        tcg_gen_qemu_ld32u(cpu_tmp0, cpu_A0,
+                        tcg_gen_qemu_ld32u(cpu_tmp2_i32, cpu_A0,
                                           (s->mem_index >> 2) - 1);
-                        tcg_gen_trunc_tl_i32(cpu_tmp2_i32, cpu_tmp0);
                         tcg_gen_st_i32(cpu_tmp2_i32, cpu_env, op2_offset +
                                         offsetof(XMMReg, XMM_L(0)));
                         break;
@@ -4301,7 +4287,6 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
 }
 #endif /* VBOX */
 
-
 /* convert one instruction. s->is_jmp is set if the translation must
    be stopped. Return the next pc value */
 static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
@@ -4314,7 +4299,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 
     if (unlikely(loglevel & CPU_LOG_TB_OP))
         tcg_gen_debug_insn_start(pc_start);
-
     s->pc = pc_start;
     prefixes = 0;
     aflag = s->code32;
@@ -4335,7 +4319,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 
     gen_update_eip(pc_start - s->cs_base);
 # endif
-#endif
+#endif /* VBOX */
 
  next_byte:
     b = ldub_code(s->pc);
@@ -6381,7 +6365,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         gen_op_movl_T0_im(val);
         gen_check_io(s, ot, pc_start - s->cs_base,
                      svm_is_rep(prefixes));
-#ifdef VBOX /* bird: linux is writing to this port for delaying I/O. */
+#ifdef VBOX /* bird: linux is writing to this port for delaying I/O. */ /** @todo this breaks AIX, remove. */
         if (val == 0x80)
             break;
 #endif /* VBOX */
@@ -7349,7 +7333,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         mod = (modrm >> 6) & 3;
         op = (modrm >> 3) & 7;
         rm = modrm & 7;
-
 #ifdef VBOX
         /* 0f 01 f9 */
         if (modrm == 0xf9)
@@ -7360,7 +7343,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             tcg_gen_helper_0_0(helper_rdtscp);
             break;
         }
-#endif
+#endif /* VBOX */
         switch(op) {
         case 0: /* sgdt */
             if (mod == 3)
@@ -7624,11 +7607,13 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #endif
         {
             int label1;
-            TCGv t0, t1, t2, a0;
+            TCGv t0, t1, t2;
+#ifdef VBOX
+            TCGv a0;
+#endif
 
             if (!s->pe || s->vm86)
                 goto illegal_op;
-
             t0 = tcg_temp_local_new(TCG_TYPE_TL);
             t1 = tcg_temp_local_new(TCG_TYPE_TL);
             t2 = tcg_temp_local_new(TCG_TYPE_TL);
@@ -8034,7 +8019,7 @@ static inline void gen_intermediate_code_internal(CPUState *env,
 #ifdef VBOX
     dc->vme = !!(env->cr[4] & CR4_VME_MASK);
     dc->pvi = !!(env->cr[4] & CR4_PVI_MASK);
-#ifdef VBOX_WITH_CALL_RECORD
+# ifdef VBOX_WITH_CALL_RECORD
     if (    !(env->state & CPU_RAW_RING0)
         &&  (env->cr[0] & CR0_PG_MASK)
         &&  !(env->eflags & X86_EFL_IF)
@@ -8042,7 +8027,7 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         dc->record_call = 1;
     else
         dc->record_call = 0;
-#endif
+# endif
 #endif
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
@@ -8137,7 +8122,7 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         if (dc->is_jmp)
             break;
 #ifdef VBOX
-#ifdef DEBUG
+# ifdef DEBUG
 /*
         if(cpu_check_code_raw(env, pc_ptr, env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK))) == ERROR_SUCCESS)
         {
@@ -8145,7 +8130,7 @@ static inline void gen_intermediate_code_internal(CPUState *env,
             dprintf(("QEmu is about to execute instructions in our patch block at %08X!!\n", pc_ptr));
         }
 */
-#endif
+# endif /* DEBUG */
         if (env->state & CPU_EMULATE_SINGLE_INSTR)
         {
             env->state &= ~CPU_EMULATE_SINGLE_INSTR;

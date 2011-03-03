@@ -46,13 +46,16 @@
 
 #ifndef VBOX
 
+#ifdef __OpenBSD__
+#include <sys/types.h>
+#else
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
-/* Linux/Sparc64 defines uint64_t */
-#if !(defined (__sparc_v9__) && defined(__linux__))
+// Linux/Sparc64 defines uint64_t
+#if !(defined (__sparc_v9__) && defined(__linux__)) && !(defined(__APPLE__) && defined(__x86_64__))
 /* XXX may be done for all 64 bits targets ? */
-#if defined (__x86_64__) || defined(__ia64)
+#if defined (__x86_64__) || defined(__ia64) || defined(__s390x__) || defined(__alpha__) || defined(__powerpc64__)
 typedef unsigned long uint64_t;
 #else
 typedef unsigned long long uint64_t;
@@ -60,7 +63,7 @@ typedef unsigned long long uint64_t;
 #endif
 
 /* if Solaris/__sun__, don't typedef int8_t, as it will be typedef'd
-   prior to this and will cause an error in compilation, conflicting
+   prior to this and will cause an error in compliation, conflicting
    with /usr/include/sys/int_types.h, line 75 */
 #ifndef __sun__
 typedef signed char int8_t;
@@ -68,11 +71,12 @@ typedef signed char int8_t;
 typedef signed short int16_t;
 typedef signed int int32_t;
 // Linux/Sparc64 defines int64_t
-#if !(defined (__sparc_v9__) && defined(__linux__))
-#if defined (__x86_64__) || defined(__ia64)
+#if !(defined (__sparc_v9__) && defined(__linux__)) && !(defined(__APPLE__) && defined(__x86_64__))
+#if defined (__x86_64__) || defined(__ia64) || defined(__s390x__) || defined(__alpha__) || defined(__powerpc64__)
 typedef signed long int64_t;
 #else
 typedef signed long long int64_t;
+#endif
 #endif
 #endif
 
@@ -113,27 +117,24 @@ typedef void * host_reg_t;
 
 #endif /* VBOX */
 
-#ifdef __i386__
+#if defined(__i386__)
 #ifndef VBOX
 #define AREG0 "ebp"
 #define AREG1 "ebx"
 #define AREG2 "esi"
 #define AREG3 "edi"
-#else
-#define AREG0 "esi"
-#define AREG1 "edi"
-#endif
-#endif
-#ifdef __x86_64__
-#if defined(VBOX)
-/* Must be in sync with TCG register notion, see tcg-target.h */
-#endif
+#else  /* VBOX - why are we different? */
+# define AREG0 "esi"
+# define AREG1 "edi"
+#endif /* VBOX */
+#elif defined(__x86_64__)
 #define AREG0 "r14"
 #define AREG1 "r15"
 #define AREG2 "r12"
 #define AREG3 "r13"
-#endif
-#ifdef __powerpc__
+//#define AREG4 "rbp"
+//#define AREG5 "rbx"
+#elif defined(__powerpc__)
 #define AREG0 "r27"
 #define AREG1 "r24"
 #define AREG2 "r25"
@@ -149,22 +150,27 @@ typedef void * host_reg_t;
 #define AREG10 "r22"
 #define AREG11 "r23"
 #endif
-#define USE_INT_TO_FLOAT_HELPERS
-#define BUGGY_GCC_DIV64
-#endif
-#ifdef __arm__
+#elif defined(__arm__)
 #define AREG0 "r7"
 #define AREG1 "r4"
 #define AREG2 "r5"
 #define AREG3 "r6"
-#endif
-#ifdef __mips__
-#define AREG0 "s3"
+#elif defined(__hppa__)
+#define AREG0 "r17"
+#define AREG1 "r14"
+#define AREG2 "r15"
+#define AREG3 "r16"
+#elif defined(__mips__)
+#define AREG0 "fp"
 #define AREG1 "s0"
 #define AREG2 "s1"
 #define AREG3 "s2"
-#endif
-#ifdef __sparc__
+#define AREG4 "s3"
+#define AREG5 "s4"
+#define AREG6 "s5"
+#define AREG7 "s6"
+#define AREG8 "s7"
+#elif defined(__sparc__)
 #ifdef HOST_SOLARIS
 #define AREG0 "g2"
 #define AREG1 "g3"
@@ -173,10 +179,9 @@ typedef void * host_reg_t;
 #define AREG4 "g6"
 #else
 #ifdef __sparc_v9__
-#define AREG0 "g1"
-#define AREG1 "g4"
-#define AREG2 "g5"
-#define AREG3 "g7"
+#define AREG0 "g5"
+#define AREG1 "g6"
+#define AREG2 "g7"
 #else
 #define AREG0 "g6"
 #define AREG1 "g1"
@@ -192,15 +197,12 @@ typedef void * host_reg_t;
 #define AREG11 "l7"
 #endif
 #endif
-#define USE_FP_CONVERT
-#endif
-#ifdef __s390__
+#elif defined(__s390__)
 #define AREG0 "r10"
 #define AREG1 "r7"
 #define AREG2 "r8"
 #define AREG3 "r9"
-#endif
-#ifdef __alpha__
+#elif defined(__alpha__)
 /* Note $15 is the frame pointer, so anything in op-i386.c that would
    require a frame pointer, like alloca, would probably loose.  */
 #define AREG0 "$15"
@@ -210,22 +212,22 @@ typedef void * host_reg_t;
 #define AREG4 "$12"
 #define AREG5 "$13"
 #define AREG6 "$14"
-#endif
-#ifdef __mc68000
+#elif defined(__mc68000)
 #define AREG0 "%a5"
 #define AREG1 "%a4"
 #define AREG2 "%d7"
 #define AREG3 "%d6"
 #define AREG4 "%d5"
-#endif
-#ifdef __ia64__
+#elif defined(__ia64__)
 #define AREG0 "r7"
 #define AREG1 "r4"
 #define AREG2 "r5"
 #define AREG3 "r6"
+#else
+#error unsupported CPU
 #endif
 
-#ifndef VBOX
+#ifndef VBOX /* WHY DO WE UNSUBSCRIBE TO THIS MACRO? */
 /* force GCC to generate only one epilog at the end of the function */
 #define FORCE_RET() __asm__ __volatile__("" : : : "memory");
 #endif
@@ -258,6 +260,13 @@ extern int __op_param3 __hidden;
 #define PARAM1 ({ int _r; asm("" : "=r"(_r) : "0" (&__op_param1)); _r; })
 #define PARAM2 ({ int _r; asm("" : "=r"(_r) : "0" (&__op_param2)); _r; })
 #define PARAM3 ({ int _r; asm("" : "=r"(_r) : "0" (&__op_param3)); _r; })
+#elif defined(__s390__)
+extern int __op_param1 __hidden;
+extern int __op_param2 __hidden;
+extern int __op_param3 __hidden;
+#define PARAM1 ({ int _r; asm("bras %0,8; .long " ASM_NAME(__op_param1) "; l %0,0(%0)" : "=r"(_r) : ); _r; })
+#define PARAM2 ({ int _r; asm("bras %0,8; .long " ASM_NAME(__op_param2) "; l %0,0(%0)" : "=r"(_r) : ); _r; })
+#define PARAM3 ({ int _r; asm("bras %0,8; .long " ASM_NAME(__op_param3) "; l %0,0(%0)" : "=r"(_r) : ); _r; })
 #else
 #if defined(__APPLE__)
 static int __op_param1, __op_param2, __op_param3;
@@ -277,11 +286,44 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #define ASM_NAME(x) #x
 #endif
 
-#ifdef VBOX
-#define GETPC() ASMReturnAddress()
+#if defined(__i386__)
+#define EXIT_TB() asm volatile ("ret")
+#define GOTO_LABEL_PARAM(n) asm volatile ("jmp " ASM_NAME(__op_gen_label) #n)
+#elif defined(__x86_64__)
+#define EXIT_TB() asm volatile ("ret")
+#define GOTO_LABEL_PARAM(n) asm volatile ("jmp " ASM_NAME(__op_gen_label) #n)
+#elif defined(__powerpc__)
+#define EXIT_TB() asm volatile ("blr")
+#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
 #elif defined(__s390__)
+#define EXIT_TB() asm volatile ("br %r14")
+#define GOTO_LABEL_PARAM(n) asm volatile ("larl %r7,12; l %r7,0(%r7); br %r7; .long " ASM_NAME(__op_gen_label) #n)
+#elif defined(__alpha__)
+#define EXIT_TB() asm volatile ("ret")
+#elif defined(__ia64__)
+#define EXIT_TB() asm volatile ("br.ret.sptk.many b0;;")
+#define GOTO_LABEL_PARAM(n) asm volatile ("br.sptk.many " \
+					  ASM_NAME(__op_gen_label) #n)
+#elif defined(__sparc__)
+#define EXIT_TB() asm volatile ("jmpl %i0 + 8, %g0; nop")
+#define GOTO_LABEL_PARAM(n) asm volatile ("ba " ASM_NAME(__op_gen_label) #n ";nop")
+#elif defined(__arm__)
+#define EXIT_TB() asm volatile ("b exec_loop")
+#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
+#elif defined(__mc68000)
+#define EXIT_TB() asm volatile ("rts")
+#elif defined(__mips__)
+#define EXIT_TB() asm volatile ("jr $ra")
+#define GOTO_LABEL_PARAM(n) asm volatile (".set noat; la $1, " ASM_NAME(__op_gen_label) #n "; jr $1; .set at")
+#elif defined(__hppa__)
+#define GOTO_LABEL_PARAM(n) asm volatile ("b,n " ASM_NAME(__op_gen_label) #n)
+#else
+#error unsupported CPU
+#endif
+
 /* The return address may point to the start of the next instruction.
    Subtracting one gets us the call instruction itself.  */
+#if defined(__s390__)
 # define GETPC() ((void*)(((unsigned long)__builtin_return_address(0) & 0x7fffffffUL) - 1))
 #elif defined(__arm__)
 /* Thumb return addresses have the low bit set, so we need to subtract two.
@@ -290,4 +332,5 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #else
 # define GETPC() ((void *)((unsigned long)__builtin_return_address(0) - 1))
 #endif
+
 #endif /* !defined(__DYNGEN_EXEC_H__) */

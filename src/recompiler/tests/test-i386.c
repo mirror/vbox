@@ -1,6 +1,6 @@
 /*
  *  x86 CPU test
- * 
+ *
  *  Copyright (c) 2003 Fabrice Bellard
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,19 +40,19 @@
 #include <sys/mman.h>
 
 #if !defined(__x86_64__)
-#define TEST_VM86
+//#define TEST_VM86
 #define TEST_SEGS
 #endif
 //#define LINUX_VM86_IOPL_FIX
 //#define TEST_P4_FLAGS
-#if defined(__x86_64__)
+#ifdef __SSE__
 #define TEST_SSE
 #define TEST_CMOV  1
 #define TEST_FCOMI 1
 #else
-//#define TEST_SSE
-#define TEST_CMOV  0
-#define TEST_FCOMI 0
+#undef TEST_SSE
+#define TEST_CMOV  1
+#define TEST_FCOMI 1
 #endif
 
 #if defined(__x86_64__)
@@ -467,6 +467,51 @@ void test_jcc(void)
     TEST_JCC("ns", 0, 0);
 }
 
+#define TEST_LOOP(insn) \
+{\
+    for(i = 0; i < sizeof(ecx_vals) / sizeof(long); i++) {\
+        ecx = ecx_vals[i];\
+        for(zf = 0; zf < 2; zf++) {\
+    asm("test %2, %2\n\t"\
+        "movl $1, %0\n\t"\
+          insn " 1f\n\t" \
+        "movl $0, %0\n\t"\
+        "1:\n\t"\
+        : "=a" (res)\
+        : "c" (ecx), "b" (!zf)); \
+    printf("%-10s ECX=" FMTLX " ZF=%ld r=%d\n", insn, ecx, zf, res);      \
+        }\
+   }\
+}
+
+void test_loop(void)
+{
+    long ecx, zf;
+    const long ecx_vals[] = {
+        0,
+        1,
+        0x10000,
+        0x10001,
+#if defined(__x86_64__)
+        0x100000000L,
+        0x100000001L,
+#endif
+    };
+    int i, res;
+
+#if !defined(__x86_64__)
+    TEST_LOOP("jcxz");
+    TEST_LOOP("loopw");
+    TEST_LOOP("loopzw");
+    TEST_LOOP("loopnzw");
+#endif
+
+    TEST_LOOP("jecxz");
+    TEST_LOOP("loopl");
+    TEST_LOOP("loopzl");
+    TEST_LOOP("loopnzl");
+}
+
 #undef CC_MASK
 #ifdef TEST_P4_FLAGS
 #define CC_MASK (CC_C | CC_P | CC_Z | CC_S | CC_O | CC_A)
@@ -480,7 +525,7 @@ void test_jcc(void)
 #define OP imul
 #include "test-i386-muldiv.h"
 
-void test_imulw2(long op0, long op1) 
+void test_imulw2(long op0, long op1)
 {
     long res, s1, s0, flags;
     s0 = op0;
@@ -489,7 +534,7 @@ void test_imulw2(long op0, long op1)
     flags = 0;
     asm volatile ("push %4\n\t"
          "popf\n\t"
-         "imulw %w2, %w0\n\t" 
+         "imulw %w2, %w0\n\t"
          "pushf\n\t"
          "pop %1\n\t"
          : "=q" (res), "=g" (flags)
@@ -498,7 +543,7 @@ void test_imulw2(long op0, long op1)
            "imulw", s0, s1, res, flags & CC_MASK);
 }
 
-void test_imull2(long op0, long op1) 
+void test_imull2(long op0, long op1)
 {
     long res, s1, s0, flags;
     s0 = op0;
@@ -507,7 +552,7 @@ void test_imull2(long op0, long op1)
     flags = 0;
     asm volatile ("push %4\n\t"
          "popf\n\t"
-         "imull %k2, %k0\n\t" 
+         "imull %k2, %k0\n\t"
          "pushf\n\t"
          "pop %1\n\t"
          : "=q" (res), "=g" (flags)
@@ -517,7 +562,7 @@ void test_imull2(long op0, long op1)
 }
 
 #if defined(__x86_64__)
-void test_imulq2(long op0, long op1) 
+void test_imulq2(long op0, long op1)
 {
     long res, s1, s0, flags;
     s0 = op0;
@@ -526,7 +571,7 @@ void test_imulq2(long op0, long op1)
     flags = 0;
     asm volatile ("push %4\n\t"
          "popf\n\t"
-         "imulq %2, %0\n\t" 
+         "imulq %2, %0\n\t"
          "pushf\n\t"
          "pop %1\n\t"
          : "=q" (res), "=g" (flags)
@@ -683,8 +728,8 @@ void test_mul(void)
     asm("xor %1, %1\n"\
         "mov $0x12345678, %0\n"\
         #op " %" size "2, %" size "0 ; setz %b1" \
-        : "=r" (res), "=q" (resz)\
-        : "g" (val));\
+        : "=&r" (res), "=&q" (resz)\
+        : "r" (val));\
     printf("%-10s A=" FMTLX " R=" FMTLX " %ld\n", #op, val, res, resz);\
 }
 
@@ -713,8 +758,8 @@ union float64u {
     uint64_t l;
 };
 
-union float64u q_nan = { .l = 0xFFF8000000000000 };
-union float64u s_nan = { .l = 0xFFF0000000000000 };
+union float64u q_nan = { .l = 0xFFF8000000000000LL };
+union float64u s_nan = { .l = 0xFFF0000000000000LL };
 
 void test_fops(double a, double b)
 {
@@ -749,7 +794,7 @@ void fpu_clear_exceptions(void)
         uint32_t ignored[4];
         long double fpregs[8];
     } float_env32;
-    
+
     asm volatile ("fnstenv %0\n" : : "m" (float_env32));
     float_env32.fpus &= ~0x7f;
     asm volatile ("fldenv %0\n" : : "m" (float_env32));
@@ -768,14 +813,14 @@ void test_fcmp(double a, double b)
         "fstsw %%ax\n"
         : "=a" (fpus)
         : "t" (a), "u" (b));
-    printf("fcom(%f %f)=%04lx \n", 
+    printf("fcom(%f %f)=%04lx \n",
            a, b, fpus & (0x4500 | FPUS_EMASK));
     fpu_clear_exceptions();
     asm("fucom %2\n"
         "fstsw %%ax\n"
         : "=a" (fpus)
         : "t" (a), "u" (b));
-    printf("fucom(%f %f)=%04lx\n", 
+    printf("fucom(%f %f)=%04lx\n",
            a, b, fpus & (0x4500 | FPUS_EMASK));
     if (TEST_FCOMI) {
         /* test f(u)comi instruction */
@@ -786,7 +831,7 @@ void test_fcmp(double a, double b)
             "pop %0\n"
             : "=r" (eflags), "=a" (fpus)
             : "t" (a), "u" (b));
-        printf("fcomi(%f %f)=%04lx %02lx\n", 
+        printf("fcomi(%f %f)=%04lx %02lx\n",
                a, b, fpus & FPUS_EMASK, eflags & (CC_Z | CC_P | CC_C));
         fpu_clear_exceptions();
         asm("fucomi %3, %2\n"
@@ -795,7 +840,7 @@ void test_fcmp(double a, double b)
             "pop %0\n"
             : "=r" (eflags), "=a" (fpus)
             : "t" (a), "u" (b));
-        printf("fucomi(%f %f)=%04lx %02lx\n", 
+        printf("fucomi(%f %f)=%04lx %02lx\n",
                a, b, fpus & FPUS_EMASK, eflags & (CC_Z | CC_P | CC_C));
     }
     fpu_clear_exceptions();
@@ -823,13 +868,15 @@ void test_fcvt(double a)
     printf("(float)%f = %f\n", a, fa);
     printf("(long double)%f = %Lf\n", a, la);
     printf("a=" FMT64X "\n", *(uint64_t *)&a);
-    printf("la=" FMT64X " %04x\n", *(uint64_t *)&la, 
+    printf("la=" FMT64X " %04x\n", *(uint64_t *)&la,
            *(unsigned short *)((char *)(&la) + 8));
 
     /* test all roundings */
     asm volatile ("fstcw %0" : "=m" (fpuc));
     for(i=0;i<4;i++) {
-        asm volatile ("fldcw %0" : : "m" ((fpuc & ~0x0c00) | (i << 10)));
+        uint16_t val16;
+        val16 = (fpuc & ~0x0c00) | (i << 10);
+        asm volatile ("fldcw %0" : : "m" (val16));
         asm volatile ("fist %0" : "=m" (wa) : "t" (a));
         asm volatile ("fistl %0" : "=m" (ia) : "t" (a));
         asm volatile ("fistpll %0" : "=m" (lla) : "t" (a) : "st");
@@ -865,7 +912,7 @@ void test_fbcd(double a)
 
     asm("fbstp %0" : "=m" (bcd[0]) : "t" (a) : "st");
     asm("fbld %1" : "=t" (b) : "m" (bcd[0]));
-    printf("a=%f bcd=%04x%04x%04x%04x%04x b=%f\n", 
+    printf("a=%f bcd=%04x%04x%04x%04x%04x b=%f\n",
            a, bcd[4], bcd[3], bcd[2], bcd[1], bcd[0], b);
 }
 
@@ -986,8 +1033,8 @@ void test_floats(void)
     test_fcvt(1.0/0.0);
     test_fcvt(q_nan.d);
     test_fconst();
-    test_fbcd(1234567890123456);
-    test_fbcd(-123451234567890);
+    test_fbcd(1234567890123456.0);
+    test_fbcd(-123451234567890.0);
     test_fenv();
     if (TEST_CMOV) {
         test_fcmov();
@@ -1051,7 +1098,7 @@ void test_bcd(void)
     TEST_BCD(aaa, 0x12340306, 0, (CC_C | CC_A));
     TEST_BCD(aaa, 0x1234040a, 0, (CC_C | CC_A));
     TEST_BCD(aaa, 0x123405fa, 0, (CC_C | CC_A));
-    
+
     TEST_BCD(aas, 0x12340205, CC_A, (CC_C | CC_A));
     TEST_BCD(aas, 0x12340306, CC_A, (CC_C | CC_A));
     TEST_BCD(aas, 0x1234040a, CC_A, (CC_C | CC_A));
@@ -1073,7 +1120,7 @@ void test_bcd(void)
     op1 = i2l(0xfbca7654);\
     asm(#op " %" size "0, %" size "1" \
         : "=q" (op0), opconst (op1) \
-        : "0" (op0), "1" (op1));\
+        : "0" (op0));\
     printf("%-10s A=" FMTLX " B=" FMTLX "\n",\
            #op, op0, op1);\
 }
@@ -1086,7 +1133,7 @@ void test_bcd(void)
     op2 = i2l(eax);\
     asm(#op " %" size "0, %" size "1" \
         : "=q" (op0), opconst (op1) \
-        : "0" (op0), "1" (op1), "a" (op2));\
+        : "0" (op0), "a" (op2));\
     printf("%-10s EAX=" FMTLX " A=" FMTLX " C=" FMTLX "\n",\
            #op, op2, op0, op1);\
 }
@@ -1094,25 +1141,25 @@ void test_bcd(void)
 void test_xchg(void)
 {
 #if defined(__x86_64__)
-    TEST_XCHG(xchgq, "", "=q");
+    TEST_XCHG(xchgq, "", "+q");
 #endif
-    TEST_XCHG(xchgl, "k", "=q");
-    TEST_XCHG(xchgw, "w", "=q");
-    TEST_XCHG(xchgb, "b", "=q");
+    TEST_XCHG(xchgl, "k", "+q");
+    TEST_XCHG(xchgw, "w", "+q");
+    TEST_XCHG(xchgb, "b", "+q");
 
 #if defined(__x86_64__)
     TEST_XCHG(xchgq, "", "=m");
 #endif
-    TEST_XCHG(xchgl, "k", "=m");
-    TEST_XCHG(xchgw, "w", "=m");
-    TEST_XCHG(xchgb, "b", "=m");
+    TEST_XCHG(xchgl, "k", "+m");
+    TEST_XCHG(xchgw, "w", "+m");
+    TEST_XCHG(xchgb, "b", "+m");
 
 #if defined(__x86_64__)
-    TEST_XCHG(xaddq, "", "=q");
+    TEST_XCHG(xaddq, "", "+q");
 #endif
-    TEST_XCHG(xaddl, "k", "=q");
-    TEST_XCHG(xaddw, "w", "=q");
-    TEST_XCHG(xaddb, "b", "=q");
+    TEST_XCHG(xaddl, "k", "+q");
+    TEST_XCHG(xaddw, "w", "+q");
+    TEST_XCHG(xaddb, "b", "+q");
 
     {
         int res;
@@ -1122,58 +1169,61 @@ void test_xchg(void)
     }
 
 #if defined(__x86_64__)
-    TEST_XCHG(xaddq, "", "=m");
+    TEST_XCHG(xaddq, "", "+m");
 #endif
-    TEST_XCHG(xaddl, "k", "=m");
-    TEST_XCHG(xaddw, "w", "=m");
-    TEST_XCHG(xaddb, "b", "=m");
+    TEST_XCHG(xaddl, "k", "+m");
+    TEST_XCHG(xaddw, "w", "+m");
+    TEST_XCHG(xaddb, "b", "+m");
 
 #if defined(__x86_64__)
-    TEST_CMPXCHG(cmpxchgq, "", "=q", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgq, "", "+q", 0xfbca7654);
 #endif
-    TEST_CMPXCHG(cmpxchgl, "k", "=q", 0xfbca7654);
-    TEST_CMPXCHG(cmpxchgw, "w", "=q", 0xfbca7654);
-    TEST_CMPXCHG(cmpxchgb, "b", "=q", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgl, "k", "+q", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgw, "w", "+q", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgb, "b", "+q", 0xfbca7654);
 
 #if defined(__x86_64__)
-    TEST_CMPXCHG(cmpxchgq, "", "=q", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgq, "", "+q", 0xfffefdfc);
 #endif
-    TEST_CMPXCHG(cmpxchgl, "k", "=q", 0xfffefdfc);
-    TEST_CMPXCHG(cmpxchgw, "w", "=q", 0xfffefdfc);
-    TEST_CMPXCHG(cmpxchgb, "b", "=q", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgl, "k", "+q", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgw, "w", "+q", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgb, "b", "+q", 0xfffefdfc);
 
 #if defined(__x86_64__)
-    TEST_CMPXCHG(cmpxchgq, "", "=m", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgq, "", "+m", 0xfbca7654);
 #endif
-    TEST_CMPXCHG(cmpxchgl, "k", "=m", 0xfbca7654);
-    TEST_CMPXCHG(cmpxchgw, "w", "=m", 0xfbca7654);
-    TEST_CMPXCHG(cmpxchgb, "b", "=m", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgl, "k", "+m", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgw, "w", "+m", 0xfbca7654);
+    TEST_CMPXCHG(cmpxchgb, "b", "+m", 0xfbca7654);
 
 #if defined(__x86_64__)
-    TEST_CMPXCHG(cmpxchgq, "", "=m", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgq, "", "+m", 0xfffefdfc);
 #endif
-    TEST_CMPXCHG(cmpxchgl, "k", "=m", 0xfffefdfc);
-    TEST_CMPXCHG(cmpxchgw, "w", "=m", 0xfffefdfc);
-    TEST_CMPXCHG(cmpxchgb, "b", "=m", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgl, "k", "+m", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgw, "w", "+m", 0xfffefdfc);
+    TEST_CMPXCHG(cmpxchgb, "b", "+m", 0xfffefdfc);
 
     {
         uint64_t op0, op1, op2;
+        long eax, edx;
         long i, eflags;
 
         for(i = 0; i < 2; i++) {
-            op0 = 0x123456789abcd;
+            op0 = 0x123456789abcdLL;
+            eax = i2l(op0 & 0xffffffff);
+            edx = i2l(op0 >> 32);
             if (i == 0)
-                op1 = 0xfbca765423456;
+                op1 = 0xfbca765423456LL;
             else
                 op1 = op0;
-            op2 = 0x6532432432434;
-            asm("cmpxchg8b %1\n" 
+            op2 = 0x6532432432434LL;
+            asm("cmpxchg8b %2\n"
                 "pushf\n"
-                "pop %2\n"
-                : "=A" (op0), "=m" (op1), "=g" (eflags)
-                : "0" (op0), "m" (op1), "b" ((int)op2), "c" ((int)(op2 >> 32)));
-            printf("cmpxchg8b: op0=" FMT64X " op1=" FMT64X " CC=%02lx\n", 
-                    op0, op1, eflags & CC_Z);
+                "pop %3\n"
+                : "=a" (eax), "=d" (edx), "=m" (op1), "=g" (eflags)
+                : "0" (eax), "1" (edx), "m" (op1), "b" ((int)op2), "c" ((int)(op2 >> 32)));
+            printf("cmpxchg8b: eax=" FMTLX " edx=" FMTLX " op1=" FMT64X " CC=%02lx\n",
+                   eax, edx, op1, eflags & CC_Z);
         }
     }
 }
@@ -1182,11 +1232,15 @@ void test_xchg(void)
 /**********************************************/
 /* segmentation tests */
 
+#include <sys/syscall.h>
+#include <unistd.h>
 #include <asm/ldt.h>
-#include <linux/unistd.h>
 #include <linux/version.h>
 
-_syscall3(int, modify_ldt, int, func, void *, ptr, unsigned long, bytecount)
+static inline int modify_ldt(int func, void * ptr, unsigned long bytecount)
+{
+    return syscall(__NR_modify_ldt, func, ptr, bytecount);
+}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 66)
 #define modify_ldt_ldt_s user_desc
@@ -1200,14 +1254,30 @@ uint8_t seg_data2[4096];
 #define TEST_LR(op, size, seg, mask)\
 {\
     int res, res2;\
+    uint16_t mseg = seg;\
     res = 0x12345678;\
     asm (op " %" size "2, %" size "0\n" \
          "movl $0, %1\n"\
          "jnz 1f\n"\
          "movl $1, %1\n"\
          "1:\n"\
-         : "=r" (res), "=r" (res2) : "m" (seg), "0" (res));\
+         : "=r" (res), "=r" (res2) : "m" (mseg), "0" (res));\
     printf(op ": Z=%d %08x\n", res2, res & ~(mask));\
+}
+
+#define TEST_ARPL(op, size, op1, op2)\
+{\
+    long a, b, c;                               \
+    a = (op1);                                  \
+    b = (op2);                                  \
+    asm volatile(op " %" size "3, %" size "0\n"\
+                 "movl $0,%1\n"\
+                 "jnz 1f\n"\
+                 "movl $1,%1\n"\
+                 "1:\n"\
+                 : "=r" (a), "=r" (c) : "0" (a), "r" (b));    \
+    printf(op size " A=" FMTLX " B=" FMTLX " R=" FMTLX " z=%ld\n",\
+           (long)(op1), (long)(op2), a, c);\
 }
 
 /* NOTE: we use Linux modify_ldt syscall */
@@ -1286,9 +1356,9 @@ void test_segs(void)
 
     segoff.seg = MK_SEL(2);
     segoff.offset = 0xabcdef12;
-    asm volatile("lfs %2, %0\n\t" 
+    asm volatile("lfs %2, %0\n\t"
                  "movl %%fs, %1\n\t"
-                 : "=r" (res), "=g" (res2) 
+                 : "=r" (res), "=g" (res2)
                  : "m" (segoff));
     printf("FS:reg = %04x:%08x\n", res2, res);
 
@@ -1301,6 +1371,10 @@ void test_segs(void)
     TEST_LR("larl", "", 0xfff8, 0);
     TEST_LR("lslw", "w", 0xfff8, 0);
     TEST_LR("lsll", "", 0xfff8, 0);
+
+    TEST_ARPL("arpl", "w", 0x12345678 | 3, 0x762123c | 1);
+    TEST_ARPL("arpl", "w", 0x12345678 | 1, 0x762123c | 3);
+    TEST_ARPL("arpl", "w", 0x12345678 | 1, 0x762123c | 1);
 }
 
 /* 16 bit code test */
@@ -1327,15 +1401,15 @@ void test_code16(void)
     modify_ldt(1, &ldt, sizeof(ldt)); /* write ldt entry */
 
     /* call the first function */
-    asm volatile ("lcall %1, %2" 
+    asm volatile ("lcall %1, %2"
                   : "=a" (res)
                   : "i" (MK_SEL(1)), "i" (&code16_func1): "memory", "cc");
     printf("func1() = 0x%08x\n", res);
-    asm volatile ("lcall %2, %3" 
+    asm volatile ("lcall %2, %3"
                   : "=a" (res), "=c" (res2)
                   : "i" (MK_SEL(1)), "i" (&code16_func2): "memory", "cc");
     printf("func2() = 0x%08x spdec=%d\n", res, res2);
-    asm volatile ("lcall %1, %2" 
+    asm volatile ("lcall %1, %2"
                   : "=a" (res)
                   : "i" (MK_SEL(1)), "i" (&code16_func3): "memory", "cc");
     printf("func3() = 0x%08x\n", res);
@@ -1373,9 +1447,13 @@ void test_misc(void)
     printf("xlat: EAX=" FMTLX "\n", res);
 
 #if defined(__x86_64__)
+#if 0
     {
+        /* XXX: see if Intel Core2 and AMD64 behavior really
+           differ. Here we implemented the Intel way which is not
+           compatible yet with QEMU. */
         static struct __attribute__((packed)) {
-            uint32_t offset;
+            uint64_t offset;
             uint16_t seg;
         } desc;
         long cs_sel;
@@ -1383,39 +1461,39 @@ void test_misc(void)
         asm volatile ("mov %%cs, %0" : "=r" (cs_sel));
 
         asm volatile ("push %1\n"
-                      "call func_lret\n" 
+                      "call func_lret\n"
                       : "=a" (res)
                       : "r" (cs_sel) : "memory", "cc");
         printf("func_lret=" FMTLX "\n", res);
 
-        /* NOTE: we assume that &func_lret < 4GB */
         desc.offset = (long)&func_lret;
         desc.seg = cs_sel;
-        
+
         asm volatile ("xor %%rax, %%rax\n"
-                      "rex64 lcall %1\n"
+                      "rex64 lcall *(%%rcx)\n"
                       : "=a" (res)
-                      : "m" (desc) 
+                      : "c" (&desc)
                       : "memory", "cc");
         printf("func_lret2=" FMTLX "\n", res);
 
         asm volatile ("push %2\n"
                       "mov $ 1f, %%rax\n"
                       "push %%rax\n"
-                      "ljmp %1\n"
+                      "rex64 ljmp *(%%rcx)\n"
                       "1:\n"
                       : "=a" (res)
-                      : "m" (desc), "b" (cs_sel)
+                      : "c" (&desc), "b" (cs_sel)
                       : "memory", "cc");
         printf("func_lret3=" FMTLX "\n", res);
     }
+#endif
 #else
-    asm volatile ("push %%cs ; call %1" 
+    asm volatile ("push %%cs ; call %1"
                   : "=a" (res)
                   : "m" (func_lret): "memory", "cc");
     printf("func_lret=" FMTLX "\n", res);
 
-    asm volatile ("pushf ; push %%cs ; call %1" 
+    asm volatile ("pushf ; push %%cs ; call %1"
                   : "=a" (res)
                   : "m" (func_iret): "memory", "cc");
     printf("func_iret=" FMTLX "\n", res);
@@ -1482,7 +1560,7 @@ void test_string(void)
    TEST_STRING(stos, "");
    TEST_STRING(stos, "rep ");
    TEST_STRING(lods, ""); /* to verify stos */
-   TEST_STRING(lods, "rep "); 
+   TEST_STRING(lods, "rep ");
    TEST_STRING(movs, "");
    TEST_STRING(movs, "rep ");
    TEST_STRING(lods, ""); /* to verify stos */
@@ -1515,13 +1593,10 @@ static inline void pushw(struct vm86_regs *r, int val)
     *(uint16_t *)seg_to_linear(r->ss, r->esp) = val;
 }
 
-#undef __syscall_return
-#define __syscall_return(type, res) \
-do { \
-	return (type) (res); \
-} while (0)
-
-_syscall2(int, vm86, int, func, struct vm86plus_struct *, v86)
+static inline int vm86(int func, struct vm86plus_struct *v86)
+{
+    return syscall(__NR_vm86, func, v86);
+}
 
 extern char vm86_code_start;
 extern char vm86_code_end;
@@ -1536,8 +1611,8 @@ void test_vm86(void)
     uint8_t *vm86_mem;
     int seg, ret;
 
-    vm86_mem = mmap((void *)0x00000000, 0x110000, 
-                    PROT_WRITE | PROT_READ | PROT_EXEC, 
+    vm86_mem = mmap((void *)0x00000000, 0x110000,
+                    PROT_WRITE | PROT_READ | PROT_EXEC,
                     MAP_FIXED | MAP_ANON | MAP_PRIVATE, -1, 0);
     if (vm86_mem == MAP_FAILED) {
         printf("ERROR: could not map vm86 memory");
@@ -1560,7 +1635,7 @@ void test_vm86(void)
 
     /* move code to proper address. We use the same layout as a .com
        dos program. */
-    memcpy(vm86_mem + (VM86_CODE_CS << 4) + VM86_CODE_IP, 
+    memcpy(vm86_mem + (VM86_CODE_CS << 4) + VM86_CODE_IP,
            &vm86_code_start, &vm86_code_end - &vm86_code_start);
 
     /* mark int 0x21 as being emulated */
@@ -1572,7 +1647,7 @@ void test_vm86(void)
         case VM86_INTx:
             {
                 int int_num, ah, v;
-                
+
                 int_num = VM86_ARG(ret);
                 if (int_num != 0x21)
                     goto unknown_int;
@@ -1675,7 +1750,7 @@ void test_exceptions(void)
 {
     struct sigaction act;
     volatile int val;
-    
+
     act.sa_sigaction = sig_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_SIGINFO | SA_NODEFER;
@@ -1728,7 +1803,7 @@ void test_exceptions(void)
         ldt.seg_not_present = 1;
         ldt.useable = 1;
         modify_ldt(1, &ldt, sizeof(ldt)); /* write ldt entry */
-        
+
         if (setjmp(jmp_env) == 0) {
             /* segment not present */
             asm volatile ("movl %0, %%fs" : : "r" (MK_SEL(1)));
@@ -1753,7 +1828,7 @@ void test_exceptions(void)
         /* read from an invalid address */
         v1 = *(char *)0x1234;
     }
-    
+
     /* test illegal instruction reporting */
     printf("UD2 exception:\n");
     if (setjmp(jmp_env) == 0) {
@@ -1765,7 +1840,7 @@ void test_exceptions(void)
         /* now execute an invalid instruction */
         asm volatile("lock nop");
     }
-    
+
     printf("INT exception:\n");
     if (setjmp(jmp_env) == 0) {
         asm volatile ("int $0xfd");
@@ -1837,7 +1912,7 @@ void test_exceptions(void)
         asm volatile ("pushf\n"
                       "orl $0x00100, (%%esp)\n"
                       "popf\n"
-                      "movl $0xabcd, %0\n" 
+                      "movl $0xabcd, %0\n"
                       "movl $0x0, %0\n" : "=m" (val) : : "cc", "memory");
     }
     printf("val=0x%x\n", val);
@@ -1868,7 +1943,7 @@ void test_single_step(void)
     asm volatile ("pushf\n"
                   "orl $0x00100, (%%esp)\n"
                   "popf\n"
-                  "movl $0xabcd, %0\n" 
+                  "movl $0xabcd, %0\n"
 
                   /* jmp test */
                   "movl $3, %%ecx\n"
@@ -1894,13 +1969,13 @@ void test_single_step(void)
                   "rep cmpsb\n"
                   "movl $4, %%ecx\n"
                   "rep cmpsb\n"
-                  
+
                   /* getpid() syscall: single step should skip one
                      instruction */
                   "movl $20, %%eax\n"
                   "int $0x80\n"
                   "movl $0, %%eax\n"
-                  
+
                   /* when modifying SS, trace is not done on the next
                      instruction */
                   "movl %%ss, %%ecx\n"
@@ -1916,12 +1991,12 @@ void test_single_step(void)
                   "popl %%ss\n"
                   "addl $1, %0\n"
                   "movl $1, %%eax\n"
-                  
+
                   "pushf\n"
                   "andl $~0x00100, (%%esp)\n"
                   "popf\n"
-                  : "=m" (val) 
-                  : 
+                  : "=m" (val)
+                  :
                   : "cc", "memory", "eax", "ecx", "esi", "edi");
     printf("val=%d\n", val);
     for(i = 0; i < 4; i++)
@@ -1934,7 +2009,8 @@ uint8_t code[] = {
     0xc3, /* ret */
 };
 
-asm("smc_code2:\n"
+asm(".section \".data\"\n"
+    "smc_code2:\n"
     "movl 4(%esp), %eax\n"
     "movl %eax, smc_patch_addr2 + 1\n"
     "nop\n"
@@ -1947,14 +2023,15 @@ asm("smc_code2:\n"
     "nop\n"
     "smc_patch_addr2:\n"
     "movl $1, %eax\n"
-    "ret\n");
+    "ret\n"
+    ".previous\n"
+    );
 
 typedef int FuncType(void);
 extern int smc_code2(int);
 void test_self_modifying_code(void)
 {
     int i;
-
     printf("self modifying code:\n");
     printf("func1 = 0x%x\n", ((FuncType *)code)());
     for(i = 2; i <= 4; i++) {
@@ -2036,7 +2113,7 @@ static void test_enter(void)
 #ifdef TEST_SSE
 
 typedef int __m64 __attribute__ ((__mode__ (__V2SI__)));
-typedef int __m128 __attribute__ ((__mode__(__V4SF__)));
+typedef float __m128 __attribute__ ((__mode__(__V4SF__)));
 
 typedef union {
     double d[2];
@@ -2210,11 +2287,12 @@ void test_sse_comi(double a1, double b1)
 }
 
 /* Force %xmm0 usage to avoid the case where both register index are 0
-   to test instruction decoding more extensively */
+   to test intruction decoding more extensively */
 #define CVT_OP_XMM2MMX(op)\
 {\
     asm volatile (#op " %1, %0" : "=y" (r.q[0]) : "x" (a.dq) \
-                  : "%xmm0");\
+                  : "%xmm0"); \
+    asm volatile("emms\n"); \
     printf("%-9s: a=" FMT64X "" FMT64X " r=" FMT64X "\n",\
            #op,\
            a.q[1], a.q[0],\
@@ -2224,6 +2302,7 @@ void test_sse_comi(double a1, double b1)
 #define CVT_OP_MMX2XMM(op)\
 {\
     asm volatile (#op " %1, %0" : "=x" (r.dq) : "y" (a.q[0]));\
+    asm volatile("emms\n"); \
     printf("%-9s: a=" FMT64X " r=" FMT64X "" FMT64X "\n",\
            #op,\
            a.q[0],\
@@ -2292,14 +2371,14 @@ void test_fxsave(void)
         " fxrstor %0\n"
         " fxsave %1\n"
         " fninit\n"
-        : "=m" (*(uint32_t *)fp2), "=m" (*(uint32_t *)fp) 
+        : "=m" (*(uint32_t *)fp2), "=m" (*(uint32_t *)fp)
         : "m" (a), "m" (b));
     printf("fpuc=%04x\n", fp->fpuc);
     printf("fpus=%04x\n", fp->fpus);
     printf("fptag=%04x\n", fp->fptag);
     for(i = 0; i < 3; i++) {
         printf("ST%d: " FMT64X " %04x\n",
-               i, 
+               i,
                *(uint64_t *)&fp->fpregs1[i * 16],
                *(uint16_t *)&fp->fpregs1[i * 16 + 8]);
     }
@@ -2311,7 +2390,7 @@ void test_fxsave(void)
 #endif
     for(i = 0; i < nb_xmm; i++) {
         printf("xmm%d: " FMT64X "" FMT64X "\n",
-               i, 
+               i,
                *(uint64_t *)&fp->xmm_regs[i * 16],
                *(uint64_t *)&fp->xmm_regs[i * 16 + 8]);
     }
@@ -2351,7 +2430,7 @@ void test_sse(void)
 
     MMX_OP2(pmulhuw);
     MMX_OP2(pmulhw);
-    
+
     MMX_OP2(psubsb);
     MMX_OP2(psubsw);
     MMX_OP2(pminsw);
@@ -2390,7 +2469,7 @@ void test_sse(void)
 
     asm volatile ("pmovmskb %1, %0" : "=r" (r.l[0]) : "y" (a.q[0]));
     printf("%-9s: r=%08x\n", "pmovmskb", r.l[0]);
-    
+
     asm volatile ("pmovmskb %1, %0" : "=r" (r.l[0]) : "x" (a.dq));
     printf("%-9s: r=%08x\n", "pmovmskb", r.l[0]);
 
@@ -2402,21 +2481,21 @@ void test_sse(void)
         a.q[1] = test_values[0][1];
         b.q[0] = test_values[1][0];
         b.q[1] = test_values[1][1];
-        asm volatile("maskmovq %1, %0" : 
+        asm volatile("maskmovq %1, %0" :
                      : "y" (a.q[0]), "y" (b.q[0]), "D" (&r)
-                     : "memory"); 
-        printf("%-9s: r=" FMT64X " a=" FMT64X " b=" FMT64X "\n", 
-               "maskmov", 
-               r.q[0], 
-               a.q[0], 
+                     : "memory");
+        printf("%-9s: r=" FMT64X " a=" FMT64X " b=" FMT64X "\n",
+               "maskmov",
+               r.q[0],
+               a.q[0],
                b.q[0]);
-        asm volatile("maskmovdqu %1, %0" : 
+        asm volatile("maskmovdqu %1, %0" :
                      : "x" (a.dq), "x" (b.dq), "D" (&r)
-                     : "memory"); 
-        printf("%-9s: r=" FMT64X "" FMT64X " a=" FMT64X "" FMT64X " b=" FMT64X "" FMT64X "\n", 
-               "maskmov", 
-               r.q[1], r.q[0], 
-               a.q[1], a.q[0], 
+                     : "memory");
+        printf("%-9s: r=" FMT64X "" FMT64X " a=" FMT64X "" FMT64X " b=" FMT64X "" FMT64X "\n",
+               "maskmov",
+               r.q[1], r.q[0],
+               a.q[1], a.q[0],
                b.q[1], b.q[0]);
     }
 
@@ -2516,8 +2595,8 @@ void test_sse(void)
         SSE_OPS(cmpnlt);
         SSE_OPS(cmpnle);
         SSE_OPS(cmpord);
-        
-        
+
+
         a.d[0] = 2.7;
         a.d[1] = -3.4;
         b.d[0] = 45.7;
@@ -2593,6 +2672,56 @@ void test_sse(void)
 
 #endif
 
+#define TEST_CONV_RAX(op)\
+{\
+    unsigned long a, r;\
+    a = i2l(0x8234a6f8);\
+    r = a;\
+    asm volatile(#op : "=a" (r) : "0" (r));\
+    printf("%-10s A=" FMTLX " R=" FMTLX "\n", #op, a, r);\
+}
+
+#define TEST_CONV_RAX_RDX(op)\
+{\
+    unsigned long a, d, r, rh;                   \
+    a = i2l(0x8234a6f8);\
+    d = i2l(0x8345a1f2);\
+    r = a;\
+    rh = d;\
+    asm volatile(#op : "=a" (r), "=d" (rh) : "0" (r), "1" (rh));   \
+    printf("%-10s A=" FMTLX " R=" FMTLX ":" FMTLX "\n", #op, a, r, rh);  \
+}
+
+void test_conv(void)
+{
+    TEST_CONV_RAX(cbw);
+    TEST_CONV_RAX(cwde);
+#if defined(__x86_64__)
+    TEST_CONV_RAX(cdqe);
+#endif
+
+    TEST_CONV_RAX_RDX(cwd);
+    TEST_CONV_RAX_RDX(cdq);
+#if defined(__x86_64__)
+    TEST_CONV_RAX_RDX(cqo);
+#endif
+
+    {
+        unsigned long a, r;
+        a = i2l(0x12345678);
+        asm volatile("bswapl %k0" : "=r" (r) : "0" (a));
+        printf("%-10s: A=" FMTLX " R=" FMTLX "\n", "bswapl", a, r);
+    }
+#if defined(__x86_64__)
+    {
+        unsigned long a, r;
+        a = i2l(0x12345678);
+        asm volatile("bswapq %0" : "=r" (r) : "0" (a));
+        printf("%-10s: A=" FMTLX " R=" FMTLX "\n", "bswapq", a, r);
+    }
+#endif
+}
+
 extern void *__start_initcall;
 extern void *__stop_initcall;
 
@@ -2610,6 +2739,7 @@ int main(int argc, char **argv)
     test_bsx();
     test_mul();
     test_jcc();
+    test_loop();
     test_floats();
 #if !defined(__x86_64__)
     test_bcd();
@@ -2625,12 +2755,13 @@ int main(int argc, char **argv)
 #ifdef TEST_VM86
     test_vm86();
 #endif
-    test_exceptions();
 #if !defined(__x86_64__)
+    test_exceptions();
     test_self_modifying_code();
     test_single_step();
 #endif
     test_enter();
+    test_conv();
 #ifdef TEST_SSE
     test_sse();
     test_fxsave();

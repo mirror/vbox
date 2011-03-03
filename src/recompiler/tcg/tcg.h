@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include "tcg-target.h"
 
 #if TCG_TARGET_REG_BITS == 32
@@ -109,7 +108,7 @@ typedef int TCGType;
 
 typedef tcg_target_ulong TCGArg;
 
-/* Define a type and accessor macros for variables.  Using a struct is
+/* Define a type and accessor macros for varables.  Using a struct is
    nice because it gives some level of type safely.  Ideally the compiler
    be able to see through all this.  However in practice this is not true,
    expecially on targets with braindamaged ABIs (e.g. i386).
@@ -193,9 +192,9 @@ typedef struct TCGTemp {
     unsigned int fixed_reg:1;
     unsigned int mem_coherent:1;
     unsigned int mem_allocated:1;
-    unsigned int temp_local:1; /* If true, the temp is saved across
+    unsigned int temp_local:1; /* If true, the temp is saved accross
                                   basic blocks. Otherwise, it is not
-                                  preserved across basic blocks. */
+                                  preserved accross basic blocks. */
     unsigned int temp_allocated:1; /* never used for code gen */
     /* index of next free temp of same base type, -1 if end */
     int next_free_temp;
@@ -369,20 +368,18 @@ do {\
     fprintf(stderr, "%s:%d: tcg fatal error\n", __FILE__, __LINE__);\
     abort();\
 } while (0)
-#else
-#define VBOX_STR(x) #x
-#define VBOX_XSTR(x) VBOX_STR(x)
-#define tcg_abort() \
-do {\
-    remAbort(-1, "TCG fatal error: "__FILE__":"VBOX_XSTR(__LINE__));     \
-} while (0)
+#else  /* VBOX */
+# define tcg_abort() \
+    do {\
+        remAbort(-1, "TCG fatal error: "__FILE__":" RT_XSTR(__LINE__));     \
+    } while (0)
 extern void qemu_qsort(void* base, size_t nmemb, size_t size,
                        int(*compar)(const void*, const void*));
 #define tcg_exit(status) \
-do {\
-    remAbort(-1, "TCG exit: "__FILE__":"VBOX_XSTR(__LINE__));\
-} while (0)
-#endif
+    do {\
+        remAbort(-1, "TCG exit: "__FILE__":" RT_XSTR(__LINE__));\
+    } while (0)
+#endif /* VBOX */
 
 void tcg_add_target_add_op_defs(const TCGTargetOpDef *tdefs);
 
@@ -439,11 +436,11 @@ extern uint8_t* code_gen_prologue;
     ((long REGPARM __attribute__ ((longcall)) (*)(void *))code_gen_prologue)(tb_ptr)
 #else
 
-#if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
-#define tcg_qemu_tb_exec(tb_ptr, ret)        \
+# if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
+#  define tcg_qemu_tb_exec(tb_ptr, ret)        \
     __asm__ __volatile__("call *%%ecx" : "=a"(ret) : "a"(tb_ptr), "c" (&code_gen_prologue[0]) : "memory", "%edx", "cc")
-#else
+# else  /* !VBOX || !GCC_WITH_BUGGY_REG_PARAM */
 #define tcg_qemu_tb_exec(tb_ptr) ((long REGPARM (*)(void *))code_gen_prologue)(tb_ptr)
-#endif
+# endif /* !VBOX || !GCC_WITH_BUGGY_REG_PARAM */
 
 #endif

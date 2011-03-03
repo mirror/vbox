@@ -1,7 +1,7 @@
 #ifndef QEMU_OSDEP_H
 #define QEMU_OSDEP_H
 
-#ifdef VBOX
+#ifdef VBOX /** @todo clean up this, it's not fully synched. */
 
 #include <iprt/alloc.h>
 #ifndef RT_OS_WINDOWS
@@ -80,17 +80,12 @@ void *get_mmap_addr(unsigned long size);
 #endif
 
 #ifndef likely
-#ifndef VBOX
 #if __GNUC__ < 3
 #define __builtin_expect(x, n) (x)
 #endif
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x)   __builtin_expect(!!(x), 0)
-#else /* VBOX */
-#define likely(cond)        RT_LIKELY(cond)
-#define unlikely(cond)      RT_UNLIKELY(cond)
-#endif
 #endif /* !likely */
 
 #ifndef offsetof
@@ -128,6 +123,10 @@ void *get_mmap_addr(unsigned long size);
 #define REGPARM __attribute((regparm(3)))
 #else
 #define REGPARM
+#endif
+
+#ifndef VBOX
+#define qemu_printf printf
 #endif
 
 #if defined (__GNUC__) && defined (__GNUC_MINOR_)

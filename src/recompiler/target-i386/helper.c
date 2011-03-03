@@ -32,9 +32,9 @@
 #include <stdio.h>
 #include <string.h>
 #ifndef VBOX
-#include <inttypes.h>
-#include <signal.h>
-#include <assert.h>
+# include <inttypes.h>
+# include <signal.h>
+# include <assert.h>
 #endif
 
 #include "cpu.h"
@@ -104,19 +104,22 @@ static void add_flagname_to_bitmaps(char *flagname, uint32_t *features,
     fprintf(stderr, "CPU feature %s not found\n", flagname);
 }
 #endif /* !VBOX */
+
 #ifndef VBOX
 CPUX86State *cpu_x86_init(const char *cpu_model)
+#else
+CPUX86State *cpu_x86_init(CPUX86State *env, const char *cpu_model)
+#endif
 {
+#ifndef VBOX
     CPUX86State *env;
+#endif
     static int inited;
 
+#ifndef VBOX
     env = qemu_mallocz(sizeof(CPUX86State));
     if (!env)
         return NULL;
-#else
-CPUX86State *cpu_x86_init(CPUX86State *env, const char *cpu_model)
-{
-    static int inited;
 #endif
     cpu_exec_init(env);
     env->cpu_model_str = cpu_model;
@@ -301,7 +304,7 @@ static x86_def_t x86_defs[] = {
              * CPUID_HT | CPUID_TM | CPUID_PBE */
             /* Some CPUs got no CPUID_SEP */
         .ext_features = CPUID_EXT_MONITOR |
-            CPUID_EXT_SSE3 /* PNI */,
+            CPUID_EXT_SSE3 /* PNI */, CPUID_EXT_SSSE3,
             /* Missing: CPUID_EXT_DSCPL | CPUID_EXT_EST |
              * CPUID_EXT_TM2 | CPUID_EXT_XTPR */
         .ext2_features = (PPRO_FEATURES & 0x0183F3FF) | CPUID_EXT2_NX,
@@ -456,7 +459,7 @@ static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
             env->cpuid_model[i >> 2] |= c << (8 * (i & 3));
         }
     }
-#endif // !VBOX
+#endif /* !VBOX */
     return 0;
 }
 
@@ -853,8 +856,8 @@ void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0)
     /* update FPU flags */
     env->hflags = (env->hflags & ~(HF_MP_MASK | HF_EM_MASK | HF_TS_MASK)) |
         ((new_cr0 << (HF_MP_SHIFT - 1)) & (HF_MP_MASK | HF_EM_MASK | HF_TS_MASK));
-
 #ifdef VBOX
+
     remR3ChangeCpuMode(env);
 #endif
 }

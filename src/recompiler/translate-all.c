@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "config.h"
 
@@ -54,7 +55,7 @@ uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
 #elif defined(TARGET_SPARC)
 target_ulong gen_opc_npc[OPC_BUF_SIZE];
 target_ulong gen_opc_jump_pc[2];
-#elif defined(TARGET_MIPS)
+#elif defined(TARGET_MIPS) || defined(TARGET_SH4)
 uint32_t gen_opc_hflags[OPC_BUF_SIZE];
 #endif
 
@@ -70,7 +71,7 @@ unsigned long code_gen_max_block_size(void)
 
     if (max == 0) {
         max = TCG_MAX_OP_SIZE;
-#define DEF(s, n, copy_size) max = (copy_size > max) ? copy_size : max;
+#define DEF(s, n, copy_size) max = copy_size > max? copy_size : max;
 #include "tcg-opc.h"
 #undef DEF
         max *= OPC_MAX_SIZE;
@@ -79,7 +80,7 @@ unsigned long code_gen_max_block_size(void)
     return max;
 }
 
-void cpu_gen_init()
+void cpu_gen_init(void)
 {
     tcg_context_init(&tcg_ctx);
     tcg_set_frame(&tcg_ctx, TCG_AREG0, offsetof(CPUState, temp_buf),
@@ -92,8 +93,7 @@ void cpu_gen_init()
    '*gen_code_size_ptr' contains the size of the generated code (host
    code).
 */
-int cpu_gen_code(CPUState *env, TranslationBlock *tb,
-                 int *gen_code_size_ptr)
+int cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
 {
     TCGContext *s = &tcg_ctx;
     uint8_t *gen_code_buf;
@@ -110,14 +110,11 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
 
 #ifdef VBOX
     RAWEx_ProfileStart(env, STATS_QEMU_COMPILATION);
+#endif
+
     tcg_func_start(s);
 
     gen_intermediate_code(env, tb);
-#else /* !VBOX */
-    tcg_func_start(s);
-
-    gen_intermediate_code(env, tb);
-#endif /* !VBOX */
 
     /* generate machine code */
     gen_code_buf = tb->tc_ptr;
@@ -128,6 +125,7 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
     s->tb_jmp_offset = tb->tb_jmp_offset;
     s->tb_next = NULL;
     /* the following two entries are optional (only used for string ops) */
+    /* XXX: not used ? */
     tb->tb_jmp_offset[2] = 0xffff;
     tb->tb_jmp_offset[3] = 0xffff;
 #else
@@ -140,7 +138,6 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
     s->interm_time += profile_getclock() - ti;
     s->code_time -= profile_getclock();
 #endif
-
     gen_code_size = dyngen_code(s, gen_code_buf);
     *gen_code_size_ptr = gen_code_size;
 #ifdef CONFIG_PROFILER

@@ -52,8 +52,8 @@ enum {
 #define TCG_AREG2 TCG_REG_ESI
 #define TCG_AREG3 TCG_REG_EDI
 #else
-#define TCG_AREG0 TCG_REG_ESI
-#define TCG_AREG1 TCG_REG_EDI
+# define TCG_AREG0 TCG_REG_ESI
+# define TCG_AREG1 TCG_REG_EDI
 #endif
 
 static inline void flush_icache_range(unsigned long start, unsigned long stop)

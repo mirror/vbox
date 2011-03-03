@@ -38,7 +38,7 @@
 # include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 #endif
 
-#if defined(__arm__) || defined(__sparc__)
+#if defined(__arm__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
 #define WORDS_ALIGNED
 #endif
 
@@ -56,6 +56,7 @@
  */
 
 #include "bswap.h"
+#include "softfloat.h"
 
 #if defined(WORDS_BIGENDIAN) != defined(TARGET_WORDS_BIGENDIAN)
 #define BSWAP_NEEDED
@@ -599,7 +600,7 @@ static inline uint64_t ldq_be_p(void *ptr)
 {
     uint32_t a,b;
     a = ldl_be_p(ptr);
-    b = ldl_be_p((uint8_t*)ptr+4);
+    b = ldl_be_p((uint8_t *)ptr + 4);
     return (((uint64_t)a<<32)|b);
 }
 
@@ -636,10 +637,11 @@ static inline void stl_be_p(void *ptr, int v)
 static inline void stq_be_p(void *ptr, uint64_t v)
 {
     stl_be_p(ptr, v >> 32);
-    stl_be_p((uint8_t*)ptr + 4, v);
+    stl_be_p((uint8_t *)ptr + 4, v);
 }
 
 /* float access */
+
 static inline float32 ldfl_be_p(void *ptr)
 {
     union {
@@ -664,7 +666,7 @@ static inline float64 ldfq_be_p(void *ptr)
 {
     CPU_DoubleU u;
     u.l.upper = ldl_be_p(ptr);
-    u.l.lower = ldl_be_p((uint8_t*)ptr + 4);
+    u.l.lower = ldl_be_p((uint8_t *)ptr + 4);
     return u.d;
 }
 
@@ -673,7 +675,7 @@ static inline void stfq_be_p(void *ptr, float64 v)
     CPU_DoubleU u;
     u.d = v;
     stl_be_p(ptr, u.l.upper);
-    stl_be_p((uint8_t*)ptr + 4, u.l.lower);
+    stl_be_p((uint8_t *)ptr + 4, u.l.lower);
 }
 
 #else
@@ -775,7 +777,8 @@ static inline void stfq_be_p(void *ptr, float64 v)
 
 /* All direct uses of g2h and h2g need to go away for usermode softmmu.  */
 #define g2h(x) ((void *)((unsigned long)(x) + GUEST_BASE))
-#define h2g(x) ((target_ulong)(x - GUEST_BASE))
+#define h2g(x) ((target_ulong)((unsigned long)(x) - GUEST_BASE))
+
 #define saddr(x) g2h(x)
 #define laddr(x) g2h(x)
 
@@ -825,12 +828,14 @@ static inline void stfq_be_p(void *ptr, float64 v)
 #define lduw_code(p) lduw_raw(p)
 #define ldsw_code(p) ldsw_raw(p)
 #define ldl_code(p) ldl_raw(p)
+#define ldq_code(p) ldq_raw(p)
 
 #define ldub_kernel(p) ldub_raw(p)
 #define ldsb_kernel(p) ldsb_raw(p)
 #define lduw_kernel(p) lduw_raw(p)
 #define ldsw_kernel(p) ldsw_raw(p)
 #define ldl_kernel(p) ldl_raw(p)
+#define ldq_kernel(p) ldq_raw(p)
 #define ldfl_kernel(p) ldfl_raw(p)
 #define ldfq_kernel(p) ldfq_raw(p)
 #define stb_kernel(p, v) stb_raw(p, v)
@@ -873,6 +878,7 @@ void page_set_flags(target_ulong start, target_ulong end, int flags);
 int page_check_range(target_ulong start, target_ulong len, int flags);
 void page_unprotect_range(target_ulong data, target_ulong data_size);
 
+#if 0 /* bird: Not there in the code I'm looking at. */
 #define SINGLE_CPU_DEFINES
 #ifdef SINGLE_CPU_DEFINES
 
@@ -936,12 +942,18 @@ void page_unprotect_range(target_ulong data, target_ulong data_size);
 #endif
 
 #endif /* SINGLE_CPU_DEFINES */
+#endif /* bird: removed? */
 
 void cpu_dump_state(CPUState *env, FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
                     int flags);
+void cpu_dump_statistics (CPUState *env, FILE *f,
+                          int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
+                          int flags);
 
-DECLNORETURN(void) cpu_abort(CPUState *env, const char *fmt, ...);
+void cpu_abort(CPUState *env, const char *fmt, ...)
+    __attribute__ ((__format__ (__printf__, 2, 3)))
+    __attribute__ ((__noreturn__));
 extern CPUState *first_cpu;
 extern CPUState *cpu_single_env;
 extern int64_t qemu_icount;
@@ -954,25 +966,25 @@ extern int use_icount;
 #define CPU_INTERRUPT_FIQ    0x10 /* Fast interrupt pending.  */
 #define CPU_INTERRUPT_HALT   0x20 /* CPU halt wanted */
 #define CPU_INTERRUPT_SMI    0x40 /* (x86 only) SMI interrupt pending */
-#define CPU_INTERRUPT_DEBUG  0x80 /* Debug event occurred.  */
+#define CPU_INTERRUPT_DEBUG  0x80 /* Debug event occured.  */
 #define CPU_INTERRUPT_VIRQ   0x100 /* virtual interrupt pending.  */
 #define CPU_INTERRUPT_NMI    0x200 /* NMI pending. */
 
 #ifdef VBOX
 /** Executes a single instruction. cpu_exec() will normally return EXCP_SINGLE_INSTR. */
-#define CPU_INTERRUPT_SINGLE_INSTR              0x0400
+# define CPU_INTERRUPT_SINGLE_INSTR             0x0400
 /** Executing a CPU_INTERRUPT_SINGLE_INSTR request, quit the cpu_loop. (for exceptions and suchlike) */
-#define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT    0x0800
+# define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT   0x0800
 /** VM execution was interrupted by VMR3Reset, VMR3Suspend or VMR3PowerOff. */
-#define CPU_INTERRUPT_RC                        0x1000
+# define CPU_INTERRUPT_RC                       0x1000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_EXIT             0x2000
+# define CPU_INTERRUPT_EXTERNAL_EXIT            0x2000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_HARD             0x4000
+# define CPU_INTERRUPT_EXTERNAL_HARD            0x4000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_TIMER            0x8000
+# define CPU_INTERRUPT_EXTERNAL_TIMER           0x8000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_DMA              0x10000
+# define CPU_INTERRUPT_EXTERNAL_DMA             0x10000
 #endif /* VBOX */
 void cpu_interrupt(CPUState *s, int mask);
 void cpu_reset_interrupt(CPUState *env, int mask);
@@ -1013,7 +1025,7 @@ typedef struct CPULogItem {
     const char *help;
 } CPULogItem;
 
-extern CPULogItem cpu_log_items[];
+extern const CPULogItem cpu_log_items[];
 
 void cpu_set_log(int log_flags);
 void cpu_set_log_filename(const char *filename);
@@ -1042,18 +1054,17 @@ typedef unsigned long ram_addr_t;
 /* memory API */
 
 #ifndef VBOX
-extern int phys_ram_size;
+extern ram_addr_t phys_ram_size;
 extern int phys_ram_fd;
-extern int phys_ram_size;
+extern uint8_t *phys_ram_base;
+extern uint8_t *phys_ram_dirty;
+extern ram_addr_t ram_size;
 #else /* VBOX */
 extern RTGCPHYS phys_ram_size;
 /** This is required for bounds checking the phys_ram_dirty accesses. */
 extern RTGCPHYS phys_ram_dirty_size;
-#endif /* VBOX */
-#if !defined(VBOX)
-extern uint8_t *phys_ram_base;
-#endif
 extern uint8_t *phys_ram_dirty;
+#endif /* VBOX */
 
 /* physical memory access */
 
@@ -1090,7 +1101,7 @@ typedef uint32_t CPUReadMemoryFunc(void *opaque, target_phys_addr_t addr);
 void cpu_register_physical_memory(target_phys_addr_t start_addr,
                                   ram_addr_t size,
                                   ram_addr_t phys_offset);
-uint32_t cpu_get_physical_page_desc(target_phys_addr_t addr);
+ram_addr_t cpu_get_physical_page_desc(target_phys_addr_t addr);
 ram_addr_t qemu_ram_alloc(ram_addr_t);
 void qemu_ram_free(ram_addr_t addr);
 int cpu_register_io_memory(int io_index,
@@ -1128,8 +1139,8 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr,
 int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
                         uint8_t *buf, int len, int is_write);
 
-#define VGA_DIRTY_FLAG  0x01
-#define CODE_DIRTY_FLAG 0x02
+#define VGA_DIRTY_FLAG       0x01
+#define CODE_DIRTY_FLAG      0x02
 #define KQEMU_DIRTY_FLAG     0x04
 #define MIGRATION_DIRTY_FLAG 0x08
 
@@ -1204,15 +1215,7 @@ void dump_exec_info(FILE *f,
 /*******************************************/
 /* host CPU ticks (if available) */
 
-#ifdef VBOX
-# include <iprt/asm-amd64-x86.h>
-
-DECLINLINE(int64_t) cpu_get_real_ticks(void)
-{
-    return ASMReadTSC();
-}
-
-#elif defined(__powerpc__)
+#if defined(__powerpc__)
 
 static inline uint32_t get_tbl(void)
 {
@@ -1262,6 +1265,15 @@ static inline int64_t cpu_get_real_ticks(void)
     return val;
 }
 
+#elif defined(__hppa__)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+    int val;
+    asm volatile ("mfctl %%cr16, %0" : "=r"(val));
+    return val;
+}
+
 #elif defined(__ia64)
 
 static inline int64_t cpu_get_real_ticks(void)
@@ -1280,7 +1292,7 @@ static inline int64_t cpu_get_real_ticks(void)
     return val;
 }
 
-#elif defined(__sparc_v9__)
+#elif defined(__sparc_v8plus__) || defined(__sparc_v8plusa__) || defined(__sparc_v9__)
 
 static inline int64_t cpu_get_real_ticks (void)
 {
@@ -1301,10 +1313,31 @@ static inline int64_t cpu_get_real_ticks (void)
         return rval.i64;
 #endif
 }
+
+#elif defined(__mips__)
+
+static inline int64_t cpu_get_real_ticks(void)
+{
+#if __mips_isa_rev >= 2
+    uint32_t count;
+    static uint32_t cyc_per_count = 0;
+
+    if (!cyc_per_count)
+        __asm__ __volatile__("rdhwr %0, $3" : "=r" (cyc_per_count));
+
+    __asm__ __volatile__("rdhwr %1, $2" : "=r" (count));
+    return (int64_t)(count * cyc_per_count);
+#else
+    /* FIXME */
+    static int64_t ticks = 0;
+    return ticks++;
+#endif
+}
+
 #else
 /* The host CPU doesn't have an easily accessible cycle counter.
-   Just return a monotonically increasing vlue.  This will be totally wrong,
-   but hopefully better than nothing.  */
+   Just return a monotonically increasing value.  This will be
+   totally wrong, but hopefully better than nothing.  */
 static inline int64_t cpu_get_real_ticks (void)
 {
     static int64_t ticks = 0;
