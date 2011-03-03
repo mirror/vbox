@@ -204,12 +204,12 @@ Display::Display() {}
 
 Display::~Display() {}
 
-VMMR3DECL(bool) CFGMR3AreValuesValid(PCFGMNODE, const char *)
+DECLEXPORT(bool) CFGMR3AreValuesValid(PCFGMNODE, const char *)
 {
     return true;
 }
 
-VMMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE, const char *, void **pv)
+DECLEXPORT(int) CFGMR3QueryPtr(PCFGMNODE, const char *, void **pv)
 {
     *pv = pMouse;
     return VINF_SUCCESS;
