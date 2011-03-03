@@ -121,9 +121,6 @@
           </item>
           <item row="0" column="2">
            <layout class="QHBoxLayout" name="mLtMemorySize">
-            <property name="spacing">
-             <number>4</number>
-            </property>
             <item>
              <widget class="QILineEdit" name="mLeMemory">
               <property name="whatsThis">
