@@ -138,11 +138,12 @@ DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
                                     int32_t        iRegion,
                                     RTHCPHYS       RegionStart,
                                     uint64_t       u64RegionSize,
+                                    int32_t        fFlags,
                                     RTR0PTR        *pRegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
-    int rc = vboxPciOsDevMapRegion(pThis, iRegion, RegionStart, u64RegionSize, pRegionBase);
+    int rc = vboxPciOsDevMapRegion(pThis, iRegion, RegionStart, u64RegionSize, fFlags, pRegionBase);
 
     return rc;
 }
@@ -151,13 +152,14 @@ DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
  * @copydoc RAWPCIDEVPORT:: pfnUnapRegion
  */
 DECLHIDDEN(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
+                                      int32_t        iRegion,
                                       RTHCPHYS       RegionStart,
                                       uint64_t       u64RegionSize,
                                       RTR0PTR        RegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
-    int rc = vboxPciOsDevUnmapRegion(pThis, RegionStart, u64RegionSize, RegionBase);
+    int rc = vboxPciOsDevUnmapRegion(pThis, iRegion, RegionStart, u64RegionSize, RegionBase);
 
     return rc;
 }
@@ -169,7 +171,9 @@ DECLHIDDEN(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, uint32_t Register, PC
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
-    int rc = vboxPciOsDevPciCfgRead(pThis, Register, pValue);
+    int rc;
+
+    rc = vboxPciOsDevPciCfgRead(pThis, Register, pValue);
 
     return rc;
 }

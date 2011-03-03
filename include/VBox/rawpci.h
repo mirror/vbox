@@ -73,6 +73,7 @@ typedef struct
     /* in */
     RTGCPHYS             StartAddress;
     uint64_t             iRegionSize;
+    int32_t              iRegion;
     uint32_t             fFlags;
     /* out */
     RTR3PTR              pvAddressR3;
@@ -87,6 +88,7 @@ typedef struct
     uint64_t             iRegionSize;
     RTR3PTR              pvAddressR3;
     RTR0PTR              pvAddressR0;
+    int32_t              iRegion;
 } PCIRAWREQUNMAPREGION;
 
 /** Parameters buffer for PCIRAWR0_DO_PIO_WRITE call. */
@@ -295,6 +297,7 @@ typedef struct RAWPCIDEVPORT
                                              int32_t        iRegion,
                                              RTHCPHYS       RegionStart,
                                              uint64_t       u64RegionSize,
+                                             int32_t        fFlags,
                                              RTR0PTR        *pRegionBaseR0));
 
     /**
@@ -303,6 +306,7 @@ typedef struct RAWPCIDEVPORT
      * @param   pPort     Pointer to this structure.
      */
     DECLR0CALLBACKMEMBER(int,  pfnUnmapRegion,(PRAWPCIDEVPORT pPort,
+                                               int32_t        iRegion,
                                                RTHCPHYS       RegionStart,
                                                uint64_t       u64RegionSize,
                                                RTR0PTR        RegionBase));
