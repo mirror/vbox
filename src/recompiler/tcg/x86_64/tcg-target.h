@@ -67,7 +67,7 @@ enum {
 #define TCG_TARGET_HAS_ext16s_i64
 #define TCG_TARGET_HAS_ext32s_i64
 
-/* Must be in sync with dyngen register notion, see dyngen-exec.h */
+/* Note: must be synced with dyngen-exec.h */
 #define TCG_AREG0 TCG_REG_R14
 #define TCG_AREG1 TCG_REG_R15
 #define TCG_AREG2 TCG_REG_R12

@@ -1,3 +1,4 @@
+#error "VBOX: obsolete file?"
 void OPPROTO glue(glue(op_ldub, MEMSUFFIX), _T0_A0)(void)
 {
     T0 = glue(ldub, MEMSUFFIX)(A0);

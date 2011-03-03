@@ -252,17 +252,6 @@ static inline void tcg_out_modrm(TCGContext *s, int opc, int r, int rm)
     tcg_out8(s, 0xc0 | ((r & 7) << 3) | (rm & 7));
 }
 
-static inline void tcg_out_push(TCGContext *s, int reg)
-{
-    tcg_out_opc(s, (0x50 + (reg & 7)), 0, reg, 0);
-}
-
-static inline void tcg_out_pop(TCGContext *s, int reg)
-{
-    tcg_out_opc(s, (0x58 + (reg & 7)), 0, reg, 0);
-}
-
-
 /* rm < 0 means no register index plus (-rm - 1 immediate bytes) */
 static inline void tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
                                         tcg_target_long offset)
@@ -632,7 +621,7 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index, int addr_reg, int 
     tcg_out_long_call(s, (tcg_target_long)vbox_st_helpers[index]);
 }
 
-#endif
+#endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
 
 static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
                             int opc)
@@ -811,9 +800,9 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     default:
         tcg_abort();
     }
-#else /* VBOX */
+#else  /* VBOX && REM_PHYS_ADDR_IN_TLB */
     tcg_out_vbox_phys_read(s, opc, r0, data_reg);
-#endif /* VBOX */
+#endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
 
 #if defined(CONFIG_SOFTMMU)
     /* label2: */
@@ -963,9 +952,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     default:
         tcg_abort();
     }
-#else /* VBOX */
+#else  /* VBOX && REM_PHYS_ADDR_IN_TLB */
     tcg_out_vbox_phys_write(s, opc, r0, data_reg);
-#endif /* VBOX */
+#endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
 
 #if defined(CONFIG_SOFTMMU)
     /* label2: */
@@ -1002,7 +991,7 @@ static inline void tcg_out_op(TCGContext *s, int opc, const TCGArg *args,
                                  (tcg_target_long)(s->tb_next +
                                                    args[0]));
 #else
-            /* @todo: can we clobber RAX here? */
+            /** @todo: can we clobber RAX here? */
             tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_RAX,
                          (tcg_target_long)&(s->tb_next[args[0]]));
             tcg_out8(s, 0xff); tcg_out8(s, 0x20 | TCG_REG_RAX); /* jmp *(%rax) */
@@ -1317,6 +1306,16 @@ static int tcg_target_callee_save_regs[] = {
                              need to save */
     TCG_REG_R15,
 };
+
+static inline void tcg_out_push(TCGContext *s, int reg)
+{
+    tcg_out_opc(s, (0x50 + (reg & 7)), 0, reg, 0);
+}
+
+static inline void tcg_out_pop(TCGContext *s, int reg)
+{
+    tcg_out_opc(s, (0x58 + (reg & 7)), 0, reg, 0);
+}
 
 /* Generate global QEMU prologue and epilogue code */
 void tcg_target_qemu_prologue(TCGContext *s)

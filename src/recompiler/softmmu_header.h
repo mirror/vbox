@@ -221,13 +221,13 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
                   "m" (*(uint8_t *)&glue(glue(__st, SUFFIX), MMUSUFFIX))
                   : "%eax", "%ecx", "%edx", "memory", "cc");
 }
+
 #else
 
 /* generic load/store macros */
 
 static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
 {
-
     int page_index;
     RES_TYPE res;
     target_ulong addr;
@@ -272,6 +272,7 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
 #if ACCESS_TYPE != (NB_MMU_MODES + 1)
 
 /* generic store macro */
+
 static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
 {
     int page_index;

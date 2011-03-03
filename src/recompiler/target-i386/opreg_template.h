@@ -28,6 +28,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#error "VBOX: obsolete file?"
+
 void OPPROTO glue(op_movl_A0,REGNAME)(void)
 {
     A0 = (uint32_t)REG;

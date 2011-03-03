@@ -198,7 +198,6 @@ static inline int tcg_target_const_match(tcg_target_long val,
 
 #define P_EXT   0x100 /* 0x0f opcode prefix */
 
-#if !defined(VBOX) || !defined(_MSC_VER)
 static const uint8_t tcg_cond_to_jcc[10] = {
     [TCG_COND_EQ] = JCC_JE,
     [TCG_COND_NE] = JCC_JNE,
@@ -211,21 +210,6 @@ static const uint8_t tcg_cond_to_jcc[10] = {
     [TCG_COND_LEU] = JCC_JBE,
     [TCG_COND_GTU] = JCC_JA,
 };
-#else
-/* Fortunately, ordering is right */
-static const uint8_t tcg_cond_to_jcc[10] = {
-    JCC_JE,
-    JCC_JNE,
-    JCC_JL,
-    JCC_JGE,
-    JCC_JLE,
-    JCC_JG,
-    JCC_JB,
-    JCC_JAE,
-    JCC_JBE,
-    JCC_JA,
-};
-#endif
 
 static inline void tcg_out_opc(TCGContext *s, int opc)
 {
@@ -290,16 +274,6 @@ static inline void tcg_out_movi(TCGContext *s, TCGType type,
         tcg_out8(s, 0xb8 + ret);
         tcg_out32(s, arg);
     }
-}
-
-static inline void tcg_out_push(TCGContext *s, int reg)
-{
-    tcg_out_opc(s, 0x50 + reg);
-}
-
-static inline void tcg_out_pop(TCGContext *s, int reg)
-{
-    tcg_out_opc(s, 0x58 + reg);
 }
 
 static inline void tcg_out_ld(TCGContext *s, TCGType type, int ret,
@@ -1064,9 +1038,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     default:
         tcg_abort();
     }
-#else
+#else  /* VBOX && REM_PHYS_ADDR_IN_TLB */
     tcg_out_vbox_phys_write(s, opc, r0, data_reg, data_reg2);
-#endif
+#endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
 
 #if defined(CONFIG_SOFTMMU)
     /* label2: */
@@ -1374,6 +1348,16 @@ static int tcg_target_callee_save_regs[] = {
     TCG_REG_EDI,
 #endif
 };
+
+static inline void tcg_out_push(TCGContext *s, int reg)
+{
+    tcg_out_opc(s, 0x50 + reg);
+}
+
+static inline void tcg_out_pop(TCGContext *s, int reg)
+{
+    tcg_out_opc(s, 0x58 + reg);
+}
 
 /* Generate global QEMU prologue and epilogue code */
 void tcg_target_qemu_prologue(TCGContext *s)

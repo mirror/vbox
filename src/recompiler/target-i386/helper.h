@@ -142,7 +142,7 @@ DEF_HELPER(int64_t, helper_fistll_ST0, (void))
 DEF_HELPER(int32_t, helper_fistt_ST0, (void))
 DEF_HELPER(int32_t, helper_fisttl_ST0, (void))
 DEF_HELPER(int64_t, helper_fisttll_ST0, (void))
-#else
+#else  /* VBOX */
 DEF_HELPER(RTCCUINTREG, helper_fsts_ST0, (void))
 DEF_HELPER(uint64_t, helper_fstl_ST0, (void))
 DEF_HELPER(RTCCINTREG, helper_fist_ST0, (void))
@@ -151,7 +151,7 @@ DEF_HELPER(int64_t, helper_fistll_ST0, (void))
 DEF_HELPER(RTCCINTREG, helper_fistt_ST0, (void))
 DEF_HELPER(RTCCINTREG, helper_fisttl_ST0, (void))
 DEF_HELPER(int64_t, helper_fisttll_ST0, (void))
-#endif
+#endif /* VBOX */
 DEF_HELPER(void, helper_fldt_ST0, (target_ulong ptr))
 DEF_HELPER(void, helper_fstt_ST0, (target_ulong ptr))
 DEF_HELPER(void, helper_fpush, (void))
@@ -194,10 +194,10 @@ DEF_HELPER(void, helper_fldz_FT0, (void))
 #ifndef VBOX
 DEF_HELPER(uint32_t, helper_fnstsw, (void))
 DEF_HELPER(uint32_t, helper_fnstcw, (void))
-#else
+#else  /* VBOX */
 DEF_HELPER(RTCCUINTREG, helper_fnstsw, (void))
 DEF_HELPER(RTCCUINTREG, helper_fnstcw, (void))
-#endif
+#endif /* VBOX */
 DEF_HELPER(void, helper_fldcw, (uint32_t val))
 DEF_HELPER(void, helper_fclex, (void))
 DEF_HELPER(void, helper_fwait, (void))
@@ -256,7 +256,6 @@ void helper_record_call(void);
 /* in op_helper.c */
 void sync_seg(CPUX86State *env1, int seg_reg, int selector);
 void sync_ldtr(CPUX86State *env1, int selector);
-
-#endif
+#endif /* VBOX */
 
 #undef DEF_HELPER

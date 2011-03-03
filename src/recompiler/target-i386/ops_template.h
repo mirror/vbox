@@ -28,6 +28,7 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#error "VBOX: obsolete file?"
 #define DATA_BITS (1 << (3 + SHIFT))
 #define SHIFT_MASK (DATA_BITS - 1)
 #define SIGN_MASK (((target_ulong)1) << (DATA_BITS - 1))

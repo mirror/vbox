@@ -513,7 +513,8 @@ qemu_qsort(
 	}
 }
 
-#endif
+#endif /* VBOX */
+
 void pstrcpy(char *buf, int buf_size, const char *str)
 {
     int c;
@@ -587,4 +588,4 @@ time_t mktimegm(struct tm *tm)
     t += 3600 * tm->tm_hour + 60 * tm->tm_min + tm->tm_sec;
     return t;
 }
-#endif
+#endif /* VBOX */

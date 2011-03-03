@@ -30,11 +30,13 @@
 #ifndef CPU_DEFS_H
 #define CPU_DEFS_H
 
+#ifndef NEED_CPU_H
+#error cpu.h included from common code
+#endif
+
 #include "config.h"
 #include <setjmp.h>
-#ifndef VBOX
 #include <inttypes.h>
-#endif
 #include "osdep.h"
 
 #ifndef TARGET_LONG_BITS
@@ -86,7 +88,7 @@ typedef uint64_t target_phys_addr_t;
 
 #define HOST_LONG_SIZE (HOST_LONG_BITS / 8)
 
-#define EXCP_INTERRUPT  0x10000 /* async interruption */
+#define EXCP_INTERRUPT 	0x10000 /* async interruption */
 #define EXCP_HLT        0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
@@ -129,8 +131,8 @@ typedef struct CPUTLBEntry {
     target_ulong addr_read;
     target_ulong addr_write;
     target_ulong addr_code;
-      /* Addend to virtual address to get physical address.  IO accesses
-       use the corresponding iotlb value.  */
+    /* Addend to virtual address to get physical address.  IO accesses
+       use the correcponding iotlb value.  */
 #if TARGET_PHYS_ADDR_BITS == 64
     /* on i386 Linux make sure it is aligned */
     target_phys_addr_t addend __attribute__((aligned(8)));
@@ -156,9 +158,7 @@ typedef struct icount_decr_u16 {
 } icount_decr_u16;
 #endif
 
-
 #define CPU_TEMP_BUF_NLONGS 128
-
 #define CPU_COMMON                                                      \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     /* soft mmu support */                                              \
@@ -202,6 +202,8 @@ typedef struct icount_decr_u16 {
     } watchpoint[MAX_WATCHPOINTS];                                      \
     int nb_watchpoints;                                                 \
     int watchpoint_hit;                                                 \
+                                                                        \
+    struct GDBRegisterState *gdb_regs;                                  \
                                                                         \
     /* Core interrupt code */                                           \
     jmp_buf jmp_env;                                                    \

@@ -35,10 +35,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#else
-#include <stdio.h>
-#include "osdep.h"
-#endif
+#else  /* VBOX */
+# include <stdio.h>
+# include "osdep.h"
+#endif /* VBOX */
 #ifdef _WIN32
 #include <malloc.h>
 #endif
@@ -46,7 +46,7 @@
 #include "config.h"
 #include "qemu-common.h"
 
-/* Note: the long term plan is to reduce the dependencies on the QEMU
+/* Note: the long term plan is to reduce the dependancies on the QEMU
    CPU definitions. Currently they are used for qemu_ld/st
    instructions */
 #define NO_CPU_IO_DEFS
@@ -64,10 +64,10 @@
  * dead, it seems.
  * @todo: fix it in compiler
  */
-#if defined(TARGET_X86_64) && (TCG_TARGET_REG_BITS == 32)
-#undef USE_LIVENESS_ANALYSIS
-#endif
-#endif
+# if defined(TARGET_X86_64) && (TCG_TARGET_REG_BITS == 32)
+#  undef USE_LIVENESS_ANALYSIS
+# endif
+#endif /* VBOX */
 
 static void patch_reloc(uint8_t *code_ptr, int type,
                         tcg_target_long value, tcg_target_long addend);
@@ -76,9 +76,9 @@ TCGOpDef tcg_op_defs[] = {
 #define DEF(s, n, copy_size) { #s, 0, 0, n, n, 0, copy_size },
 #ifndef VBOX
 #define DEF2(s, iargs, oargs, cargs, flags) { #s, iargs, oargs, cargs, iargs + oargs + cargs, flags, 0 },
-#else
-#define DEF2(s, iargs, oargs, cargs, flags) { #s, iargs, oargs, cargs, iargs + oargs + cargs, flags, 0, 0, 0 },
-#endif
+#else  /* VBOX */
+# define DEF2(s, iargs, oargs, cargs, flags) { #s, iargs, oargs, cargs, iargs + oargs + cargs, flags, 0, 0, 0 },
+#endif /* VBOX */
 #include "tcg-opc.h"
 #undef DEF
 #undef DEF2
@@ -507,7 +507,6 @@ void tcg_register_helper(void *func, const char *name)
         } else {
             n *= 2;
         }
-
 #ifdef VBOX
         s->helpers = qemu_realloc(s->helpers, n * sizeof(TCGHelperInfo));
 #else
@@ -765,7 +764,6 @@ static TCGHelperInfo *tcg_find_helper(TCGContext *s, tcg_target_ulong val)
     return NULL;
 }
 
-#ifndef VBOX
 static const char * const cond_name[] =
 {
     [TCG_COND_EQ] = "eq",
@@ -779,21 +777,6 @@ static const char * const cond_name[] =
     [TCG_COND_LEU] = "leu",
     [TCG_COND_GTU] = "gtu"
 };
-#else
-static const char * const cond_name[] =
-{
-    "eq",
-    "ne",
-    "lt",
-    "ge",
-    "le",
-    "gt",
-    "ltu",
-    "geu",
-    "leu",
-    "gtu"
-};
-#endif
 
 void tcg_dump_ops(TCGContext *s, FILE *outfile)
 {
@@ -1432,7 +1415,7 @@ static void temp_save(TCGContext *s, int temp, TCGRegSet allocated_regs)
     }
 }
 
-/* save globals to their canonical location and assume they can be
+/* save globals to their cannonical location and assume they can be
    modified be the following code. 'allocated_regs' is used in case a
    temporary registers needs to be allocated to store a constant. */
 static void save_globals(TCGContext *s, TCGRegSet allocated_regs)
@@ -1942,7 +1925,6 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
         fprintf(logfile, "OP after la:\n");
         tcg_dump_ops(s, logfile);
         fprintf(logfile, "\n");
-        fflush(logfile);
     }
 #endif
 

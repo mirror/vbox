@@ -39,36 +39,19 @@
 
 #include "cpu-defs.h"
 
-/* at least 4 register variables are defined */
 register struct CPUX86State *env asm(AREG0);
 
 #include "qemu-log.h"
 
-#ifndef reg_EAX
 #define EAX (env->regs[R_EAX])
-#endif
-#ifndef reg_ECX
 #define ECX (env->regs[R_ECX])
-#endif
-#ifndef reg_EDX
 #define EDX (env->regs[R_EDX])
-#endif
-#ifndef reg_EBX
 #define EBX (env->regs[R_EBX])
-#endif
-#ifndef reg_ESP
 #define ESP (env->regs[R_ESP])
-#endif
-#ifndef reg_EBP
 #define EBP (env->regs[R_EBP])
-#endif
-#ifndef reg_ESI
 #define ESI (env->regs[R_ESI])
-#endif
-#ifndef reg_EDI
 #define EDI (env->regs[R_EDI])
-#endif
-#define EIP  (env->eip)
+#define EIP (env->eip)
 #define DF  (env->df)
 
 #define CC_SRC (env->cc_src)
@@ -126,56 +109,9 @@ static inline void svm_check_intercept(uint32_t type)
     helper_svm_check_intercept_param(type, 0);
 }
 
-void check_iob_T0(void);
-void check_iow_T0(void);
-void check_iol_T0(void);
-void check_iob_DX(void);
-void check_iow_DX(void);
-void check_iol_DX(void);
-
 #if !defined(CONFIG_USER_ONLY)
 
 #include "softmmu_exec.h"
-
-static inline double ldfq(target_ulong ptr)
-{
-    union {
-        double d;
-        uint64_t i;
-    } u;
-    u.i = ldq(ptr);
-    return u.d;
-}
-
-static inline void stfq(target_ulong ptr, double v)
-{
-    union {
-        double d;
-        uint64_t i;
-    } u;
-    u.d = v;
-    stq(ptr, u.i);
-}
-
-static inline float ldfl(target_ulong ptr)
-{
-    union {
-        float f;
-        uint32_t i;
-    } u;
-    u.i = ldl(ptr);
-    return u.f;
-}
-
-static inline void stfl(target_ulong ptr, float v)
-{
-    union {
-        float f;
-        uint32_t i;
-    } u;
-    u.f = v;
-    stl(ptr, u.i);
-}
 
 #endif /* !defined(CONFIG_USER_ONLY) */
 
@@ -251,18 +187,10 @@ extern CPU86_LDouble ceil(CPU86_LDouble x);
 #endif /* VBOX */
 
 #define RC_MASK         0xc00
-#ifndef RC_NEAR
 #define RC_NEAR		0x000
-#endif
-#ifndef RC_DOWN
 #define RC_DOWN		0x400
-#endif
-#ifndef RC_UP
 #define RC_UP		0x800
-#endif
-#ifndef RC_CHOP
 #define RC_CHOP		0xc00
-#endif
 
 #define MAXTAN 9223372036854775808.0
 
@@ -327,7 +255,7 @@ static inline void fpush(void)
 
 static inline void fpop(void)
 {
-    env->fptags[env->fpstt] = 1; /* invalidate stack entry */
+    env->fptags[env->fpstt] = 1; /* invvalidate stack entry */
     env->fpstt = (env->fpstt + 1) & 7;
 }
 
@@ -368,22 +296,6 @@ static inline void helper_fstt(CPU86_LDouble f, target_ulong ptr)
 }
 #else
 
-/* XXX: same endianness assumed */
-
-#ifdef CONFIG_USER_ONLY
-
-static inline CPU86_LDouble helper_fldt(target_ulong ptr)
-{
-    return *(CPU86_LDouble *)ptr;
-}
-
-static inline void helper_fstt(CPU86_LDouble f, target_ulong ptr)
-{
-    *(CPU86_LDouble *)ptr = f;
-}
-
-#else
-
 /* we use memory access macros */
 
 static inline CPU86_LDouble helper_fldt(target_ulong ptr)
@@ -403,8 +315,6 @@ static inline void helper_fstt(CPU86_LDouble f, target_ulong ptr)
     stq(ptr, temp.l.lower);
     stw(ptr + 8, temp.l.upper);
 }
-
-#endif /* !CONFIG_USER_ONLY */
 
 #endif /* USE_X86LDOUBLE */
 
@@ -441,7 +351,7 @@ static inline void load_eflags(int eflags, int update_mask)
     CC_SRC = eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
     DF = 1 - (2 * ((eflags >> 10) & 1));
     env->eflags = (env->eflags & ~update_mask) |
-        (eflags & update_mask);
+        (eflags & update_mask) | 0x2;
 }
 
 static inline void env_to_regs(void)
