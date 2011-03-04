@@ -80,6 +80,9 @@ VBoxBFE_SOURCES = \
 	VMControl.cpp \
 	$(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))
 
+$(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS))): \
+    $(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_HDRS)))
+
 ifdef VBOX_WITH_HGCM
 VBoxBFE_DEFS += VBOX_WITH_HGCM
 VBoxBFE_SOURCES += \
@@ -173,7 +176,7 @@ $$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x0
 
 # Files we share with Main needs to be copied into the output dir.
 VBoxBFE_INTERMEDIATES += $(addprefix $(VBoxBFE_0_OUTDIR)/,$(VBOXBFE_MAIN_HDRS))
-VBoxBFE_CLEAN         += $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS) $(VBOXBFE_MAIN_SRCS))
+VBoxBFE_CLEAN         += $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS) $(notdir $(VBOXBFE_MAIN_SRCS)))
 
 define def_copy_main_file
 $$(VBoxBFE_0_OUTDIR)/$(notdir $(file)): $(PATH_ROOT)/src/VBox/Main/$(file) | $$(dir $$@)
