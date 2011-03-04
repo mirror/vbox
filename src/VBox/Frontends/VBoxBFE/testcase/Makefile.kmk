@@ -42,6 +42,10 @@ tstMouseImpl_INCS     = \
 	$(VBOX_PATH_SDK)/include \
 	$(PATH_ROOT)/src/VBox/Frontends/VBoxBFE
 
+tstMouseImpl.cpp_DEPS = \
+    $(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_HDRS)))
+$(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))_DEPS = \
+    $(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_HDRS)))
 
 # generate rules.
 include $(KBUILD_PATH)/subfooter.kmk
