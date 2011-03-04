@@ -779,7 +779,7 @@
  * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
  */
 #ifdef __GNUC__
-# define DECL_FORCE_INLINE(type)    __attribute__((always_inline)) DECLINLINE(type)
+# define DECL_FORCE_INLINE(type)    __attribute__((__always_inline__)) DECLINLINE(type)
 #elif defined(_MSC_VER)
 # define DECL_FORCE_INLINE(type)    __forceinline type
 #else
