@@ -2824,7 +2824,7 @@ static void gen_eob(DisasContext *s)
        ) {
         gen_helper_debug();
     } else if (s->tf) {
-        gen_helper_single_step();
+	gen_helper_single_step();
     } else {
         tcg_gen_exit_tb(0);
     }
