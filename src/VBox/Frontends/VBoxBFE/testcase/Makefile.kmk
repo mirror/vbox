@@ -37,6 +37,8 @@ tstMouseImpl_DEFS += VBOXBFE_WITHOUT_COM
 tstMouseImpl_SOURCES  = \
 	tstMouseImpl.cpp \
 	$(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))
+$(tstMouseImpl_SOURCES): \
+    $(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_HDRS)))
 tstMouseImpl_INCS     = \
 	$(VBoxBFE_0_OUTDIR) \
 	$(VBOX_PATH_SDK)/include \
