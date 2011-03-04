@@ -86,7 +86,7 @@ void *get_mmap_addr(unsigned long size);
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x)   __builtin_expect(!!(x), 0)
-#endif /* !likely */
+#endif
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *) 0)->MEMBER)
@@ -113,7 +113,9 @@ void *get_mmap_addr(unsigned long size);
 #define always_inline inline
 #else
 #define always_inline __attribute__ (( always_inline )) __inline__
+#ifdef __OPTIMIZE__
 #define inline always_inline
+#endif
 #endif
 #else
 #define inline always_inline
@@ -129,7 +131,7 @@ void *get_mmap_addr(unsigned long size);
 #define qemu_printf printf
 #endif
 
-#if defined (__GNUC__) && defined (__GNUC_MINOR_)
+#if defined (__GNUC__) && defined (__GNUC_MINOR__)
 # define QEMU_GNUC_PREREQ(maj, min) \
          ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
@@ -155,11 +157,8 @@ int qemu_gettimeofday(qemu_timeval *tp);
 typedef struct timeval qemu_timeval;
 #define qemu_gettimeofday(tp) gettimeofday(tp, NULL);
 #endif /* !_WIN32 */
-#endif /* !VBOX */
-
-#ifdef VBOX
-/** @todo why don't we go with dyngen-exec.h here? */
-#define FORCE_RET() ;
+#else  /* VBOX */
+# define qemu_memalign(alignment, size)  ( (alignment) <= PAGE_SIZE ? RTMemPageAlloc((size)) : NULL )
 #endif /* VBOX */
 
 #endif

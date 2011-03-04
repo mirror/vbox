@@ -22,9 +22,9 @@
 #define LOG_GROUP LOG_GROUP_REM
 #include <stdio.h>      /* FILE */
 #include "osdep.h"
-#include "exec-all.h"
 #include "config.h"
-#include "cpu-all.h"
+#include "cpu.h"
+#include "exec-all.h"
 
 #include <VBox/vmm/rem.h>
 #include <VBox/vmm/vmapi.h>
@@ -820,7 +820,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
      * If we're standing at a breakpoint, that have to be disabled before we start stepping.
      */
     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-    fBp = !cpu_breakpoint_remove(&pVM->rem.s.Env, GCPtrPC);
+    fBp = !cpu_breakpoint_remove(&pVM->rem.s.Env, GCPtrPC, BP_GDB);
 
     /*
      * Execute and handle the return code.
@@ -863,7 +863,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
      */
     if (fBp)
     {
-        int rc2 = cpu_breakpoint_insert(&pVM->rem.s.Env, GCPtrPC);
+        int rc2 = cpu_breakpoint_insert(&pVM->rem.s.Env, GCPtrPC, BP_GDB, NULL);
         Assert(rc2 == 0); NOREF(rc2);
     }
     cpu_single_step(&pVM->rem.s.Env, 0);
@@ -884,7 +884,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
 REMR3DECL(int) REMR3BreakpointSet(PVM pVM, RTGCUINTPTR Address)
 {
     VM_ASSERT_EMT(pVM);
-    if (!cpu_breakpoint_insert(&pVM->rem.s.Env, Address))
+    if (!cpu_breakpoint_insert(&pVM->rem.s.Env, Address, BP_GDB, NULL))
     {
         LogFlow(("REMR3BreakpointSet: Address=%RGv\n", Address));
         return VINF_SUCCESS;
@@ -905,7 +905,7 @@ REMR3DECL(int) REMR3BreakpointSet(PVM pVM, RTGCUINTPTR Address)
 REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
 {
     VM_ASSERT_EMT(pVM);
-    if (!cpu_breakpoint_remove(&pVM->rem.s.Env, Address))
+    if (!cpu_breakpoint_remove(&pVM->rem.s.Env, Address, BP_GDB))
     {
         LogFlow(("REMR3BreakpointClear: Address=%RGv\n", Address));
         return VINF_SUCCESS;
@@ -989,20 +989,23 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
              * If there was a breakpoint there we're fucked now.
              */
             case EXCP_DEBUG:
-            {
-                /* breakpoint or single step? */
-                RTGCPTR     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-                int         iBP;
-                rc = VINF_EM_DBG_STEPPED;
-                for (iBP = 0; iBP < pVM->rem.s.Env.nb_breakpoints; iBP++)
-                    if (pVM->rem.s.Env.breakpoints[iBP] == GCPtrPC)
-                    {
-                        rc = VINF_EM_DBG_BREAKPOINT;
-                        break;
-                    }
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC));
+                if (pVM->rem.s.Env.watchpoint_hit)
+                {
+                    /** @todo deal with watchpoints */
+                    Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc !watchpoint_hit!\n", rc));
+                    rc = VINF_EM_DBG_BREAKPOINT;
+                }
+                else
+                {
+                    CPUBreakpoint  *pBP;
+                    RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
+                    TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                        if (pBP->pc == GCPtrPC)
+                            break;
+                    rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
+                    Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc pBP=%p GCPtrPC=%RGv\n", rc, pBP, GCPtrPC));
+                }
                 break;
-            }
 
             /*
              * hlt instruction.
@@ -1169,18 +1172,21 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
              */
 #endif
             case EXCP_DEBUG:
-                rc = VINF_EM_DBG_STEPPED;
-                if (pVM->rem.s.Env.nb_breakpoints > 0)
+                if (pVM->rem.s.Env.watchpoint_hit)
                 {
-                    RTGCPTR     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-                    int         iBP;
-                    for (iBP = 0; iBP < pVM->rem.s.Env.nb_breakpoints; iBP++)
-                        if (pVM->rem.s.Env.breakpoints[iBP] == GCPtrPC)
-                        {
-                            rc = VINF_EM_DBG_BREAKPOINT;
-                            RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC);
+                    /** @todo deal with watchpoints */
+                    Log2(("remR3RunLoggingStep: cpu_exec -> EXCP_DEBUG rc=%Rrc !watchpoint_hit!\n", rc));
+                    rc = VINF_EM_DBG_BREAKPOINT;
+                }
+                else
+                {
+                    CPUBreakpoint  *pBP;
+                    RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
+                    TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                        if (pBP->pc == GCPtrPC)
                             break;
-                        }
+                    rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
+                    Log2(("remR3RunLoggingStep: cpu_exec -> EXCP_DEBUG rc=%Rrc pBP=%p GCPtrPC=%RGv\n", rc, pBP, GCPtrPC));
                 }
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
                 if (rc == VINF_EM_DBG_STEPPED)
@@ -1324,41 +1330,23 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
          * Breakpoint/single step.
          */
         case EXCP_DEBUG:
-        {
-#if 0//def DEBUG_bird
-            static int iBP = 0;
-            printf("howdy, breakpoint! iBP=%d\n", iBP);
-            switch (iBP)
+            if (pVM->rem.s.Env.watchpoint_hit)
             {
-                case 0:
-                    cpu_breakpoint_remove(&pVM->rem.s.Env, pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base);
-                    pVM->rem.s.Env.state |= CPU_EMULATE_SINGLE_STEP;
-                    //pVM->rem.s.Env.interrupt_request = 0;
-                    //pVM->rem.s.Env.exception_index = -1;
-                    //g_fInterruptDisabled = 1;
-                    rc = VINF_SUCCESS;
-                    asm("int3");
-                    break;
-                default:
-                    asm("int3");
-                    break;
+                /** @todo deal with watchpoints */
+                Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc !watchpoint_hit!\n", rc));
+                rc = VINF_EM_DBG_BREAKPOINT;
             }
-            iBP++;
-#else
-            /* breakpoint or single step? */
-            RTGCPTR     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-            int         iBP;
-            rc = VINF_EM_DBG_STEPPED;
-            for (iBP = 0; iBP < pVM->rem.s.Env.nb_breakpoints; iBP++)
-                if (pVM->rem.s.Env.breakpoints[iBP] == GCPtrPC)
-                {
-                    rc = VINF_EM_DBG_BREAKPOINT;
-                    break;
-                }
-            Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC));
-#endif
+            else
+            {
+                CPUBreakpoint  *pBP;
+                RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
+                TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                    if (pBP->pc == GCPtrPC)
+                        break;
+                rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
+                Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc pBP=%p GCPtrPC=%RGv\n", rc, pBP, GCPtrPC));
+            }
             break;
-        }
 
         /*
          * Switch to RAW-mode.
@@ -1539,9 +1527,15 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         return false;
     }
 
-    if (env->nb_breakpoints > 0)
+    if (!TAILQ_EMPTY(&env->breakpoints))
     {
         //Log2(("raw mode refused: Breakpoints\n"));
+        return false;
+    }
+
+    if (!TAILQ_EMPTY(&env->watchpoints))
+    {
+        //Log2(("raw mode refused: Watchpoints\n"));
         return false;
     }
 
@@ -4624,19 +4618,19 @@ int cpu_inl(CPUState *env, int addr)
 /**
  * Perform the CPUID instruction.
  *
- * ASMCpuId cannot be invoked from some source files where this is used because of global
- * register allocations.
- *
  * @param   env         Pointer to the recompiler CPU structure.
- * @param   uOperator   CPUID operation (eax).
+ * @param   idx         The CPUID leaf (eax).
+ * @param   idxSub      The CPUID sub-leaf (ecx) where applicable.
  * @param   pvEAX       Where to store eax.
  * @param   pvEBX       Where to store ebx.
  * @param   pvECX       Where to store ecx.
  * @param   pvEDX       Where to store edx.
  */
-void remR3CpuId(CPUState *env, unsigned uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
+void cpu_x86_cpuid(CPUX86State *env, uint32_t idx, uint32_t idxSub,
+                   uint32_t *pEAX, uint32_t *pEBX, uint32_t *pECX, uint32_t *pEDX)
 {
-    CPUMGetGuestCpuId(env->pVCpu, uOperator, (uint32_t *)pvEAX, (uint32_t *)pvEBX, (uint32_t *)pvECX, (uint32_t *)pvEDX);
+    NOREF(idxSub);
+    CPUMGetGuestCpuId(env->pVCpu, idx, pEAX, pEBX, pECX, pEDX);
 }
 
 

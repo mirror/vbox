@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
  */
 
 /*
@@ -38,6 +38,7 @@
 #include <setjmp.h>
 #include <inttypes.h>
 #include "osdep.h"
+#include "sys-queue.h"
 
 #ifndef TARGET_LONG_BITS
 #error TARGET_LONG_BITS must be defined before including this header
@@ -92,14 +93,12 @@ typedef uint64_t target_phys_addr_t;
 #define EXCP_HLT        0x10001 /* hlt instruction reached */
 #define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
-#if defined(VBOX)
-#define EXCP_EXECUTE_RAW    0x11024 /* execute raw mode. */
-#define EXCP_EXECUTE_HWACC  0x11025 /* execute hardware accelerated raw mode. */
-#define EXCP_SINGLE_INSTR   0x11026 /* executed single instruction. */
-#define EXCP_RC             0x11027 /* a EM rc was raised (VMR3Reset/Suspend/PowerOff). */
+#ifdef VBOX
+# define EXCP_EXECUTE_RAW   0x11024 /**< execute raw mode. */
+# define EXCP_EXECUTE_HWACC 0x11025 /**< execute hardware accelerated raw mode. */
+# define EXCP_SINGLE_INSTR  0x11026 /**< executed single instruction. */
+# define EXCP_RC            0x11027 /**< a EM rc was raised (VMR3Reset/Suspend/PowerOff). */
 #endif /* VBOX */
-#define MAX_BREAKPOINTS 32
-#define MAX_WATCHPOINTS 32
 
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
@@ -132,7 +131,7 @@ typedef struct CPUTLBEntry {
     target_ulong addr_write;
     target_ulong addr_code;
     /* Addend to virtual address to get physical address.  IO accesses
-       use the correcponding iotlb value.  */
+       use the corresponding iotlb value.  */
 #if TARGET_PHYS_ADDR_BITS == 64
     /* on i386 Linux make sure it is aligned */
     target_phys_addr_t addend __attribute__((aligned(8)));
@@ -157,6 +156,22 @@ typedef struct icount_decr_u16 {
     uint16_t high;
 } icount_decr_u16;
 #endif
+
+struct kvm_run;
+struct KVMState;
+
+typedef struct CPUBreakpoint {
+    target_ulong pc;
+    int flags; /* BP_* */
+    TAILQ_ENTRY(CPUBreakpoint) entry;
+} CPUBreakpoint;
+
+typedef struct CPUWatchpoint {
+    target_ulong vaddr;
+    target_ulong len_mask;
+    int flags; /* BP_* */
+    TAILQ_ENTRY(CPUWatchpoint) entry;
+} CPUWatchpoint;
 
 #define CPU_TEMP_BUF_NLONGS 128
 #define CPU_COMMON                                                      \
@@ -192,16 +207,11 @@ typedef struct icount_decr_u16 {
                                                                         \
     /* from this point: preserved by CPU reset */                       \
     /* ice debug support */                                             \
-    target_ulong breakpoints[MAX_BREAKPOINTS];                          \
-    int nb_breakpoints;                                                 \
+    TAILQ_HEAD(breakpoints_head, CPUBreakpoint) breakpoints;            \
     int singlestep_enabled;                                             \
                                                                         \
-    struct {                                                            \
-        target_ulong vaddr;                                             \
-        int type; /* PAGE_READ/PAGE_WRITE */                            \
-    } watchpoint[MAX_WATCHPOINTS];                                      \
-    int nb_watchpoints;                                                 \
-    int watchpoint_hit;                                                 \
+    TAILQ_HEAD(watchpoints_head, CPUWatchpoint) watchpoints;            \
+    CPUWatchpoint *watchpoint_hit;                                      \
                                                                         \
     struct GDBRegisterState *gdb_regs;                                  \
                                                                         \
@@ -209,14 +219,15 @@ typedef struct icount_decr_u16 {
     jmp_buf jmp_env;                                                    \
     int exception_index;                                                \
                                                                         \
-    int user_mode_only;                                                 \
-                                                                        \
     void *next_cpu; /* next CPU sharing TB cache */                     \
     int cpu_index; /* CPU index (informative) */                        \
     int running; /* Nonzero if cpu is currently running(usermode).  */  \
     /* user data */                                                     \
     void *opaque;                                                       \
                                                                         \
-    const char *cpu_model_str;
+    const char *cpu_model_str;                                          \
+    struct KVMState *kvm_state;                                         \
+    struct kvm_run *kvm_run;                                            \
+    int kvm_fd;
 
 #endif

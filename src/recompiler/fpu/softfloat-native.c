@@ -60,10 +60,10 @@ ldexpl(long double x, int n) {
 #endif
 #endif
 
-#if defined(__powerpc__)
+#if defined(_ARCH_PPC)
 
 /* correct (but slow) PowerPC rint() (glibc version is incorrect) */
-double qemu_rint(double x)
+static double qemu_rint(double x)
 {
     double y = 4503599627370496.0;
     if (fabs(x) >= y)
@@ -229,25 +229,25 @@ float32 float32_sqrt( float32 a STATUS_PARAM)
 int float32_compare( float32 a, float32 b STATUS_PARAM )
 {
     if (a < b) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (a > b) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int float32_compare_quiet( float32 a, float32 b STATUS_PARAM )
 {
     if (isless(a, b)) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (isgreater(a, b)) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int float32_is_signaling_nan( float32 a1)
@@ -257,6 +257,15 @@ int float32_is_signaling_nan( float32 a1)
     u.f = a1;
     a = u.i;
     return ( ( ( a>>22 ) & 0x1FF ) == 0x1FE ) && ( a & 0x003FFFFF );
+}
+
+int float32_is_nan( float32 a1 )
+{
+    float32u u;
+    uint64_t a;
+    u.f = a1;
+    a = u.i;
+    return ( 0xFF800000 < ( a<<1 ) );
 }
 
 /*----------------------------------------------------------------------------
@@ -391,25 +400,25 @@ float64 float64_sqrt( float64 a STATUS_PARAM)
 int float64_compare( float64 a, float64 b STATUS_PARAM )
 {
     if (a < b) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (a > b) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int float64_compare_quiet( float64 a, float64 b STATUS_PARAM )
 {
     if (isless(a, b)) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (isgreater(a, b)) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int float64_is_signaling_nan( float64 a1)
@@ -431,7 +440,7 @@ int float64_is_nan( float64 a1 )
     u.f = a1;
     a = u.i;
 
-    return ( LIT64( 0xFFE0000000000000 ) < (bits64) ( a<<1 ) );
+    return ( LIT64( 0xFFF0000000000000 ) < (bits64) ( a<<1 ) );
 
 }
 
@@ -483,28 +492,41 @@ floatx80 floatx80_sqrt( floatx80 a STATUS_PARAM)
 int floatx80_compare( floatx80 a, floatx80 b STATUS_PARAM )
 {
     if (a < b) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (a > b) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int floatx80_compare_quiet( floatx80 a, floatx80 b STATUS_PARAM )
 {
     if (isless(a, b)) {
-        return -1;
+        return float_relation_less;
     } else if (a == b) {
-        return 0;
+        return float_relation_equal;
     } else if (isgreater(a, b)) {
-        return 1;
+        return float_relation_greater;
     } else {
-        return 2;
+        return float_relation_unordered;
     }
 }
 int floatx80_is_signaling_nan( floatx80 a1)
+{
+    floatx80u u;
+    uint64_t aLow;
+    u.f = a1;
+
+    aLow = u.i.low & ~ LIT64( 0x4000000000000000 );
+    return
+           ( ( u.i.high & 0x7FFF ) == 0x7FFF )
+        && (bits64) ( aLow<<1 )
+        && ( u.i.low == aLow );
+}
+
+int floatx80_is_nan( floatx80 a1 )
 {
     floatx80u u;
     u.f = a1;

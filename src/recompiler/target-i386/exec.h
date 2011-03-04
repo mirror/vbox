@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
  */
 
 /*
@@ -41,6 +41,7 @@
 
 register struct CPUX86State *env asm(AREG0);
 
+#include "qemu-common.h"
 #include "qemu-log.h"
 
 #define EAX (env->regs[R_EAX])
@@ -67,31 +68,14 @@ register struct CPUX86State *env asm(AREG0);
 #include "cpu.h"
 #include "exec-all.h"
 
-void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
-void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
-int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
-                             int is_write, int mmu_idx, int is_softmmu);
-void __hidden cpu_lock(void);
-void __hidden cpu_unlock(void);
+/* op_helper.c */
 void do_interrupt(int intno, int is_int, int error_code,
                   target_ulong next_eip, int is_hw);
 void do_interrupt_user(int intno, int is_int, int error_code,
                        target_ulong next_eip);
-void raise_interrupt(int intno, int is_int, int error_code,
-                     int next_eip_addend);
-void raise_exception_err(int exception_index, int error_code);
-void raise_exception(int exception_index);
+void QEMU_NORETURN raise_exception_err(int exception_index, int error_code);
+void QEMU_NORETURN raise_exception(int exception_index);
 void do_smm_enter(void);
-void __hidden cpu_loop_exit(void);
-
-void OPPROTO op_movl_eflags_T0(void);
-void OPPROTO op_movl_T0_eflags(void);
-#ifdef VBOX
-void OPPROTO op_movl_T0_eflags_vme(void);
-void OPPROTO op_movw_eflags_T0_vme(void);
-void OPPROTO op_cli_vme(void);
-void OPPROTO op_sti_vme(void);
-#endif
 
 /* n must be a constant to be efficient */
 static inline target_long lshift(target_long x, int n)
@@ -330,19 +314,9 @@ static inline void helper_fstt(CPU86_LDouble f, target_ulong ptr)
 
 #define FPUC_EM 0x3f
 
-extern const CPU86_LDouble f15rk[7];
-
-void fpu_raise_exception(void);
-void restore_native_fp_state(CPUState *env);
-void save_native_fp_state(CPUState *env);
-
-extern const uint8_t parity_table[256];
-extern const uint8_t rclw_table[32];
-extern const uint8_t rclb_table[32];
-
 static inline uint32_t compute_eflags(void)
 {
-    return env->eflags | cc_table[CC_OP].compute_all() | (DF & DF_MASK);
+    return env->eflags | helper_cc_compute_all(CC_OP) | (DF & DF_MASK);
 }
 
 /* NOTE: CC_OP must be modified manually to CC_OP_EFLAGS */

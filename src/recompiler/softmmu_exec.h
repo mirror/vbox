@@ -1,5 +1,8 @@
 /* Common softmmu definitions and inline routines.  */
 
+/* XXX: find something cleaner.
+ * Furthermore, this is false for 64 bits targets
+ */
 #define ldul_user       ldl_user
 #define ldul_kernel     ldl_kernel
 #define ldul_hypv       ldl_hypv

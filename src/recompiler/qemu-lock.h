@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
  */
 
 /*
@@ -72,17 +72,16 @@ DECLINLINE(int) testandset (int *p)
 {
     return ASMAtomicCmpXchgU32((volatile uint32_t *)p, 1, 0) ? 0 : 1;
 }
-#elif defined(__powerpc__)
+#elif defined(_ARCH_PPC)
 static inline int testandset (int *p)
 {
     int ret;
     __asm__ __volatile__ (
-                          "0:    lwarx %0,0,%1\n"
+                          "      lwarx %0,0,%1\n"
                           "      xor. %0,%3,%0\n"
-                          "      bne 1f\n"
+                          "      bne $+12\n"
                           "      stwcx. %2,0,%1\n"
-                          "      bne- 0b\n"
-                          "1:    "
+                          "      bne- $-16\n"
                           : "=&r" (ret)
                           : "r" (p), "r" (1), "r" (0)
                           : "cr0", "memory");
