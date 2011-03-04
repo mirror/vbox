@@ -6135,13 +6135,14 @@ void Machine::composeSavedStateFilename(Utf8Str &strStateFilePath)
     RTTimeExplode(&time, &ts);
 
     strStateFilePath += RTPATH_DELIMITER;
-    strStateFilePath += Utf8StrFmt("%04ld-%02hd-%02hdT%02hd:%02hd:%02hdZ.sav",
+    strStateFilePath += Utf8StrFmt("%04ld-%02u-%02uT%02u-%02u-%02u-%09luZ.sav",
                                    time.i32Year,
-                                   (uint16_t)time.u8Month,
-                                   (uint16_t)time.u8MonthDay,
-                                   (uint16_t)time.u8Hour,
-                                   (uint16_t)time.u8Minute,
-                                   (uint16_t)time.u8Second);
+                                   time.u8Month,
+                                   time.u8MonthDay,
+                                   time.u8Hour,
+                                   time.u8Minute,
+                                   time.u8Second,
+                                   time.u32Nanosecond);
 }
 
 /**
