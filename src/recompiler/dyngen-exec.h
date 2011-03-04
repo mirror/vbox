@@ -42,9 +42,9 @@
    point because host CPU registers are used as global variables. Some
    host headers do not allow that. */
 #include <stddef.h>
+#ifndef VBOX
 #include <stdint.h>
 
-#ifndef VBOX
 
 #ifdef __OpenBSD__
 #include <sys/types.h>
