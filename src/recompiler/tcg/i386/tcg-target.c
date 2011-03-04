@@ -301,14 +301,14 @@ static inline void tgen_arithi(TCGContext *s, int c, int r0, int32_t val)
     }
 }
 
-void tcg_out_addi(TCGContext *s, int reg, tcg_target_long val)
+static void tcg_out_addi(TCGContext *s, int reg, tcg_target_long val)
 {
     if (val != 0)
         tgen_arithi(s, ARITH_ADD, reg, val);
 }
 
 #ifdef VBOX
-void tcg_out_subi(TCGContext *s, int reg, tcg_target_long val)
+static void tcg_out_subi(TCGContext *s, int reg, tcg_target_long val)
 {
     if (val != 0)
         tgen_arithi(s, ARITH_SUB, reg, val);
@@ -665,7 +665,13 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
         tcg_out_modrm(s, 0xbf | P_EXT, data_reg, TCG_REG_EAX);
         break;
     case 0:
+        /* movzbl */
+        tcg_out_modrm(s, 0xb6 | P_EXT, data_reg, TCG_REG_EAX);
+        break;
     case 1:
+        /* movzwl */
+        tcg_out_modrm(s, 0xb7 | P_EXT, data_reg, TCG_REG_EAX);
+        break;
     case 2:
     default:
         tcg_out_mov(s, data_reg, TCG_REG_EAX);
@@ -960,7 +966,6 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 # ifdef VBOX
         tcg_gen_stack_alignment_check(s);
 # endif
-
         tcg_out8(s, 0xe8);
         tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);

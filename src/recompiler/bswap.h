@@ -5,6 +5,12 @@
 
 #include <inttypes.h>
 
+#ifdef HAVE_MACHINE_BSWAP_H
+#include <sys/endian.h>
+#include <sys/types.h>
+#include <machine/bswap.h>
+#else
+
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #else
@@ -43,26 +49,22 @@
 
 #endif /* !HAVE_BYTESWAP_H */
 
-#ifndef bswap16 /* BSD endian.h clash */
 static inline uint16_t bswap16(uint16_t x)
 {
     return bswap_16(x);
 }
-#endif
 
-#ifndef bswap32 /* BSD endian.h clash */
 static inline uint32_t bswap32(uint32_t x)
 {
     return bswap_32(x);
 }
-#endif
 
-#ifndef bswap64 /* BSD endian.h clash. */
 static inline uint64_t bswap64(uint64_t x)
 {
     return bswap_64(x);
 }
-#endif
+
+#endif /* ! HAVE_MACHINE_BSWAP_H */
 
 static inline void bswap16s(uint16_t *s)
 {
@@ -132,7 +134,7 @@ CPU_CONVERT(le, 64, uint64_t)
 
 /* unaligned versions (optimized for frequent unaligned accesses)*/
 
-#if defined(__i386__) || defined(__powerpc__)
+#if defined(__i386__) || defined(_ARCH_PPC)
 
 #define cpu_to_le16wu(p, v) cpu_to_le16w(p, v)
 #define cpu_to_le32wu(p, v) cpu_to_le32w(p, v)

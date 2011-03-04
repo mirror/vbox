@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
  */
 
 /*
@@ -68,7 +68,6 @@ void glue(helper_psrlw, SUFFIX)(Reg *d, Reg *s)
         d->W(7) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psraw, SUFFIX)(Reg *d, Reg *s)
@@ -114,7 +113,6 @@ void glue(helper_psllw, SUFFIX)(Reg *d, Reg *s)
         d->W(7) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
@@ -135,7 +133,6 @@ void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
         d->L(3) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrad, SUFFIX)(Reg *d, Reg *s)
@@ -173,7 +170,6 @@ void glue(helper_pslld, SUFFIX)(Reg *d, Reg *s)
         d->L(3) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
@@ -192,7 +188,6 @@ void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
         d->Q(1) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
@@ -211,7 +206,6 @@ void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
         d->Q(1) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 #if SHIFT == 1
@@ -226,7 +220,6 @@ void glue(helper_psrldq, SUFFIX)(Reg *d, Reg *s)
         d->B(i) = d->B(i + shift);
     for(i = 16 - shift; i < 16; i++)
         d->B(i) = 0;
-    FORCE_RET();
 }
 
 void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
@@ -240,7 +233,6 @@ void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
         d->B(i) = d->B(i - shift);
     for(i = 0; i < shift; i++)
         d->B(i) = 0;
-    FORCE_RET();
 }
 #endif
 
@@ -442,7 +434,6 @@ void glue(helper_pmaddwd, SUFFIX) (Reg *d, Reg *s)
         d->L(i) = (int16_t)s->W(2*i) * (int16_t)d->W(2*i) +
             (int16_t)s->W(2*i+1) * (int16_t)d->W(2*i+1);
     }
-    FORCE_RET();
 }
 
 #if SHIFT == 0
@@ -489,7 +480,6 @@ void glue(helper_maskmov, SUFFIX) (Reg *d, Reg *s, target_ulong a0)
         if (s->B(i) & 0x80)
             stb(a0 + i, d->B(i));
     }
-    FORCE_RET();
 }
 
 void glue(helper_movl_mm_T0, SUFFIX) (Reg *d, uint32_t val)
@@ -927,7 +917,6 @@ void helper_ucomiss(Reg *d, Reg *s)
     s1 = s->XMM_S(0);
     ret = float32_compare_quiet(s0, s1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_comiss(Reg *d, Reg *s)
@@ -939,7 +928,6 @@ void helper_comiss(Reg *d, Reg *s)
     s1 = s->XMM_S(0);
     ret = float32_compare(s0, s1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_ucomisd(Reg *d, Reg *s)
@@ -951,7 +939,6 @@ void helper_ucomisd(Reg *d, Reg *s)
     d1 = s->XMM_D(0);
     ret = float64_compare_quiet(d0, d1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_comisd(Reg *d, Reg *s)
@@ -963,7 +950,6 @@ void helper_comisd(Reg *d, Reg *s)
     d1 = s->XMM_D(0);
     ret = float64_compare(d0, d1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 uint32_t helper_movmskps(Reg *s)
@@ -990,23 +976,23 @@ uint32_t glue(helper_pmovmskb, SUFFIX)(Reg *s)
 {
     uint32_t val;
     val = 0;
-    val |= (s->XMM_B(0) >> 7);
-    val |= (s->XMM_B(1) >> 6) & 0x02;
-    val |= (s->XMM_B(2) >> 5) & 0x04;
-    val |= (s->XMM_B(3) >> 4) & 0x08;
-    val |= (s->XMM_B(4) >> 3) & 0x10;
-    val |= (s->XMM_B(5) >> 2) & 0x20;
-    val |= (s->XMM_B(6) >> 1) & 0x40;
-    val |= (s->XMM_B(7)) & 0x80;
+    val |= (s->B(0) >> 7);
+    val |= (s->B(1) >> 6) & 0x02;
+    val |= (s->B(2) >> 5) & 0x04;
+    val |= (s->B(3) >> 4) & 0x08;
+    val |= (s->B(4) >> 3) & 0x10;
+    val |= (s->B(5) >> 2) & 0x20;
+    val |= (s->B(6) >> 1) & 0x40;
+    val |= (s->B(7)) & 0x80;
 #if SHIFT == 1
-    val |= (s->XMM_B(8) << 1) & 0x0100;
-    val |= (s->XMM_B(9) << 2) & 0x0200;
-    val |= (s->XMM_B(10) << 3) & 0x0400;
-    val |= (s->XMM_B(11) << 4) & 0x0800;
-    val |= (s->XMM_B(12) << 5) & 0x1000;
-    val |= (s->XMM_B(13) << 6) & 0x2000;
-    val |= (s->XMM_B(14) << 7) & 0x4000;
-    val |= (s->XMM_B(15) << 8) & 0x8000;
+    val |= (s->B(8) << 1) & 0x0100;
+    val |= (s->B(9) << 2) & 0x0200;
+    val |= (s->B(10) << 3) & 0x0400;
+    val |= (s->B(11) << 4) & 0x0800;
+    val |= (s->B(12) << 5) & 0x1000;
+    val |= (s->B(13) << 6) & 0x2000;
+    val |= (s->B(14) << 7) & 0x4000;
+    val |= (s->B(15) << 8) & 0x8000;
 #endif
     return val;
 }
@@ -1509,12 +1495,12 @@ void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
     d->elem(0) = F(0);\
     d->elem(1) = F(1);\
-    d->elem(2) = F(2);\
-    d->elem(3) = F(3);\
-    if (num > 3) {\
-        d->elem(4) = F(4);\
-        d->elem(5) = F(5);\
-        if (num > 5) {\
+    if (num > 2) {\
+        d->elem(2) = F(2);\
+        d->elem(3) = F(3);\
+        if (num > 4) {\
+            d->elem(4) = F(4);\
+            d->elem(5) = F(5);\
             d->elem(6) = F(6);\
             d->elem(7) = F(7);\
         }\

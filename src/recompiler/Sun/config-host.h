@@ -29,6 +29,7 @@
 # elif defined(RT_OS_DARWIN)
 #  define CONFIG_DARWIN
 # elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
+#  define HAVE_MACHINE_BSWAP_H
 /*#  define CONFIG_BSD*/
 # elif defined(RT_OS_SOLARIS)
 #  define CONFIG_SOLARIS
