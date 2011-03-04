@@ -36,7 +36,9 @@
 #include "config.h"
 #include <setjmp.h>
 #include <inttypes.h>
+#ifndef VBOX
 #include <signal.h>
+#endif
 #include "osdep.h"
 #include "sys-queue.h"
 #include "targphys.h"
