@@ -451,13 +451,9 @@ com::Utf8Str ConfigFileBase::makeString(const RTTIMESPEC &stamp)
     if (!RTTimeExplode(&time, &stamp))
         throw ConfigFileError(this, NULL, N_("Timespec %lld ms is invalid"), RTTimeSpecGetMilli(&stamp));
 
-    return Utf8StrFmt("%04ld-%02hd-%02hdT%02hd:%02hd:%02hdZ",
-                      time.i32Year,
-                      (uint16_t)time.u8Month,
-                      (uint16_t)time.u8MonthDay,
-                      (uint16_t)time.u8Hour,
-                      (uint16_t)time.u8Minute,
-                      (uint16_t)time.u8Second);
+    return Utf8StrFmt("%04u-%02u-%02uT%02u:%02u:%02uZ",
+                      time.i32Year, time.u8Month, time.u8MonthDay,
+                      time.u8Hour, time.u8Minute, time.u8Second);
 }
 
 /**

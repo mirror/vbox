@@ -596,7 +596,7 @@ void WebLog(const char *pszFormat, ...)
         RTTIME t;
         RTTimeExplode(&t, &ts);
 
-        com::Utf8StrFmt strPrefix("%04d-%02d-%02d %02d:%02d:%02d %s",
+        com::Utf8StrFmt strPrefix("%04d-%02u-%02u %02u:%02u:%02u %s",
                                   t.i32Year, t.u8Month, t.u8MonthDay,
                                   t.u8Hour, t.u8Minute, t.u8Second,
                                   pcszPrefix);
