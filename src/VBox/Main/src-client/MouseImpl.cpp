@@ -40,6 +40,17 @@ enum
 };
 /** @} */
 
+/** @name Absolute mouse reporting range
+ * @{ */
+enum
+{
+    /** Lower end */
+    MOUSE_RANGE_LOWER = 0,
+    /** Higher end */
+    MOUSE_RANGE_UPPER = 0xFFFF
+};
+/** @} */
+
 /**
  * Mouse driver instance data.
  */
@@ -310,9 +321,13 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
+HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
                                         int32_t dz, int32_t dw, uint32_t fButtons)
 {
+    if (mouseXAbs < MOUSE_RANGE_LOWER || mouseXAbs > MOUSE_RANGE_UPPER)
+        return S_OK;
+    if (mouseYAbs < MOUSE_RANGE_LOWER || mouseYAbs > MOUSE_RANGE_UPPER)
+        return S_OK;
     if (   mouseXAbs != mcLastAbsX || mouseYAbs != mcLastAbsY
         || dz || dw || fButtons != mfLastButtons)
     {
@@ -459,8 +474,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 
 /**
  * Convert an (X, Y) value pair in screen co-ordinates (starting from 1) to a
- * value from 0 to 0xffff.  Sets the optional validity value to false if the
- * pair is not on an active screen and to true otherwise.
+ * value from MOUSE_RANGE_LOWER to MOUSE_RANGE_UPPER.  Sets the optional
+ * validity value to false if the pair is not on an active screen and to true
+ * otherwise.
  *
  * @returns   COM status value
  */
@@ -484,17 +500,18 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ? ((x - 1) * 0xFFFF) / (LONG) displayWidth: 0;
-        *pcY = displayHeight ? ((y - 1) * 0xFFFF) / (LONG) displayHeight: 0;
+        *pcX = displayWidth ? ((x - 1) * MOUSE_RANGE_UPPER) / (LONG) displayWidth: 0;
+        *pcY = displayHeight ? ((y - 1) * MOUSE_RANGE_UPPER) / (LONG) displayHeight: 0;
     }
     else
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 != x2 ? (x - 1 - x1) * 0xFFFF / (x2 - x1) : 0;
-        *pcY = y1 != y2 ? (y - 1 - y1) * 0xFFFF / (y2 - y1) : 0;
-        if (*pcX < 0 || *pcX > 0xFFFF || *pcY < 0 || *pcY > 0xFFFF)
+        *pcX = x1 != x2 ? (x - 1 - x1) * MOUSE_RANGE_UPPER / (x2 - x1) : 0;
+        *pcY = y1 != y2 ? (y - 1 - y1) * MOUSE_RANGE_UPPER / (y2 - y1) : 0;
+        if (   *pcX < MOUSE_RANGE_LOWER || *pcX > MOUSE_RANGE_UPPER
+            || *pcY < MOUSE_RANGE_LOWER || *pcY > MOUSE_RANGE_UPPER)
             if (pfValid)
                 *pfValid = false;
     }
