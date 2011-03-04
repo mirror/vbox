@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -37,19 +36,13 @@
 #include "config.h"
 #include <setjmp.h>
 #include <inttypes.h>
+#include <signal.h>
 #include "osdep.h"
 #include "sys-queue.h"
+#include "targphys.h"
 
 #ifndef TARGET_LONG_BITS
 #error TARGET_LONG_BITS must be defined before including this header
-#endif
-
-#ifndef TARGET_PHYS_ADDR_BITS
-#if TARGET_LONG_BITS >= HOST_LONG_BITS
-#define TARGET_PHYS_ADDR_BITS TARGET_LONG_BITS
-#else
-#define TARGET_PHYS_ADDR_BITS HOST_LONG_BITS
-#endif
 #endif
 
 #define TARGET_LONG_SIZE (TARGET_LONG_BITS / 8)
@@ -69,22 +62,6 @@ typedef uint64_t target_ulong;
 #define TARGET_FMT_lu "%" PRIu64
 #else
 #error TARGET_LONG_SIZE undefined
-#endif
-
-/* target_phys_addr_t is the type of a physical address (its size can
-   be different from 'target_ulong'). We have sizeof(target_phys_addr)
-   = max(sizeof(unsigned long),
-   sizeof(size_of_target_physical_address)) because we must pass a
-   host pointer to memory operations in some cases */
-
-#if TARGET_PHYS_ADDR_BITS == 32
-typedef uint32_t target_phys_addr_t;
-#define TARGET_FMT_plx "%08x"
-#elif TARGET_PHYS_ADDR_BITS == 64
-typedef uint64_t target_phys_addr_t;
-#define TARGET_FMT_plx "%016" PRIx64
-#else
-#error TARGET_PHYS_ADDR_BITS undefined
 #endif
 
 #define HOST_LONG_SIZE (HOST_LONG_BITS / 8)
@@ -185,6 +162,8 @@ typedef struct CPUWatchpoint {
     target_ulong mem_io_vaddr; /* target virtual addr at which the      \
                                      memory was accessed */             \
     uint32_t halted; /* Nonzero if the CPU is in suspend state */       \
+    uint32_t stop;   /* Stop request */                                 \
+    uint32_t stopped; /* Artificially stopped */                        \
     uint32_t interrupt_request;                                         \
     volatile /*sig_atomic_t - vbox*/ int32_t exit_request;                                 \
     /* The meaning of the MMU modes is defined in the target code. */   \
@@ -220,12 +199,17 @@ typedef struct CPUWatchpoint {
     jmp_buf jmp_env;                                                    \
     int exception_index;                                                \
                                                                         \
-    void *next_cpu; /* next CPU sharing TB cache */                     \
+    CPUState *next_cpu; /* next CPU sharing TB cache */                 \
     int cpu_index; /* CPU index (informative) */                        \
+    uint32_t host_tid; /* host thread ID */                             \
+    int numa_node; /* NUMA node this cpu is belonging to  */            \
     int running; /* Nonzero if cpu is currently running(usermode).  */  \
     /* user data */                                                     \
     void *opaque;                                                       \
                                                                         \
+    uint32_t created;                                                   \
+    struct QemuThread *thread;                                          \
+    struct QemuCond *halt_cond;                                         \
     const char *cpu_model_str;                                          \
     struct KVMState *kvm_state;                                         \
     struct kvm_run *kvm_run;                                            \

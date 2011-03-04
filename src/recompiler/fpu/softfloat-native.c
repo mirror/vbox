@@ -2,11 +2,15 @@
    context is supported */
 #include "softfloat.h"
 #include <math.h>
+#if defined(HOST_SOLARIS)
+#include <fenv.h>
+#endif
 
 void set_float_rounding_mode(int val STATUS_PARAM)
 {
     STATUS(float_rounding_mode) = val;
-#if defined(_BSD) && !defined(__APPLE__) || (defined(HOST_SOLARIS) && (HOST_SOLARIS < 10 || HOST_SOLARIS == 11)) /* VBOX adds sol 11 */
+#if defined(HOST_BSD) && !defined(__APPLE__) ||         \
+    (defined(HOST_SOLARIS) && (HOST_SOLARIS < 10 || HOST_SOLARIS == 11)) /* VBOX adds sol 11 */
     fpsetround(val);
 #elif defined(__arm__)
     /* nothing to do */
@@ -22,7 +26,7 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 }
 #endif
 
-#if defined(_BSD) || (defined(HOST_SOLARIS) && HOST_SOLARIS < 10)
+#if defined(HOST_BSD) || (defined(HOST_SOLARIS) && HOST_SOLARIS < 10)
 #define lrint(d)		((int32_t)rint(d))
 #define llrint(d)		((int64_t)rint(d))
 #define lrintf(f)		((int32_t)rint(f))
@@ -31,7 +35,7 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 #define remainderf(fa, fb)	((float)remainder(fa, fb))
 #define rintf(f)		((float)rint(f))
 /* Some defines which only apply to *BSD */
-# if defined(VBOX) && defined(_BSD)
+# if defined(VBOX) && defined(HOST_BSD)
 #  define lrintl(f)            ((int32_t)rint(f))
 #  define llrintl(f)           ((int64_t)rint(f))
 #  define rintl(d)             ((int32_t)rint(d))

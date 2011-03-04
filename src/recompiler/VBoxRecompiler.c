@@ -323,9 +323,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     /*
      * Register ram types.
      */
-    pVM->rem.s.iMMIOMemType    = cpu_register_io_memory(-1, g_apfnMMIORead, g_apfnMMIOWrite, pVM);
+    pVM->rem.s.iMMIOMemType    = cpu_register_io_memory(g_apfnMMIORead, g_apfnMMIOWrite, pVM);
     AssertReleaseMsg(pVM->rem.s.iMMIOMemType >= 0, ("pVM->rem.s.iMMIOMemType=%d\n", pVM->rem.s.iMMIOMemType));
-    pVM->rem.s.iHandlerMemType = cpu_register_io_memory(-1, g_apfnHandlerRead, g_apfnHandlerWrite, pVM);
+    pVM->rem.s.iHandlerMemType = cpu_register_io_memory(g_apfnHandlerRead, g_apfnHandlerWrite, pVM);
     AssertReleaseMsg(pVM->rem.s.iHandlerMemType >= 0, ("pVM->rem.s.iHandlerMemType=%d\n", pVM->rem.s.iHandlerMemType));
     Log2(("REM: iMMIOMemType=%d iHandlerMemType=%d\n", pVM->rem.s.iMMIOMemType, pVM->rem.s.iHandlerMemType));
 
@@ -468,7 +468,7 @@ REMR3DECL(int) REMR3InitFinalize(PVM pVM)
 
 
 /**
- * Initializes phys_ram_size, phys_ram_dirty and phys_ram_dirty_size.
+ * Initializes phys_ram_dirty and phys_ram_dirty_size.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -483,7 +483,6 @@ static int remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded)
     AssertLogRelMsgReturn(cb > pVM->rem.s.GCPhysLastRam,
                           ("GCPhysLastRam=%RGp - out of range\n", pVM->rem.s.GCPhysLastRam),
                           VERR_OUT_OF_RANGE);
-    phys_ram_size = cb;
     phys_ram_dirty_size = cb >> PAGE_SHIFT;
     AssertMsg(((RTGCPHYS)phys_ram_dirty_size << PAGE_SHIFT) == cb, ("%RGp\n", cb));
 
@@ -812,7 +811,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
      * pending interrupts and suchlike.
      */
     interrupt_request = pVM->rem.s.Env.interrupt_request;
-    Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER  | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
+    Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER  | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
     pVM->rem.s.Env.interrupt_request = 0;
     cpu_single_step(&pVM->rem.s.Env, 1);
 
@@ -952,7 +951,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     if (RT_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
-        Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
+        Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
         cpu_single_step(&pVM->rem.s.Env, 0);
 #endif
@@ -2438,7 +2437,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
      * Clear old interrupt request flags; Check for pending hardware interrupts.
      * (See @remark for why we don't check for other FFs.)
      */
-    pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
+    pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
     if (    pVM->rem.s.u32PendingInterrupt != REM_NO_PENDING_IRQ
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
@@ -4499,7 +4498,7 @@ int cpu_wrmsr(CPUX86State *env, uint32_t idMsr, uint64_t uValue)
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_REM_IOPORT
 
-void cpu_outb(CPUState *env, int addr, int val)
+void cpu_outb(CPUState *env, pio_addr_t addr, uint8_t val)
 {
     int rc;
 
@@ -4518,7 +4517,7 @@ void cpu_outb(CPUState *env, int addr, int val)
     remAbort(rc, __FUNCTION__);
 }
 
-void cpu_outw(CPUState *env, int addr, int val)
+void cpu_outw(CPUState *env, pio_addr_t addr, uint16_t val)
 {
     //Log2(("cpu_outw: addr=%#06x val=%#x\n", addr, val));
     int rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 2);
@@ -4533,7 +4532,7 @@ void cpu_outw(CPUState *env, int addr, int val)
     remAbort(rc, __FUNCTION__);
 }
 
-void cpu_outl(CPUState *env, int addr, int val)
+void cpu_outl(CPUState *env, pio_addr_t addr, uint32_t val)
 {
     int rc;
     Log2(("cpu_outl: addr=%#06x val=%#x\n", addr, val));
@@ -4549,7 +4548,7 @@ void cpu_outl(CPUState *env, int addr, int val)
     remAbort(rc, __FUNCTION__);
 }
 
-int cpu_inb(CPUState *env, int addr)
+uint8_t cpu_inb(CPUState *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 1);
@@ -4557,38 +4556,38 @@ int cpu_inb(CPUState *env, int addr)
     {
         if (/*addr != 0x61 && */addr != 0x71)
             Log2(("cpu_inb: addr=%#06x -> %#x\n", addr, u32));
-        return (int)u32;
+        return (uint8_t)u32;
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
         Log(("cpu_inb: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
-        return (int)u32;
+        return (uint8_t)u32;
     }
     remAbort(rc, __FUNCTION__);
-    return 0xff;
+    return UINT8_C(0xff);
 }
 
-int cpu_inw(CPUState *env, int addr)
+uint16_t cpu_inw(CPUState *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 2);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         Log2(("cpu_inw: addr=%#06x -> %#x\n", addr, u32));
-        return (int)u32;
+        return (uint16_t)u32;
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
         Log(("cpu_inw: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
-        return (int)u32;
+        return (uint16_t)u32;
     }
     remAbort(rc, __FUNCTION__);
-    return 0xffff;
+    return UINT16_C(0xffff);
 }
 
-int cpu_inl(CPUState *env, int addr)
+uint32_t cpu_inl(CPUState *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 4);
@@ -4597,16 +4596,16 @@ int cpu_inl(CPUState *env, int addr)
 //if (addr==0x01f0 && u32 == 0x6b6d)
 //    loglevel = ~0;
         Log2(("cpu_inl: addr=%#06x -> %#x\n", addr, u32));
-        return (int)u32;
+        return u32;
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
         Log(("cpu_inl: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
-        return (int)u32;
+        return u32;
     }
     remAbort(rc, __FUNCTION__);
-    return 0xffffffff;
+    return UINT32_C(0xffffffff);
 }
 
 #undef LOG_GROUP

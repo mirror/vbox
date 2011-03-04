@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -34,7 +33,6 @@
 #ifndef VBOX
 #include <inttypes.h>
 #include <signal.h>
-#include <assert.h>
 #endif /* !VBOX */
 
 #include "cpu.h"
@@ -45,61 +43,65 @@
 //#define DEBUG_MMU
 
 #ifndef VBOX
-static void add_flagname_to_bitmaps(char *flagname, uint32_t *features,
+/* feature flags taken from "Intel Processor Identification and the CPUID
+ * Instruction" and AMD's "CPUID Specification". In cases of disagreement
+ * about feature names, the Linux name is used. */
+static const char *feature_name[] = {
+    "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce",
+    "cx8", "apic", NULL, "sep", "mtrr", "pge", "mca", "cmov",
+    "pat", "pse36", "pn" /* Intel psn */, "clflush" /* Intel clfsh */, NULL, "ds" /* Intel dts */, "acpi", "mmx",
+    "fxsr", "sse", "sse2", "ss", "ht" /* Intel htt */, "tm", "ia64", "pbe",
+};
+static const char *ext_feature_name[] = {
+    "pni" /* Intel,AMD sse3 */, NULL, NULL, "monitor", "ds_cpl", "vmx", NULL /* Linux smx */, "est",
+    "tm2", "ssse3", "cid", NULL, NULL, "cx16", "xtpr", NULL,
+    NULL, NULL, "dca", NULL, NULL, NULL, NULL, "popcnt",
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, "hypervisor",
+};
+static const char *ext2_feature_name[] = {
+    "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce",
+    "cx8" /* AMD CMPXCHG8B */, "apic", NULL, "syscall", "mtrr", "pge", "mca", "cmov",
+    "pat", "pse36", NULL, NULL /* Linux mp */, "nx" /* Intel xd */, NULL, "mmxext", "mmx",
+    "fxsr", "fxsr_opt" /* AMD ffxsr */, "pdpe1gb" /* AMD Page1GB */, "rdtscp", NULL, "lm" /* Intel 64 */, "3dnowext", "3dnow",
+};
+static const char *ext3_feature_name[] = {
+    "lahf_lm" /* AMD LahfSahf */, "cmp_legacy", "svm", "extapic" /* AMD ExtApicSpace */, "cr8legacy" /* AMD AltMovCr8 */, "abm", "sse4a", "misalignsse",
+    "3dnowprefetch", "osvw", NULL /* Linux ibs */, NULL, "skinit", "wdt", NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+};
+
+static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features,
                                     uint32_t *ext_features,
                                     uint32_t *ext2_features,
                                     uint32_t *ext3_features)
 {
     int i;
-    /* feature flags taken from "Intel Processor Identification and the CPUID
-     * Instruction" and AMD's "CPUID Specification". In cases of disagreement
-     * about feature names, the Linux name is used. */
-    static const char *feature_name[] = {
-        "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce",
-        "cx8", "apic", NULL, "sep", "mtrr", "pge", "mca", "cmov",
-        "pat", "pse36", "pn" /* Intel psn */, "clflush" /* Intel clfsh */, NULL, "ds" /* Intel dts */, "acpi", "mmx",
-        "fxsr", "sse", "sse2", "ss", "ht" /* Intel htt */, "tm", "ia64", "pbe",
-    };
-    static const char *ext_feature_name[] = {
-       "pni" /* Intel,AMD sse3 */, NULL, NULL, "monitor", "ds_cpl", "vmx", NULL /* Linux smx */, "est",
-       "tm2", "ssse3", "cid", NULL, NULL, "cx16", "xtpr", NULL,
-       NULL, NULL, "dca", NULL, NULL, NULL, NULL, "popcnt",
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    };
-    static const char *ext2_feature_name[] = {
-       "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce",
-       "cx8" /* AMD CMPXCHG8B */, "apic", NULL, "syscall", "mtrr", "pge", "mca", "cmov",
-       "pat", "pse36", NULL, NULL /* Linux mp */, "nx" /* Intel xd */, NULL, "mmxext", "mmx",
-       "fxsr", "fxsr_opt" /* AMD ffxsr */, "pdpe1gb" /* AMD Page1GB */, "rdtscp", NULL, "lm" /* Intel 64 */, "3dnowext", "3dnow",
-    };
-    static const char *ext3_feature_name[] = {
-       "lahf_lm" /* AMD LahfSahf */, "cmp_legacy", "svm", "extapic" /* AMD ExtApicSpace */, "cr8legacy" /* AMD AltMovCr8 */, "abm", "sse4a", "misalignsse",
-       "3dnowprefetch", "osvw", NULL /* Linux ibs */, NULL, "skinit", "wdt", NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    };
+    int found = 0;
 
     for ( i = 0 ; i < 32 ; i++ )
         if (feature_name[i] && !strcmp (flagname, feature_name[i])) {
             *features |= 1 << i;
-            return;
+            found = 1;
         }
     for ( i = 0 ; i < 32 ; i++ )
         if (ext_feature_name[i] && !strcmp (flagname, ext_feature_name[i])) {
             *ext_features |= 1 << i;
-            return;
+            found = 1;
         }
     for ( i = 0 ; i < 32 ; i++ )
         if (ext2_feature_name[i] && !strcmp (flagname, ext2_feature_name[i])) {
             *ext2_features |= 1 << i;
-            return;
+            found = 1;
         }
     for ( i = 0 ; i < 32 ; i++ )
         if (ext3_feature_name[i] && !strcmp (flagname, ext3_feature_name[i])) {
             *ext3_features |= 1 << i;
-            return;
+            found = 1;
         }
-    fprintf(stderr, "CPU feature %s not found\n", flagname);
+    if (!found) {
+        fprintf(stderr, "CPU feature %s not found\n", flagname);
+    }
 }
 #endif /* !VBOX */
 
@@ -113,6 +115,7 @@ typedef struct x86_def_t {
     uint32_t features, ext_features, ext2_features, ext3_features;
     uint32_t xlevel;
     char model_id[48];
+    int vendor_override;
 } x86_def_t;
 
 #ifndef VBOX
@@ -145,8 +148,7 @@ static x86_def_t x86_defs[] = {
             CPUID_PSE36,
         .ext_features = CPUID_EXT_SSE3,
         .ext2_features = (PPRO_FEATURES & 0x0183F3FF) |
-            CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX |
-            CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT,
+            CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         .ext3_features = CPUID_EXT3_SVM,
         .xlevel = 0x8000000A,
         .model_id = "QEMU Virtual CPU version " QEMU_VERSION,
@@ -270,9 +272,9 @@ static x86_def_t x86_defs[] = {
     {
         .name = "athlon",
         .level = 2,
-        .vendor1 = 0x68747541, /* "Auth" */
-        .vendor2 = 0x69746e65, /* "enti" */
-        .vendor3 = 0x444d4163, /* "cAMD" */
+        .vendor1 = CPUID_VENDOR_AMD_1,
+        .vendor2 = CPUID_VENDOR_AMD_2,
+        .vendor3 = CPUID_VENDOR_AMD_3,
         .family = 6,
         .model = 2,
         .stepping = 3,
@@ -305,6 +307,54 @@ static x86_def_t x86_defs[] = {
     },
 };
 
+static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
+                               uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+
+static int cpu_x86_fill_model_id(char *str)
+{
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        host_cpuid(0x80000002 + i, 0, &eax, &ebx, &ecx, &edx);
+        memcpy(str + i * 16 +  0, &eax, 4);
+        memcpy(str + i * 16 +  4, &ebx, 4);
+        memcpy(str + i * 16 +  8, &ecx, 4);
+        memcpy(str + i * 16 + 12, &edx, 4);
+    }
+    return 0;
+}
+
+static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
+{
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+    x86_cpu_def->name = "host";
+    host_cpuid(0x0, 0, &eax, &ebx, &ecx, &edx);
+    x86_cpu_def->level = eax;
+    x86_cpu_def->vendor1 = ebx;
+    x86_cpu_def->vendor2 = edx;
+    x86_cpu_def->vendor3 = ecx;
+
+    host_cpuid(0x1, 0, &eax, &ebx, &ecx, &edx);
+    x86_cpu_def->family = ((eax >> 8) & 0x0F) + ((eax >> 20) & 0xFF);
+    x86_cpu_def->model = ((eax >> 4) & 0x0F) | ((eax & 0xF0000) >> 12);
+    x86_cpu_def->stepping = eax & 0x0F;
+    x86_cpu_def->ext_features = ecx;
+    x86_cpu_def->features = edx;
+
+    host_cpuid(0x80000000, 0, &eax, &ebx, &ecx, &edx);
+    x86_cpu_def->xlevel = eax;
+
+    host_cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+    x86_cpu_def->ext2_features = edx;
+    x86_cpu_def->ext3_features = ecx;
+    cpu_x86_fill_model_id(x86_cpu_def->model_id);
+    x86_cpu_def->vendor_override = 0;
+
+    return 0;
+}
+
 static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
 {
     unsigned int i;
@@ -323,9 +373,16 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
             break;
         }
     }
-    if (!def)
+    if (kvm_enabled() && strcmp(name, "host") == 0) {
+        cpu_x86_fill_host(x86_cpu_def);
+    } else if (!def) {
         goto error;
-    memcpy(x86_cpu_def, def, sizeof(*def));
+    } else {
+        memcpy(x86_cpu_def, def, sizeof(*def));
+    }
+
+    add_flagname_to_bitmaps("hypervisor", &plus_features,
+        &plus_ext_features, &plus_ext2_features, &plus_ext3_features);
 
     featurestr = strtok(NULL, ",");
 
@@ -374,6 +431,7 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
                     x86_cpu_def->vendor2 |= ((uint8_t)val[i + 4]) << (8 * i);
                     x86_cpu_def->vendor3 |= ((uint8_t)val[i + 8]) << (8 * i);
                 }
+                x86_cpu_def->vendor_override = 1;
             } else if (!strcmp(featurestr, "model_id")) {
                 pstrcpy(x86_cpu_def->model_id, sizeof(x86_cpu_def->model_id),
                         val);
@@ -428,6 +486,7 @@ static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
         env->cpuid_vendor2 = CPUID_VENDOR_INTEL_2;
         env->cpuid_vendor3 = CPUID_VENDOR_INTEL_3;
     }
+    env->cpuid_vendor_override = def->vendor_override;
     env->cpuid_level = def->level;
     if (def->family > 0x0f)
         env->cpuid_version = 0xf00 | ((def->family - 0x0f) << 20);
@@ -494,17 +553,23 @@ void cpu_reset(CPUX86State *env)
     env->tr.flags = DESC_P_MASK | (11 << DESC_TYPE_SHIFT);
 
     cpu_x86_load_seg_cache(env, R_CS, 0xf000, 0xffff0000, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_CS_MASK | DESC_R_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_CS_MASK |
+                           DESC_R_MASK | DESC_A_MASK);
     cpu_x86_load_seg_cache(env, R_DS, 0, 0, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK |
+                           DESC_A_MASK);
     cpu_x86_load_seg_cache(env, R_ES, 0, 0, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK |
+                           DESC_A_MASK);
     cpu_x86_load_seg_cache(env, R_SS, 0, 0, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK |
+                           DESC_A_MASK);
     cpu_x86_load_seg_cache(env, R_FS, 0, 0, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK |
+                           DESC_A_MASK);
     cpu_x86_load_seg_cache(env, R_GS, 0, 0, 0xffff,
-                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK);
+                           DESC_P_MASK | DESC_S_MASK | DESC_W_MASK |
+                           DESC_A_MASK);
 
     env->eip = 0xfff0;
 #ifndef VBOX
@@ -595,6 +660,61 @@ static const char *cc_op_str[] = {
     "SARQ",
 };
 
+static void
+cpu_x86_dump_seg_cache(CPUState *env, FILE *f,
+                       int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
+                       const char *name, struct SegmentCache *sc)
+{
+#ifdef TARGET_X86_64
+    if (env->hflags & HF_CS64_MASK) {
+        cpu_fprintf(f, "%-3s=%04x %016" PRIx64 " %08x %08x", name,
+                    sc->selector, sc->base, sc->limit, sc->flags);
+    } else
+#endif
+    {
+        cpu_fprintf(f, "%-3s=%04x %08x %08x %08x", name, sc->selector,
+                    (uint32_t)sc->base, sc->limit, sc->flags);
+    }
+
+    if (!(env->hflags & HF_PE_MASK) || !(sc->flags & DESC_P_MASK))
+        goto done;
+
+    cpu_fprintf(f, " DPL=%d ", (sc->flags & DESC_DPL_MASK) >> DESC_DPL_SHIFT);
+    if (sc->flags & DESC_S_MASK) {
+        if (sc->flags & DESC_CS_MASK) {
+            cpu_fprintf(f, (sc->flags & DESC_L_MASK) ? "CS64" :
+                           ((sc->flags & DESC_B_MASK) ? "CS32" : "CS16"));
+            cpu_fprintf(f, " [%c%c", (sc->flags & DESC_C_MASK) ? 'C' : '-',
+                        (sc->flags & DESC_R_MASK) ? 'R' : '-');
+        } else {
+            cpu_fprintf(f, (sc->flags & DESC_B_MASK) ? "DS  " : "DS16");
+            cpu_fprintf(f, " [%c%c", (sc->flags & DESC_E_MASK) ? 'E' : '-',
+                        (sc->flags & DESC_W_MASK) ? 'W' : '-');
+        }
+        cpu_fprintf(f, "%c]", (sc->flags & DESC_A_MASK) ? 'A' : '-');
+    } else {
+        static const char *sys_type_name[2][16] = {
+            { /* 32 bit mode */
+                "Reserved", "TSS16-avl", "LDT", "TSS16-busy",
+                "CallGate16", "TaskGate", "IntGate16", "TrapGate16",
+                "Reserved", "TSS32-avl", "Reserved", "TSS32-busy",
+                "CallGate32", "Reserved", "IntGate32", "TrapGate32"
+            },
+            { /* 64 bit mode */
+                "<hiword>", "Reserved", "LDT", "Reserved", "Reserved",
+                "Reserved", "Reserved", "Reserved", "Reserved",
+                "TSS64-avl", "Reserved", "TSS64-busy", "CallGate64",
+                "Reserved", "IntGate64", "TrapGate64"
+            }
+        };
+        cpu_fprintf(f, sys_type_name[(env->hflags & HF_LMA_MASK) ? 1 : 0]
+                                    [(sc->flags & DESC_TYPE_MASK)
+                                     >> DESC_TYPE_SHIFT]);
+    }
+done:
+    cpu_fprintf(f, "\n");
+}
+
 void cpu_dump_state(CPUState *env, FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
                     int flags)
@@ -673,27 +793,15 @@ void cpu_dump_state(CPUState *env, FILE *f,
                     env->halted);
     }
 
+    for(i = 0; i < 6; i++) {
+        cpu_x86_dump_seg_cache(env, f, cpu_fprintf, seg_name[i],
+                               &env->segs[i]);
+    }
+    cpu_x86_dump_seg_cache(env, f, cpu_fprintf, "LDT", &env->ldt);
+    cpu_x86_dump_seg_cache(env, f, cpu_fprintf, "TR", &env->tr);
+
 #ifdef TARGET_X86_64
     if (env->hflags & HF_LMA_MASK) {
-        for(i = 0; i < 6; i++) {
-            SegmentCache *sc = &env->segs[i];
-            cpu_fprintf(f, "%s =%04x %016" PRIx64 " %08x %08x\n",
-                        seg_name[i],
-                        sc->selector,
-                        sc->base,
-                        sc->limit,
-                        sc->flags);
-        }
-        cpu_fprintf(f, "LDT=%04x %016" PRIx64 " %08x %08x\n",
-                    env->ldt.selector,
-                    env->ldt.base,
-                    env->ldt.limit,
-                    env->ldt.flags);
-        cpu_fprintf(f, "TR =%04x %016" PRIx64 " %08x %08x\n",
-                    env->tr.selector,
-                    env->tr.base,
-                    env->tr.limit,
-                    env->tr.flags);
         cpu_fprintf(f, "GDT=     %016" PRIx64 " %08x\n",
                     env->gdt.base, env->gdt.limit);
         cpu_fprintf(f, "IDT=     %016" PRIx64 " %08x\n",
@@ -710,25 +818,6 @@ void cpu_dump_state(CPUState *env, FILE *f,
     } else
 #endif
     {
-        for(i = 0; i < 6; i++) {
-            SegmentCache *sc = &env->segs[i];
-            cpu_fprintf(f, "%s =%04x %08x %08x %08x\n",
-                        seg_name[i],
-                        sc->selector,
-                        (uint32_t)sc->base,
-                        sc->limit,
-                        sc->flags);
-        }
-        cpu_fprintf(f, "LDT=%04x %08x %08x %08x\n",
-                    env->ldt.selector,
-                    (uint32_t)env->ldt.base,
-                    env->ldt.limit,
-                    env->ldt.flags);
-        cpu_fprintf(f, "TR =%04x %08x %08x %08x\n",
-                    env->tr.selector,
-                    (uint32_t)env->tr.base,
-                    env->tr.limit,
-                    env->tr.flags);
         cpu_fprintf(f, "GDT=     %08x %08x\n",
                     (uint32_t)env->gdt.base, env->gdt.limit);
         cpu_fprintf(f, "IDT=     %08x %08x\n",
@@ -938,7 +1027,7 @@ target_phys_addr_t cpu_get_phys_page_debug(CPUState *env, target_ulong addr)
 
 /* XXX: This value should match the one returned by CPUID
  * and in exec.c */
-#if defined(USE_KQEMU)
+#if defined(CONFIG_KQEMU)
 #define PHYS_ADDR_MASK 0xfffff000LL
 #else
 # if defined(TARGET_X86_64)
@@ -1436,9 +1525,82 @@ static void breakpoint_handler(CPUState *env)
     if (prev_debug_excp_handler)
         prev_debug_excp_handler(env);
 }
+
+
+#ifndef VBOX
+/* This should come from sysemu.h - if we could include it here... */
+void qemu_system_reset_request(void);
+
+void cpu_inject_x86_mce(CPUState *cenv, int bank, uint64_t status,
+                        uint64_t mcg_status, uint64_t addr, uint64_t misc)
+{
+    uint64_t mcg_cap = cenv->mcg_cap;
+    unsigned bank_num = mcg_cap & 0xff;
+    uint64_t *banks = cenv->mce_banks;
+
+    if (bank >= bank_num || !(status & MCI_STATUS_VAL))
+        return;
+
+    /*
+     * if MSR_MCG_CTL is not all 1s, the uncorrected error
+     * reporting is disabled
+     */
+    if ((status & MCI_STATUS_UC) && (mcg_cap & MCG_CTL_P) &&
+        cenv->mcg_ctl != ~(uint64_t)0)
+        return;
+    banks += 4 * bank;
+    /*
+     * if MSR_MCi_CTL is not all 1s, the uncorrected error
+     * reporting is disabled for the bank
+     */
+    if ((status & MCI_STATUS_UC) && banks[0] != ~(uint64_t)0)
+        return;
+    if (status & MCI_STATUS_UC) {
+        if ((cenv->mcg_status & MCG_STATUS_MCIP) ||
+            !(cenv->cr[4] & CR4_MCE_MASK)) {
+            fprintf(stderr, "injects mce exception while previous "
+                    "one is in progress!\n");
+            qemu_log_mask(CPU_LOG_RESET, "Triple fault\n");
+            qemu_system_reset_request();
+            return;
+        }
+        if (banks[1] & MCI_STATUS_VAL)
+            status |= MCI_STATUS_OVER;
+        banks[2] = addr;
+        banks[3] = misc;
+        cenv->mcg_status = mcg_status;
+        banks[1] = status;
+        cpu_interrupt(cenv, CPU_INTERRUPT_MCE);
+    } else if (!(banks[1] & MCI_STATUS_VAL)
+               || !(banks[1] & MCI_STATUS_UC)) {
+        if (banks[1] & MCI_STATUS_VAL)
+            status |= MCI_STATUS_OVER;
+        banks[2] = addr;
+        banks[3] = misc;
+        banks[1] = status;
+    } else
+        banks[1] |= MCI_STATUS_OVER;
+}
+#endif /* !VBOX */
 #endif /* !CONFIG_USER_ONLY */
 
 #ifndef VBOX
+
+static void mce_init(CPUX86State *cenv)
+{
+    unsigned int bank, bank_num;
+
+    if (((cenv->cpuid_version >> 8)&0xf) >= 6
+        && (cenv->cpuid_features&(CPUID_MCE|CPUID_MCA)) == (CPUID_MCE|CPUID_MCA)) {
+        cenv->mcg_cap = MCE_CAP_DEF | MCE_BANKS_DEF;
+        cenv->mcg_ctl = ~(uint64_t)0;
+        bank_num = cenv->mcg_cap & 0xff;
+        cenv->mce_banks = qemu_mallocz(bank_num * sizeof(uint64_t) * 4);
+        for (bank = 0; bank < bank_num; bank++)
+            cenv->mce_banks[bank*4] = ~(uint64_t)0;
+    }
+}
+
 static void host_cpuid(uint32_t function, uint32_t count,
                        uint32_t *eax, uint32_t *ebx,
                        uint32_t *ecx, uint32_t *edx)
@@ -1498,7 +1660,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
          * isn't supported in compatibility mode on Intel.  so advertise the
          * actuall cpu, and say goodbye to migration between different vendors
          * is you use compatibility mode. */
-        if (kvm_enabled())
+        if (kvm_enabled() && !env->cpuid_vendor_override)
             host_cpuid(0, 0, NULL, ebx, ecx, edx);
         break;
     case 1:
@@ -1506,10 +1668,6 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx = (env->cpuid_apic_id << 24) | 8 << 8; /* CLFLUSH size in quad words, Linux wants it. */
         *ecx = env->cpuid_ext_features;
         *edx = env->cpuid_features;
-
-        /* "Hypervisor present" bit required for Microsoft SVVP */
-        if (kvm_enabled())
-            *ecx |= (1 << 31);
         break;
     case 2:
         /* cache info: needed for Pentium Pro compatibility */
@@ -1582,34 +1740,17 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ecx = env->cpuid_vendor3;
         break;
     case 0x80000001:
-        *eax = env->cpuid_features;
+        *eax = env->cpuid_version;
         *ebx = 0;
         *ecx = env->cpuid_ext3_features;
         *edx = env->cpuid_ext2_features;
 
         if (kvm_enabled()) {
-            uint32_t h_eax, h_edx;
-
-            host_cpuid(index, 0, &h_eax, NULL, NULL, &h_edx);
-
-            /* disable CPU features that the host does not support */
-
-            /* long mode */
-            if ((h_edx & 0x20000000) == 0 /* || !lm_capable_kernel */)
-                *edx &= ~0x20000000;
-            /* syscall */
-            if ((h_edx & 0x00000800) == 0)
-                *edx &= ~0x00000800;
-            /* nx */
-            if ((h_edx & 0x00100000) == 0)
-                *edx &= ~0x00100000;
-
-            /* disable CPU features that KVM cannot support */
-
-            /* svm */
-            *ecx &= ~4UL;
-            /* 3dnow */
-            *edx &= ~0xc0000000;
+            /* Nested SVM not yet supported in KVM */
+            *ecx &= ~CPUID_EXT3_SVM;
+        } else {
+            /* AMD 3DNow! is not supported in QEMU */
+            *edx &= ~(CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
         }
         break;
     case 0x80000002:
@@ -1639,14 +1780,14 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
 /* XXX: This value must match the one used in the MMU code. */
         if (env->cpuid_ext2_features & CPUID_EXT2_LM) {
             /* 64 bit processor */
-#if defined(USE_KQEMU)
+#if defined(CONFIG_KQEMU)
             *eax = 0x00003020;	/* 48 bits virtual, 32 bits physical */
 #else
 /* XXX: The physical address space is limited to 42 bits in exec.c. */
             *eax = 0x00003028;	/* 48 bits virtual, 40 bits physical */
 #endif
         } else {
-#if defined(USE_KQEMU)
+#if defined(CONFIG_KQEMU)
             *eax = 0x00000020;	/* 32 bits physical */
 #else
             if (env->cpuid_features & CPUID_PSE36)
@@ -1674,6 +1815,36 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     }
 }
+
+int cpu_x86_get_descr_debug(CPUX86State *env, unsigned int selector,
+                            target_ulong *base, unsigned int *limit,
+                            unsigned int *flags)
+{
+    SegmentCache *dt;
+    target_ulong ptr;
+    uint32_t e1, e2;
+    int index;
+
+    if (selector & 0x4)
+        dt = &env->ldt;
+    else
+        dt = &env->gdt;
+    index = selector & ~7;
+    ptr = dt->base + index;
+    if ((index + 7) > dt->limit
+        || cpu_memory_rw_debug(env, ptr, (uint8_t *)&e1, sizeof(e1), 0) != 0
+        || cpu_memory_rw_debug(env, ptr+4, (uint8_t *)&e2, sizeof(e2), 0) != 0)
+        return 0;
+
+    *base = ((e1 >> 16) | ((e2 & 0xff) << 16) | (e2 & 0xff000000));
+    *limit = (e1 & 0xffff) | (e2 & 0x000f0000);
+    if (e2 & DESC_G_MASK)
+        *limit = (*limit << 12) | 0xfff;
+    *flags = e2;
+
+    return 1;
+}
+
 #endif /* !VBOX */
 
 #ifndef VBOX
@@ -1706,11 +1877,39 @@ CPUX86State *cpu_x86_init(CPUX86State *env, const char *cpu_model)
         cpu_x86_close(env);
         return NULL;
     }
+#ifndef VBOX
+    mce_init(env);
+#endif
     cpu_reset(env);
-#ifdef USE_KQEMU
+#ifdef CONFIG_KQEMU
     kqemu_init(env);
 #endif
-    if (kvm_enabled())
-        kvm_init_vcpu(env);
+
+    qemu_init_vcpu(env);
+
     return env;
 }
+
+#ifndef VBOX
+#if !defined(CONFIG_USER_ONLY)
+void do_cpu_init(CPUState *env)
+{
+    int sipi = env->interrupt_request & CPU_INTERRUPT_SIPI;
+    cpu_reset(env);
+    env->interrupt_request = sipi;
+    apic_init_reset(env);
+}
+
+void do_cpu_sipi(CPUState *env)
+{
+    apic_sipi(env);
+}
+#else
+void do_cpu_init(CPUState *env)
+{
+}
+void do_cpu_sipi(CPUState *env)
+{
+}
+#endif
+#endif /* !VBOX */

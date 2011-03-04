@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -34,7 +33,6 @@
 #ifndef VBOX
 #include <inttypes.h>
 #include <signal.h>
-#include <assert.h>
 #endif /* !VBOX */
 
 #include "cpu.h"
@@ -54,7 +52,7 @@
 
 #ifdef TARGET_X86_64
 #define X86_64_ONLY(x) x
-#define X86_64_DEF(x...) x
+#define X86_64_DEF(...)  __VA_ARGS__
 #define CODE64(s) ((s)->code64)
 #define REX_X(s) ((s)->rex_x)
 #define REX_B(s) ((s)->rex_b)
@@ -64,7 +62,7 @@
 #endif
 #else
 #define X86_64_ONLY(x) NULL
-#define X86_64_DEF(x...)
+#define X86_64_DEF(...)
 #define CODE64(s) 0
 #define REX_X(s) 0
 #define REX_B(s) 0
@@ -1726,7 +1724,6 @@ static inline void tcg_gen_lshift(TCGv ret, TCGv arg1, target_long arg2)
         tcg_gen_shri_tl(ret, arg1, -arg2);
 }
 
-/* XXX: add faster immediate case */
 static void gen_rot_rm_T1(DisasContext *s, int ot, int op1,
                           int is_right)
 {
@@ -1820,6 +1817,83 @@ static void gen_rot_rm_T1(DisasContext *s, int ot, int op1,
     tcg_temp_free(t0);
     tcg_temp_free(t1);
     tcg_temp_free(t2);
+    tcg_temp_free(a0);
+}
+
+static void gen_rot_rm_im(DisasContext *s, int ot, int op1, int op2,
+                          int is_right)
+{
+    int mask;
+    int data_bits;
+    TCGv t0, t1, a0;
+
+    /* XXX: inefficient, but we must use local temps */
+    t0 = tcg_temp_local_new();
+    t1 = tcg_temp_local_new();
+    a0 = tcg_temp_local_new();
+
+    if (ot == OT_QUAD)
+        mask = 0x3f;
+    else
+        mask = 0x1f;
+
+    /* load */
+    if (op1 == OR_TMP0) {
+        tcg_gen_mov_tl(a0, cpu_A0);
+        gen_op_ld_v(ot + s->mem_index, t0, a0);
+    } else {
+        gen_op_mov_v_reg(ot, t0, op1);
+    }
+
+    gen_extu(ot, t0);
+    tcg_gen_mov_tl(t1, t0);
+
+    op2 &= mask;
+    data_bits = 8 << ot;
+    if (op2 != 0) {
+        int shift = op2 & ((1 << (3 + ot)) - 1);
+        if (is_right) {
+            tcg_gen_shri_tl(cpu_tmp4, t0, shift);
+            tcg_gen_shli_tl(t0, t0, data_bits - shift);
+        }
+        else {
+            tcg_gen_shli_tl(cpu_tmp4, t0, shift);
+            tcg_gen_shri_tl(t0, t0, data_bits - shift);
+        }
+        tcg_gen_or_tl(t0, t0, cpu_tmp4);
+    }
+
+    /* store */
+    if (op1 == OR_TMP0) {
+        gen_op_st_v(ot + s->mem_index, t0, a0);
+    } else {
+        gen_op_mov_reg_v(ot, op1, t0);
+    }
+
+    if (op2 != 0) {
+        /* update eflags */
+        if (s->cc_op != CC_OP_DYNAMIC)
+            gen_op_set_cc_op(s->cc_op);
+
+        gen_compute_eflags(cpu_cc_src);
+        tcg_gen_andi_tl(cpu_cc_src, cpu_cc_src, ~(CC_O | CC_C));
+        tcg_gen_xor_tl(cpu_tmp0, t1, t0);
+        tcg_gen_lshift(cpu_tmp0, cpu_tmp0, 11 - (data_bits - 1));
+        tcg_gen_andi_tl(cpu_tmp0, cpu_tmp0, CC_O);
+        tcg_gen_or_tl(cpu_cc_src, cpu_cc_src, cpu_tmp0);
+        if (is_right) {
+            tcg_gen_shri_tl(t0, t0, data_bits - 1);
+        }
+        tcg_gen_andi_tl(t0, t0, CC_C);
+        tcg_gen_or_tl(cpu_cc_src, cpu_cc_src, t0);
+
+        tcg_gen_discard_tl(cpu_cc_dst);
+        tcg_gen_movi_i32(cpu_cc_op, CC_OP_EFLAGS);
+        s->cc_op = CC_OP_EFLAGS;
+    }
+
+    tcg_temp_free(t0);
+    tcg_temp_free(t1);
     tcg_temp_free(a0);
 }
 
@@ -2037,6 +2111,12 @@ static void gen_shift(DisasContext *s1, int op, int ot, int d, int s)
 static void gen_shifti(DisasContext *s1, int op, int ot, int d, int c)
 {
     switch(op) {
+    case OP_ROL:
+        gen_rot_rm_im(s1, ot, d, c, 0);
+        break;
+    case OP_ROR:
+        gen_rot_rm_im(s1, ot, d, c, 1);
+        break;
     case OP_SHL:
     case OP_SHL1:
         gen_shift_rm_im(s1, ot, d, c, 0, 0);
@@ -2815,6 +2895,9 @@ static void gen_eob(DisasContext *s)
         gen_op_set_cc_op(s->cc_op);
     if (s->tb->flags & HF_INHIBIT_IRQ_MASK) {
         gen_helper_reset_inhibit_irq();
+    }
+    if (s->tb->flags & HF_RF_MASK) {
+        gen_helper_reset_rf();
     }
     if (   s->singlestep_enabled
 #ifdef VBOX
@@ -7057,26 +7140,16 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #ifdef TARGET_X86_64
         if (dflag == 2) {
             gen_op_mov_TN_reg(OT_QUAD, 0, reg);
-            tcg_gen_bswap_i64(cpu_T[0], cpu_T[0]);
+            tcg_gen_bswap64_i64(cpu_T[0], cpu_T[0]);
             gen_op_mov_reg_T0(OT_QUAD, reg);
         } else
-        {
-            TCGv_i32 tmp0;
-            gen_op_mov_TN_reg(OT_LONG, 0, reg);
-
-            tmp0 = tcg_temp_new_i32();
-            tcg_gen_trunc_i64_i32(tmp0, cpu_T[0]);
-            tcg_gen_bswap_i32(tmp0, tmp0);
-            tcg_gen_extu_i32_i64(cpu_T[0], tmp0);
-            gen_op_mov_reg_T0(OT_LONG, reg);
-        }
-#else
-        {
-            gen_op_mov_TN_reg(OT_LONG, 0, reg);
-            tcg_gen_bswap_i32(cpu_T[0], cpu_T[0]);
-            gen_op_mov_reg_T0(OT_LONG, reg);
-        }
 #endif
+        {
+            gen_op_mov_TN_reg(OT_LONG, 0, reg);
+            tcg_gen_ext32u_tl(cpu_T[0], cpu_T[0]);
+            tcg_gen_bswap32_tl(cpu_T[0], cpu_T[0]);
+            gen_op_mov_reg_T0(OT_LONG, reg);
+        }
         break;
     case 0xd6: /* salc */
         if (CODE64(s))
@@ -7996,6 +8069,9 @@ static inline void gen_intermediate_code_internal(CPUState *env,
     target_ulong cs_base;
     int num_insns;
     int max_insns;
+#ifdef VBOX
+    int const singlestep = env->state & CPU_EMULATE_SINGLE_STEP;
+#endif
 
     /* generate intermediate code */
     pc_start = tb->pc;
@@ -8088,7 +8164,8 @@ static inline void gen_intermediate_code_internal(CPUState *env,
     for(;;) {
         if (unlikely(!TAILQ_EMPTY(&env->breakpoints))) {
             TAILQ_FOREACH(bp, &env->breakpoints, entry) {
-                if (bp->pc == pc_ptr) {
+                if (bp->pc == pc_ptr &&
+                    !((bp->flags & BP_CPU) && (tb->flags & HF_RF_MASK))) {
                     gen_debug(dc, pc_ptr - dc->cs_base);
                     break;
                 }
@@ -8148,6 +8225,11 @@ static inline void gen_intermediate_code_internal(CPUState *env,
         if (gen_opc_ptr >= gen_opc_end ||
             (pc_ptr - pc_start) >= (TARGET_PAGE_SIZE - 32) ||
             num_insns >= max_insns) {
+            gen_jmp_im(pc_ptr - dc->cs_base);
+            gen_eob(dc);
+            break;
+        }
+        if (singlestep) {
             gen_jmp_im(pc_ptr - dc->cs_base);
             gen_eob(dc);
             break;
