@@ -1771,9 +1771,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
         /*
          * Resolve the PID.
          */
-#ifdef DEBUG
         VBoxServiceVerbose(4, "ControlExec: Input (PID %u) received: cbSize=%u\n", uPID, cbSize);
-#endif
+
         PVBOXSERVICECTRLTHREAD pNode = VBoxServiceControlExecFindProcess(uPID);
         if (pNode)
         {
@@ -1785,11 +1784,11 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
              */
             bool fPendingClose = false;
             if (uFlags & INPUT_FLAG_EOF)
+            {
                 fPendingClose = true;
-#ifdef DEBUG
-            if (fPendingClose)
-                VBoxServiceVerbose(4, "ControlExec: Got last input block ...\n");
-#endif
+                VBoxServiceVerbose(4, "ControlExec: Got last input block (PID %u) ...\n", uPID);
+            }
+
             /*
              * Feed the data to the pipe.
              */
