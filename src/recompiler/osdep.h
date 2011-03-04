@@ -72,9 +72,11 @@ void *get_mmap_addr(unsigned long size);
 #include <sys/signal.h>
 #endif
 
+#ifndef VBOX
 #ifndef _WIN32
 #include <sys/time.h>
 #endif
+#endif /* !VBOX */
 
 #ifndef glue
 #define xglue(x, y) x ## y
