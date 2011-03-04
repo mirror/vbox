@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -33,27 +32,29 @@
 #define SUFFIX q
 #define USUFFIX q
 #define DATA_TYPE uint64_t
-#define DATA_TYPE_PROMOTED uint64_t
+#ifdef VBOX
+# define DATA_TYPE_PROMOTED uint64_t
+#endif
 #elif DATA_SIZE == 4
 #define SUFFIX l
 #define USUFFIX l
 #define DATA_TYPE uint32_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOTED RTCCUINTREG
+# define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #elif DATA_SIZE == 2
 #define SUFFIX w
 #define USUFFIX uw
 #define DATA_TYPE uint16_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOTED RTCCUINTREG
+# define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #elif DATA_SIZE == 1
 #define SUFFIX b
 #define USUFFIX ub
 #define DATA_TYPE uint8_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOTED RTCCUINTREG
+# define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #else
 #error unsupported data size
@@ -96,7 +97,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
     res |= (uint64_t)io_mem_read[index][2](io_mem_opaque[index], physaddr + 4) << 32;
 #endif
 #endif /* SHIFT > 2 */
-#ifdef USE_KQEMU
+#ifdef CONFIG_KQEMU
     env->last_io_time = cpu_get_time_fast();
 #endif
     return res;
@@ -250,7 +251,7 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
     io_mem_write[index][2](io_mem_opaque[index], physaddr + 4, val >> 32);
 #endif
 #endif /* SHIFT > 2 */
-#ifdef USE_KQEMU
+#ifdef CONFIG_KQEMU
     env->last_io_time = cpu_get_time_fast();
 #endif
 }
@@ -355,7 +356,7 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
 #endif /* !defined(SOFTMMU_CODE_ACCESS) */
 
 #ifdef VBOX
-#undef DATA_TYPE_PROMOTED
+# undef DATA_TYPE_PROMOTED
 #endif
 #undef READ_ACCESS_TYPE
 #undef SHIFT

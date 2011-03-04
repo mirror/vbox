@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -384,14 +383,25 @@ static inline void regs_to_env(void)
 #endif
 }
 
+static inline int cpu_has_work(CPUState *env)
+{
+    int work;
+
+    work = (env->interrupt_request & CPU_INTERRUPT_HARD) &&
+           (env->eflags & IF_MASK);
+    work |= env->interrupt_request & CPU_INTERRUPT_NMI;
+    work |= env->interrupt_request & CPU_INTERRUPT_INIT;
+    work |= env->interrupt_request & CPU_INTERRUPT_SIPI;
+
+    return work;
+}
+
 static inline int cpu_halted(CPUState *env) {
     /* handle exit of HALTED state */
     if (!env->halted)
         return 0;
     /* disable halt condition */
-    if (((env->interrupt_request & CPU_INTERRUPT_HARD) &&
-         (env->eflags & IF_MASK)) ||
-        (env->interrupt_request & CPU_INTERRUPT_NMI)) {
+    if (cpu_has_work(env)) {
         env->halted = 0;
         return 0;
     }

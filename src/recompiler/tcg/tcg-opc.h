@@ -67,10 +67,14 @@ DEF2(divu2_i32, 2, 3, 0, 0)
 DEF2(and_i32, 1, 2, 0, 0)
 DEF2(or_i32, 1, 2, 0, 0)
 DEF2(xor_i32, 1, 2, 0, 0)
-/* shifts */
+/* shifts/rotates */
 DEF2(shl_i32, 1, 2, 0, 0)
 DEF2(shr_i32, 1, 2, 0, 0)
 DEF2(sar_i32, 1, 2, 0, 0)
+#ifdef TCG_TARGET_HAS_rot_i32
+DEF2(rotl_i32, 1, 2, 0, 0)
+DEF2(rotr_i32, 1, 2, 0, 0)
+#endif
 
 DEF2(brcond_i32, 0, 2, 2, TCG_OPF_BB_END | TCG_OPF_SIDE_EFFECTS)
 #if TCG_TARGET_REG_BITS == 32
@@ -85,8 +89,17 @@ DEF2(ext8s_i32, 1, 1, 0, 0)
 #ifdef TCG_TARGET_HAS_ext16s_i32
 DEF2(ext16s_i32, 1, 1, 0, 0)
 #endif
-#ifdef TCG_TARGET_HAS_bswap_i32
-DEF2(bswap_i32, 1, 1, 0, 0)
+#ifdef TCG_TARGET_HAS_bswap16_i32
+DEF2(bswap16_i32, 1, 1, 0, 0)
+#endif
+#ifdef TCG_TARGET_HAS_bswap32_i32
+DEF2(bswap32_i32, 1, 1, 0, 0)
+#endif
+#ifdef TCG_TARGET_HAS_not_i32
+DEF2(not_i32, 1, 1, 0, 0)
+#endif
+#ifdef TCG_TARGET_HAS_neg_i32
+DEF2(neg_i32, 1, 1, 0, 0)
 #endif
 
 #if TCG_TARGET_REG_BITS == 64
@@ -120,10 +133,14 @@ DEF2(divu2_i64, 2, 3, 0, 0)
 DEF2(and_i64, 1, 2, 0, 0)
 DEF2(or_i64, 1, 2, 0, 0)
 DEF2(xor_i64, 1, 2, 0, 0)
-/* shifts */
+/* shifts/rotates */
 DEF2(shl_i64, 1, 2, 0, 0)
 DEF2(shr_i64, 1, 2, 0, 0)
 DEF2(sar_i64, 1, 2, 0, 0)
+#ifdef TCG_TARGET_HAS_rot_i64
+DEF2(rotl_i64, 1, 2, 0, 0)
+DEF2(rotr_i64, 1, 2, 0, 0)
+#endif
 
 DEF2(brcond_i64, 0, 2, 2, TCG_OPF_BB_END | TCG_OPF_SIDE_EFFECTS)
 #ifdef TCG_TARGET_HAS_ext8s_i64
@@ -135,15 +152,21 @@ DEF2(ext16s_i64, 1, 1, 0, 0)
 #ifdef TCG_TARGET_HAS_ext32s_i64
 DEF2(ext32s_i64, 1, 1, 0, 0)
 #endif
-#ifdef TCG_TARGET_HAS_bswap_i64
-DEF2(bswap_i64, 1, 1, 0, 0)
+#ifdef TCG_TARGET_HAS_bswap16_i64
+DEF2(bswap16_i64, 1, 1, 0, 0)
 #endif
+#ifdef TCG_TARGET_HAS_bswap32_i64
+DEF2(bswap32_i64, 1, 1, 0, 0)
 #endif
-#ifdef TCG_TARGET_HAS_neg_i32
-DEF2(neg_i32, 1, 1, 0, 0)
+#ifdef TCG_TARGET_HAS_bswap64_i64
+DEF2(bswap64_i64, 1, 1, 0, 0)
+#endif
+#ifdef TCG_TARGET_HAS_not_i64
+DEF2(not_i64, 1, 1, 0, 0)
 #endif
 #ifdef TCG_TARGET_HAS_neg_i64
 DEF2(neg_i64, 1, 1, 0, 0)
+#endif
 #endif
 
 /* QEMU specific */

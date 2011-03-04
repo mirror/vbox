@@ -14,9 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
- *  MA 02110-1301, USA.
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -75,7 +73,7 @@ int __chk_error(const char *filename, int line, int ret)
     return ret;
 }
 
-#define error(fmt, args...) error1(__FILE__, __LINE__, fmt, ##args)
+#define error(fmt, ...) error1(__FILE__, __LINE__, fmt, ## __VA_ARGS__)
 
 #define chk_error(ret) __chk_error(__FILE__, __LINE__, (ret))
 

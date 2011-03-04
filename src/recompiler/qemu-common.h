@@ -30,6 +30,9 @@ char *pstrcat(char *buf, int buf_size, const char *s);
 #define qemu_isascii(c)		RT_C_IS_ASCII((unsigned char)(c))
 #define qemu_toascii(c)		RT_C_TO_ASCII((unsigned char)(c))
 
+#define qemu_init_vcpu(env)     do { } while (0) /* we don't need this :-) */
+
+
 #else /* !VBOX */
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -58,6 +61,7 @@ char *pstrcat(char *buf, int buf_size, const char *s);
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <assert.h>
 #include "config-host.h"
 
 #ifndef O_LARGEFILE
@@ -142,6 +146,7 @@ void pstrcpy(char *buf, int buf_size, const char *str);
 char *pstrcat(char *buf, int buf_size, const char *s);
 int strstart(const char *str, const char *val, const char **ptr);
 int stristart(const char *str, const char *val, const char **ptr);
+int qemu_strnlen(const char *s, int max_len);
 time_t mktimegm(struct tm *tm);
 int qemu_fls(int i);
 
@@ -197,6 +202,7 @@ typedef struct BlockDriverState BlockDriverState;
 typedef struct DisplayState DisplayState;
 typedef struct DisplayChangeListener DisplayChangeListener;
 typedef struct DisplaySurface DisplaySurface;
+typedef struct DisplayAllocator DisplayAllocator;
 typedef struct PixelFormat PixelFormat;
 typedef struct TextConsole TextConsole;
 typedef TextConsole QEMUConsole;
@@ -211,7 +217,12 @@ typedef struct PCIBus PCIBus;
 typedef struct PCIDevice PCIDevice;
 typedef struct SerialState SerialState;
 typedef struct IRQState *qemu_irq;
-struct pcmcia_card_s;
+typedef struct PCMCIACardState PCMCIACardState;
+typedef struct MouseTransformInfo MouseTransformInfo;
+typedef struct uWireSlave uWireSlave;
+typedef struct I2SCodec I2SCodec;
+typedef struct DeviceState DeviceState;
+typedef struct SSIBus SSIBus;
 
 /* CPU save/load.  */
 void cpu_save(QEMUFile *f, void *opaque);
@@ -219,6 +230,19 @@ int cpu_load(QEMUFile *f, void *opaque, int version_id);
 
 /* Force QEMU to stop what it's doing and service IO */
 void qemu_service_io(void);
+
+/* Force QEMU to process pending events */
+void qemu_notify_event(void);
+
+/* Unblock cpu */
+void qemu_cpu_kick(void *env);
+int qemu_cpu_self(void *env);
+
+#ifdef CONFIG_USER_ONLY
+#define qemu_init_vcpu(env) do { } while (0)
+#else
+void qemu_init_vcpu(void *env);
+#endif
 
 typedef struct QEMUIOVector {
     struct iovec *iov;
@@ -228,11 +252,17 @@ typedef struct QEMUIOVector {
 } QEMUIOVector;
 
 void qemu_iovec_init(QEMUIOVector *qiov, int alloc_hint);
+void qemu_iovec_init_external(QEMUIOVector *qiov, struct iovec *iov, int niov);
 void qemu_iovec_add(QEMUIOVector *qiov, void *base, size_t len);
 void qemu_iovec_destroy(QEMUIOVector *qiov);
 void qemu_iovec_reset(QEMUIOVector *qiov);
 void qemu_iovec_to_buffer(QEMUIOVector *qiov, void *buf);
 void qemu_iovec_from_buffer(QEMUIOVector *qiov, const void *buf, size_t count);
+
+struct Monitor;
+typedef struct Monitor Monitor;
+
+#include "module.h"
 
 #endif /* dyngen-exec.h hack */
 

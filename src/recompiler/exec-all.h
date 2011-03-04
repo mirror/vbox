@@ -14,8 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -57,7 +56,7 @@
 typedef struct TranslationBlock TranslationBlock;
 
 /* XXX: make safe guess about sizes */
-#define MAX_OP_PER_INSTR 64
+#define MAX_OP_PER_INSTR 96
 /* A Call op needs up to 6 + 2N parameters (N = number of arguments).  */
 #define MAX_OPC_PARAM 10
 #define OPC_BUF_SIZE 512
@@ -242,7 +241,9 @@ static inline void tb_set_jmp_target1(unsigned long jmp_addr, unsigned long addr
 #endif
 
     /* we could use a ldr pc, [pc, #-4] kind of branch and avoid the flush */
-    *(uint32_t *)jmp_addr |= ((addr - (jmp_addr + 8)) >> 2) & 0xffffff;
+    *(uint32_t *)jmp_addr =
+        (*(uint32_t *)jmp_addr & ~0xffffff)
+        | (((addr - (jmp_addr + 8)) >> 2) & 0xffffff);
 
 #if QEMU_GNUC_PREREQ(4, 1)
     __clear_cache((char *) jmp_addr, (char *) jmp_addr + 4);
@@ -349,6 +350,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
 {
     int mmu_idx, page_index, pd;
+    void *p;
 
     page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = cpu_mmu_index(env1);
@@ -376,7 +378,9 @@ static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
     Assert(env1->phys_addends[mmu_idx][page_index] != -1);
     return addr + env1->phys_addends[mmu_idx][page_index];
 # else
-    return addr + env1->tlb_table[mmu_idx][page_index].addend - (unsigned long)phys_ram_base;
+    p = (void *)(unsigned long)addr
+        + env1->tlb_table[mmu_idx][page_index].addend;
+    return qemu_ram_addr_from_host(p);
 # endif
 }
 
@@ -395,7 +399,7 @@ static inline int can_do_io(CPUState *env)
 }
 #endif
 
-#ifdef USE_KQEMU
+#ifdef CONFIG_KQEMU
 #define KQEMU_MODIFY_PAGE_MASK (0xff & ~(VGA_DIRTY_FLAG | CODE_DIRTY_FLAG))
 
 #define MSR_QPI_COMMBASE 0xfabe0010
@@ -412,6 +416,9 @@ void kqemu_cpu_interrupt(CPUState *env);
 void kqemu_record_dump(void);
 
 extern uint32_t kqemu_comm_base;
+
+extern ram_addr_t kqemu_phys_ram_size;
+extern uint8_t *kqemu_phys_ram_base;
 
 static inline int kqemu_is_ok(CPUState *env)
 {
@@ -430,4 +437,10 @@ static inline int kqemu_is_ok(CPUState *env)
 typedef void (CPUDebugExcpHandler)(CPUState *env);
 
 CPUDebugExcpHandler *cpu_set_debug_excp_handler(CPUDebugExcpHandler *handler);
+
+/* vl.c */
+#ifndef VBOX
+extern int singlestep;
+#endif
+
 #endif
