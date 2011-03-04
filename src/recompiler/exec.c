@@ -668,6 +668,7 @@ static int cpu_common_load(QEMUFile *f, void *opaque, int version_id)
 
     qemu_get_be32s(f, &env->halted);
     qemu_get_be32s(f, &env->interrupt_request);
+    env->interrupt_request &= ~CPU_INTERRUPT_EXIT;
     tlb_flush(env, 1);
 
     return 0;
@@ -1734,6 +1735,11 @@ void cpu_interrupt(CPUState *env, int mask)
 #endif
     int old_mask;
 
+    if (mask & CPU_INTERRUPT_EXIT) {
+        env->exit_request = 1;
+        mask &= ~CPU_INTERRUPT_EXIT;
+    }
+
     old_mask = env->interrupt_request;
 #ifdef VBOX
     VM_ASSERT_EMT(env->pVM);
@@ -1752,10 +1758,8 @@ void cpu_interrupt(CPUState *env, int mask)
     if (use_icount) {
         env->icount_decr.u16.high = 0xffff;
 #ifndef CONFIG_USER_ONLY
-        /* CPU_INTERRUPT_EXIT isn't a real interrupt.  It just means
-           an async event happened and we need to process it.  */
         if (!can_do_io(env)
-            && (mask & ~(old_mask | CPU_INTERRUPT_EXIT)) != 0) {
+            && (mask & ~old_mask) != 0) {
             cpu_abort(env, "Raised interrupt while not in I/O function");
         }
 #endif
