@@ -2451,9 +2451,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
             RTUuidClear(&pImage->ParentModificationUuid);
         else
         {
-            rc = RTUuidCreate(&pImage->ParentModificationUuid);
-            if (RT_FAILURE(rc))
-                return rc;
+            RTUuidClear(&pImage->ParentModificationUuid);
             rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
                                     VMDK_DDB_PARENT_MODIFICATION_UUID,
                                     &pImage->ParentModificationUuid);
