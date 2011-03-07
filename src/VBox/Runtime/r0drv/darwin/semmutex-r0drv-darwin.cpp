@@ -28,7 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define RTSEMMULTI_WITHOUT_REMAPPING
+#define RTSEMMUTEX_WITHOUT_REMAPPING
 #include "the-darwin-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
