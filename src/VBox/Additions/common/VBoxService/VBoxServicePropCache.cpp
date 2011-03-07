@@ -110,7 +110,7 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                 if (rc == VERR_PARSE_ERROR)
                 {
                     /* Host does not support the "TRANSIENT_RESET" flag, so only
-                     * use the "TRANSIENT" flag* -- better than nothing :-). */
+                     * use the "TRANSIENT" flag -- better than nothing :-). */
                     rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
                 }
             }
