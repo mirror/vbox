@@ -104,9 +104,15 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                  * Because a value can be temporary we have to make sure it also
                  * gets deleted when the property cache did not have the chance to
                  * gracefully clean it up (due to a hard VM reset etc), so set this
-                 * guest property using the TRANSIENT flag.
+                 * guest property using the TRANSIENT and TRANSIENT_RESET flags.
                  */
-                rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
+                rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT,TRANSIENT_RESET");
+                if (rc == VERR_PARSE_ERROR)
+                {
+                    /* Host does not support the "TRANSIENT_RESET" flag, so only
+                     * use the "TRANSIENT" flag* -- better than nothing :-). */
+                    rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
+                }
             }
             else
                 rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
@@ -376,7 +382,7 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
 
             /*
              * When destroying the cache and we have a temporary value, remove the
-             * (eventually) set TRANSIENT flag from it so that it doesn't get deleted
+             * (eventually) set TRANSIENT_RESET flag from it so that it doesn't get deleted
              * by the host side in order to put the actual reset value in it.
              */
             if (pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)

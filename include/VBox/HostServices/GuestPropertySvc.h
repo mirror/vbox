@@ -58,12 +58,14 @@ enum { MAX_GUEST_NOTIFICATIONS = 256 };
  */
 enum ePropFlags
 {
-    NILFLAG     = 0,
-    TRANSIENT   = RT_BIT(1),
-    RDONLYGUEST = RT_BIT(2),
-    RDONLYHOST  = RT_BIT(3),
-    READONLY    = RDONLYGUEST | RDONLYHOST,
-    ALLFLAGS    = TRANSIENT | READONLY
+    NILFLAG          = 0,
+    TRANSIENT        = RT_BIT(1),
+    RDONLYGUEST      = RT_BIT(2),
+    RDONLYHOST       = RT_BIT(3),
+    /** Transient until VM gets a reset / restarts. */
+    TRANSIENT_RESET  = RT_BIT(4),
+    READONLY         = RDONLYGUEST | RDONLYHOST,
+    ALLFLAGS         = TRANSIENT | READONLY | TRANSIENT_RESET
 };
 
 /**
@@ -74,7 +76,7 @@ enum ePropFlags
  */
 DECLINLINE(const char *) flagName(uint32_t fFlag)
 {
-    switch(fFlag)
+    switch (fFlag)
     {
         case TRANSIENT:
             return "TRANSIENT";
@@ -84,9 +86,12 @@ DECLINLINE(const char *) flagName(uint32_t fFlag)
             return "RDONLYHOST";
         case READONLY:
             return "READONLY";
+        case TRANSIENT_RESET:
+            return "TRANSIENT_RESET";
         default:
-            return NULL;
+            break;
     }
+    return NULL;
 }
 
 /**
@@ -105,7 +110,7 @@ DECLINLINE(size_t) flagNameLen(uint32_t fFlag)
  * Maximum length for the property flags field.  We only ever return one of
  * RDONLYGUEST, RDONLYHOST and RDONLY
  */
-enum { MAX_FLAGS_LEN =   sizeof("TRANSIENT, RDONLYGUEST") };
+enum { MAX_FLAGS_LEN =   sizeof("TRANSIENT_RESET, RDONLYGUEST") };
 
 /**
  * Parse a guest properties flags string for flag names and make sure that
@@ -122,7 +127,12 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
 {
     static const uint32_t s_aFlagList[] =
     {
-        TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
+        /*
+         * Note: TRANSIENT_RESET must come before TRANSIENT because
+         * otherwise the RTStrNICmp with the flagNameLen parameter would
+         * fail below.
+         */
+        TRANSIENT_RESET, TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
     };
     const char *pcszNext = pcszFlags;
     int rc = VINF_SUCCESS;
@@ -137,9 +147,11 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
         {
             unsigned i = 0;
             for (; i < RT_ELEMENTS(s_aFlagList); ++i)
+            {
                 if (RTStrNICmp(pcszNext, flagName(s_aFlagList[i]),
                                flagNameLen(s_aFlagList[i])) == 0)
                     break;
+            }
             if (RT_ELEMENTS(s_aFlagList) == i)
                 rc = VERR_PARSE_ERROR;
             else
@@ -173,7 +185,7 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
 {
     static const uint32_t s_aFlagList[] =
     {
-        TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
+        TRANSIENT_RESET, TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
     };
     char *pszNext = pszFlags;
     int rc = VINF_SUCCESS;

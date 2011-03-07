@@ -672,27 +672,56 @@ void Console::uninit()
 
 #ifdef VBOX_WITH_GUEST_PROPS
 
-bool Console::enabledGuestPropertiesVRDP(void)
+/**
+ * Handles guest properties on a VM reset.
+ * At the moment we only delete properties which have the flag
+ * "TRARESET".
+ */
+void Console::guestPropertiesHandleVMReset(void)
+{
+    com::SafeArray<BSTR>   arrNames;
+    com::SafeArray<BSTR>   arrValues;
+    com::SafeArray<LONG64> arrTimestamps;
+    com::SafeArray<BSTR>   arrFlags;
+    HRESULT hrc = enumerateGuestProperties(Bstr("*").raw(),
+                                           ComSafeArrayAsOutParam(arrNames),
+                                           ComSafeArrayAsOutParam(arrValues),
+                                           ComSafeArrayAsOutParam(arrTimestamps),
+                                           ComSafeArrayAsOutParam(arrFlags));
+    if (SUCCEEDED(hrc))
+    {
+        for (size_t i = 0; i < arrFlags.size(); i++)
+        {
+            /* Delete all properties which have the flag "TRARESET". */
+            if (Utf8Str(arrFlags[i]).contains("TRANSIENT_RESET", Utf8Str::CaseInsensitive))
+            {
+                hrc = mMachine->SetGuestProperty(arrNames[i], Bstr("").raw() /* Value */,
+                                                 Bstr("").raw() /* Flags */);
+                if (FAILED(hrc))
+                    LogRel(("RESET: Could not delete transient property \"%ls\", rc=%Rhrc\n",
+                            arrNames[i], hrc));
+            }
+        }
+    }
+    else
+        LogRel(("RESET: Unable to enumerate guest properties, rc=%Rhrc\n", hrc));
+}
+
+bool Console::guestPropertiesVRDPEnabled(void)
 {
     Bstr value;
     HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableGuestPropertiesVRDP").raw(),
                                          value.asOutParam());
-    if (hrc == S_OK)
-    {
-        if (value == "1")
-        {
-            return true;
-        }
-    }
+    if (   hrc   == S_OK
+        && value == "1")
+        return true;
     return false;
 }
 
-void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *pszUser, const char *pszDomain)
+void Console::guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *pszUser, const char *pszDomain)
 {
-    if (!enabledGuestPropertiesVRDP())
-    {
+    if (!guestPropertiesVRDPEnabled())
         return;
-    }
 
     char szPropNm[256];
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
@@ -724,9 +753,9 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
     return;
 }
 
-void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
+void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 {
-    if (!enabledGuestPropertiesVRDP())
+    if (!guestPropertiesVRDPEnabled())
         return;
 
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
@@ -960,7 +989,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     }
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    updateGuestPropertiesVRDPLogon(u32ClientId, pszUser, pszDomain);
+    guestPropertiesVRDPUpdateLogon(u32ClientId, pszUser, pszDomain);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
     /* Check if the successfully verified credentials are to be sent to the guest. */
@@ -1095,7 +1124,7 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
         mConsoleVRDPServer->AuthDisconnect(uuid, u32ClientId);
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    updateGuestPropertiesVRDPDisconnect(u32ClientId);
+    guestPropertiesVRDPUpdateDisconnect(u32ClientId);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
     if (u32Clients == 0)
@@ -6767,6 +6796,15 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     that->setMachineState(MachineState_PoweredOff);
                     break;
             }
+            break;
+        }
+
+        case VMSTATE_RESETTING:
+        {
+    #ifdef VBOX_WITH_GUEST_PROPS
+            /* Do not take any read/write locks here! */
+            that->guestPropertiesHandleVMReset();
+    #endif
             break;
         }
 
