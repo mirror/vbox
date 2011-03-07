@@ -125,7 +125,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--dos2unix]\n"
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                            [--timeout <msec>] [--unix2dos] [--verbose]\n"
-                 "                            [--wait-exit] [--wait-stdout] [--wait-stdout]"
+                 "                            [--wait-exit] [--wait-stdout] [--wait-stdout]\n"
                  //"                          [--output-format=<dos>|<unix>]\n"
                  "                            [--output-type=<binary>|<text>]\n"
                  "                            [-- [<argument1>] ... [<argumentN>]\n"
