@@ -100,7 +100,7 @@ if [ "$system" = "debian" ]; then
     }
 
     killproc() {
-        start-stop-daemon --stop --exec $@
+        start-stop-daemon --stop --retry 2 --exec $@
     }
 
     fail_msg() {
@@ -123,7 +123,7 @@ if [ "$system" = "gentoo" ]; then
     }
 
     killproc() {
-        start-stop-daemon --stop --exec $@
+        start-stop-daemon --stop --retry 2 --exec $@
     }
 
     fail_msg() {
