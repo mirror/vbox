@@ -6061,8 +6061,14 @@ void Machine::copyPathRelativeToMachine(const Utf8Str &strSource,
     strTarget = mData->m_strConfigFileFull;
     strTarget.stripFilename();
     if (RTPathStartsWith(strSource.c_str(), strTarget.c_str()))
+    {
         // is relative: then append what's left
         strTarget = strSource.substr(strTarget.length() + 1); // skip '/'
+        // for empty paths (only possible for subdirs) use "." to avoid
+        // triggering default settings for not present config attributes.
+        if (strTarget.isEmpty())
+            strTarget = ".";
+    }
     else
         // is not relative: then overwrite
         strTarget = strSource;
@@ -8027,6 +8033,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         bool fileRenamed = false;
 
         Utf8Str configFile, newConfigFile;
+        Utf8Str configFilePrev, newConfigFilePrev;
         Utf8Str configDir, newConfigDir;
 
         do
@@ -8092,6 +8099,11 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                         break;
                     }
                     fileRenamed = true;
+                    configFilePrev = configFile;
+                    configFilePrev += "-prev";
+                    newConfigFilePrev = newConfigFile;
+                    newConfigFilePrev += "-prev";
+                    RTFileRename(configFilePrev.c_str(), newConfigFilePrev.c_str(), 0);
                 }
             }
 
@@ -8126,7 +8138,10 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         {
             /* silently try to rename everything back */
             if (fileRenamed)
+            {
+                RTFileRename(newConfigFilePrev.c_str(), configFilePrev.c_str(), 0);
                 RTFileRename(newConfigFile.c_str(), configFile.c_str(), 0);
+            }
             if (dirRenamed)
                 RTPathRename(newConfigDir.c_str(), configDir.c_str(), 0);
         }
