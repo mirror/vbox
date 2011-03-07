@@ -280,6 +280,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
 
 STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
 {
+    LogFlowThisFuncEnter();
     CheckComArgOutPointerValid(aBwGroup);
 
     AutoCaller autoCaller(this);
@@ -299,6 +300,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwG
             pBwGroup.queryInterfaceTo(aBwGroup);
     }
 
+    LogFlowThisFuncLeave();
     return hrc;
 }
 
@@ -423,5 +425,20 @@ void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
     m->bd->strBandwidthGroup = aBandwidthGroup;
 
     LogFlowThisFuncLeave();
+}
+
+void MediumAttachment::updateParentMachine(Machine * const pMachine)
+{
+    LogFlowThisFunc(("ENTER - %s\n", getLogName()));
+
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    unconst(m->pMachine) = pMachine;
+
+    LogFlowThisFunc(("LEAVE - %s\n", getLogName()));
 }
 
