@@ -31,6 +31,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMRW_WITHOUT_REMAPPING
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
 
@@ -87,7 +88,6 @@ struct RTSEMRWINTERNAL
 
 
 
-#undef RTSemRWCreate
 RTDECL(int) RTSemRWCreate(PRTSEMRW phRWSem)
 {
     return RTSemRWCreateEx(phRWSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW");
@@ -436,7 +436,6 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies,
 }
 
 
-#undef RTSemRWRequestRead
 RTDECL(int) RTSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT
@@ -457,7 +456,6 @@ RTDECL(int) RTSemRWRequestReadDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCU
 RT_EXPORT_SYMBOL(RTSemRWRequestReadDebug);
 
 
-#undef RTSemRWRequestReadNoResume
 RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT
@@ -742,7 +740,6 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies
 }
 
 
-#undef RTSemRWRequestWrite
 RTDECL(int) RTSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT
@@ -763,7 +760,6 @@ RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHC
 RT_EXPORT_SYMBOL(RTSemRWRequestWriteDebug);
 
 
-#undef RTSemRWRequestWriteNoResume
 RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT

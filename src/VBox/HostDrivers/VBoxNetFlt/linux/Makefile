@@ -197,7 +197,7 @@ MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS  += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS  += -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 

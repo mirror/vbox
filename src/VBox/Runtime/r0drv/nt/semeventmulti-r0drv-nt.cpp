@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMEVENTMULTI_WITHOUT_REMAPPING
 #include "the-nt-kernel.h"
 #include <iprt/semaphore.h>
 
@@ -271,7 +272,6 @@ DECLINLINE(int) rtR0SemEventMultiNtWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t
 }
 
 
-#undef RTSemEventMultiWaitEx
 RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
 {
 #ifndef RTSEMEVENT_STRICT

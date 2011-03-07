@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMMUTEX_WITHOUT_REMAPPING
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
@@ -296,7 +297,6 @@ DECLINLINE(int) rtSemMutexLinuxRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
 }
 
 
-#undef RTSemMutexRequest
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexLinuxRequest(hMutexSem, cMillies, false /*fInterruptible*/);
@@ -311,7 +311,6 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, 
 RT_EXPORT_SYMBOL(RTSemMutexRequestDebug);
 
 
-#undef RTSemMutexRequestNoResume
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexLinuxRequest(hMutexSem, cMillies, true /*fInterruptible*/);

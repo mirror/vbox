@@ -29,6 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SEM
+#define RTSEMEVENTMULTI_WITHOUT_REMAPPING
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
 
@@ -37,7 +38,6 @@
 #include <iprt/assert.h>
 
 
-#undef RTSemEventMultiWait              /* undo debug mapping */
 RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, RTMSINTERVAL cMillies)
 {
     int rc;

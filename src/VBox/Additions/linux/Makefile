@@ -59,7 +59,6 @@ all:
 	    fi; \
 	fi
 
-
 install:
 	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest install
 	@if [ -d vboxsf ]; then \
@@ -78,6 +77,9 @@ clean:
 	    $(MAKE) -C vboxvideo clean; \
 	fi
 	rm -f vboxguest.*o vboxsf.*o vboxvideo.*o
+
+check:
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest check
 
 load:
 	@/sbin/rmmod vboxvideo || true

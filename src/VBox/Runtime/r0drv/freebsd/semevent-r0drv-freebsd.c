@@ -31,6 +31,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMEVENT_WITHOUT_REMAPPING
 #include "the-freebsd-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
@@ -226,7 +227,6 @@ static int rtR0SemEventWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, uint64_t
 }
 
 
-#undef RTSemEventWaitEx
 RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout)
 {
 #ifndef RTSEMEVENT_STRICT

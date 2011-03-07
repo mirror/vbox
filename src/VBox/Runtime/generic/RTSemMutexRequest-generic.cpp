@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMMUTEX_WITHOUT_REMAPPING
 #define LOG_GROUP RTLOGGROUP_SEM
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
@@ -37,7 +38,6 @@
 #include <iprt/assert.h>
 
 
-#undef RTSemMutexRequest                /* undo debug mapping */
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX Mutex, RTMSINTERVAL cMillies)
 {
     int rc;

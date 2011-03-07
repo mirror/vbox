@@ -262,7 +262,7 @@ MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS  += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS  += -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
@@ -303,3 +303,12 @@ clean:
  endif
 
 endif # eq($(MAKECMDGOALS),clean)
+
+check: $(MODULE)
+	@if ! readelf -p __ksymtab_strings vboxdrv.ko | grep -E "\[.*\]  *(RT|g_..*RT.*)"; then \
+	    echo "All exported IPRT symbols are properly renamed!"; \
+	 else \
+	    echo "error: Some exported IPRT symbols was not properly renamed! See above." >&2; \
+	    false; \
+	 fi
+

@@ -270,7 +270,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS += -include $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h  $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
@@ -287,6 +287,14 @@ install: $(MODULE)
 	PATH="$(PATH):/bin:/sbin" depmod -a;
 
 endif # eq($(MAKECMDGOALS),clean)
+
+check: $(MODULE)
+	@if ! readelf -p __ksymtab_strings vboxguest.ko | grep -E "\[.*\]  *(RT|g_..*RT.*)"; then \
+	    echo "All exported IPRT symbols are properly renamed!"; \
+	 else \
+	    echo "error: Some exported IPRT symbols was not properly renamed! See above." >&2; \
+	    false; \
+	 fi
 
 clean:
 	for f in . linux r0drv generic r0drv/linux r0drv/generic VBox \
