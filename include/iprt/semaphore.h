@@ -634,7 +634,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem);
 RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 
 /* Strict build: Remap the two request calls to the debug versions. */
-#ifdef RT_STRICT
+#if   defined(RT_STRICT) && !defined(RTSEMMUTEX_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # ifdef ___iprt_asm_h
 #  define RTSemMutexRequest(hMutexSem, cMillies)            RTSemMutexRequestDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemMutexRequestNoResume(hMutexSem, cMillies)    RTSemMutexRequestNoResumeDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -647,7 +647,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 #endif
 
 /* Strict lock order: Automatically classify locks by init location. */
-#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+#if   defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(RTSEMMUTEX_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # define RTSemMutexCreate(phMutexSem) \
     RTSemMutexCreateEx((phMutexSem), 0 /*fFlags*/, \
                        RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
@@ -1159,7 +1159,7 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW hRWSem);
 RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem);
 
 /* Strict build: Remap the four request calls to the debug versions. */
-#ifdef RT_STRICT
+#if defined(RT_STRICT) && !defined(RTSEMRW_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # ifdef ___iprt_asm_h
 #  define RTSemRWRequestRead(hRWSem, cMillies)              RTSemRWRequestReadDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemRWRequestReadNoResume(hRWSem, cMillies)      RTSemRWRequestReadNoResumeDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -1176,7 +1176,7 @@ RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem);
 #endif
 
 /* Strict lock order: Automatically classify locks by init location. */
-#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(RTSEMRW_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # define RTSemRWCreate(phSemRW) \
     RTSemRWCreateEx((phSemRW), 0 /*fFlags*/, \
                     RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \

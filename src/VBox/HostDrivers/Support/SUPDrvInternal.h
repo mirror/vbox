@@ -168,6 +168,7 @@
  * @todo fix the mutex implementation on linux and make this the default. */
 # define SUPDRV_USE_MUTEX_FOR_GIP
 #endif
+#define SUPDRV_USE_MUTEX_FOR_LDR /* !!! DONT COMMIT THIS !!! */
 
 
 /**

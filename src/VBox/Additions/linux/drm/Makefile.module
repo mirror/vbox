@@ -214,7 +214,7 @@ else
 endif
 
 # build defs
-EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS += -include $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 

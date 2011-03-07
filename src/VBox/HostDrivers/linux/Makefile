@@ -68,7 +68,6 @@ all:
 	    echo; \
 	fi
 
-
 install:
 	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv install
 	@if [ -d vboxnetflt ]; then \
@@ -93,6 +92,9 @@ clean:
 	    $(MAKE) -C vboxpci clean; \
 	fi
 	rm -f vboxdrv.ko vboxnetflt.ko vboxnetadp.ko vboxpci.ko 
+
+check:
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv check
 
 unload:
 	@for module in vboxpci vboxnetadp vboxnetflt vboxdrv; do \

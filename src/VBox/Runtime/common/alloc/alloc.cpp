@@ -28,16 +28,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTMEM_NO_WRAP_TO_EF_APIS
 #include <iprt/mem.h>
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
-
-#undef RTMemDup
-#undef RTMemDupTag
-#undef RTMemDupEx
-#undef RTMemDupExTag
 
 
 

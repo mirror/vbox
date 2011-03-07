@@ -29,6 +29,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTSEMMUTEX_WITHOUT_REMAPPING
 #include "the-nt-kernel.h"
 #include <iprt/semaphore.h>
 #include <iprt/alloc.h>
@@ -168,7 +169,6 @@ static int rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, BOOLEA
 }
 
 
-#undef RTSemMutexRequest
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexRequest(hMutexSem, cMillies, FALSE /*fInterruptible*/);
@@ -181,7 +181,6 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, 
 }
 
 
-#undef RTSemMutexRequestNoResume
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexRequest(hMutexSem, cMillies, TRUE /*fInterruptible*/);
