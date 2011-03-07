@@ -2773,7 +2773,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3
 TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
 	-Wformat \
-	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
+	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti 
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
 endif # Solaris
@@ -2884,6 +2884,10 @@ ifdef VBOX_WITH_VBOXDRV
  endif
 endif
 
+ifn1of (darwin os2 win, $(KBUILD_TARGET))
+ TEMPLATE_VBOXR0DRV_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
+ TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
+endif
 
 
 #
@@ -4413,6 +4417,10 @@ TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
 ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
+endif
+ifn1of (darwin os2 win, $(KBUILD_TARGET))
+ TEMPLATE_VBOXGUESTR0_CFLAGS     = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CFLAGS))
+ TEMPLATE_VBOXGUESTR0_CXXFLAGS   = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CXXFLAGS))
 endif
 
 #
