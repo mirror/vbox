@@ -90,6 +90,8 @@ public:
     /** Must be called from under this object's write lock. */
     void updateBandwidthGroup(const Utf8Str &aBandwidthGroup);
 
+    void updateParentMachine(Machine * const pMachine);
+
     /** Get a unique and somewhat descriptive name for logging. */
     const char* getLogName(void) const { return mLogName.c_str(); }
 

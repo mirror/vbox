@@ -9590,6 +9590,23 @@ void Machine::commitMedia(bool aOnline /*= false*/)
 
     if (isSessionMachine())
     {
+        /*
+         * Update the parent machine to point to the new owner.
+         * This is necessary because the stored parent will point to the
+         * session machine otherwise and cause crashes or errors later
+         * when the session machine gets invalid.
+         *
+         * @todo: Change the MediumAttachment class to behave like any other class
+         *        in this regard by creating peer MediumAttachment objects for
+         *        session machines and share the data with the peer machine.
+         */
+        for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+             it != mMediaData->mAttachments.end();
+             ++it)
+        {
+            (*it)->updateParentMachine(mPeer);
+        }
+
         /* attach new data to the primary machine and reshare it */
         mPeer->mMediaData.attach(mMediaData);
     }
