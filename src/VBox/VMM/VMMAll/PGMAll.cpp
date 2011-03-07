@@ -1626,10 +1626,14 @@ int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
  * @param   pVCpu       VMCPU handle.
  * @param   iPdpt       PDPT index
  */
-VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVMCPU pVCpu, unsigned iPdpt)
+VMMDECL(int)  PGMGstQueryPaePDPtr(PVMCPU pVCpu, unsigned iPdpt, PX86PDPE pPdpe)
 {
     Assert(iPdpt <= 3);
-    return pgmGstGetPaePDPTPtr(pVCpu)->a[iPdpt & 3];
+    PX86PDPT pPdpt;
+    int rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pPdpt);
+    if (RT_SUCCESS(rc))
+        *pPdpe = pPdpt->a[iPdpt & 3];
+    return rc;
 }
 
 
