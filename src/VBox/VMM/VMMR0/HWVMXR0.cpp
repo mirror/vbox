@@ -1236,23 +1236,26 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 /**
  * Prefetch the 4 PDPT pointers (PAE and nested paging only)
  *
+ * @returns VINF_SUCCESS or fatal error.
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
-static void vmxR0PrefetchPAEPdptrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int vmxR0PrefetchPAEPdptrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (CPUMIsGuestInPAEModeEx(pCtx))
     {
-        X86PDPE Pdpe;
-
         for (unsigned i=0;i<4;i++)
         {
-            Pdpe = PGMGstGetPaePDPtr(pVCpu, i);
-            int rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
+            X86PDPE Pdpe;
+            int rc = PGMGstQueryPaePDPtr(pVCpu, i, &Pdpe);
+            AssertRCReturn(rc, rc);
+
+            rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
             AssertRC(rc);
         }
     }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1746,7 +1749,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
                 val = pCtx->cr3;
                 /* Prefetch the four PDPT entries in PAE mode. */
-                vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+                rc = vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+                AssertRCReturn(rc, rc);
             }
         }
         else
@@ -2020,7 +2024,8 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             PGMUpdateCR3(pVCpu, val);
         }
         /* Prefetch the four PDPT entries in PAE mode. */
-        vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+        rc = vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+        AssertRCReturn(rc, rc);
     }
 
     /* Sync back DR7 here. */
