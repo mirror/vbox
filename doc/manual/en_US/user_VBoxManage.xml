@@ -2325,6 +2325,11 @@ Value: 2006.01.01</screen>
               </listitem>
 
               <listitem>
+                <para><computeroutput>TRANSIENT_RESET</computeroutput>: the value
+                will be deleted as soon as the VM restarts and/or exits;</para>
+              </listitem>
+
+              <listitem>
                 <para><computeroutput>RDONLYGUEST</computeroutput>: the value
                 can only be changed by the host, but the guest can only read
                 it;</para>
