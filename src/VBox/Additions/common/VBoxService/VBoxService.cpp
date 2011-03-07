@@ -137,6 +137,7 @@ static int VBoxServiceUsage(void)
              "    -i | --interval         The default interval.\n"
              "    -f | --foreground       Don't daemonize the program. For debugging.\n"
              "    -v | --verbose          Increment the verbosity level. For debugging.\n"
+             "    -V | --version          Show version information.\n"
              "    -h | -? | --help        Show this message and exit with status 1.\n"
              );
 #ifdef RT_OS_WINDOWS
@@ -576,21 +577,6 @@ int main(int argc, char **argv)
         return VBoxServicePageSharingInitFork();
 #endif
 
-    VBoxServiceReportStatus(VBoxGuestFacilityStatus_PreInit);
-
-    /*
-     * Do pre-init of services.
-     */
-    for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-    {
-        rc = g_aServices[j].pDesc->pfnPreInit();
-        if (RT_FAILURE(rc))
-        {
-            VBoxServiceReportStatus(VBoxGuestFacilityStatus_Failed);
-            return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
-        }
-    }
-
     /*
      * Parse the arguments.
      */
@@ -614,6 +600,8 @@ int main(int argc, char **argv)
                 psz = "f";
             else if (MATCHES("verbose"))
                 psz = "v";
+            else if (MATCHES("version"))
+                psz = "V";
             else if (MATCHES("help"))
                 psz = "h";
             else if (MATCHES("interval"))
@@ -681,6 +669,10 @@ int main(int argc, char **argv)
                     g_cVerbosity++;
                     break;
 
+                case 'V':
+                    RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                    return RTEXITCODE_SUCCESS;
+
                 case 'h':
                 case '?':
                     return VBoxServiceUsage();
@@ -698,8 +690,12 @@ int main(int argc, char **argv)
                     bool fFound = false;
                     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
                     {
-                        rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
-                        fFound = rc == 0;
+                        rc = g_aServices[j].pDesc->pfnPreInit();
+                        if (RT_FAILURE(rc))
+                            return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
+                        else
+                            rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
+                        fFound = rc == VINF_SUCCESS;
                         if (fFound)
                             break;
                         if (rc != -1)
@@ -780,6 +776,8 @@ int main(int argc, char **argv)
     else
 #endif
     {
+        VBoxServiceReportStatus(VBoxGuestFacilityStatus_PreInit);
+
         /*
          * Windows: We're running the service as a console application now. Start the
          *          services, enter the main thread's run loop and stop them again
@@ -793,6 +791,11 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
             VBoxServiceMainWait();
         VBoxServiceStopServices();
+
+        /* Only report the "terminated" status when we really did run the internal services --
+         * otherwise we also wrongly would report "terminated" when a user simply
+         * wants to query the version or the command line help. */
+        VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
     }
 
 #ifdef RT_OS_WINDOWS
@@ -807,7 +810,6 @@ int main(int argc, char **argv)
 #endif
 
     VBoxServiceVerbose(0, "Ended.\n");
-    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
     return rcExit;
 }
 
