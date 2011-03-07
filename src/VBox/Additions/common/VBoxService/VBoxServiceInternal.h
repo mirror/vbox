@@ -93,6 +93,7 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 /** The service name (needed for mutex creation on Windows). */
 #define VBOXSERVICE_NAME            "VBoxService"
+#define VBOXSERVICE_NAME_GLOBAL     "Global\\VBoxService"
 
 #ifdef RT_OS_WINDOWS
 /** The friendly service name. */

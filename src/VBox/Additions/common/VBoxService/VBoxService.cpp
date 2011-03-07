@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -590,29 +590,6 @@ int main(int argc, char **argv)
             return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
         }
     }
-#ifdef RT_OS_WINDOWS
-    /*
-     * Make sure only one instance of VBoxService runs at a time.  Create a
-     * global mutex for that.  Do not use a global namespace ("Global\\") for
-     * mutex name here, will blow up NT4 compatibility!
-     */
-    /** @todo r=bird: Use Global\\ prefix or this serves no purpose on terminal servers. */
-    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
-    if (   hMutexAppRunning != NULL
-        && GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
-
-        /* Close the mutex for this application instance. */
-        CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-
-        /** @todo r=bird: How does this cause us to terminate?  Btw. Why do
-         *        we do this before parsing parameters?  'VBoxService --help'
-         *        and 'VBoxService --version' won't work now when the service
-         *        is running... */
-    }
-#endif
 
     /*
      * Parse the arguments.
@@ -735,6 +712,44 @@ int main(int argc, char **argv)
             }
         } while (psz && *++psz);
     }
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Make sure only one instance of VBoxService runs at a time.  Create a
+     * global mutex for that.
+     */
+    OSVERSIONINFOEX OSInfoEx;
+    RT_ZERO(OSInfoEx);
+    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+    HANDLE hMutexAppRunning;
+    if (    GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+        &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
+        &&  OSInfoEx.dwMajorVersion >= 5 /* NT 5.0 a.k.a W2K */)
+    {
+        hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME_GLOBAL);
+    }
+    else
+    {
+        /* On older Windows OSes (like NT4) don't use the global namespace
+         * needed for terminal servers on Win2K+. */
+        hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
+    }
+    if (   hMutexAppRunning != NULL
+        && GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
+
+        /* Close the mutex for this application instance. */
+        CloseHandle(hMutexAppRunning);
+        hMutexAppRunning = NULL;
+
+        return RTEXITCODE_FAILURE;
+    }
+#else /* !RT_OS_WINDOWS */
+    /** @todo Add PID file creation here. */
+#endif /* RT_OS_WINDOWS */
+
     /*
      * Check that at least one service is enabled.
      */
