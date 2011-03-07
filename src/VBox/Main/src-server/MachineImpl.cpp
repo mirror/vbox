@@ -5008,7 +5008,8 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
                      (aName,
                       /** @todo Fix when adding DeleteGuestProperty(),
                                    see defect. */
-                      *aValue ? aValue : NULL, aFlags, true /* isSetter */,
+                      *aValue ? aValue : NULL, *aFlags ? aFlags : NULL,
+                      true /* isSetter */,
                       &dummy, &dummy64, &dummy);
     }
     catch (std::bad_alloc &)
@@ -8651,7 +8652,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             if (   (   mData->mMachineState == MachineState_PoweredOff
                     || mData->mMachineState == MachineState_Aborted
                     || mData->mMachineState == MachineState_Teleported)
-                && property.mFlags & guestProp::TRANSIENT)
+                && (   property.mFlags & guestProp::TRANSIENT
+                    || property.mFlags & guestProp::TRANSIENT_RESET))
                 continue;
             settings::GuestProperty prop;
             prop.strName = property.strName;
@@ -12216,7 +12218,8 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         if (!fNeedsSaving)
             for (it = mHWData->mGuestProperties.begin();
                  it != mHWData->mGuestProperties.end(); ++it)
-                if (it->mFlags & guestProp::TRANSIENT)
+                if (   (it->mFlags & guestProp::TRANSIENT)
+                    || (it->mFlags & guestProp::TRANSIENT_RESET))
                 {
                     fNeedsSaving = true;
                     break;

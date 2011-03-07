@@ -20,9 +20,18 @@
 
 #include "VBoxServiceInternal.h"
 
-#ifdef VBOX_WITH_GUEST_PROPS
+# ifdef VBOX_WITH_GUEST_PROPS
 
+/** Indicates wheter a guest property is temporary and either should
+ *  get deleted when
+ *  - a) the property cache gets destroyed, or
+ *  - b) the VM gets a hard reset / shutdown
+ *  or gets a default "reset" value (if specified via VBoxServicePropCacheUpdateEntry)
+ *  when the property cache gets properly destroyed.
+ */
 #define VBOXSERVICEPROPCACHEFLAG_TEMPORARY          RT_BIT(1)
+/** Indicates whether a property every time needs to be updated, regardless
+ *  if its real value changed or not. */
 #define VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE      RT_BIT(2)
 
 int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
@@ -31,7 +40,7 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
 int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszValue, uint32_t fFlags, const char *pszPathFormat, ...);
 int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
 void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache);
-#endif
+# endif /* VBOX_WITH_GUEST_PROPS */
 
-#endif
+#endif  /* ___VBoxServicePropCache_h */
 

@@ -618,9 +618,10 @@ private:
                                                            ComSafeArrayOut(LONG64, aTimestamps),
                                                            ComSafeArrayOut(BSTR, aFlags));
 
-    bool enabledGuestPropertiesVRDP(void);
-    void updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *pszUser, const char *pszDomain);
-    void updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId);
+    void guestPropertiesHandleVMReset(void);
+    bool guestPropertiesVRDPEnabled(void);
+    void guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *pszUser, const char *pszDomain);
+    void guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId);
 #endif
 
     /** @name Teleporter support
