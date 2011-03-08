@@ -28,11 +28,11 @@
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/EventQueue.h>
 
-#include <VBox/HostServices/GuestControlSvc.h> /* for PROC_STS_XXX */
+#include <VBox/err.h>
+#include <VBox/log.h>
 
 #include <iprt/asm.h>
 #include <iprt/dir.h>
@@ -107,11 +107,11 @@ enum GETOPTDEF_EXEC
     GETOPTDEF_EXEC_WAITFORSTDERR
 };
 
-enum OUTPUT_TYPE
+enum OUTPUTTYPE
 {
-    OUTPUT_TYPE_UNDEFINED = 0,
-    OUTPUT_TYPE_DOS2UNIX  = 10,
-    OUTPUT_TYPE_UNIX2DOS  = 20
+    OUTPUTTYPE_UNDEFINED = 0,
+    OUTPUTTYPE_DOS2UNIX  = 10,
+    OUTPUTTYPE_UNIX2DOS  = 20
 };
 
 #endif /* VBOX_ONLY_DOCS */
@@ -119,7 +119,8 @@ enum OUTPUT_TYPE
 void usageGuestControl(PRTSTREAM pStrm)
 {
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestcontrol     <vmname>|<uuid> exec[ute]\n"
+                 "VBoxManage guestcontrol     <vmname>|<uuid>\n"
+                 "                            exec[ute]\n"
                  "                            --image <path to program>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--dos2unix]\n"
@@ -132,17 +133,17 @@ void usageGuestControl(PRTSTREAM pStrm)
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
                  "\n"
-                 "                            <vmname>|<uuid> copyto|cp\n"
+                 "                            copyto|cp\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--dryrun] [--follow] [--recursive] [--verbose]\n"
                  "\n"
-                 "                            <vmname>|<uuid> createdir[ectory]|mkdir|md\n"
+                 "                            createdir[ectory]|mkdir|md\n"
                  "                            <directory to create on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--parents] [--mode <mode>] [--verbose]\n"
                  "\n"
-                 "                            <vmname>|<uuid> updateadditions\n"
+                 "                            updateadditions\n"
                  "                            [--source <guest additions .ISO>] [--verbose]\n"
                  "\n");
 }
@@ -401,7 +402,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     Utf8Str                 Utf8UserName;
     Utf8Str                 Utf8Password;
     uint32_t                cMsTimeout      = 0;
-    OUTPUT_TYPE             eOutputType     = OUTPUT_TYPE_UNDEFINED;
+    OUTPUTTYPE              eOutputType     = OUTPUTTYPE_UNDEFINED;
     bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
     bool                    fWaitForStdOut  = false;
@@ -416,9 +417,9 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         switch (ch)
         {
             case GETOPTDEF_EXEC_DOS2UNIX:
-                if (eOutputType != OUTPUT_TYPE_UNDEFINED)
+                if (eOutputType != OUTPUTTYPE_UNDEFINED)
                     return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
-                eOutputType = OUTPUT_TYPE_DOS2UNIX;
+                eOutputType = OUTPUTTYPE_DOS2UNIX;
                 break;
 
             case 'e': /* Environment */
@@ -455,9 +456,9 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
 
             case GETOPTDEF_EXEC_UNIX2DOS:
-                if (eOutputType != OUTPUT_TYPE_UNDEFINED)
+                if (eOutputType != OUTPUTTYPE_UNDEFINED)
                     return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
-                eOutputType = OUTPUT_TYPE_UNIX2DOS;
+                eOutputType = OUTPUTTYPE_UNIX2DOS;
                 break;
 
             case 'u': /* User name */
@@ -484,37 +485,20 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                if (Utf8Cmd.isEmpty())
+#if 0 /** @todo r=bird: enable this when the argv[0] issue has been addressed. */
+                if (args.size() == 0 && Utf8Cmd.isEmpty())
                     Utf8Cmd = ValueUnion.psz;
-                else
+                args.push_back(Bstr(ValueUnion.psz).raw());
+#else
+                if (Utf8Cmd.isEmpty())
                 {
-                    /* Push current parameter to vector. */
-                    args.push_back(Bstr(ValueUnion.psz).raw());
-
-                    /*
-                     * Add all following parameters after this one to our guest process
-                     * argument vector.
-                     */
-                    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-                           && RT_SUCCESS(vrc))
-                    {
-                        /*
-                         * Is this option unknown or not recognized an option? Then just
-                         * add the raw string value to our argument vector.
-                         */
-                        if (   ch == VINF_GETOPT_NOT_OPTION
-                            || ch == VERR_GETOPT_UNKNOWN_OPTION)
-                            args.push_back(Bstr(ValueUnion.psz).raw());
-                        /*
-                         * If this is an option/parameter we already defined for our actual
-                         * execution command we need to take the pDef->pszLong value instead.
-                         */
-                        else if (ValueUnion.pDef)
-                            args.push_back(Bstr(ValueUnion.pDef->pszLong).raw());
-                        else
-                            AssertMsgFailed(("Unknown parameter type detected!\n"));
-                    }
+                    Utf8Cmd = ValueUnion.psz;
+                    if (Utf8Cmd.isEmpty())
+                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The first argument cannot be empty yet, wait for 4.1.0");
                 }
+                else
+                    args.push_back(Bstr(ValueUnion.psz).raw());
+#endif
                 break;
             }
 
@@ -559,192 +543,190 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                                progress.asOutParam());
     if (FAILED(rc))
         return ctrlPrintError(guest, COM_IIDOF(IGuest));
-    else
+
+    if (fVerbose)
+        RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
+    if (fWaitForExit)
     {
         if (fVerbose)
-            RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
-        if (fWaitForExit)
         {
-            if (fVerbose)
+            if (cMsTimeout) /* Wait with a certain timeout. */
             {
-                if (cMsTimeout) /* Wait with a certain timeout. */
-                {
-                    /* Calculate timeout value left after process has been started.  */
-                    uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
-                    /* Is timeout still bigger than current difference? */
-                    if (cMsTimeout > u64Elapsed)
-                        RTPrintf("Waiting for process to exit (%ums left) ...\n", cMsTimeout - u64Elapsed);
-                    else
-                        RTPrintf("No time left to wait for process!\n"); /** @todo a bit misleading ... */
-                }
-                else /* Wait forever. */
-                    RTPrintf("Waiting for process to exit ...\n");
+                /* Calculate timeout value left after process has been started.  */
+                uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+                /* Is timeout still bigger than current difference? */
+                if (cMsTimeout > u64Elapsed)
+                    RTPrintf("Waiting for process to exit (%ums left) ...\n", cMsTimeout - u64Elapsed);
+                else
+                    RTPrintf("No time left to wait for process!\n"); /** @todo a bit misleading ... */
             }
+            else /* Wait forever. */
+                RTPrintf("Waiting for process to exit ...\n");
+        }
 
-            /* Setup signal handling if cancelable. */
-            ASSERT(progress);
-            bool fCanceledAlready = false;
-            BOOL fCancelable;
-            HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-            if (FAILED(hrc))
-                fCancelable = FALSE;
-            if (fCancelable)
-                ctrlSignalHandlerInstall();
+        /* Setup signal handling if cancelable. */
+        ASSERT(progress);
+        bool fCanceledAlready = false;
+        BOOL fCancelable;
+        HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+        if (FAILED(hrc))
+            fCancelable = FALSE;
+        if (fCancelable)
+            ctrlSignalHandlerInstall();
 
-            /* Wait for process to exit ... */
-            BOOL fCompleted    = FALSE;
-            BOOL fCanceled     = FALSE;
-            int  cMilliesSleep = 0;
-            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+        /* Wait for process to exit ... */
+        BOOL fCompleted    = FALSE;
+        BOOL fCanceled     = FALSE;
+        int  cMilliesSleep = 0;
+        while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+        {
+            SafeArray<BYTE> aOutputData;
+            ULONG cbOutputData = 0;
+
+            /*
+             * Some data left to output?
+             */
+            if (   fWaitForStdOut
+                || fWaitForStdErr)
             {
-                SafeArray<BYTE> aOutputData;
-                ULONG cbOutputData = 0;
-
-                /*
-                 * Some data left to output?
+                /** @todo r=bird: The timeout argument is bogus in several
+                 * ways:
+                 *  1. RT_MAX will evaluate the arguments twice, which may
+                 *     result in different values because RTTimeMilliTS()
+                 *     returns a higher value the 2nd time. Worst case:
+                 *     Imagine when RT_MAX calculates the remaining time
+                 *     out (first expansion) there is say 60 ms left.  Then
+                 *     we're preempted and rescheduled after, say, 120 ms.
+                 *     We call RTTimeMilliTS() again and ends up with a
+                 *     value -60 ms, which translate to a UINT32_MAX - 59
+                 *     ms timeout.
+                 *
+                 *  2. When the period expires, we will wait forever since
+                 *     both 0 and -1 mean indefinite timeout with this API,
+                 *     at least that's one way of reading the main code.
+                 *
+                 *  3. There is a signed/unsigned ambiguity in the
+                 *     RT_MAX expression.  The left hand side is signed
+                 *     integer (0), the right side is unsigned 64-bit. From
+                 *     what I can tell, the compiler will treat this as
+                 *     unsigned 64-bit and never return 0.
                  */
-                if (   fWaitForStdOut
-                    || fWaitForStdErr)
+                /** @todo r=bird: We must separate stderr and stdout
+                 *        output, seems bunched together here which
+                 *        won't do the trick for unix BOFHs. */
+                rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
+                                             RT_MAX(0, cMsTimeout - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
+                                             _64K, ComSafeArrayAsOutParam(aOutputData));
+                if (FAILED(rc))
                 {
-                    /** @todo r=bird: The timeout argument is bogus in several
-                     * ways:
-                     *  1. RT_MAX will evaluate the arguments twice, which may
-                     *     result in different values because RTTimeMilliTS()
-                     *     returns a higher value the 2nd time. Worst case:
-                     *     Imagine when RT_MAX calculates the remaining time
-                     *     out (first expansion) there is say 60 ms left.  Then
-                     *     we're preempted and rescheduled after, say, 120 ms.
-                     *     We call RTTimeMilliTS() again and ends up with a
-                     *     value -60 ms, which translate to a UINT32_MAX - 59
-                     *     ms timeout.
-                     *
-                     *  2. When the period expires, we will wait forever since
-                     *     both 0 and -1 mean indefinite timeout with this API,
-                     *     at least that's one way of reading the main code.
-                     *
-                     *  3. There is a signed/unsigned ambiguity in the
-                     *     RT_MAX expression.  The left hand side is signed
-                     *     integer (0), the right side is unsigned 64-bit. From
-                     *     what I can tell, the compiler will treat this as
-                     *     unsigned 64-bit and never return 0.
-                     */
-                    /** @todo r=bird: We must separate stderr and stdout
-                     *        output, seems bunched together here which
-                     *        won't do the trick for unix BOFHs. */
-                    rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
-                                                 RT_MAX(0, cMsTimeout - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
-                                                 _64K, ComSafeArrayAsOutParam(aOutputData));
-                    if (FAILED(rc))
-                    {
-                        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
-                        cbOutputData = 0;
-                    }
-                    else
-                    {
-                        cbOutputData = aOutputData.size();
-                        if (cbOutputData > 0)
-                        {
-                            /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
-                            *        generic problem and the new VFS APIs will handle it more
-                            *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
-                            if (eOutputType != OUTPUT_TYPE_UNDEFINED)
-                            {
-                                /*
-                                 * If aOutputData is text data from the guest process' stdout or stderr,
-                                 * it has a platform dependent line ending. So standardize on
-                                 * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                                 * Windows. Otherwise we end up with CR/CR/LF on Windows.
-                                 */
-                                ULONG cbOutputDataPrint = cbOutputData;
-                                for (BYTE *s = aOutputData.raw(), *d = s;
-                                     s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                     s++, d++)
-                                {
-                                    if (*s == '\r')
-                                    {
-                                        /* skip over CR, adjust destination */
-                                        d--;
-                                        cbOutputDataPrint--;
-                                    }
-                                    else if (s != d)
-                                        *d = *s;
-                                }
-                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
-                            }
-                            else /* Just dump all data as we got it ... */
-                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputData);
-                        }
-                    }
+                    vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+                    cbOutputData = 0;
                 }
-
-                /* No more output data left? */
-                if (cbOutputData <= 0)
-                {
-                    /* Only break out from process handling loop if we processed (displayed)
-                     * all output data or if there simply never was output data and the process
-                     * has been marked as complete. */
-                    if (fCompleted)
-                        break;
-                }
-
-                /* Process async cancelation */
-                if (g_fGuestCtrlCanceled && !fCanceledAlready)
-                {
-                    hrc = progress->Cancel();
-                    if (SUCCEEDED(hrc))
-                        fCanceledAlready = TRUE;
-                    else
-                        g_fGuestCtrlCanceled = false;
-                }
-
-                /* Progress canceled by Main API? */
-                if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                    && fCanceled)
-                    break;
-
-                /* Did we run out of time? */
-                if (   cMsTimeout
-                    && RTTimeMilliTS() - u64StartMS > cMsTimeout)
-                {
-                    progress->Cancel();
-                    break;
-                }
-            } /* while */
-
-            /* Undo signal handling */
-            if (fCancelable)
-                ctrlSignalHandlerUninstall();
-
-            /* Report status back to the user. */
-            if (fCanceled)
-            {
-                if (fVerbose)
-                    RTPrintf("Process execution canceled!\n");
-                rcProc = EXITCODE_EXEC_CANCELED;
-            }
-            else if (   fCompleted
-                     && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
-            {
-                LONG iRc;
-                CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                if (FAILED(iRc))
-                    vrc = ctrlPrintProgressError(progress);
                 else
                 {
-                    ExecuteProcessStatus_T retStatus;
-                    ULONG uRetExitCode, uRetFlags;
-                    rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
-                    if (SUCCEEDED(rc) && fVerbose)
-                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, retStatus, ctrlExecProcessStatusToText(retStatus), uRetFlags);
-                    rcProc = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
+                    cbOutputData = aOutputData.size();
+                    if (cbOutputData > 0)
+                    {
+                        /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
+                        *        generic problem and the new VFS APIs will handle it more
+                        *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
+                        if (eOutputType != OUTPUTTYPE_UNDEFINED)
+                        {
+                            /*
+                             * If aOutputData is text data from the guest process' stdout or stderr,
+                             * it has a platform dependent line ending. So standardize on
+                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                             * Windows. Otherwise we end up with CR/CR/LF on Windows.
+                             */
+                            ULONG cbOutputDataPrint = cbOutputData;
+                            for (BYTE *s = aOutputData.raw(), *d = s;
+                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                 s++, d++)
+                            {
+                                if (*s == '\r')
+                                {
+                                    /* skip over CR, adjust destination */
+                                    d--;
+                                    cbOutputDataPrint--;
+                                }
+                                else if (s != d)
+                                    *d = *s;
+                            }
+                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                        }
+                        else /* Just dump all data as we got it ... */
+                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputData);
+                    }
                 }
             }
+
+            /* No more output data left? */
+            if (cbOutputData <= 0)
+            {
+                /* Only break out from process handling loop if we processed (displayed)
+                 * all output data or if there simply never was output data and the process
+                 * has been marked as complete. */
+                if (fCompleted)
+                    break;
+            }
+
+            /* Process async cancelation */
+            if (g_fGuestCtrlCanceled && !fCanceledAlready)
+            {
+                hrc = progress->Cancel();
+                if (SUCCEEDED(hrc))
+                    fCanceledAlready = TRUE;
+                else
+                    g_fGuestCtrlCanceled = false;
+            }
+
+            /* Progress canceled by Main API? */
+            if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                && fCanceled)
+                break;
+
+            /* Did we run out of time? */
+            if (   cMsTimeout
+                && RTTimeMilliTS() - u64StartMS > cMsTimeout)
+            {
+                progress->Cancel();
+                break;
+            }
+        } /* while */
+
+        /* Undo signal handling */
+        if (fCancelable)
+            ctrlSignalHandlerUninstall();
+
+        /* Report status back to the user. */
+        if (fCanceled)
+        {
+            if (fVerbose)
+                RTPrintf("Process execution canceled!\n");
+            rcProc = EXITCODE_EXEC_CANCELED;
+        }
+        else if (   fCompleted
+                 && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
+        {
+            LONG iRc;
+            CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+            if (FAILED(iRc))
+                vrc = ctrlPrintProgressError(progress);
             else
             {
-                if (fVerbose)
-                    RTPrintf("Process execution aborted!\n");
-                rcProc = EXITCODE_EXEC_TERM_ABEND;
+                ExecuteProcessStatus_T retStatus;
+                ULONG uRetExitCode, uRetFlags;
+                rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
+                if (SUCCEEDED(rc) && fVerbose)
+                    RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, retStatus, ctrlExecProcessStatusToText(retStatus), uRetFlags);
+                rcProc = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
             }
+        }
+        else
+        {
+            if (fVerbose)
+                RTPrintf("Process execution aborted!\n");
+            rcProc = EXITCODE_EXEC_TERM_ABEND;
         }
     }
 
@@ -760,6 +742,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
  * @param   pszFileSource       Full qualified source path of file to copy (optional).
  * @param   pszFileDest         Full qualified destination path (optional).
  * @param   pList               Copy list used for insertion.
+ *
+ * @todo    r=bird: Since everyone is maintaining an entry count, it would make
+ *          sense to abstract the list. To simplify cleanup work, it would be
+ *          preferable to use a standard C++ container template class.
  */
 static int ctrlDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
                                     PRTLISTNODE pList)
@@ -849,25 +835,31 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
     AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
 
-    PRTDIR pDir = NULL;
-
-    int rc = VINF_SUCCESS;
+    /*
+     * Construct current path.
+     */
     char szCurDir[RTPATH_MAX];
-    /* Construct current path. */
-    if (RTStrPrintf(szCurDir, sizeof(szCurDir), pszRootDir))
-    {
-        if (pszSubDir != NULL)
-            rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
-    }
-    else
-        rc = VERR_NO_MEMORY;
+    int rc = RTStrCopy(szCurDir, sizeof(szCurDir), pszRootDir);
+    if (RT_SUCCESS(rc) && pszSubDir != NULL)
+        rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
+    /*
+     * Open directory without a filter - RTDirOpenFiltered unfortunately
+     * cannot handle sub directories so we have to do the filtering ourselves.
+     */
+    PRTDIR pDir = NULL;
     if (RT_SUCCESS(rc))
     {
-        /* Open directory without a filter - RTDirOpenFiltered unfortunately
-         * cannot handle sub directories so we have to do the filtering ourselves. */
         rc = RTDirOpen(&pDir, szCurDir);
-        for (;RT_SUCCESS(rc);)
+        if (RT_FAILURE(rc))
+            pDir = NULL;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Enumerate the directory tree.
+         */
+        while (RT_SUCCESS(rc))
         {
             RTDIRENTRY DirEntry;
             rc = RTDirRead(pDir, &DirEntry, NULL);
@@ -880,12 +872,11 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
             switch (DirEntry.enmType)
             {
                 case RTDIRENTRYTYPE_DIRECTORY:
-                    /* Skip "." and ".." entrires. */
+                    /* Skip "." and ".." entries. */
                     if (   !strcmp(DirEntry.szName, ".")
                         || !strcmp(DirEntry.szName, ".."))
-                    {
                         break;
-                    }
+
                     if (fFlags & CopyFileFlag_Recursive)
                     {
                         char *pszNewSub = NULL;
@@ -917,13 +908,8 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
 
                 case RTDIRENTRYTYPE_FILE:
                 {
-                    bool fProcess = false;
-                    if (pszFilter && RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
-                        fProcess = true;
-                    else if (!pszFilter)
-                        fProcess = true;
-
-                    if (fProcess)
+                    if (   !pszFilter
+                        || RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
                     {
                         char *pszFileSource = NULL;
                         char *pszFileDest = NULL;
@@ -945,7 +931,7 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                         {
                             rc = ctrlDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
                             if (RT_SUCCESS(rc))
-                                *pcObjects = *pcObjects + 1;
+                                *pcObjects += 1;
                         }
 
                         if (pszFileSource)
@@ -962,10 +948,9 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
             if (RT_FAILURE(rc))
                 break;
         }
-    }
 
-    if (pDir)
         RTDirClose(pDir);
+    }
     return rc;
 }
 
@@ -1144,13 +1129,24 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
+    /** @todo r=bird: This command isn't very unix friendly in general. mkdir
+     * is much better (partly because it is much simpler of course).  The main
+     * arguments against this is that (1) all but two options conflicts with
+     * what 'man cp' tells me on a GNU/Linux system, (2) wildchar matching is
+     * done windows CMD style (though not in a 100% compatible way), and (3)
+     * that only one source is allowed - efficiently sabotaging default
+     * wildcard expansion by a unix shell.  The best solution here would be
+     * two different variant, one windowsy (xcopy) and one unixy (gnu cp). */
+    /** @todo r=bird: Why isn't IGuest::CopyToGuest powerful enough to do
+     *        all this recursive copying? */
+
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING },
-        { "--follow",              'F',         RTGETOPT_REQ_NOTHING },
-        { "--password",            'p',         RTGETOPT_REQ_STRING  },
-        { "--recursive",           'R',         RTGETOPT_REQ_NOTHING },
-        { "--username",            'u',         RTGETOPT_REQ_STRING  },
+        { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: '-d' incompatible with GNU cp.  */
+        { "--follow",              'F',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: This isn't a GNU cp option. This is instead spread over several options.  */
+        { "--password",            'p',         RTGETOPT_REQ_STRING  }, /**< @todo r=bird: Just drop these short options since (BSD, GNU, ++) cp uses '-p' to indicate that ownership, timestamp and other stuff should be preserved.  Other file commands probably use '-p' as well. */
+        { "--recursive",           'R',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: Most cp implementations treats '-r' as an alias for '-R'. */
+        { "--username",            'u',         RTGETOPT_REQ_STRING  }, /**< @todo r=bird: Just drop these short options since GNU cp uses '-u' to indicate update-only (as does 4nt).  Other file commands probably uses '-u' as well. */
         { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
     };
 
@@ -1170,7 +1166,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     int vrc = VINF_SUCCESS;
     uint32_t idxNonOption = 0;
-    while (ch = RTGetOpt(&GetState, &ValueUnion))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -1212,10 +1208,12 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                         Utf8Dest = ValueUnion.psz;
                         break;
 
+                    /* @todo r=bird: VBoxManage guestcontrol execute <VMName> copyto hostfile.1 hostfile.2 hostfile.3 guestdir/
+                     * A better way to implement this would be to tell RTGetOptInit to sort the argument, so
+                     * that when VINF_GETOPT_NOT_OPTION is returned, the remainder of pArg->argv are all arguments. */
+
                     default:
                         return errorSyntax(USAGE_GUESTCONTROL, "Too many parameters specified, only source and destination allowed!");
-                        /* Never reached. */
-                        break;
                 }
                 idxNonOption++;
                 if (idxNonOption == UINT32_MAX)
@@ -1319,6 +1317,12 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--mode",                'm',         RTGETOPT_REQ_UINT32  },
@@ -1336,23 +1340,22 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t fFlags = CreateDirectoryFlag_None;
-    uint32_t uMode = 0;
+    uint32_t fDirMode = 0; /* 0 == default mode, right? */
     bool fVerbose = false;
 
     RTLISTNODE listDirs;
     uint32_t cDirs = 0;
     RTListInit(&listDirs);
 
-    int vrc = VINF_SUCCESS;
-    bool fUsageOK = true;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(vrc))
+           && rcExit == RTEXITCODE_SUCCESS)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
             case 'm': /* Mode */
-                uMode = ValueUnion.u32;
+                fDirMode = ValueUnion.u32;
                 break;
 
             case 'P': /* Create parents */
@@ -1373,59 +1376,69 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                vrc = ctrlDirectoryEntryAppend(NULL,              /* No source given */
-                                               ValueUnion.psz,    /* Destination */
-                                               &listDirs);
+/** @todo r=bird: Simplify by letting RTGetOptInit sort the argv, just like
+ *        for cp. */
+                int vrc = ctrlDirectoryEntryAppend(NULL,              /* No source given */
+                                                   ValueUnion.psz,    /* Destination */
+                                                   &listDirs);
                 if (RT_SUCCESS(vrc))
                 {
                     cDirs++;
                     if (cDirs == UINT32_MAX)
-                    {
-                        RTMsgError("Too many directories specified! Aborting.\n");
-                        vrc = VERR_TOO_MUCH_DATA;
-                    }
+                        rcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "Too many directories specified! Aborting.");
                 }
+                else
+                    rcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "Failed to append directory: %Rrc", vrc);
                 break;
             }
 
             default:
-                return RTGetOptPrintError(ch, &ValueUnion);
+                rcExit = RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
-    if (!fUsageOK)
-        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+    if (rcExit == RTEXITCODE_SUCCESS && !cDirs)
+        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No directory to create specified!");
 
-    if (!cDirs)
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No directory to create specified!");
+    if (rcExit == RTEXITCODE_SUCCESS && Utf8UserName.isEmpty())
+        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
-    if (Utf8UserName.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No user name specified!");
-
-    HRESULT rc = S_OK;
-    if (fVerbose && cDirs > 1)
-        RTPrintf("Creating %u directories ...\n", cDirs);
-
-    PDIRECTORYENTRY pNode;
-    RTListForEach(&listDirs, pNode, DIRECTORYENTRY, Node)
+    if (rcExit == RTEXITCODE_SUCCESS)
     {
-        if (fVerbose)
-            RTPrintf("Creating directory \"%s\" ...\n", pNode->pszDestPath);
+        /*
+         * Create the directories.
+         */
+        HRESULT hrc = S_OK;
+        if (fVerbose && cDirs > 1)
+            RTPrintf("Creating %u directories ...\n", cDirs);
 
-        ComPtr<IProgress> progress;
-        rc = guest->CreateDirectory(Bstr(pNode->pszDestPath).raw(),
-                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                    uMode, fFlags, progress.asOutParam());
-        if (FAILED(rc))
+        PDIRECTORYENTRY pNode;
+        RTListForEach(&listDirs, pNode, DIRECTORYENTRY, Node)
         {
-            ctrlPrintError(guest, COM_IIDOF(IGuest)); /* (return code ignored, save original rc) */
-            break;
+            if (fVerbose)
+                RTPrintf("Creating directory \"%s\" ...\n", pNode->pszDestPath);
+
+            ComPtr<IProgress> progress;
+            hrc = guest->CreateDirectory(Bstr(pNode->pszDestPath).raw(),
+                                         Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
+                                         fDirMode, fFlags, progress.asOutParam());
+            if (FAILED(hrc))
+            {
+                ctrlPrintError(guest, COM_IIDOF(IGuest)); /* (return code ignored, save original rc) */
+                break;
+            }
         }
+        if (FAILED(hrc))
+            rcExit = RTEXITCODE_FAILURE;
     }
+
+    /*
+     * Clean up and return.
+     */
     ctrlDirectoryListDestroy(&listDirs);
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+
+    return rcExit;
 }
 
 static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)

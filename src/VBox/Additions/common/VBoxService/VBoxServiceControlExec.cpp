@@ -1231,11 +1231,20 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
 
+/** @todo r=bird: Obvious misdesign: argv[0] does NOT have to be the same as
+ *        the full path to the executable file name!!   I thought we went thru
+ *        all that when you did the VBoxService toolbox stuff, i.e. how busybox
+ *        works? */
+
+/** @todo RTGetOptArgvToString converts to MSC quoted string, while
+ *        RTGetOptArgvFromString takes bourne shell according to the docs...
+ * Actually, converting to and from here is a very roundabout way of prepending
+ * an entry (pszFilename) to an array (*ppapszArgv). */
     char *pszArgs;
     int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
     if (   RT_SUCCESS(rc)
-        && pszArgs)
+        && pszArgs) /**< @todo pszArg will never be NULL on a successfull return. Perhaps *pszArgs was meant? */
     {
         /*
          * Construct the new command line by appending the actual
@@ -1364,14 +1373,14 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
              * Otherwise use the RTPROC_FLAGS_SERVICE to use some special authentication
              * code (at least on Windows) for running processes as different users
              * started from our system service. */
-            if (strlen(pszAsUser))
+            if (*pszAsUser)
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,
-                                strlen(pszAsUser) ? pszAsUser : NULL,
-                                strlen(pszPassword) ? pszPassword : NULL,
+                                *pszAsUser   ? pszAsUser   : NULL,
+                                *pszPassword ? pszPassword : NULL,
                                 phProcess);
             RTGetOptArgvFree(papszArgsExp);
         }
