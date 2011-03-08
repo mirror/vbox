@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  *
- * This code is based on:
+ * This code is loosely based on:
  *
  * QEMU DMA emulation
  *
@@ -40,15 +40,13 @@
  * THE SOFTWARE.
  */
 
-#ifdef VBOX
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEV_DMA
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/err.h>
 
-#define LOG_GROUP LOG_GROUP_DEFAULT ///@todo LOG_GROUP_DEV_DMA
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -57,829 +55,813 @@
 #include <stdlib.h>
 
 #include "VBoxDD.h"
-#include "vl_vbox.h"
-typedef PFNDMATRANSFERHANDLER DMA_transfer_handler;
 
-#else  /* !VBOX */
-#include "vl.h"
-#endif
 
-/* #define DEBUG_DMA */
+/* DMA Overview and notes
+ *
+ * Modern PCs typically emulate AT-compatible DMA. The IBM PC/AT used dual
+ * cascaded 8237A DMA controllers, augmented with a 74LS612 memory mapper.
+ * The 8237As are 8-bit parts, only capable of addressing up to 64KB; the
+ * 74LS612 extends addressing to 24 bits. That leads to well known and
+ * inconvenient DMA limitations:
+ *  - DMA can only access physical memory under the 16MB line
+ *  - DMA transfers must occur within a 64KB/128KB 'page'
+ *
+ * The 16-bit DMA controller added in the PC/AT shifts all 8237A addresses
+ * left by one, including the control registers addresses. The DMA register
+ * offsets (except for the page registers) are therefore "double spaced".
+ * 
+ * Due to the address shifting, the DMA controller decodes more addresses
+ * than are usually documented, with aliasing. See the ICH8 datasheet.
+ *
+ * In the IBM PC and PC/XT, DMA channel 0 was used for memory refresh, thus
+ * preventing the use of memory-to-memory DMA transfers (which use channels
+ * 0 and 1). In the PC/AT, memory-to-memory DMA was theoretically possible.
+ * However, it would transfer a single byte at a time, while the CPU can
+ * transfer two (on a 286) or four (on a 386+) bytes at a time. On many
+ * compatibles, memory-to-memory DMA is not even implemented at all, and
+ * therefore has no practical use.
+ *
+ * Auto-init mode is handled implicitly; a device's transfer handler may
+ * return an end count lower than the start count.
+ *
+ * Naming convention: 'channel' refers to a system-wide DMA channel (0-7)
+ * while 'chidx' refers to a DMA channel index within a controller (0-3).
+ *
+ * References:
+ *  - IBM Personal Computer AT Technical Reference, 1984
+ *  - Intel 8237A-5 Datasheet, 1993
+ *  - Frank van Gilluwe, The Undocumented PC, 1994
+ *  - OPTi 82C206 Data Book, 1996 (or Chips & Tech 82C206)
+ *  - Intel ICH8 Datasheet, 2007
+ */
 
-#ifndef VBOX
-#ifndef __WIN32__
-#define dolog(...) fprintf (stderr, "dma: " __VA_ARGS__)
-#ifdef DEBUG_DMA
-#define lwarn(...) fprintf (stderr, "dma: " __VA_ARGS__)
-#define linfo(...) fprintf (stderr, "dma: " __VA_ARGS__)
-#define ldebug(...) fprintf (stderr, "dma: " __VA_ARGS__)
-#else
-#define lwarn(...)
-#define linfo(...)
-#define ldebug(...)
-#endif
-#else
-#define dolog()
-#define lwarn()
-#define linfo()
-#define ldebug()
-#endif
-#else /* VBOX */
 
-# ifdef LOG_ENABLED
-#   define DEBUG_DMA
-    static void DMA_DPRINTF (const char *fmt, ...)
-    {
-        if (LogIsEnabled ()) {
-            va_list args;
-            va_start (args, fmt);
-            RTLogLogger (NULL, NULL, "dma: %N", fmt, &args); /* %N - nested va_list * type formatting call. */
-            va_end (args);
-        }
-    }
-# else
-  DECLINLINE(void) DMA_DPRINTF(const char *pszFmt, ...) {}
-# endif
+/* Saved state versions. */
+#define DMA_SAVESTATE_OLD       1   /* The original saved state. */
+#define DMA_SAVESTATE_CURRENT   2   /* The new and improved saved state. */
 
-# define dolog DMA_DPRINTF
-# define lwarn DMA_DPRINTF
-# define linfo DMA_DPRINTF
-# define ldebug DMA_DPRINTF
-
-#endif /* VBOX */
-
-#define LENOFA(a) ((int) (sizeof(a)/sizeof(a[0])))
-
-struct dma_regs {
-    unsigned int now[2];
-    uint16_t base[2];
-    uint8_t mode;
-    uint8_t page;
-    uint8_t pageh;
-    uint8_t dack;
-    uint8_t eop;
-    DMA_transfer_handler transfer_handler;
-    void *opaque;
-};
-
-#define ADDR 0
-#define COUNT 1
-
-struct dma_cont {
-    uint8_t status;
-    uint8_t command;
-    uint8_t mask;
-    uint8_t flip_flop;
-    unsigned int dshift;
-    struct dma_regs regs[4];
-};
-
+/* State information for a single DMA channel. */
 typedef struct {
-    PPDMDEVINS pDevIns;
-    PCPDMDMACHLP pHlp;
-    struct dma_cont dma_controllers[2];
+    void                    *pvUser;        /* User specific context. */
+    PFNDMATRANSFERHANDLER   pfnXferHandler; /* Transfer handler for channel. */
+    uint16_t                u16BaseAddr;    /* Base address for transfers. */
+    uint16_t                u16BaseCount;   /* Base count for transfers. */
+    uint16_t                u16CurAddr;     /* Current address. */
+    uint16_t                u16CurCount;    /* Current count. */
+    uint8_t                 u8Mode;         /* Channel mode. */
+} DMAChannel;
+
+/* State information for a DMA controller (DMA8 or DMA16). */
+typedef struct {
+    DMAChannel  ChState[4];     /* Per-channel state. */
+    uint8_t     au8Page[8];     /* Page registers (A16-A23). */
+    uint8_t     au8PageHi[8];   /* High page registers (A24-A31). */
+    uint8_t     u8Command;      /* Command register. */
+    uint8_t     u8Status;       /* Status register. */
+    uint8_t     u8Mask;         /* Mask register. */
+    uint8_t     u8Temp;         /* Temporary (mem/mem) register. */
+    uint8_t     u8ModeCtr;      /* Mode register counter for reads. */
+    bool        bHiByte;        /* Byte pointer (T/F -> high/low). */
+    uint32_t    is16bit;        /* True for 16-bit DMA. */
+} DMAControl;
+
+/* Complete DMA state information. */
+typedef struct {
+    PPDMDEVINS      pDevIns;    /* Device instance. */
+    PCPDMDMACHLP    pHlp;       /* PDM DMA helpers. */
+    DMAControl      DMAC[2];    /* Two DMA controllers. */
 } DMAState;
 
+/* DMA command register bits. */
 enum {
-    CMD_MEMORY_TO_MEMORY = 0x01,
-    CMD_FIXED_ADDRESS    = 0x02,
-    CMD_BLOCK_CONTROLLER = 0x04,
-    CMD_COMPRESSED_TIME  = 0x08,
-    CMD_CYCLIC_PRIORITY  = 0x10,
-    CMD_EXTENDED_WRITE   = 0x20,
-    CMD_LOW_DREQ         = 0x40,
-    CMD_LOW_DACK         = 0x80,
-    CMD_NOT_SUPPORTED    = CMD_MEMORY_TO_MEMORY | CMD_FIXED_ADDRESS
-    | CMD_COMPRESSED_TIME | CMD_CYCLIC_PRIORITY | CMD_EXTENDED_WRITE
-    | CMD_LOW_DREQ | CMD_LOW_DACK
-
+    CMD_MEMTOMEM    = 0x01,     /* Enable mem-to-mem trasfers. */
+    CMD_ADRHOLD     = 0x02,     /* Address hold for mem-to-mem. */
+    CMD_DISABLE     = 0x04,     /* Disable controller. */
+    CMD_COMPRTIME   = 0x08,     /* Compressed timing. */
+    CMD_ROTPRIO     = 0x10,     /* Rotating priority. */
+    CMD_EXTWR       = 0x20,     /* Extended write. */
+    CMD_DREQHI      = 0x40,     /* DREQ is active high if set. */
+    CMD_DACKHI      = 0x80,     /* DACK is active high if set. */
+    CMD_UNSUPPORTED = CMD_MEMTOMEM | CMD_ADRHOLD | CMD_COMPRTIME
+                    | CMD_EXTWR | CMD_DREQHI | CMD_DACKHI
 };
 
-static int channels[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
+/* DMA control register offsets for read accesses. */
+enum {
+    CTL_R_STAT,     /* Read status registers. */
+    CTL_R_DMAREQ,   /* Read DRQ register. */
+    CTL_R_CMD,      /* Read command register. */
+    CTL_R_MODE,     /* Read mode register. */
+    CTL_R_SETBPTR,  /* Set byte pointer flip-flop. */
+    CTL_R_TEMP,     /* Read temporary register. */
+    CTL_R_CLRMODE,  /* Clear mode register counter. */
+    CTL_R_MASK      /* Read all DRQ mask bits. */
+};
 
-static void write_page (void *opaque, uint32_t nport, uint32_t data)
+/* DMA control register offsets for read accesses. */
+enum {
+    CTL_W_CMD,      /* Write command register. */
+    CTL_W_DMAREQ,   /* Write DRQ register. */
+    CTL_W_MASKONE,  /* Write single DRQ mask bit. */
+    CTL_W_MODE,     /* Write mode register. */
+    CTL_W_CLRBPTR,  /* Clear byte pointer flip-flop. */
+    CTL_W_MASTRCLR, /* Master clear. */
+    CTL_W_CLRMASK,  /* Clear all DRQ mask bits. */
+    CTL_W_MASK      /* Write all DRQ mask bits. */
+};
+
+/* Convert DMA channel number (0-7) to controller number (0-1). */
+#define DMACH2C(c)      (c < 4 ? 0 : 1)
+
+static int dmaChannelMap[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
+/* Map a DMA page register offset (0-7) to channel index (0-3). */
+#define DMAPG2CX(c)     (dmaChannelMap[c])
+
+static int dmaMapChannel[4] = {7, 3, 1, 2};
+/* Map a channel index (0-3) to DMA page register offset (0-7). */
+#define DMACX2PG(c)     (dmaMapChannel[c])
+/* Map a channel number (0-7) to DMA page register offset (0-7). */
+#define DMACH2PG(c)     (dmaMapChannel[c & 3])
+
+/* Test the decrement bit of mode register. */
+#define IS_MODE_DEC(c)  ((c) & 0x20)
+/* Test the auto-init bit of mode register. */
+#define IS_MODE_AI(c)   ((c) & 0x10)
+
+/* Perform a master clear (reset) on a DMA controller. */
+static void dmaClear(DMAControl *dc)
 {
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int ichan;
-
-    ichan = channels[nport & 7];
-    if (-1 == ichan) {
-        dolog ("invalid channel %#x %#x\n", nport, data);
-        return;
-    }
-    d->regs[ichan].page = data;
+    dc->u8Command = 0;
+    dc->u8Status  = 0;
+    dc->u8Temp    = 0;
+    dc->u8ModeCtr = 0;
+    dc->bHiByte   = false;
+    dc->u8Mask    = ~0;
 }
 
-static void write_pageh (void *opaque, uint32_t nport, uint32_t data)
+/* Read the byte pointer and flip it. */
+static inline bool dmaReadBytePtr(DMAControl *dc)
 {
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int ichan;
+    bool    bHighByte;
 
-    ichan = channels[nport & 7];
-    if (-1 == ichan) {
-        dolog ("invalid channel %#x %#x\n", nport, data);
-        return;
-    }
-    d->regs[ichan].pageh = data;
+    bHighByte = !!dc->bHiByte;
+    dc->bHiByte ^= 1;
+    return bHighByte;
 }
 
-static uint32_t read_page (void *opaque, uint32_t nport)
+/* DMA address registers writes and reads. */
+
+static DECLCALLBACK(int) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                      uint32_t u32, unsigned cb)
 {
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int ichan;
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        DMAChannel  *ch;
+        int         chidx, reg, is_count;
 
-    ichan = channels[nport & 7];
-    if (-1 == ichan) {
-        dolog ("invalid channel read %#x\n", nport);
-        return 0;
-    }
-    return d->regs[ichan].page;
-}
-
-static uint32_t read_pageh (void *opaque, uint32_t nport)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int ichan;
-
-    ichan = channels[nport & 7];
-    if (-1 == ichan) {
-        dolog ("invalid channel read %#x\n", nport);
-        return 0;
-    }
-    return d->regs[ichan].pageh;
-}
-
-static inline void init_chan (struct dma_cont *d, int ichan)
-{
-    struct dma_regs *r;
-
-    r = d->regs + ichan;
-    r->now[ADDR] = r->base[ADDR] << d->dshift;
-    r->now[COUNT] = 0;
-}
-
-static inline int getff (struct dma_cont *d)
-{
-    int ff;
-
-    ff = d->flip_flop;
-    d->flip_flop = !ff;
-    return ff;
-}
-
-static uint32_t read_chan (void *opaque, uint32_t nport)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int ichan, nreg, iport, ff, val, dir;
-    struct dma_regs *r;
-
-    iport = (nport >> d->dshift) & 0x0f;
-    ichan = iport >> 1;
-    nreg = iport & 1;
-    r = d->regs + ichan;
-
-    dir = ((r->mode >> 5) & 1) ? -1 : 1;
-    ff = getff (d);
-    if (nreg)
-        val = (r->base[COUNT] << d->dshift) - r->now[COUNT];
-    else
-        val = r->now[ADDR] + r->now[COUNT] * dir;
-
-    ldebug ("read_chan %#x -> %d\n", iport, val);
-    return (val >> (d->dshift + (ff << 3))) & 0xff;
-}
-
-static void write_chan (void *opaque, uint32_t nport, uint32_t data)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int iport, ichan, nreg;
-    struct dma_regs *r;
-
-    iport = (nport >> d->dshift) & 0x0f;
-    ichan = iport >> 1;
-    nreg = iport & 1;
-    r = d->regs + ichan;
-    if (getff (d)) {
-        r->base[nreg] = (r->base[nreg] & 0xff) | ((data << 8) & 0xff00);
-        init_chan (d, ichan);
-    } else {
-        r->base[nreg] = (r->base[nreg] & 0xff00) | (data & 0xff);
-    }
-}
-
-static void write_cont (void *opaque, uint32_t nport, uint32_t data)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int iport, ichan = 0;
-
-    iport = (nport >> d->dshift) & 0x0f;
-    switch (iport) {
-    case 0x08:                  /* command */
-        if ((data != 0) && (data & CMD_NOT_SUPPORTED)) {
-            dolog ("command %#x not supported\n", data);
-            return;
-        }
-        d->command = data;
-        break;
-
-    case 0x09:
-        ichan = data & 3;
-        if (data & 4) {
-            d->status |= 1 << (ichan + 4);
-        }
-        else {
-            d->status &= ~(1 << (ichan + 4));
-        }
-        d->status &= ~(1 << ichan);
-        break;
-
-    case 0x0a:                  /* single mask */
-        if (data & 4)
-            d->mask |= 1 << (data & 3);
-        else
-            d->mask &= ~(1 << (data & 3));
-        break;
-
-    case 0x0b:                  /* mode */
+        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
+        reg      = (port >> dc->is16bit) & 0x0f;
+        chidx    = reg >> 1;
+        is_count = reg & 1;
+        ch       = &dc->ChState[chidx];
+        if (dmaReadBytePtr(dc))
         {
-            ichan = data & 3;
-#ifdef DEBUG_DMA
-            {
-                int op, ai, dir, opmode;
-                op = (data >> 2) & 3;
-                ai = (data >> 4) & 1;
-                dir = (data >> 5) & 1;
-                opmode = (data >> 6) & 3;
+            /* Write the high byte. */
+            if (is_count)
+                ch->u16BaseCount = RT_MAKE_U16(ch->u16BaseCount, u32);
+            else
+                ch->u16BaseAddr  = RT_MAKE_U16(ch->u16BaseAddr, u32);
 
-                linfo ("ichan %d, op %d, ai %d, dir %d, opmode %d\n",
-                       ichan, op, ai, dir, opmode);
+            ch->u16CurCount = 0;
+            ch->u16CurAddr  = ch->u16BaseAddr;
+        }
+        else
+        {
+            /* Write the low byte. */
+            if (is_count)
+                ch->u16BaseCount = RT_MAKE_U16(u32, RT_HIBYTE(ch->u16BaseCount));
+            else
+                ch->u16BaseAddr  = RT_MAKE_U16(u32, RT_HIBYTE(ch->u16BaseAddr));
+        }
+        Log2(("dmaWriteAddr: port %#06x, chidx %d, data %#02x\n",
+              port, chidx, u32));
+    }
+    else
+    {
+        /* Likely a guest bug. */
+        Log(("Bad size write to count register %#x (size %d, data %#x)\n",
+             port, cb, u32));
+    }
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) dmaReadAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                     uint32_t *pu32, unsigned cb)
+{
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        DMAChannel  *ch;
+        int         chidx, reg, val, dir;
+        int         bptr;
+
+        reg   = (port >> dc->is16bit) & 0x0f;
+        chidx = reg >> 1;
+        ch    = &dc->ChState[chidx];
+
+        dir = IS_MODE_DEC(ch->u8Mode) ? -1 : 1;
+        if (reg & 1)
+            val = ch->u16BaseCount - ch->u16CurCount;
+        else
+            val = ch->u16CurAddr + ch->u16CurCount * dir;
+
+        bptr = dmaReadBytePtr(dc);
+        *pu32 = RT_LOBYTE(val >> (bptr * 8));
+
+        Log(("Count read: port %#06x, reg %#04x, data %#x\n", port, reg, val));
+        return VINF_SUCCESS;
+    }
+    else
+        return VERR_IOM_IOPORT_UNUSED;
+}
+
+/* DMA control registers writes and reads. */
+
+static DECLCALLBACK(int) dmaWriteCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                     uint32_t u32, unsigned cb)
+{
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        int         chidx = 0;
+        int         reg;
+
+        reg = ((port >> dc->is16bit) & 0x0f) - 8;
+        Assert((reg >= CTL_W_CMD && reg <= CTL_W_MASK));
+        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
+
+        switch (reg) {
+        case CTL_W_CMD:
+            /* Unsupported commands are entirely ignored. */
+            if (u32 & CMD_UNSUPPORTED)
+            {
+                Log(("DMA command %#x is not supported, ignoring!\n", u32));
+                break;
             }
-#endif
-            d->regs[ichan].mode = data;
+            dc->u8Command = u32;
+            break;
+        case CTL_W_DMAREQ:
+            chidx = u32 & 3;
+            if (u32 & 4)
+                dc->u8Status |= 1 << (chidx + 4);
+            else
+                dc->u8Status &= ~(1 << (chidx + 4));
+            dc->u8Status &= ~(1 << chidx);  /* Clear TC for channel. */
+            break;
+        case CTL_W_MASKONE:
+            chidx = u32 & 3;
+            if (u32 & 4)
+                dc->u8Mask |= 1 << chidx;
+            else
+                dc->u8Mask &= ~(1 << chidx);
+            break;
+        case CTL_W_MODE:
+            {
+                int op, opmode;
+
+                chidx = u32 & 3;
+                op = (u32 >> 2) & 3;
+                opmode = (u32 >> 6) & 3;
+                Log2(("chidx %d, op %d, %sauto-init, %screment, opmode %d\n",
+                      chidx, op, IS_MODE_AI(u32) ? "" : "no ",
+                      IS_MODE_DEC(u32) ? "de" : "in", opmode));
+
+                dc->ChState[chidx].u8Mode = u32;
+                break;
+            }
+        case CTL_W_CLRBPTR:
+            dc->bHiByte = false;
+            break;
+        case CTL_W_MASTRCLR:
+            dmaClear(dc);
+            break;
+        case CTL_W_CLRMASK:
+            dc->u8Mask = 0;
+            break;
+        case CTL_W_MASK:
+            dc->u8Mask = u32;
+            break;
+        default:
+            Assert(0);
+            break;
+        }
+        Log(("dmaWriteCtl: port %#06x, chidx %d, data %#02x\n",
+              port, chidx, u32));
+    }
+    else
+    {
+        /* Likely a guest bug. */
+        Log(("Bad size write to controller register %#x (size %d, data %#x)\n",
+             port, cb, u32));
+    }
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                    uint32_t *pu32, unsigned cb)
+{
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        uint8_t     val;
+        int         reg;
+
+        reg = ((port >> dc->is16bit) & 0x0f) - 8;
+        Assert((reg >= CTL_R_STAT && reg <= CTL_R_MASK));
+
+        switch (reg) {
+        case CTL_R_STAT:
+            val = dc->u8Status;
+            dc->u8Status &= 0xf0;   /* A read clears all TCs. */
+            break;
+        case CTL_R_DMAREQ:
+            val = (dc->u8Status >> 4) | 0xf0;
+            break;
+        case CTL_R_CMD:
+            val = dc->u8Command;
+            break;
+        case CTL_R_MODE:
+            val = dc->ChState[dc->u8ModeCtr].u8Mode | 3;
+            dc->u8ModeCtr = (dc->u8ModeCtr + 1) & 3;
+        case CTL_R_SETBPTR:
+            dc->bHiByte = true;
+            break;
+        case CTL_R_TEMP:
+            val = dc->u8Temp;
+            break;
+        case CTL_R_CLRMODE:
+            dc->u8ModeCtr = 0;
+            break;
+        case CTL_R_MASK:
+            val = dc->u8Mask;
+            break;
+        default:
+            Assert(0);
+            val = 0;
             break;
         }
 
-    case 0x0c:                  /* clear flip flop */
-        d->flip_flop = 0;
-        break;
+        Log(("Ctrl read: port %#06x, reg %#04x, data %#x\n", port, reg, val));
+        *pu32 = val;
 
-    case 0x0d:                  /* reset */
-        d->flip_flop = 0;
-        d->mask = ~0;
-        d->status = 0;
-        d->command = 0;
-        break;
-
-    case 0x0e:                  /* clear mask for all channels */
-        d->mask = 0;
-        break;
-
-    case 0x0f:                  /* write mask for all channels */
-        d->mask = data;
-        break;
-
-    default:
-        dolog ("unknown iport %#x\n", iport);
-        break;
+        return VINF_SUCCESS;
     }
-
-#ifdef DEBUG_DMA
-    if (0xc != iport) {
-        linfo ("write_cont: nport %#06x, ichan % 2d, val %#06x\n",
-               nport, ichan, data);
-    }
-#endif
+    else 
+        return VERR_IOM_IOPORT_UNUSED;
 }
 
-static uint32_t read_cont (void *opaque, uint32_t nport)
+/* DMA page registers. There are 16 R/W page registers for compatibility with 
+ * the IBM PC/AT; only some of those registers are used for DMA. The page register
+ * accessible via port 80h may be read to insert small delays or used as a scratch
+ * register by a BIOS.
+ */
+static DECLCALLBACK(int) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                     uint32_t *pu32, unsigned cb)
 {
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int iport, val;
+    if (cb == 1) 
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        int         reg;
 
-    iport = (nport >> d->dshift) & 0x0f;
-    switch (iport) {
-    case 0x08:                  /* status */
-        val = d->status;
-        d->status &= 0xf0;
-        break;
-    case 0x0f:                  /* mask */
-        val = d->mask;
-        break;
-    default:
-        val = 0;
-        break;
-    }
-
-    ldebug ("read_cont: nport %#06x, iport %#04x val %#x\n", nport, iport, val);
-    return val;
-}
-
-static uint8_t DMA_get_channel_mode (DMAState *s, int nchan)
-{
-    return s->dma_controllers[nchan > 3].regs[nchan & 3].mode;
-}
-
-static void DMA_hold_DREQ (DMAState *s, int nchan)
-{
-    int ncont, ichan;
-
-    ncont = nchan > 3;
-    ichan = nchan & 3;
-    linfo ("held cont=%d chan=%d\n", ncont, ichan);
-    s->dma_controllers[ncont].status |= 1 << (ichan + 4);
-}
-
-static void DMA_release_DREQ (DMAState *s, int nchan)
-{
-    int ncont, ichan;
-
-    ncont = nchan > 3;
-    ichan = nchan & 3;
-    linfo ("released cont=%d chan=%d\n", ncont, ichan);
-    s->dma_controllers[ncont].status &= ~(1 << (ichan + 4));
-}
-
-static void channel_run (DMAState *s, int ncont, int ichan)
-{
-    int n;
-    struct dma_regs *r = &s->dma_controllers[ncont].regs[ichan];
-#ifdef DEBUG_DMA
-    int dir, opmode;
-
-    dir = (r->mode >> 5) & 1;
-    opmode = (r->mode >> 6) & 3;
-
-    if (dir) {
-        dolog ("DMA in address decrement mode\n");
-    }
-    if (opmode != 1) {
-        dolog ("DMA not in single mode select %#x\n", opmode);
-    }
-#endif
-
-    r = s->dma_controllers[ncont].regs + ichan;
-    n = r->transfer_handler (s->pDevIns, r->opaque, ichan + (ncont << 2),
-                             r->now[COUNT], (r->base[COUNT] + 1) << ncont);
-    r->now[COUNT] = n;
-    ldebug ("dma_pos %d size %d\n", n, (r->base[COUNT] + 1) << ncont);
-}
-
-static void DMA_run (DMAState *s)
-{
-    struct dma_cont *d;
-    int icont, ichan;
-
-    d = s->dma_controllers;
-
-    for (icont = 0; icont < 2; icont++, d++) {
-        for (ichan = 0; ichan < 4; ichan++) {
-            int mask;
-
-            mask = 1 << ichan;
-
-            if ((0 == (d->mask & mask)) && (0 != (d->status & (mask << 4))))
-                channel_run (s, icont, ichan);
-        }
-    }
-}
-
-static void DMA_register_channel (DMAState *s, unsigned nchan,
-                                  DMA_transfer_handler transfer_handler,
-                                  void *opaque)
-{
-    struct dma_regs *r;
-    int ichan, ncont;
-    LogFlow (("DMA_register_channel: s=%p nchan=%d transfer_handler=%p opaque=%p\n",
-              s, nchan, transfer_handler, opaque));
-
-    ncont = nchan > 3;
-    ichan = nchan & 3;
-
-    r = s->dma_controllers[ncont].regs + ichan;
-    r->transfer_handler = transfer_handler;
-    r->opaque = opaque;
-}
-
-static uint32_t DMA_read_memory (DMAState *s,
-                                 unsigned nchan,
-                                 void *buf,
-                                 uint32_t pos,
-                                 uint32_t len)
-{
-    struct dma_regs *r = &s->dma_controllers[nchan > 3].regs[nchan & 3];
-    uint32_t addr = ((r->pageh & 0x7f) << 24) | (r->page << 16) | r->now[ADDR];
-
-    if (r->mode & 0x20) {
-        unsigned i;
-        uint8_t *p = (uint8_t*)buf;
-
-#ifdef VBOX
-        PDMDevHlpPhysRead (s->pDevIns, addr - pos - len, buf, len);
-#else
-        cpu_physical_memory_read (addr - pos - len, buf, len);
-#endif
-        /* What about 16bit transfers? */
-        for (i = 0; i < len >> 1; i++) {
-            uint8_t b = p[len - i - 1];
-            p[i] = b;
-        }
+        reg   = port & 7;
+        *pu32 = dc->au8Page[reg];
+        Log2(("Read %#x to from page register %#x (channel %d)\n", 
+              *pu32, port, DMAPG2CX(reg)));
+        return VINF_SUCCESS;
     }
     else
-#ifdef VBOX
-        PDMDevHlpPhysRead (s->pDevIns, addr + pos, buf, len);
-#else
-        cpu_physical_memory_read (addr + pos, buf, len);
-#endif
-    return len;
+        return VERR_IOM_IOPORT_UNUSED;
 }
 
-static uint32_t DMA_write_memory (DMAState *s,
-                                  unsigned nchan,
-                                  const void *buf,
-                                  uint32_t pos,
-                                  uint32_t len)
+static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                      uint32_t u32, unsigned cb)
 {
-    struct dma_regs *r = &s->dma_controllers[nchan > 3].regs[nchan & 3];
-    uint32_t addr = ((r->pageh & 0x7f) << 24) | (r->page << 16) | r->now[ADDR];
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        int         reg;
 
-    if (r->mode & 0x20) {
-        unsigned i;
-        uint8_t *p = (uint8_t *) buf;
-
-#ifdef VBOX
-        PDMDevHlpPhysWrite (s->pDevIns, addr - pos - len, buf, len);
-#else
-        cpu_physical_memory_write (addr - pos - len, buf, len);
-#endif
-        /* What about 16bit transfers? */
-        for (i = 0; i < len; i++) {
-            uint8_t b = p[len - i - 1];
-            p[i] = b;
-        }
+        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
+        reg = port & 7;
+        dc->au8Page[reg]   = u32;
+        dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
+        Log2(("Wrote %#x to page register %#x (channel %d)\n",
+              u32, port, DMAPG2CX(reg)));
     }
     else
-#ifdef VBOX
-        PDMDevHlpPhysWrite (s->pDevIns, addr + pos, buf, len);
-#else
-        cpu_physical_memory_write (addr + pos, buf, len);
-#endif
-
-    return len;
-}
-
-
-#ifndef VBOX
-/* request the emulator to transfer a new DMA memory block ASAP */
-void DMA_schedule(int nchan)
-{
-    cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
-}
-#endif
-
-static void dma_reset(void *opaque)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    write_cont (d, (0x0d << d->dshift), 0);
-}
-
-#ifdef VBOX
-#define IO_READ_PROTO(n)                                        \
-static DECLCALLBACK(int) io_read_##n (PPDMDEVINS pDevIns,       \
-                                      void *pvUser,             \
-                                      RTIOPORT Port,          \
-                                      uint32_t *pu32,           \
-                                      unsigned cb)
-
-
-#define IO_WRITE_PROTO(n)                                       \
-static DECLCALLBACK(int) io_write_##n (PPDMDEVINS pDevIns,      \
-                                       void *pvUser,            \
-                                       RTIOPORT Port,         \
-                                       uint32_t u32,            \
-                                       unsigned cb)
-
-IO_WRITE_PROTO (chan)
-{
-    if (cb == 1) {
-        write_chan (pvUser, Port, u32);
+    {
+        /* Likely a guest bug. */
+        Log(("Bad size write to page register %#x (size %d, data %#x)\n",
+             port, cb, u32));
     }
-#ifdef PARANOID
-    else {
-        Log (("Unknown write to %#x of size %d, value %#x\n",
-              Port, cb, u32));
-    }
-#endif
     return VINF_SUCCESS;
 }
 
-IO_WRITE_PROTO (page)
+/* EISA style high page registers, for extending the DMA addresses to cover
+ * the entire 32-bit address space.
+ */
+static DECLCALLBACK(int) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                       uint32_t *pu32, unsigned cb)
 {
-    if (cb == 1) {
-        write_page (pvUser, Port, u32);
+    if (cb == 1) 
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        int         reg;
+
+        reg   = port & 7;
+        *pu32 = dc->au8PageHi[reg];
+        Log2(("Read %#x to from high page register %#x (channel %d)\n", 
+              *pu32, port, DMAPG2CX(reg)));
+        return VINF_SUCCESS;
     }
-#ifdef PARANOID
-    else {
-        Log (("Unknown write to %#x of size %d, value %#x\n",
-              Port, cb, u32));
+    else
+        return VERR_IOM_IOPORT_UNUSED;
+}
+
+static DECLCALLBACK(int) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
+                                        uint32_t u32, unsigned cb)
+{
+    if (cb == 1)
+    {
+        DMAControl  *dc = (DMAControl *)pvUser;
+        int         reg;
+
+        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
+        reg = port & 7;
+        dc->au8PageHi[reg] = u32;
+        Log2(("Wrote %#x to high page register %#x (channel %d)\n", 
+              u32, port, DMAPG2CX(reg)));
     }
-#endif
+    else
+    {
+        /* Likely a guest bug. */
+        Log(("Bad size write to high page register %#x (size %d, data %#x)\n",
+             port, cb, u32));
+    }
     return VINF_SUCCESS;
 }
 
-IO_WRITE_PROTO (pageh)
+/* Perform any pending transfers on a single DMA channel. */
+static void dmaRunChannel(DMAState *s, int ctlidx, int chidx)
 {
-    if (cb == 1) {
-        write_pageh (pvUser, Port, u32);
-    }
-#ifdef PARANOID
-    else {
-        Log (("Unknown write to %#x of size %d, value %#x\n",
-              Port, cb, u32));
-    }
-#endif
-    return VINF_SUCCESS;
+    DMAControl  *dc = &s->DMAC[ctlidx];
+    DMAChannel  *ch = &dc->ChState[chidx];
+    uint32_t    start_cnt, end_cnt;
+    int         opmode;
+
+    opmode = (ch->u8Mode >> 6) & 3;
+
+    Log3(("DMA address %screment, mode %d\n",
+          IS_MODE_DEC(ch->u8Mode) ? "de" : "in",
+          ch->u8Mode >> 6));
+
+    /* Addresses and counts are shifted for 16-bit channels. */
+    start_cnt = ch->u16CurCount << dc->is16bit;
+    end_cnt = ch->pfnXferHandler(s->pDevIns, ch->pvUser, (ctlidx * 4) + chidx,
+                                 start_cnt, (ch->u16BaseCount + 1) << dc->is16bit);
+    ch->u16CurCount = end_cnt >> dc->is16bit;
+    Log3(("DMA position %d, size %d\n", end_cnt, (ch->u16BaseCount + 1) << dc->is16bit));
 }
 
-IO_WRITE_PROTO (cont)
+static bool dmaRun(PPDMDEVINS pDevIns)
 {
-    if (cb == 1) {
-        write_cont (pvUser, Port, u32);
-    }
-#ifdef PARANOID
-    else {
-        Log (("Unknown write to %#x of size %d, value %#x\n",
-              Port, cb, u32));
-    }
-#endif
-    return VINF_SUCCESS;
-}
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAControl  *dc;
+    int         ctlidx, chidx, mask;
 
-IO_READ_PROTO (chan)
-{
-    if (cb == 1) {
-        *pu32 = read_chan (pvUser, Port);
-        return VINF_SUCCESS;
-    }
-    else {
-        return VERR_IOM_IOPORT_UNUSED;
-    }
-}
+    /* Run all controllers and channels. */
+    for (ctlidx = 0; ctlidx < 2; ++ctlidx)
+    {
+        dc = &s->DMAC[ctlidx];
 
-IO_READ_PROTO (page)
-{
-    if (cb == 1) {
-        *pu32 = read_page (pvUser, Port);
-        return VINF_SUCCESS;
-    }
-    else {
-        return VERR_IOM_IOPORT_UNUSED;
-    }
-}
+        /* If controller is disabled, don't even bother. */
+        if (dc->u8Command & CMD_DISABLE)
+            continue;
 
-IO_READ_PROTO (pageh)
-{
-    if (cb == 1) {
-        *pu32 = read_pageh (pvUser, Port);
-        return VINF_SUCCESS;
-    }
-    else {
-        return VERR_IOM_IOPORT_UNUSED;
-    }
-}
-
-IO_READ_PROTO (cont)
-{
-    if (cb == 1) {
-        *pu32 = read_cont (pvUser, Port);
-        return VINF_SUCCESS;
-    }
-    else {
-        return VERR_IOM_IOPORT_UNUSED;
-    }
-}
-#endif
-
-/* dshift = 0: 8 bit DMA, 1 = 16 bit DMA */
-static void dma_init2(DMAState *s, struct dma_cont *d, int base, int dshift,
-                      int page_base, int pageh_base)
-{
-    const static int page_port_list[] = { 0x1, 0x2, 0x3, 0x7 };
-    int i;
-
-    d->dshift = dshift;
-    for (i = 0; i < 8; i++) {
-#ifdef VBOX
-        PDMDevHlpIOPortRegister (s->pDevIns, base + (i << dshift), 1, d,
-                                 io_write_chan, io_read_chan, NULL, NULL, "DMA");
-#else
-        register_ioport_write (base + (i << dshift), 1, 1, write_chan, d);
-        register_ioport_read (base + (i << dshift), 1, 1, read_chan, d);
-#endif
-    }
-    for (i = 0; i < LENOFA (page_port_list); i++) {
-#ifdef VBOX
-        PDMDevHlpIOPortRegister (s->pDevIns, page_base + page_port_list[i], 1, d,
-                                 io_write_page, io_read_page, NULL, NULL, "DMA Page");
-#else
-        register_ioport_write (page_base + page_port_list[i], 1, 1,
-                               write_page, d);
-        register_ioport_read (page_base + page_port_list[i], 1, 1,
-                              read_page, d);
-#endif
-        if (pageh_base >= 0) {
-#ifdef VBOX
-            PDMDevHlpIOPortRegister (s->pDevIns, pageh_base + page_port_list[i], 1, d,
-                                     io_write_pageh, io_read_pageh, NULL, NULL, "DMA Page High");
-#else
-            register_ioport_write (pageh_base + page_port_list[i], 1, 1,
-                                   write_pageh, d);
-            register_ioport_read (pageh_base + page_port_list[i], 1, 1,
-                                  read_pageh, d);
-#endif
+        for (chidx = 0; chidx < 4; ++chidx)
+        {
+            mask = 1 << chidx;
+            if (!(dc->u8Mask & mask) && (dc->u8Status & (mask << 4)))
+                dmaRunChannel(s, ctlidx, chidx);
         }
-    }
-    for (i = 0; i < 8; i++) {
-#ifdef VBOX
-        PDMDevHlpIOPortRegister (s->pDevIns, base + ((i + 8) << dshift), 1, d,
-                                 io_write_cont, io_read_cont, NULL, NULL, "DMA cont");
-#else
-        register_ioport_write (base + ((i + 8) << dshift), 1, 1,
-                               write_cont, d);
-        register_ioport_read (base + ((i + 8) << dshift), 1, 1,
-                              read_cont, d);
-#endif
-    }
-#ifndef VBOX
-    qemu_register_reset(dma_reset, d);
-#endif
-    dma_reset(d);
-}
-
-static void dma_save (QEMUFile *f, void *opaque)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int i;
-
-    /* qemu_put_8s (f, &d->status); */
-    qemu_put_8s (f, &d->command);
-    qemu_put_8s (f, &d->mask);
-    qemu_put_8s (f, &d->flip_flop);
-    qemu_put_be32s (f, &d->dshift);
-
-    for (i = 0; i < 4; ++i) {
-        struct dma_regs *r = &d->regs[i];
-        qemu_put_be32s (f, &r->now[0]);
-        qemu_put_be32s (f, &r->now[1]);
-        qemu_put_be16s (f, &r->base[0]);
-        qemu_put_be16s (f, &r->base[1]);
-        qemu_put_8s (f, &r->mode);
-        qemu_put_8s (f, &r->page);
-        qemu_put_8s (f, &r->pageh);
-        qemu_put_8s (f, &r->dack);
-        qemu_put_8s (f, &r->eop);
-    }
-}
-
-static int dma_load (QEMUFile *f, void *opaque, int version_id)
-{
-    struct dma_cont *d = (struct dma_cont*)opaque;
-    int i;
-
-    if (version_id != 1)
-#ifdef VBOX
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-#else
-        return -EINVAL;
-#endif
-
-    /* qemu_get_8s (f, &d->status); */
-    qemu_get_8s (f, &d->command);
-    qemu_get_8s (f, &d->mask);
-    qemu_get_8s (f, &d->flip_flop);
-    qemu_get_be32s (f, &d->dshift);
-
-    for (i = 0; i < 4; ++i) {
-        struct dma_regs *r = &d->regs[i];
-        qemu_get_be32s (f, &r->now[0]);
-        qemu_get_be32s (f, &r->now[1]);
-        qemu_get_be16s (f, &r->base[0]);
-        qemu_get_be16s (f, &r->base[1]);
-        qemu_get_8s (f, &r->mode);
-        qemu_get_8s (f, &r->page);
-        qemu_get_8s (f, &r->pageh);
-        qemu_get_8s (f, &r->dack);
-        qemu_get_8s (f, &r->eop);
     }
     return 0;
 }
 
-#ifndef VBOX
-void DMA_init (int high_page_enable)
+static void dmaRegister(PPDMDEVINS pDevIns, unsigned channel,
+                        PFNDMATRANSFERHANDLER handler, void *pvUser)
 {
-    dma_init2(&dma_controllers[0], 0x00, 0, 0x80,
-              high_page_enable ? 0x480 : -1);
-    dma_init2(&dma_controllers[1], 0xc0, 1, 0x88,
-              high_page_enable ? 0x488 : -1);
-    register_savevm ("dma", 0, 1, dma_save, dma_load, &dma_controllers[0]);
-    register_savevm ("dma", 1, 1, dma_save, dma_load, &dma_controllers[1]);
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);    
+    DMAChannel  *ch = &s->DMAC[DMACH2C(channel)].ChState[channel & 3];
+
+    LogFlow(("dmaRegister: s=%p channel=%u XferHandler=%p pvUser=%p\n",
+             s, channel, handler, pvUser));
+
+    ch->pfnXferHandler = handler;
+    ch->pvUser = pvUser;
 }
+
+/* Reverse the order of bytes in a memory buffer. */
+static void dmaReverseBuf8(void *buf, unsigned len)
+{
+    uint8_t     *pBeg, *pEnd;
+    uint8_t     temp;
+
+    pBeg = (uint8_t *)buf;
+    pEnd = pBeg + len - 1;
+    for (len = len / 2; len; --len)
+    {
+        temp = *pBeg;
+        *pBeg++ = *pEnd;
+        *pEnd-- = temp;
+    }
+}
+
+/* Reverse the order of words in a memory buffer. */
+static void dmaReverseBuf16(void *buf, unsigned len)
+{
+    uint16_t    *pBeg, *pEnd;
+    uint16_t    temp;
+
+    Assert(!(len & 1));
+    len /= 2;   /* Convert to word count. */
+    pBeg = (uint16_t *)buf;
+    pEnd = pBeg + len - 1;
+    for (len = len / 2; len; --len)
+    {
+        temp = *pBeg;
+        *pBeg++ = *pEnd;
+        *pEnd-- = temp;
+    }
+}
+
+static uint32_t dmaReadMemory(PPDMDEVINS pDevIns, unsigned channel,
+                              void *buf, uint32_t pos, uint32_t len)
+{
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAControl  *dc = &s->DMAC[DMACH2C(channel)];
+    DMAChannel  *ch = &dc->ChState[channel & 3];
+    uint32_t    page, pagehi;
+    uint32_t    addr;
+
+    LogFlow(("dmaReadMemory: s=%p channel=%u buf=%p pos=%u len=%u\n",
+             s, channel, buf, pos, len));
+
+    /* Build the address for this transfer. */
+    page   = dc->au8Page[DMACH2PG(channel)] & ~dc->is16bit;
+    pagehi = dc->au8PageHi[DMACH2PG(channel)];
+    addr   = (pagehi << 24) | (page << 16) | (ch->u16CurAddr << dc->is16bit);
+
+    if (IS_MODE_DEC(ch->u8Mode))
+    {
+        PDMDevHlpPhysRead(s->pDevIns, addr - pos - len, buf, len);
+        if (dc->is16bit)
+            dmaReverseBuf16(buf, len);
+        else
+            dmaReverseBuf8(buf, len);
+    }
+    else
+        PDMDevHlpPhysRead(s->pDevIns, addr + pos, buf, len);
+
+    return len;
+}
+
+static uint32_t dmaWriteMemory(PPDMDEVINS pDevIns, unsigned channel,
+                               const void *buf, uint32_t pos, uint32_t len)
+{
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAControl  *dc = &s->DMAC[DMACH2C(channel)];
+    DMAChannel  *ch = &dc->ChState[channel & 3];
+    uint32_t    page, pagehi;
+    uint32_t    addr;
+
+    LogFlow(("dmaWriteMemory: s=%p channel=%u buf=%p pos=%u len=%u\n",
+             s, channel, buf, pos, len));
+
+    /* Build the address for this transfer. */
+    page   = dc->au8Page[DMACH2PG(channel)] & ~dc->is16bit;
+    pagehi = dc->au8PageHi[DMACH2PG(channel)];
+    addr   = (pagehi << 24) | (page << 16) | (ch->u16CurAddr << dc->is16bit);
+
+    if (IS_MODE_DEC(ch->u8Mode))
+    {
+        //@todo: This would need a temporary buffer.
+        Assert(0);
+#if 0
+        if (dc->is16bit)
+            dmaReverseBuf16(buf, len);
+        else
+            dmaReverseBuf8(buf, len);
 #endif
+        PDMDevHlpPhysWrite(s->pDevIns, addr - pos - len, buf, len);
+    }
+    else
+        PDMDevHlpPhysWrite(s->pDevIns, addr + pos, buf, len);
 
-#ifdef VBOX
-static bool run_wrapper (PPDMDEVINS pDevIns)
+    return len;
+}
+
+static void dmaSetDREQ(PPDMDEVINS pDevIns, unsigned channel, unsigned level)
 {
-    DMA_run (PDMINS_2_DATA (pDevIns, DMAState *));
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAControl  *dc = &s->DMAC[DMACH2C(channel)];
+    int         chidx;
+
+    LogFlow(("dmaSetDREQ: s=%p channel=%u level=%u\n", s, channel, level));
+
+    chidx  = channel & 3;
+    if (level) 
+        dc->u8Status |= 1 << (chidx + 4);
+    else
+        dc->u8Status &= ~(1 << (chidx + 4));
+}
+
+static uint8_t dmaGetChannelMode(PPDMDEVINS pDevIns, unsigned channel)
+{
+    DMAState *s = PDMINS_2_DATA(pDevIns, DMAState *);
+
+    LogFlow(("dmaGetChannelMode: s=%p channel=%u\n", s, channel));
+
+    return s->DMAC[DMACH2C(channel)].ChState[channel & 3].u8Mode;
+}
+
+static void dmaReset(PPDMDEVINS pDevIns)
+{
+    DMAState *s = PDMINS_2_DATA(pDevIns, DMAState *);
+
+    LogFlow(("dmaReset: s=%p\n", s));
+
+    /* NB: The page and address registers are unaffected by a reset
+     * and in an undefined state after power-up.
+     */
+    dmaClear(&s->DMAC[0]);
+    dmaClear(&s->DMAC[1]);
+}
+
+/* Register DMA I/O port handlers. */
+static void dmaIORegister(PPDMDEVINS pDevIns, bool bHighPage)
+{
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAControl  *dc8;
+    DMAControl  *dc16;
+
+    dc8  = &s->DMAC[0];
+    dc16 = &s->DMAC[1];
+
+    dc8->is16bit  = false;
+    dc16->is16bit = true;
+
+    /* Base and current address for each channel. */
+    PDMDevHlpIOPortRegister(s->pDevIns, 0x00, 8, dc8,
+                            dmaWriteAddr, dmaReadAddr, NULL, NULL, "DMA8 Address");
+    PDMDevHlpIOPortRegister(s->pDevIns, 0xC0, 16, dc16,
+                            dmaWriteAddr, dmaReadAddr, NULL, NULL, "DMA16 Address");
+    /* Control registers for both DMA controllers. */
+    PDMDevHlpIOPortRegister(s->pDevIns, 0x08, 8, dc8,
+                            dmaWriteCtl, dmaReadCtl, NULL, NULL, "DMA8 Control");
+    PDMDevHlpIOPortRegister(s->pDevIns, 0xD0, 16, dc16,
+                            dmaWriteCtl, dmaReadCtl, NULL, NULL, "DMA16 Control");
+    /* Page registers for each channel (plus a few unused ones). */
+    PDMDevHlpIOPortRegister(s->pDevIns, 0x80, 8, dc8,
+                            dmaWritePage, dmaReadPage, NULL, NULL, "DMA8 Page");
+    PDMDevHlpIOPortRegister(s->pDevIns, 0x88, 8, dc16,
+                            dmaWritePage, dmaReadPage, NULL, NULL, "DMA16 Page");
+    /* Optional EISA style high page registers (address bits 24-31). */
+    if (bHighPage)
+    {
+        PDMDevHlpIOPortRegister(s->pDevIns, 0x480, 8, dc8,
+                                dmaWriteHiPage, dmaReadHiPage, NULL, NULL, "DMA8 Page High");
+        PDMDevHlpIOPortRegister(s->pDevIns, 0x488, 8, dc16,
+                                dmaWriteHiPage, dmaReadHiPage, NULL, NULL, "DMA16 Page High");
+    }
+}
+
+static void dmaSaveController(PSSMHANDLE pSSMHandle, DMAControl *dc)
+{
+    int         chidx;
+
+    /* Save controller state... */
+    SSMR3PutU8(pSSMHandle, dc->u8Command);
+    SSMR3PutU8(pSSMHandle, dc->u8Mask);
+    SSMR3PutU8(pSSMHandle, dc->bHiByte);
+    SSMR3PutU32(pSSMHandle, dc->is16bit);
+    SSMR3PutU8(pSSMHandle, dc->u8Status);
+    SSMR3PutU8(pSSMHandle, dc->u8Temp);
+    SSMR3PutU8(pSSMHandle, dc->u8ModeCtr);
+    SSMR3PutMem(pSSMHandle, &dc->au8Page, sizeof(dc->au8Page));
+    SSMR3PutMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
+
+    /* ...and all four of its channels. */
+    for (chidx = 0; chidx < 4; ++chidx) 
+    {
+        DMAChannel  *ch = &dc->ChState[chidx];
+
+        SSMR3PutU16(pSSMHandle, ch->u16CurAddr);
+        SSMR3PutU16(pSSMHandle, ch->u16CurCount);
+        SSMR3PutU16(pSSMHandle, ch->u16BaseAddr);
+        SSMR3PutU16(pSSMHandle, ch->u16BaseCount);
+        SSMR3PutU8(pSSMHandle, ch->u8Mode);
+    }
+}
+
+static int dmaLoadController(PSSMHANDLE pSSMHandle, DMAControl *dc, int version)
+{
+    uint8_t     u8val;
+    uint32_t    u32val;
+    int         chidx;
+
+    SSMR3GetU8(pSSMHandle, &dc->u8Command);
+    SSMR3GetU8(pSSMHandle, &dc->u8Mask);
+    SSMR3GetU8(pSSMHandle, &u8val);
+    dc->bHiByte = !!u8val;
+    SSMR3GetU32(pSSMHandle, &dc->is16bit);
+    if (version > DMA_SAVESTATE_OLD)
+    {
+        SSMR3GetU8(pSSMHandle, &dc->u8Status);
+        SSMR3GetU8(pSSMHandle, &dc->u8Temp);
+        SSMR3GetU8(pSSMHandle, &dc->u8ModeCtr);
+        SSMR3GetMem(pSSMHandle, &dc->au8Page, sizeof(dc->au8Page));
+        SSMR3GetMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
+    }
+
+    for (chidx = 0; chidx < 4; ++chidx) 
+    {
+        DMAChannel  *ch = &dc->ChState[chidx];
+
+        if (version == DMA_SAVESTATE_OLD)
+        {
+            /* Convert from 17-bit to 16-bit format. */
+            SSMR3GetU32(pSSMHandle, &u32val);
+            ch->u16CurAddr = u32val >> dc->is16bit;
+            SSMR3GetU32(pSSMHandle, &u32val);
+            ch->u16CurCount = u32val >> dc->is16bit;
+        }
+        else
+        {
+            SSMR3GetU16(pSSMHandle, &ch->u16CurAddr);
+            SSMR3GetU16(pSSMHandle, &ch->u16CurCount);
+        }
+        SSMR3GetU16(pSSMHandle, &ch->u16BaseAddr);
+        SSMR3GetU16(pSSMHandle, &ch->u16BaseCount);
+        SSMR3GetU8(pSSMHandle, &ch->u8Mode);
+        /* Convert from old save state. */
+        if (version == DMA_SAVESTATE_OLD)
+        {
+            /* Remap page register contents. */
+            SSMR3GetU8(pSSMHandle, &u8val);
+            dc->au8Page[DMACX2PG(chidx)] = u8val;
+            SSMR3GetU8(pSSMHandle, &u8val);
+            dc->au8PageHi[DMACX2PG(chidx)] = u8val;
+            /* Throw away dack, eop. */
+            SSMR3GetU8(pSSMHandle, &u8val);
+            SSMR3GetU8(pSSMHandle, &u8val);
+        }
+    }
     return 0;
-}
-
-static void register_channel_wrapper (PPDMDEVINS pDevIns,
-                                      unsigned nchan,
-                                      PFNDMATRANSFERHANDLER f,
-                                      void *opaque)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    DMA_register_channel (s, nchan, f, opaque);
-}
-
-static uint32_t rd_mem_wrapper (PPDMDEVINS pDevIns,
-                                unsigned nchan,
-                                void *buf,
-                                uint32_t pos,
-                                uint32_t len)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    return DMA_read_memory (s, nchan, buf, pos, len);
-}
-
-static uint32_t wr_mem_wrapper (PPDMDEVINS pDevIns,
-                                unsigned nchan,
-                                const void *buf,
-                                uint32_t pos,
-                                uint32_t len)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    return DMA_write_memory (s, nchan, buf, pos, len);
-}
-
-static void set_DREQ_wrapper (PPDMDEVINS pDevIns,
-                              unsigned nchan,
-                              unsigned level)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    if (level) {
-        DMA_hold_DREQ (s, nchan);
-    }
-    else {
-        DMA_release_DREQ (s, nchan);
-    }
-}
-
-static uint8_t get_mode_wrapper (PPDMDEVINS pDevIns, unsigned nchan)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    return DMA_get_channel_mode (s, nchan);
-}
-
-static void dmaReset (PPDMDEVINS pDevIns)
-{
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    dma_reset (&s->dma_controllers[0]);
-    dma_reset (&s->dma_controllers[1]);
 }
 
 static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    dma_save (pSSMHandle, &s->dma_controllers[0]);
-    dma_save (pSSMHandle, &s->dma_controllers[1]);
+    DMAState *s = PDMINS_2_DATA(pDevIns, DMAState *);
+
+    dmaSaveController(pSSMHandle, &s->DMAC[0]);
+    dmaSaveController(pSSMHandle, &s->DMAC[1]);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) dmaLoadExec (PPDMDEVINS pDevIns,
-                                      PSSMHANDLE pSSMHandle,
-                                      uint32_t uVersion,
-                                      uint32_t uPass)
+static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
+                                     uint32_t uVersion, uint32_t uPass)
 {
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
+    DMAState *s = PDMINS_2_DATA(pDevIns, DMAState *);
 
-    AssertMsgReturn (uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    Assert (uPass == SSM_PASS_FINAL); NOREF(uPass);
+    AssertMsgReturn(uVersion <= DMA_SAVESTATE_CURRENT, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    dma_load (pSSMHandle, &s->dma_controllers[0], uVersion);
-    return dma_load (pSSMHandle, &s->dma_controllers[1], uVersion);
+    dmaLoadController(pSSMHandle, &s->DMAC[0], uVersion);
+    return dmaLoadController(pSSMHandle, &s->DMAC[1], uVersion);
 }
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns,
-                                      int iInstance,
-                                      PCFGMNODE pCfg)
+static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
-    bool high_page_enable = 0;
-    PDMDMACREG reg;
-    int rc;
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
+    bool        bHighPage = false;
+    PDMDMACREG  reg;
+    int         rc;
 
     s->pDevIns = pDevIns;
 
@@ -890,31 +872,28 @@ static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns,
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
 #if 0
-    rc = CFGMR3QueryBool (pCfg, "HighPageEnable", &high_page_enable);
-    if (RT_FAILURE (rc)) {
+    rc = CFGMR3QueryBool(pCfg, "HighPageEnable", &bHighPage);
+    if (RT_FAILURE (rc))
         return rc;
-    }
 #endif
 
-    dma_init2(s, &s->dma_controllers[0], 0x00, 0, 0x80,
-              high_page_enable ? 0x480 : -1);
-    dma_init2(s, &s->dma_controllers[1], 0xc0, 1, 0x88,
-              high_page_enable ? 0x488 : -1);
+    dmaIORegister(pDevIns, bHighPage);
+    dmaReset(pDevIns);
 
     reg.u32Version        = PDM_DMACREG_VERSION;
-    reg.pfnRun            = run_wrapper;
-    reg.pfnRegister       = register_channel_wrapper;
-    reg.pfnReadMemory     = rd_mem_wrapper;
-    reg.pfnWriteMemory    = wr_mem_wrapper;
-    reg.pfnSetDREQ        = set_DREQ_wrapper;
-    reg.pfnGetChannelMode = get_mode_wrapper;
+    reg.pfnRun            = dmaRun;
+    reg.pfnRegister       = dmaRegister;
+    reg.pfnReadMemory     = dmaReadMemory;
+    reg.pfnWriteMemory    = dmaWriteMemory;
+    reg.pfnSetDREQ        = dmaSetDREQ;
+    reg.pfnGetChannelMode = dmaGetChannelMode;
 
-    rc = PDMDevHlpDMACRegister (pDevIns, &reg, &s->pHlp);
-    if (RT_FAILURE (rc)) {
+    rc = PDMDevHlpDMACRegister(pDevIns, &reg, &s->pHlp);
+    if (RT_FAILURE (rc))
         return rc;
-    }
 
-    rc = PDMDevHlpSSMRegister (pDevIns, 1 /*uVersion*/, sizeof (*s), dmaSaveExec, dmaLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, DMA_SAVESTATE_CURRENT, sizeof(*s),
+                              dmaSaveExec, dmaLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -975,4 +954,3 @@ const PDMDEVREG g_DeviceDMA =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
-#endif /* VBOX */
