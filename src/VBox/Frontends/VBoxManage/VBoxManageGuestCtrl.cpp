@@ -80,17 +80,17 @@ typedef struct DIRECTORYENTRY
  * started guest process to the command line VBoxManage was started from.
  * Useful for e.g. scripting.
  */
-enum EXITCODE_EXEC
+enum EXITCODEEXEC
 {
-    EXITCODE_EXEC_SUCCESS      = RTEXITCODE_SUCCESS,
+    EXITCODEEXEC_SUCCESS        = RTEXITCODE_SUCCESS,
     /* Process exited normally but with an exit code <> 0. */
-    EXITCODE_EXEC_CODE         = 16,
-    EXITCODE_EXEC_FAILED       = 17,
-    EXITCODE_EXEC_TERM_SIGNAL  = 18,
-    EXITCODE_EXEC_TERM_ABEND   = 19,
-    EXITCODE_EXEC_TIMEOUT      = 20,
-    EXITCODE_EXEC_DOWN         = 21,
-    EXITCODE_EXEC_CANCELED     = 22
+    EXITCODEEXEC_CODE           = 16,
+    EXITCODEEXEC_FAILED         = 17,
+    EXITCODEEXEC_TERM_SIGNAL    = 18,
+    EXITCODEEXEC_TERM_ABEND     = 19,
+    EXITCODEEXEC_TIMEOUT        = 20,
+    EXITCODEEXEC_DOWN           = 21,
+    EXITCODEEXEC_CANCELED       = 22
 };
 
 /**
@@ -218,34 +218,34 @@ static const char *ctrlExecProcessStatusToText(ExecuteProcessStatus_T enmStatus)
 
 static int ctrlExecProcessStatusToExitCode(ExecuteProcessStatus_T enmStatus, ULONG uExitCode)
 {
-    int rc = EXITCODE_EXEC_SUCCESS;
+    int rc = EXITCODEEXEC_SUCCESS;
     switch (enmStatus)
     {
         case ExecuteProcessStatus_Started:
-            rc = EXITCODE_EXEC_SUCCESS;
+            rc = EXITCODEEXEC_SUCCESS;
             break;
         case ExecuteProcessStatus_TerminatedNormally:
-            rc = !uExitCode ? EXITCODE_EXEC_SUCCESS : EXITCODE_EXEC_CODE;
+            rc = !uExitCode ? EXITCODEEXEC_SUCCESS : EXITCODEEXEC_CODE;
             break;
         case ExecuteProcessStatus_TerminatedSignal:
-            rc = EXITCODE_EXEC_TERM_SIGNAL;
+            rc = EXITCODEEXEC_TERM_SIGNAL;
             break;
         case ExecuteProcessStatus_TerminatedAbnormally:
-            rc = EXITCODE_EXEC_TERM_ABEND;
+            rc = EXITCODEEXEC_TERM_ABEND;
             break;
         case ExecuteProcessStatus_TimedOutKilled:
-            rc = EXITCODE_EXEC_TIMEOUT;
+            rc = EXITCODEEXEC_TIMEOUT;
             break;
         case ExecuteProcessStatus_TimedOutAbnormally:
-            rc = EXITCODE_EXEC_TIMEOUT;
+            rc = EXITCODEEXEC_TIMEOUT;
             break;
         case ExecuteProcessStatus_Down:
             /* Service/OS is stopping, process was killed, so
              * not exactly an error of the started process ... */
-            rc = EXITCODE_EXEC_DOWN;
+            rc = EXITCODEEXEC_DOWN;
             break;
         case ExecuteProcessStatus_Error:
-            rc = EXITCODE_EXEC_FAILED;
+            rc = EXITCODEEXEC_FAILED;
             break;
         default:
             AssertMsgFailed(("Unknown exit code (%u) from guest process returned!\n", enmStatus));
@@ -703,7 +703,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         {
             if (fVerbose)
                 RTPrintf("Process execution canceled!\n");
-            rcProc = EXITCODE_EXEC_CANCELED;
+            rcProc = EXITCODEEXEC_CANCELED;
         }
         else if (   fCompleted
                  && SUCCEEDED(rc)) /* The GetProcessOutput rc. */
@@ -726,7 +726,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         {
             if (fVerbose)
                 RTPrintf("Process execution aborted!\n");
-            rcProc = EXITCODE_EXEC_TERM_ABEND;
+            rcProc = EXITCODEEXEC_TERM_ABEND;
         }
     }
 
