@@ -9610,10 +9610,11 @@ void Machine::commitMedia(bool aOnline /*= false*/)
          * This is necessary because the stored parent will point to the
          * session machine otherwise and cause crashes or errors later
          * when the session machine gets invalid.
-         *
-         * @todo: Change the MediumAttachment class to behave like any other class
-         *        in this regard by creating peer MediumAttachment objects for
-         *        session machines and share the data with the peer machine.
+         */
+        /** @todo Change the MediumAttachment class to behave like any other
+         *        class in this regard by creating peer MediumAttachment
+         *        objects for session machines and share the data with the peer
+         *        machine.
          */
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
