@@ -86,6 +86,10 @@ DECLINLINE(const char *) flagName(uint32_t fFlag)
             return "RDONLYHOST";
         case READONLY:
             return "READONLY";
+/** @todo r=bird: TRANSIENT_RESET is inconsistent with the other constants
+ *        in that it uses '_' and rather long (RDONLYGUEST would be
+ *        READONLY_GUEST if '_' was used). Michael, any suggestions how to
+ *        shorten it? */
         case TRANSIENT_RESET:
             return "TRANSIENT_RESET";
         default:
