@@ -106,12 +106,16 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                  * gracefully clean it up (due to a hard VM reset etc), so set this
                  * guest property using the TRANSIENT and TRANSIENT_RESET flags.
                  */
+                /** @todo r=bird: TRANSIENT_RESET should imply TRANSIENT. See
+                 *        MAX_FLAGS_LEN... */
                 rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT,TRANSIENT_RESET");
                 if (rc == VERR_PARSE_ERROR)
                 {
                     /* Host does not support the "TRANSIENT_RESET" flag, so only
                      * use the "TRANSIENT" flag -- better than nothing :-). */
                     rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
+                    /** @todo r=bird: Remember that the host doesn't support
+                     * this. */
                 }
             }
             else
