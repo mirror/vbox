@@ -2195,11 +2195,15 @@ int cpu_physical_memory_get_dirty_tracking(void)
 int cpu_physical_sync_dirty_bitmap(target_phys_addr_t start_addr,
                                    target_phys_addr_t end_addr)
 {
+#ifndef VBOX
     int ret = 0;
 
     if (kvm_enabled())
         ret = kvm_physical_sync_dirty_bitmap(start_addr, end_addr);
     return ret;
+#else
+    return 0;
+#endif
 }
 
 #if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
