@@ -399,6 +399,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
 
                     if (VBGLR0_CAN_USE_PHYS_PAGE_LIST())
                     {
+                        Assert(cb == RT_ALIGN_Z(cb, PAGE_SIZE));
                         size_t const cPages = RTR0MemObjSize(hObj) >> PAGE_SHIFT;
                         *pcbExtra += RT_OFFSETOF(HGCMPageListInfo, aPages[cPages]);
                     }
