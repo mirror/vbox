@@ -114,6 +114,12 @@ DECLINLINE(size_t) flagNameLen(uint32_t fFlag)
  * Maximum length for the property flags field.  We only ever return one of
  * RDONLYGUEST, RDONLYHOST and RDONLY
  */
+/** @todo r=bird: Michael, where to do enforce the "only every return one of
+ *        R*"? I cannot see it? */
+/** @todo r=bird: Should TRANSIENT_RESET imply TRANSIENT or not? See
+ *        VBoxServicePropCache.cpp.  You've introduced (or maybe just made an
+ *        existing one more obvious - see abouve) a buffer overrun in
+ *        writeFlags now. */
 enum { MAX_FLAGS_LEN =   sizeof("TRANSIENT_RESET, RDONLYGUEST") };
 
 /**
@@ -151,11 +157,9 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
         {
             unsigned i = 0;
             for (; i < RT_ELEMENTS(s_aFlagList); ++i)
-            {
                 if (RTStrNICmp(pcszNext, flagName(s_aFlagList[i]),
                                flagNameLen(s_aFlagList[i])) == 0)
                     break;
-            }
             if (RT_ELEMENTS(s_aFlagList) == i)
                 rc = VERR_PARSE_ERROR;
             else
