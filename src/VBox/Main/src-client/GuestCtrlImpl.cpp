@@ -1575,7 +1575,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 
             char *pszArgs = NULL;
             if (uNumArgs > 0)
-                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);
+                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
             if (RT_SUCCESS(vrc))
             {
                 uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
