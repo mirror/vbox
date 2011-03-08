@@ -1,4 +1,6 @@
-QEMU is based on r5495 of SVN repository. Modified parts related to calls of
-external functions, to allow loading recompiler library as regular shared
-object in high memory on 64-bit systems.
+QEMU is based on v0.11.1 (35bfc7324e2e6946c4113ada5db30553a1a7c40b)
+from git://git.savannah.nongnu.org/qemu.git.
+
+Modified parts related to calls of external functions, to allow loading
+recompiler library as regular shared object in high memory on 64-bit systems.
 
