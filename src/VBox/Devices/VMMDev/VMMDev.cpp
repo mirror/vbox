@@ -435,7 +435,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     if (   !pThis->fu32AdditionsOk
         && requestHeader.requestType != VMMDevReq_ReportGuestInfo2
         && requestHeader.requestType != VMMDevReq_ReportGuestInfo
-        && requestHeader.requestType != VMMDevReq_WriteCoreDump)
+        && requestHeader.requestType != VMMDevReq_WriteCoreDump
+        && requestHeader.requestType != VMMDevReq_GetHostVersion) /* Always allow the guest to query the host capabilities. */
     {
         Log(("VMMDev: guest has not yet reported to us. Refusing operation.\n"));
         requestHeader.rc = VERR_NOT_SUPPORTED;
