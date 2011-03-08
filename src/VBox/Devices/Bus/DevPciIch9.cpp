@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DevPCI - ICH9 southbridge PCI bus emulation Device.
+ * DevPCI - ICH9 southbridge PCI bus emulation device.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,8 @@
  */
 
 /*******************************************************************************
- *   Header Files                                                              *
- *******************************************************************************/
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCI
 /* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
 #define PCI_INCLUDE_PRIVATE
@@ -35,6 +35,10 @@
 
 #include "MsiCommon.h"
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
  * PCI Bus instance.
  */
@@ -117,15 +121,17 @@ typedef struct
 } PCIGLOBALS, *PPCIGLOBALS;
 
 
-typedef struct {
+typedef struct
+{
     uint8_t  iBus;
     uint8_t  iDeviceFunc;
     uint16_t iRegister;
 } PciAddress;
 
+
 /*******************************************************************************
- *   Defined Constants And Macros                                              *
- *******************************************************************************/
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 
 /** @def VBOX_ICH9PCI_SAVED_STATE_VERSION
  * Saved state version of the ICH9 PCI bus device.
@@ -140,8 +146,7 @@ typedef struct {
 #define DEVINS_2_PCIGLOBALS(pDevIns)    ((PPCIGLOBALS)(PDMINS_2_DATA(pDevIns, PPCIGLOBALS)))
 /** Converts a device instance pointer to a PCIBUS pointer. */
 #define DEVINS_2_PCIBUS(pDevIns)        ((PPCIBUS)(&PDMINS_2_DATA(pDevIns, PPCIGLOBALS)->aPciBus))
-/** Converts a pointer to a PCI root bus instance to a PCIGLOBALS pointer.
- */
+/** Converts a pointer to a PCI root bus instance to a PCIGLOBALS pointer. */
 #define PCIROOTBUS_2_PCIGLOBALS(pPciBus)    ( (PPCIGLOBALS)((uintptr_t)(pPciBus) - RT_OFFSETOF(PCIGLOBALS, aPciBus)) )
 
 
@@ -552,7 +557,7 @@ static void ich9pciApicSetIrq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, 
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
         {
-            /**
+            /*
              *  we raised it few lines above, as PDM_IRQ_LEVEL_FLIP_FLOP has
              * PDM_IRQ_LEVEL_HIGH bit set
              */
@@ -1849,13 +1854,13 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
     pGlobals->uBus = 0;
 
-    /**
+    /*
      * Assign bridge topology, for further routing to work.
      */
     PPCIBUS pBus = &pGlobals->aPciBus;
     ich9pciInitBridgeTopology(pGlobals, pBus);
 
-    /**
+    /*
      * Init the devices.
      */
     for (i = 0; i < 256; i++)
@@ -1940,6 +1945,7 @@ DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, 
 
     PCIDevSetByte(aDev, uAddr, u8Val);
 }
+
 /**
  * See paragraph 7.5 of PCI Express specification (p. 349) for definition of
  * registers and their writability policy.
@@ -2277,7 +2283,7 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool f
         {
             printIndent(pHlp, iIndent);
 
-            /**
+            /*
              * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
              * as host driver handles real devices interrupts.
              */
@@ -2492,7 +2498,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
      * Fill in PCI configs and add them to the bus.
      */
 
-    /**
+    /*
      * We emulate 82801IB ICH9 IO chip used in Q35,
      * see http://ark.intel.com/Product.aspx?id=31892
      *
