@@ -118,6 +118,10 @@
 #include <asm/uaccess.h>
 #include <asm/div64.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# include <linux/kthread.h>
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # ifndef page_to_pfn
 #  define page_to_pfn(page) ((page) - mem_map)
@@ -363,6 +367,4 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # define IPRT_LINUX_HAS_HRTIMER
 #endif
 
-
 #endif
-

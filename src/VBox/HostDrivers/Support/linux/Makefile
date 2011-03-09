@@ -118,11 +118,13 @@ OBJS   = \
 	common/misc/assert.o \
 	common/misc/handletable.o \
 	common/misc/handletablectx.o \
+	common/misc/thread.o \
 	common/string/strformat.o \
 	common/string/strformatrt.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
+	common/table/avlpv.o \
 	common/time/time.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
 	generic/RTAssertShouldPanic-generic.o \
