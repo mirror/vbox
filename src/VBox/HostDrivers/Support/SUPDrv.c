@@ -288,6 +288,13 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadUserReset",                      (void *)RTThreadUserReset },
     { "RTThreadUserWait",                       (void *)RTThreadUserWait },
     { "RTThreadUserWaitNoResume",               (void *)RTThreadUserWaitNoResume },
+#else 
+    /**  
+     * @todo: remove me, once above code enabled.  
+     * We need RTThreadCreate/RTThreadWait in the PCI driver. 
+     */ 
+    { "RTThreadCreate",                         (void *)RTThreadCreate }, 
+    { "RTThreadWait",                           (void *)RTThreadWait }, 
 #endif
     { "RTThreadPreemptIsEnabled",               (void *)RTThreadPreemptIsEnabled },
     { "RTThreadPreemptIsPending",               (void *)RTThreadPreemptIsPending },
@@ -5467,4 +5474,3 @@ static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, u
         ASMAtomicIncU32(&pGipCpu->u32TransactionId);
     }
 }
-

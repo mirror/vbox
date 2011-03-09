@@ -294,11 +294,11 @@ RTDECL(bool) KAVL_FN(Insert)(PPKAVLNODECORE ppTree, PKAVLNODECORE pNode)
 {
     KAVLSTACK               AVLStack;
     PPKAVLNODECORE          ppCurNode = ppTree;
+    register PKAVLNODECORE  pCurNode;
     register KAVLKEY        Key = pNode->Key; NOREF(Key);
 #ifdef KAVL_RANGE
     register KAVLKEY        KeyLast = pNode->KeyLast; NOREF(KeyLast);
 #endif
-    register PKAVLNODECORE  pCurNode;
 
     AVLStack.cEntries = 0;
 
