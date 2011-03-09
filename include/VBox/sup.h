@@ -134,6 +134,10 @@ AssertCompileSize(SUPGIPCPU, 96);
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
 typedef SUPGIPCPU *PSUPGIPCPU;
 
+/** The number of CPUs covered by the GIP.
+ * @remarks Must be a power of two! */
+#define SUPGLOBALINFOPAGE_CPUS      32
+
 /**
  * Global Information Page.
  *
@@ -166,7 +170,7 @@ typedef struct SUPGLOBALINFOPAGE
      * If u32Mode == SUPGIPMODE_SYNC_TSC then only the first entry is used.
      * If u32Mode == SUPGIPMODE_ASYNC_TSC then the CPU ACPI ID is used as an
      * index into the array. */
-    SUPGIPCPU           aCPUs[32];
+    SUPGIPCPU           aCPUs[SUPGLOBALINFOPAGE_CPUS];
 } SUPGLOBALINFOPAGE;
 AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000);
 /* AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPU, 32); - fixme */

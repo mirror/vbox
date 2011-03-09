@@ -517,8 +517,11 @@ BEGINPROC rtTimeNanoTSInternalAsm
  %endif
     ; pGipCpu = &pGip->aCPU[u8ApicId];
     shr     ebx, 24
-    mov     eax, SUPGIPCPU_size
-    mul     ebx
+    mov     eax, ebx
+ %if SUPGLOBALINFOPAGE_CPUS < 256
+    and     eax, SUPGLOBALINFOPAGE_CPUS - 1
+ %endif
+    imul    eax, SUPGIPCPU_size
     lea     pGipCPU, [pGip + rax + SUPGLOBALINFOPAGE.aCPUs]
 %else
     lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
