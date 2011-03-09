@@ -1735,9 +1735,7 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
             && rule->host_port == host_port
             && rule->bind_ip.s_addr == host_addr.s_addr
             && rule->guest_port == guest_port
-#ifndef VBOX_WITH_NAT_SERVICE
             && rule->guest_addr.s_addr == guest_addr.s_addr
-#endif
             )
                 return 0; /* rule has been already registered */
     }
@@ -1749,9 +1747,7 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
     rule->proto = (is_udp ? IPPROTO_UDP : IPPROTO_TCP);
     rule->host_port = host_port;
     rule->guest_port = guest_port;
-#ifndef VBOX_WITH_NAT_SERVICE
     rule->guest_addr.s_addr = guest_addr.s_addr;
-#endif
     rule->bind_ip.s_addr = host_addr.s_addr;
     memcpy(rule->mac_address, ethaddr, ETH_ALEN);
     /* @todo add mac address */
@@ -1773,9 +1769,7 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
             && rule->host_port == host_port
             && rule->guest_port == guest_port
             && rule->bind_ip.s_addr == host_addr.s_addr
-#ifndef VBOX_WITH_NAT_SERVICE
             && rule->guest_addr.s_addr == guest_addr.s_addr
-#endif
             && rule->activated)
         {
             LogRel(("NAT: remove redirect %s host port %d => guest port %d @ %R[IP4]\n",
