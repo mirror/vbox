@@ -2413,6 +2413,8 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
             pStats->aHostCpus[iDstCpu].cStarts    = 0;
 #endif
             iDstCpu++;
+            if (iDstCpu >= RT_ELEMENTS(pStats->aHostCpus))
+                break;
         }
     }
     pStats->cHostCpus = iDstCpu;
