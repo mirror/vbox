@@ -375,7 +375,7 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
     if (cb == 1)
     {
         DMAControl  *dc = (DMAControl *)pvUser;
-        uint8_t     val;
+        uint8_t     val = 0;
         int         reg;
 
         reg = ((port >> dc->is16bit) & 0x0f) - 8;
@@ -409,7 +409,6 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
             break;
         default:
             Assert(0);
-            val = 0;
             break;
         }
 
