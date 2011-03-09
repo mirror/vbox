@@ -4551,11 +4551,9 @@
 
     <method name="setBandwidthGroupForDevice">
       <desc>
-        Sets the passthrough mode of an existing DVD device. Changing the
-        setting while the VM is running is forbidden. The setting is only used
-        if at VM start the device is configured as a host DVD drive, in all
-        other cases it is ignored. The device must already exist; see
-        <link to="IMachine::attachDevice"/> for how to attach a new device.
+        Sets the bandwidth group of an existing storage device.
+        The device must already exist; see <link to="IMachine::attachDevice"/>
+        for how to attach a new device.
 
         The @a controllerPort and @a device parameters specify the device slot and
         have have the same meaning as with <link to="IMachine::attachDevice" />.
