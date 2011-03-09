@@ -1602,6 +1602,13 @@ VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 # filesplitter (splits java files)
 VBOX_FILESPLIT ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
 
+# GNU tar if present.
+if1of ($(KBUILD_TARGET), linux os2 win)
+ VBOX_GTAR ?= tar
+else if1of ($(KBUILD_TARGET), freebsd solaris)
+ VBOX_GTAR ?= gtar
+endif
+
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
  VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe
@@ -2773,7 +2780,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3
 TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
 	-Wformat \
-	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti 
+	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
 endif # Solaris
