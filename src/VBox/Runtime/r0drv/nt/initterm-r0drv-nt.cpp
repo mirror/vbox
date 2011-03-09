@@ -82,6 +82,9 @@ int rtR0InitNative(void)
     KAFFINITY ActiveProcessors = KeQueryActiveProcessors();
 #endif
     RTCpuSetEmpty(&g_rtMpNtCpuSet);
+#ifdef RT_WITH_LOTS_OF_CPUS
+# error "port me"
+#endif
     RTCpuSetFromU64(&g_rtMpNtCpuSet, ActiveProcessors);
 
 #ifdef IPRT_TARGET_NT4

@@ -192,7 +192,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - None.
  */
-#define SUPDRV_IOC_VERSION                              0x00160000
+#define SUPDRV_IOC_VERSION                              0x00160001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -483,8 +483,6 @@ typedef struct SUPLDRGETSYMBOL
 
 /** @name SUP_IOCTL_CALL_VMMR0
  * Call the R0 VMM Entry point.
- *
- * @todo Might have to convert this to a big request...
  * @{
  */
 #define SUP_IOCTL_CALL_VMMR0(cbReq)                     SUP_CTL_CODE_SIZE(7, SUP_IOCTL_CALL_VMMR0_SIZE(cbReq))
@@ -512,6 +510,17 @@ typedef struct SUPCALLVMMR0
     /** The VMMR0Entry request packet. */
     uint8_t                 abReqPkt[1];
 } SUPCALLVMMR0, *PSUPCALLVMMR0;
+/** @} */
+
+
+/** @name SUP_IOCTL_CALL_VMMR0_BIG
+ * Version of SUP_IOCTL_CALL_VMMR0 for dealing with large requests.
+ * @{
+ */
+#define SUP_IOCTL_CALL_VMMR0_BIG                        SUP_CTL_CODE_BIG(27)
+#define SUP_IOCTL_CALL_VMMR0_BIG_SIZE(cbReq)            RT_UOFFSETOF(SUPCALLVMMR0, abReqPkt[cbReq])
+#define SUP_IOCTL_CALL_VMMR0_BIG_SIZE_IN(cbReq)         SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
+#define SUP_IOCTL_CALL_VMMR0_BIG_SIZE_OUT(cbReq)        SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
 /** @} */
 
 

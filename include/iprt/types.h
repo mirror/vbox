@@ -1671,7 +1671,19 @@ typedef RTCPUID const                              *PCRTCPUID;
 /** A CPU set.
  * Treat this as an opaque type and always use RTCpuSet* for manupulating it.
  * @remarks Subject to change. */
+#ifdef RT_WITH_LOTS_OF_CPUS /** @todo RT_WITH_LOTS_OF_CPUS is just a temporary placeholder. */
+typedef struct RTCPUSET
+{
+    /** The bitmap.
+     * @remarks Must be large enough to hold RTCPUSET_MAX_CPUS bits, see
+     *          iprt/cpuset.h. */
+    uint64_t bmSet[256 / 64];
+} RTCPUSET;
+/** Indicates that RTCPUSET is a bitmap and not a 64-bit integer. */
+# define RTCPUSET_IS_BITMAP                         1
+#else
 typedef uint64_t                                    RTCPUSET;
+#endif
 /** Pointer to a CPU set. */
 typedef RTCPUSET                                   *PRTCPUSET;
 /** Pointer to a const CPU set. */

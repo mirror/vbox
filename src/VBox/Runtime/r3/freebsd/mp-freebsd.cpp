@@ -65,7 +65,7 @@ static RTCPUID rtMpFreeBsdMaxCpus(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < rtMpFreeBsdMaxCpus() ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu < rtMpFreeBsdMaxCpus() ? idCpu : -1;
 }
 
 
