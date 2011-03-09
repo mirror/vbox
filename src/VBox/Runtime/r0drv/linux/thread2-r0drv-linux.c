@@ -70,22 +70,22 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
     {
         case RTTHREADTYPE_INFREQUENT_POLLER:
         {
-            param.sched_priority = MAX_RT_PRIO + 2;
+            param.sched_priority = MAX_RT_PRIO + 5;
             break;
         }
         case RTTHREADTYPE_EMULATION:
         {
-            param.sched_priority = MAX_RT_PRIO + 3;
+            param.sched_priority = MAX_RT_PRIO + 4;
             break;
         }
         case RTTHREADTYPE_DEFAULT:
         {
-            param.sched_priority = MAX_RT_PRIO + 4;
+            param.sched_priority = MAX_RT_PRIO + 3;
             break;
         }
         case RTTHREADTYPE_MSG_PUMP:
         {
-            param.sched_priority = MAX_RT_PRIO + 5;
+            param.sched_priority = MAX_RT_PRIO + 2;
             break;
         }
         case RTTHREADTYPE_IO:
