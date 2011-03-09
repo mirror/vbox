@@ -47,7 +47,7 @@ RT_EXPORT_SYMBOL(RTMpCpuId);
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < NR_CPUS ? (int)idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu < NR_CPUS ? (int)idCpu : -1;
 }
 RT_EXPORT_SYMBOL(RTMpCpuIdToSetIndex);
 

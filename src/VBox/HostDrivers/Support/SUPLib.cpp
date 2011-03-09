@@ -266,9 +266,9 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t uMinVersion = /*(SUPDRV_IOC_VERSION & 0xffff0000) == 0x00160000
-                                   ?  0x00160000
-                                   :*/ SUPDRV_IOC_VERSION & 0xffff0000;
+        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00160000
+                                   ? 0x00160001
+                                   : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
@@ -655,8 +655,32 @@ SUPR3DECL(int) SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation,
             rc = pReq->Hdr.rc;
         memcpy(pReqHdr, &pReq->abReqPkt[0], cbReq);
     }
-    else /** @todo may have to remove the size limits one this request... */
-        AssertMsgFailedReturn(("cbReq=%#x\n", pReqHdr->cbReq), VERR_INTERNAL_ERROR);
+    else if (pReqHdr->cbReq <= _512K)
+    {
+        AssertPtrReturn(pReqHdr, VERR_INVALID_POINTER);
+        AssertReturn(pReqHdr->u32Magic == SUPVMMR0REQHDR_MAGIC, VERR_INVALID_MAGIC);
+        const size_t cbReq = pReqHdr->cbReq;
+
+        PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)RTMemTmpAlloc(SUP_IOCTL_CALL_VMMR0_BIG_SIZE(cbReq));
+        pReq->Hdr.u32Cookie         = g_u32Cookie;
+        pReq->Hdr.u32SessionCookie  = g_u32SessionCookie;
+        pReq->Hdr.cbIn              = SUP_IOCTL_CALL_VMMR0_BIG_SIZE_IN(cbReq);
+        pReq->Hdr.cbOut             = SUP_IOCTL_CALL_VMMR0_BIG_SIZE_OUT(cbReq);
+        pReq->Hdr.fFlags            = SUPREQHDR_FLAGS_DEFAULT;
+        pReq->Hdr.rc                = VERR_INTERNAL_ERROR;
+        pReq->u.In.pVMR0            = pVMR0;
+        pReq->u.In.idCpu            = idCpu;
+        pReq->u.In.uOperation       = uOperation;
+        pReq->u.In.u64Arg           = u64Arg;
+        memcpy(&pReq->abReqPkt[0], pReqHdr, cbReq);
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_CALL_VMMR0_BIG, pReq, SUP_IOCTL_CALL_VMMR0_BIG_SIZE(cbReq));
+        if (RT_SUCCESS(rc))
+            rc = pReq->Hdr.rc;
+        memcpy(pReqHdr, &pReq->abReqPkt[0], cbReq);
+        RTMemTmpFree(pReq);
+    }
+    else
+        AssertMsgFailedReturn(("cbReq=%#x\n", pReqHdr->cbReq), VERR_OUT_OF_RANGE);
     return rc;
 }
 

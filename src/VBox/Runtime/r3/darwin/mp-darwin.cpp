@@ -69,7 +69,7 @@ static RTCPUID rtMpDarwinMaxCpus(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < rtMpDarwinMaxCpus() ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu < rtMpDarwinMaxCpus() ? idCpu : -1;
 }
 
 

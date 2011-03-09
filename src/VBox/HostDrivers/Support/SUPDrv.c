@@ -1392,6 +1392,37 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_VMMR0_BIG):
+        {
+            /* validate */
+            PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
+            Log4(("SUP_IOCTL_CALL_VMMR0_BIG: op=%u in=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                  pReq->u.In.uOperation, pReq->Hdr.cbIn, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+
+            PSUPVMMR0REQHDR pVMMReq = (PSUPVMMR0REQHDR)&pReq->abReqPkt[0];
+            REQ_CHECK_EXPR_FMT(pReq->Hdr.cbIn >= SUP_IOCTL_CALL_VMMR0_BIG_SIZE(sizeof(SUPVMMR0REQHDR)),
+                               ("SUP_IOCTL_CALL_VMMR0_BIG: cbIn=%#x < %#lx\n", pReq->Hdr.cbIn, SUP_IOCTL_CALL_VMMR0_BIG_SIZE(sizeof(SUPVMMR0REQHDR))));
+            REQ_CHECK_EXPR(SUP_IOCTL_CALL_VMMR0_BIG, pVMMReq->u32Magic == SUPVMMR0REQHDR_MAGIC);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0_BIG, SUP_IOCTL_CALL_VMMR0_BIG_SIZE_IN(pVMMReq->cbReq), SUP_IOCTL_CALL_VMMR0_BIG_SIZE_OUT(pVMMReq->cbReq));
+
+            /* execute */
+            if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
+                pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.idCpu, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
+            else
+                pReq->Hdr.rc = VERR_WRONG_ORDER;
+
+            if (    RT_FAILURE(pReq->Hdr.rc)
+                &&  pReq->Hdr.rc != VERR_INTERRUPTED
+                &&  pReq->Hdr.rc != VERR_TIMEOUT)
+                Log(("SUP_IOCTL_CALL_VMMR0_BIG: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                     pReq->Hdr.rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+            else
+                Log4(("SUP_IOCTL_CALL_VMMR0_BIG: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                      pReq->Hdr.rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
+            return 0;
+        }
+
         case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GET_PAGING_MODE):
         {
             /* validate */

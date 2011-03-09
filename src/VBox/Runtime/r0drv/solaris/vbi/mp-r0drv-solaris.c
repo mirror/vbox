@@ -56,7 +56,7 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < vbi_cpu_maxcount() ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu < vbi_cpu_maxcount() ? idCpu : -1;
 }
 
 
