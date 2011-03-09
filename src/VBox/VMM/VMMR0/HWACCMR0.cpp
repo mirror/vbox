@@ -210,7 +210,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                int     aRc[RTCPUSET_MAX_CPUS];
+                int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: move this off the stack */
                 RTCPUID idCpu = 0;
 
                 HWACCMR0Globals.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
@@ -375,7 +375,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                int     aRc[RTCPUSET_MAX_CPUS];
+                int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
                 RTCPUID idCpu = 0;
 
                 fAMDVPresent = true;
@@ -559,7 +559,7 @@ VMMR0DECL(int) HWACCMR0Term(void)
         /* Only disable VT-x/AMD-V on all CPUs if we enabled it before. */
         if (HWACCMR0Globals.fGlobalInit)
         {
-            int aRc[RTCPUSET_MAX_CPUS];
+            int aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
 
             memset(aRc, 0, sizeof(aRc));
             rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
@@ -703,7 +703,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
         }
         else
         {
-            int     aRc[RTCPUSET_MAX_CPUS];
+            int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
             RTCPUID idCpu = 0;
 
             memset(aRc, 0, sizeof(aRc));
@@ -902,7 +902,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
 
     if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
     {
-        int     aRc[RTCPUSET_MAX_CPUS];
+        int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
         int     rc;
         RTCPUID idCpu;
 
