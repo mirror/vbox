@@ -3097,7 +3097,7 @@ def playbackDemoCmd(ctx, args):
 
 
 def pciAddr(ctx,addr):
-    str = "%d:%d.%d" %(addr >> 8, (addr & 0xff) >> 3, addr & 7)
+    str = "%02x:%02x.%d" %(addr >> 8, (addr & 0xff) >> 3, addr & 7)
     return colPci(ctx, str)
 
 def lspci(ctx, console):
@@ -3115,12 +3115,12 @@ def lspci(ctx, console):
     return
 
 def parsePci(str):
-    pcire = re.compile(r'(?P<b>\d+):(?P<d>\d+)\.(?P<f>\d)')
+    pcire = re.compile(r'(?P<b>[0-9a-fA-F]+):(?P<d>[0-9a-fA-F]+)\.(?P<f>\d)')
     m = pcire.search(str)
     if m is None:
         return -1
     dict = m.groupdict()
-    return ((int(dict['b'])) << 8) | ((int(dict['d'])) << 3) | int(dict['f'])
+    return ((int(dict['b'], 16)) << 8) | ((int(dict['d'], 16)) << 3) | int(dict['f'])
 
 def lspciCmd(ctx, args):
     if (len(args) < 2):
