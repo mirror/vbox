@@ -1403,10 +1403,11 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         {
             /* validate */
             PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
+            PSUPVMMR0REQHDR pVMMReq;
             Log4(("SUP_IOCTL_CALL_VMMR0_BIG: op=%u in=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
                   pReq->u.In.uOperation, pReq->Hdr.cbIn, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
 
-            PSUPVMMR0REQHDR pVMMReq = (PSUPVMMR0REQHDR)&pReq->abReqPkt[0];
+            pVMMReq = (PSUPVMMR0REQHDR)&pReq->abReqPkt[0];
             REQ_CHECK_EXPR_FMT(pReq->Hdr.cbIn >= SUP_IOCTL_CALL_VMMR0_BIG_SIZE(sizeof(SUPVMMR0REQHDR)),
                                ("SUP_IOCTL_CALL_VMMR0_BIG: cbIn=%#x < %#lx\n", pReq->Hdr.cbIn, SUP_IOCTL_CALL_VMMR0_BIG_SIZE(sizeof(SUPVMMR0REQHDR))));
             REQ_CHECK_EXPR(SUP_IOCTL_CALL_VMMR0_BIG, pVMMReq->u32Magic == SUPVMMR0REQHDR_MAGIC);

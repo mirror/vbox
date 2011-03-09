@@ -47,22 +47,64 @@ int rtThreadNativeInit(void)
     return VINF_SUCCESS;
 }
 
+/*
+ * Following is verbatim comment from Linux's sched.h.
+ *
+ * Priority of a process goes from 0..MAX_PRIO-1, valid RT
+ * priority is 0..MAX_RT_PRIO-1, and SCHED_NORMAL/SCHED_BATCH
+ * tasks are in the range MAX_RT_PRIO..MAX_PRIO-1. Priority
+ * values are inverted: lower p->prio value means higher priority.
+ *
+ * The MAX_USER_RT_PRIO value allows the actual maximum
+ * RT priority to be separate from the value exported to
+ * user-space.  This allows kernel threads to set their
+ * priority to a value higher than any user task. Note:
+ * MAX_RT_PRIO must not be smaller than MAX_USER_RT_PRIO.
+ */
+
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    int Priority = 0;
+    int    sched_class = SCHED_NORMAL;
+    struct sched_param param = { .sched_priority = MAX_PRIO-1 };
     switch (enmType)
     {
-        case RTTHREADTYPE_INFREQUENT_POLLER:    Priority = 9; break;
-        case RTTHREADTYPE_EMULATION:            Priority = 7; break;
-        case RTTHREADTYPE_DEFAULT:              Priority = 8; break;
-        case RTTHREADTYPE_MSG_PUMP:             Priority = 9; break;
-        case RTTHREADTYPE_IO:                   Priority = 10; break;
-        case RTTHREADTYPE_TIMER:                Priority = 11; break;
-
+        case RTTHREADTYPE_INFREQUENT_POLLER:
+        {
+            param.sched_priority = MAX_RT_PRIO + 2;
+            break;
+        }
+        case RTTHREADTYPE_EMULATION:
+        {
+            param.sched_priority = MAX_RT_PRIO + 3;
+            break;
+        }
+        case RTTHREADTYPE_DEFAULT:
+        {
+            param.sched_priority = MAX_RT_PRIO + 4;
+            break;
+        }
+        case RTTHREADTYPE_MSG_PUMP:
+        {
+            param.sched_priority = MAX_RT_PRIO + 5;
+            break;
+        }
+        case RTTHREADTYPE_IO:
+        {
+            sched_class = SCHED_FIFO;
+            param.sched_priority = MAX_RT_PRIO - 1;
+            break;
+        }
+        case RTTHREADTYPE_TIMER:
+        {
+            sched_class = SCHED_FIFO;
+            param.sched_priority = 1; /* not 0 just in case */
+        }
         default:
             AssertMsgFailed(("enmType=%d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
+    sched_setscheduler(current, sched_class, &param);
+
     return VINF_SUCCESS;
 }
 
