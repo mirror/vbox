@@ -41,6 +41,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+/** The maximum number of release log entries per image. */
+#define MAX_LOG_REL_ERRORS  1024
+
 /** Default port number to use for iSCSI. */
 #define ISCSI_DEFAULT_PORT 3260
 
@@ -626,6 +629,9 @@ typedef struct ISCSIIMAGE
     unsigned            cCmdsWaiting;
     /** Table of commands waiting for a response from the target. */
     PISCSICMD           aCmdsWaiting[ISCSI_CMD_WAITING_ENTRIES];
+
+    /** Release log counter. */
+    unsigned            cLogRelErrors;
 } ISCSIIMAGE;
 
 
@@ -697,6 +703,20 @@ static void chap_md5_generate_challenge(uint8_t *pbChallenge, size_t *pcbChallen
 static void chap_md5_compute_response(uint8_t *pbResponse, uint8_t id, const uint8_t *pbChallenge, size_t cbChallenge,
                                       const uint8_t *pbSecret, size_t cbSecret);
 
+/**
+ * Internal: release log wrapper limiting the number of entries.
+ */
+DECLINLINE(void) iscsiLogRel(PISCSIIMAGE pImage, const char *pcszFormat, ...)
+{
+    if (pImage->cLogRelErrors++ < MAX_LOG_REL_ERRORS)
+    {
+        va_list va;
+
+        va_start(va, pcszFormat);
+        LogRel(("%N\n", pcszFormat, &va));
+        va_end(va);
+    }
+}
 
 /**
  * Internal: signal an error to the frontend.
@@ -3387,7 +3407,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 if (rc == VERR_BROKEN_PIPE)
                     iscsiReattach(pImage);
                 else if (RT_FAILURE(rc))
-                    LogRel(("iSCSI: Handling incoming request failed %Rrc\n", rc));
+                    iscsiLogRel(pImage, "iSCSI: Handling incoming request failed %Rrc\n", rc);
             }
 
             if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
@@ -3395,7 +3415,14 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 LogFlow(("The socket is writable\n"));
                 rc = iscsiSendPDUAsync(pImage);
                 if (RT_FAILURE(rc))
-                    LogRel(("iSCSI: Sending PDU failed %Rrc\n", rc));
+                {
+                    /*
+                     * Something unexpected happened, log the error and try to reset everything
+                     * by reattaching to the target.
+                     */
+                    iscsiLogRel(pImage, "iSCSI: Sending PDU failed %Rrc\n", rc);
+                    iscsiReattach(pImage);
+                }
             }
 
             if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
@@ -3405,9 +3432,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
             }
         }
         else
-        {
-            LogRel(("iSCSI: Waiting for I/O failed rc=%Rrc\n", rc));
-        }
+            iscsiLogRel(pImage, "iSCSI: Waiting for I/O failed rc=%Rrc\n", rc);
     }
 
     return VINF_SUCCESS;
@@ -4431,6 +4456,7 @@ static int iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pszHostname = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
     pImage->pVDIfsImage = pVDIfsImage;
+    pImage->cLogRelErrors = 0;
 
     rc = iscsiOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
