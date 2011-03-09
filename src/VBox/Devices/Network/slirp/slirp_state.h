@@ -78,9 +78,7 @@ struct port_forward_rule
     uint16_t proto;
     uint16_t host_port;
     uint16_t guest_port;
-#ifndef VBOX_WITH_NAT_SERVICE
     struct in_addr guest_addr;
-#endif
     struct in_addr bind_ip;
     uint8_t mac_address[6]; /*need ETH_ALEN here */
     int activated;
