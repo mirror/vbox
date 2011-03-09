@@ -694,7 +694,7 @@ static int cpumR0MapLocalApics(void)
      */
     if (RTMpGetArraySize() > RT_ELEMENTS(g_aLApics))
     {
-        LogRel(("CPUM: Too many real CPUs - %u, max %u\n", RTMpGetArraySize(), RT_ELEMENTS(g_aLApics)));
+        LogRel(("CPUM: Too many real CPUs/cores/threads - %u, max %u\n", RTMpGetArraySize(), RT_ELEMENTS(g_aLApics)));
         return VERR_TOO_MANY_CPUS;
     }
 
