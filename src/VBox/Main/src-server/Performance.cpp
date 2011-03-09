@@ -169,6 +169,7 @@ int CollectorGuest::disable()
     mEnabled = false;
     Assert(mGuest && mConsole);
     HRESULT ret = mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
+    NOREF(ret);
     LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
                 this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
     invalidateStats();
