@@ -3581,6 +3581,9 @@ bool Medium::isReadOnly()
                 if (it->llSnapshotIds.size() != 0)
                     return true;
 
+            if (m->variant & MediumVariant_VmdkStreamOptimized)
+                return true;
+
             return false;
         }
         case MediumType_Immutable:
