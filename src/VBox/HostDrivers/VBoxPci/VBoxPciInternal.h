@@ -64,6 +64,9 @@ typedef struct VBOXRAWPCIINS
 
     /** Port, given to the outside world. */
     RAWPCIDEVPORT      DevPort;
+
+    PFNRAWPCIISR       pfnIrqHandler;
+    void              *pIrqContext;
 } VBOXRAWPCIINS;
 
 /**
@@ -102,6 +105,7 @@ DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
 DECLHIDDEN(int)  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags);
+
 DECLHIDDEN(int)  vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
                                            int32_t        iRegion,
                                            RTHCPHYS       *pRegionStart,
@@ -119,8 +123,12 @@ DECLHIDDEN(int)  vboxPciOsDevUnmapRegion(PVBOXRAWPCIINS pIns,
                                          RTHCPHYS       RegionStart,
                                          uint64_t       u64RegionSize,
                                          RTR0PTR        RegionBase);
+
 DECLHIDDEN(int)  vboxPciOsDevPciCfgWrite(PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue);
 DECLHIDDEN(int)  vboxPciOsDevPciCfgRead (PVBOXRAWPCIINS pIns, uint32_t Register, PCIRAWMEMLOC *pValue);
+
+DECLHIDDEN(int)  vboxPciOsDevRegisterIrqHandler  (PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq);
+DECLHIDDEN(int)  vboxPciOsDevUnregisterIrqHandler(PVBOXRAWPCIINS pIns, int32_t iHostIrq);
 
 RT_C_DECLS_END
 

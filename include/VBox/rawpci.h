@@ -157,6 +157,24 @@ typedef struct
     PCIRAWMEMLOC         Value;
 } PCIRAWREQPCICFGREAD;
 
+/** Parameters buffer for PCIRAWR0_DO_REGISTER_R0_IRQ_HANDLER call. */
+typedef struct
+{
+    /* in */
+    int32_t              iGuestIrq;
+    RTR0PTR              pfnHandler;
+    RTR0PTR              pfnHandlerContext;
+    /* out */
+    int32_t              iHostIrq;
+} PCIRAWREQREGISTERR0IRQHANDLER;
+
+/** Parameters buffer for PCIRAWR0_DO_UNREGISTER_R0_IRQ_HANDLER call. */
+typedef struct
+{
+    /* in */
+    int32_t              iHostIrq;
+} PCIRAWREQUNREGISTERR0IRQHANDLER;
+
 /**
  * Request buffer use for communication with the driver.
  */
@@ -186,6 +204,8 @@ typedef struct PCIRAWSENDREQ
         PCIRAWREQMMIOREAD      aMmioRead;
         PCIRAWREQPCICFGWRITE   aPciCfgWrite;
         PCIRAWREQPCICFGREAD    aPciCfgRead;
+        PCIRAWREQREGISTERR0IRQHANDLER   aRegisterR0IrqHandler;
+        PCIRAWREQUNREGISTERR0IRQHANDLER aUnregisterR0IrqHandler;
     } u;
 } PCIRAWSENDREQ;
 typedef PCIRAWSENDREQ *PPCIRAWSENDREQ;
@@ -217,6 +237,10 @@ typedef enum PCIRAWR0OPERATION
     PCIRAWR0_DO_PCICFG_WRITE,
     /* Perform PCI config read. */
     PCIRAWR0_DO_PCICFG_READ,
+    /* Register device IRQ R0 handler. */
+    PCIRAWR0_DO_REGISTER_R0_IRQ_HANDLER,
+    /* Unregister device IRQ R0 handler. */
+    PCIRAWR0_DO_UNREGISTER_R0_IRQ_HANDLER,
     /** The usual 32-bit type blow up. */
     PCIRAWR0_DO_32BIT_HACK = 0x7fffffff
 } PCIRAWR0OPERATION;
@@ -224,6 +248,15 @@ typedef enum PCIRAWR0OPERATION
 /** Forward declarations. */
 typedef struct RAWPCIFACTORY *PRAWPCIFACTORY;
 typedef struct RAWPCIDEVPORT *PRAWPCIDEVPORT;
+
+/**
+ * Interrupt service routine callback.
+ *
+ * @param   pvContext       Opaque user data which to the handler.
+ * @param   iIrq            Interrupt number.
+ */
+typedef DECLCALLBACK(void) FNRAWPCIISR(void *pvContext, int32_t iIrq);
+typedef FNRAWPCIISR *PFNRAWPCIISR;
 
 /**
  * This is the port on the device interface, i.e. the driver side which the
@@ -331,6 +364,28 @@ typedef struct RAWPCIDEVPORT
     DECLR0CALLBACKMEMBER(int,  pfnPciCfgWrite,(PRAWPCIDEVPORT pPort,
                                                uint32_t          Register,
                                                PCIRAWMEMLOC      *pValue));
+
+    /**
+     * Request to register interrupt handler.
+     *
+     * @param   pPort       Pointer to this structure.
+     * @param   pfnHandler  Pointer to the handler.
+     * @param   pIrqContext Context passed to the handler.
+     * @param   piHostIrq   Which host IRQ is used.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnRegisterIrqHandler,(PRAWPCIDEVPORT pPort,
+                                                      PFNRAWPCIISR pfnHandler,
+                                                      void* pIrqContext,
+                                                      int32_t *piHostIrq));
+
+    /**
+     * Request to unregister interrupt handler.
+     *
+     * @param   pPort       Pointer to this structure.
+     * @param   iHostIrq    Which host IRQ was used (retured by earlier pfnRegisterIrqHandler).
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnUnregisterIrqHandler,(PRAWPCIDEVPORT pPort,
+                                                        int32_t iHostIrq));
 
     /** Structure version number. (RAWPCIDEVPORT_VERSION) */
     uint32_t u32VersionEnd;
