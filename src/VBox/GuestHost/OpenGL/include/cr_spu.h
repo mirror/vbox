@@ -454,6 +454,7 @@ DECLEXPORT(void) crSPUInitDispatchNops(SPUDispatchTable *table);
 DECLEXPORT(int) crLoadOpenGL( crOpenGLInterface *crInterface, SPUNamedFunctionTable table[] );
 DECLEXPORT(void) crUnloadOpenGL( void );
 DECLEXPORT(int) crLoadOpenGLExtensions( const crOpenGLInterface *crInterface, SPUNamedFunctionTable table[] );
+DECLEXPORT(void) crSPUChangeDispatch(SPUDispatchTable *dispatch, const SPUNamedFunctionTable *newtable);
 
 #if defined(GLX)
 DECLEXPORT(XVisualInfo *)

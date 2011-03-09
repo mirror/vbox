@@ -868,6 +868,30 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 {
                     crError( "Render SPU: (MakeCurrent) Couldn't create the context for the window (error 0x%x)", GetLastError() );
                 }
+
+                /*Requery ext function pointers, we skip dummy ctx as it should never be used with ext functions*/
+                if (0 && context->id)
+                {
+                    int numFuncs, i;
+                    SPUNamedFunctionTable ext_table[1000];
+
+
+                    crDebug("Default server ctx created, requerying ext functions");
+                    /*requery ext functions*/
+                    numFuncs = renderspuCreateFunctions(ext_table);
+                    numFuncs += crLoadOpenGLExtensions( &render_spu.ws, ext_table+numFuncs);
+                    CRASSERT(numFuncs < 1000);
+
+                    /*change spu dispatch*/
+                    crSPUChangeDispatch(&render_spu.self, ext_table);
+
+
+                    /*cleanup temp table*/
+                    for (i=0; i<numFuncs; ++i)
+                    {
+                        if (ext_table[i].name) crFree(ext_table[i].name);
+                    }
+                }
             }
 
             /*crDebug("MakeCurrent 0x%x, 0x%x", window->device_context, context->hRC);*/
