@@ -141,7 +141,7 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 
     RT_ASSERT_PREEMPTIBLE();
 
-    NativeThread = kthread_run(rtThreadNativeMain, pThreadInt, "%s", pThreadInt->szName);
+    NativeThread = kthread_run(rtThreadNativeMain, pThreadInt, "vbox-%s", pThreadInt->szName);
 
     if (IS_ERR(NativeThread))
         return VERR_GENERAL_FAILURE;
