@@ -103,7 +103,10 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
             AssertMsgFailed(("enmType=%d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
     sched_setscheduler(current, sched_class, &param);
+#endif
 
     return VINF_SUCCESS;
 }
