@@ -33,6 +33,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/cpuset.h>
+#include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/param.h>
 #include <iprt/power.h>
@@ -46,8 +47,7 @@
 *******************************************************************************/
 static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2);
-static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
-static              int   hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
+static DECLCALLBACK(void) hwaccmR0InitCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static bool               hwaccmR0IsSubjectToVmxPreemptionTimerErratum(void);
 static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
 
@@ -142,6 +142,70 @@ static struct
 } HWACCMR0Globals;
 
 
+/**
+ * This is used to manage the status code of a RTMpOnAll in HWACCM.
+ */
+typedef struct HWACCMR0FIRSTRC
+{
+    /** The status code. */
+    int32_t volatile    rc;
+    /** The ID of the CPU reporting the first failure. */
+    RTCPUID volatile    idCpu;
+} HWACCMR0FIRSTRC;
+/** Pointer to a first return code structure. */
+typedef HWACCMR0FIRSTRC *PHWACCMR0FIRSTRC;
+
+
+/**
+ * Initializes a first return code structure.
+ *
+ * @param   pFirstRc            The structure to init.
+ */
+static void hwaccmR0FirstRcInit(PHWACCMR0FIRSTRC pFirstRc)
+{
+    pFirstRc->rc    = VINF_SUCCESS;
+    pFirstRc->idCpu = NIL_RTCPUID;
+}
+
+
+/**
+ * Try se the status code (success ignored).
+ *
+ * @param   pFirstRc            The first return code structure.
+ * @param   rc                  The status code.
+ */
+static void hwaccmR0FirstRcSetStatus(PHWACCMR0FIRSTRC pFirstRc, int rc)
+{
+    if (   RT_FAILURE(rc)
+        && ASMAtomicCmpXchgS32(&pFirstRc->rc, rc, VINF_SUCCESS))
+        pFirstRc->idCpu = RTMpCpuId();
+}
+
+
+/**
+ * Get the status code of a first return code structure.
+ *
+ * @returns The status code; VINF_SUCCESS or error status, no informational or
+ *          warning errors.
+ * @param   pFirstRc            The first return code structure.
+ */
+static int hwaccmR0FirstRcGetStatus(PHWACCMR0FIRSTRC pFirstRc)
+{
+    return pFirstRc->rc;
+}
+
+
+/**
+ * Get the CPU ID on which the failure status code was reported.
+ *
+ * @returns The CPU ID, NIL_RTCPUID if no failure was reported.
+ * @param   pFirstRc            The first return code structure.
+ */
+static RTCPUID hwaccmR0FirstRcGetCpuId(PHWACCMR0FIRSTRC pFirstRc)
+{
+    return pFirstRc->idCpu;
+}
+
 
 /**
  * Does global Ring-0 HWACCM initialization.
@@ -210,9 +274,6 @@ VMMR0DECL(int) HWACCMR0Init(void)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: move this off the stack */
-                RTCPUID idCpu = 0;
-
                 HWACCMR0Globals.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
                 /*
@@ -236,12 +297,11 @@ VMMR0DECL(int) HWACCMR0Init(void)
                     HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx = false;
 
                     /* We need to check if VT-x has been properly initialized on all CPUs. Some BIOSes do a lousy job. */
-                    memset(aRc, 0, sizeof(aRc));
-                    HWACCMR0Globals.lLastError = RTMpOnAll(HWACCMR0InitCPU, (void *)u32VendorEBX, aRc);
-
-                    /* Check the return code of all invocations. */
+                    HWACCMR0FIRSTRC FirstRc;
+                    hwaccmR0FirstRcInit(&FirstRc);
+                    HWACCMR0Globals.lLastError = RTMpOnAll(hwaccmR0InitCpu, (void *)u32VendorEBX, &FirstRc);
                     if (RT_SUCCESS(HWACCMR0Globals.lLastError))
-                        HWACCMR0Globals.lLastError = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+                        HWACCMR0Globals.lLastError = hwaccmR0FirstRcGetStatus(&FirstRc);
                 }
                 if (RT_SUCCESS(HWACCMR0Globals.lLastError))
                 {
@@ -354,7 +414,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 }
 #ifdef LOG_ENABLED
                 else
-                    SUPR0Printf("HWACCMR0InitCPU failed with rc=%d\n", HWACCMR0Globals.lLastError);
+                    SUPR0Printf("hwaccmR0InitCpu failed with rc=%d\n", HWACCMR0Globals.lLastError);
 #endif
             }
             else
@@ -375,25 +435,19 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
-                RTCPUID idCpu = 0;
-
                 fAMDVPresent = true;
 
                 /* Query AMD features. */
                 ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
 
                 /* We need to check if AMD-V has been properly initialized on all CPUs. Some BIOSes might do a poor job. */
-                memset(aRc, 0, sizeof(aRc));
-                rc = RTMpOnAll(HWACCMR0InitCPU, (void *)u32VendorEBX, aRc);
-                AssertRC(rc);
-
-                /* Check the return code of all invocations. */
+                HWACCMR0FIRSTRC FirstRc;
+                hwaccmR0FirstRcInit(&FirstRc);
+                rc = RTMpOnAll(hwaccmR0InitCpu, (void *)u32VendorEBX, &FirstRc);    AssertRC(rc);
                 if (RT_SUCCESS(rc))
-                    rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
-
+                    rc = hwaccmR0FirstRcGetStatus(&FirstRc);
 #ifndef DEBUG_bird
-                AssertMsg(rc == VINF_SUCCESS || rc == VERR_SVM_IN_USE, ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
+                AssertMsg(rc == VINF_SUCCESS || rc == VERR_SVM_IN_USE, ("hwaccmR0InitCpu failed for cpu %d with rc=%d\n", hwaccmR0FirstRcGetCpuId(&FirstRc), rc));
 #endif
                 if (RT_SUCCESS(rc))
                 {
@@ -448,36 +502,6 @@ VMMR0DECL(int) HWACCMR0Init(void)
     }
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * Checks the error code array filled in for each cpu in the system.
- *
- * @returns VBox status code.
- * @param   paRc        Error code array
- * @param   cErrorCodes Array size
- * @param   pidCpu      Value of the first cpu that set an error (out)
- */
-static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu)
-{
-    int rc = VINF_SUCCESS;
-
-    Assert(cErrorCodes == RTCPUSET_MAX_CPUS);
-
-    for (unsigned i=0;i<cErrorCodes;i++)
-    {
-        if (RTMpIsCpuOnline(i))
-        {
-            if (RT_FAILURE(paRc[i]))
-            {
-                rc      = paRc[i];
-                *pidCpu = i;
-                break;
-            }
-        }
-    }
-    return rc;
 }
 
 
@@ -559,15 +583,15 @@ VMMR0DECL(int) HWACCMR0Term(void)
         /* Only disable VT-x/AMD-V on all CPUs if we enabled it before. */
         if (HWACCMR0Globals.fGlobalInit)
         {
-            int aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
-
-            memset(aRc, 0, sizeof(aRc));
-            rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
+            HWACCMR0FIRSTRC FirstRc;
+            hwaccmR0FirstRcInit(&FirstRc);
+            rc = RTMpOnAll(hwaccmR0DisableCpuCallback, NULL, &FirstRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
-#ifdef VBOX_STRICT
-            for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
-                AssertMsgRC(aRc[i], ("hwaccmR0DisableCpuCallback failed for cpu %d with rc=%d\n", i, aRc[i]));
-#endif
+            if (RT_SUCCESS(rc))
+            {
+                rc = hwaccmR0FirstRcGetStatus(&FirstRc);
+                AssertMsgRC(rc, ("%u: %Rrc\n", hwaccmR0FirstRcGetCpuId(&FirstRc), rc));
+            }
         }
 
         /* Free the per-cpu pages used for VT-x and AMD-V */
@@ -592,14 +616,15 @@ VMMR0DECL(int) HWACCMR0Term(void)
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
  */
-static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) hwaccmR0InitCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    unsigned u32VendorEBX = (uintptr_t)pvUser1;
-    int     *paRc         = (int *)pvUser2;
-    uint64_t val;
+    unsigned            u32VendorEBX = (uintptr_t)pvUser1;
+    PHWACCMR0FIRSTRC    pFirstRc     = (PHWACCMR0FIRSTRC)pvUser2;
+    uint64_t            val;
+    int                 rc;
 
 #if defined(LOG_ENABLED) && !defined(DEBUG_bird)
-    SUPR0Printf("HWACCMR0InitCPU cpu %d\n", idCpu);
+    SUPR0Printf("hwaccmR0InitCpu cpu %d\n", idCpu);
 #endif
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
 
@@ -621,12 +646,11 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
         }
         if (   (val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                    == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
-            paRc[idCpu] = VINF_SUCCESS;
+            rc = VINF_SUCCESS;
         else
-            paRc[idCpu] = VERR_VMX_MSR_LOCKED_OR_DISABLED;
+            rc = VERR_VMX_MSR_LOCKED_OR_DISABLED;
     }
-    else
-    if (u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX)
+    else if (u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX)
     {
         /* Check if SVM is disabled */
         val = ASMRdMsr(MSR_K8_VM_CR);
@@ -635,9 +659,7 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
             /* Turn on SVM in the EFER MSR. */
             val = ASMRdMsr(MSR_K6_EFER);
             if (val & MSR_K6_EFER_SVME)
-            {
-                paRc[idCpu] = VERR_SVM_IN_USE;
-            }
+                rc = VERR_SVM_IN_USE;
             else
             {
                 ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
@@ -648,18 +670,22 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
                 {
                     /* Restore previous value. */
                     ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
-                    paRc[idCpu] = VINF_SUCCESS;
+                    rc = VINF_SUCCESS;
                 }
                 else
-                    paRc[idCpu] = VERR_SVM_ILLEGAL_EFER_MSR;
+                    rc = VERR_SVM_ILLEGAL_EFER_MSR;
             }
         }
         else
-            paRc[idCpu] = VERR_SVM_DISABLED;
+            rc = VERR_SVM_DISABLED;
     }
     else
+    {
         AssertFailed(); /* can't happen */
-    return;
+        rc = VERR_INTERNAL_ERROR_5;
+    }
+
+    hwaccmR0FirstRcSetStatus(pFirstRc, rc);
 }
 
 
@@ -703,11 +729,6 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
         }
         else
         {
-            int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
-            RTCPUID idCpu = 0;
-
-            memset(aRc, 0, sizeof(aRc));
-
             /* Allocate one page per cpu for the global vt-x and amd-v pages */
             for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
             {
@@ -733,12 +754,12 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
             if (HWACCMR0Globals.fGlobalInit)
             {
                 /* First time, so initialize each cpu/core */
-                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, (void *)pVM, aRc);
-
-                /* Check the return code of all invocations. */
+                HWACCMR0FIRSTRC FirstRc;
+                hwaccmR0FirstRcInit(&FirstRc);
+                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, (void *)pVM, &FirstRc);
                 if (RT_SUCCESS(rc))
-                    rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
-                AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
+                    rc = hwaccmR0FirstRcGetStatus(&FirstRc);
+                AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", hwaccmR0FirstRcGetCpuId(&FirstRc), rc));
             }
             else
                 rc = VINF_SUCCESS;
@@ -805,17 +826,10 @@ static int hwaccmR0EnableCpu(PVM pVM, RTCPUID idCpu)
  */
 static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PVM             pVM = (PVM)pvUser1;     /* can be NULL! */
-    int            *paRc = (int *)pvUser2;
-
-    if (!HWACCMR0Globals.fGlobalInit)
-    {
-        paRc[idCpu] = VINF_SUCCESS;
-        AssertFailed();
-        return;
-    }
-
-    paRc[idCpu] = hwaccmR0EnableCpu(pVM, idCpu);
+    PVM                 pVM      = (PVM)pvUser1;     /* can be NULL! */
+    PHWACCMR0FIRSTRC    pFirstRc = (PHWACCMR0FIRSTRC)pvUser2;
+    AssertReturnVoid(HWACCMR0Globals.fGlobalInit);
+    hwaccmR0FirstRcSetStatus(pFirstRc, hwaccmR0EnableCpu(pVM, idCpu));
 }
 
 
@@ -867,16 +881,9 @@ static int hwaccmR0DisableCpu(RTCPUID idCpu)
  */
 static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    int            *paRc = (int *)pvUser1;
-
-    if (!HWACCMR0Globals.fGlobalInit)
-    {
-        paRc[idCpu] = VINF_SUCCESS;
-        AssertFailed();
-        return;
-    }
-
-    paRc[idCpu] = hwaccmR0DisableCpu(idCpu);
+    PHWACCMR0FIRSTRC pFirstRc = (PHWACCMR0FIRSTRC)pvUser2;
+    AssertReturnVoid(HWACCMR0Globals.fGlobalInit);
+    hwaccmR0FirstRcSetStatus(pFirstRc, hwaccmR0DisableCpu(idCpu));
 }
 
 /**
@@ -902,17 +909,16 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
 
     if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
     {
-        int     aRc[RTCPUSET_MAX_CPUS]; /** @todo 256 CPUs: Move this off the stack */
-        int     rc;
-        RTCPUID idCpu;
+        int             rc;
+        HWACCMR0FIRSTRC FirstRc;
+        hwaccmR0FirstRcInit(&FirstRc);
 
-        memset(aRc, 0, sizeof(aRc));
         if (enmEvent == RTPOWEREVENT_SUSPEND)
         {
             if (HWACCMR0Globals.fGlobalInit)
             {
                 /* Turn off VT-x or AMD-V on all CPUs. */
-                rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
+                rc = RTMpOnAll(hwaccmR0DisableCpuCallback, NULL, &FirstRc);
                 Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             }
             /* else nothing to do here for the local init case */
@@ -920,20 +926,20 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
         else
         {
             /* Reinit the CPUs from scratch as the suspend state might have messed with the MSRs. (lousy BIOSes as usual) */
-            rc = RTMpOnAll(HWACCMR0InitCPU, (void *)((HWACCMR0Globals.vmx.fSupported) ? X86_CPUID_VENDOR_INTEL_EBX : X86_CPUID_VENDOR_AMD_EBX), aRc);
+            uintptr_t uFirstArg = HWACCMR0Globals.vmx.fSupported ? X86_CPUID_VENDOR_INTEL_EBX : X86_CPUID_VENDOR_AMD_EBX;
+            rc = RTMpOnAll(hwaccmR0InitCpu, (void *)uFirstArg , &FirstRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
-
             if (RT_SUCCESS(rc))
-                rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+                rc = hwaccmR0FirstRcGetStatus(&FirstRc);
 #ifdef LOG_ENABLED
             if (RT_FAILURE(rc))
-                SUPR0Printf("hwaccmR0PowerCallback HWACCMR0InitCPU failed with %d\n", rc);
+                SUPR0Printf("hwaccmR0PowerCallback hwaccmR0InitCpu failed with %Rc\n", rc);
 #endif
 
             if (HWACCMR0Globals.fGlobalInit)
             {
                 /* Turn VT-x or AMD-V back on on all CPUs. */
-                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, NULL, aRc);
+                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, NULL, &FirstRc /* output ignored */);
                 Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             }
             /* else nothing to do here for the local init case */
