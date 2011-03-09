@@ -44,7 +44,7 @@ typedef struct
     uint64_t    PhysBase;
     RTR0MEMOBJ  hMemObj;
     RTR0MEMOBJ  hMapObj;
-    void        *pv;
+    void       *pv;
     uint32_t    fHasThermal;
 } CPUMHOSTLAPIC;
 
@@ -645,10 +645,10 @@ VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
  */
 static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    uint32_t u32MaxIdx;
-    uint32_t u32EBX, u32ECX, u32EDX;
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
-    Assert(iCpu < RTCPUSET_MAX_CPUS);
+    AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
+
+    uint32_t u32MaxIdx, u32EBX, u32ECX, u32EDX;
     ASMCpuId(0, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
     if (   (   (   u32EBX == X86_CPUID_VENDOR_INTEL_EBX
                 && u32ECX == X86_CPUID_VENDOR_INTEL_ECX
@@ -663,9 +663,10 @@ static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2
             &&  (u32EDX & X86_CPUID_FEATURE_EDX_MSR))
         {
             uint64_t u64ApicBase = ASMRdMsr(MSR_IA32_APICBASE);
-            uint32_t u32MaxExtIdx;
+            uint64_t u64Mask     = UINT64_C(0x0000000ffffff000);
+
             /* see Intel Manual: Local APIC Status and Location: MAXPHYADDR default is bit 36 */
-            uint64_t u64Mask = UINT64_C(0x0000000ffffff000);
+            uint32_t u32MaxExtIdx;
             ASMCpuId(0x80000000, &u32MaxExtIdx, &u32EBX, &u32ECX, &u32EDX);
             if (   u32MaxExtIdx >= 0x80000008
                 && u32MaxExtIdx <  0x8000ffff)
@@ -675,6 +676,7 @@ static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2
                 u32PhysBits &= 0xff;
                 u64Mask = ((UINT64_C(1) << u32PhysBits) - 1) & UINT64_C(0xfffffffffffff000);
             }
+
             g_aLApics[iCpu].fEnabled = true;
             g_aLApics[iCpu].PhysBase = u64ApicBase & u64Mask;
         }
@@ -687,7 +689,22 @@ static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2
  */
 static int cpumR0MapLocalApics(void)
 {
+    /*
+     * Check that we'll always stay within the array bounds.
+     */
+    if (RTMpGetArraySize() > RT_ELEMENTS(g_aLApics))
+    {
+        LogRel(("CPUM: Too many real CPUs - %u, max %u\n", RTMpGetArraySize(), RT_ELEMENTS(g_aLApics)));
+        return VERR_TOO_MANY_CPUS;
+    }
+
+    /*
+     * Create mappings for all online CPUs we think have APICs.
+     */
+    /** @todo r=bird: This code is not adequately handling CPUs that are
+     *        offline or unplugged at init time and later bought into action. */
     int rc = RTMpOnAll(cpumR0MapLocalApicWorker, NULL, NULL);
+
     for (unsigned iCpu = 0; RT_SUCCESS(rc) && iCpu < RT_ELEMENTS(g_aLApics); iCpu++)
     {
         if (g_aLApics[iCpu].fEnabled)
@@ -695,27 +712,31 @@ static int cpumR0MapLocalApics(void)
             rc = RTR0MemObjEnterPhys(&g_aLApics[iCpu].hMemObj, g_aLApics[iCpu].PhysBase,
                                      PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
             if (RT_SUCCESS(rc))
-                rc = RTR0MemObjMapKernel(&g_aLApics[iCpu].hMapObj, g_aLApics[iCpu].hMemObj, (void*)-1,
-                                         PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-            if (RT_SUCCESS(rc))
             {
-                void *pApicBase = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);
-                uint32_t ApicVersion = ApicRegRead(pApicBase, APIC_REG_VERSION);
-                /*
-                 * 0x0X       82489 external APIC
-                 * 0x1X       Local APIC
-                 * 0x2X..0xFF reserved
-                 */
-                if ((APIC_REG_VERSION_GET_VER(ApicVersion) & 0xF0) != 0x10)
+                rc = RTR0MemObjMapKernel(&g_aLApics[iCpu].hMapObj, g_aLApics[iCpu].hMemObj, (void *)-1,
+                                         PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                if (RT_SUCCESS(rc))
                 {
+                    void *pvApicBase = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);
+
+                    /*
+                     * 0x0X       82489 external APIC
+                     * 0x1X       Local APIC
+                     * 0x2X..0xFF reserved
+                     */
+                    uint32_t ApicVersion = ApicRegRead(pvApicBase, APIC_REG_VERSION);
+                    if ((APIC_REG_VERSION_GET_VER(ApicVersion) & 0xF0) == 0x10)
+                    {
+                        g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(ApicVersion) >= 5;
+                        g_aLApics[iCpu].pv          = pvApicBase;
+                        continue;
+                    }
+
                     RTR0MemObjFree(g_aLApics[iCpu].hMapObj, true /* fFreeMappings */);
-                    RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
-                    g_aLApics[iCpu].fEnabled = false;
-                    continue;
                 }
-                g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(ApicVersion) >= 5;
-                g_aLApics[iCpu].pv = pApicBase;
+                RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
             }
+            g_aLApics[iCpu].fEnabled = false;
         }
     }
     if (RT_FAILURE(rc))
@@ -739,8 +760,10 @@ static void cpumR0UnmapLocalApics(void)
         {
             RTR0MemObjFree(g_aLApics[iCpu].hMapObj, true /* fFreeMappings */);
             RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
+            g_aLApics[iCpu].hMapObj  = NIL_RTR0MEMOBJ;
+            g_aLApics[iCpu].hMemObj  = NIL_RTR0MEMOBJ;
             g_aLApics[iCpu].fEnabled = false;
-            g_aLApics[iCpu].pv = NULL;
+            g_aLApics[iCpu].pv       = NULL;
         }
     }
 }
