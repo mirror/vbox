@@ -136,7 +136,6 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Gather corresponding values from internal variables: */
-    m_machine.SetName(m_cache.m_strName);
     m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
     m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
     m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
@@ -144,6 +143,9 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
     m_machine.SetClipboardMode(m_cache.m_clipboardMode);
     m_machine.SetDescription(m_cache.m_strDescription);
+    /* Must be last as otherwise its VM rename magic can collide with other
+     * settings in the config, especially with the snapshot folder. */
+    m_machine.SetName(m_cache.m_strName);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
