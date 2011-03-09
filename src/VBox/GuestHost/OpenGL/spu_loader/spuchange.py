@@ -53,3 +53,20 @@ print """
 	table->mark = 0;
 """
 print '}'
+
+print """
+void crSPUChangeDispatch(SPUDispatchTable *dispatch, const SPUNamedFunctionTable *newtable)
+{
+    SPUGenericFunction func;
+"""
+keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
+for func_name in keys:
+    print '\tfunc = crSPUFindFunction(newtable, "%s");' % func_name
+    print '\tif (func && ((SPUGenericFunction)dispatch->%s!=func))' % func_name
+    print '\t{'
+    print '\t\tcrDebug("%%s changed from %%p to %%p", "gl%s", dispatch->%s, func);' % (func_name, func_name)
+    print '\t\tcrSPUChangeInterface(dispatch, dispatch->%s, func);' % func_name
+    print '\t}\n'
+print """
+}
+"""
