@@ -8668,7 +8668,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
                     || mData->mMachineState == MachineState_Aborted
                     || mData->mMachineState == MachineState_Teleported)
                 && (   property.mFlags & guestProp::TRANSIENT
-                    || property.mFlags & guestProp::TRANSIENT_RESET))
+                    || property.mFlags & guestProp::TRANSRESET))
                 continue;
             settings::GuestProperty prop;
             prop.strName = property.strName;
@@ -12252,7 +12252,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
             for (it = mHWData->mGuestProperties.begin();
                  it != mHWData->mGuestProperties.end(); ++it)
                 if (   (it->mFlags & guestProp::TRANSIENT)
-                    || (it->mFlags & guestProp::TRANSIENT_RESET))
+                    || (it->mFlags & guestProp::TRANSRESET))
                 {
                     fNeedsSaving = true;
                     break;

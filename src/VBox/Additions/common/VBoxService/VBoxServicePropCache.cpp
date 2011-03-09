@@ -104,14 +104,12 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                  * Because a value can be temporary we have to make sure it also
                  * gets deleted when the property cache did not have the chance to
                  * gracefully clean it up (due to a hard VM reset etc), so set this
-                 * guest property using the TRANSIENT and TRANSIENT_RESET flags.
+                 * guest property using the TRANSRESET flag..
                  */
-                /** @todo r=bird: TRANSIENT_RESET should imply TRANSIENT. See
-                 *        MAX_FLAGS_LEN... */
-                rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT,TRANSIENT_RESET");
+                rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSRESET");
                 if (rc == VERR_PARSE_ERROR)
                 {
-                    /* Host does not support the "TRANSIENT_RESET" flag, so only
+                    /* Host does not support the "TRANSRESET" flag, so only
                      * use the "TRANSIENT" flag -- better than nothing :-). */
                     rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
                     /** @todo r=bird: Remember that the host doesn't support

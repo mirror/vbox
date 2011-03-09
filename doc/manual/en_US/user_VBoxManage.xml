@@ -2325,7 +2325,7 @@ Value: 2006.01.01</screen>
               </listitem>
 
               <listitem>
-                <para><computeroutput>TRANSIENT_RESET</computeroutput>: the value
+                <para><computeroutput>TRANSRESET</computeroutput>: the value
                 will be deleted as soon as the VM restarts and/or exits;</para>
               </listitem>
 

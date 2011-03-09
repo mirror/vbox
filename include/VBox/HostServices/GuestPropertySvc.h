@@ -59,13 +59,15 @@ enum { MAX_GUEST_NOTIFICATIONS = 256 };
 enum ePropFlags
 {
     NILFLAG          = 0,
+    /** Transient until VM gets shut down. */
     TRANSIENT        = RT_BIT(1),
     RDONLYGUEST      = RT_BIT(2),
     RDONLYHOST       = RT_BIT(3),
-    /** Transient until VM gets a reset / restarts. */
-    TRANSIENT_RESET  = RT_BIT(4),
+    /** Transient until VM gets a reset / restarts.
+     *  Implies TRANSIENT. */
+    TRANSRESET       = RT_BIT(4),
     READONLY         = RDONLYGUEST | RDONLYHOST,
-    ALLFLAGS         = TRANSIENT | READONLY | TRANSIENT_RESET
+    ALLFLAGS         = TRANSIENT | READONLY | TRANSRESET
 };
 
 /**
@@ -86,12 +88,8 @@ DECLINLINE(const char *) flagName(uint32_t fFlag)
             return "RDONLYHOST";
         case READONLY:
             return "READONLY";
-/** @todo r=bird: TRANSIENT_RESET is inconsistent with the other constants
- *        in that it uses '_' and rather long (RDONLYGUEST would be
- *        READONLY_GUEST if '_' was used). Michael, any suggestions how to
- *        shorten it? */
-        case TRANSIENT_RESET:
-            return "TRANSIENT_RESET";
+        case TRANSRESET:
+            return "TRANSRESET";
         default:
             break;
     }
@@ -114,13 +112,7 @@ DECLINLINE(size_t) flagNameLen(uint32_t fFlag)
  * Maximum length for the property flags field.  We only ever return one of
  * RDONLYGUEST, RDONLYHOST and RDONLY
  */
-/** @todo r=bird: Michael, where to do enforce the "only every return one of
- *        R*"? I cannot see it? */
-/** @todo r=bird: Should TRANSIENT_RESET imply TRANSIENT or not? See
- *        VBoxServicePropCache.cpp.  You've introduced (or maybe just made an
- *        existing one more obvious - see abouve) a buffer overrun in
- *        writeFlags now. */
-enum { MAX_FLAGS_LEN =   sizeof("TRANSIENT_RESET, RDONLYGUEST") };
+enum { MAX_FLAGS_LEN =   sizeof("TRANSRESET","RDONLYGUEST") };
 
 /**
  * Parse a guest properties flags string for flag names and make sure that
@@ -137,12 +129,7 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
 {
     static const uint32_t s_aFlagList[] =
     {
-        /*
-         * Note: TRANSIENT_RESET must come before TRANSIENT because
-         * otherwise the RTStrNICmp with the flagNameLen parameter would
-         * fail below.
-         */
-        TRANSIENT_RESET, TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
+        TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST, TRANSRESET
     };
     const char *pcszNext = pcszFlags;
     int rc = VINF_SUCCESS;
@@ -193,7 +180,7 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
 {
     static const uint32_t s_aFlagList[] =
     {
-        TRANSIENT_RESET, TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
+        TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST, TRANSRESET
     };
     char *pszNext = pszFlags;
     int rc = VINF_SUCCESS;
