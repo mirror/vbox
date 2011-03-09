@@ -1657,7 +1657,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     if (uVendor == 0xffff)
         return;
 
-    Log(("BIOS init device: %02x::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+    Log(("BIOS init device: %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
     switch (uDevClass)
     {
@@ -2295,8 +2295,8 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool f
                             pciDevIsMsiCapable(pPciDev)  ? " MSI" : "",
                             pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
                             );
-            if (!pciDevIsPassthrough(pPciDev) && PCIDevGetInterruptPin(pPciDev) != 0)
-                pHlp->pfnPrintf(pHlp, " IRQ%d", PCIDevGetInterruptLine(pPciDev));
+            if (ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
+                pHlp->pfnPrintf(pHlp, " IRQ%d", ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE));
 
             pHlp->pfnPrintf(pHlp, "\n");
 
@@ -2617,7 +2617,6 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
 
     /** @todo: other chipset devices shall be registered too */
-    /** @todo: what to with bridges? */
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. (no arguments)", ich9pciInfo);
 
@@ -2641,8 +2640,8 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
 
     if (pciDevIsPassthrough(pDev))
     {
-        // implement reset handler
-        AssertFailed();
+        // no reset handler - we can do what we need in PDM reset handler
+        // @todo: is it correct?
     }
     else
     {

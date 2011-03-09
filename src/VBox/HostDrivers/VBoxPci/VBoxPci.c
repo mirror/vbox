@@ -190,6 +190,33 @@ DECLHIDDEN(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, P
     return rc;
 }
 
+DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+    int rc;
+
+    pThis->pfnIrqHandler = pfnHandler;
+    pThis->pIrqContext   = pIrqContext;
+    rc = vboxPciOsDevRegisterIrqHandler(pThis, pfnHandler, pIrqContext, piHostIrq);
+    if (RT_FAILURE(rc))
+    {
+        pThis->pfnIrqHandler = NULL;
+        pThis->pIrqContext   = NULL;
+        *piHostIrq = -1;
+    }
+
+    return rc;
+}
+
+DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHostIrq)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+
+    int rc = vboxPciOsDevUnregisterIrqHandler(pThis, iHostIrq);
+
+    return rc;
+}
+
 /**
  * Creates a new instance.
  *
@@ -225,7 +252,10 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->DevPort.pfnUnmapRegion        = vboxPciDevUnmapRegion;
     pNew->DevPort.pfnPciCfgRead         = vboxPciDevPciCfgRead;
     pNew->DevPort.pfnPciCfgWrite        = vboxPciDevPciCfgWrite;
-
+    pNew->DevPort.pfnPciCfgRead         = vboxPciDevPciCfgRead;
+    pNew->DevPort.pfnPciCfgWrite        = vboxPciDevPciCfgWrite;
+    pNew->DevPort.pfnRegisterIrqHandler = vboxPciDevRegisterIrqHandler;
+    pNew->DevPort.pfnUnregisterIrqHandler = vboxPciDevUnregisterIrqHandler;
     pNew->DevPort.u32VersionEnd         = RAWPCIDEVPORT_VERSION;
 
     rc = RTSpinlockCreate(&pNew->hSpinlock);
@@ -282,9 +312,6 @@ static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
     Assert(cRefs >= 0); NOREF(cRefs);
     LogFlow(("vboxPciFactoryRelease: cRefs=%d (new)\n", cRefs));
 }
-
-
-
 
 static DECLHIDDEN(bool) vboxPciCanUnload(PVBOXRAWPCIGLOBALS pGlobals)
 {
