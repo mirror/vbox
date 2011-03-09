@@ -1211,6 +1211,8 @@ static int vdIoCtxLockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowFunc(("pDisk=%#p pIoCtx=%#p\n", pDisk, pIoCtx));
+
     if (!ASMAtomicCmpXchgBool(&pDisk->fLocked, true, false))
     {
         Assert(pDisk->pIoCtxLockOwner != pIoCtx); /* No nesting allowed. */
@@ -1225,11 +1227,16 @@ static int vdIoCtxLockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
         pDisk->pIoCtxLockOwner = pIoCtx;
     }
 
+    LogFlowFunc(("returns -> %Rrc\n", rc));
     return rc;
 }
 
 static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessDeferredReqs)
 {
+    LogFlowFunc(("pDisk=%#p pIoCtx=%#p fProcessDeferredReqs=%RTbool\n",
+                 pDisk, pIoCtx, fProcessDeferredReqs));
+
+    LogFlow(("Unlocking disk lock owner is %#p\n", pDisk->pIoCtxLockOwner));
     Assert(pDisk->fLocked);
     Assert(pDisk->pIoCtxLockOwner == pIoCtx);
     pDisk->pIoCtxLockOwner = NULL;
@@ -1280,6 +1287,8 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessDefe
         else
             RTCritSectLeave(&pDisk->CritSect);
     }
+
+    LogFlowFunc(("returns\n"));
 }
 
 /**
@@ -2086,7 +2095,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     LogFlow(("Child write request completed\n"));
                     Assert(pIoCtx->cbTransferLeft >= cbThisWrite);
                     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisWrite);
-                    ASMAtomicWriteBool(&pDisk->fLocked, false);
+                    vdIoCtxUnlockDisk(pDisk, pIoCtx, false /* fProcessDeferredReqs*/ );
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
                     rc = VINF_SUCCESS;
@@ -2156,6 +2165,8 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
         rc = pImage->Backend->pfnAsyncFlush(pImage->pBackendData, pIoCtx);
         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = VINF_SUCCESS;
+        else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+            vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessDeferredReqs */);
     }
 
     return rc;
