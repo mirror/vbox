@@ -140,6 +140,7 @@ static int rtThreadNativeMain(void *pvArg)
 
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4)
     struct task_struct *NativeThread;
 
     RT_ASSERT_PREEMPTIBLE();
@@ -151,4 +152,7 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 
     *pNativeThread = (RTNATIVETHREAD)NativeThread;
     return VINF_SUCCESS;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
