@@ -1134,7 +1134,7 @@ VMMR3DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
      */
     PUVM pUVM = pUVCpu->pUVM;
     int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnWait(pUVCpu);
-    LogFlow(("VMR3WaitU: returns %Rrc (FF %#x)\n", rc, pVM ? pVM->fGlobalForcedActions : 0));
+    LogFlow(("VMR3WaitU: returns %Rrc (FF %#x)\n", rc, pUVM->pVM ? pUVM->pVM->fGlobalForcedActions : 0));
     return rc;
 }
 
