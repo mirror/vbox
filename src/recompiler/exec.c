@@ -2333,7 +2333,8 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 #ifndef VBOX
         if (p) {
 #else
-        if (   p->phys_offset
+        if (   p
+            && p->phys_offset
             && (pd & ~TARGET_PAGE_MASK) != env->pVM->rem.s.iMMIOMemType
             && (pd & ~TARGET_PAGE_MASK) != env->pVM->rem.s.iHandlerMemType) {
 #endif
