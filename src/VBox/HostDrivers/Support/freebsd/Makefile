@@ -132,8 +132,8 @@ SRCS += \
 	RTSemEventMultiWait-2-ex-generic.c \
 	RTSemEventMultiWaitNoResume-2-ex-generic.c \
 	RTTimerCreate-generic.c \
-	timer-generic.c \
-	mppresent-generic.c
+	mppresent-generic.c \
+	timer-generic.c
 
 .PATH:	${.CURDIR}/r0drv
 SRCS += \

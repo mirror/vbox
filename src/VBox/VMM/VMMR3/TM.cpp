@@ -121,6 +121,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
+#include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP from sup.h  */
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
@@ -138,7 +139,6 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
-#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -221,12 +221,20 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      */
     pVM->tm.s.pvGIPR3 = (void *)g_pSUPGlobalInfoPage;
     AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_INTERNAL_ERROR);
+    AssertMsgReturn((g_pSUPGlobalInfoPage->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
+                    ("Unsupported GIP version!\n"), VERR_INTERNAL_ERROR);
+
     RTHCPHYS HCPhysGIP;
     rc = SUPR3GipGetPhys(&HCPhysGIP);
     AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
 
     RTGCPTR GCPtr;
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, (size_t)g_pSUPGlobalInfoPage->cPages * PAGE_SIZE,
+                            "GIP", &GCPtr);
+#else
     rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
+#endif
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to map GIP into GC, rc=%Rrc!\n", rc));
@@ -794,34 +802,23 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
     /*
      * Use GIP when available present.
      */
-    uint64_t    u64Hz;
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (    pGip
-        &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
+    uint64_t u64Hz = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+    if (u64Hz != UINT64_MAX)
     {
-        unsigned iCpu = pGip->u32Mode != SUPGIPMODE_ASYNC_TSC ? 0 : ASMGetApicId();
-        if (iCpu >= RT_ELEMENTS(pGip->aCPUs))
-            AssertReleaseMsgFailed(("iCpu=%d - the ApicId is too high. send VBox.log and hardware specs!\n", iCpu));
+        if (tmR3HasFixedTSC(pVM))
+            /* Sleep a bit to get a more reliable CpuHz value. */
+            RTThreadSleep(32);
         else
         {
-            if (tmR3HasFixedTSC(pVM))
-                /* Sleep a bit to get a more reliable CpuHz value. */
-                RTThreadSleep(32);
-            else
-            {
-                /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
-                const uint64_t u64 = RTTimeMilliTS();
-                while ((RTTimeMilliTS() - u64) < 40 /*ms*/)
-                    /* nothing */;
-            }
-
-            pGip = g_pSUPGlobalInfoPage;
-            if (    pGip
-                &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-                &&  (u64Hz = pGip->aCPUs[iCpu].u64CpuHz)
-                &&  u64Hz != ~(uint64_t)0)
-                return u64Hz;
+            /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
+            const uint64_t u64 = RTTimeMilliTS();
+            while ((RTTimeMilliTS() - u64) < 40 /*ms*/)
+                /* nothing */;
         }
+
+        u64Hz = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+        if (u64Hz != UINT64_MAX)
+            return u64Hz;
     }
 
     /* call this once first to make sure it's initialized. */

@@ -130,10 +130,13 @@ static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
-static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
+static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
+                                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus);
+static DECLCALLBACK(void)   supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static void                 supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
-static void                 supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick);
-static void                 supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick);
+static void                 supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick);
+static void                 supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
+                                                  RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
 
 
 /*******************************************************************************
@@ -288,13 +291,13 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadUserReset",                      (void *)RTThreadUserReset },
     { "RTThreadUserWait",                       (void *)RTThreadUserWait },
     { "RTThreadUserWaitNoResume",               (void *)RTThreadUserWaitNoResume },
-#else 
-    /**  
-     * @todo: remove me, once above code enabled.  
-     * We need RTThreadCreate/RTThreadWait in the PCI driver. 
-     */ 
-    { "RTThreadCreate",                         (void *)RTThreadCreate }, 
-    { "RTThreadWait",                           (void *)RTThreadWait }, 
+#else
+    /**
+     * @todo: remove me, once above code enabled.
+     * We need RTThreadCreate/RTThreadWait in the PCI driver.
+     */
+    { "RTThreadCreate",                         (void *)RTThreadCreate },
+    { "RTThreadWait",                           (void *)RTThreadWait },
 #endif
     { "RTThreadPreemptIsEnabled",               (void *)RTThreadPreemptIsEnabled },
     { "RTThreadPreemptIsPending",               (void *)RTThreadPreemptIsPending },
@@ -3212,9 +3215,17 @@ static void supdrvGipReInitCpu(PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
 static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PSUPGLOBALINFOPAGE  pGip = (PSUPGLOBALINFOPAGE)pvUser1;
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    unsigned            iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
+#else
     unsigned            iCpu = ASMGetApicId();
+#endif
 
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    if (RT_LIKELY(iCpu < pGip->cCpus && pGip->aCPUs[iCpu].idCpu == idCpu))
+#else
     if (RT_LIKELY(iCpu < RT_ELEMENTS(pGip->aCPUs)))
+#endif
         supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
 
     NOREF(pvUser2);
@@ -4806,11 +4817,13 @@ static int supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
  */
 static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 {
-    PSUPGLOBALINFOPAGE pGip;
-    RTHCPHYS HCPhysGip;
-    uint32_t u32SystemResolution;
-    uint32_t u32Interval;
-    int rc;
+    PSUPGLOBALINFOPAGE  pGip;
+    RTHCPHYS            HCPhysGip;
+    uint32_t            u32SystemResolution;
+    uint32_t            u32Interval;
+    unsigned            cCpus;
+    int                 rc;
+
 
     LogFlow(("supdrvGipCreate:\n"));
 
@@ -4820,9 +4833,33 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     Assert(!pDevExt->pGipTimer);
 
     /*
-     * Allocate a suitable page with a default kernel mapping.
+     * Check the CPU count.
      */
-    rc = RTR0MemObjAllocLow(&pDevExt->GipMemObj, PAGE_SIZE, false);
+    cCpus = RTMpGetArraySize();
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    if (   cCpus > RTCPUSET_MAX_CPUS
+        || cCpus > 256 /*uint8_t is used for the mappings*/)
+#else
+    if (cCpus > RT_ELEMENTS(pGip->aCPUs))
+#endif
+    {
+#ifdef SUP_WITH_LOTS_OF_CPUS
+        SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RTCPUSET_MAX_CPUS, 256));
+#else
+        SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RT_ELEMENTS(pGip->aCPUs), 256));
+#endif
+        return VERR_TOO_MANY_CPUS;
+    }
+
+    /*
+     * Allocate a contiguous set of pages with a default kernel mapping.
+     */
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), false /*fExecutable*/);
+#else
+    cCpus = RT_ELEMENTS(pGip->aCPUs);
+    rc = RTR0MemObjAllocLow(&pDevExt->GipMemObj, PAGE_SIZE, false /*fExecutable*/);
+#endif
     if (RT_FAILURE(rc))
     {
         OSDBGPRINT(("supdrvGipCreate: failed to allocate the GIP page. rc=%d\n", rc));
@@ -4838,7 +4875,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     while (u32Interval < 10000000 /* 10 ms */)
         u32Interval += u32SystemResolution;
 
-    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/);
+    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
     /*
      * Create the timer.
@@ -4857,23 +4894,30 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
         rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0, supdrvGipSyncTimer, pDevExt);
     if (RT_SUCCESS(rc))
     {
-        if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
-            rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
+        rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * We're good.
-             */
-            Log(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
-            g_pSUPGlobalInfoPage = pGip;
-            return VINF_SUCCESS;
-        }
+            rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * We're good.
+                 */
+                Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
+                g_pSUPGlobalInfoPage = pGip;
+                return VINF_SUCCESS;
+            }
 
-        OSDBGPRINT(("supdrvGipCreate: failed register MP event notfication. rc=%d\n", rc));
+            OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed with rc=%Rrc\n", rc));
+            RTMpNotificationDeregister(supdrvGipMpEvent, pDevExt);
+
+        }
+        else
+            OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
     }
     else
     {
-        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %ld ns interval. rc=%d\n", (long)u32Interval, rc));
+        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
         Assert(!pDevExt->pGipTimer);
     }
     supdrvGipDestroy(pDevExt);
@@ -4944,7 +4988,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
 
-    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, iTick);
+    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
     ASMSetFlags(fOldFlags);
 }
@@ -4965,19 +5009,115 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
     /** @todo reset the transaction number and whatnot when iTick == 1. */
     if (pDevExt->idGipMaster == idCpu)
-        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, iTick);
+        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, idCpu, iTick);
     else
-        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, ASMGetApicId(), iTick);
+        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, idCpu, ASMGetApicId(), iTick);
 
     ASMSetFlags(fOldFlags);
 }
 
 
 /**
+ * The calling CPU should be accounted as online, update GIP accordingly.
+ *
+ * This is used by supdrvGipMpEvent as well as the supdrvGipCreate.
+ *
+ * @param   pGip                The GIP.
+ * @param   idCpu               The CPU ID.
+ */
+static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+{
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    int         iCpuSet;
+    uint8_t     idApic;
+    uint32_t    i;
+
+    Assert(idCpu == RTMpCpuId());
+    Assert(pGip->cPossibleCpus == RTMpGetCount());
+
+    /*
+     * Update the globals.
+     */
+    ASMAtomicWriteU32(&pGip->cPresentCpus,  RTMpGetPresentCount());
+    ASMAtomicWriteU32(&pGip->cOnlineCpus,   RTMpGetOnlineCount());
+    iCpuSet = RTMpCpuIdToSetIndex(idCpu);
+    if (iCpuSet >= 0)
+    {
+        Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
+        RTCpuSetAddByIndex(&pGip->OnlineCpuSet, iCpuSet);
+        RTCpuSetAddByIndex(&pGip->PresentCpuSet, iCpuSet);
+    }
+
+    /*
+     * Find our entry, or allocate one if not found.
+     * ASSUMES that CPU IDs are constant.
+     */
+    for (i = 0; i < pGip->cCpus; i++)
+        if (pGip->aCPUs[i].idCpu == idCpu)
+            break;
+
+    if (i >= pGip->cCpus)
+        for (i = 0; i < pGip->cCpus; i++)
+        {
+            bool fRc;
+            ASMAtomicCmpXchgSize(&pGip->aCPUs[i].idCpu, idCpu, NIL_RTCPUID, fRc);
+            if (fRc)
+                break;
+        }
+
+    AssertReturnVoid(i < pGip->cCpus);
+
+    /*
+     * Update the entry.
+     */
+    idApic = ASMGetApicId();
+    ASMAtomicUoWriteU16(&pGip->aCPUs[i].idApic,  idApic);
+    ASMAtomicUoWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
+    ASMAtomicUoWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
+    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
+
+    /*
+     * Update the APIC ID and CPU set index mappings.
+     */
+    ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
+    ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
+#endif
+}
+
+
+/**
+ * The CPU should be accounted as offline, update the GIP accordingly.
+ *
+ * This is used by supdrvGipMpEvent.
+ *
+ * @param   pGip                The GIP.
+ * @param   idCpu               The CPU ID.
+ */
+static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+{
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    int         iCpuSet;
+    unsigned    i;
+
+    iCpuSet = RTMpCpuIdToSetIndex(idCpu);
+    AssertReturnVoid(iCpuSet >= 0);
+
+    i = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    AssertReturnVoid(i < pGip->cCpus);
+    AssertReturnVoid(pGip->aCPUs[i].idCpu == idCpu);
+
+    Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
+    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
+    RTCpuSetDelByIndex(&pGip->OnlineCpuSet, iCpuSet);
+#endif
+}
+
+
+/**
  * Multiprocessor event notification callback.
  *
- * This is used to make sue that the GIP master gets passed on to
- * another CPU.
+ * This is used to make sure that the GIP master gets passed on to
+ * another CPU.  It also updates the associated CPU data.
  *
  * @param   enmEvent    The event.
  * @param   idCpu       The cpu it applies to.
@@ -4985,7 +5125,29 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
  */
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
 {
-    PSUPDRVDEVEXT   pDevExt = (PSUPDRVDEVEXT)pvUser;
+    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
+    PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
+
+    /*
+     * Update the GIP CPU data.
+     */
+    if (pGip)
+    {
+        switch (enmEvent)
+        {
+            case RTMPEVENT_ONLINE:
+                supdrvGipMpEventOnline(pGip, idCpu);
+                break;
+            case RTMPEVENT_OFFLINE:
+                supdrvGipMpEventOffline(pGip, idCpu);
+                break;
+
+        }
+    }
+
+    /*
+     * Make sure there is a master GIP.
+     */
     if (enmEvent == RTMPEVENT_OFFLINE)
     {
         RTCPUID idGipMaster;
@@ -5183,32 +5345,59 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
  * @param   HCPhys      The physical address of the GIP.
  * @param   u64NanoTS   The current nanosecond timestamp.
  * @param   uUpdateHz   The update frequency.
+ * @param   cCpus       The CPU count.
  */
-static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
+static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
+                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus)
 {
-    unsigned i;
+    size_t const    cbGip = RT_ALIGN_Z(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), PAGE_SIZE);
+    unsigned        i;
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz));
+    OSDBGPRINT(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d cCpus=%u\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz, cCpus));
 #else
-    LogFlow(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz));
+    LogFlow(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d cCpus=%u\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz, cCpus));
 #endif
 
     /*
      * Initialize the structure.
      */
-    memset(pGip, 0, PAGE_SIZE);
-    pGip->u32Magic          = SUPGLOBALINFOPAGE_MAGIC;
-    pGip->u32Version        = SUPGLOBALINFOPAGE_VERSION;
-    pGip->u32Mode           = supdrvGipDeterminTscMode(pDevExt);
-    pGip->u32UpdateHz       = uUpdateHz;
-    pGip->u32UpdateIntervalNS = 1000000000 / uUpdateHz;
+    memset(pGip, 0, cbGip);
+    pGip->u32Magic              = SUPGLOBALINFOPAGE_MAGIC;
+    pGip->u32Version            = SUPGLOBALINFOPAGE_VERSION;
+    pGip->u32Mode               = supdrvGipDeterminTscMode(pDevExt);
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    pGip->cCpus                 = (uint16_t)cCpus;
+    pGip->cPages                = (uint16_t)(cbGip / PAGE_SIZE);
+#endif
+    pGip->u32UpdateHz           = uUpdateHz;
+    pGip->u32UpdateIntervalNS   = 1000000000 / uUpdateHz;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    RTCpuSetEmpty(&pGip->OnlineCpuSet);
+    pGip->cOnlineCpus           = RTMpGetOnlineCount();
+    pGip->cPresentCpus          = RTMpGetPresentCount();
+    RTCpuSetEmpty(&pGip->PresentCpuSet);
+    RTMpGetSet(&pGip->PossibleCpuSet);
+    pGip->cPossibleCpus         = RTMpGetCount();
+    pGip->idCpuMax              = RTMpGetMaxCpuId();
+    for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
+        pGip->aiCpuFromApicId[i]    = 0;
+    for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
+        pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
+#endif
 
-    for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
+    for (i = 0; i < cCpus; i++)
     {
         pGip->aCPUs[i].u32TransactionId  = 2;
         pGip->aCPUs[i].u64NanoTS         = u64NanoTS;
         pGip->aCPUs[i].u64TSC            = ASMReadTSC();
+
+#ifdef SUP_WITH_LOTS_OF_CPUS
+        pGip->aCPUs[i].enmState          = SUPGIPCPUSTATE_INVALID;
+        pGip->aCPUs[i].idCpu             = NIL_RTCPUID;
+        pGip->aCPUs[i].iCpuSet           = -1;
+        pGip->aCPUs[i].idApic            = UINT8_MAX;
+#endif
 
         /*
          * We don't know the following values until we've executed updates.
@@ -5231,9 +5420,24 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     /*
      * Link it to the device extension.
      */
-    pDevExt->pGip = pGip;
+    pDevExt->pGip      = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
+}
+
+
+/**
+ * On CPU initialization callback for RTMpOnAll.
+ *
+ * @param   idCpu               The CPU ID.
+ * @param   pvUser1             The device extension.
+ * @param   pvUser2             The GIP.
+ */
+static DECLCALLBACK(void) supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    /* This is good enough, even though it will update some of the globals a
+       bit to much. */
+    supdrvGipMpEventOnline((PSUPGLOBALINFOPAGE)pvUser2, idCpu);
 }
 
 
@@ -5280,14 +5484,14 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
     /*
      * Update the NanoTS.
      */
-    ASMAtomicXchgU64(&pGipCpu->u64NanoTS, u64NanoTS);
+    ASMAtomicWriteU64(&pGipCpu->u64NanoTS, u64NanoTS);
 
     /*
      * Calc TSC delta.
      */
     /** @todo validate the NanoTS delta, don't trust the OS to call us when it should... */
     u64TSCDelta = u64TSC - pGipCpu->u64TSC;
-    ASMAtomicXchgU64(&pGipCpu->u64TSC, u64TSC);
+    ASMAtomicWriteU64(&pGipCpu->u64TSC, u64TSC);
 
     if (u64TSCDelta >> 32)
     {
@@ -5317,8 +5521,8 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
      */
     Assert(RT_ELEMENTS(pGipCpu->au32TSCHistory) == 8);
     iTSCHistoryHead = (pGipCpu->iTSCHistoryHead + 1) & 7;
-    ASMAtomicXchgU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
-    ASMAtomicXchgU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
+    ASMAtomicWriteU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
+    ASMAtomicWriteU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
 
     /*
      * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
@@ -5358,13 +5562,13 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
         /* This value hasn't be checked yet.. waiting for OS/2 and 33Hz timers.. :-) */
         u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
     }
-    ASMAtomicXchgU32(&pGipCpu->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
+    ASMAtomicWriteU32(&pGipCpu->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
 
     /*
      * CpuHz.
      */
     u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, pGip->u32UpdateHz);
-    ASMAtomicXchgU64(&pGipCpu->u64CpuHz, u64CpuHz);
+    ASMAtomicWriteU64(&pGipCpu->u64CpuHz, u64CpuHz);
 }
 
 
@@ -5374,9 +5578,10 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
  * @param   pGip            Pointer to the GIP.
  * @param   u64NanoTS       The current nanosecond timesamp.
  * @param   u64TSC          The current TSC timesamp.
+ * @param   idCpu           The CPU ID.
  * @param   iTick           The current timer tick.
  */
-static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
+static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick)
 {
     /*
      * Determine the relevant CPU data.
@@ -5386,10 +5591,19 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
         pGipCpu = &pGip->aCPUs[0];
     else
     {
+#ifdef SUP_WITH_LOTS_OF_CPUS
+        unsigned iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
+        if (RT_UNLIKELY(iCpu >= pGip->cCpus))
+            return;
+        pGipCpu = &pGip->aCPUs[iCpu];
+        if (RT_UNLIKELY(pGipCpu->idCpu != idCpu))
+            return;
+#else
         unsigned iCpu = ASMGetApicId();
         if (RT_UNLIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
             return;
         pGipCpu = &pGip->aCPUs[iCpu];
+#endif
     }
 
     /*
@@ -5416,12 +5630,12 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
             uint32_t u32UpdateHz = (uint32_t)((UINT64_C(1000000000) * GIP_UPDATEHZ_RECALC_FREQ) / u64Delta);
             if (u32UpdateHz <= 2000 && u32UpdateHz >= 30)
             {
-                ASMAtomicXchgU32(&pGip->u32UpdateHz, u32UpdateHz);
-                ASMAtomicXchgU32(&pGip->u32UpdateIntervalNS, 1000000000 / u32UpdateHz);
+                ASMAtomicWriteU32(&pGip->u32UpdateHz, u32UpdateHz);
+                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, 1000000000 / u32UpdateHz);
             }
 #endif
         }
-        ASMAtomicXchgU64(&pGip->u64NanoTSLastUpdateHz, u64NanoTS);
+        ASMAtomicWriteU64(&pGip->u64NanoTSLastUpdateHz, u64NanoTS);
     }
 
     /*
@@ -5442,36 +5656,49 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
  * @param   pGip            Pointer to the GIP.
  * @param   u64NanoTS       The current nanosecond timesamp.
  * @param   u64TSC          The current TSC timesamp.
- * @param   iCpu            The CPU index.
+ * @param   idCpu           The CPU ID.
+ * @param   idApic          The APIC id for the CPU index.
  * @param   iTick           The current timer tick.
  */
-static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick)
+static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
+                                  RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
 {
-    PSUPGIPCPU  pGipCpu;
+#ifdef SUP_WITH_LOTS_OF_CPUS
+    unsigned iCpu = pGip->aiCpuFromApicId[idApic];
+
+    if (RT_LIKELY(iCpu < pGip->cCpus))
+#else
+    unsigned iCpu = idApic;
 
     if (RT_LIKELY(iCpu < RT_ELEMENTS(pGip->aCPUs)))
+#endif
     {
-        pGipCpu = &pGip->aCPUs[iCpu];
-
-        /*
-         * Start update transaction.
-         */
-        if (!(ASMAtomicIncU32(&pGipCpu->u32TransactionId) & 1))
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
+#ifdef SUP_WITH_LOTS_OF_CPUS
+        if (pGipCpu->idCpu == idCpu)
+#endif
         {
-            AssertMsgFailed(("Invalid transaction id, %#x, not odd!\n", pGipCpu->u32TransactionId));
+
+            /*
+             * Start update transaction.
+             */
+            if (!(ASMAtomicIncU32(&pGipCpu->u32TransactionId) & 1))
+            {
+                AssertMsgFailed(("Invalid transaction id, %#x, not odd!\n", pGipCpu->u32TransactionId));
+                ASMAtomicIncU32(&pGipCpu->u32TransactionId);
+                pGipCpu->cErrors++;
+                return;
+            }
+
+            /*
+             * Update the data.
+             */
+            supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
+
+            /*
+             * Complete transaction.
+             */
             ASMAtomicIncU32(&pGipCpu->u32TransactionId);
-            pGipCpu->cErrors++;
-            return;
         }
-
-        /*
-         * Update the data.
-         */
-        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
-
-        /*
-         * Complete transaction.
-         */
-        ASMAtomicIncU32(&pGipCpu->u32TransactionId);
     }
 }
