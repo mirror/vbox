@@ -546,9 +546,6 @@ DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t
 
 DECLINLINE(uint8_t)  PCIDevGetByte(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
-#ifdef PCIDEVICEINT_DECLARED
-    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
-#endif
     return pPciDev->config[uOffset];
 }
 
@@ -559,9 +556,6 @@ DECLINLINE(void)     PCIDevSetWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint16_
 
 DECLINLINE(uint16_t) PCIDevGetWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
-#ifdef PCIDEVICEINT_DECLARED
-    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
-#endif
     uint16_t u16Value = *(uint16_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U16(u16Value);
 }
@@ -573,9 +567,6 @@ DECLINLINE(void)     PCIDevSetDWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint32
 
 DECLINLINE(uint32_t) PCIDevGetDWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
-#ifdef PCIDEVICEINT_DECLARED
-    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
-#endif
     uint32_t u32Value = *(uint32_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U32(u32Value);
 }
@@ -587,9 +578,6 @@ DECLINLINE(void)     PCIDevSetQWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint64
 
 DECLINLINE(uint64_t) PCIDevGetQWord(PPCIDEVICE pPciDev, uint32_t uOffset)
 {
-#ifdef PCIDEVICEINT_DECLARED
-    Assert((pPciDev->Int.s.fFlags & PCIDEV_FLAG_PASSTHROUGH) == 0);
-#endif
     uint64_t u64Value = *(uint64_t*)&pPciDev->config[uOffset];
     return RT_H2LE_U64(u64Value);
 }
