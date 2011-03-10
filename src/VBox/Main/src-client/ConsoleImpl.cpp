@@ -675,7 +675,7 @@ void Console::uninit()
 /**
  * Handles guest properties on a VM reset.
  * At the moment we only delete properties which have the flag
- * "TRANSIENT_RESET".
+ * "TRANSRESET".
  */
 void Console::guestPropertiesHandleVMReset(void)
 {
@@ -692,8 +692,8 @@ void Console::guestPropertiesHandleVMReset(void)
     {
         for (size_t i = 0; i < arrFlags.size(); i++)
         {
-            /* Delete all properties which have the flag "TRANSIENT_RESET". */
-            if (Utf8Str(arrFlags[i]).contains("TRANSIENT_RESET", Utf8Str::CaseInsensitive))
+            /* Delete all properties which have the flag "TRANSRESET". */
+            if (Utf8Str(arrFlags[i]).contains("TRANSRESET", Utf8Str::CaseInsensitive))
             {
                 hrc = mMachine->SetGuestProperty(arrNames[i], Bstr("").raw() /* Value */,
                                                  Bstr("").raw() /* Flags */);
