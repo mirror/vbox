@@ -2063,15 +2063,13 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                 /* don't change read-only bits => actually all lower bits are read-only */
                 u8Val &= UINT32_C(~0xff);
                 /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-                if (!fPassthrough)
-                    aDev->config[addr] &= ~u8Val;
+                aDev->config[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                 /* don't change read-only bits */
                 u8Val &= UINT32_C(~0x06);
                 /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-                if (!fPassthrough)
-                    aDev->config[addr] &= ~u8Val;
+                aDev->config[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_ROM_ADDRESS:    case VBOX_PCI_ROM_ADDRESS   +1: case VBOX_PCI_ROM_ADDRESS   +2: case VBOX_PCI_ROM_ADDRESS   +3:
                 fRom = true;
@@ -2089,15 +2087,14 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                 {
                     int iRegion = fRom ? VBOX_PCI_ROM_SLOT : (addr - VBOX_PCI_BASE_ADDRESS_0) >> 2;
                     int iOffset = addr & 0x3;
-                    if (!fPassthrough)
-                        ich9pciWriteBarByte(aDev, iRegion, iOffset, u8Val);
+                    ich9pciWriteBarByte(aDev, iRegion, iOffset, u8Val);
                     fUpdateMappings = true;
                 }
                 break;
             }
             default:
             default_case:
-                if (fWritable && !fPassthrough)
+                if (fWritable)
                     PCIDevSetByte(aDev, addr, u8Val);
         }
         addr++;

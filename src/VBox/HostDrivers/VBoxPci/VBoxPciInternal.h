@@ -23,6 +23,17 @@
 #include <iprt/semaphore.h>
 #include <iprt/assert.h>
 
+#ifdef RT_OS_LINUX
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#define VBOX_WITH_IOMMU
+#endif
+
+#ifdef VBOX_WITH_IOMMU
+#include <linux/iommu.h>
+#endif
+
+#endif
 
 RT_C_DECLS_BEGIN
 
