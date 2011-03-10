@@ -98,7 +98,7 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
         char *pszValue;
         if (RTStrAPrintfV(&pszValue, pszValueFormat, va) >= 0)
         {
-            if (fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
+            if (fFlags & VBOXSERVICEPROPCACHEFLAG_TRANSIENT)
             {
                 /*
                  * Because a value can be temporary we have to make sure it also
@@ -117,7 +117,7 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                 }
             }
             else
-                rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
+                rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue /* No transient flags set */);
             RTStrFree(pszValue);
         }
         else
@@ -382,13 +382,11 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
                                                                                       VBOXSERVICEVEPROPCACHEENTRY, NodeSucc);
             RTListNodeRemove(&pNode->NodeSucc);
 
-            /*
-             * When destroying the cache and we have a temporary value, remove the
-             * (eventually) set TRANSIENT_RESET flag from it so that it doesn't get deleted
-             * by the host side in order to put the actual reset value in it.
-             */
             if (pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
-                vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, 0 /* Flags, clear all */, pNode->pszValueReset);
+            {
+                rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName,
+                                                    pNode->fFlags, pNode->pszValueReset);
+            }
 
             AssertPtr(pNode->pszName);
             RTStrFree(pNode->pszName);

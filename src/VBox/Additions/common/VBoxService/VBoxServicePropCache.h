@@ -23,16 +23,19 @@
 # ifdef VBOX_WITH_GUEST_PROPS
 
 /** Indicates wheter a guest property is temporary and either should
- *  get deleted when
- *  - a) the property cache gets destroyed, or
- *  - b) the VM gets a hard reset / shutdown
- *  or gets a default "reset" value (if specified via VBoxServicePropCacheUpdateEntry)
- *  when the property cache gets properly destroyed.
+ *  - a) get a "reset" value assigned (via VBoxServicePropCacheUpdateEntry)
+ *       as soon as the property cache gets destroyed, or
+ *  - b) get deleted when no reset value is specified.
  */
-#define VBOXSERVICEPROPCACHEFLAG_TEMPORARY          RT_BIT(1)
+#define VBOXSERVICEPROPCACHEFLAG_TEMPORARY              RT_BIT(1)
 /** Indicates whether a property every time needs to be updated, regardless
  *  if its real value changed or not. */
-#define VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE      RT_BIT(2)
+#define VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE          RT_BIT(2)
+/** The guest property gets deleted when
+ *  - a) the property cache gets destroyed, or
+ *  - b) the VM gets reset / shutdown / destroyed.
+ */
+#define VBOXSERVICEPROPCACHEFLAG_TRANSIENT              RT_BIT(3)
 
 int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
 int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset);

@@ -207,6 +207,8 @@ public:
 
                     if (fProcessDisconnectOnGuestLogout)
                     {
+                        bool fDropConnection = false;
+
                         Bstr value;
                         gpcev->COMGETTER(Value)(value.asOutParam());
                         Utf8Str utf8Value = value;
@@ -215,31 +217,41 @@ public:
                             if (!mfNoLoggedInUsers) /* Only if the property really changes. */
                             {
                                 mfNoLoggedInUsers = true;
-
-                                /* If there is a connection, drop it. */
-                                ComPtr<IVRDEServerInfo> info;
-                                hrc = gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
-                                if (SUCCEEDED(hrc) && info)
-                                {
-                                    ULONG cClients = 0;
-                                    hrc = info->COMGETTER(NumberOfClients)(&cClients);
-                                    if (SUCCEEDED(hrc) && cClients > 0)
-                                    {
-                                        ComPtr <IVRDEServer> vrdeServer;
-                                        hrc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
-                                        if (SUCCEEDED(hrc) && vrdeServer)
-                                        {
-                                            LogRel(("VRDE: the guest user has logged out, disconnecting remote clients.\n"));
-                                            vrdeServer->COMSETTER(Enabled)(FALSE);
-                                            vrdeServer->COMSETTER(Enabled)(TRUE);
-                                        }
-                                    }
-                                }
+                                fDropConnection = true;
                             }
+                        }
+                        /* Guest property got deleted due to hard reset,
+                         * so it has no value anymore. */
+                        else if (utf8Value.isEmpty())
+                        {
+                            fDropConnection = true;
                         }
                         else
                         {
                             mfNoLoggedInUsers = false;
+                        }
+
+                        if (fDropConnection)
+                        {
+                            /* If there is a connection, drop it. */
+                            ComPtr<IVRDEServerInfo> info;
+                            hrc = gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
+                            if (SUCCEEDED(hrc) && info)
+                            {
+                                ULONG cClients = 0;
+                                hrc = info->COMGETTER(NumberOfClients)(&cClients);
+                                if (SUCCEEDED(hrc) && cClients > 0)
+                                {
+                                    ComPtr <IVRDEServer> vrdeServer;
+                                    hrc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                                    if (SUCCEEDED(hrc) && vrdeServer)
+                                    {
+                                        LogRel(("VRDE: the guest user has logged out, disconnecting remote clients.\n"));
+                                        vrdeServer->COMSETTER(Enabled)(FALSE);
+                                        vrdeServer->COMSETTER(Enabled)(TRUE);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -531,7 +543,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 }
 #endif /* VBOX_FFMPEG defined */
 
-#ifdef RT_OS_WINDOWS 
+#ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
 #endif
@@ -1325,7 +1337,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     virtualBox.setNull();
     pVirtualBoxClient.setNull();
     machine.setNull();
-  
+
     com::Shutdown();
 
     LogFlow(("VBoxHeadless FINISHED.\n"));
