@@ -623,9 +623,6 @@ static DECLCALLBACK(void) hwaccmR0InitCpu(RTCPUID idCpu, void *pvUser1, void *pv
     uint64_t            val;
     int                 rc;
 
-#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
-    SUPR0Printf("hwaccmR0InitCpu cpu %d\n", idCpu);
-#endif
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
 
     if (u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX)
