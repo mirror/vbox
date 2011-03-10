@@ -108,6 +108,23 @@ DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
 
 
 /**
+ * Adds a CPU given by its identifier to the set.
+ *
+ * @returns 0 on success, -1 if iCpu isn't valid.
+ * @param   pSet    Pointer to the set.
+ * @param   iCpu    The index of the CPU to add.
+ * @remarks The modification is atomic.
+ */
+DECLINLINE(int) RTCpuSetAddByIndex(PRTCPUSET pSet, int iCpu)
+{
+    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
+        return -1;
+    ASMAtomicBitSet(pSet, iCpu);
+    return 0;
+}
+
+
+/**
  * Removes a CPU given by its identifier from the set.
  *
  * @returns 0 on success, -1 if idCpu isn't valid.
@@ -128,7 +145,7 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
 /**
  * Removes a CPU given by its index from the set.
  *
- * @returns 0 on success, -1 if idCpu isn't valid.
+ * @returns 0 on success, -1 if iCpu isn't valid.
  * @param   pSet    Pointer to the set.
  * @param   iCpu    The index of the CPU to delete.
  * @remarks The modification is atomic.
@@ -187,7 +204,7 @@ DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
 #ifdef RTCPUSET_IS_BITMAP
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(pSet1->bmSet); i++)
-        if (pSet1->bmSet[i] != pSet1->bmSet[i])
+        if (pSet1->bmSet[i] != pSet2->bmSet[i])
             return false;
     return true;
 #else

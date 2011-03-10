@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,14 +29,34 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
-#include <iprt/cpuset.h>
 #include "internal/iprt.h"
+
+#include <iprt/asm.h>
+#include <iprt/cpuset.h>
 
 
 RTDECL(uint32_t) RTMpGetArraySize(void)
 {
-    RTCPUSET    CpuSet;
-    return RTCpuLastIndex(RTMpGetSet(&CpuSet)) + 1;
+    /*
+     * Cache the result here.  This whole point of this function is that it
+     * will always return the same value, so that should be safe.
+     *
+     * Note! Because RTCPUSET may be to small to represent all the CPUs, we
+     *       check with RTMpGetCount() as well.
+     */
+    static uint32_t s_cMaxCpus = 0;
+    uint32_t cCpus = s_cMaxCpus;
+    if (RT_UNLIKELY(cCpus == 0))
+    {
+        RTCPUSET    CpuSet;
+        uint32_t    cCpus1 = RTCpuLastIndex(RTMpGetSet(&CpuSet)) + 1;
+        uint32_t    cCpus2 = RTMpGetCount();
+        uint32_t    cCpus  = RT_MAX(cCpus1, cCpus2);
+        ASMAtomicCmpXchgU32(&s_cMaxCpus, cCpus, 0);
+        return cCpus;
+    }
+    return s_cMaxCpus;
+
 }
 RT_EXPORT_SYMBOL(RTMpGetArraySize);
 

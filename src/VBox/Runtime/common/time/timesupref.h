@@ -62,11 +62,11 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #endif
 
 #ifdef ASYNC_GIP
-        uint8_t u8ApicId = ASMGetApicId();
-# if SUPGLOBALINFOPAGE_CPUS < 256
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[u8ApicId & SUPGLOBALINFOPAGE_CPUS];
+        uint8_t    u8ApicId = ASMGetApicId();
+# ifdef SUP_WITH_LOTS_OF_CPUS
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[pGip->aiCpuFromApicId[u8ApicId]];
 # else
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[u8ApicId];
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[u8ApicId & (SUPGLOBALINFOPAGE_CPUS - 1)];
 # endif
 #else
         PSUPGIPCPU pGipCpu = &pGip->aCPUs[0];

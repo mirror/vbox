@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2011 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,9 @@
 %ifndef ___VBox_sup_mac
 %define ___VBox_sup_mac
 
-%define SUPGLOBALINFOPAGE_CPUS  32
+%ifndef SUP_WITH_LOTS_OF_CPUS
+ %define SUPGLOBALINFOPAGE_CPUS 32
+%endif
 
 struc SUPGIPCPU
     .u32TransactionId           resd 1
@@ -39,7 +41,15 @@ struc SUPGIPCPU
     .iTSCHistoryHead            resd 1
     .au32TSCHistory             resd 8
     .u32PrevUpdateIntervalNS    resd 1
+%ifdef SUP_WITH_LOTS_OF_CPUS
+    .au32Reserved               resd (5+5)
+    .enmState                   resd 1
+    .idCpu                      resd 1
+    .iCpuSet                    resw 1
+    .idApic                     resw 1
+%else
     .au32Reserved               resd 5
+%endif
 endstruc
 
 %define SUPGLOBALINFOPAGE_MAGIC 0x19590106
@@ -47,12 +57,31 @@ struc SUPGLOBALINFOPAGE
     .u32Magic                   resd 1
     .u32Version                 resd 1
     .u32Mode                    resd 1
+%ifdef SUP_WITH_LOTS_OF_CPUS
+    .cCpus                      resw 1
+    .cPages                     resw 1
+%else
     .u32Padding0                resd 1
+%endif
     .u32UpdateHz                resd 1
     .u32UpdateIntervalNS        resd 1
     .u64NanoTSLastUpdateHz      resq 1
+%ifdef SUP_WITH_LOTS_OF_CPUS
+    .OnlineCpuSet               resq 4
+    .cOnlineCpus                resd 1
+    .cPresentCpus               resd 1
+    .PresentCpuSet              resq 4
+    .PossibleCpuSet             resq 4
+    .cPossibleCpus              resd 1
+    .idCpuMax                   resd 1
+    .au32Padding1               resd 28
+    .aiCpuFromApicId            resw 256
+    .aiCpuFromCpuSetIdx         resw 256
+    .aCPUs                      resb SUPGIPCPU_size
+%else
     .au32Padding1               resd 56
     .aCPUs                      resb (SUPGIPCPU_size*SUPGLOBALINFOPAGE_CPUS)
+%endif
 endstruc
 
 
