@@ -489,6 +489,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
         Assert(pCritSect->s.Core.cNestings >= 1);
         ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
+        Assert(pCritSect->s.Core.cLockers >= 0);
         return;
     }
 
