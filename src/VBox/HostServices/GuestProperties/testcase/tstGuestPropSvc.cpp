@@ -71,7 +71,9 @@ validFlagStrings[] =
     { "transient, ", "TRANSIENT" },
     { "  rdOnLyHOST, transIENT  ,     READONLY    ", "TRANSIENT, READONLY" },
     { " rdonlyguest", "RDONLYGUEST" },
-    { "rdonlyhost     ", "RDONLYHOST" }
+    { "rdonlyhost     ", "RDONLYHOST" },
+    { "transient, transreset, rdonlyhost",
+       "TRANSIENT, RDONLYHOST, TRANSRESET" }
 };
 
 /**
