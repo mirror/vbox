@@ -264,9 +264,12 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                  * High resolution timeout - arm a high resolution timeout callback
                  * for waking up the thread at the desired time.
                  */
+                int OldPrioLevel = getpil();
                 u.idCo = g_pfnrtR0Sol_timeout_generic(CALLOUT_REALTIME, rtR0SemSolWaitTimeout, pWait,
                                                       pWait->uNsAbsTimeout, RTR0SEMSOLWAIT_RESOLUTION,
                                                       CALLOUT_FLAG_ABSOLUTE);
+                int NewPrioLevel = getpil();
+                AssertReleaseMsg(NewPrioLevel >= OldPrioLevel, ("Unexpected lowering of PIL (Old=%d New=%d)\n", OldPrioLevel, NewPrioLevel));
             }
 #if 0 /* @bugref{5342} */
             else
