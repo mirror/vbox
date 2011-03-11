@@ -225,8 +225,7 @@ typedef struct SUPGLOBALINFOPAGE
     SUPGIPCPU           aCPUs[1];
 } SUPGLOBALINFOPAGE;
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, u64NanoTSLastUpdateHz, 8);
-AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs[0], 256);
-AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs[1], 128);
+AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 256);
 
 /** Pointer to the global info page.
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
