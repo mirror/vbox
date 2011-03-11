@@ -5,7 +5,7 @@
 
 /*
  *
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,34 +18,72 @@
 
 #include <windows.h>
 #include <stdio.h>      /* Needed for swprintf() */
+
 #include "Dialog.h"
 #include "WinWlx.h"
 #include "Helper.h"
 #include "VBoxGINA.h"
 
-//
-// MSGINA dialog box IDs.
-//
+
+/*
+ * Dialog IDs for legacy Windows OSes (e.g. NT 4.0).
+ */
 #define IDD_WLXDIAPLAYSASNOTICE_DIALOG    1400
 #define IDD_WLXLOGGEDOUTSAS_DIALOG        1450
-/* the Windows 2000 ID */
-#define IDD_WLXLOGGEDOUTSAS_DIALOG2       1500
+/** Change password dialog: To change the current
+ *  account password. */
 #define IDD_CHANGE_PASSWORD_DIALOG        1550
 #define IDD_WLXLOGGEDONSAS_DIALOG         1650
+/** Security dialog: To lock the workstation, log off
+ *  change password, ... */
+#define IDD_SECURITY_DIALOG               1800
+/** Locked dialog: To unlock the currently lockted
+ *  workstation. */
 #define IDD_WLXWKSTALOCKEDSAS_DIALOG      1850
+/** Shutdown dialog: To either restart, logoff current
+ *  user or shutdown the workstation. */
+#define IDD_SHUTDOWN_DIALOG               2200
+/** Logoff dialog: "Do you really want to logoff?". */
+#define IDD_LOGOFF_DIALOG                 2250
 
-//
-// MSGINA control IDs
-//
+
+/*
+ * Dialog IDs for Windows 2000 and up.
+ */
+#define IDD_WLXLOGGEDOUTSAS_DIALOG2       1500
+/** Change password dialog: To change the current
+ *  account password. */
+#define IDD_CHANGE_PASSWORD_DIALOG2       1700
+/** Locked dialog: To unlock the currently lockted
+ *  workstation. */
+#define IDD_WLXWKSTALOCKEDSAS_DIALOG2     1950
+
+
+/*
+ * Control IDs.
+ */
 #define IDC_WLXLOGGEDOUTSAS_USERNAME      1453
 #define IDC_WLXLOGGEDOUTSAS_USERNAME2     1502
 #define IDC_WLXLOGGEDOUTSAS_PASSWORD      1454
 #define IDC_WLXLOGGEDOUTSAS_PASSWORD2     1503
 #define IDC_WLXLOGGEDOUTSAS_DOMAIN        1455
 #define IDC_WLXLOGGEDOUTSAS_DOMAIN2       1504
-#define IDC_WLXWKSTALOCKEDSAS_DOMAIN      1856
+
+#define IDC_WKSTALOCKED_USERNAME          1953
+#define IDC_WKSTALOCKED_PASSWORD          1954
+#define IDC_WKSTALOCKEd_DOMAIN            1856
+#define IDC_WKSTALOCKED_DOMAIN2           1956
+
+
+/*
+ * Own IDs.
+ */
+#define IDT_BASE                          WM_USER  + 1100 /* Timer ID base. */
+#define IDT_LOGGEDONDLG_POLL              IDT_BASE + 1
+#define IDT_LOCKEDDLG_POLL                IDT_BASE + 2
 
 static DLGPROC g_pfnWlxLoggedOutSASDlgProc = NULL;
+static DLGPROC g_pfnWlxLockedSASDlgProc = NULL;
 
 static PWLX_DIALOG_BOX_PARAM g_pfnWlxDialogBoxParam = NULL;
 
@@ -105,9 +143,6 @@ void hookDialogBoxes(PVOID pWinlogonFunctions, DWORD dwWlxVersion)
 //
 // Redirected WlxLoggedOutSASDlgProc().
 //
-
-#define CREDPOLL_TIMERID 0x1243
-
 BOOL credentialsToUI(HWND hwndUserId, HWND hwndPassword, HWND hwndDomain)
 {
     BOOL bIsFQDN = FALSE;
@@ -182,8 +217,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                                           LPARAM lParam)   // second message parameter
 {
     BOOL bResult;
-    static HWND hwndUserId, hwndPassword, hwndDomain = 0;
-    static UINT_PTR timer = 0;
+    static HWND s_hwndUserId, s_hwndPassword, s_hwndDomain = 0;
 
     /*Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc\n"));*/
 
@@ -202,18 +236,18 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
             Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: got WM_INITDIALOG\n"));
 
             /* get the entry fields */
-            hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME);
-            if (!hwndUserId)
-                hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME2);
-            hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD);
-            if (!hwndPassword)
-                hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD2);
-            hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN);
-            if (!hwndDomain)
-                hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN2);
+            s_hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME);
+            if (!s_hwndUserId)
+                s_hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME2);
+            s_hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD);
+            if (!s_hwndPassword)
+                s_hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD2);
+            s_hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN);
+            if (!s_hwndDomain)
+                s_hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN2);
 
             Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: hwndUserId: %x, hwndPassword: %d, hwndDomain: %d\n",
-                 hwndUserId, hwndPassword, hwndDomain));
+                 s_hwndUserId, s_hwndPassword, s_hwndDomain));
 
             /* terminate the credentials poller thread, it's done is job */
             credentialsPollerTerminate();
@@ -224,7 +258,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                 if (credentialsRetrieve())
                 {
                     /* fill in credentials to appropriate UI elements */
-                    credentialsToUI(hwndUserId, hwndPassword, hwndDomain);
+                    credentialsToUI(s_hwndUserId, s_hwndPassword, s_hwndDomain);
 
                     /* we got the credentials, null them out */
                     credentialsReset();
@@ -240,12 +274,10 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                  * The dialog is there but we don't have any credentials.
                  * Create a timer and poll for them.
                  */
-                timer = SetTimer(hwndDlg, CREDPOLL_TIMERID, 200, NULL);
-                if (!timer)
-                {
-                    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: failed creating timer! last error: %s\n",
+                UINT_PTR uTimer = SetTimer(hwndDlg, IDT_LOGGEDONDLG_POLL, 200, NULL);
+                if (!uTimer)
+                    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: failed creating timer! Last error: %ld\n",
                          GetLastError()));
-                }
             }
             break;
         }
@@ -253,14 +285,14 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
         case WM_TIMER:
         {
             /* is it our credentials poller timer? */
-            if (wParam == CREDPOLL_TIMERID)
+            if (wParam == IDT_LOGGEDONDLG_POLL)
             {
                 if (credentialsAvailable())
                 {
                     if (credentialsRetrieve())
                     {
                         /* fill in credentials to appropriate UI elements */
-                        credentialsToUI(hwndUserId, hwndPassword, hwndDomain);
+                        credentialsToUI(s_hwndUserId, s_hwndPassword, s_hwndDomain);
 
                         /* we got the credentials, null them out */
                         credentialsReset();
@@ -270,13 +302,112 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                         PostMessage(hwndDlg, WM_COMMAND, wParam, 0);
 
                         /* we don't need the timer any longer */
-                        /** @todo will we leak the timer when logging in manually? Should we kill it on WM_CLOSE? */
-                        KillTimer(hwndDlg, CREDPOLL_TIMERID);
+                        KillTimer(hwndDlg, IDT_LOGGEDONDLG_POLL);
                     }
                 }
             }
             break;
         }
+
+        case WM_DESTROY:
+            KillTimer(hwndDlg, IDT_LOGGEDONDLG_POLL);
+            break;
+    }
+    return bResult;
+}
+
+
+INT_PTR CALLBACK MyWlxLockedSASDlgProc(HWND   hwndDlg,  // handle to dialog box
+                                       UINT   uMsg,     // message
+                                       WPARAM wParam,   // first message parameter
+                                       LPARAM lParam)   // second message parameter
+{
+    BOOL bResult;
+    static HWND s_hwndPassword = 0;
+
+    /*Log(("VBoxGINA::MyWlxLockedSASDlgProc\n"));*/
+
+    //
+    // Pass on to MSGINA first.
+    //
+    bResult = g_pfnWlxLockedSASDlgProc(hwndDlg, uMsg, wParam, lParam);
+
+    //
+    // We are only interested in the WM_INITDIALOG message.
+    //
+    switch (uMsg)
+    {
+        case WM_INITDIALOG:
+        {
+            Log(("VBoxGINA::MyWlxLockedSASDlgProc: got WM_INITDIALOG\n"));
+
+            /* get the entry fields */
+            s_hwndPassword = GetDlgItem(hwndDlg, IDC_WKSTALOCKED_PASSWORD);
+            Log(("VBoxGINA::MyWlxLockedSASDlgProc: hwndPassword: %d\n", s_hwndPassword));
+
+            /* terminate the credentials poller thread, it's done is job */
+            credentialsPollerTerminate();
+
+            if (credentialsAvailable())
+            {
+                /* query the credentials from VBox */
+                if (credentialsRetrieve())
+                {
+                    /* fill in credentials to appropriate UI elements */
+                    credentialsToUI(NULL /* User ID */, s_hwndPassword, NULL /* Domain */);
+
+                    /* we got the credentials, null them out */
+                    credentialsReset();
+
+                    /* confirm the logon dialog, simulating the user pressing "OK" */
+                    WPARAM wParam = MAKEWPARAM(IDOK, BN_CLICKED);
+                    PostMessage(hwndDlg, WM_COMMAND, wParam, 0);
+                }
+            }
+            else
+            {
+                /*
+                 * The dialog is there but we don't have any credentials.
+                 * Create a timer and poll for them.
+                 */
+                UINT_PTR uTimer = SetTimer(hwndDlg, IDT_LOCKEDDLG_POLL, 200, NULL);
+                if (!uTimer)
+                    Log(("VBoxGINA::MyWlxLockedSASDlgProc: failed creating timer! Last error: %ld\n",
+                         GetLastError()));
+            }
+            break;
+        }
+
+        case WM_TIMER:
+        {
+            /* is it our credentials poller timer? */
+            if (wParam == IDT_LOCKEDDLG_POLL)
+            {
+                if (credentialsAvailable())
+                {
+                    if (credentialsRetrieve())
+                    {
+                        /* fill in credentials to appropriate UI elements */
+                        credentialsToUI(NULL /* User ID */, s_hwndPassword, NULL /* Domain */);
+
+                        /* we got the credentials, null them out */
+                        credentialsReset();
+
+                        /* confirm the logon dialog, simulating the user pressing "OK" */
+                        WPARAM wParam = MAKEWPARAM(IDOK, BN_CLICKED);
+                        PostMessage(hwndDlg, WM_COMMAND, wParam, 0);
+
+                        /* we don't need the timer any longer */
+                        KillTimer(hwndDlg, IDT_LOCKEDDLG_POLL);
+                    }
+                }
+            }
+            break;
+        }
+
+        case WM_DESTROY:
+            KillTimer(hwndDlg, IDT_LOCKEDDLG_POLL);
+            break;
     }
     return bResult;
 }
@@ -289,33 +420,52 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
                                DLGPROC dlgprc,
                                LPARAM  dwInitParam)
 {
-   Log(("VBoxGINA::MyWlxDialogBoxParam: lpszTemplate = %d\n", lpszTemplate));
+    Log(("VBoxGINA::MyWlxDialogBoxParam: lpszTemplate = %ls\n", lpszTemplate));
 
-   //
-   // We only know MSGINA dialogs by identifiers.
-   //
-   if (!HIWORD((int)(void*)lpszTemplate))
-   {
-      //
-      // Hook appropriate dialog boxes as necessary.
-      //
-      switch ((DWORD) lpszTemplate)
-      {
-         case IDD_WLXLOGGEDOUTSAS_DIALOG:
-         case IDD_WLXLOGGEDOUTSAS_DIALOG2:
-         {
-            Log(("VBoxGINA::MyWlxDialogBoxParam: returning hooked logged out dialog\n"));
-            g_pfnWlxLoggedOutSASDlgProc = dlgprc;
-            return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
-                                          MyWlxLoggedOutSASDlgProc, dwInitParam);
-         }
-      }
-   }
+    //
+    // We only know MSGINA dialogs by identifiers.
+    //
+    if (!HIWORD((int)(void*)lpszTemplate))
+    {
+        //
+        // Hook appropriate dialog boxes as necessary.
+        //
+        switch ((DWORD) lpszTemplate)
+        {
+            case IDD_WLXLOGGEDOUTSAS_DIALOG:     /* Windows NT 4.0. */
+            case IDD_WLXLOGGEDOUTSAS_DIALOG2:    /* Windows 2000 and up. */
+            {
+                Log(("VBoxGINA::MyWlxDialogBoxParam: returning hooked LOGGED OUT dialog\n"));
+                g_pfnWlxLoggedOutSASDlgProc = dlgprc;
+                return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
+                                              MyWlxLoggedOutSASDlgProc, dwInitParam);
+            }
 
-   //
-   // The rest will not be redirected.
-   //
-   return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate,
-                                 hwndOwner, dlgprc, dwInitParam);
+            case IDD_WLXWKSTALOCKEDSAS_DIALOG:   /* Windows NT 4.0. */
+            case IDD_WLXWKSTALOCKEDSAS_DIALOG2:  /* Windows 2000 and up. */
+            {
+                Log(("VBoxGINA::MyWlxDialogBoxParam: returning hooked LOCKED dialog\n"));
+                g_pfnWlxLockedSASDlgProc = dlgprc;
+                return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
+                                              MyWlxLockedSASDlgProc, dwInitParam);
+            }
+
+            /** @todo Add other hooking stuff here. */
+
+            default:
+            {
+                char szBuf[1024];
+                sprintf(szBuf, "VBoxGINA::MyWlxDialogBoxParam: dialog %ld not handled\n", (DWORD)lpszTemplate);
+                Log((szBuf));
+                break;
+            }
+        }
+    }
+
+    //
+    // The rest will not be redirected.
+    //
+    return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate,
+                                  hwndOwner, dlgprc, dwInitParam);
 }
 

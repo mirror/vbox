@@ -2,7 +2,7 @@
  *
  * VBoxGINA -- Windows Logon DLL for VirtualBox
  *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,23 +23,22 @@
 #include <VBox/VBoxGuestLib.h>
 
 /*
- * Global variables
+ * Global variables.
  */
 
-
-/** DLL instance handle */
+/** DLL instance handle. */
 HINSTANCE hDllInstance;
 
-/** Version of Winlogon */
+/** Version of Winlogon. */
 DWORD wlxVersion;
 
-/** Handle to Winlogon service */
+/** Handle to Winlogon service. */
 HANDLE hGinaWlx;
-/** Winlog function dispatch table */
+/** Winlog function dispatch table. */
 PWLX_DISPATCH_VERSION_1_1 pWlxFuncs;
 
 /**
- * Function pointers to MSGINA entry points
+ * Function pointers to MSGINA entry points.
  */
 PGWLXNEGOTIATE GWlxNegotiate;
 PGWLXINITIALIZE GWlxInitialize;
@@ -53,19 +52,18 @@ PGWLXISLOCKOK GWlxIsLockOk;
 PGWLXISLOGOFFOK GWlxIsLogoffOk;
 PGWLXLOGOFF GWlxLogoff;
 PGWLXSHUTDOWN GWlxShutdown;
-/* GINA 1.1 */
+/* GINA 1.1. */
 PGWLXSTARTAPPLICATION GWlxStartApplication;
 PGWLXSCREENSAVERNOTIFY GWlxScreenSaverNotify;
-/* GINA 1.3 */
+/* GINA 1.3. */
 PGWLXNETWORKPROVIDERLOAD GWlxNetworkProviderLoad;
 PGWLXDISPLAYSTATUSMESSAGE GWlxDisplayStatusMessage;
 PGWLXGETSTATUSMESSAGE GWlxGetStatusMessage;
 PGWLXREMOVESTATUSMESSAGE GWlxRemoveStatusMessage;
-/* GINA 1.4 */
+/* GINA 1.4. */
 PGWLXGETCONSOLESWITCHCREDENTIALS GWlxGetConsoleSwitchCredentials;
 PGWLXRECONNECTNOTIFY GWlxReconnectNotify;
 PGWLXDISCONNECTNOTIFY GWlxDisconnectNotify;
-
 
 
 /**
@@ -81,7 +79,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
         {
             RTR3Init();
             VbglR3Init();
-            LogRel(("VBoxGina: DLL loaded.\n"));
+            LogRel(("VBoxGINA: DLL loaded.\n"));
 
             DisableThreadLibraryCalls(hInstance);
             hDllInstance = hInstance;
@@ -90,7 +88,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-            LogRel(("VBoxGina: DLL unloaded.\n"));
+            LogRel(("VBoxGINA: DLL unloaded.\n"));
             VbglR3Term();
             /// @todo RTR3Term();
             break;
@@ -101,6 +99,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     }
     return TRUE;
 }
+
 
 BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
                          DWORD *pdwDllVersion)
@@ -271,7 +270,7 @@ VOID WINAPI WlxDisplaySASNotice(PVOID pWlxContext)
         Log(("VBoxGINA::WlxDisplaySASNotice: starting credentials poller\n"));
         /* start the credentials poller thread */
         credentialsPollerCreate();
-        /* forward call to MSGINA */
+        /* Forward call to MSGINA. */
         GWlxDisplaySASNotice(pWlxContext);
     }
 }
@@ -285,9 +284,7 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
 
     /* when performing a direct logon without C-A-D, our poller might not be running */
     if (!credentialsAvailable())
-    {
         credentialsPollerCreate();
-    }
 
     int iRet;
     iRet = GWlxLoggedOutSAS(pWlxContext, dwSasType, pAuthenticationId, pLogonSid,
@@ -303,7 +300,6 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
         // pMprNotifyInfo->pszDomain
         // pMprNotifyInfo->pszPassword
         // pMprNotifyInfo->pszOldPassword
-
     }
 
     return iRet;
@@ -315,7 +311,7 @@ BOOL WINAPI WlxActivateUserShell(PVOID pWlxContext, PWSTR pszDesktopName,
 {
     Log(("VBoxGINA::WlxActivateUserShell\n"));
 
-    /* forward call to MSGINA */
+    /* Forward call to MSGINA. */
     return GWlxActivateUserShell(pWlxContext, pszDesktopName, pszMprLogonScript, pEnvironment);
 }
 
@@ -338,7 +334,7 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisplayLockedNotice\n"));
-    /* forward call to MSGINA */
+    /* Forward call to MSGINA. */
     GWlxDisplayLockedNotice(pWlxContext);
 }
 
@@ -346,14 +342,19 @@ VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 BOOL WINAPI WlxIsLockOk(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxIsLockOk\n"));
-    /* forward call to MSGINA */
+    /* Forward call to MSGINA. */
     return GWlxIsLockOk(pWlxContext);
 }
 
 int WINAPI WlxWkstaLockedSAS(PVOID pWlxContext, DWORD dwSasType)
 {
     Log(("VBoxGINA::WlxWkstaLockedSAS\n"));
-    /* forward call to MSGINA */
+
+    /* when performing a direct logon without C-A-D, our poller might not be running */
+    if (!credentialsAvailable())
+        credentialsPollerCreate();
+
+    /* Forward call to MSGINA. */
     return GWlxWkstaLockedSAS(pWlxContext, dwSasType);
 }
 
@@ -382,7 +383,7 @@ VOID WINAPI WlxLogoff(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxLogoff\n"));
 
-    /* forward call to MSGINA */
+    /* Forward call to MSGINA. */
     GWlxLogoff(pWlxContext);
 }
 
@@ -391,7 +392,7 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
 {
     Log(("VBoxGINA::WlxShutdown\n"));
 
-    /* forward call to MSGINA */
+    /* Forward call to MSGINA. */
     GWlxShutdown(pWlxContext, ShutdownType);
 }
 
@@ -399,12 +400,11 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
 /*
  * GINA 1.1 entry points
  */
-
 BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 {
     Log(("VBoxGINA::WlxScreenSaverNotify\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxScreenSaverNotify)
         return GWlxScreenSaverNotify(pWlxContext, pSecure);
     /* return something intelligent */
@@ -412,17 +412,19 @@ BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
     return TRUE;
 }
 
+
 BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
                                 PVOID pEnvironment, PWSTR pszCmdLine)
 {
     Log(("VBoxGINA::WlxStartApplication: pWlxCtx=%p, pszDesktopName=%ls, pEnvironment=%p, pszCmdLine=%ls\n",
         pWlxContext, pszDesktopName, pEnvironment, pszCmdLine));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxStartApplication)
         return GWlxStartApplication(pWlxContext, pszDesktopName, pEnvironment, pszCmdLine);
     return FALSE;
 }
+
 
 /*
  * GINA 1.3 entry points
@@ -431,7 +433,7 @@ BOOL WINAPI WlxNetworkProviderLoad (PVOID pWlxContext, PWLX_MPR_NOTIFY_INFO pNpr
 {
     Log(("VBoxGINA::WlxNetworkProviderLoad\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxNetworkProviderLoad)
         return GWlxNetworkProviderLoad(pWlxContext, pNprNotifyInfo);
     return FALSE;
@@ -443,7 +445,7 @@ BOOL WINAPI WlxDisplayStatusMessage(PVOID pWlxContext, HDESK hDesktop, DWORD dwO
 {
     Log(("VBoxGINA::WlxDisplayStatusMessage\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxDisplayStatusMessage)
         return GWlxDisplayStatusMessage(pWlxContext, hDesktop, dwOptions, pTitle, pMessage);
     return FALSE;
@@ -455,7 +457,7 @@ BOOL WINAPI WlxGetStatusMessage(PVOID pWlxContext, DWORD *pdwOptions,
 {
     Log(("VBoxGINA::WlxGetStatusMessage\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxGetStatusMessage)
         return GWlxGetStatusMessage(pWlxContext, pdwOptions, pMessage, dwBufferSize);
     return FALSE;
@@ -466,7 +468,7 @@ BOOL WINAPI WlxRemoveStatusMessage(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxRemoveStatusMessage\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxRemoveStatusMessage)
         return GWlxRemoveStatusMessage(pWlxContext);
     return FALSE;
@@ -476,7 +478,6 @@ BOOL WINAPI WlxRemoveStatusMessage(PVOID pWlxContext)
 /*
  * GINA 1.4 entry points
  */
-
 BOOL WINAPI WlxGetConsoleSwitchCredentials(PVOID pWlxContext,PVOID pCredInfo)
 {
     Log(("VBoxGINA::WlxGetConsoleSwitchCredentials\n"));
@@ -487,20 +488,23 @@ BOOL WINAPI WlxGetConsoleSwitchCredentials(PVOID pWlxContext,PVOID pCredInfo)
     return FALSE;
 }
 
+
 VOID WINAPI WlxReconnectNotify(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxReconnectNotify\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxReconnectNotify)
         GWlxReconnectNotify(pWlxContext);
 }
+
 
 VOID WINAPI WlxDisconnectNotify(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisconnectNotify\n"));
 
-    /* forward to MSGINA if present */
+    /* Forward to MSGINA if present. */
     if (GWlxDisconnectNotify)
         GWlxDisconnectNotify(pWlxContext);
 }
+
