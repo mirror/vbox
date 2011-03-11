@@ -46,10 +46,7 @@ typedef struct VBOXRAWPCIINS     *PVBOXRAWPCIINS;
 /**
  * The per-instance data of the VBox raw PCI interface.
  *
- * This is data associated with a host PCI card which
- * the filter driver has been or may be attached to. When possible it is
- * attached dynamically, but this may not be possible on all OSes so we have
- * to be flexible about things.
+ * This is data associated with a host PCI card attached to the VM.
  *
  */
 typedef struct VBOXRAWPCIINS
@@ -77,10 +74,8 @@ typedef struct VBOXRAWPCIINS
     bool               fIommuUsed;
     bool               fPad0;
 
-    /** The session this interface is associated with. */
-    PSUPDRVSESSION     pSession;
-    /** The SUPR0 object id. */
-    void               *pvObj;
+    /** Temporary: host IRQ we were given. Assumes single IRQ devices. */
+    int32_t            iHostIrq;
 
     /** Port, given to the outside world. */
     RAWPCIDEVPORT      DevPort;
@@ -126,6 +121,7 @@ DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
 DECLHIDDEN(int)  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags);
+DECLHIDDEN(int)  vboxPciOsDevDestroy(PVBOXRAWPCIINS pIns);
 
 DECLHIDDEN(int)  vboxPciOsDevGetRegionInfo(PVBOXRAWPCIINS pIns,
                                            int32_t        iRegion,

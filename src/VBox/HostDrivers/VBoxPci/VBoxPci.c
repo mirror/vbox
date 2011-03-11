@@ -129,20 +129,9 @@ static void vboxPciUnlinkInstanceLocked(PVBOXRAWPCIGLOBALS pGlobals, PVBOXRAWPCI
 }
 
 
-/**
- * @copydoc RAWPCIDEVPORT:: pfnRetain
- */
-DECLHIDDEN(void) vboxPciDevRetain(PRAWPCIDEVPORT pPort)
+DECLHIDDEN(void) vboxPciDevCleanup(PVBOXRAWPCIINS pThis)
 {
-    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
-}
-
-/**
- * @copydoc RAWPCIDEVPORT:: pfnRelease
- */
-DECLHIDDEN(void) vboxPciDevRelease(PRAWPCIDEVPORT pPort)
-{
-    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+    pThis->DevPort.pfnDeinit(&pThis->DevPort, 0);
 
     if (pThis->hFastMtx)
     {
@@ -160,6 +149,7 @@ DECLHIDDEN(void) vboxPciDevRelease(PRAWPCIDEVPORT pPort)
     vboxPciUnlinkInstanceLocked(pThis->pGlobals, pThis);
     vboxPciGlobalsUnlock(pThis->pGlobals);
 }
+
 
 /**
  * @copydoc RAWPCIDEVPORT:: pfnInit
@@ -186,6 +176,13 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
 
+    /* Bit racy, better check under lock. */
+    if (pThis->iHostIrq != -1)
+    {
+        pPort->pfnUnregisterIrqHandler(pPort, pThis->iHostIrq);
+        pThis->iHostIrq = -1;
+    }
+
     vboxPciDevLock(pThis);
 
     rc = vboxPciOsDevDeinit(pThis, fFlags);
@@ -195,6 +192,39 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     return rc;
 }
 
+
+/**
+ * @copydoc RAWPCIDEVPORT:: pfnDestroy
+ */
+DECLHIDDEN(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+    int rc;
+    
+    rc = vboxPciOsDevDestroy(pThis);
+    if (rc == VINF_SUCCESS)
+    {
+        if (pThis->hFastMtx)
+        {
+            RTSemFastMutexDestroy(pThis->hFastMtx);
+            pThis->hFastMtx = NIL_RTSEMFASTMUTEX;
+        }
+        
+        if (pThis->hSpinlock)
+        {
+            RTSpinlockDestroy(pThis->hSpinlock);
+            pThis->hSpinlock = NIL_RTSPINLOCK;
+        }
+        
+        vboxPciGlobalsLock(pThis->pGlobals);
+        vboxPciUnlinkInstanceLocked(pThis->pGlobals, pThis);
+        vboxPciGlobalsUnlock(pThis->pGlobals);
+
+        RTMemFree(pThis);
+    }
+
+    return rc;
+}
 /**
  * @copydoc RAWPCIDEVPORT:: pfnGetRegionInfo
  */
@@ -310,8 +340,11 @@ DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR 
     {
         pThis->pfnIrqHandler = NULL;
         pThis->pIrqContext   = NULL;
+        pThis->iHostIrq      = -1;
         *piHostIrq = -1;
     }
+    else
+        pThis->iHostIrq      = *piHostIrq;
 
     vboxPciDevUnlock(pThis);
 
@@ -324,11 +357,14 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHo
     int rc;
 
     vboxPciDevLock(pThis);
+
+    Assert(iHostIrq == pThis->iHostIrq);
     rc = vboxPciOsDevUnregisterIrqHandler(pThis, iHostIrq);
     if (RT_SUCCESS(rc))
     {
         pThis->pfnIrqHandler = NULL;
         pThis->pIrqContext   = NULL;
+        pThis->iHostIrq = -1;
     }
     vboxPciDevUnlock(pThis);
 
@@ -358,13 +394,13 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->cRefs                         = 1;
     pNew->pNext                         = NULL;
     pNew->HostPciAddress                = u32HostAddress;
+    pNew->iHostIrq                      = -1;
 
     pNew->DevPort.u32Version            = RAWPCIDEVPORT_VERSION;
 
-    pNew->DevPort.pfnRetain             = vboxPciDevRetain;
-    pNew->DevPort.pfnRelease            = vboxPciDevRelease;
     pNew->DevPort.pfnInit               = vboxPciDevInit;
     pNew->DevPort.pfnDeinit             = vboxPciDevDeinit;
+    pNew->DevPort.pfnDestroy            = vboxPciDevDestroy;
     pNew->DevPort.pfnGetRegionInfo      = vboxPciDevGetRegionInfo;
     pNew->DevPort.pfnMapRegion          = vboxPciDevMapRegion;
     pNew->DevPort.pfnUnmapRegion        = vboxPciDevUnmapRegion;
@@ -390,7 +426,6 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 
                 pNew->pNext = pGlobals->pInstanceHead;
                 pGlobals->pInstanceHead = pNew;
-
             }
             else
             {

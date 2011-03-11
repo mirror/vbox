@@ -34,7 +34,7 @@ RT_C_DECLS_BEGIN
 /**
  * Handle for the raw PCI device.
  */
-typedef RTR0PTR PCIRAWDEVHANDLE;
+typedef uint32_t PCIRAWDEVHANDLE;
 
 
 /** Parameters buffer for PCIRAWR0_DO_OPEN_DEVICE call */
@@ -270,25 +270,6 @@ typedef struct RAWPCIDEVPORT
     uint32_t u32Version;
 
     /**
-     * Retain the object.
-     *
-     * It will normally be called while owning the internal semaphore.
-     *
-     * @param   pPort     Pointer to this structure.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnRetain,(PRAWPCIDEVPORT pPort));
-
-    /**
-     * Releases the object.
-     *
-     * This must be called for every pfnRetain call.
-     *
-     *
-     * @param   pPort     Pointer to this structure.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnRelease,(PRAWPCIDEVPORT pPort));
-
-    /**
      * Init device.
      *
      * @param   pPort     Pointer to this structure.
@@ -307,6 +288,13 @@ typedef struct RAWPCIDEVPORT
     DECLR0CALLBACKMEMBER(int,  pfnDeinit,(PRAWPCIDEVPORT pPort,
                                           uint32_t       fFlags));
 
+
+    /**
+     * Destroy device.
+     *
+     * @param   pPort     Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnDestroy,(PRAWPCIDEVPORT pPort));
 
     /**
      * Get PCI region info.
