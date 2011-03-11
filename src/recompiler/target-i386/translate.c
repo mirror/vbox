@@ -6445,10 +6445,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         gen_op_movl_T0_im(val);
         gen_check_io(s, ot, pc_start - s->cs_base,
                      svm_is_rep(prefixes));
-#ifdef VBOX /* bird: linux is writing to this port for delaying I/O. */ /** @todo YYY: this breaks AIX, remove. */
-        if (val == 0x80)
-            break;
-#endif /* VBOX */
         gen_op_mov_TN_reg(ot, 1, R_EAX);
 
         if (use_icount)
