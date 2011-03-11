@@ -112,7 +112,7 @@ DECLINLINE(size_t) flagNameLen(uint32_t fFlag)
  * Maximum length for the property flags field.  We only ever return one of
  * RDONLYGUEST, RDONLYHOST and RDONLY
  */
-enum { MAX_FLAGS_LEN =   sizeof("TRANSRESET, RDONLYGUEST") };
+enum { MAX_FLAGS_LEN = sizeof("TRANSIENT, RDONLYGUEST, TRANSRESET") };
 
 /**
  * Parse a guest properties flags string for flag names and make sure that
