@@ -150,24 +150,6 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 }
 
 
-RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet)
-{
-    return RTMpGetSet(pSet);
-}
-
-
-RTDECL(RTCPUID) RTMpGetPresentCount(void)
-{
-    return RTMpGetCount();
-}
-
-
-RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
-{
-    return RTMpIsCpuPossible(idCpu);
-}
-
-
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
     /** @todo darwin R0 MP (rainy day) */
