@@ -95,9 +95,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
     SYSTEM_INFO SysInfo;
     GetSystemInfo(&SysInfo);
-#ifdef RT_WITH_LOTS_OF_CPUS
-# error "port me"
-#endif
+/** @todo port to W2K8 / W7 w/ > 64 CPUs & grouping. */
     return RTCpuSetFromU64(pSet, SysInfo.dwActiveProcessorMask);
 }
 

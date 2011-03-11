@@ -3215,17 +3215,9 @@ static void supdrvGipReInitCpu(PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
 static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PSUPGLOBALINFOPAGE  pGip = (PSUPGLOBALINFOPAGE)pvUser1;
-#ifdef SUP_WITH_LOTS_OF_CPUS
     unsigned            iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
-#else
-    unsigned            iCpu = ASMGetApicId();
-#endif
 
-#ifdef SUP_WITH_LOTS_OF_CPUS
     if (RT_LIKELY(iCpu < pGip->cCpus && pGip->aCPUs[iCpu].idCpu == idCpu))
-#else
-    if (RT_LIKELY(iCpu < RT_ELEMENTS(pGip->aCPUs)))
-#endif
         supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
 
     NOREF(pvUser2);
@@ -4836,30 +4828,17 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      * Check the CPU count.
      */
     cCpus = RTMpGetArraySize();
-#ifdef SUP_WITH_LOTS_OF_CPUS
     if (   cCpus > RTCPUSET_MAX_CPUS
-        || cCpus > 256 /*uint8_t is used for the mappings*/)
-#else
-    if (cCpus > RT_ELEMENTS(pGip->aCPUs))
-#endif
+        || cCpus > 256 /*ApicId is used for the mappings*/)
     {
-#ifdef SUP_WITH_LOTS_OF_CPUS
         SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RTCPUSET_MAX_CPUS, 256));
-#else
-        SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RT_ELEMENTS(pGip->aCPUs), 256));
-#endif
         return VERR_TOO_MANY_CPUS;
     }
 
     /*
      * Allocate a contiguous set of pages with a default kernel mapping.
      */
-#ifdef SUP_WITH_LOTS_OF_CPUS
     rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), false /*fExecutable*/);
-#else
-    cCpus = RT_ELEMENTS(pGip->aCPUs);
-    rc = RTR0MemObjAllocLow(&pDevExt->GipMemObj, PAGE_SIZE, false /*fExecutable*/);
-#endif
     if (RT_FAILURE(rc))
     {
         OSDBGPRINT(("supdrvGipCreate: failed to allocate the GIP page. rc=%d\n", rc));
@@ -5027,7 +5006,6 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
  */
 static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 {
-#ifdef SUP_WITH_LOTS_OF_CPUS
     int         iCpuSet;
     uint8_t     idApic;
     uint32_t    i;
@@ -5038,8 +5016,8 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     /*
      * Update the globals.
      */
-    ASMAtomicWriteU32(&pGip->cPresentCpus,  RTMpGetPresentCount());
-    ASMAtomicWriteU32(&pGip->cOnlineCpus,   RTMpGetOnlineCount());
+    ASMAtomicWriteU16(&pGip->cPresentCpus,  RTMpGetPresentCount());
+    ASMAtomicWriteU16(&pGip->cOnlineCpus,   RTMpGetOnlineCount());
     iCpuSet = RTMpCpuIdToSetIndex(idCpu);
     if (iCpuSet >= 0)
     {
@@ -5081,7 +5059,6 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
      */
     ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
-#endif
 }
 
 
@@ -5095,7 +5072,6 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
  */
 static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 {
-#ifdef SUP_WITH_LOTS_OF_CPUS
     int         iCpuSet;
     unsigned    i;
 
@@ -5109,7 +5085,6 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
     RTCpuSetDelByIndex(&pGip->OnlineCpuSet, iCpuSet);
-#endif
 }
 
 
@@ -5365,26 +5340,22 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->u32Magic              = SUPGLOBALINFOPAGE_MAGIC;
     pGip->u32Version            = SUPGLOBALINFOPAGE_VERSION;
     pGip->u32Mode               = supdrvGipDeterminTscMode(pDevExt);
-#ifdef SUP_WITH_LOTS_OF_CPUS
     pGip->cCpus                 = (uint16_t)cCpus;
     pGip->cPages                = (uint16_t)(cbGip / PAGE_SIZE);
-#endif
     pGip->u32UpdateHz           = uUpdateHz;
     pGip->u32UpdateIntervalNS   = 1000000000 / uUpdateHz;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
-#ifdef SUP_WITH_LOTS_OF_CPUS
     RTCpuSetEmpty(&pGip->OnlineCpuSet);
-    pGip->cOnlineCpus           = RTMpGetOnlineCount();
-    pGip->cPresentCpus          = RTMpGetPresentCount();
     RTCpuSetEmpty(&pGip->PresentCpuSet);
     RTMpGetSet(&pGip->PossibleCpuSet);
+    pGip->cOnlineCpus           = RTMpGetOnlineCount();
+    pGip->cPresentCpus          = RTMpGetPresentCount();
     pGip->cPossibleCpus         = RTMpGetCount();
     pGip->idCpuMax              = RTMpGetMaxCpuId();
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = 0;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
-#endif
 
     for (i = 0; i < cCpus; i++)
     {
@@ -5392,12 +5363,10 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
         pGip->aCPUs[i].u64NanoTS         = u64NanoTS;
         pGip->aCPUs[i].u64TSC            = ASMReadTSC();
 
-#ifdef SUP_WITH_LOTS_OF_CPUS
         pGip->aCPUs[i].enmState          = SUPGIPCPUSTATE_INVALID;
         pGip->aCPUs[i].idCpu             = NIL_RTCPUID;
         pGip->aCPUs[i].iCpuSet           = -1;
         pGip->aCPUs[i].idApic            = UINT8_MAX;
-#endif
 
         /*
          * We don't know the following values until we've executed updates.
@@ -5591,19 +5560,12 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
         pGipCpu = &pGip->aCPUs[0];
     else
     {
-#ifdef SUP_WITH_LOTS_OF_CPUS
         unsigned iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
         if (RT_UNLIKELY(iCpu >= pGip->cCpus))
             return;
         pGipCpu = &pGip->aCPUs[iCpu];
         if (RT_UNLIKELY(pGipCpu->idCpu != idCpu))
             return;
-#else
-        unsigned iCpu = ASMGetApicId();
-        if (RT_UNLIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
-            return;
-        pGipCpu = &pGip->aCPUs[iCpu];
-#endif
     }
 
     /*
@@ -5663,20 +5625,12 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
 static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
 {
-#ifdef SUP_WITH_LOTS_OF_CPUS
     unsigned iCpu = pGip->aiCpuFromApicId[idApic];
 
     if (RT_LIKELY(iCpu < pGip->cCpus))
-#else
-    unsigned iCpu = idApic;
-
-    if (RT_LIKELY(iCpu < RT_ELEMENTS(pGip->aCPUs)))
-#endif
     {
         PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
-#ifdef SUP_WITH_LOTS_OF_CPUS
         if (pGipCpu->idCpu == idCpu)
-#endif
         {
 
             /*
