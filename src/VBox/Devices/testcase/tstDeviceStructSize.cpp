@@ -29,6 +29,8 @@
 #undef LOG_GROUP
 #include "../Bus/DevPCI.cpp"
 #undef LOG_GROUP
+#include "../Bus/DevPciIch9.cpp"
+#undef LOG_GROUP
 #include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
 #include "../Input/DevPS2.cpp"
