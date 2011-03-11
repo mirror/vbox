@@ -1668,22 +1668,24 @@ typedef RTCPUID const                              *PCRTCPUID;
 /** Nil CPU Id. */
 #define NIL_RTCPUID                                 ((RTCPUID)~0)
 
+/** The maximum number of CPUs a set can contain and IPRT is able
+ * to reference. (Should be max of support arch/platforms.)
+ * @remarks Must be a multiple of 64 (see RTCPUSET).  */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define RTCPUSET_MAX_CPUS      256
+#elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# define RTCPUSET_MAX_CPUS      1024
+#else
+# define RTCPUSET_MAX_CPUS      64
+#endif
 /** A CPU set.
- * Treat this as an opaque type and always use RTCpuSet* for manupulating it.
- * @remarks Subject to change. */
-#ifdef RT_WITH_LOTS_OF_CPUS /** @todo RT_WITH_LOTS_OF_CPUS is just a temporary placeholder. */
+ * @note    Treat this as an opaque type and always use RTCpuSet* for
+ *          manupulating it. */
 typedef struct RTCPUSET
 {
-    /** The bitmap.
-     * @remarks Must be large enough to hold RTCPUSET_MAX_CPUS bits, see
-     *          iprt/cpuset.h. */
-    uint64_t bmSet[256 / 64];
+    /** The bitmap.  */
+    uint64_t bmSet[RTCPUSET_MAX_CPUS / 64];
 } RTCPUSET;
-/** Indicates that RTCPUSET is a bitmap and not a 64-bit integer. */
-# define RTCPUSET_IS_BITMAP                         1
-#else
-typedef uint64_t                                    RTCPUSET;
-#endif
 /** Pointer to a CPU set. */
 typedef RTCPUSET                                   *PRTCPUSET;
 /** Pointer to a const CPU set. */

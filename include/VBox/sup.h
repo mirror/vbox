@@ -87,11 +87,6 @@ typedef enum SUPPAGINGMODE
     SUPPAGINGMODE_AMD64_GLOBAL_NX
 } SUPPAGINGMODE;
 
-#ifdef SUP_WITH_LOTS_OF_CPUS
-# ifndef RT_WITH_LOTS_OF_CPUS
-#  error "RT_WITH_LOTS_OF_CPUS must be defined with SUP_WITH_LOTS_OF_CPUS"
-# endif
-#endif
 
 /**
  * The CPU state.
@@ -146,14 +141,9 @@ typedef struct SUPGIPCPU
     volatile uint32_t   u32PrevUpdateIntervalNS;
 
     /** Reserved for future per processor data. */
-#ifdef SUP_WITH_LOTS_OF_CPUS
     volatile uint32_t   au32Reserved[5+5];
-#else
-    volatile uint32_t   au32Reserved[5];
-#endif
 
     /** @todo Add topology/NUMA info. */
-#ifdef SUP_WITH_LOTS_OF_CPUS
     /** The CPU state. */
     SUPGIPCPUSTATE volatile enmState;
     /** The host CPU ID of this CPU (the SUPGIPCPU is indexed by APIC ID). */
@@ -162,14 +152,9 @@ typedef struct SUPGIPCPU
     int16_t                 iCpuSet;
     /** The APIC ID of this CPU. */
     uint16_t                idApic;
-#endif
 } SUPGIPCPU;
-#ifdef SUP_WITH_LOTS_OF_CPUS
 AssertCompileSize(RTCPUID, 4);
 AssertCompileSize(SUPGIPCPU, 128);
-#else
-AssertCompileSize(SUPGIPCPU, 96);
-#endif
 AssertCompileMemberAlignment(SUPGIPCPU, u64NanoTS, 8);
 AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8);
 
@@ -178,12 +163,6 @@ AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8);
 typedef SUPGIPCPU *PSUPGIPCPU;
 
 
-
-#ifndef SUP_WITH_LOTS_OF_CPUS
-/** The number of CPUs covered by the GIP.
- * @remarks Must be a power of two! */
-# define SUPGLOBALINFOPAGE_CPUS     32
-#endif
 
 /**
  * Global Information Page.
@@ -201,54 +180,42 @@ typedef struct SUPGLOBALINFOPAGE
 
     /** The GIP update mode, see SUPGIPMODE. */
     uint32_t            u32Mode;
-#ifdef SUP_WITH_LOTS_OF_CPUS
     /** The number of entries in the CPU table.
      * (This can work as RTMpGetArraySize().)  */
     uint16_t            cCpus;
     /** The size of the GIP in pages. */
     uint16_t            cPages;
-#else
-    /** Reserved / padding. */
-    uint32_t            u32Padding0;
-#endif
     /** The update frequency of the of the NanoTS. */
     volatile uint32_t   u32UpdateHz;
     /** The update interval in nanoseconds. (10^9 / u32UpdateHz) */
     volatile uint32_t   u32UpdateIntervalNS;
     /** The timestamp of the last time we update the update frequency. */
     volatile uint64_t   u64NanoTSLastUpdateHz;
-#ifdef SUP_WITH_LOTS_OF_CPUS
     /** The set of online CPUs. */
     RTCPUSET            OnlineCpuSet;
-    /** The number of CPUs that are online. */
-    volatile uint32_t   cOnlineCpus;
-    /** The number of CPUs present in the system. */
-    volatile uint32_t   cPresentCpus;
     /** The set of present CPUs. */
     RTCPUSET            PresentCpuSet;
     /** The set of possible CPUs. */
     RTCPUSET            PossibleCpuSet;
+    /** The number of CPUs that are online. */
+    volatile uint16_t   cOnlineCpus;
+    /** The number of CPUs present in the system. */
+    volatile uint16_t   cPresentCpus;
     /** The highest number of CPUs possible. */
-    uint32_t            cPossibleCpus;
+    uint16_t            cPossibleCpus;
+    /** The highest number of CPUs possible. */
+    uint16_t            u16Padding0;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
-#endif
 
     /** Padding / reserved space for future data. */
-#ifdef SUP_WITH_LOTS_OF_CPUS
-    uint32_t            au32Padding1[28];
-#else
-    uint32_t            au32Padding1[56];
-#endif
+    uint32_t            au32Padding1[29];
 
-#ifdef SUP_WITH_LOTS_OF_CPUS
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
-    uint16_t             aiCpuFromApicId[256];
+    uint16_t            aiCpuFromApicId[256];
     /** CPU set index to CPU table index. */
-    uint16_t             aiCpuFromCpuSetIdx[RTCPUSET_MAX_CPUS];
-#endif
+    uint16_t            aiCpuFromCpuSetIdx[RTCPUSET_MAX_CPUS];
 
-#ifdef SUP_WITH_LOTS_OF_CPUS
     /** Array of per-cpu data.
      * This is index by ApicId via the aiCpuFromApicId table.
      *
@@ -256,22 +223,10 @@ typedef struct SUPGLOBALINFOPAGE
      * is SUPGIPMODE_ASYNC_TSC, otherwise (SUPGIPMODE_SYNC_TSC) only the first
      * entry is updated. */
     SUPGIPCPU           aCPUs[1];
-#else
-    /** Array of per-cpu data.
-     * If u32Mode == SUPGIPMODE_SYNC_TSC then only the first entry is used.
-     * If u32Mode == SUPGIPMODE_ASYNC_TSC then the CPU ACPI ID is used as an
-     * index into the array. */
-    SUPGIPCPU           aCPUs[SUPGLOBALINFOPAGE_CPUS];
-#endif
 } SUPGLOBALINFOPAGE;
-#ifndef SUP_WITH_LOTS_OF_CPUS
-AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000);
-#endif
-#ifdef SUP_WITH_LOTS_OF_CPUS
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, u64NanoTSLastUpdateHz, 8);
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs[0], 256);
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs[1], 128);
-#endif
 
 /** Pointer to the global info page.
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
@@ -283,11 +238,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#ifdef SUP_WITH_LOTS_OF_CPUS
-# define SUPGLOBALINFOPAGE_VERSION   0x00030000
-#else
-# define SUPGLOBALINFOPAGE_VERSION   0x00020000
-#endif
+#define SUPGLOBALINFOPAGE_VERSION   0x00030000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -368,15 +319,9 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
         iCpu = 0;
     else
     {
-# ifdef SUP_WITH_LOTS_OF_CPUS
         iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
         if (iCpu >= pGip->cCpus)
             return UINT64_MAX;
-# else
-        iCpu = ASMGetApicId();
-        if (RT_UNLIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
-            return UINT64_MAX;
-# endif
     }
 
     return pGip->aCPUs[iCpu].u64CpuHz;
