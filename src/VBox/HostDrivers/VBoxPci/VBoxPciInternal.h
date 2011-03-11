@@ -26,7 +26,9 @@
 #ifdef RT_OS_LINUX
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
-#define VBOX_WITH_IOMMU
+# ifdef DEBUG_nike
+#  define VBOX_WITH_IOMMU
+# endif
 #endif
 
 #ifdef VBOX_WITH_IOMMU
@@ -54,7 +56,10 @@ typedef struct VBOXRAWPCIINS
 {
     /** Pointer to the globals. */
     PVBOXRAWPCIGLOBALS pGlobals;
-    /** The spinlock protecting the state variables and host interface handle. */
+
+     /** Mutex protecting device access. */
+    RTSEMFASTMUTEX     hFastMtx;
+    /** The spinlock protecting the state variables and device access. */
     RTSPINLOCK         hSpinlock;
     /** Pointer to the next device in the list. */
     PVBOXRAWPCIINS     pNext;
@@ -67,6 +72,10 @@ typedef struct VBOXRAWPCIINS
 #ifdef RT_OS_LINUX
     struct pci_dev  *  pPciDev;
 #endif
+    bool               fMsiUsed;
+    bool               fMsixUsed;
+    bool               fIommuUsed;
+    bool               fPad0;
 
     /** The session this interface is associated with. */
     PSUPDRVSESSION     pSession;
@@ -76,6 +85,7 @@ typedef struct VBOXRAWPCIINS
     /** Port, given to the outside world. */
     RAWPCIDEVPORT      DevPort;
 
+    uint32_t           cHandlersCount;
     PFNRAWPCIISR       pfnIrqHandler;
     void              *pIrqContext;
 } VBOXRAWPCIINS;
