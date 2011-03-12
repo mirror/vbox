@@ -2377,7 +2377,7 @@ SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_LIB)/RuntimeR3NtDll-amd64.lib
 #
 if1of ($(KBUILD_TARGET), linux)
  ifeq ($(origin VBOX_LINUX_SRC),undefined)
-  ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h),)
+  ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h  /lib/modules/$(shell uname -r)/build/include/generated/autoconf.h),)
    export VBOX_LINUX_SRC := /lib/modules/$(shell uname -r)/build
   else
    export VBOX_LINUX_SRC := /usr/src/linux
