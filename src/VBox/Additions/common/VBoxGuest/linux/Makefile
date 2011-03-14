@@ -88,6 +88,7 @@ OBJS   = \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o \
+	r0drv/linux/thread2-r0drv-linux.o \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
@@ -108,12 +109,14 @@ OBJS   = \
 	common/misc/RTAssertMsg2Weak.o \
 	common/misc/RTAssertMsg2WeakV.o \
 	common/misc/assert.o \
+	common/misc/thread.o \
 	common/string/RTStrCopy.o \
 	common/string/strformat.o \
 	common/string/strformatrt.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
+	common/table/avlpv.o \
 	common/time/time.o \
 	generic/RTAssertShouldPanic-generic.o \
         generic/RTLogWriteStdErr-stub-generic.o \
