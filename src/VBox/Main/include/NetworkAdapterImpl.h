@@ -22,6 +22,7 @@
 
 #include "VirtualBoxBase.h"
 #include "NATEngineImpl.h"
+#include "BandwidthGroupImpl.h"
 
 class GuestOSType;
 
@@ -70,7 +71,7 @@ public:
 #endif
         Bstr mNATNetwork;
         ULONG mBootPriority;
-        ULONG mBandwidthLimit;
+        ComObjPtr<BandwidthGroup> mBandwidthGroup;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(NetworkAdapter, INetworkAdapter)
@@ -124,8 +125,8 @@ public:
     STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);
     STDMETHOD(COMGETTER(BootPriority)) (ULONG *aBootPriority);
     STDMETHOD(COMSETTER(BootPriority)) (ULONG aBootPriority);
-    STDMETHOD(COMGETTER(BandwidthLimit)) (ULONG *aLimit);
-    STDMETHOD(COMSETTER(BandwidthLimit)) (ULONG aLimit);
+    STDMETHOD(COMGETTER(BandwidthGroup)) (IBandwidthGroup **aBwGroup);
+    STDMETHOD(COMSETTER(BandwidthGroup)) (IBandwidthGroup *aBwGroup);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
@@ -137,7 +138,7 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings(const settings::NetworkAdapter &data);
+    HRESULT loadSettings(BandwidthControl *bwctl, const settings::NetworkAdapter &data);
     HRESULT saveSettings(settings::NetworkAdapter &data);
 
     bool isModified();
@@ -150,6 +151,8 @@ private:
 
     void detach();
     void generateMACAddress();
+    HRESULT updateMacAddress(Utf8Str aMacAddress);
+    void updateBandwidthGroup(BandwidthGroup *aBwGroup);
 
     Machine * const     mParent;
     const ComObjPtr<NetworkAdapter> mPeer;

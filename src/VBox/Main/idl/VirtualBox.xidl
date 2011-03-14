@@ -487,8 +487,15 @@
       -->
     </const>
 
+    <const name="v1_13"     value="15">
+      <desc>Settings version "1.13", written by VirtualBox 4.2.x.</desc>
+      <!--
+          NetworkAdapter changes: bandwidth group.
+      -->
+    </const>
+
     <const name="Future"     value="99999">
-      <desc>Settings version greater than "1.11", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.13", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -11826,7 +11833,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="2178cf4f-d961-42f4-ba76-59539234b337"
+    uuid="6aa240a1-dd58-478e-92e8-aac001ce5547"
     wsmap="managed"
     >
     <desc>
@@ -11948,11 +11955,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="bandwidthLimit" type="unsigned long">
-      <desc>
-        Maximum throughput allowed for this network adapter, in units of 1 mbps.
-        A zero value means uncapped/unlimited.
-      </desc>
+    <attribute name="bandwidthGroup" type="IBandwidthGroup">
+      <desc>The bandwidth group this network adapter is assigned to.</desc>
     </attribute>
 
     <method name="attachToNAT">
