@@ -3046,6 +3046,7 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         else if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
+            vdIoTaskFree(pDisk, pIoTask);
             break;
         }
 
@@ -3118,6 +3119,7 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         else if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
+            vdIoTaskFree(pDisk, pIoTask);
             break;
         }
 
