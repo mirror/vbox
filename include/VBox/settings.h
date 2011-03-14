@@ -440,8 +440,7 @@ struct NetworkAdapter
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
           ulBootPriority(0),
-          fHasDisabledNAT(false),
-          ulBandwidthLimit(0)
+          fHasDisabledNAT(false)
     {}
 
     bool operator==(const NetworkAdapter &n) const;
@@ -465,7 +464,7 @@ struct NetworkAdapter
     com::Utf8Str                        strName;
     uint32_t                            ulBootPriority;
     bool                                fHasDisabledNAT;
-    uint32_t                            ulBandwidthLimit;
+    com::Utf8Str                        strBandwidthGroup; // requires settings version 1.13 (VirtualBox 4.2)
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 

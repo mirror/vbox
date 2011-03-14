@@ -85,9 +85,6 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
     /* initialize data */
     mData->mSlot = aSlot;
 
-    /* Default limit is not capped/unlimited. */
-    mData->mBandwidthLimit = 0;
-
     /* default to Am79C973 */
     mData->mAdapterType = NetworkAdapterType_Am79C973;
 
@@ -339,47 +336,23 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
+HRESULT NetworkAdapter::updateMacAddress(Utf8Str aMACAddress)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
     HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
 
     /*
      * Are we supposed to generate a MAC?
      */
-    if (!aMACAddress || !*aMACAddress)
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        mData.backup();
-
+    if (aMACAddress.isEmpty())
         generateMACAddress();
-        emitChangeEvent = true;
-
-        m_fModified = true;
-        // leave the lock before informing callbacks
-        alock.release();
-
-        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
-        mlock.release();
-    }
     else
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (mData->mMACAddress != aMACAddress)
         {
             /*
              * Verify given MAC address
              */
-            Utf8Str macAddressUtf = aMACAddress;
-            char *macAddressStr = macAddressUtf.mutableRaw();
+            char *macAddressStr = aMACAddress.mutableRaw();
             int i = 0;
             while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
             {
@@ -407,28 +380,37 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
                 rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
             if (SUCCEEDED(rc))
-            {
-                mData.backup();
-
-                mData->mMACAddress = macAddressUtf;
-
-                emitChangeEvent = true;
-
-                m_fModified = true;
-                // leave the lock before informing callbacks
-                alock.release();
-
-                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-                mParent->setModified(Machine::IsModified_NetworkAdapters);
-                mlock.release();
-            }
+                mData->mMACAddress = aMACAddress;
         }
     }
 
-    // we have left the lock in any case at this point
+    return rc;
+}
 
-    if (emitChangeEvent)
+STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mData.backup();
+
+    HRESULT rc = updateMacAddress(aMACAddress);
+    if (SUCCEEDED(rc))
     {
+        m_fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
         /* Changing the MAC via the Main API during runtime is not allowed,
          * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
@@ -798,47 +780,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(PromiscModePolicy)(NetworkAdapterPromiscM
     }
 
     return hrc;
-}
-
-STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthLimit) (ULONG *aLimit)
-{
-    CheckComArgOutPointerValid(aLimit);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aLimit = mData->mBandwidthLimit;
-    return S_OK;
-}
-
-STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthLimit) (ULONG aLimit)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine doesn't need to be mutable */
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (aLimit != mData->mBandwidthLimit)
-    {
-        mData.backup();
-        mData->mBandwidthLimit = aLimit;
-
-        m_fModified = true;
-        // leave the lock before informing callbacks
-        alock.release();
-
-        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
-        mParent->setModified(Machine::IsModified_NetworkAdapters);
-        mlock.release();
-
-        /* No change in CFGM logic => changeAdapter=FALSE. */
-        mParent->onNetworkAdapterChange(this, FALSE);
-    }
-    return S_OK;
 }
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
@@ -1278,10 +1219,13 @@ STDMETHODIMP NetworkAdapter::Detach()
  *
  *  @note Locks this object for writing.
  */
-HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
+HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
+                                     const settings::NetworkAdapter &data)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -1299,7 +1243,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mAdapterType = data.type;
     mData->mEnabled = data.fEnabled;
     /* MAC address (can be null) */
-    rc = COMSETTER(MACAddress)(Bstr(data.strMACAddress).raw());
+    rc = updateMacAddress(data.strMACAddress);
     if (FAILED(rc)) return rc;
     /* cable (required) */
     mData->mCableConnected = data.fCableConnected;
@@ -1311,8 +1255,18 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mTraceFile = data.strTraceFile;
     /* boot priority (defaults to 0, i.e. lowest) */
     mData->mBootPriority = data.ulBootPriority;
-    /* Bandwidth limit in Mbps. */
-    mData->mBandwidthLimit = data.ulBandwidthLimit;
+    /* bandwidth group */
+    if (data.strBandwidthGroup.isEmpty())
+        updateBandwidthGroup(NULL);
+    else
+    {
+        ComObjPtr<BandwidthGroup> group;
+        rc = bwctl->getBandwidthGroupByName(data.strBandwidthGroup, group, true); // TODO: set error?
+        if (FAILED(rc)) return rc;
+    }
+    
+    // leave the lock before attaching
+    alock.release();
 
     switch (data.mode)
     {
@@ -1397,7 +1351,10 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
     data.ulBootPriority = mData->mBootPriority;
 
-    data.ulBandwidthLimit = mData->mBandwidthLimit;
+    if (mData->mBandwidthGroup.isNull())
+        data.strBandwidthGroup = "";
+    else
+        data.strBandwidthGroup = mData->mBandwidthGroup->getName();
 
     data.type = mData->mAdapterType;
 
@@ -1627,5 +1584,80 @@ void NetworkAdapter::generateMACAddress()
                  guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
     LogFlowThisFunc(("generated MAC: '%s'\n", strMAC));
     mData->mMACAddress = strMAC;
+}
+
+STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
+{
+    LogFlowThisFuncEnter();
+    CheckComArgOutPointerValid(aBwGroup);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData->mBandwidthGroup.queryInterfaceTo(aBwGroup);
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup) (IBandwidthGroup *aBwGroup)
+{
+    LogFlowThisFuncEnter();
+    CheckComArgOutPointerValid(aBwGroup);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    //HRESULT hrc = S_OK;
+
+    if (mData->mBandwidthGroup != aBwGroup)
+    {
+        mData.backup();
+
+        updateBandwidthGroup(static_cast<BandwidthGroup*>(aBwGroup));
+
+        m_fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        /* TODO: changeAdapter=???. */
+        mParent->onNetworkAdapterChange(this, FALSE);
+    }
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
+void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
+{
+    LogFlowThisFuncEnter();
+    Assert(isWriteLockOnCurrentThread());
+
+    mData.backup();
+    if (!mData->mBandwidthGroup.isNull())
+    {
+        mData->mBandwidthGroup->release();
+        mData->mBandwidthGroup.setNull();
+    }
+
+    if (aBwGroup)
+    {
+        mData->mBandwidthGroup = aBwGroup;
+        mData->mBandwidthGroup->reference();
+    }
+
+    LogFlowThisFuncLeave();
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

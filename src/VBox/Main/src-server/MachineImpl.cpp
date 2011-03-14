@@ -7467,6 +7467,10 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         rc = mBIOSSettings->loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
+        // Bandwidth control (must come before network adapters)
+        rc = mBandwidthControl->loadSettings(data.ioSettings);
+        if (FAILED(rc)) return rc;
+
         /* USB Controller */
         rc = mUSBController->loadSettings(data.usbController);
         if (FAILED(rc)) return rc;
@@ -7480,7 +7484,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
             /* slot unicity is guaranteed by XML Schema */
             AssertBreak(nic.ulSlot < RT_ELEMENTS(mNetworkAdapters));
-            rc = mNetworkAdapters[nic.ulSlot]->loadSettings(nic);
+            rc = mNetworkAdapters[nic.ulSlot]->loadSettings(mBandwidthControl, nic);
             if (FAILED(rc)) return rc;
         }
 
@@ -7532,10 +7536,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         // IO settings
         mHWData->mIoCacheEnabled = data.ioSettings.fIoCacheEnabled;
         mHWData->mIoCacheSize = data.ioSettings.ulIoCacheSize;
-
-        // Bandwidth control
-        rc = mBandwidthControl->loadSettings(data.ioSettings);
-        if (FAILED(rc)) return rc;
 
         // Host PCI devices
         for (settings::HostPciDeviceAttachmentList::const_iterator it = data.pciAttachments.begin();

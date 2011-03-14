@@ -104,6 +104,7 @@ enum
     MODIFYVM_NICSPEED,
     MODIFYVM_NICBOOTPRIO,
     MODIFYVM_NICPROMISC,
+    MODIFYVM_NICBWGROUP,
     MODIFYVM_NIC,
     MODIFYVM_CABLECONNECTED,
     MODIFYVM_BRIDGEADAPTER,
@@ -231,6 +232,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nicbootprio",              MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nicpromisc",               MODIFYVM_NICPROMISC,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nicbandwidthgroup",        MODIFYVM_NICBWGROUP,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1105,6 +1107,38 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(nic);
 
                 CHECK_ERROR(nic, COMSETTER(PromiscModePolicy)(enmPromiscModePolicy));
+                break;
+            }
+
+            case MODIFYVM_NICBWGROUP:
+            {
+                ComPtr<INetworkAdapter> nic;
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                if (!RTStrICmp(ValueUnion.psz, "none"))
+                {
+                    /* Just remove the bandwidth group. */
+                    CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(NULL));
+                    //CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(bwGroup));
+                    //CHECK_ERROR(machine, SetBandwidthGroupForNetworkAdapter(GetOptState.uIndex - 1, NULL));
+                }
+                else
+                {
+                    ComPtr<IBandwidthControl> bwCtrl;
+                    ComPtr<IBandwidthGroup> bwGroup;
+
+                    CHECK_ERROR(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
+
+                    if (SUCCEEDED(rc))
+                    {
+                        CHECK_ERROR(bwCtrl, GetBandwidthGroup(Bstr(ValueUnion.psz).raw(), bwGroup.asOutParam()));
+                        if (SUCCEEDED(rc))
+                        {
+                            CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(bwGroup));
+                        }
+                    }
+                }
                 break;
             }
 

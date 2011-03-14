@@ -1945,7 +1945,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         pelmAdapter->getAttributeValue("trace", nic.fTraceEnabled);
         pelmAdapter->getAttributeValue("tracefile", nic.strTraceFile);
         pelmAdapter->getAttributeValue("bootPriority", nic.ulBootPriority);
-        pelmAdapter->getAttributeValue("bandwidthLimit", nic.ulBandwidthLimit);
+        pelmAdapter->getAttributeValue("bandwidthGroup", nic.strBandwidthGroup);
 
         xml::ElementNodesList llNetworkModes;
         pelmAdapter->getChildElements(llNetworkModes);
@@ -3694,8 +3694,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmAdapter->setAttribute("trace", nic.fTraceEnabled);
             pelmAdapter->setAttribute("tracefile", nic.strTraceFile);
         }
-        if (nic.ulBandwidthLimit)
-            pelmAdapter->setAttribute("bandwidthLimit", nic.ulBandwidthLimit);
+        if (nic.strBandwidthGroup.isNotEmpty())
+            pelmAdapter->setAttribute("bandwidthGroup", nic.strBandwidthGroup);
 
         const char *pszPolicy;
         switch (nic.enmPromiscModePolicy)
@@ -4728,12 +4728,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              netit != hardwareMachine.llNetworkAdapters.end();
              ++netit)
         {
-            if (    (m->sv < SettingsVersion_v1_11)
-                 && (netit->ulBandwidthLimit)
+            if (    (m->sv < SettingsVersion_v1_12)
+                 && (netit->strBandwidthGroup.isNotEmpty())
                )
             {
-                /* New in VirtualBox 4.0 */
-                m->sv = SettingsVersion_v1_11;
+                /* New in VirtualBox 4.1 */
+                m->sv = SettingsVersion_v1_12;
                 break;
             }
             else if (    (m->sv < SettingsVersion_v1_10)
