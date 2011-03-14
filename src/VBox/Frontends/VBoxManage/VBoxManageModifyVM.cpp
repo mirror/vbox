@@ -1120,8 +1120,6 @@ int handleModifyVM(HandlerArg *a)
                 {
                     /* Just remove the bandwidth group. */
                     CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(NULL));
-                    //CHECK_ERROR(nic, COMSETTER(BandwidthGroup)(bwGroup));
-                    //CHECK_ERROR(machine, SetBandwidthGroupForNetworkAdapter(GetOptState.uIndex - 1, NULL));
                 }
                 else
                 {
