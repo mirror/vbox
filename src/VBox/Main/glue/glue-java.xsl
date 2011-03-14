@@ -955,6 +955,10 @@
       </xsl:choose>
     </xsl:when>
 
+    <xsl:when test="($idltype='octet') and ($safearray='yes')">
+      <xsl:value-of select="concat('Helper.unwrapBytes(', $value,')')"/>
+    </xsl:when>
+
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
         <xsl:with-param name="msg" select="concat('Unhandled type: ', $idltype)" />
@@ -2856,10 +2860,23 @@ public class Helper {
         SafeArray result = new SafeArray(Variant.VariantBoolean, vals.size());
         int i = 0;
         for (boolean l : vals) {
-                result.setBoolean(i, l);
+                result.setBoolean(i++, l);
         }
         return result;
     }
+
+
+    public static SafeArray unwrapBytes(byte[] vals) {
+        if (vals==null)  return null;
+
+        SafeArray result = new SafeArray(Variant.VariantByte, vals.length);
+        int i = 0;
+        for (byte l : vals) {
+                result.setByte(i++, l);
+        }
+        return result;
+    }
+
 
     public static <T extends Enum <T>> SafeArray unwrapEnum(Class<T> enumClass, List<T> values) {
         if (values == null)  return null;
@@ -2869,7 +2886,7 @@ public class Helper {
            java.lang.reflect.Method valueM = enumClass.getMethod("value");
            int i = 0;
            for (T v : values) {
-             result.setInt(i, (Integer)valueM.invoke(v));
+             result.setInt(i++, (Integer)valueM.invoke(v));
            }
            return result;
         } catch (NoSuchMethodException e) {
@@ -2890,7 +2907,7 @@ public class Helper {
         SafeArray result = new SafeArray(Variant.VariantString, vals.size());
         int i = 0;
         for (String l : vals) {
-                result.setString(i, l);
+                result.setString(i++, l);
         }
         return result;
     }
