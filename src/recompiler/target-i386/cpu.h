@@ -756,7 +756,11 @@ typedef struct CPUX86State {
     uint64 *mce_banks;
 #else  /* VBOX */
 
+#if HC_ARCH_BITS == 64
     uint32_t alignment2[3];
+#else
+    uint32_t alignment2[2];
+#endif
     /** Profiling tb_flush. */
     STAMPROFILE StatTbFlush;
 #endif /* VBOX */
