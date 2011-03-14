@@ -1261,7 +1261,7 @@ HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
     else
     {
         ComObjPtr<BandwidthGroup> group;
-        rc = bwctl->getBandwidthGroupByName(data.strBandwidthGroup, group, true); // TODO: set error?
+        rc = bwctl->getBandwidthGroupByName(data.strBandwidthGroup, group, true);
         if (FAILED(rc)) return rc;
     }
     
@@ -1605,7 +1605,6 @@ STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGro
 STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup) (IBandwidthGroup *aBwGroup)
 {
     LogFlowThisFuncEnter();
-    CheckComArgOutPointerValid(aBwGroup);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1615,8 +1614,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup) (IBandwidthGroup *aBwGrou
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    //HRESULT hrc = S_OK;
 
     if (mData->mBandwidthGroup != aBwGroup)
     {
