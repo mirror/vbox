@@ -379,28 +379,6 @@
         the <computeroutput>/extract</computeroutput> parameter.</para>
       </sect3>
 
-      <sect3 id="vista_networking">
-        <title>Windows Vista networking</title>
-
-        <para>If, for some reason, you want to use an AMD PCNet card with
-        Microsoft Windows Vista or later instead of the Intel E1000 card that
-        VirtualBox provides by default, you will need to install a driver for
-        that manually (see <xref linkend="nichardware" />).</para>
-
-        <para>As a convenience, VirtualBox ships with a 32-bit driver for the
-        AMD PCNet card, which comes with the Windows Guest Additions. If you
-        install these in a 32-bit Vista guest, the driver will automatically
-        be installed as well. If, for some reason, you would like to install
-        the driver manually, you can extract the required files from the
-        Windows Guest Additions setup. Please consult <xref
-        linkend="windows-guest-file-extraction" /> on how to achieve this. You
-        will then find the AMD PCNet driver files in the
-        <computeroutput>x86\Network\AMD\netamd.inf</computeroutput>
-        subdirectory of the default install directory.</para>
-
-        <para>Unfortunately, there is no 64-bit driver available for the AMD
-        PCNet card.</para>
-      </sect3>
     </sect2>
 
     <sect2>
