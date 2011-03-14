@@ -652,10 +652,8 @@ typedef struct AHCI
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment9;
-#endif
+    /** Number of usable command slots for each port. */
+    uint32_t                        cCmdSlotsAvail;
 
     /** Flag whether we have written the first 4bytes in an 8byte MMIO write successfully. */
     volatile bool                   f8ByteMMIO4BytesWrittenSuccessfully;
@@ -1985,7 +1983,7 @@ static void ahciHBAReset(PAHCI pThis)
                             AHCI_HBA_CAP_SNCQ | /* Support native command queuing */
                             AHCI_HBA_CAP_SSS  | /* Staggered spin up */
                             AHCI_HBA_CAP_CCCS | /* Support command completion coalescing */
-                            AHCI_HBA_CAP_NCS_SET(AHCI_NR_COMMAND_SLOTS) | /* Number of command slots we support */
+                            AHCI_HBA_CAP_NCS_SET(pThis->cCmdSlotsAvail) | /* Number of command slots we support */
                             AHCI_HBA_CAP_NP_SET(pThis->cPortsImpl); /* Number of supported ports */
     pThis->regHbaCtrl     = AHCI_HBA_CTRL_AE;
     pThis->regHbaIs       = 0;
@@ -2873,7 +2871,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[103] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 48);
 
     /* The following are SATA specific */
-    p[75] = RT_H2LE_U16(31); /* We support 32 commands */
+    p[75] = RT_H2LE_U16(pAhciPort->CTX_SUFF(pAhci)->cCmdSlotsAvail-1); /* Number of commands we support, 0's based */
     p[76] = RT_H2LE_U16((1 << 8) | (1 << 2)); /* Native command queuing and Serial ATA Gen2 (3.0 Gbps) speed supported */
 
     uint32_t uCsum = ataChecksum(p, 510);
@@ -7738,7 +7736,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                     "SecondarySlave\0"
                                     "PortCount\0"
                                     "UseAsyncInterfaceIfAvailable\0"
-                                    "Bootable\0"))
+                                    "Bootable\0"
+                                    "CmdSlotsAvail\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AHCI configuration error: unknown option specified"));
 
@@ -7777,6 +7776,20 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read Bootable as boolean"));
+
+    rc = CFGMR3QueryU32Def(pCfg, "CmdSlotsAvail", &pThis->cCmdSlotsAvail, AHCI_NR_COMMAND_SLOTS);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AHCI configuration error: failed to read CmdSlotsAvail as integer"));
+    Log(("%s: cCmdSlotsAvail=%u\n", __FUNCTION__, pThis->cCmdSlotsAvail));
+    if (pThis->cCmdSlotsAvail > AHCI_NR_COMMAND_SLOTS)
+        return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                   N_("AHCI configuration error: CmdSlotsAvail=%u should not exceed %u"),
+                                   pThis->cPortsImpl, AHCI_NR_COMMAND_SLOTS);
+    if (pThis->cCmdSlotsAvail < 1)
+        return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                   N_("AHCI configuration error: CmdSlotsAvail=%u should be at least 1"),
+                                   pThis->cCmdSlotsAvail);
 
     pThis->fR0Enabled = fR0Enabled;
     pThis->fGCEnabled = fGCEnabled;
