@@ -1810,15 +1810,15 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
 static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus)
 {
     PPCIDEVICE pBridgeDev = &pBus->aPciDev;
-    PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, pGlobals->uBus);
 
-    /* For simplicity, let's start numbering PCI bridges from 0,
-     * not 1, so don't increment count on Host->PCI bridge.
-     */
-    if (strcmp(pBridgeDev->name, "i82801") != 0)
-        pGlobals->uBus++;
+    /* Set only if we are not on the root bus, it has no primary bus attached. */
+    if (pGlobals->uBus != 0)
+    {
+        PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, pGlobals->uBus);
+        PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus);
+    }
 
-    PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus);
+    pGlobals->uBus++;
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         PPCIDEVICE pBridge = pBus->papBridgesR3[iBridge];
@@ -2104,36 +2104,11 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
         ich9pciUpdateMappings(aDev);
 }
 
-/* Slot/functions assignment per table at p. 12 of ICH9 family spec update */
-static const struct {
-    const char* pszName;
-    int32_t     iSlot;
-    int32_t     iFunction;
-} PciSlotAssignments[] = {
-    /* The only override that have to be here, as host controller is added in the way invisible to bus slot assignment management,
-       maybe to be changed in the future. */
-    {
-        "i82801",   30, 0 /* Host Controller */
-    },
-};
-
 static bool assignPosition(PICH9PCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName, int iDevFn, PciAddress* aPosition)
 {
     aPosition->iBus = 0;
     aPosition->iDeviceFunc = iDevFn;
     aPosition->iRegister = 0; /* N/A */
-
-    /* Hardcoded slots/functions, per chipset spec */
-    for (size_t i = 0; i < RT_ELEMENTS(PciSlotAssignments); i++)
-    {
-        if (!strcmp(pszName, PciSlotAssignments[i].pszName))
-        {
-            pciDevSetRequestedDevfunc(pPciDev);
-            aPosition->iDeviceFunc =
-                    (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
-            return true;
-        }
-    }
 
     /* Explicit slot request */
     if (iDevFn >=0 && iDevFn < (int)RT_ELEMENTS(pBus->apDevices))
@@ -2491,35 +2466,26 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     /*
      * Fill in PCI configs and add them to the bus.
      */
-
-    /*
-     * We emulate 82801IB ICH9 IO chip used in Q35,
-     * see http://ark.intel.com/Product.aspx?id=31892
-     *
-     * Stepping   S-Spec   Top Marking
-     *
-     *   A2        SLA9M    NH82801IB
+    /** @todo: Disabled for now because this causes error messages with Linux guests.
+     *         The guest loads the x38_edac device which tries to map a memory region
+     *         using an address given at place 0x48 - 0x4f in the PCi config space.
+     *         This fails. because we don't register such a region.
      */
+#if 0
     /* Host bridge device */
-    /* @todo: move to separate driver? */
     PCIDevSetVendorId(  &pBus->aPciDev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(  &pBus->aPciDev, 0x244e); /* Desktop */
-    PCIDevSetRevisionId(&pBus->aPciDev,   0x92); /* rev. A2 */
+    PCIDevSetDeviceId(  &pBus->aPciDev, 0x29e0); /* Desktop */
+    PCIDevSetRevisionId(&pBus->aPciDev,   0x01); /* rev. 01 */
     PCIDevSetClassBase( &pBus->aPciDev,   0x06); /* bridge */
     PCIDevSetClassSub(  &pBus->aPciDev,   0x00); /* Host/PCI bridge */
-    PCIDevSetClassProg( &pBus->aPciDev,   0x01); /* Supports subtractive decoding. */
-    PCIDevSetHeaderType(&pBus->aPciDev,   0x01); /* bridge */
+    PCIDevSetClassProg( &pBus->aPciDev,   0x00); /* Host/PCI bridge */
+    PCIDevSetHeaderType(&pBus->aPciDev,   0x00); /* bridge */
     PCIDevSetWord(&pBus->aPciDev,  VBOX_PCI_SEC_STATUS, 0x0280);  /* secondary status */
-    PCIDevSetDWord(&pBus->aPciDev, 0x4c, 0x00001200); /* Bridge policy configuration */
-    PCIDevSetStatus    (&pBus->aPciDev, VBOX_PCI_STATUS_CAP_LIST);
-    PCIDevSetCapabilityList(&pBus->aPciDev, 0x50);
-    /* capability */
-    PCIDevSetWord(&pBus->aPciDev,  0x50, VBOX_PCI_CAP_ID_SSVID);
-    PCIDevSetDWord(&pBus->aPciDev, 0x54, 0x00000000); /* Subsystem vendor ids */
 
     pBus->aPciDev.pDevIns               = pDevIns;
     /* We register Host<->PCI controller on the bus */
-    ich9pciRegisterInternal(pBus, -1, &pBus->aPciDev, "i82801");
+    ich9pciRegisterInternal(pBus, 0, &pBus->aPciDev, "dram");
+#endif
 
     /*
      * Register I/O ports and save state.
