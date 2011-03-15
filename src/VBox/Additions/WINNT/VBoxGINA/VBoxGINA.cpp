@@ -334,8 +334,22 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisplayLockedNotice\n"));
-    /* Forward call to MSGINA. */
-    GWlxDisplayLockedNotice(pWlxContext);
+
+    /* check if there are credentials for us, if so simulate C-A-D */
+    if (credentialsAvailable())
+    {
+        Log(("VBoxGINA::WlxDisplayLockedNotice: simulating C-A-D\n"));
+        /* automatic C-A-D */
+        pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
+    }
+    else
+    {
+        Log(("VBoxGINA::WlxDisplayLockedNotice: starting credentials poller\n"));
+        /* start the credentials poller thread */
+        credentialsPollerCreate();
+        /* Forward call to MSGINA. */
+        GWlxDisplayLockedNotice(pWlxContext);
+    }
 }
 
 
