@@ -1924,8 +1924,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                           SaveS_ResetCurStateModified | saveFlags);
         if (FAILED(rc))
             throw rc;
-        if (fNeedsGlobalSaveSettings)
-            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
+        // unconditionally add the parent registry. We do similar in SessionMachine::EndTakingSnapshot
+        // (mParent->saveSettings())
+        mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
 
         // let go of the locks while we're deleting image files below
         alock.leave();
