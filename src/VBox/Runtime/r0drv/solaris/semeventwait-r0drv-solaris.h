@@ -237,6 +237,8 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
  * @param   pCnd                The condition variable to wait on.
  * @param   pMtx                The mutex related to the condition variable.
  *                              The caller has entered this.
+ *
+ * @remarks This must be call with the object mutex (spinlock) held.
  */
 DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx)
 {
@@ -263,13 +265,14 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                 /*
                  * High resolution timeout - arm a high resolution timeout callback
                  * for waking up the thread at the desired time.
+                 *
+                 * Release and reacquire the mutex across calls to timeout_generic(), @bugref{5595}.
                  */
-                int OldPrioLevel = getpil();
+                mutex_exit(pMtx);
                 u.idCo = g_pfnrtR0Sol_timeout_generic(CALLOUT_REALTIME, rtR0SemSolWaitTimeout, pWait,
                                                       pWait->uNsAbsTimeout, RTR0SEMSOLWAIT_RESOLUTION,
                                                       CALLOUT_FLAG_ABSOLUTE);
-                int NewPrioLevel = getpil();
-                AssertReleaseMsg(NewPrioLevel >= OldPrioLevel, ("Unexpected lowering of PIL (Old=%d New=%d)\n", OldPrioLevel, NewPrioLevel));
+                mutex_enter(pMtx);
             }
 #if 0 /* @bugref{5342} */
             else
@@ -299,28 +302,39 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
              * Normal timeout.
              * We're better off with our own callback like on the timeout man page,
              * than calling cv_timedwait[_sig]().
+             *
+             * Release and reacquire the mutex across calls to realtime_timeout(), @bugref{5595}.
              */
+            mutex_exit(pMtx);
             u.idTom = realtime_timeout(rtR0SemSolWaitTimeout, pWait, pWait->u.lTimeout);
+            mutex_enter(pMtx);
         }
     }
 
     /*
-     * Do the waiting.
-     * (rc > 0 - normal wake-up; rc == 0 - interruption; rc == -1 - timeout)
+     * Check if the timeout has already fired in the time when the mutex was released.
+     * Required since we release/reacquire the mutex, @bugref{5595}.
      */
-    if (pWait->fInterruptible)
+    if (ASMAtomicReadBool(&pWait->fTimedOut) == false)
     {
-        int rc = cv_wait_sig(pCnd, pMtx);
-        if (RT_UNLIKELY(rc <= 0))
+        /*
+         * Do the waiting.
+         * (rc > 0 - normal wake-up; rc == 0 - interruption; rc == -1 - timeout)
+         */
+        if (pWait->fInterruptible)
         {
-            if (RT_LIKELY(rc == 0))
-                pWait->fInterrupted = true;
-            else
-                AssertMsgFailed(("rc=%d\n", rc)); /* no timeouts, see above! */
+            int rc = cv_wait_sig(pCnd, pMtx);
+            if (RT_UNLIKELY(rc <= 0))
+            {
+                if (RT_LIKELY(rc == 0))
+                    pWait->fInterrupted = true;
+                else
+                    AssertMsgFailed(("rc=%d\n", rc)); /* no timeouts, see above! */
+            }
         }
+        else
+            cv_wait(pCnd, pMtx);
     }
-    else
-        cv_wait(pCnd, pMtx);
 
     /*
      * Remove the timeout callback.  Drop the lock while we're doing that
@@ -329,6 +343,11 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
      */
     if (fHasTimeout)
     {
+        /*
+         * Invalidate the mutex pointer here so that if the timer fires just after we
+         * exit the mutex or has already fired and the callback is waiting on the mutex,
+         * we can simply ignore it in the callback as we've completed waiting.
+         */
         ASMAtomicWritePtr(&pWait->pvMtx, NULL);
         mutex_exit(pMtx);
 
