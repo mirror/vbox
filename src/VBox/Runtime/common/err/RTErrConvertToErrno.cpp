@@ -176,6 +176,7 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         case VERR_FILE_LOCK_FAILED:                 return ENOLCK;
 #endif
 #ifdef ENOSYS
+        case VERR_NOT_IMPLEMENTED:
         case VERR_NOT_SUPPORTED:                    return ENOSYS;
 #endif
 #ifdef ENOTEMPTY
