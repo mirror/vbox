@@ -1223,7 +1223,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                     {
                         CHECK_ERROR_RET(pDisplay, GetFramebuffer(i, pFramebuffer.asOutParam(), &xo, &yo), rc);
 
-                        if (!pDisplay)
+                        if (!pFramebuffer)
                         {
                             rc = crVBoxServerUnmapScreen(i);
                             AssertRCReturn(rc, rc);
