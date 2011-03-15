@@ -212,24 +212,25 @@ public:
                         Bstr value;
                         gpcev->COMGETTER(Value)(value.asOutParam());
                         Utf8Str utf8Value = value;
-                        if (utf8Value == "true")
+
+                        if (!mfNoLoggedInUsers) /* Only if the property really changes. */
                         {
-                            if (!mfNoLoggedInUsers) /* Only if the property really changes. */
+                            if (   utf8Value == "true"
+                                /* Guest property got deleted due to hard reset,
+                                 * so it has no value anymore. */
+                                || utf8Value.isEmpty())
                             {
                                 mfNoLoggedInUsers = true;
                                 fDropConnection = true;
                             }
                         }
-                        /* Guest property got deleted due to hard reset,
-                         * so it has no value anymore. */
-                        else if (utf8Value.isEmpty())
-                        {
-                            fDropConnection = true;
-                        }
-                        else
-                        {
+                        else if (utf8Value == "false")
                             mfNoLoggedInUsers = false;
-                        }
+                        /* Guest property got deleted due to hard reset,
+                         * take the shortcut without touching the mfNoLoggedInUsers
+                         * state. */
+                        else if (utf8Value.isEmpty())
+                            fDropConnection = true;
 
                         if (fDropConnection)
                         {
