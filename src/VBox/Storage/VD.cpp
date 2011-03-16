@@ -3474,6 +3474,21 @@ static size_t vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
 static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
                                   size_t cbCompleted)
 {
+    PVDIO    pVDIo = (PVDIO)pvUser;
+    PVBOXHDD pDisk = pVDIo->pDisk;
+
+    /*
+     * Grab the disk critical section to avoid races with other threads which
+     * might still modify the I/O context.
+     * Example is that iSCSI is doing an asynchronous write but calls us already
+     * while the other thread is still hanging in vdWriteHelperAsync and couldn't update
+     * the fBlocked state yet.
+     * It can overwrite the state to true before we call vdIoCtxContinue and the
+     * the request would hang indefinite.
+     */
+    int rc = RTCritSectEnter(&pDisk->CritSect);
+    AssertRC(rc);
+
     /* Continue */
     pIoCtx->fBlocked = false;
     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCompleted);
@@ -3482,6 +3497,9 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
      * @todo: Find a better way to prevent vdIoCtxContinue from calling the read/write helper again. */
     if (!pIoCtx->cbTransferLeft)
         pIoCtx->pfnIoCtxTransfer = NULL;
+
+    rc = RTCritSectLeave(&pDisk->CritSect);
+    AssertRC(rc);
 
     vdIoCtxContinue(pIoCtx, rcReq);
 }
