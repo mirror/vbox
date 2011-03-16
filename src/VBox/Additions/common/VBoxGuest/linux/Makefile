@@ -231,6 +231,11 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxguest,/ /include /r0drv/linux)
  export INCL
 endif
+ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxguest),)
+ MANGLING := $(KBUILD_EXTMOD)/vboxguest/include/VBox/VBoxGuestMangling.h
+else
+ MANGLING := $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h
+endif
 KFLAGS   := -D__KERNEL__ -DMODULE \
 	-DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_GUEST -DIN_GUEST_R0 \
 	-DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM
@@ -273,7 +278,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += -include $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h  $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS += -include $(MANGLING) $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
