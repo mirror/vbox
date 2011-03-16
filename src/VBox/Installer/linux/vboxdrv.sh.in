@@ -317,7 +317,7 @@ setup()
       fi
       if ! $BUILDVBOXNETADP \
           --use-module-symvers /tmp/vboxdrv-Module.symvers \
-        --no-print-directory install >> $LOG 2>&1; then
+          --no-print-directory install >> $LOG 2>&1; then
           failure "Look at $LOG to find out what went wrong"
       fi
     fi

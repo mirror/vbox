@@ -159,6 +159,11 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxnetadp,/ /include /r0drv/linux)
  export INCL
 endif
+ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetadp),)
+ MANGLING := $(KBUILD_EXTMOD)/vboxnetadp/include/VBox/SUPDrvMangling.h
+else
+ MANGLING := $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h
+endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \
 	    -DIN_SUP_R0 -DVBOX -DRT_WITH_VBOX -DVBOX_WITH_HARDENING
 ifdef VBOX_REDHAT_KABI
@@ -193,7 +198,7 @@ MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS  += -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS  += -include $(MANGLING) $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
