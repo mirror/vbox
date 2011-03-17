@@ -1,5 +1,5 @@
 /** @file
- * Symbols from libvdeplug.so.2 to be loaded at runtime for DrvVDE.cpp
+ * Symbols from libvdeplug.so to be loaded at runtime for DrvVDE.cpp
  */
 
 /*
@@ -43,7 +43,7 @@ struct vde_open_args
 };
 
 /** The file name of the DBus library */
-#define VBOX_LIB_VDE_PLUG_NAME "libvdeplug.so.2"
+#define VBOX_LIB_VDE_PLUG_NAME "libvdeplug.so"
 #define RT_RUNTIME_LOADER_LIB_NAME VBOX_LIB_VDE_PLUG_NAME
 
 /** The name of the loader function */
