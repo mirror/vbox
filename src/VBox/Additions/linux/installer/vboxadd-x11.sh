@@ -324,10 +324,27 @@ setup()
             echo "installing the X.Org drivers."
             dox11config=""
             ;;
-        1.9.99.* | 1.10.* )
+        1.10.* )
             begin "Installing X.Org Server 1.10 modules"
             vboxvideo_src=vboxvideo_drv_110.so
             vboxmouse_src=vboxmouse_drv_110.so
+            doxorgconfd="true"
+            # Does Fedora still ship without vboxvideo detection?
+            # test "$system" = "redhat" || setupxorgconf=""
+            ;;
+        1.9.99.901 )
+            echo "Warning: you are using a pre-release version of X.Org server 1.5 which is known"
+            echo "not to work with the VirtualBox Guest Additions.  Please update to a more"
+            echo "recent version (for example by installing all updates in your guest) and then"
+            echo "set up the Guest Additions for X.Org server by running"
+            echo ""
+            echo "  /usr/lib[64]/VBoxGuestAdditions/vboxadd-x11 setup"
+            dox11config=""
+            ;;
+        1.9.99.* )
+            begin "Installing X.Org Server 1.10rc modules"
+            vboxvideo_src=vboxvideo_drv_110rc.so
+            vboxmouse_src=vboxmouse_drv_110rc.so
             doxorgconfd="true"
             # Does Fedora still ship without vboxvideo detection?
             # test "$system" = "redhat" || setupxorgconf=""
