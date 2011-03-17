@@ -756,10 +756,9 @@ typedef struct CPUX86State {
     uint64 *mce_banks;
 #else  /* VBOX */
 
-# if HC_ARCH_BITS == 64
+/* see 641 line to consult current alignments for darwin 32-bit host. */
+# if HC_ARCH_BITS == 64 || (RT_OS_DARWIN && HC_ARCH_BITS == 32)
     uint32_t alignment2[3];
-# elif defined(RT_OS_DARWIN) /* Darwin needs different padding. */
-    uint32_t alignment2;
 # else
     uint32_t alignmnt2[2];
 # endif
