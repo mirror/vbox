@@ -480,9 +480,12 @@ static bool pdmBlkCacheReclaim(PPDMBLKCACHEGLOBAL pCache, size_t cbData, bool fR
     return (cbRemoved >= cbData);
 }
 
-DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLKCACHEIOXFER pIoXfer)
+DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, size_t cbXfer, PPDMBLKCACHEIOXFER pIoXfer)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("%s: Enqueuing hIoXfer=%#p enmXferDir=%d\n",
+                 __FUNCTION__, pIoXfer, pIoXfer->enmXferDir));
 
     switch (pBlkCache->enmType)
     {
@@ -490,7 +493,7 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLK
         {
             rc = pBlkCache->u.Dev.pfnXferEnqueue(pBlkCache->u.Dev.pDevIns,
                                                  pIoXfer->enmXferDir,
-                                                 off, pIoXfer->cbXfer,
+                                                 off, cbXfer,
                                                  &pIoXfer->SgBuf, pIoXfer);
             break;
         }
@@ -498,7 +501,7 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLK
         {
             rc = pBlkCache->u.Drv.pfnXferEnqueue(pBlkCache->u.Drv.pDrvIns,
                                                  pIoXfer->enmXferDir,
-                                                 off, pIoXfer->cbXfer,
+                                                 off, cbXfer,
                                                  &pIoXfer->SgBuf, pIoXfer);
             break;
         }
@@ -506,7 +509,7 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLK
         {
             rc = pBlkCache->u.Usb.pfnXferEnqueue(pBlkCache->u.Usb.pUsbIns,
                                                  pIoXfer->enmXferDir,
-                                                 off, pIoXfer->cbXfer,
+                                                 off, cbXfer,
                                                  &pIoXfer->SgBuf, pIoXfer);
             break;
         }
@@ -514,7 +517,7 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLK
         {
             rc = pBlkCache->u.Int.pfnXferEnqueue(pBlkCache->u.Int.pvUser,
                                                  pIoXfer->enmXferDir,
-                                                 off, pIoXfer->cbXfer,
+                                                 off, cbXfer,
                                                  &pIoXfer->SgBuf, pIoXfer);
             break;
         }
@@ -522,6 +525,7 @@ DECLINLINE(int) pdmBlkCacheEnqueue(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLK
             AssertMsgFailed(("Unknown block cache type!\n"));
     }
 
+    LogFlowFunc(("%s: returns rc=%Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
@@ -549,11 +553,10 @@ static int pdmBlkCacheEntryReadFromMedium(PPDMBLKCACHEENTRY pEntry)
     pIoXfer->pEntry = pEntry;
     pIoXfer->SgSeg.pvSeg = pEntry->pbData;
     pIoXfer->SgSeg.cbSeg = pEntry->cbData;
-    pIoXfer->cbXfer      = pEntry->cbData;
     pIoXfer->enmXferDir  = PDMBLKCACHEXFERDIR_READ;
     RTSgBufInit(&pIoXfer->SgBuf, &pIoXfer->SgSeg, 1);
 
-    return pdmBlkCacheEnqueue(pBlkCache, pEntry->Core.Key, pIoXfer);
+    return pdmBlkCacheEnqueue(pBlkCache, pEntry->Core.Key, pEntry->cbData, pIoXfer);
 }
 
 /**
@@ -580,11 +583,10 @@ static int pdmBlkCacheEntryWriteToMedium(PPDMBLKCACHEENTRY pEntry)
     pIoXfer->pEntry = pEntry;
     pIoXfer->SgSeg.pvSeg = pEntry->pbData;
     pIoXfer->SgSeg.cbSeg = pEntry->cbData;
-    pIoXfer->cbXfer      = pEntry->cbData;
     pIoXfer->enmXferDir  = PDMBLKCACHEXFERDIR_WRITE;
     RTSgBufInit(&pIoXfer->SgBuf, &pIoXfer->SgSeg, 1);
 
-    return pdmBlkCacheEnqueue(pBlkCache, pEntry->Core.Key, pIoXfer);
+    return pdmBlkCacheEnqueue(pBlkCache, pEntry->Core.Key, pEntry->cbData, pIoXfer);
 }
 
 /**
@@ -611,7 +613,6 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
     ASMAtomicIncU32(&pReq->cXfersPending);
     pIoXfer->fIoCache    = false;
     pIoXfer->pReq        = pReq;
-    pIoXfer->cbXfer      = cbData;
     pIoXfer->enmXferDir  = enmXferDir;
     if (pSgBuf)
     {
@@ -619,7 +620,7 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
         RTSgBufAdvance(pSgBuf, cbData);
     }
 
-    return pdmBlkCacheEnqueue(pBlkCache, offStart, pIoXfer);
+    return pdmBlkCacheEnqueue(pBlkCache, offStart, cbData, pIoXfer);
 }
 
 /**
@@ -1853,14 +1854,13 @@ static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
     return pEntryNew;
 }
 
-static PPDMBLKCACHEREQ pdmBlkCacheReqAlloc(size_t cbXfer, void *pvUser)
+static PPDMBLKCACHEREQ pdmBlkCacheReqAlloc(void *pvUser)
 {
     PPDMBLKCACHEREQ pReq = (PPDMBLKCACHEREQ)RTMemAlloc(sizeof(PDMBLKCACHEREQ));
 
     if (RT_LIKELY(pReq))
     {
         pReq->pvUser = pvUser;
-        pReq->cbXfer = cbXfer;
         pReq->rcReq  = VINF_SUCCESS;
         pReq->cXfersPending = 0;
     }
@@ -1904,25 +1904,22 @@ static void pdmBlkCacheReqComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq)
 }
 
 static bool pdmBlkCacheReqUpdate(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq,
-                                 size_t cbComplete, int rcReq, bool fCallHandler)
+                                 int rcReq, bool fCallHandler)
 {
     if (RT_FAILURE(rcReq))
         ASMAtomicCmpXchgS32(&pReq->rcReq, rcReq, VINF_SUCCESS);
 
-    AssertMsg(pReq->cbXfer >= cbComplete, ("Completed more than left\n"));
     AssertMsg(pReq->cXfersPending > 0, ("No transfers are pending for this request\n"));
-    uint32_t cbOld = ASMAtomicSubU32(&pReq->cbXfer, cbComplete);
     uint32_t cXfersPending = ASMAtomicDecU32(&pReq->cXfersPending);
 
-    if (   !(cbOld - cbComplete)
-        && !cXfersPending)
+    if (!cXfersPending)
     {
         if (fCallHandler)
             pdmBlkCacheReqComplete(pBlkCache, pReq);
         return true;
     }
 
-    LogFlowFunc(("pReq=%#p cXfersPending=%u cbXfer=%u\n", pReq, cXfersPending, (cbOld - cbComplete)));
+    LogFlowFunc(("pReq=%#p cXfersPending=%u\n", pReq, cXfersPending));
     return false;
 }
 
@@ -1944,7 +1941,7 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
     RTSgBufClone(&SgBuf, pcSgBuf);
 
     /* Allocate new request structure. */
-    pReq = pdmBlkCacheReqAlloc(cbRead, pvUser);
+    pReq = pdmBlkCacheReqAlloc(pvUser);
     if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
@@ -2011,7 +2008,6 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
                 {
                     /* Read as much as we can from the entry. */
                     RTSgBufCopyFromBuf(&SgBuf, pEntry->pbData + offDiff, cbToRead);
-                    ASMAtomicSubU32(&pReq->cbXfer, cbToRead);
                 }
 
                 /* Move this entry to the top position */
@@ -2136,7 +2132,7 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
         off += cbToRead;
     }
 
-    if (!pdmBlkCacheReqUpdate(pBlkCache, pReq, 0, rc, false))
+    if (!pdmBlkCacheReqUpdate(pBlkCache, pReq, rc, false))
         rc = VINF_AIO_TASK_PENDING;
 
     LogFlowFunc((": Leave rc=%Rrc\n", rc));
@@ -2162,7 +2158,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
     RTSgBufClone(&SgBuf, pcSgBuf);
 
     /* Allocate new request structure. */
-    pReq = pdmBlkCacheReqAlloc(cbWrite, pvUser);
+    pReq = pdmBlkCacheReqAlloc(pvUser);
     if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
@@ -2210,7 +2206,6 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                     {
                         RTSgBufCopyToBuf(&SgBuf, pEntry->pbData + offDiff,
                                          cbToWrite);
-                        ASMAtomicSubU32(&pReq->cbXfer, cbToWrite);
                     }
                     else
                     {
@@ -2243,7 +2238,6 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                     {
                         /* Write as much as we can into the entry and update the file. */
                         RTSgBufCopyToBuf(&SgBuf, pEntry->pbData + offDiff, cbToWrite);
-                        ASMAtomicSubU32(&pReq->cbXfer, cbToWrite);
 
                         bool fCommit = pdmBlkCacheAddDirtyEntry(pBlkCache, pEntry);
                         if (fCommit)
@@ -2333,7 +2327,6 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                 if (!offDiff && pEntryNew->cbData == cbToWrite)
                 {
                     RTSgBufCopyToBuf(&SgBuf, pEntryNew->pbData, cbToWrite);
-                    ASMAtomicSubU32(&pReq->cbXfer, cbToWrite);
 
                     bool fCommit = pdmBlkCacheAddDirtyEntry(pBlkCache, pEntryNew);
                     if (fCommit)
@@ -2371,7 +2364,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
         off += cbToWrite;
     }
 
-    if (!pdmBlkCacheReqUpdate(pBlkCache, pReq, 0, rc, false))
+    if (!pdmBlkCacheReqUpdate(pBlkCache, pReq, rc, false))
         rc = VINF_AIO_TASK_PENDING;
 
     LogFlowFunc((": Leave rc=%Rrc\n", rc));
@@ -2393,7 +2386,7 @@ VMMR3DECL(int) PDMR3BlkCacheFlush(PPDMBLKCACHE pBlkCache, void *pvUser)
     pdmBlkCacheCommit(pBlkCache);
 
     /* Allocate new request structure. */
-    pReq = pdmBlkCacheReqAlloc(0, pvUser);
+    pReq = pdmBlkCacheReqAlloc(pvUser);
     if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
@@ -2420,7 +2413,7 @@ static PPDMBLKCACHEWAITER pdmBlkCacheWaiterComplete(PPDMBLKCACHE pBlkCache,
     PPDMBLKCACHEWAITER pNext = pWaiter->pNext;
     PPDMBLKCACHEREQ pReq = pWaiter->pReq;
 
-    pdmBlkCacheReqUpdate(pBlkCache, pWaiter->pReq, pWaiter->cbTransfer, rc, true);
+    pdmBlkCacheReqUpdate(pBlkCache, pWaiter->pReq, rc, true);
 
     RTMemFree(pWaiter);
 
@@ -2531,7 +2524,7 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
     if (hIoXfer->fIoCache)
         pdmBlkCacheIoXferCompleteEntry(pBlkCache, hIoXfer, rcIoXfer);
     else
-        pdmBlkCacheReqUpdate(pBlkCache, hIoXfer->pReq, hIoXfer->cbXfer, rcIoXfer, true);
+        pdmBlkCacheReqUpdate(pBlkCache, hIoXfer->pReq, rcIoXfer, true);
 }
 
 /**
