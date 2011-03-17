@@ -185,8 +185,9 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "       (the partitioning information in the MBR file is ignored).\n"
           "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
           "       \\\\.\\PhysicalDrive0).\n"
-          "       On Linux host the parameter -relative causes a VMDK file to be created\n"
-          "       which refers to individual partitions instead to the entire disk.\n"
+          "       On Linux or FreeBSD host the parameter -relative causes a VMDK file to\n"
+          "       be created which refers to individual partitions instead to the entire\n"
+          "       disk.\n"
           "       The necessary partition numbers can be queried with\n"
           "         VBoxManage internalcommands listpartitions\n"
           "\n"
@@ -967,12 +968,12 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             i++;
             pszPartitions = argv[i];
         }
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         else if (strcmp(argv[i], "-relative") == 0)
         {
             fRelative = true;
         }
-#endif /* RT_OS_LINUX */
+#endif /* RT_OS_LINUX || RT_OS_FREEBSD */
         else
             return errorSyntax(USAGE_CREATERAWVMDK, "Invalid parameter '%s'", argv[i]);
     }
@@ -1320,10 +1321,16 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             {
                 if (fRelative)
                 {
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
                     /* Refer to the correct partition and use offset 0. */
                     char *psz;
-                    RTStrAPrintf(&psz, "%s%u", rawdisk.c_str(),
+                    RTStrAPrintf(&psz,
+#if defined(RT_OS_LINUX)
+                                 "%s%u",
+#elif defined(RT_OS_FREEBSD)
+                                 "%ss%u",
+#endif
+                                 rawdisk.c_str(),
                                  partitions.aPartitions[i].uIndex);
                     if (!psz)
                     {
