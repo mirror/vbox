@@ -1242,7 +1242,7 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
             if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
                 && !fCompleted)
             {
-                    /* If we previously got completed notification, don't trigger again. */
+                /* If we previously got completed notification, don't trigger again. */
                 it->second.pProgress->notifyComplete(S_OK);
             }
         }
@@ -1269,6 +1269,9 @@ int Guest::notifyCtrlExecInStatus(uint32_t                  u32Function,
 
         /* Save bytes processed. */
         pCBData->cbProcessed = pData->cbProcessed;
+        pCBData->u32Status = pData->u32Status;
+        pCBData->u32Flags = pData->u32Flags;
+        pCBData->u32PID = pData->u32PID;
 
         /* Only trigger completion once. */
         BOOL fCompleted;
@@ -1949,27 +1952,41 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                     rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);
                     if (FAILED(rc)) throw rc;
 
-                    /* Was the call completed within time? */
-                    LONG uResult;
-                    if (   SUCCEEDED(it->second.pProgress->COMGETTER(ResultCode)(&uResult))
-                        && uResult == S_OK)
-                    {
-                        PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
-                        AssertPtr(pStatusData);
-                        Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
+                    /* Was the operation canceled by one of the parties? */
+                    rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
+                    if (FAILED(rc)) throw rc;
 
-                        *aBytesWritten = pStatusData->cbProcessed;
-                    }
-                    else if (   SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled))
-                             && fCanceled)
-                    {
-                        rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("The input operation was canceled by the guest"));
+                    if (!fCanceled)
+                    {   
+                        BOOL fCompleted;
+                        if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
+                            && fCompleted)
+                        {
+                            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);                        
+
+                            PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
+                            AssertPtr(pStatusData);
+                            Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
+
+                            switch (pStatusData->u32Status)
+                            {
+                                case INPUT_STS_WRITTEN:
+                                    *aBytesWritten = pStatusData->cbProcessed;
+                                    break;
+
+                                default:
+                                    rc = setError(VBOX_E_IPRT_ERROR,
+                                                  tr("Client error %u while processing input data"), pStatusData->u32Status);
+                                    break;
+                            }                                                           
+                        }
+                        else
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The input operation was not acknowledged from guest within time (%ums)"), aTimeoutMS);
                     }
                     else
                         rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("The input operation was not acknowledged from guest within time (%ums)"), aTimeoutMS);
-
+                                      tr("The input operation was canceled by the guest"));
                     {
                         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
                         /* Destroy locally used progress object. */
