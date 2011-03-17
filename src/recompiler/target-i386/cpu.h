@@ -758,8 +758,10 @@ typedef struct CPUX86State {
 
 #if HC_ARCH_BITS == 64
     uint32_t alignment2[3];
-#else
+#elif defined(RT_OS_DARWIN) /* Darwin needs different padding. */
     uint32_t alignment2;
+#else
+    uint32_t alignmnt2[2];
 #endif
     /** Profiling tb_flush. */
     STAMPROFILE StatTbFlush;
