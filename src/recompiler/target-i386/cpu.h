@@ -757,7 +757,7 @@ typedef struct CPUX86State {
 #else  /* VBOX */
 
 /* see 641 line to consult current alignments for darwin 32-bit host. */
-# if HC_ARCH_BITS == 64 || (RT_OS_DARWIN && HC_ARCH_BITS == 32)
+# if HC_ARCH_BITS == 64 || (defined(RT_OS_DARWIN) && HC_ARCH_BITS == 32)
     uint32_t alignment2[3];
 # else
     uint32_t alignmnt2[2];
