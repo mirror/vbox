@@ -756,13 +756,13 @@ typedef struct CPUX86State {
     uint64 *mce_banks;
 #else  /* VBOX */
 
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
     uint32_t alignment2[3];
-#elif defined(RT_OS_DARWIN) /* Darwin needs different padding. */
+# elif defined(RT_OS_DARWIN) /* Darwin needs different padding. */
     uint32_t alignment2;
-#else
+# else
     uint32_t alignmnt2[2];
-#endif
+# endif
     /** Profiling tb_flush. */
     STAMPROFILE StatTbFlush;
 #endif /* VBOX */
