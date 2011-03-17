@@ -68,7 +68,8 @@ VBoxService_SOURCES       = \
 ifdef VBOX_WITH_GUEST_CONTROL
  VBoxService_SOURCES    += \
  	VBoxServiceControl.cpp \
- 	VBoxServiceControlExec.cpp
+ 	VBoxServiceControlExec.cpp \
+	VBoxServicePipeBuf.cpp
 endif
 
 ifdef VBOX_WITH_MEMBALLOON

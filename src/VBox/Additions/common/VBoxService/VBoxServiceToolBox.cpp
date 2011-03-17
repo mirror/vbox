@@ -185,7 +185,7 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
         for (;;)
         {
             rc = RTFileRead(hInput, abBuf, sizeof(abBuf), &cbRead);
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc) && cbRead > 0)
             {
                 rc = RTFileWrite(hOutput, abBuf, cbRead, NULL /* Try to write all at once! */);
                 cbRead = 0;
