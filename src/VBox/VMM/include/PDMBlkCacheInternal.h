@@ -262,8 +262,6 @@ typedef struct PDMBLKCACHEREQ
 {
     /** Opaque user data returned on completion. */
     void             *pvUser;
-    /** Number of bytes to transfer. */
-    volatile uint32_t cbXfer;
     /** Number of pending transfers (waiting for a cache entry and passed through). */
     volatile uint32_t cXfersPending;
     /** Status code. */
@@ -291,8 +289,6 @@ typedef struct PDMBLKCACHEIOXFER
     RTSGBUF SgBuf;
     /** Transfer direction. */
     PDMBLKCACHEXFERDIR enmXferDir;
-    /** Size of the transfer. */
-    size_t             cbXfer;
 } PDMBLKCACHEIOXFER;
 
 /**
