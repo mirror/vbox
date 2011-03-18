@@ -534,35 +534,23 @@ exit:
 
 FunctionEnd
 
-Function PrepareForUpdate
+Function CheckForInstalledComponents
 
-  StrCmp $g_strAddVerMaj "1" v1     ; Handle major version "v1.x"
-  StrCmp $g_strAddVerMaj "2" v2     ; Handle major version "v2.x"
-  StrCmp $g_strAddVerMaj "3" v3     ; Handle major version "v3.x"
-  Goto exit
+  Push $0
 
-v3:
+  DetailPrint "Checking for installed components ..."
 
-  Goto exit
+  Call SetAppMode64
 
-v2:
+  ; VBoxGINA already installed? So we need to update the installed version as well,
+  ; regardless whether the user used "/with_autologon" or not
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
+  ${If} $0 == "VBoxGINA.dll"
+    DetailPrint "Found installed VBoxGINA"
+    StrCpy $g_bWithAutoLogon "true"
+  ${EndIf}
 
-  Goto exit
-
-v1:
-
-  StrCmp $g_strAddVerMin "5" v1_5   ; Handle minor version "v1.5.x"
-  StrCmp $g_strAddVerMin "6" v1_6   ; Handle minor version "v1.6.x"
-
-v1_5:
-
-  Goto exit
-
-v1_6:
-
-  Goto exit
-
-exit:
+  Pop $0
 
 FunctionEnd
 
@@ -600,18 +588,11 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite on
 
-  ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ; Because the next two lines will crash at the license page (??) we have to re-enable that here again
-  ${DisableX64FSRedirection}
-  SetRegView 64
-!endif
+  Call SetAppMode64
 
   StrCpy $g_strSystemDir "$SYSDIR"
 
   Call EnableLog
-  Call PrepareForUpdate
 
   DetailPrint "Version: $%VBOX_VERSION_STRING% (Rev $%VBOX_SVN_REV%)"
   ${If} $g_strAddVerMaj != ""
@@ -708,13 +689,7 @@ SectionEnd
 ; Auto-logon support (section is hidden at the moment -- only can be enabled via command line switch)
 Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
 
-  ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ; Because the next two lines will crash at the license page (??) we have to re-enable that here again
-  ${DisableX64FSRedirection}
-  SetRegView 64
-!endif
+  Call SetAppMode64
 
   Call GetWindowsVersion
   Pop $R0 ; Windows Version
@@ -1138,6 +1113,8 @@ Function .onInit
     Quit
   ${EndIf}
 
+  Call CheckForInstalledComponents
+
   ; Set section bits
   ${If} $g_bWithAutoLogon == "true" ; Auto-logon support
     SectionSetFlags ${SEC02} ${SF_SELECTED}
@@ -1155,13 +1132,7 @@ Function .onInit
   !endif
 !endif
 
-  ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths for checking for old additions
-  ; in block below
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ${DisableX64FSRedirection}
-  SetRegView 64
-!endif
+  Call SetAppMode64
 
   ; Check for old additions
   Call CheckForOldGuestAdditions
@@ -1170,10 +1141,7 @@ Function .onInit
   ; Due to some bug in NSIS the license page won't be displayed if we're in
   ; 64-bit registry view, so as a workaround switch back to 32-bit (Wow6432Node)
   ; mode for now
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ${EnableX64FSRedirection}
-  SetRegView 32
-!endif
+  Call SetAppMode32
 
 !endif ; UNINSTALLER_ONLY
 
@@ -1208,12 +1176,7 @@ Function un.onInit
 
 proceed:
 
-  ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ${DisableX64FSRedirection}
-  SetRegView 64
-!endif
+  Call un.SetAppMode64
 
   ; Set system directory
   StrCpy $g_strSystemDir "$SYSDIR"
@@ -1233,13 +1196,7 @@ Section Uninstall
   Call un.EnableLog
 !endif
 
-  ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths
-!if $%BUILD_TARGET_ARCH% == "amd64"
-  ; Do *not* add this line in .onInit - it will crash at the license page (??) because of a weird NSIS bug
-  ${DisableX64FSRedirection}
-  SetRegView 64
-!endif
+  Call un.SetAppMode64
 
   ; Call the uninstall main function
   Call un.Uninstall
