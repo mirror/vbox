@@ -2289,7 +2289,7 @@ static void atapiParseCmdVirtualATAPI(AHCIATADevState *s)
                         rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                              (PFNRT)s->pDrvMount->pfnUnmount, 3, s->pDrvMount,
                                              false /*=fForce*/, true /*=fEeject*/);
-                        AssertReleaseRC(rc);
+                        Assert(RT_SUCCESS(rc) || (rc == VERR_PDM_MEDIA_LOCKED) || (rc = VERR_PDM_MEDIA_NOT_MOUNTED));
                         {
                             STAM_PROFILE_START(&pCtl->StatLockWait, a);
                             PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);

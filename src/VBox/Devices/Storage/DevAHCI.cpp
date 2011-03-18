@@ -4038,7 +4038,7 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
                             rc2 = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                   (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
                                                   pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
-                            Assert(RT_SUCCESS(rc2) || (rc == VERR_PDM_MEDIA_LOCKED));
+                            Assert(RT_SUCCESS(rc2) || (rc2 == VERR_PDM_MEDIA_LOCKED) || (rc2 = VERR_PDM_MEDIA_NOT_MOUNTED));
                         }
                         break;
                     case 3: /* 11 - Load media */
