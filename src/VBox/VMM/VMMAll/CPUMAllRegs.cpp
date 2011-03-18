@@ -865,7 +865,13 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             /* Needs to be tested more before enabling. */
             *puValue = pVCpu->cpum.s.GuestMsr.msr.miscEnable;
 #else
-            *puValue = 0;
+            /* Currenty we don't allow guests to modify enable MSRs. */
+            *puValue = MSR_IA32_MISC_ENABLE_FAST_STRINGS  /* by default */;
+
+            if ((pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_MONITOR) != 0)
+                
+                *puValue |= MSR_IA32_MISC_ENABLE_MONITOR /* if mwait/monitor available */;
+            /** @todo: add more cpuid-controlled features this way. */
 #endif
             break;
 
