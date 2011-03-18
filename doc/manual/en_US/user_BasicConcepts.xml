@@ -736,11 +736,12 @@
           <para>Under the "Remote display" tab, if the VirtualBox Remote
           Display Extension (VRDE) is installed, you can enable the VRDP server
           that is built into VirtualBox. This allows you to connect to the
-          virtual machine remotely with any standard RDP viewer, such as
-          <computeroutput>mstsc.exe</computeroutput> that comes with Microsoft
-          Windows or, on Linux systems, the standard open-source
-          <computeroutput>rdesktop</computeroutput> program. These features
-          are described in detail in <xref linkend="vrde" />.</para>
+          console of the virtual machine remotely with any standard RDP viewer,
+          such as <computeroutput>mstsc.exe</computeroutput> that comes with
+          Microsoft Windows. On Linux and Solaris systems you can use the
+          standard open-source <computeroutput>rdesktop</computeroutput>
+          program. These features are described in detail in
+          <xref linkend="vrde" />.</para>
         </glossdef>
       </glossentry>
     </glosslist>
