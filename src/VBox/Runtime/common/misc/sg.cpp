@@ -38,6 +38,13 @@ static void *sgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
     size_t cbData = RT_MIN(*pcbData, pSgBuf->cbSegLeft);
     void *pvBuf = pSgBuf->pvSegCur;
 
+    AssertReleaseMsg(      pSgBuf->cbSegLeft <= 5 * _1M
+                     &&    (uintptr_t)pSgBuf->pvSegCur                     >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
+                     &&    (uintptr_t)pSgBuf->pvSegCur + pSgBuf->cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
+                     ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p pSgBuf->cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
+                      pSgBuf->idxSeg, pSgBuf->cSegs, pSgBuf->pvSegCur, pSgBuf->cbSegLeft,
+                      pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg, pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
+
     pSgBuf->cbSegLeft -= cbData;
 
     /* Advance to the next segment if required. */
