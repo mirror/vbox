@@ -542,3 +542,29 @@ FunctionEnd
 !insertmacro CheckForCapabilities ""
 !insertmacro CheckForCapabilities "un."
 
+; Switches (back) the path + registry view to
+; 32-bit mode (SysWOW64) on 64-bit guests
+!macro SetAppMode32 un
+Function ${un}SetAppMode32
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    ${EnableX64FSRedirection}
+    SetRegView 32
+  !endif
+FunctionEnd
+!macroend
+!insertmacro SetAppMode32 ""
+!insertmacro SetAppMode32 "un."
+
+; Because this NSIS installer is always built in 32-bit mode, we have to
+; do some tricks for the Windows paths + registry on 64-bit guests
+!macro SetAppMode64 un
+Function ${un}SetAppMode64
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    ${DisableX64FSRedirection}
+    SetRegView 64
+  !endif
+FunctionEnd
+!macroend
+!insertmacro SetAppMode64 ""
+!insertmacro SetAppMode64 "un."
+
