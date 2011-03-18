@@ -887,7 +887,27 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_THERM_STATUS               0x19c
 
 /** Enable misc. processor features (R/W). */
-#define MSR_IA32_MISC_ENABLE                0x1A0
+#define MSR_IA32_MISC_ENABLE                   0x1A0
+/* Enable fast-strings feature (for REP MOVS and REP STORS). */
+#define MSR_IA32_MISC_ENABLE_FAST_STRINGS      RT_BIT(0)
+/* Automatic Thermal Control Circuit Enable (R/W). */
+#define MSR_IA32_MISC_ENABLE_TCC               RT_BIT(3)
+/* Performance Monitoring Available (R). */
+#define MSR_IA32_MISC_ENABLE_PERF_MON          RT_BIT(7)
+/* Branch Trace Storage Unavailable (R/O). */
+#define MSR_IA32_MISC_ENABLE_BTS_UNAVAIL       RT_BIT(11)
+/* Precise Event Based Sampling (PEBS) Unavailable (R/O). */
+#define MSR_IA32_MISC_ENABLE_PEBS_UNAVAIL      RT_BIT(12)
+/* Enhanced Intel SpeedStep Technology Enable (R/W). */
+#define MSR_IA32_MISC_ENABLE_SST_ENABLE        RT_BIT(16)
+/* If MONITOR/MWAIT is supported (R/W). */
+#define MSR_IA32_MISC_ENABLE_MONITOR           RT_BIT(18)
+/* Limit CPUID Maxval to 3 leafs (R/W). */
+#define MSR_IA32_MISC_ENABLE_LIMIT_CPUID       RT_BIT(22)
+/* When set to 1, xTPR messages are disabled (R/W). */
+#define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT(23)
+/* When set to 1, the Execute Disable Bit feature (XD Bit) is disabled (R/W). */
+#define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
 
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
