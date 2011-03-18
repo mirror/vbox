@@ -542,8 +542,8 @@ setup_init_script()
     # Redhat chkconfig information.
     if test "$ro_INIT_TYPE" = "sysv" -a -r "$scriptname"; then
         orders=`grep '^#['"$spaces"']*chkconfig:' "$scriptname" |
-            sed -e 's/^#['"$spaces"']*chkconfig:\s*[0-9]*['"$spaces"']*//'`
-        expr "$orders" : '[0-9]*['"$spaces"']*[0-9]*$' > /dev/null ||
+            sed -e 's/^#['"$spaces"']*chkconfig:['"$spaces"']*[0-9]*['"$spaces"']*//'`
+        expr "$orders" : '.*[0-9][0-9]*['"$spaces"']['"$spaces"']*[0-9][0-9]*$' > /dev/null ||
             {
                 log "$self: bad or missing chkconfig line in init script $scriptname"
                 return 1
