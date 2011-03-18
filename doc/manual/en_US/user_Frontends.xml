@@ -132,6 +132,13 @@
             with a different port if necessary. The "rdp:/" bit is required
             with krdc to switch it into RDP mode.</para>
           </listitem>
+
+          <listitem>
+            <para>With Sun Ray thin clients you can use
+            <computeroutput>uttsc</computeroutput>, which is part of the
+            Sun Ray Windows Connector package. See the corresponding
+            documentation for details.</para>
+          </listitem>
         </itemizedlist></para>
     </sect2>
 
@@ -326,8 +333,11 @@
       <para>Accessing remote USB devices is only possible if the RDP client
       supports this extension. On Linux and Solaris hosts, the VirtualBox
       installation provides a suitable VRDP client called
-      <computeroutput>rdesktop-vrdp</computeroutput>. RDP clients for other
-      platforms will be provided in future VirtualBox versions.</para>
+      <computeroutput>rdesktop-vrdp</computeroutput>. Recent versions of
+      <computeroutput>uttsc</computeroutput>, a client tailored for the use
+      with Sun Ray thin clients, also support accessing remote USB devices.
+      RDP clients for other platforms will be provided in future VirtualBox
+      versions.</para>
 
       <para>To make a remote USB device available to a VM,
       <computeroutput>rdesktop-vrdp</computeroutput> should be started as
