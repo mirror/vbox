@@ -121,7 +121,7 @@ static struct
  *
  * @returns 1.
  */
-static int VBoxServiceUsage(void)
+static int vboxServiceUsage(void)
 {
     RTPrintf("Usage:\n"
              " %-12s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
@@ -286,7 +286,7 @@ int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32
  * @param   ThreadSelf      My thread handle.
  * @param   pvUser          The service index.
  */
-static DECLCALLBACK(int) VBoxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vboxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     const unsigned i = (uintptr_t)pvUser;
 
@@ -307,15 +307,14 @@ static DECLCALLBACK(int) VBoxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 
 
 /**
- * Check if at least one service should be started.
+ * Count the number of enabled services.
  */
-static bool VBoxServiceCheckStartedServices(void)
+static unsigned vboxServiceCountEnabledServices(void)
 {
-    for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        if (g_aServices[j].fEnabled)
-            return true;
-
-   return false;
+    unsigned cEnabled = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aServices); i++)
+        cEnabled += g_aServices[i].fEnabled;
+   return cEnabled;
 }
 
 
@@ -364,7 +363,7 @@ int VBoxServiceStartServices(void)
             continue;
 
         VBoxServiceVerbose(2, "Starting service     '%s' ...\n", g_aServices[j].pDesc->pszName);
-        rc = RTThreadCreate(&g_aServices[j].Thread, VBoxServiceThread, (void *)(uintptr_t)j, 0,
+        rc = RTThreadCreate(&g_aServices[j].Thread, vboxServiceThread, (void *)(uintptr_t)j, 0,
                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, g_aServices[j].pDesc->pszName);
         if (RT_FAILURE(rc))
         {
@@ -584,7 +583,9 @@ int main(int argc, char **argv)
 #endif
 
     /*
-     * Parse the arguments.
+     * Parse the arguments                                       .
+     *                                                           .
+     * Note! This code predates RTGetOpt, thus the manual parsing.
      */
     bool fDaemonize = true;
     bool fDaemonized = false;
@@ -681,7 +682,7 @@ int main(int argc, char **argv)
 
                 case 'h':
                 case '?':
-                    return VBoxServiceUsage();
+                    return vboxServiceUsage();
 
 #ifdef RT_OS_WINDOWS
                 case 'r':
@@ -715,48 +716,46 @@ int main(int argc, char **argv)
         } while (psz && *++psz);
     }
 
+    /* Check that at least one service is enabled. */
+    if (vboxServiceCountEnabledServices() == 0)
+        return VBoxServiceSyntax("At least one service must be enabled.\n");
+
 #ifdef RT_OS_WINDOWS
     /*
      * Make sure only one instance of VBoxService runs at a time.  Create a
      * global mutex for that.
+     *
+     * Note! The \\Global\ namespace was introduced with Win2K, thus the
+     *       version check.
+     * Note! If the mutex exists CreateMutex will open it and set last error to
+     *       ERROR_ALREADY_EXISTS.
      */
     OSVERSIONINFOEX OSInfoEx;
     RT_ZERO(OSInfoEx);
     OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
+    SetLastError(NO_ERROR);
     HANDLE hMutexAppRunning;
-    if (    GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+    if (    GetVersionEx((LPOSVERSIONINFO)&OSInfoEx)
         &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
         &&  OSInfoEx.dwMajorVersion >= 5 /* NT 5.0 a.k.a W2K */)
-    {
         hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME_GLOBAL);
-    }
     else
-    {
-        /* On older Windows OSes (like NT4) don't use the global namespace
-         * needed for terminal servers on Win2K+. */
         hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
-    }
-    if (   hMutexAppRunning != NULL
-        && GetLastError() == ERROR_ALREADY_EXISTS)
+    if (hMutexAppRunning == NULL)
     {
-        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
-
-        /* Close the mutex for this application instance. */
-        CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-
+        VBoxServiceError("CreateMutex failed with last error %u! Terminating", GetLastError());
         return RTEXITCODE_FAILURE;
     }
-#else /* !RT_OS_WINDOWS */
-    /** @todo Add PID file creation here. */
-#endif /* RT_OS_WINDOWS */
-
-    /*
-     * Check that at least one service is enabled.
-     */
-    if (!VBoxServiceCheckStartedServices())
-        return VBoxServiceSyntax("At least one service must be enabled.\n");
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
+        CloseHandle(hMutexAppRunning);
+        return RTEXITCODE_FAILURE;
+    }
+#else  /* !RT_OS_WINDOWS */
+    /** @todo Add PID file creation here? */
+#endif /* !RT_OS_WINDOWS */
 
     VBoxServiceVerbose(0, "%s r%s started. Verbose level = %d\n",
                        RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
@@ -806,13 +805,9 @@ int main(int argc, char **argv)
 
 #ifdef RT_OS_WINDOWS
     /*
-     * Release instance mutex if we got it.
+     * Cleanup mutex.
      */
-    if (hMutexAppRunning != NULL)
-    {
-        ::CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-    }
+    CloseHandle(hMutexAppRunning);
 #endif
 
     VBoxServiceVerbose(0, "Ended.\n");
