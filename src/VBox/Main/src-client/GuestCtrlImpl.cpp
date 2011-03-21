@@ -326,6 +326,8 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             ULONG uFlags = ProcessInputFlag_None;
                             /* Did we reach the end of the content we want to transfer (last chunk)? */
                             if (   (cbRead < _64K)
+                                /* Did we reach the last block which is exactly _64K? */
+                                || (cbToRead - cbRead == 0)
                                 /* ... or does the user want to cancel? */
                                 || (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
                                     && fCanceled)
@@ -635,14 +637,14 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         aTask->progress->SetCurrentOperationProgress(20);
 
                         /* Wait for process to exit ... */
-                        SafeArray<BYTE> aInputData(_1M);
+                        SafeArray<BYTE> aInputData(_64K);
                         while (   SUCCEEDED(progressCat->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
                             size_t cbRead;
                             /* cbLength contains remaining bytes of our installer file
                              * opened above to read. */
-                            size_t cbToRead = RT_MIN(cbLength, _1M);
+                            size_t cbToRead = RT_MIN(cbLength, _64K);
                             if (cbToRead)
                             {
                                 vrc = RTFileRead(iso.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
@@ -655,7 +657,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
                                     /* Did we reach the end of the content we want to transfer (last chunk)? */
                                     ULONG uFlags = ProcessInputFlag_None;
-                                    if (   (cbRead < _1M)
+                                    if (   (cbRead < _64K)
+                                        /* Did we reach the last block which is exactly _64K? */
+                                        || (cbToRead - cbRead == 0)
                                         /* ... or does the user want to cancel? */
                                         || (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
                                             && fCanceled)
@@ -1957,12 +1961,12 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                     if (FAILED(rc)) throw rc;
 
                     if (!fCanceled)
-                    {   
+                    {
                         BOOL fCompleted;
                         if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
                             && fCompleted)
                         {
-                            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);                        
+                            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
                             PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
                             AssertPtr(pStatusData);
@@ -1978,7 +1982,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                                     rc = setError(VBOX_E_IPRT_ERROR,
                                                   tr("Client error %u while processing input data"), pStatusData->u32Status);
                                     break;
-                            }                                                           
+                            }
                         }
                         else
                             rc = setError(VBOX_E_IPRT_ERROR,
