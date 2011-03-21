@@ -774,15 +774,19 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
     memcpy(ssymname->String.utf8, symname, symname_len);
 
     rc = vboxCallSymlink(&client_handle, &sf_g->map, path, ssymname, &info);
+    kfree(ssymname);
+
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_WRITE_PROTECT)
         {
             err = -EROFS;
-            goto fail2;
+            goto fail1;
         }
+        LogFunc(("vboxCallSymlink(%s) failed rc=%Rrc\n",
+                    fDirectory, sf_i->path->String.utf8, rc));
         err = -EPROTO;
-        goto fail2;
+        goto fail1;
     }
 
     err = sf_instantiate(parent, dentry, path, &info, SHFL_HANDLE_NIL);
@@ -790,11 +794,12 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
     {
         LogFunc(("could not instantiate dentry for %s err=%d\n",
                  sf_i->path->String.utf8, err));
-        goto fail2;
+        goto fail1;
     }
 
-fail2:
-    kfree(ssymname);
+    sf_i->force_restat = 1;
+    return 0;
+
 fail1:
     kfree(path);
 fail0:
