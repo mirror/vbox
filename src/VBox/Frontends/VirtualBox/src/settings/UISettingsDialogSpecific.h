@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@
 #include "UISettingsDialog.h"
 
 /* Dialog which encapsulate all the specific functionalities of the Global Settings */
-class UIGLSettingsDlg : public UISettingsDialog
+class UISettingsDialogGlobal : public UISettingsDialog
 {
     Q_OBJECT;
 
@@ -42,7 +42,7 @@ public:
         GLSettingsPage_MAX
     };
 
-    UIGLSettingsDlg(QWidget *pParent);
+    UISettingsDialogGlobal(QWidget *pParent);
 
 protected:
 
@@ -59,7 +59,7 @@ private:
 };
 
 /* Dialog which encapsulate all the specific functionalities of the Virtual Machine Settings */
-class UIVMSettingsDlg : public UISettingsDialog
+class UISettingsDialogMachine : public UISettingsDialog
 {
     Q_OBJECT;
 
@@ -81,8 +81,8 @@ public:
         VMSettingsPage_MAX
     };
 
-    UIVMSettingsDlg(QWidget *pParent, const CMachine &machine,
-                    const QString &strCategory, const QString &strControl);
+    UISettingsDialogMachine(QWidget *pParent, const CMachine &machine,
+                            const QString &strCategory, const QString &strControl);
 
 protected:
 

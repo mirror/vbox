@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -287,7 +287,7 @@ protected:
 
 UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
 
-UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
+UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
     : UISettingsDialog(pParent)
 {
     /* Window icon: */
@@ -296,85 +296,81 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
 #endif /* !Q_WS_MAC */
 
     /* Creating settings pages: */
-    for (int i = GLSettingsPage_General; i < GLSettingsPage_MAX; ++i)
+    for (int iPageIndex = GLSettingsPage_General; iPageIndex < GLSettingsPage_MAX; ++iPageIndex)
     {
-        if (isAvailable(i))
+        if (isAvailable(iPageIndex))
         {
-            switch (i)
+            UISettingsPage *pSettingsPage = 0;
+            switch (iPageIndex)
             {
                 /* General page: */
                 case GLSettingsPage_General:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsGeneral;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
-                            i, "#general", pSettingsPage);
+                            iPageIndex, "#general", pSettingsPage);
                     break;
                 }
                 /* Input page: */
                 case GLSettingsPage_Input:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsInput;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsInput;
                     addItem(":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
                             ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
-                            i, "#input", pSettingsPage);
+                            iPageIndex, "#input", pSettingsPage);
                     break;
                 }
                 /* Update page: */
                 case GLSettingsPage_Update:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsUpdate;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsUpdate;
                     addItem(":/refresh_32px.png", ":/refresh_disabled_32px.png",
                             ":/refresh_16px.png", ":/refresh_disabled_16px.png",
-                            i, "#update", pSettingsPage);
+                            iPageIndex, "#update", pSettingsPage);
                     break;
                 }
                 /* Language page: */
                 case GLSettingsPage_Language:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsLanguage;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsLanguage;
                     addItem(":/site_32px.png", ":/site_disabled_32px.png",
                             ":/site_16px.png", ":/site_disabled_16px.png",
-                            i, "#language", pSettingsPage);
+                            iPageIndex, "#language", pSettingsPage);
                     break;
                 }
                 /* USB page: */
                 case GLSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Global);
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Global);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
-                            i, "#usb", pSettingsPage);
+                            iPageIndex, "#usb", pSettingsPage);
                     break;
                 }
                 /* Network page: */
                 case GLSettingsPage_Network:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsNetwork;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsNetwork;
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
-                            i, "#language", pSettingsPage);
+                            iPageIndex, "#language", pSettingsPage);
                     break;
                 }
                 /* Extension page: */
                 case GLSettingsPage_Extension:
                 {
-                    UISettingsPage *pSettingsPage = new UIGlobalSettingsExtension;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIGlobalSettingsExtension;
                     addItem(":/extension_pack_32px.png", ":/extension_pack_disabled_32px.png",
                             ":/extension_pack_16px.png", ":/extension_pack_disabled_16px.png",
-                            i, "#extension", pSettingsPage);
+                            iPageIndex, "#extension", pSettingsPage);
                     break;
                 }
                 default:
                     break;
             }
+            if (pSettingsPage)
+                pSettingsPage->setId(iPageIndex);
         }
     }
 
@@ -385,7 +381,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
     m_pSelector->selectById(0);
 }
 
-void UIGLSettingsDlg::getFrom()
+void UISettingsDialogGlobal::getFrom()
 {
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
@@ -402,7 +398,7 @@ void UIGLSettingsDlg::getFrom()
     pGlobalSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
-void UIGLSettingsDlg::putBackTo()
+void UISettingsDialogGlobal::putBackTo()
 {
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
@@ -431,7 +427,7 @@ void UIGLSettingsDlg::putBackTo()
         vboxGlobal().setSettings(newSettings);
 }
 
-void UIGLSettingsDlg::retranslateUi()
+void UISettingsDialogGlobal::retranslateUi()
 {
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -464,12 +460,12 @@ void UIGLSettingsDlg::retranslateUi()
     UISettingsDialog::retranslateUi();
 }
 
-QString UIGLSettingsDlg::title() const
+QString UISettingsDialogGlobal::title() const
 {
     return tr("VirtualBox - %1").arg(titleExtension());
 }
 
-bool UIGLSettingsDlg::isAvailable(int id)
+bool UISettingsDialogGlobal::isAvailable(int id)
 {
     /* Show the host error message for particular group if present.
      * We don't use the generic cannotLoadGlobalConfig()
@@ -507,10 +503,10 @@ bool UIGLSettingsDlg::isAvailable(int id)
     return true;
 }
 
-UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
-                                 const CMachine &machine,
-                                 const QString &strCategory,
-                                 const QString &strControl)
+UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent,
+                                                 const CMachine &machine,
+                                                 const QString &strCategory,
+                                                 const QString &strControl)
     : UISettingsDialog(pParent)
     , m_machine(machine)
     , m_fAllowResetFirstRunFlag(false)
@@ -525,72 +521,67 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
     connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltAllowResetFirstRunFlag()));
 
     /* Creating settings pages: */
-    for (int i = VMSettingsPage_General; i < VMSettingsPage_MAX; ++i)
+    for (int iPageIndex = VMSettingsPage_General; iPageIndex < VMSettingsPage_MAX; ++iPageIndex)
     {
-        if (isAvailable(i))
+        if (isAvailable(iPageIndex))
         {
-            switch (i)
+            UISettingsPage *pSettingsPage = 0;
+            switch (iPageIndex)
             {
                 /* General page: */
                 case VMSettingsPage_General:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsGeneral;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
-                            i, "#general", pSettingsPage);
+                            iPageIndex, "#general", pSettingsPage);
                     break;
                 }
                 /* System page: */
                 case VMSettingsPage_System:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsSystem;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsSystem;
                     connect(pSettingsPage, SIGNAL(tableChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/chipset_32px.png", ":/chipset_disabled_32px.png",
                             ":/chipset_16px.png", ":/chipset_disabled_16px.png",
-                            i, "#system", pSettingsPage);
+                            iPageIndex, "#system", pSettingsPage);
                     break;
                 }
                 /* Display page: */
                 case VMSettingsPage_Display:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsDisplay;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsDisplay;
                     addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
                             ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
-                            i, "#display", pSettingsPage);
+                            iPageIndex, "#display", pSettingsPage);
                     break;
                 }
                 /* Storage page: */
                 case VMSettingsPage_Storage:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsStorage;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsStorage;
                     connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
                             ":/attachment_16px.png", ":/attachment_disabled_16px.png",
-                            i, "#storage", pSettingsPage);
+                            iPageIndex, "#storage", pSettingsPage);
                     break;
                 }
                 /* Audio page: */
                 case VMSettingsPage_Audio:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsAudio;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsAudio;
                     addItem(":/sound_32px.png", ":/sound_disabled_32px.png",
                             ":/sound_16px.png", ":/sound_disabled_16px.png",
-                            i, "#audio", pSettingsPage);
+                            iPageIndex, "#audio", pSettingsPage);
                     break;
                 }
                 /* Network page: */
                 case VMSettingsPage_Network:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsNetworkPage;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsNetworkPage;
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
-                            i, "#network", pSettingsPage);
+                            iPageIndex, "#network", pSettingsPage);
                     break;
                 }
                 /* Ports page: */
@@ -598,52 +589,50 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 {
                     addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
                             ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
-                            i, "#ports");
+                            iPageIndex, "#ports");
                     break;
                 }
                 /* Serial page: */
                 case VMSettingsPage_Serial:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsSerialPage;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsSerialPage;
                     addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
                             ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
-                            i, "#serialPorts", pSettingsPage, VMSettingsPage_Ports);
+                            iPageIndex, "#serialPorts", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* Parallel page: */
                 case VMSettingsPage_Parallel:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsParallelPage;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsParallelPage;
                     addItem(":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
                             ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
-                            i, "#parallelPorts", pSettingsPage, VMSettingsPage_Ports);
+                            iPageIndex, "#parallelPorts", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* USB page: */
                 case VMSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Machine);
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Machine);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
-                            i, "#usb", pSettingsPage, VMSettingsPage_Ports);
+                            iPageIndex, "#usb", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* Shared Folders page: */
                 case VMSettingsPage_SF:
                 {
-                    UISettingsPage *pSettingsPage = new UIMachineSettingsSF;
-                    pSettingsPage->setId(i);
+                    pSettingsPage = new UIMachineSettingsSF;
                     addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
                             ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
-                            i, "#sfolders", pSettingsPage);
+                            iPageIndex, "#sfolders", pSettingsPage);
                     break;
                 }
                 default:
                     break;
             }
+            if (pSettingsPage)
+                pSettingsPage->setId(iPageIndex);
         }
     }
 
@@ -684,7 +673,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
         m_pSelector->selectById(0);
 }
 
-void UIVMSettingsDlg::getFrom()
+void UISettingsDialogMachine::getFrom()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -704,7 +693,7 @@ void UIVMSettingsDlg::getFrom()
     pMachineSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
-void UIVMSettingsDlg::putBackTo()
+void UISettingsDialogMachine::putBackTo()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -767,7 +756,7 @@ void UIVMSettingsDlg::putBackTo()
     }
 }
 
-void UIVMSettingsDlg::retranslateUi()
+void UISettingsDialogMachine::retranslateUi()
 {
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -832,7 +821,7 @@ void UIVMSettingsDlg::retranslateUi()
     }
 }
 
-QString UIVMSettingsDlg::title() const
+QString UISettingsDialogMachine::title() const
 {
     QString strDialogTitle;
     if (!m_machine.isNull())
@@ -840,7 +829,7 @@ QString UIVMSettingsDlg::title() const
     return strDialogTitle;
 }
 
-bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
+bool UISettingsDialogMachine::recorrelate(QWidget *pPage, QString &strWarning)
 {
     /* This method performs correlation option check
      * between different pages of VM Settings dialog: */
@@ -959,7 +948,7 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     return true;
 }
 
-void UIVMSettingsDlg::sltCategoryChanged(int cId)
+void UISettingsDialogMachine::sltCategoryChanged(int cId)
 {
     if (UISettingsSerializer::instance())
         UISettingsSerializer::instance()->raisePriorityOfPage(cId);
@@ -967,23 +956,23 @@ void UIVMSettingsDlg::sltCategoryChanged(int cId)
     UISettingsDialog::sltCategoryChanged(cId);
 }
 
-void UIVMSettingsDlg::sltAllowResetFirstRunFlag()
+void UISettingsDialogMachine::sltAllowResetFirstRunFlag()
 {
     m_fAllowResetFirstRunFlag = true;
 }
 
-void UIVMSettingsDlg::sltSetFirstRunFlag()
+void UISettingsDialogMachine::sltSetFirstRunFlag()
 {
     m_fResetFirstRunFlag = false;
 }
 
-void UIVMSettingsDlg::sltResetFirstRunFlag()
+void UISettingsDialogMachine::sltResetFirstRunFlag()
 {
     if (m_fAllowResetFirstRunFlag)
         m_fResetFirstRunFlag = true;
 }
 
-bool UIVMSettingsDlg::isAvailable(int id)
+bool UISettingsDialogMachine::isAvailable(int id)
 {
     if (m_machine.isNull())
         return false;
