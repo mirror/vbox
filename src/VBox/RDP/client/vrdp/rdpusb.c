@@ -322,7 +322,7 @@ rdpusb_send(STREAM s)
 static void
 rdpusb_send_reply (uint8_t code, uint8_t status, uint32_t devid)
 {
-	STREAM s = rdpusb_init_packet(1, code);
+	STREAM s = rdpusb_init_packet(5, code);
 	out_uint8(s, status);
 	out_uint32_le(s, devid);
 	s_mark_end(s);
