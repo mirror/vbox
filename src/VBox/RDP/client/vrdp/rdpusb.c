@@ -17,7 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* DEBUG is defined in ../rdesktop.h */
+#ifdef DEBUG
+# define VBOX_DEBUG DEBUG
+#endif
 #include "../rdesktop.h"
+#undef DEBUG
+#ifdef VBOX_DEBUG
+# define DEBUG VBOX_DEBUG
+#endif
 
 #include "vrdpusb.h"
 #include "USBProxyDevice.h"
