@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -594,7 +594,7 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    UISettingsDialog *dlg = new UIGLSettingsDlg(this);
+    UISettingsDialog *dlg = new UISettingsDialogGlobal(this);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -736,7 +736,7 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
     /* Don't show the inaccessible warning if the user open the vm settings. */
     mDoneInaccessibleWarningOnce = true;
 
-    UISettingsDialog *dlg = new UIVMSettingsDlg(this, m, strCategory, strControl);
+    UISettingsDialog *dlg = new UISettingsDialogMachine(this, m, strCategory, strControl);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
