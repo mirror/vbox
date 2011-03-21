@@ -317,12 +317,8 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
     m_pAdapterNameCombo->blockSignals(true);
 
     /* Update alternative-name combo-box availability: */
-    m_pAdapterNameLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                    attachmentType() != KNetworkAttachmentType_NAT);
     m_pAdapterNameCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
-    m_pPromiscuousModeLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                        attachmentType() != KNetworkAttachmentType_NAT);
     m_pPromiscuousModeCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
 
@@ -826,8 +822,8 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsNetworkPage::getFromCache()
 {
     /* Setup tab order: */
-    Assert(m_pFirstWidget);
-    setTabOrder(m_pFirstWidget, m_pTwAdapters->focusProxy());
+    Assert(firstWidget());
+    setTabOrder(firstWidget(), m_pTwAdapters->focusProxy());
     QWidget *pLastFocusWidget = m_pTwAdapters->focusProxy();
 
     int uCount = qMin(m_pTwAdapters->count(), m_cache.m_items.size());
@@ -910,12 +906,12 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                 adapter.SetHostInterface(data.m_strHostInterfaceName);
                 adapter.AttachToHostOnlyInterface();
                 break;
-    #ifdef VBOX_WITH_VDE
+#ifdef VBOX_WITH_VDE
             case KNetworkAttachmentType_VDE:
                 adapter.SetVDENetwork(data.m_strVDENetworkName);
                 adapter.AttachToVDE();
                 break;
-    #endif
+#endif /* VBOX_WITH_VDE */
             default:
                 break;
         }

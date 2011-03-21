@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -195,8 +195,8 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsParallelPage::getFromCache()
 {
-    Assert(m_pFirstWidget);
-    setTabOrder(m_pFirstWidget, mTabWidget->focusProxy());
+    Assert(firstWidget());
+    setTabOrder(firstWidget(), mTabWidget->focusProxy());
     QWidget *pLastFocusWidget = mTabWidget->focusProxy();
 
     /* Apply internal variables data to QWidget(s): */

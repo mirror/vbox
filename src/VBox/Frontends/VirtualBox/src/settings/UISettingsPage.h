@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,11 +19,11 @@
 #ifndef __UISettingsPage_h__
 #define __UISettingsPage_h__
 
-/* Global includes */
+/* Qt includes */
 #include <QWidget>
 #include <QVariant>
 
-/* Local includes */
+/* Other includes */
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 #include "VBoxGlobalSettings.h"
@@ -80,35 +80,38 @@ public:
      * this task COULD be performed in other than GUI thread: */
     virtual void saveFromCacheTo(QVariant &data) = 0;
 
-    /* Returns settings page type: */
-    virtual UISettingsPageType type() const;
-
     /* Validation stuff: */
-    virtual void setValidator(QIWidgetValidator *pValidator);
-    virtual bool revalidate(QString &strWarningText, QString &strTitle);
+    virtual void setValidator(QIWidgetValidator* /* pValidator */) {}
+    virtual bool revalidate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
 
     /* Navigation stuff: */
-    virtual void setOrderAfter(QWidget *pWidget);
+    QWidget* firstWidget() const { return m_pFirstWidget; }
+    virtual void setOrderAfter(QWidget *pWidget) { m_pFirstWidget = pWidget; }
+
+    /* Settings page type stuff: */
+    UISettingsPageType pageType() const { return m_pageType; }
 
     /* Page 'ID' stuff: */
-    int id() const;
-    void setId(int cId);
+    int id() const { return m_cId; }
+    void setId(int cId) { m_cId = cId; }
 
     /* Page 'processed' stuff: */
-    bool processed() const;
-    void setProcessed(bool fProcessed);
+    bool processed() const { return m_fProcessed; }
+    void setProcessed(bool fProcessed) { m_fProcessed = fProcessed; }
 
     /* Page 'failed' stuff: */
-    bool failed() const;
-    void setFailed(bool fFailed);
+    bool failed() const { return m_fFailed; }
+    void setFailed(bool fFailed) { m_fFailed = fFailed; }
 
 protected:
 
     /* Settings page constructor, hidden: */
-    UISettingsPage(UISettingsPageType type, QWidget *pParent = 0);
+    UISettingsPage(UISettingsPageType type);
 
-    /* Variables: */
-    UISettingsPageType m_type;
+private:
+
+    /* Private variables: */
+    UISettingsPageType m_pageType;
     int m_cId;
     bool m_fProcessed;
     bool m_fFailed;
@@ -122,14 +125,14 @@ class UISettingsPageGlobal : public UISettingsPage
 
 protected:
 
+    /* Global settings page constructor, hidden: */
+    UISettingsPageGlobal();
+
     /* Fetch data to m_properties & m_settings: */
     void fetchData(const QVariant &data);
 
     /* Upload m_properties & m_settings to data: */
     void uploadData(QVariant &data) const;
-
-    /* Global settings page constructor, hidden: */
-    UISettingsPageGlobal(QWidget *pParent = 0);
 
     /* Global data source: */
     CSystemProperties m_properties;
@@ -143,14 +146,14 @@ class UISettingsPageMachine : public UISettingsPage
 
 protected:
 
+    /* Machine settings page constructor, hidden: */
+    UISettingsPageMachine();
+
     /* Fetch data to m_machine: */
     void fetchData(const QVariant &data);
 
     /* Upload m_machine to data: */
     void uploadData(QVariant &data) const;
-
-    /* Machine settings page constructor, hidden: */
-    UISettingsPageMachine(QWidget *pParent = 0);
 
     /* Machine data source: */
     CMachine m_machine;

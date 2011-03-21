@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -153,7 +153,7 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
     fetchData(data);
 
     /* Depending on page type: */
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {
@@ -236,7 +236,7 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsUSB::getFromCache()
 {
     /* Depending on page type: */
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {
@@ -274,7 +274,7 @@ void UIMachineSettingsUSB::getFromCache()
 void UIMachineSettingsUSB::putToCache()
 {
     /* Depending on page type: */
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Machine:
         {
@@ -296,7 +296,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     fetchData(data);
 
     /* Depending on page type: */
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {
@@ -469,7 +469,7 @@ void UIMachineSettingsUSB::newClicked()
 
     /* Add new corresponding list item to the cache: */
     UIUSBFilterData data;
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
             data.m_action = KUSBDeviceFilterAction_Hold;
@@ -506,7 +506,7 @@ void UIMachineSettingsUSB::addConfirmed (QAction *aAction)
 
     /* Add new corresponding list item to the cache: */
     UIUSBFilterData data;
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
             data.m_action = KUSBDeviceFilterAction_Hold;
@@ -554,7 +554,7 @@ void UIMachineSettingsUSB::edtClicked()
     UIUSBFilterData &data = m_cache.m_items[mTwFilters->indexOfTopLevelItem(pItem)];
 
     /* Configure USB filter details dialog: */
-    UIMachineSettingsUSBFilterDetails dlgFilterDetails(type(), this);
+    UIMachineSettingsUSBFilterDetails dlgFilterDetails(pageType(), this);
     dlgFilterDetails.mLeName->setText(data.m_strName);
     dlgFilterDetails.mLeVendorID->setText(data.m_strVendorId);
     dlgFilterDetails.mLeProductID->setText(data.m_strProductId);
@@ -563,7 +563,7 @@ void UIMachineSettingsUSB::edtClicked()
     dlgFilterDetails.mLeManufacturer->setText(data.m_strManufacturer);
     dlgFilterDetails.mLeProduct->setText(data.m_strProduct);
     dlgFilterDetails.mLeSerialNo->setText(data.m_strSerialNumber);
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {
@@ -601,7 +601,7 @@ void UIMachineSettingsUSB::edtClicked()
         data.m_strProduct = dlgFilterDetails.mLeProduct->text().isEmpty() ? QString::null : dlgFilterDetails.mLeProduct->text();
         data.m_strSerialNumber = dlgFilterDetails.mLeSerialNo->text().isEmpty() ? QString::null : dlgFilterDetails.mLeSerialNo->text();
         data.m_strPort = dlgFilterDetails.mLePort->text().isEmpty() ? QString::null : dlgFilterDetails.mLePort->text();
-        switch (type())
+        switch (pageType())
         {
             case UISettingsPageType_Global:
             {
@@ -723,7 +723,7 @@ void UIMachineSettingsUSB::addUSBFilter(const UIUSBFilterData &data, bool fIsNew
 /* Fetch data to m_properties & m_settings or m_machine: */
 void UIMachineSettingsUSB::fetchData(const QVariant &data)
 {
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {
@@ -744,7 +744,7 @@ void UIMachineSettingsUSB::fetchData(const QVariant &data)
 /* Upload m_properties & m_settings or m_machine to data: */
 void UIMachineSettingsUSB::uploadData(QVariant &data) const
 {
-    switch (type())
+    switch (pageType())
     {
         case UISettingsPageType_Global:
         {

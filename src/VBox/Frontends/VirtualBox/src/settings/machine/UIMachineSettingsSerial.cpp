@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -171,7 +171,6 @@ void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
 {
     KPortMode mode = vboxGlobal().toPortMode (aText);
     mCbPipe->setEnabled (mode == KPortMode_HostPipe);
-    mLbPath->setEnabled (mode != KPortMode_Disconnected);
     mLePath->setEnabled (mode != KPortMode_Disconnected);
     if (mValidator)
         mValidator->revalidate();
@@ -244,8 +243,8 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSerialPage::getFromCache()
 {
-    Assert(m_pFirstWidget);
-    setTabOrder(m_pFirstWidget, mTabWidget->focusProxy());
+    Assert(firstWidget());
+    setTabOrder(firstWidget(), mTabWidget->focusProxy());
     QWidget *pLastFocusWidget = mTabWidget->focusProxy();
 
     ulong uCount = qMin(mTabWidget->count(), m_cache.m_items.size());
