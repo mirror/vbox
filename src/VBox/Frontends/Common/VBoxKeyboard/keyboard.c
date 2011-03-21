@@ -609,6 +609,10 @@ X11DRV_InitKeyboardByXkb(Display *pDisplay)
  *                           succeeded, and to 0 otherwise
  * @param   remapScancode    array of tuples that remap the keycode (first
  *                           part) to a scancode (second part)
+ * @note  Xkb takes precedence over byType takes precedence over byLayout,
+ *        for anyone who wants to log information about which method is in
+ *        use.  byLayout is the fallback, as it is likely to be partly usable
+ *        even if it doesn't initialise correctly.
  */
 unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK,
                              unsigned *byTypeOK, unsigned *byXkbOK,
