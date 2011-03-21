@@ -1464,7 +1464,7 @@ const PDMUSBREG g_UsbHidKbd =
     NULL,
     /* pfnUsbReset */
     usbHidUsbReset,
-    /* pfnUsbGetCachedDescriptors */
+    /* pfnUsbGetDescriptorCache */
     usbHidUsbGetDescriptorCache,
     /* pfnUsbSetConfiguration */
     usbHidUsbSetConfiguration,
