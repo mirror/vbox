@@ -2325,10 +2325,128 @@ static bool atapiReadTrackInformationSS(ATADevState *s)
     return false;
 }
 
+static size_t atapiGetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 3*4)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x0); /* feature 0: list of profiles supported */
+    pbBuf[2] = (0 << 2) | (1 << 1) | (1 || 0); /* version 0, persistent, current */
+    pbBuf[3] = 8; /* additional bytes for profiles */
+    /* The MMC-3 spec says that DVD-ROM read capability should be reported
+     * before CD-ROM read capability. */
+    ataH2BE_U16(pbBuf + 4, 0x10); /* profile: read-only DVD */
+    pbBuf[6] = (0 << 0); /* NOT current profile */
+    ataH2BE_U16(pbBuf + 8, 0x08); /* profile: read only CD */
+    pbBuf[10] = (1 << 0); /* current profile */
+
+    return 3*4; /* Header + 2 profiles entries */
+}
+
+static size_t atapiGetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 12)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x1); /* feature 0001h: Core Feature */
+    pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 8; /* Additional length */
+    ataH2BE_U16(pbBuf + 4, 0x00000002); /* Physical interface ATAPI. */
+    pbBuf[8] = RT_BIT(0); /* DBE */
+    /* Rest is reserved. */
+
+    return 12;
+}
+
+static size_t atapiGetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 8)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x2); /* feature 0002h: Morphing Feature */
+    pbBuf[2] = (0x1 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 4; /* Additional length */
+    pbBuf[4] = RT_BIT(1) | 0x0; /* OCEvent | !ASYNC */
+    /* Rest is reserved. */
+
+    return 8;
+}
+
+static size_t atapiGetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 8)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x3); /* feature 0003h: Removable Medium Feature */
+    pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 4; /* Additional length */
+    /* Tray type loading | Load | Eject | !Pvnt Jmpr | !DBML | Lock */
+    pbBuf[4] = (0x2 << 5) | RT_BIT(4) | RT_BIT(3) | (0x0 << 2) | (0x0 << 1) | RT_BIT(0);
+    /* Rest is reserved. */
+
+    return 8;
+}
+
+static size_t atapiGetConfigurationFillFeatureRandomReadable(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 12)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x10); /* feature 0010h: Random Readable Feature */
+    pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 8; /* Additional length */
+    ataH2BE_U32(pbBuf + 4, 2048); /* Logical block size. */
+    ataH2BE_U16(pbBuf + 8, 0x10); /* Blocking (0x10 for DVD, CD is not defined). */
+    pbBuf[10] = 0; /* PP not present */
+    /* Rest is reserved. */
+
+    return 12;
+}
+
+static size_t atapiGetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 8)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x1e); /* feature 001Eh: CD Read Feature */
+    pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 0; /* Additional length */
+    pbBuf[4] = (0x0 << 7) | (0x0 << 1) | 0x0; /* !DAP | !C2-Flags | !CD-Text. */
+    /* Rest is reserved. */
+
+    return 8;
+}
+
+static size_t atapiGetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 4)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x100); /* feature 0100h: Power Management Feature */
+    pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 0; /* Additional length */
+
+    return 4;
+}
+
+static size_t atapiGetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (cbBuf < 8)
+        return 0;
+
+    ataH2BE_U16(pbBuf, 0x105); /* feature 0105h: Timeout Feature */
+    pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
+    pbBuf[3] = 4; /* Additional length */
+    pbBuf[4] = 0x0; /* !Group3 */
+
+    return 8;
+}
 
 static bool atapiGetConfigurationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+    size_t cbBuf = s->cbIOBuffer;
+    size_t cbCopied = 0;
     uint16_t u16Sfn = ataBE2H_U16(&s->aATAPICmd[2]);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
@@ -2339,22 +2457,51 @@ static bool atapiGetConfigurationSS(ATADevState *s)
         atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
     }
-    memset(pbBuf, '\0', 32);
-    ataH2BE_U32(pbBuf, 16);
+    memset(pbBuf, '\0', cbBuf);
     /** @todo implement switching between CD-ROM and DVD-ROM profile (the only
-     * way to differentiate them right now is based on the image size). Also
-     * implement signalling "no current profile" if no medium is loaded. */
-    ataH2BE_U16(pbBuf + 6, 0x08); /* current profile: read-only CD */
+     * way to differentiate them right now is based on the image size). */
+    if (s->cTotalSectors)
+        ataH2BE_U16(pbBuf + 6, 0x08); /* current profile: read-only CD */
+    else
+        ataH2BE_U16(pbBuf + 6, 0x00); /* current profile: none -> no media */
+    cbBuf    -= 8;
+    pbBuf    += 8;
 
-    ataH2BE_U16(pbBuf + 8, 0); /* feature 0: list of profiles supported */
-    pbBuf[10] = (0 << 2) | (1 << 1) | (1 || 0); /* version 0, persistent, current */
-    pbBuf[11] = 8; /* additional bytes for profiles */
-    /* The MMC-3 spec says that DVD-ROM read capability should be reported
-     * before CD-ROM read capability. */
-    ataH2BE_U16(pbBuf + 12, 0x10); /* profile: read-only DVD */
-    pbBuf[14] = (0 << 0); /* NOT current profile */
-    ataH2BE_U16(pbBuf + 16, 0x08); /* profile: read only CD */
-    pbBuf[18] = (1 << 0); /* current profile */
+    cbCopied = atapiGetConfigurationFillFeatureListProfiles(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureCore(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureMorphing(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureRemovableMedium(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureRandomReadable(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureCDRead(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeaturePowerManagement(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    cbCopied = atapiGetConfigurationFillFeatureTimeout(s, pbBuf, cbBuf);
+    cbBuf -= cbCopied;
+    pbBuf += cbCopied;
+
+    /* Set data length now. */
+    ataH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf);
+
     /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
