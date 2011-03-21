@@ -1,10 +1,10 @@
-/* $Id: */
+/* $Id$ */
 /** @file
  * VBoxServicePipeBuf - Pipe buffering.
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,7 +38,7 @@
  */
 int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     /** @todo Add allocation size as function parameter! */
     pBuf->pbData = (uint8_t *)RTMemAlloc(_64K); /* Start with a 64k buffer. */
@@ -84,10 +84,10 @@ int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificat
 int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                            uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pbBuffer, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pbBuffer, VERR_INVALID_POINTER);
     AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbToRead, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbToRead, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
@@ -132,12 +132,12 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                  uint8_t *pbData, uint32_t cbData, bool fPendingClose,
                                  uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        AssertPtrReturn(pbData, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pbData, VERR_INVALID_POINTER);
         if (pBuf->fEnabled)
         {
             /* Rewind the buffer if it's empty. */
@@ -235,8 +235,8 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe,
                                   size_t *pcbWritten, size_t *pcbLeft)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
@@ -313,7 +313,7 @@ int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe
  */
 bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     bool fEnabled = false;
     if (   RTCritSectIsInitialized(&pBuf->CritSect)
@@ -337,7 +337,7 @@ bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
  */
 bool VBoxServicePipeBufIsClosing(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     bool fClosing = false;
     if (   RTCritSectIsInitialized(&pBuf->CritSect)
@@ -359,7 +359,7 @@ bool VBoxServicePipeBufIsClosing(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
  */
 int VBoxServicePipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
@@ -390,8 +390,9 @@ int VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVA
 
 /**
  * Deletes a pipe buffer.
- * Note: Not thread safe -- only call this when nobody is relying on the
- *       data anymore!
+ *
+ * @note    Not thread safe -- only call this when nobody is relying on the
+ *          data anymore!
  *
  * @param   pBuf            The pipe buffer.
  */
