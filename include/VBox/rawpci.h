@@ -28,7 +28,6 @@
 
 #include <iprt/types.h>
 
-
 RT_C_DECLS_BEGIN
 
 /**
@@ -36,6 +35,13 @@ RT_C_DECLS_BEGIN
  */
 typedef uint32_t PCIRAWDEVHANDLE;
 
+/** Data being part of the VM structure. */
+typedef struct RAWPCIVM
+{
+    /* Shall only be interpreted by the host PCI driver. */
+    RTR0PTR  pDriverData;
+} RAWPCIVM;
+typedef RAWPCIVM *PRAWPCIVM;
 
 /** Parameters buffer for PCIRAWR0_DO_OPEN_DEVICE call */
 typedef struct
@@ -53,7 +59,6 @@ typedef struct
     /* in */
     uint32_t fFlags;
 } PCIRAWREQCLOSEDEVICE;
-
 
 /** Parameters buffer for PCIRAWR0_DO_GET_REGION_INFO call */
 typedef struct
@@ -417,9 +422,34 @@ typedef struct RAWPCIFACTORY
                                                    PRAWPCIDEVPORT       *ppDevPort));
 
 
+    /**
+     * Initialize per-VM data related to PCI passthrough.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     * @param   pVM                 Pointer to VM structure to initialize.
+     * @param   pPciData            Pointer to PCI data.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnInitVm,(PRAWPCIFACTORY       pFactory,
+                                         PVM                  pVM,
+                                         PRAWPCIVM            pPciData));
+
+    /**
+     * Deinitialize per-VM data related to PCI passthrough.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pIfFactory          Pointer to this structure.
+     * @param   pVM                 Pointer to VM structure to deinitialize.
+     * @param   pPciData            Pointer to PCI data.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnDeinitVm,(PRAWPCIFACTORY       pFactory,
+                                            PVM                  pVM,
+                                            PRAWPCIVM            pPciData));
 } RAWPCIFACTORY;
 
-#define RAWPCIFACTORY_UUID_STR "c0268f49-e1e4-402b-b7e0-eb8d09659a9b"
+#define RAWPCIFACTORY_UUID_STR   "0382086d-d37c-48e8-9749-c3bee355acf6"
 
 /**
  * Flags passed to pfnPciDeviceConstructStart(), to notify driver

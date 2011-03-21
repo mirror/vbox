@@ -306,15 +306,26 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 #endif
                 if (RT_SUCCESS(rc))
                 {
-                    GVMMR0DoneInitVM(pVM);
-                    return rc;
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                    rc = PciRawR0InitVM(pVM);
+#endif
+                    if (RT_SUCCESS(rc))
+                    {
+                        GVMMR0DoneInitVM(pVM);
+                        return rc;
+                    }
                 }
 
                 /* bail out */
             }
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+            PciRawR0TermVM(pVM);
+#endif
             HWACCMR0TermVM(pVM);
         }
     }
+
+
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pVM->pSession);
     return rc;
 }
@@ -335,6 +346,10 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
  */
 VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 {
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+    PciRawR0TermVM(pVM);
+#endif
+
     /*
      * Tell GVMM what we're up to and check that we only do this once.
      */

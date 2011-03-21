@@ -41,6 +41,7 @@ RT_C_DECLS_BEGIN
 
 /* Forward declaration. */
 typedef struct VBOXRAWPCIGLOBALS *PVBOXRAWPCIGLOBALS;
+typedef struct VBOXRAWPCIVM      *PVBOXRAWPCIVM;
 typedef struct VBOXRAWPCIINS     *PVBOXRAWPCIINS;
 
 /**
@@ -86,6 +87,22 @@ typedef struct VBOXRAWPCIINS
 } VBOXRAWPCIINS;
 
 /**
+ * Per-VM data of the VBox PCI driver. Pointed to by pVM->rawpci.s.pOsData.
+ *
+ */
+typedef struct VBOXRAWPCIVM
+{
+    /** Mutex protecting state changes. */
+    RTSEMFASTMUTEX hFastMtx;
+
+#ifdef RT_OS_LINUX
+# ifdef VBOX_WITH_IOMMU
+    struct iommu_domain* iommu_domain;
+# endif
+#endif
+} VBOXRAWPCIVM;
+
+/**
  * The global data of the VBox PCI driver.
  *
  * This contains the bit required for communicating with support driver, VBoxDrv
@@ -113,11 +130,13 @@ typedef struct VBOXRAWPCIGLOBALS
 #ifdef RT_OS_LINUX
     struct module    * pciStubModule;
 #endif
-
 } VBOXRAWPCIGLOBALS;
 
 DECLHIDDEN(int)  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals);
 DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
+
+DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIVM pThis,   PVM pVM);
+DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIVM pThis, PVM pVM);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
 DECLHIDDEN(int)  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags);
