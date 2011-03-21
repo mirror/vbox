@@ -209,7 +209,7 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static int VBoxServiceToolboxMkDir(int argc, char **argv)
+static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
 {
      static const RTGETOPTDEF s_aOptions[] =
      {
@@ -331,7 +331,7 @@ static int VBoxServiceToolboxMkDir(int argc, char **argv)
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
  */
-static int VBoxServiceToolboxCat(int argc, char **argv)
+static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 {
      static const RTGETOPTDEF s_aOptions[] =
      {
@@ -485,23 +485,24 @@ static int VBoxServiceToolboxCat(int argc, char **argv)
  * @return  True if an internal tool was handled, false if not.
  * @param   argc                    Number of arguments.
  * @param   argv                    Pointer to argument array.
- * @param   piExitCode              Pointer to receive exit code when internal command
- *                                  was handled.
+ * @param   prcExit                 Where to store the exit code when an
+ *                                  internal toolbox command was handled.
  */
-bool VBoxServiceToolboxMain(int argc, char **argv, int *piExitCode)
+bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
 {
     if (argc > 0) /* Do we have at least a main command? */
     {
         if (   !strcmp(argv[0], "cat")
             || !strcmp(argv[0], "vbox_cat"))
         {
-            *piExitCode = VBoxServiceToolboxCat(argc, argv);
+            *prcExit = VBoxServiceToolboxCat(argc, argv);
             return true;
         }
-        else if (   !strcmp(argv[0], "mkdir")
-                 || !strcmp(argv[0], "vbox_mkdir"))
+
+        if (   !strcmp(argv[0], "mkdir")
+            || !strcmp(argv[0], "vbox_mkdir"))
         {
-            *piExitCode = VBoxServiceToolboxMkDir(argc, argv);
+            *prcExit = VBoxServiceToolboxMkDir(argc, argv);
             return true;
         }
     }
