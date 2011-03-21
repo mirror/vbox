@@ -602,6 +602,13 @@ static int filteraudio_run_in(HWVoiceIn *phw)
 
     if (!pVoice->fIntercepted)
     {
+        if (!pVoice->fHostOK)
+        {
+            /* Host did not initialize the voice. */
+            Log(("FilterAudio: [Input]: run_in voice %p (hw %p) not available on host\n", pVoice, pVoice->phw));
+            return -1;
+        }
+
         Log(("FilterAudio: [Input]: forwarding run_in for voice %p (hw %p)\n", pVoice, pVoice->phw));
         return filter_conf.pDrv->pcm_ops->run_in(phw);
     }
