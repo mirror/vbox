@@ -200,7 +200,7 @@ DECLHIDDEN(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
-    
+
     rc = vboxPciOsDevDestroy(pThis);
     if (rc == VINF_SUCCESS)
     {
@@ -209,13 +209,13 @@ DECLHIDDEN(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
             RTSemFastMutexDestroy(pThis->hFastMtx);
             pThis->hFastMtx = NIL_RTSEMFASTMUTEX;
         }
-        
+
         if (pThis->hSpinlock)
         {
             RTSpinlockDestroy(pThis->hSpinlock);
             pThis->hSpinlock = NIL_RTSPINLOCK;
         }
-        
+
         vboxPciGlobalsLock(pThis->pGlobals);
         vboxPciUnlinkInstanceLocked(pThis->pGlobals, pThis);
         vboxPciGlobalsUnlock(pThis->pGlobals);
@@ -485,6 +485,63 @@ static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
     LogFlow(("vboxPciFactoryRelease: cRefs=%d (new)\n", cRefs));
 }
 
+/**
+ * @copydoc RAWPCIFACTORY::pfnInitVm
+ */
+static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
+                                               PVM                  pVM,
+                                               PRAWPCIVM            pPciData)
+{
+    PVBOXRAWPCIVM pThis = (PVBOXRAWPCIVM)RTMemAllocZ(sizeof(VBOXRAWPCIVM));
+    int rc;
+
+    if (!pThis)
+         return VERR_NO_MEMORY;
+
+    rc = RTSemFastMutexCreate(&pThis->hFastMtx);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxPciOsInitVm(pThis, pVM);
+
+        if (RT_SUCCESS(rc))
+        {
+            pPciData->pDriverData = pThis;
+            return VINF_SUCCESS;
+        }
+
+        RTSemFastMutexDestroy(pThis->hFastMtx);
+        pThis->hFastMtx = NIL_RTSEMFASTMUTEX;
+        RTMemFree(pThis);
+    }
+
+    return rc;
+}
+
+/**
+ * @copydoc RAWPCIFACTORY::pfnDeinitVm
+ */
+static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
+                                                  PVM                  pVM,
+                                                  PRAWPCIVM            pPciData)
+{
+    if (pPciData->pDriverData)
+    {
+        PVBOXRAWPCIVM pThis = pPciData->pDriverData;
+
+        vboxPciOsDeinitVm(pThis, pVM);
+
+        if (pThis->hFastMtx)
+        {
+            RTSemFastMutexDestroy(pThis->hFastMtx);
+            pThis->hFastMtx = NIL_RTSEMFASTMUTEX;
+        }
+
+        RTMemFree(pThis);
+        pPciData->pDriverData = NULL;
+    }
+}
+
+
 static DECLHIDDEN(bool) vboxPciCanUnload(PVBOXRAWPCIGLOBALS pGlobals)
 {
     int rc = vboxPciGlobalsLock(pGlobals);
@@ -578,6 +635,8 @@ DECLHIDDEN(int) vboxPciInitGlobals(PVBOXRAWPCIGLOBALS pGlobals)
         pGlobals->pInstanceHead = NULL;
         pGlobals->RawPciFactory.pfnRelease = vboxPciFactoryRelease;
         pGlobals->RawPciFactory.pfnCreateAndConnect = vboxPciFactoryCreateAndConnect;
+        pGlobals->RawPciFactory.pfnInitVm = vboxPciFactoryInitVm;
+        pGlobals->RawPciFactory.pfnDeinitVm = vboxPciFactoryDeinitVm;
         memcpy(pGlobals->SupDrvFactory.szName, "VBoxRawPci", sizeof("VBoxRawPci"));
         pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxPciQueryFactoryInterface;
         pGlobals->fIDCOpen = false;
