@@ -784,7 +784,7 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
             goto fail1;
         }
         LogFunc(("vboxCallSymlink(%s) failed rc=%Rrc\n",
-                    fDirectory, sf_i->path->String.utf8, rc));
+                    sf_i->path->String.utf8, rc));
         err = -EPROTO;
         goto fail1;
     }
