@@ -1,10 +1,10 @@
-/* $Id: */
+/* $Id$ */
 /** @file
  * VBoxServicePipeBuf - Pipe buffering.
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,18 +20,18 @@
 
 #include "VBoxServiceInternal.h"
 
-int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe);
-int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                  uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
-int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                 uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
-int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe,
-                                  size_t *pcbWritten, size_t *pcbLeft);
+int  VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe);
+int  VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                            uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+int  VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                  uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
+int  VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe,
+                                   size_t *pcbWritten, size_t *pcbLeft);
 bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
 bool VBoxServicePipeBufIsClosing(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
-int VBoxServicePipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled);
-int VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVAL cMillies);
+int  VBoxServicePipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled);
+int  VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVAL cMillies);
 void VBoxServicePipeBufDestroy(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
 
-#endif  /* ___VBoxServicePipeBuf_h */
+#endif  /* !___VBoxServicePipeBuf_h */
 
