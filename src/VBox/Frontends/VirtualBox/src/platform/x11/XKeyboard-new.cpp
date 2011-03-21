@@ -219,6 +219,10 @@ void doXKeyboardLogging(Display *dpy)
             LogRel((",%d=%d",i,keyc2scan[i]));
         LogRel(("\n"));
     }
+    LogRel(("Using %s for keycode to scan code conversion\n",
+              gfByXkbOK ? "XKB"
+            : gfByTypeOK ? "known keycode mapping"
+            : "host keyboard layout detection"));
 }
 
 /*
@@ -227,7 +231,10 @@ void doXKeyboardLogging(Display *dpy)
 unsigned handleXKeyEvent(XEvent *event)
 {
     // call the WINE event handler
-    return X11DRV_KeyEvent(event->xkey.display, event->xkey.keycode);
+    unsigned key = X11DRV_KeyEvent(event->xkey.display, event->xkey.keycode);
+    LogRel3(("VBoxKeyboard: converting keycode %d to scancode %s0x%x\n",
+          event->xkey.keycode, key > 0x100 ? "0xe0 " : "", key & 0xff));
+    return key;
 }
 
 /**
