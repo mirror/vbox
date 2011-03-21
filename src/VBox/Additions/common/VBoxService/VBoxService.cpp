@@ -739,7 +739,7 @@ int main(int argc, char **argv)
     if (    GetVersionEx((LPOSVERSIONINFO)&OSInfoEx)
         &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
         &&  OSInfoEx.dwMajorVersion >= 5 /* NT 5.0 a.k.a W2K */)
-        hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME_GLOBAL);
+        hMutexAppRunning = CreateMutex(NULL, FALSE, "Global\\" VBOXSERVICE_NAME);
     else
         hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
     if (hMutexAppRunning == NULL)
