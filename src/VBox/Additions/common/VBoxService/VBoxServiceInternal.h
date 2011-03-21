@@ -285,7 +285,7 @@ extern void         VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
 #ifdef VBOXSERVICE_TOOLBOX
-extern bool         VBoxServiceToolboxMain(int argc, char **argv, int *piExitCode);
+extern bool         VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
 #endif
 
 #ifdef RT_OS_WINDOWS

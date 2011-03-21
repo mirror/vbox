@@ -39,6 +39,7 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -76,6 +77,8 @@ static struct
     PCVBOXSERVICE   pDesc;
     /** The worker thread. NIL_RTTHREAD if it's the main thread. */
     RTTHREAD        Thread;
+    /** Whether Pre-init was called. */
+    bool            fPreInited;
     /** Shutdown indicator. */
     bool volatile   fShutdown;
     /** Indicator set by the service thread exiting. */
@@ -87,31 +90,31 @@ static struct
 } g_aServices[] =
 {
 #ifdef VBOXSERVICE_CONTROL
-    { &g_Control,   NIL_RTTHREAD, false, false, false, true },
+    { &g_Control,       NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_TIMESYNC
-    { &g_TimeSync,  NIL_RTTHREAD, false, false, false, true },
+    { &g_TimeSync,      NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_CLIPBOARD
-    { &g_Clipboard, NIL_RTTHREAD, false, false, false, true },
+    { &g_Clipboard,     NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_VMINFO
-    { &g_VMInfo,    NIL_RTTHREAD, false, false, false, true },
+    { &g_VMInfo,        NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_CPUHOTPLUG
-    { &g_CpuHotPlug, NIL_RTTHREAD, false, false, false, true },
+    { &g_CpuHotPlug,    NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_MANAGEMENT
 # ifdef VBOX_WITH_MEMBALLOON
-    { &g_MemBalloon, NIL_RTTHREAD, false, false, false, true },
+    { &g_MemBalloon,    NIL_RTTHREAD, false, false, false, false, true },
 # endif
-    { &g_VMStatistics, NIL_RTTHREAD, false, false, false, true },
+    { &g_VMStatistics,  NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
-    { &g_PageSharing, NIL_RTTHREAD, false, false, false, true },
+    { &g_PageSharing,   NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    { &g_AutoMount, NIL_RTTHREAD, false, false, false, true },
+    { &g_AutoMount,     NIL_RTTHREAD, false, false, false, false, true },
 #endif
 };
 
@@ -231,17 +234,29 @@ void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
 /**
  * Reports the current VBoxService status to the host.
  *
+ * This makes sure that the Failed state is sticky.
+ *
  * @return  IPRT status code.
  * @param   enmStatus               Status to report to the host.
  */
 int VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus)
 {
-    /* Report the host that we're up and running! */
-    int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService,
-                                         enmStatus, 0 /* Flags */);
-    if (RT_FAILURE(rc))
-        VBoxServiceError("Could not report VBoxService status (%u), rc=%Rrc\n", enmStatus, rc);
-    return rc;
+    /*
+     * VBoxGuestFacilityStatus_Failed is sticky.
+     */
+    static VBoxGuestFacilityStatus s_enmLastStatus = VBoxGuestFacilityStatus_Inactive;
+    if (s_enmLastStatus != VBoxGuestFacilityStatus_Failed)
+    {
+        int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService,
+                                             enmStatus, 0 /* Flags */);
+        if (RT_FAILURE(rc))
+        {
+            VBoxServiceError("Could not report VBoxService status (%u), rc=%Rrc\n", enmStatus, rc);
+            return rc;
+        }
+        s_enmLastStatus = enmStatus;
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -307,6 +322,25 @@ static DECLCALLBACK(int) vboxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 
 
 /**
+ * Lazily calls the pfnPreInit method on each service.
+ *
+ * @returns VBox status code, error message displayed.
+ */
+static RTEXITCODE vboxServiceLazyPreInit(void)
+{
+    for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
+        if (!g_aServices[j].fPreInited)
+        {
+            int rc = g_aServices[j].pDesc->pfnPreInit();
+            if (RT_FAILURE(rc))
+                return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
+            g_aServices[j].fPreInited = true;
+        }
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Count the number of enabled services.
  */
 static unsigned vboxServiceCountEnabledServices(void)
@@ -343,6 +377,7 @@ int VBoxServiceStartServices(void)
                 {
                     VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
                                      g_aServices[j].pDesc->pszName, rc);
+                    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Failed);
                     return rc;
                 }
                 g_aServices[j].fEnabled = false;
@@ -372,13 +407,12 @@ int VBoxServiceStartServices(void)
         }
         g_aServices[j].fStarted = true;
 
-        /* Wait for the thread to initialize.
-         *
-         * @todo There is a race between waiting and checking
-         *       the fShutdown flag of a thread here and processing
-         *       the thread's actual worker loop. If the thread decides
-         *       to exit the loop before we skipped the fShutdown check
-         *       below the service will fail to start! */
+        /* Wait for the thread to initialize. */
+        /** @todo There is a race between waiting and checking
+         * the fShutdown flag of a thread here and processing
+         * the thread's actual worker loop. If the thread decides
+         * to exit the loop before we skipped the fShutdown check
+         * below the service will fail to start! */
         RTThreadUserWait(g_aServices[j].Thread, 60 * 1000);
         if (g_aServices[j].fShutdown)
         {
@@ -406,8 +440,6 @@ int VBoxServiceStartServices(void)
  */
 int VBoxServiceStopServices(void)
 {
-    int rc = VINF_SUCCESS;
-
     VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminating);
 
     /*
@@ -429,6 +461,7 @@ int VBoxServiceStopServices(void)
     /*
      * Wait for all the service threads to complete.
      */
+    int rc = VINF_SUCCESS;
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
         if (!g_aServices[j].fEnabled) /* Only stop services which were started before. */
@@ -436,18 +469,22 @@ int VBoxServiceStopServices(void)
         if (g_aServices[j].Thread != NIL_RTTHREAD)
         {
             VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
+            int rc2 = VINF_SUCCESS;
             for (int i = 0; i < 30; i++) /* Wait 30 seconds in total */
             {
-                rc = RTThreadWait(g_aServices[j].Thread, 1000 /* Wait 1 second */, NULL);
-                if (RT_SUCCESS(rc))
+                rc2 = RTThreadWait(g_aServices[j].Thread, 1000 /* Wait 1 second */, NULL);
+                if (RT_SUCCESS(rc2))
                     break;
 #ifdef RT_OS_WINDOWS
                 /* Notify SCM that it takes a bit longer ... */
                 VBoxServiceWinSetStopPendingStatus(i + j*32);
 #endif
             }
-            if (RT_FAILURE(rc))
-                VBoxServiceError("Service '%s' failed to stop. (%Rrc)\n", g_aServices[j].pDesc->pszName, rc);
+            if (RT_FAILURE(rc2))
+            {
+                VBoxServiceError("Service '%s' failed to stop. (%Rrc)\n", g_aServices[j].pDesc->pszName, rc2);
+                rc = rc2;
+            }
         }
         VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n", g_aServices[j].pDesc->pszName, j);
         g_aServices[j].pDesc->pfnTerm();
@@ -458,18 +495,17 @@ int VBoxServiceStopServices(void)
      * Wake up and tell the main() thread that we're shutting down (it's
      * sleeping in VBoxServiceMainWait).
      */
+    ASMAtomicWriteBool(&g_fWindowsServiceShutdown, true);
     if (g_hEvtWindowsService != NIL_RTSEMEVENT)
     {
         VBoxServiceVerbose(3, "Stopping the main thread...\n");
-        ASMAtomicWriteBool(&g_fWindowsServiceShutdown, true);
-        rc = RTSemEventSignal(g_hEvtWindowsService);
-        AssertRC(rc);
+        int rc2 = RTSemEventSignal(g_hEvtWindowsService);
+        AssertRC(rc2);
     }
 #endif
 
-    VBoxServiceVerbose(2, "Stopping services returned: rc=%Rrc\n", rc);
-    VBoxServiceReportStatus(RT_SUCCESS(rc)
-                            ? VBoxGuestFacilityStatus_Paused : VBoxGuestFacilityStatus_Failed);
+    VBoxServiceVerbose(2, "Stopping services returning: %Rrc\n", rc);
+    VBoxServiceReportStatus(RT_SUCCESS(rc) ? VBoxGuestFacilityStatus_Paused : VBoxGuestFacilityStatus_Failed);
     return rc;
 }
 
@@ -534,25 +570,31 @@ void VBoxServiceMainWait(void)
 
 int main(int argc, char **argv)
 {
+    RTEXITCODE rcExit;
+
     /*
      * Init globals and such.
      */
-    RTR3Init();
-
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
     g_pszProgName = RTPathFilename(argv[0]);
 
-    int rc;
 #ifdef VBOXSERVICE_TOOLBOX
+    /*
+     * Run toolbox code before all other stuff since these things are simpler
+     * shell/file/text utility like programs that just happens to be inside
+     * VBoxService and shouldn't be subject to /dev/vboxguest, pid-files and
+     * global mutex restrictions.
+     */
+# if 0 /** @todo r=bird: pending argv[0] bugfixing.  */
+    if (VBoxServiceToolboxMain(argc, argv, &rcExit))
+        return rcExit;
+# else
     if (argc > 1)
-    {
-        /*
-         * Run toolbox code before all other stuff, especially before checking the global
-         * mutex because VBoxService might spawn itself to execute some commands.
-         */
-        int iExitCode;
-        if (VBoxServiceToolboxMain(argc - 1, &argv[1], &iExitCode))
-            return iExitCode;
-    }
+        if (VBoxServiceToolboxMain(argc - 1, &argv[1], &rcExit))
+            return rcExit;
+# endif
 #endif
 
     /*
@@ -566,10 +608,9 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_ACCESS_DENIED)
-            return VBoxServiceError("Not enough rights to start %s! Please start with Administrator/root privileges!\n",
+            return VBoxServiceError("Insufficient privileges to start %s! Please start with Administrator/root privileges!\n",
                                     g_pszProgName);
-        else
-            return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
+        return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
     }
 
 #ifdef RT_OS_WINDOWS
@@ -583,8 +624,8 @@ int main(int argc, char **argv)
 #endif
 
     /*
-     * Parse the arguments                                       .
-     *                                                           .
+     * Parse the arguments.
+     *
      * Note! This code predates RTGetOpt, thus the manual parsing.
      */
     bool fDaemonize = true;
@@ -639,6 +680,11 @@ int main(int argc, char **argv)
                             g_aServices[j].fEnabled = false;
 
                 if (!fFound)
+                {
+                    rcExit = vboxServiceLazyPreInit();
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
                     {
                         rc = g_aServices[j].pDesc->pfnOption(NULL, argc, argv, &i);
@@ -648,6 +694,7 @@ int main(int argc, char **argv)
                         if (rc != -1)
                             return rc;
                     }
+                }
                 if (!fFound)
                     return VBoxServiceSyntax("Unknown option '%s'\n", argv[i]);
                 continue;
@@ -694,14 +741,14 @@ int main(int argc, char **argv)
 
                 default:
                 {
+                    rcExit = vboxServiceLazyPreInit();
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+
                     bool fFound = false;
                     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
                     {
-                        rc = g_aServices[j].pDesc->pfnPreInit();
-                        if (RT_FAILURE(rc))
-                            return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
-                        else
-                            rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
+                        rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
                         fFound = rc == VINF_SUCCESS;
                         if (fFound)
                             break;
@@ -719,6 +766,11 @@ int main(int argc, char **argv)
     /* Check that at least one service is enabled. */
     if (vboxServiceCountEnabledServices() == 0)
         return VBoxServiceSyntax("At least one service must be enabled.\n");
+
+    /* Call pre-init if we didn't do it already. */
+    rcExit = vboxServiceLazyPreInit();
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -763,7 +815,6 @@ int main(int argc, char **argv)
     /*
      * Daemonize if requested.
      */
-    RTEXITCODE rcExit;
     if (fDaemonize && !fDaemonized)
     {
 #ifdef RT_OS_WINDOWS
@@ -781,8 +832,6 @@ int main(int argc, char **argv)
     else
 #endif
     {
-        VBoxServiceReportStatus(VBoxGuestFacilityStatus_PreInit);
-
         /*
          * Windows: We're running the service as a console application now. Start the
          *          services, enter the main thread's run loop and stop them again
@@ -796,12 +845,8 @@ int main(int argc, char **argv)
         if (RT_SUCCESS(rc))
             VBoxServiceMainWait();
         VBoxServiceStopServices();
-
-        /* Only report the "terminated" status when we really did run the internal services --
-         * otherwise we also wrongly would report "terminated" when a user simply
-         * wants to query the version or the command line help. */
-        VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
     }
+    VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
 
 #ifdef RT_OS_WINDOWS
     /*

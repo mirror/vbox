@@ -344,7 +344,12 @@ static int vboxServiceWinStart(void)
             VBoxServiceMainWait();
         }
         else
+        {
             vboxServiceWinSetStatus(SERVICE_STOPPED, 0);
+#if 0 /** @todo r=bird: Enable this if SERVICE_CONTROL_STOP isn't triggered automatically */
+            VBoxServiceStopServices();
+#endif
+        }
     }
     /**@todo r=bird: else vboxServiceWinSetStatus(SERVICE_STOPPED, 0); ? */
 
