@@ -371,6 +371,20 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHo
     return rc;
 }
 
+DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTATE  aState)
+{
+    PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
+    int rc;
+
+    vboxPciDevLock(pThis);
+
+    rc = vboxPciOsDevPowerStateChange(pThis, aState);
+    
+    vboxPciDevUnlock(pThis);
+
+    return rc;
+}
+
 /**
  * Creates a new instance.
  *
@@ -382,6 +396,7 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHo
 static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
                               uint32_t           u32HostAddress,
                               uint32_t           fFlags,
+                              PRAWPCIVM          pVmCtx,
                               PRAWPCIDEVPORT     *ppDevPort)
 {
     int             rc;
@@ -395,6 +410,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->pNext                         = NULL;
     pNew->HostPciAddress                = u32HostAddress;
     pNew->iHostIrq                      = -1;
+    pNew->pVmCtx                        = pVmCtx;
 
     pNew->DevPort.u32Version            = RAWPCIDEVPORT_VERSION;
 
@@ -410,6 +426,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->DevPort.pfnPciCfgWrite        = vboxPciDevPciCfgWrite;
     pNew->DevPort.pfnRegisterIrqHandler = vboxPciDevRegisterIrqHandler;
     pNew->DevPort.pfnUnregisterIrqHandler = vboxPciDevUnregisterIrqHandler;
+    pNew->DevPort.pfnPowerStateChange   = vboxPciDevPowerStateChange;
     pNew->DevPort.u32VersionEnd         = RAWPCIDEVPORT_VERSION;
 
     rc = RTSpinlockCreate(&pNew->hSpinlock);
@@ -446,6 +463,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFactory,
                                                         uint32_t             u32HostAddress,
                                                         uint32_t             fFlags,
+                                                        PRAWPCIVM            pVmCtx,
                                                         PRAWPCIDEVPORT       *ppDevPort)
 {
     PVBOXRAWPCIGLOBALS pGlobals = (PVBOXRAWPCIGLOBALS)((uint8_t *)pFactory - RT_OFFSETOF(VBOXRAWPCIGLOBALS, RawPciFactory));
@@ -465,7 +483,7 @@ static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFa
         goto unlock;
     }
 
-    rc = vboxPciNewInstance(pGlobals, u32HostAddress, fFlags, ppDevPort);
+    rc = vboxPciNewInstance(pGlobals, u32HostAddress, fFlags, pVmCtx, ppDevPort);
 
 unlock:
     vboxPciGlobalsUnlock(pGlobals);
@@ -492,7 +510,7 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
                                                PVM                  pVM,
                                                PRAWPCIVM            pPciData)
 {
-    PVBOXRAWPCIVM pThis = (PVBOXRAWPCIVM)RTMemAllocZ(sizeof(VBOXRAWPCIVM));
+    PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)RTMemAllocZ(sizeof(VBOXRAWPCIDRVVM));
     int rc;
 
     if (!pThis)
@@ -526,7 +544,7 @@ static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
 {
     if (pPciData->pDriverData)
     {
-        PVBOXRAWPCIVM pThis = pPciData->pDriverData;
+        PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)pPciData->pDriverData;
 
         vboxPciOsDeinitVm(pThis, pVM);
 

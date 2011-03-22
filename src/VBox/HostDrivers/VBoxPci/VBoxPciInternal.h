@@ -41,7 +41,7 @@ RT_C_DECLS_BEGIN
 
 /* Forward declaration. */
 typedef struct VBOXRAWPCIGLOBALS *PVBOXRAWPCIGLOBALS;
-typedef struct VBOXRAWPCIVM      *PVBOXRAWPCIVM;
+typedef struct VBOXRAWPCIDRVVM   *PVBOXRAWPCIDRVVM;
 typedef struct VBOXRAWPCIINS     *PVBOXRAWPCIINS;
 
 /**
@@ -84,13 +84,15 @@ typedef struct VBOXRAWPCIINS
     uint32_t           cHandlersCount;
     PFNRAWPCIISR       pfnIrqHandler;
     void              *pIrqContext;
+
+    PRAWPCIVM         pVmCtx;
 } VBOXRAWPCIINS;
 
 /**
  * Per-VM data of the VBox PCI driver. Pointed to by pVM->rawpci.s.pOsData.
  *
  */
-typedef struct VBOXRAWPCIVM
+typedef struct VBOXRAWPCIDRVVM
 {
     /** Mutex protecting state changes. */
     RTSEMFASTMUTEX hFastMtx;
@@ -100,7 +102,7 @@ typedef struct VBOXRAWPCIVM
     struct iommu_domain* iommu_domain;
 # endif
 #endif
-} VBOXRAWPCIVM;
+} VBOXRAWPCIDRVVM;
 
 /**
  * The global data of the VBox PCI driver.
@@ -135,8 +137,8 @@ typedef struct VBOXRAWPCIGLOBALS
 DECLHIDDEN(int)  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals);
 DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
-DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIVM pThis,   PVM pVM);
-DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIVM pThis, PVM pVM);
+DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis,   PVM pVM);
+DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
 DECLHIDDEN(int)  vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags);
@@ -165,6 +167,10 @@ DECLHIDDEN(int)  vboxPciOsDevPciCfgRead (PVBOXRAWPCIINS pIns, uint32_t Register,
 
 DECLHIDDEN(int)  vboxPciOsDevRegisterIrqHandler  (PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq);
 DECLHIDDEN(int)  vboxPciOsDevUnregisterIrqHandler(PVBOXRAWPCIINS pIns, int32_t iHostIrq);
+
+DECLHIDDEN(int)  vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTATE  aState);
+
+#define VBOX_DRV_VMDATA(pIns) ((PVBOXRAWPCIDRVVM)(pIns->pVmCtx->pDriverData))
 
 RT_C_DECLS_END
 
