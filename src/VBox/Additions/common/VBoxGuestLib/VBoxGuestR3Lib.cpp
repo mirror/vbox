@@ -213,8 +213,9 @@ static int vbglR3Init(const char *pszDeviceName)
     PRTLOGGER pReleaseLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     int rc2 = RTLogCreate(&pReleaseLogger, 0, "all", "VBOX_RELEASE_LOG",
-                          RT_ELEMENTS(s_apszGroups), &s_apszGroups[0],
-                          RTLOGDEST_USER, NULL);
+                          RT_ELEMENTS(s_apszGroups), &s_apszGroups[0], RTLOGDEST_USER,
+                          NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
+                          NULL);
     /* This may legitimately fail if we are using the mini-runtime. */
     if (RT_SUCCESS(rc2))
         RTLogRelSetDefaultInstance(pReleaseLogger);
