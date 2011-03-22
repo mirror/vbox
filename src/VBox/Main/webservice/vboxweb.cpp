@@ -110,9 +110,10 @@ unsigned int            g_uBacklog = 100;               // backlog = max queue s
 unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker threads
 unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
+uint32_t                g_cHistory = 10;                // enable log rotation, 10 files
+uint32_t                g_uHistoryFileTime = RT_SEC_1WEEK; // max 1 week per file
+uint64_t                g_uHistoryFileSize = 100 * _1M; // max 100MB per file
 bool                    g_fVerbose = false;             // be verbose
-bool                    g_fStdOutLogging = true;        // log to stdout
-PRTSTREAM               g_pStrmLog = NULL;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 bool                    g_fDaemonize = false;           // run in background.
@@ -176,6 +177,9 @@ static const RTGETOPTDEF g_aOptions[]
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { "--pidfile",          'P', RTGETOPT_REQ_STRING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
+        { "--logrotate",        'R', RTGETOPT_REQ_UINT32 },
+        { "--logsize",          'S', RTGETOPT_REQ_UINT64 },
+        { "--loginterval",      'I', RTGETOPT_REQ_UINT32 }
     };
 
 void DisplayHelp()
@@ -238,6 +242,18 @@ void DisplayHelp()
 
             case 'F':
                 pcszDescr = "Name of file to write log to (no file).";
+                break;
+
+            case 'R':
+                pcszDescr = "Number of log files (0 disables log rotation).";
+                break;
+
+            case 'S':
+                pcszDescr = "Maximum size of a log file to trigger rotationi (bytes).";
+                break;
+
+            case 'I':
+                pcszDescr = "Maximum time interval to trigger log rotation (seconds).";
                 break;
         }
 
@@ -581,47 +597,6 @@ void WebLog(const char *pszFormat, ...)
     RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
 
-    if (g_fStdOutLogging || g_pStrmLog)
-    {
-        const char *pcszPrefix = "[   ]";
-        util::AutoReadLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
-        ThreadsMap::iterator it = g_mapThreads.find(RTThreadSelf());
-        if (it != g_mapThreads.end())
-            pcszPrefix = it->second.c_str();
-        thrLock.release();
-
-        // make a timestamp
-        RTTIMESPEC ts;
-        RTTimeLocalNow(&ts);
-        RTTIME t;
-        RTTimeExplode(&t, &ts);
-
-        com::Utf8StrFmt strPrefix("%04d-%02u-%02u %02u:%02u:%02u %s",
-                                  t.i32Year, t.u8Month, t.u8MonthDay,
-                                  t.u8Hour, t.u8Minute, t.u8Second,
-                                  pcszPrefix);
-
-        // synchronize the actual output
-        util::AutoWriteLock logLock(g_pWebLogLockHandle COMMA_LOCKVAL_SRC_POS);
-        // terminal
-        if (g_fStdOutLogging)
-            RTPrintf("%s %s", strPrefix.c_str(), psz);
-
-        // log file
-        if (g_pStrmLog)
-        {
-            RTStrmPrintf(g_pStrmLog, "%s %s", strPrefix.c_str(), psz);
-            RTStrmFlush(g_pStrmLog);
-        }
-
-#ifdef DEBUG
-        // debug logger instance
-        RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s %s", pcszPrefix, psz);
-#endif
-
-        logLock.release();
-    }
-
     LogRel(("%s", psz));
 
     RTStrFree(psz);
@@ -644,6 +619,74 @@ void WebLogSoapError(struct soap *soap)
     WebLog("#### SOAP FAULT: %s [%s]\n",
            pcszFaultString ? pcszFaultString : "[no fault string available]",
            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
+}
+
+static void WebLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+{
+    /* some introductory information */
+    static RTTIMESPEC timeSpec = {0};
+    char szTmp[256];
+    if (enmPhase == RTLOGPHASE_BEGIN)
+        RTTimeNow(&timeSpec);
+    RTTimeSpecToString(&timeSpec, szTmp, sizeof(szTmp));
+
+    switch (enmPhase)
+    {
+        case RTLOGPHASE_BEGIN:
+        {
+            pfnLog(pLoggerRelease,
+                   "VirtualBox web service %s r%u %s (%s %s) release log\n"
+#ifdef VBOX_BLEEDING_EDGE
+                   "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
+#endif
+                   "Log opened %s\n",
+                   VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
+                   __DATE__, __TIME__, szTmp);
+
+            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            pfnLog(pLoggerRelease,
+                   "Executable: %s\n"
+                   "Process ID: %u\n"
+                   "Package type: %s"
+#ifdef VBOX_OSE
+                   " (OSE)"
+#endif
+                   "\n",
+                   pszExecName ? pszExecName : "unknown",
+                   RTProcSelf(),
+                   VBOX_PACKAGE_STRING);
+            break;
+        }
+
+        case RTLOGPHASE_PREROTATE:
+            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_POSTROTATE:
+            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_END:
+            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
+            break;
+
+        default:
+            /* nothing */;
+    }
 }
 
 /****************************************************************************
@@ -691,7 +734,7 @@ void doQueuesLoop()
             }
 
             // add the socket to the queue and tell worker threads to
-            // pick up the jobn
+            // pick up the job
             size_t cItemsOnQ = g_pSoapQ->add(s);
             WebLog("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ);
         }
@@ -747,6 +790,7 @@ int main(int argc, char *argv[])
                             "All rights reserved.\n");
 
     int c;
+    const char *pszLogFile = NULL;
     const char *pszPidFile = NULL;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
@@ -780,14 +824,21 @@ int main(int argc, char *argv[])
 
             case 'F':
             {
-                int rc2 = RTStrmOpen(ValueUnion.psz, "a", &g_pStrmLog);
-                if (rc2)
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open log file \"%s\" for writing: %Rrc", ValueUnion.psz, rc2);
-
-                WebLog(VBOX_PRODUCT " Webservice Version %s\n"
-                       "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
+                pszLogFile = ValueUnion.psz;
                 break;
             }
+
+            case 'R':
+                g_cHistory = ValueUnion.u32;
+                break;
+
+            case 'S':
+                g_uHistoryFileSize = ValueUnion.u64;
+                break;
+
+            case 'I':
+                g_uHistoryFileTime = ValueUnion.u32;
+                break;
 
             case 'P':
                 pszPidFile = ValueUnion.psz;
@@ -824,6 +875,29 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* create release logger */
+    PRTLOGGER pLoggerRelease;
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+    char szError[RTPATH_MAX + 128] = "";
+    int vrc = RTLogCreateEx(&pLoggerRelease, fFlags, "all",
+                            "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT,
+                            WebLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                            szError, sizeof(szError), pszLogFile);
+    if (RT_SUCCESS(vrc))
+    {
+        /* register this logger as the release logger */
+        RTLogRelSetDefaultInstance(pLoggerRelease);
+
+        /* Explicitly flush the log in case of VBOXWEBSRV_RELEASE_LOG=buffered. */
+        RTLogFlush(pLoggerRelease);
+    }
+    else
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
+
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (g_fDaemonize)
     {
@@ -841,67 +915,25 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
 
-        /* From now on it's a waste of CPU cycles to send logging to stdout. */
-        g_fStdOutLogging = false;
-
         /* create release logger */
-        PRTLOGGER loggerRelease;
+        PRTLOGGER pLoggerRelease;
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
         RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
         fFlags |= RTLOGFLAGS_USECRLF;
 #endif
         char szError[RTPATH_MAX + 128] = "";
-        int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
-                                "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                                RTLOGDEST_FILE, szError, sizeof(szError), szLogFile);
+        int vrc = RTLogCreateEx(&pLoggerRelease, fFlags, "all",
+                                "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
+                                WebLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                                szError, sizeof(szError), szLogFile);
         if (RT_SUCCESS(vrc))
         {
-            /* some introductory information */
-            RTTIMESPEC timeSpec;
-            char szTmp[256];
-            RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
-            RTLogRelLogger(loggerRelease, 0, ~0U,
-                           "VirtualBox web service %s r%u %s (%s %s) release log\n"
-#ifdef VBOX_BLEEDING_EDGE
-                           "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
-#endif
-                           "Log opened %s\n",
-                           VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
-                           __DATE__, __TIME__, szTmp);
-
-            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Product: %s\n", szTmp);
-            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Release: %s\n", szTmp);
-            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Version: %s\n", szTmp);
-            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-                RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
-
-            /* the package type is interesting for Linux distributions */
-            char szExecName[RTPATH_MAX];
-            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
-            RTLogRelLogger(loggerRelease, 0, ~0U,
-                           "Executable: %s\n"
-                           "Process ID: %u\n"
-                           "Package type: %s"
-#ifdef VBOX_OSE
-                           " (OSE)"
-#endif
-                           "\n",
-                           pszExecName ? pszExecName : "unknown",
-                           RTProcSelf(),
-                           VBOX_PACKAGE_STRING);
-
             /* register this logger as the release logger */
-            RTLogRelSetDefaultInstance(loggerRelease);
+            RTLogRelSetDefaultInstance(pLoggerRelease);
 
             /* Explicitly flush the log in case of VBOXWEBSRV_RELEASE_LOG=buffered. */
-            RTLogFlush(loggerRelease);
+            RTLogFlush(pLoggerRelease);
         }
         else
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
