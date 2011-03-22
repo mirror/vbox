@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -813,7 +813,9 @@ int main(int argc, char **argv)
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     PRTLOGGER pRelLogger;
     rc = RTLogCreate(&pRelLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all", "VBOX_RELEASE_LOG",
-                     RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE, "./tstAnimate.log");
+                     RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
+                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
+                     "./tstAnimate.log");
     if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(pRelLogger);
     else
