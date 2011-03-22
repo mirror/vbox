@@ -2172,7 +2172,7 @@ def registerHddCmd(ctx,args):
    imageId = ""
    setParentId = False
    parentId = ""
-   hdd = vb.openHardDisk(loc, ctx['global'].constants.AccessMode_ReadWrite, setImageId, imageId, setParentId, parentId)
+   hdd = vb.openMedium(loc, ctx['global'].constants.DeviceType_HardDisk, ctx['global'].constants.AccessMode_ReadWrite)
    print "registered HDD as %s" %(hdd.id)
    return 0
 
@@ -2287,8 +2287,7 @@ def registerIsoCmd(ctx,args):
       return 0
    vb = ctx['vb']
    loc = args[1]
-   id = ""
-   iso = vb.openDVDImage(loc, id)
+   iso = vb.openMedium(loc, ctx['global'].constants.DeviceType_DVD, ctx['global'].constants.AccessMode_ReadOnly)
    print "registered ISO as %s" %(iso.id)
    return 0
 
@@ -2300,13 +2299,13 @@ def unregisterIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[1]
    try:
-      dvd = vb.findMedium(loc, )
+      dvd = vb.findMedium(loc, ctx['global'].constants.DeviceType_DVD)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
 
    progress = dvd.close()
-   print "Unregistered ISO at %s" %(colPath(ctx,dvd.location))
+   print "Unregistered ISO at %s" %(colPath(ctx,loc))
 
    return 0
 
