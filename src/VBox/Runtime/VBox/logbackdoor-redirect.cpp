@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -103,7 +103,9 @@ RTDECL(void) RTLogFlush(PRTLOGGER)
 /* Do nothing. */
 RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        RTUINT fDestFlags, const char *pszFilenameFmt, ...)
+                        RTUINT fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
+                        uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
+                        const char *pszFilenameFmt, ...)
 {
     return VERR_NOT_IMPLEMENTED;
 }
