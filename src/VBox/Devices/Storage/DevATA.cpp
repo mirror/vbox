@@ -2450,7 +2450,7 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     uint16_t u16Sfn = ataBE2H_U16(&s->aATAPICmd[2]);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
-    Assert(s->cbElementaryTransfer <= 32);
+    Assert(s->cbElementaryTransfer <= 80);
     /* Accept valid request types only, and only starting feature 0. */
     if ((s->aATAPICmd[1] & 0x03) == 3 || u16Sfn != 0)
     {
@@ -2471,7 +2471,6 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
 
-#if 0
     cbCopied = atapiGetConfigurationFillFeatureCore(s, pbBuf, cbBuf);
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
@@ -2499,7 +2498,6 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     cbCopied = atapiGetConfigurationFillFeatureTimeout(s, pbBuf, cbBuf);
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
-#endif
 
     /* Set data length now - the field is not included in the final length. */
     ataH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
@@ -3241,7 +3239,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
         case SCSI_GET_CONFIGURATION:
             /* No media change stuff here, it can confuse Linux guests. */
             cbMax = ataBE2H_U16(pbPacket + 7);
-            ataStartTransfer(s, RT_MIN(cbMax, 32), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
+            ataStartTransfer(s, RT_MIN(cbMax, 80), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
             break;
         case SCSI_INQUIRY:
             cbMax = ataBE2H_U16(pbPacket + 3);
