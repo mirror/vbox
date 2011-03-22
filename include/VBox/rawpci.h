@@ -180,6 +180,13 @@ typedef struct
     int32_t              iHostIrq;
 } PCIRAWREQUNREGISTERR0IRQHANDLER;
 
+/** Parameters buffer for PCIRAWR0_DO_POWER_STATE_CHANGE call. */
+typedef struct PCIRAWREQPOWERSTATECHANGE
+{
+    /* in */
+    uint32_t             iState;
+} PCIRAWREQPOWERSTATECHANGE;
+
 /**
  * Request buffer use for communication with the driver.
  */
@@ -211,6 +218,7 @@ typedef struct PCIRAWSENDREQ
         PCIRAWREQPCICFGREAD    aPciCfgRead;
         PCIRAWREQREGISTERR0IRQHANDLER   aRegisterR0IrqHandler;
         PCIRAWREQUNREGISTERR0IRQHANDLER aUnregisterR0IrqHandler;
+        PCIRAWREQPOWERSTATECHANGE aPowerStateChange;
     } u;
 } PCIRAWSENDREQ;
 typedef PCIRAWSENDREQ *PPCIRAWSENDREQ;
@@ -246,9 +254,29 @@ typedef enum PCIRAWR0OPERATION
     PCIRAWR0_DO_REGISTER_R0_IRQ_HANDLER,
     /* Unregister device IRQ R0 handler. */
     PCIRAWR0_DO_UNREGISTER_R0_IRQ_HANDLER,
+    /* Notify driver about guest power state change. */
+    PCIRAWR0_DO_POWER_STATE_CHANGE,
     /** The usual 32-bit type blow up. */
     PCIRAWR0_DO_32BIT_HACK = 0x7fffffff
 } PCIRAWR0OPERATION;
+
+/**
+ * Power state enumeration.
+ */
+typedef enum PCIRAWPOWERSTATE
+{
+    /* Power on. */
+    PCIRAW_POWER_ON,
+    /* Power off. */
+    PCIRAW_POWER_OFF,
+    /* Suspend. */
+    PCIRAW_POWER_SUSPEND,
+    /* Resume. */
+    PCIRAW_POWER_RESUME,  
+    /** The usual 32-bit type blow up. */
+    PCIRAW_POWER_32BIT_HACK = 0x7fffffff
+} PCIRAWPOWERSTATE;
+
 
 /** Forward declarations. */
 typedef struct RAWPCIFACTORY *PRAWPCIFACTORY;
@@ -380,6 +408,15 @@ typedef struct RAWPCIDEVPORT
     DECLR0CALLBACKMEMBER(int,  pfnUnregisterIrqHandler,(PRAWPCIDEVPORT pPort,
                                                         int32_t iHostIrq));
 
+    /**
+     * Power state change notification.
+     *
+     * @param   pPort       Pointer to this structure.
+     * @param   aState      New power state.
+     */
+    DECLR0CALLBACKMEMBER(int,  pfnPowerStateChange,(PRAWPCIDEVPORT pPort,
+                                                    PCIRAWPOWERSTATE  aState));
+
     /** Structure version number. (RAWPCIDEVPORT_VERSION) */
     uint32_t u32VersionEnd;
 } RAWPCIDEVPORT;
@@ -412,6 +449,7 @@ typedef struct RAWPCIFACTORY
      * @param   pIfFactory          Pointer to this structure.
      * @param   u32HostAddress      Address of PCI device on the host.
      * @param   fFlags              Creation flags.
+     * @param   pVmCtx              Context of VM where device is created.
      * @param   ppDevPort           Where to store the pointer to the device port
      *                              on success.
      *
@@ -419,6 +457,7 @@ typedef struct RAWPCIFACTORY
     DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory,
                                                    uint32_t             u32HostAddress,
                                                    uint32_t             fFlags,
+                                                   PRAWPCIVM            pVmCtx,
                                                    PRAWPCIDEVPORT       *ppDevPort));
 
 
@@ -449,7 +488,7 @@ typedef struct RAWPCIFACTORY
                                             PRAWPCIVM            pPciData));
 } RAWPCIFACTORY;
 
-#define RAWPCIFACTORY_UUID_STR   "0382086d-d37c-48e8-9749-c3bee355acf6"
+#define RAWPCIFACTORY_UUID_STR   "ea089839-4171-476f-adfb-9e7ab1cbd0fb"
 
 /**
  * Flags passed to pfnPciDeviceConstructStart(), to notify driver
