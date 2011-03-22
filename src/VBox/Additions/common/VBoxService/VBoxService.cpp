@@ -46,7 +46,6 @@
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 
-#include <VBox/VBoxGuestLib.h>
 #include <VBox/log.h>
 
 #include "VBoxServiceInternal.h"
@@ -245,6 +244,7 @@ int VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus)
      * VBoxGuestFacilityStatus_Failed is sticky.
      */
     static VBoxGuestFacilityStatus s_enmLastStatus = VBoxGuestFacilityStatus_Inactive;
+    VBoxServiceVerbose(4, "Setting VBoxService status to %u\n", enmStatus);
     if (s_enmLastStatus != VBoxGuestFacilityStatus_Failed)
     {
         int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_VBoxService,
