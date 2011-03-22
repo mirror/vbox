@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -397,8 +397,9 @@ int main(int argc, char **argv)
     PRTLOGGER pLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     int rc = RTLogCreate(&pLogger, 0, "all",
-                         NULL, RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                          RTLOGDEST_STDOUT, NULL);
+                         NULL, RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT,
+                         NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
+                         NULL);
     RTLogRelSetDefaultInstance(pLogger);
 
     if (strcmp(szCmd, "NEW") == 0)

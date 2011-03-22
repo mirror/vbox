@@ -5393,8 +5393,9 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 #endif
     char szError[RTPATH_MAX + 128] = "";
     int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
-                            "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                            RTLOGDEST_FILE, szError, sizeof(szError), logFile.c_str());
+                            "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
+                            NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
+                            szError, sizeof(szError), logFile.c_str());
     if (RT_SUCCESS(vrc))
     {
         /* some introductory information */
