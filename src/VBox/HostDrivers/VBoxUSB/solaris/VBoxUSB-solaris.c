@@ -555,12 +555,12 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     bzero(&pState->ClientInfo, sizeof(pState->ClientInfo));
                                                     char szDevicePath[MAXPATHLEN];
                                                     ddi_pathname(pState->pDip, szDevicePath);
-                                                    RTStrPrintf(pState->ClientInfo.achClientPath, sizeof(pState->ClientInfo.achClientPath),
+                                                    RTStrPrintf(pState->ClientInfo.szClientPath, sizeof(pState->ClientInfo.szClientPath),
                                                                 "/devices%s:%s",
                                                                 szDevicePath,
                                                                 DEVICE_NAME);
                                                     RTPathStripFilename(szDevicePath);
-                                                    RTStrPrintf(pState->ClientInfo.achDeviceIdent, sizeof(pState->ClientInfo.achDeviceIdent),
+                                                    RTStrPrintf(pState->ClientInfo.szDeviceIdent, sizeof(pState->ClientInfo.szDeviceIdent),
                                                                 "%#x:%#x:%d:%s",
                                                                 pState->pDevDesc->dev_descr->idVendor,
                                                                 pState->pDevDesc->dev_descr->idProduct,
@@ -569,11 +569,17 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     pState->ClientInfo.Instance = instance;
                                                     rc = VBoxUSBMonSolarisRegisterClient(pState->pDip, &pState->ClientInfo);
                                                     if (RT_SUCCESS(rc))
+                                                    {
+                                                        LogRel((DEVICE_NAME ": Captured %s %s\n",
+                                                                pState->pDevDesc->dev_product ? pState->pDevDesc->dev_product : "<Unnamed USB device>",
+                                                                pState->ClientInfo.szDeviceIdent));
+
                                                         return DDI_SUCCESS;
+                                                    }
                                                     else
                                                     {
                                                         LogRel((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient failed! rc=%d path=%s instance=%d\n",
-                                                                rc, pState->ClientInfo.achClientPath, instance));
+                                                                rc, pState->ClientInfo.szClientPath, instance));
                                                     }
 
                                                     usb_unregister_event_cbs(pState->pDip, &g_VBoxUSBSolarisEvents);
@@ -737,6 +743,10 @@ int VBoxUSBSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             VBoxUSBMonSolarisUnregisterClient(pState->pDip);
 
             ddi_remove_minor_node(pState->pDip, NULL);
+
+            LogRel((DEVICE_NAME ": Released %s %s\n",
+                    pState->pDevDesc->dev_product ? pState->pDevDesc->dev_product : "<Unnamed USB device>",
+                    pState->ClientInfo.szDeviceIdent));
 
             ddi_soft_state_free(g_pVBoxUSBSolarisState, instance);
             pState = NULL;

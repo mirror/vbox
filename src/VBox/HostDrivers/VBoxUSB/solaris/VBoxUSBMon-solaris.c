@@ -864,10 +864,10 @@ static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIE
     vboxusbmon_client_t *pPrev = NULL;
     while (pCur)
     {
-        if (strncmp(pClientInfo->achDeviceIdent, pCur->Info.achDeviceIdent, sizeof(pCur->Info.achDeviceIdent) - 1) == 0)
+        if (strncmp(pClientInfo->szDeviceIdent, pCur->Info.szDeviceIdent, sizeof(pCur->Info.szDeviceIdent) - 1) == 0)
         {
             pClientInfo->Instance = pCur->Info.Instance;
-            RTStrPrintf(pClientInfo->achClientPath, sizeof(pClientInfo->achClientPath), "%s", pCur->Info.achClientPath);
+            RTStrPrintf(pClientInfo->szClientPath, sizeof(pClientInfo->szClientPath), "%s", pCur->Info.szClientPath);
 
             mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
@@ -880,7 +880,7 @@ static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIE
 
     mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-    LogRel((DEVICE_NAME ":vboxUSBMonSolarisClientInfo Failed to find client %s\n", pClientInfo->achDeviceIdent));
+    LogRel((DEVICE_NAME ":vboxUSBMonSolarisClientInfo Failed to find client %s\n", pClientInfo->szDeviceIdent));
     return VERR_NOT_FOUND;
 }
 
@@ -915,7 +915,7 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
                 mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
                 LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient registered. %d %s %s\n",
-                            pClient->Info.Instance, pClient->Info.achClientPath, pClient->Info.achDeviceIdent));
+                            pClient->Info.Instance, pClient->Info.szClientPath, pClient->Info.achDeviceIdent));
 
                 return VINF_SUCCESS;
             }
@@ -963,7 +963,7 @@ int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip)
                     mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
                     LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient unregistered. %d %s %s\n",
-                                pCur->Info.Instance, pCur->Info.achClientPath, pCur->Info.achDeviceIdent));
+                                pCur->Info.Instance, pCur->Info.szClientPath, pCur->Info.szDeviceIdent));
                     RTMemFree(pCur);
                     pCur = NULL;
                     return VINF_SUCCESS;

@@ -200,17 +200,17 @@ USBLIB_DECL(int) USBLibGetClientInfo(char *pszDeviceIdent, char **ppszClientPath
 
     VBOXUSBREQ_CLIENT_INFO Req;
     bzero(&Req, sizeof(Req));
-    RTStrPrintf(Req.achDeviceIdent, sizeof(Req.achDeviceIdent), "%s", pszDeviceIdent);
+    RTStrPrintf(Req.szDeviceIdent, sizeof(Req.szDeviceIdent), "%s", pszDeviceIdent);
 
     int rc = usblibDoIOCtl(VBOXUSBMON_IOCTL_CLIENT_INFO, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
     {
         *pInstance = Req.Instance;
-        rc = RTStrDupEx(ppszClientPath, Req.achClientPath);
+        rc = RTStrDupEx(ppszClientPath, Req.szClientPath);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
-        LogRel((USBLIBR3 ":USBLibGetClientInfo RTStrAPrintf failed! rc=%Rrc achClientPath=%s\n", rc, Req.achClientPath));
+        LogRel((USBLIBR3 ":USBLibGetClientInfo RTStrDupEx failed! rc=%Rrc szClientPath=%s\n", rc, Req.szClientPath));
     }
     else
         LogRel((USBLIBR3 ":USBLibGetClientInfo VBOXUSBMON_IOCTL_CLIENTPATH failed! rc=%Rrc\n", rc));
