@@ -2471,6 +2471,7 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
 
+#if 0
     cbCopied = atapiGetConfigurationFillFeatureCore(s, pbBuf, cbBuf);
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
@@ -2498,9 +2499,10 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     cbCopied = atapiGetConfigurationFillFeatureTimeout(s, pbBuf, cbBuf);
     cbBuf -= cbCopied;
     pbBuf += cbCopied;
+#endif
 
-    /* Set data length now. */
-    ataH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf);
+    /* Set data length now - the field is not included in the final length. */
+    ataH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
 
     /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
     s->iSourceSink = ATAFN_SS_NULL;
