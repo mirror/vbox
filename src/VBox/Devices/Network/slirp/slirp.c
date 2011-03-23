@@ -2019,23 +2019,16 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
 }
 
-int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *mac)
-{
-    if (slirp_arp_cache_update(pData, dst, mac))
-        slirp_arp_cache_add(pData, dst, mac);
-
-    return 0;
-}
-
 /* updates the arp cache
+ * @note: this is helper function, slirp_arp_cache_update_or_add should be used.
  * @returns 0 - if has found and updated
  *          1 - if hasn't found.
  */
-int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
+static inline int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
 {
     struct arp_cache_entry *ac;
-    if (!memcmp(mac, broadcast_ethaddr, ETH_ALEN))
-        return 1;
+    Assert((   memcmp(mac, broadcast_ethaddr, ETH_ALEN)
+            && memcmp(mac, zerro_ethaddr, ETH_ALEN)));
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
         if (!memcmp(ac->ether, mac, ETH_ALEN))
@@ -2046,10 +2039,16 @@ int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
     }
     return 1;
 }
+/**
+ * add entry to the arp cache
+ * @note: this is helper function, slirp_arp_cache_update_or_add should be used.
+ */
 
-void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
+static inline void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
 {
     struct arp_cache_entry *ac = NULL;
+    Assert((   memcmp(ether, broadcast_ethaddr, ETH_ALEN)
+            && memcmp(ether, zerro_ethaddr, ETH_ALEN)));
     ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
     if (ac == NULL)
     {
@@ -2057,21 +2056,34 @@ void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
         return;
     }
     ac->ip = ip;
-    if(!memcmp(ether, broadcast_ethaddr, ETH_ALEN))
+    memcpy(ac->ether, ether, ETH_ALEN);
+    LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
+}
+
+/* updates or adds entry to the arp cache
+ * @returns 0 - if has found and updated
+ *          1 - if hasn't found.
+ */
+int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *mac)
+{
+    if (   !memcmp(mac, broadcast_ethaddr, ETH_ALEN)
+        || !memcmp(mac, zerro_ethaddr, ETH_ALEN))
     {
         static bool fBroadcastEtherAddReported;
         if (!fBroadcastEtherAddReported)
         {
             LogRel(("NAT: Attept to add pair [%R[ether]:%R[IP4]] was ignored\n",
-                    ether, ip));
+                    mac, &dst));
             fBroadcastEtherAddReported = true;
         }
-        RTMemFree(ac);
-        return;
+        return 1;
     }
-    memcpy(ac->ether, ether, ETH_ALEN);
-    LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
+    if (slirp_arp_cache_update(pData, dst, mac))
+        slirp_arp_cache_add(pData, dst, mac);
+
+    return 0;
 }
+
 
 void slirp_set_mtu(PNATState pData, int mtu)
 {
