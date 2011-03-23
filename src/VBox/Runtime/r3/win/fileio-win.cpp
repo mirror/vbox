@@ -403,7 +403,54 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcb
         }
         return VINF_SUCCESS;
     }
-    return RTErrConvertFromWin32(GetLastError());
+
+    /* 
+     * If it's a console, we might bump into out of memory conditions in the 
+     * ReadConsole call.  
+     */
+    DWORD dwErr = GetLastError();
+    if (dwErr == ERROR_NOT_ENOUGH_MEMORY)
+    {
+        ULONG cbChunk = cbToReadAdj / 2;
+        if (cbChunk > 16*_1K)
+            cbChunk = 16*_1K;
+        else
+            cbChunk = RT_ALIGN_32(cbChunk, 256);
+
+        cbRead = 0;
+        while (cbToReadAdj > cbRead)
+        {
+            ULONG cbToRead   = RT_MIN(cbChunk, cbToReadAdj - cbRead);
+            ULONG cbReadPart = 0;
+            if (!ReadFile((HANDLE)File, (char *)pvBuf + cbRead, cbToRead, &cbReadPart, NULL))
+            {
+                /* If we failed because the buffer is too big, shrink it and
+                   try again. */
+                dwErr = GetLastError();
+                if (   dwErr == ERROR_NOT_ENOUGH_MEMORY
+                    && cbChunk > 8)
+                {
+                    cbChunk /= 2;
+                    continue;
+                }
+                return RTErrConvertFromWin32(dwErr);
+            }
+            cbRead += cbReadPart;
+
+            /* Return if the caller can handle partial reads, otherwise try
+               fill the buffer all the way up. */
+            if (pcbRead)
+            {
+                *pcbRead = cbRead;
+                break;
+            }
+            if (cbReadPart == 0)
+                return VERR_EOF;
+        }
+        return VINF_SUCCESS;
+    }
+    
+    return RTErrConvertFromWin32(dwErr);
 }
 
 
@@ -442,7 +489,58 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
         }
         return VINF_SUCCESS;
     }
-    int rc = RTErrConvertFromWin32(GetLastError());
+
+    /* 
+     * If it's a console, we might bump into out of memory conditions in the 
+     * WriteConsole call.  
+     */
+    DWORD dwErr = GetLastError();
+    if (dwErr == ERROR_NOT_ENOUGH_MEMORY)
+    {
+        ULONG cbChunk = cbToWriteAdj / 2;
+        if (cbChunk > _32K)
+            cbChunk = _32K;
+        else
+            cbChunk = RT_ALIGN_32(cbChunk, 256);
+
+        cbWritten = 0;
+        while (cbToWriteAdj > cbWritten)
+        {
+            ULONG cbToWrite     = RT_MIN(cbChunk, cbToWriteAdj - cbWritten);
+            ULONG cbWrittenPart = 0;
+            if (!WriteFile((HANDLE)File, (const char *)pvBuf + cbWritten, cbToWrite, &cbWrittenPart, NULL))
+            {
+                /* If we failed because the buffer is too big, shrink it and
+                   try again. */
+                dwErr = GetLastError();
+                if (   dwErr == ERROR_NOT_ENOUGH_MEMORY
+                    && cbChunk > 8)
+                {
+                    cbChunk /= 2;
+                    continue;
+                }
+                int rc = RTErrConvertFromWin32(dwErr);
+                if (   rc == VERR_DISK_FULL
+                    && IsBeyondLimit(File, cbToWriteAdj - cbWritten, FILE_CURRENT))
+                    rc = VERR_FILE_TOO_BIG;
+                return rc;
+            }
+            cbWritten += cbWrittenPart;
+
+            /* Return if the caller can handle partial writes, otherwise try
+               write out everything. */
+            if (pcbWritten)
+            {
+                *pcbWritten = cbWritten;
+                break;
+            }
+            if (cbWrittenPart == 0)
+                return VERR_WRITE_ERROR;
+        }
+        return VINF_SUCCESS;
+    }
+
+    int rc = RTErrConvertFromWin32(dwErr);
     if (   rc == VERR_DISK_FULL
         && IsBeyondLimit(File, cbToWriteAdj - cbWritten, FILE_CURRENT))
         rc = VERR_FILE_TOO_BIG;
