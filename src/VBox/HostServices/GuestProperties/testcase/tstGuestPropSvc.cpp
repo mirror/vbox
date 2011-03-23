@@ -22,6 +22,12 @@
 #include <VBox/HostServices/GuestPropertySvc.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+#include <iprt/test.h>
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static RTTEST g_hTest = NIL_RTTEST;
 
 using namespace guestProp;
 
@@ -65,22 +71,24 @@ struct flagStrings
     /** How the functions should output the string again */
     const char *pcszOut;
 }
-validFlagStrings[] =
+g_validFlagStrings[] =
 {
-    { "  ", "" },
-    { "transient, ", "TRANSIENT" },
-    { "  rdOnLyHOST, transIENT  ,     READONLY    ", "TRANSIENT, READONLY" },
-    { " rdonlyguest", "RDONLYGUEST" },
-    { "rdonlyhost     ", "RDONLYHOST" },
-    { "transient, transreset, rdonlyhost",
-       "TRANSIENT, RDONLYHOST, TRANSRESET" }
+    /* pcszIn,                                          pcszOut */
+    { "  ",                                             "" },
+    { "transient, ",                                    "TRANSIENT" },
+    { "  rdOnLyHOST, transIENT  ,     READONLY    ",    "TRANSIENT, READONLY" },
+    { " rdonlyguest",                                   "RDONLYGUEST" },
+    { "rdonlyhost     ",                                "RDONLYHOST" },
+    { "transient, transreset, rdonlyhost",              "TRANSIENT, RDONLYHOST, TRANSRESET" },
+    { "transient, transreset, rdonlyguest",             "TRANSIENT, RDONLYGUEST, TRANSRESET" },
+    { "rdonlyguest, rdonlyhost",                        "READONLY" }
 };
 
 /**
  * A list of invalid flag strings for testConvertFlags.  The flag conversion
  * functions should reject these.
  */
-const char *invalidFlagStrings[] =
+const char *g_invalidFlagStrings[] =
 {
     "RDONLYHOST,,",
     "  TRANSIENT READONLY"
@@ -94,63 +102,65 @@ const char *invalidFlagStrings[] =
 int testConvertFlags()
 {
     int rc = VINF_SUCCESS;
+    char *pszFlagBuffer = (char *)RTTestGuardedAllocTail(g_hTest, MAX_FLAGS_LEN);
+
     RTPrintf("tstGuestPropSvc: Testing conversion of valid flags strings.\n");
-    for (unsigned i = 0; i < RT_ELEMENTS(validFlagStrings) && RT_SUCCESS(rc); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(g_validFlagStrings) && RT_SUCCESS(rc); ++i)
     {
-        char szFlagBuffer[MAX_FLAGS_LEN * 2];
         uint32_t fFlags;
-        rc = validateFlags(validFlagStrings[i].pcszIn, &fFlags);
+        rc = validateFlags(g_validFlagStrings[i].pcszIn, &fFlags);
         if (RT_FAILURE(rc))
-            RTPrintf("tstGuestPropSvc: FAILURE - Failed to validate flag string '%s'.\n", validFlagStrings[i].pcszIn);
+            RTPrintf("tstGuestPropSvc: FAILURE - Failed to validate flag string '%s'.\n", g_validFlagStrings[i].pcszIn);
         if (RT_SUCCESS(rc))
         {
-            rc = writeFlags(fFlags, szFlagBuffer);
+            rc = writeFlags(fFlags, pszFlagBuffer);
             if (RT_FAILURE(rc))
                 RTPrintf("tstGuestPropSvc: FAILURE - Failed to convert flag string '%s' back to a string.\n",
-                            validFlagStrings[i].pcszIn);
+                         g_validFlagStrings[i].pcszIn);
         }
-        if (RT_SUCCESS(rc) && (strlen(szFlagBuffer) > MAX_FLAGS_LEN - 1))
+        if (RT_SUCCESS(rc) && (strlen(pszFlagBuffer) > MAX_FLAGS_LEN - 1))
         {
             RTPrintf("tstGuestPropSvc: FAILURE - String '%s' converts back to a flag string which is too long.\n",
-                        validFlagStrings[i].pcszIn);
+                     g_validFlagStrings[i].pcszIn);
             rc = VERR_TOO_MUCH_DATA;
         }
-        if (RT_SUCCESS(rc) && (strcmp(szFlagBuffer, validFlagStrings[i].pcszOut) != 0))
+        if (RT_SUCCESS(rc) && (strcmp(pszFlagBuffer, g_validFlagStrings[i].pcszOut) != 0))
         {
             RTPrintf("tstGuestPropSvc: FAILURE - String '%s' converts back to '%s' instead of to '%s'\n",
-                        validFlagStrings[i].pcszIn, szFlagBuffer,
-                        validFlagStrings[i].pcszOut);
+                     g_validFlagStrings[i].pcszIn, pszFlagBuffer,
+                     g_validFlagStrings[i].pcszOut);
             rc = VERR_PARSE_ERROR;
         }
     }
     if (RT_SUCCESS(rc))
     {
         RTPrintf("Testing rejection of invalid flags strings.\n");
-        for (unsigned i = 0; i < RT_ELEMENTS(invalidFlagStrings) && RT_SUCCESS(rc); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(g_invalidFlagStrings) && RT_SUCCESS(rc); ++i)
         {
             uint32_t fFlags;
             /* This is required to fail. */
-            if (RT_SUCCESS(validateFlags(invalidFlagStrings[i], &fFlags)))
+            if (RT_SUCCESS(validateFlags(g_invalidFlagStrings[i], &fFlags)))
             {
                 RTPrintf("String '%s' was incorrectly accepted as a valid flag string.\n",
-                         invalidFlagStrings[i]);
+                         g_invalidFlagStrings[i]);
                 rc = VERR_PARSE_ERROR;
             }
         }
     }
     if (RT_SUCCESS(rc))
     {
-        char szFlagBuffer[MAX_FLAGS_LEN * 2];
         uint32_t u32BadFlags = ALLFLAGS << 1;
         RTPrintf("Testing rejection of an invalid flags field.\n");
         /* This is required to fail. */
-        if (RT_SUCCESS(writeFlags(u32BadFlags, szFlagBuffer)))
+        if (RT_SUCCESS(writeFlags(u32BadFlags, pszFlagBuffer)))
         {
             RTPrintf("Flags 0x%x were incorrectly written out as '%.*s'\n",
-                     u32BadFlags, MAX_FLAGS_LEN, szFlagBuffer);
+                     u32BadFlags, MAX_FLAGS_LEN, pszFlagBuffer);
             rc = VERR_PARSE_ERROR;
         }
     }
+
+    RTTestGuardedFree(g_hTest, pszFlagBuffer);
     return rc;
 }
 
@@ -1039,11 +1049,18 @@ int testDelPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
 
 int main(int argc, char **argv)
 {
-    VBOXHGCMSVCFNTABLE svcTable;
-    VBOXHGCMSVCHELPERS svcHelpers;
+    VBOXHGCMSVCFNTABLE  svcTable;
+    VBOXHGCMSVCHELPERS  svcHelpers;
+    RTEXITCODE          rcExit;
 
+    rcExit  = RTTestInitAndCreate("tstGuestPropSvc", &g_hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(g_hTest);
+
+/** @todo convert the rest of this testcase. */
     initTable(&svcTable, &svcHelpers);
-    RTR3Init();
+
     if (RT_FAILURE(testConvertFlags()))
         return 1;
     /* The function is inside the service, not HGCM. */
@@ -1080,6 +1097,6 @@ int main(int argc, char **argv)
         return 1;
     if (RT_FAILURE(testDelPropROGuest(&svcTable)))
         return 1;
-    RTPrintf("tstGuestPropSvc: SUCCEEDED.\n");
-    return 0;
+
+    return RTTestSummaryAndDestroy(g_hTest);
 }
