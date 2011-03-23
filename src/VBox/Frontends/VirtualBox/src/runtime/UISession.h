@@ -167,6 +167,7 @@ signals:
     void sigAdditionsStateChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
+    void sigVRDEChange();
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
@@ -193,6 +194,7 @@ private slots:
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
+    void sltVRDEChange();
 
 private:
 

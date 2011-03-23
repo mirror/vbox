@@ -170,9 +170,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         }
         /* Not used *
         case KVBoxEventType_OnCPUChange:
-        case KVBoxEventType_OnVRDEServerChange:
-        case KVBoxEventType_OnVRDEServerInfoChange:
          */
+        case KVBoxEventType_OnVRDEServerChanged:
+        case KVBoxEventType_OnVRDEServerInfoChanged:
+        {
+            emit sigVRDEChange();
+            break;
+        }
         case KVBoxEventType_OnUSBControllerChanged:
         {
             emit sigUSBControllerChange();
