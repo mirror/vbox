@@ -30,6 +30,7 @@
 *******************************************************************************/
 #include <Windows.h>
 #include <iprt/thread.h>
+#include <iprt/param.h>
 #include "internal/thread.h"
 
 
@@ -41,7 +42,24 @@ BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
     switch (dwReason)
     {
+        /*
+         * When attaching to a process, we'd like to make sure IPRT stays put 
+         * and doesn't get unloaded.
+         */
         case DLL_PROCESS_ATTACH:
+        {
+            WCHAR wszName[RTPATH_MAX];
+            SetLastError(NO_ERROR);
+            if (   GetModuleFileNameW((HMODULE)hModule, wszName, RT_ELEMENTS(wszName)) > 0
+                && GetLastError() == NO_ERROR)
+            {
+                int cExtraLoads = 32;
+                while (cExtraLoads-- > 0)
+                    LoadLibraryW(wszName);
+            }
+            break;
+        }
+
         case DLL_PROCESS_DETACH:
         case DLL_THREAD_ATTACH:
         default:
@@ -54,3 +72,4 @@ BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
     }
     return TRUE;
 }
+
