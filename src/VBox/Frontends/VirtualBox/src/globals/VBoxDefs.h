@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,6 +96,14 @@ struct VBoxDefs
         FormatSize_Round,
         FormatSize_RoundDown,
         FormatSize_RoundUp
+    };
+
+    /** Settings dialog types: */
+    enum SettingsDialogType
+    {
+        SettingsDialogType_Wrong,
+        SettingsDialogType_Offline,
+        SettingsDialogType_Runtime
     };
 
     static const char* GUI_LastWindowPosition;

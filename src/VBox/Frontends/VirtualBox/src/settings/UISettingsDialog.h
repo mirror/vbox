@@ -23,6 +23,7 @@
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UISettingsDialog.gen.h"
+#include "VBoxDefs.h"
 
 /* Forward declarations */
 class QIWidgetValidator;
@@ -40,7 +41,7 @@ class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UI
 public:
 
     /* Settings Dialog Constructor/Destructor: */
-    UISettingsDialog(QWidget *pParent);
+    UISettingsDialog(QWidget *pParent, VBoxDefs::SettingsDialogType dialogType);
    ~UISettingsDialog();
 
     /* Save/Load interface: */
@@ -63,6 +64,8 @@ protected:
     /* UI translator: */
     virtual void retranslateUi();
 
+    /* Dialog type: */
+    VBoxDefs::SettingsDialogType dialogType() { return m_dialogType; }
     /* Dialog title: */
     virtual QString title() const = 0;
     /* Dialog title extension: */
@@ -106,6 +109,7 @@ private:
     void assignValidator(UISettingsPage *pPage);
 
     /* Global Flags: */
+    VBoxDefs::SettingsDialogType m_dialogType;
     bool m_fPolished;
 
     /* Error & Warning stuff: */

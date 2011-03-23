@@ -222,6 +222,28 @@ protected:
     }
 };
 
+class ShowSettingsDialogAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ShowSettingsDialogAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/settings_16px.png", ":/settings_dis_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionsPool", "&Settings..."), gMS->shortcut(UIMachineShortcuts::SettingsDialogShortcut)));
+        setStatusTip(QApplication::translate("UIActionsPool", "Manage the virtual machine settings"));
+    }
+};
+
 class PerformTakeSnapshotAction : public UISimpleAction
 {
     Q_OBJECT;
@@ -261,7 +283,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionsPool", "Session I&nformation"), gMS->shortcut(UIMachineShortcuts::InformationDialogShortcut)));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionsPool", "Session I&nformation..."), gMS->shortcut(UIMachineShortcuts::InformationDialogShortcut)));
         setStatusTip(QApplication::translate("UIActionsPool", "Show Session Information Dialog"));
     }
 };
@@ -1113,6 +1135,7 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     , m_actionsPool(UIActionIndex_End, 0)
 {
     /* "Machine" menu actions: */
+    m_actionsPool[UIActionIndex_Simple_SettingsDialog] = new ShowSettingsDialogAction(this);
     m_actionsPool[UIActionIndex_Simple_TakeSnapshot] = new PerformTakeSnapshotAction(this);
     m_actionsPool[UIActionIndex_Simple_InformationDialog] = new ShowInformationDialogAction(this);
     m_actionsPool[UIActionIndex_Toggle_MouseIntegration] = new ToggleMouseIntegrationAction(this);

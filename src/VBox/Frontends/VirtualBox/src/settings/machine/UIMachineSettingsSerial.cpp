@@ -25,8 +25,9 @@
 #include <QDir>
 
 /* UIMachineSettingsSerial stuff */
-UIMachineSettingsSerial::UIMachineSettingsSerial()
+UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
+    , m_pParent(pParent)
     , mValidator(0)
     , m_iSlot(-1)
 {
@@ -62,6 +63,32 @@ UIMachineSettingsSerial::UIMachineSettingsSerial()
 
     /* Applying language settings */
     retranslateUi();
+}
+
+void UIMachineSettingsSerial::polishTab()
+{
+    /* Polish tab depending on dialog type: */
+    switch (m_pParent->dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            mGbSerial->setEnabled(false);
+            mLbNumber->setEnabled(false);
+            mCbNumber->setEnabled(false);
+            mLbIRQ->setEnabled(false);
+            mLeIRQ->setEnabled(false);
+            mLbIOPort->setEnabled(false);
+            mLeIOPort->setEnabled(false);
+            mLbMode->setEnabled(false);
+            mCbMode->setEnabled(false);
+            mCbPipe->setEnabled(false);
+            mLbPath->setEnabled(false);
+            mLePath->setEnabled(false);
+            break;
+        default:
+            break;
+    }
 }
 
 void UIMachineSettingsSerial::fetchPortData(const UISerialPortData &data)
@@ -194,7 +221,7 @@ UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
     {
         /* Creating port's page: */
-        UIMachineSettingsSerial *pPage = new UIMachineSettingsSerial;
+        UIMachineSettingsSerial *pPage = new UIMachineSettingsSerial(this);
 
         /* Attach port's page to Tab Widget: */
         mTabWidget->addTab(pPage, pPage->pageTitle());
@@ -293,25 +320,39 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
-    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    /* Save settings depending on dialog type: */
+    switch (dialogType())
     {
-        /* Get adapter: */
-        CSerialPort port = m_machine.GetSerialPort(iSlot);
+        /* Here come the properties which could be changed only in offline state: */
+        case VBoxDefs::SettingsDialogType_Offline:
+        {
+            /* Gather corresponding values from internal variables: */
+            for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+            {
+                /* Get adapter: */
+                CSerialPort port = m_machine.GetSerialPort(iSlot);
 
-        /* Get cached data for this slot: */
-        const UISerialPortData &data = m_cache.m_items[iSlot];
+                /* Get cached data for this slot: */
+                const UISerialPortData &data = m_cache.m_items[iSlot];
 
-        /* Save options: */
-        port.SetEnabled(data.m_fPortEnabled);
-        port.SetIRQ(data.m_uIRQ);
-        port.SetIOBase(data.m_uIOBase);
-        port.SetServer(data.m_fServer);
-        port.SetPath(data.m_strPath);
-        /* This *must* be last. The host mode will be changed to disconnected if
-         * some of the necessary settings above will not meet the requirements for
-         * the selected mode. */
-        port.SetHostMode(data.m_hostMode);
+                /* Save options: */
+                port.SetEnabled(data.m_fPortEnabled);
+                port.SetIRQ(data.m_uIRQ);
+                port.SetIOBase(data.m_uIOBase);
+                port.SetServer(data.m_fServer);
+                port.SetPath(data.m_strPath);
+                /* This *must* be last. The host mode will be changed to disconnected if
+                 * some of the necessary settings above will not meet the requirements for
+                 * the selected mode. */
+                port.SetHostMode(data.m_hostMode);
+            }
+            break;
+        }
+        /* Here come the properties which could be changed at runtime too: */
+        case VBoxDefs::SettingsDialogType_Runtime:
+            break;
+        default:
+            break;
     }
 
     /* Upload machine to data: */
@@ -389,6 +430,31 @@ void UIMachineSettingsSerialPage::retranslateUi()
         UIMachineSettingsSerial *page =
             static_cast<UIMachineSettingsSerial*> (mTabWidget->widget (i));
         mTabWidget->setTabText (i, page->pageTitle());
+    }
+}
+
+void UIMachineSettingsSerialPage::polishPage()
+{
+    /* Get the count of serial port tabs: */
+    for (int iTabIndex = 0; iTabIndex < mTabWidget->count(); ++iTabIndex)
+    {
+        /* Polish iterated tab depending on dialog type: */
+        switch (dialogType())
+        {
+            case VBoxDefs::SettingsDialogType_Offline:
+                break;
+            case VBoxDefs::SettingsDialogType_Runtime:
+            {
+                if (!m_cache.m_items[iTabIndex].m_fPortEnabled)
+                    mTabWidget->setTabEnabled(iTabIndex, false);
+                break;
+            }
+            default:
+                break;
+        }
+        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iTabIndex));
+        Assert(pTab);
+        pTab->polishTab();
     }
 }
 

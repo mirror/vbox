@@ -26,10 +26,12 @@
 /* Other includes */
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
+#include "VBoxDefs.h"
 #include "VBoxGlobalSettings.h"
 
 /* Forward declarations */
 class QIWidgetValidator;
+class QShowEvent;
 
 /* Settings page types: */
 enum UISettingsPageType
@@ -53,9 +55,10 @@ Q_DECLARE_METATYPE(UISettingsDataGlobal);
 struct UISettingsDataMachine
 {
     UISettingsDataMachine() {}
-    UISettingsDataMachine(const CMachine &machine)
-        : m_machine(machine) {}
+    UISettingsDataMachine(const CMachine &machine, const CConsole &console)
+        : m_machine(machine), m_console(console) {}
     CMachine m_machine;
+    CConsole m_console;
 };
 Q_DECLARE_METATYPE(UISettingsDataMachine);
 
@@ -91,6 +94,10 @@ public:
     /* Settings page type stuff: */
     UISettingsPageType pageType() const { return m_pageType; }
 
+    /* Settings dialog type stuff: */
+    VBoxDefs::SettingsDialogType dialogType() const { return m_dialogType; }
+    virtual void setDialogType(VBoxDefs::SettingsDialogType dialogType) { m_dialogType = dialogType; }
+
     /* Page 'ID' stuff: */
     int id() const { return m_cId; }
     void setId(int cId) { m_cId = cId; }
@@ -108,11 +115,19 @@ protected:
     /* Settings page constructor, hidden: */
     UISettingsPage(UISettingsPageType type);
 
+    /* Show event: */
+    void showEvent(QShowEvent *pEvent);
+
+    /* Virtual function to polish page content: */
+    virtual void polishPage() {}
+
 private:
 
     /* Private variables: */
     UISettingsPageType m_pageType;
+    VBoxDefs::SettingsDialogType m_dialogType;
     int m_cId;
+    bool m_fPolished;
     bool m_fProcessed;
     bool m_fFailed;
     QWidget *m_pFirstWidget;
@@ -157,6 +172,7 @@ protected:
 
     /* Machine data source: */
     CMachine m_machine;
+    CConsole m_console;
 };
 
 #endif // __UISettingsPage_h__

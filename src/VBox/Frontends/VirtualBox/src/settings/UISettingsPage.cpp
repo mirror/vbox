@@ -23,11 +23,25 @@
 /* Settings page constructor, hidden: */
 UISettingsPage::UISettingsPage(UISettingsPageType pageType)
     : m_pageType(pageType)
+    , m_dialogType(VBoxDefs::SettingsDialogType_Wrong)
     , m_cId(-1)
+    , m_fPolished(false)
     , m_fProcessed(false)
     , m_fFailed(false)
     , m_pFirstWidget(0)
 {
+}
+
+void UISettingsPage::showEvent(QShowEvent *pEvent)
+{
+    /* Polish page if necessary: */
+    if (!m_fPolished)
+    {
+        m_fPolished = true;
+        polishPage();
+    }
+    /* Call for base-class: */
+    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
 
 /* Global settings page constructor, hidden: */
@@ -55,15 +69,16 @@ UISettingsPageMachine::UISettingsPageMachine()
 {
 }
 
-/* Fetch data to m_machine: */
+/* Fetch data to m_machine & m_console: */
 void UISettingsPageMachine::fetchData(const QVariant &data)
 {
     m_machine = data.value<UISettingsDataMachine>().m_machine;
+    m_console = data.value<UISettingsDataMachine>().m_console;
 }
 
-/* Upload m_machine to data: */
+/* Upload m_machine & m_console to data: */
 void UISettingsPageMachine::uploadData(QVariant &data) const
 {
-    data = QVariant::fromValue(UISettingsDataMachine(m_machine));
+    data = QVariant::fromValue(UISettingsDataMachine(m_machine, m_console));
 }
 

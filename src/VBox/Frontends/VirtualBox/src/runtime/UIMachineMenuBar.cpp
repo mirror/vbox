@@ -189,6 +189,7 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
         return;
 
     /* Machine submenu: */
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_SettingsDialog));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_TakeSnapshot));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_InformationDialog));
     pMenu->addSeparator();

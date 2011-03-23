@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,8 +98,7 @@ protected:
 private slots:
 
     void usbAdapterToggled (bool aOn);
-    void currentChanged (QTreeWidgetItem *aItem = 0,
-                         QTreeWidgetItem *aPrev = 0);
+    void currentChanged (QTreeWidgetItem *aItem = 0);
 
     void newClicked();
     void addClicked();
@@ -125,12 +124,15 @@ private:
     /* Returns the multi-line description of the given USB filter: */
     static QString toolTipFor(const UIUSBFilterData &data);
 
+    void polishPage();
+
     /* Global data source: */
     CSystemProperties m_properties;
     VBoxGlobalSettings m_settings;
 
     /* Machine data source: */
     CMachine m_machine;
+    CConsole m_console;
 
     /* Other variables: */
     QIWidgetValidator *mValidator;

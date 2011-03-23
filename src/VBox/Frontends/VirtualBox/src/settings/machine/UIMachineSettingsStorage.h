@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -502,6 +502,8 @@ public:
     KChipsetType chipsetType() const;
     void setChipsetType(KChipsetType type);
 
+    void setDialogType(VBoxDefs::SettingsDialogType dialogType);
+
     QMap<KStorageBus, int> currentControllerTypes() const;
     QMap<KStorageBus, int> maximumControllerTypes() const;
 
@@ -520,6 +522,7 @@ private:
     ToolTipType mToolTipType;
 
     KChipsetType m_chipsetType;
+    VBoxDefs::SettingsDialogType m_dialogType;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
@@ -668,6 +671,9 @@ private:
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
     void addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType);
+
+    void setDialogType(VBoxDefs::SettingsDialogType settingsDialogType);
+    void polishPage();
 
     QIWidgetValidator *mValidator;
 

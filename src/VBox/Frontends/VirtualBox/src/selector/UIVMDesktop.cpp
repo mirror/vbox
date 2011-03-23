@@ -981,14 +981,7 @@ void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
 void UIDetailsPagePrivate::setMachine(const CMachine& machine)
 {
     m_machine = machine;
-    if (m_machine.isNull())
-        m_fChangeable = false;
-    else
-    {
-        KMachineState state = m_machine.GetState();
-        bool running = m_machine.GetSessionState() != KSessionState_Unlocked;
-        m_fChangeable = !running && state != KMachineState_Saved;
-    }
+    m_fChangeable = m_machine.isNull() ? false : m_machine.GetState() != KMachineState_Stuck;
 
     sltUpdateGeneral();
     sltUpdateSystem();

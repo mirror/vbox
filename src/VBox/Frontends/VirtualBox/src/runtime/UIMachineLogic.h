@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -168,13 +168,14 @@ private slots:
     void sltClose();
 
     /* "Device" menu functionality */
+    void sltOpenVMSettingsDialog(const QString &strCategory = QString());
+    void sltOpenNetworkAdaptersDialog();
+    void sltOpenSharedFoldersDialog();
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
     void sltMountRecentStorageMedium();
     void sltPrepareUSBMenu();
     void sltAttachUSBDevice();
-    void sltOpenNetworkAdaptersDialog();
-    void sltOpenSharedFoldersDialog();
     void sltSwitchVrde(bool fOn);
     void sltInstallGuestAdditions();
 

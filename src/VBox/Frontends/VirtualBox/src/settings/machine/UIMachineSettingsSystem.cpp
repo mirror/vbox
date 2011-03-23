@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -285,30 +285,46 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
-    int iBootIndex = 0;
-    /* Save boot-items of current VM: */
-    for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+    /* Save settings depending on dialog type: */
+    switch (dialogType())
     {
-        if (m_cache.m_bootItems[i].m_fEnabled)
-            m_machine.SetBootOrder(++iBootIndex, m_cache.m_bootItems[i].m_type);
+        /* Here come the properties which could be changed only in offline state: */
+        case VBoxDefs::SettingsDialogType_Offline:
+        {
+            /* Motherboard tab: */
+            m_machine.SetMemorySize(m_cache.m_iRAMSize);
+            int iBootIndex = 0;
+            /* Save boot-items of current VM: */
+            for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+            {
+                if (m_cache.m_bootItems[i].m_fEnabled)
+                    m_machine.SetBootOrder(++iBootIndex, m_cache.m_bootItems[i].m_type);
+            }
+            /* Save other unique boot-items: */
+            for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+            {
+                if (!m_cache.m_bootItems[i].m_fEnabled)
+                    m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+            }
+            m_machine.SetChipsetType(m_cache.m_chipsetType);
+            m_machine.GetBIOSSettings().SetIOAPICEnabled(m_cache.m_fIoApicEnabled);
+            m_machine.SetFirmwareType(m_cache.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+            m_machine.SetRTCUseUTC(m_cache.m_fUTCEnabled);
+            m_machine.SetPointingHidType(m_cache.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
+            /* Processor tab: */
+            m_machine.SetCPUCount(m_cache.m_cCPUCount);
+            m_machine.SetCPUProperty(KCPUPropertyType_PAE, m_cache.m_fPAEEnabled);
+            /* Acceleration tab: */
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, m_cache.m_fHwVirtExEnabled);
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, m_cache.m_fNestedPagingEnabled);
+            break;
+        }
+        /* Here come the properties which could be changed at runtime too: */
+        case VBoxDefs::SettingsDialogType_Runtime:
+            break;
+        default:
+            break;
     }
-    /* Save other unique boot-items: */
-    for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
-    {
-        if (!m_cache.m_bootItems[i].m_fEnabled)
-            m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
-    }
-    m_machine.GetBIOSSettings().SetIOAPICEnabled(m_cache.m_fIoApicEnabled);
-    m_machine.SetFirmwareType(m_cache.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
-    m_machine.SetRTCUseUTC(m_cache.m_fUTCEnabled);
-    m_machine.SetPointingHidType(m_cache.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
-    m_machine.SetCPUProperty(KCPUPropertyType_PAE, m_cache.m_fPAEEnabled);
-    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, m_cache.m_fHwVirtExEnabled);
-    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, m_cache.m_fNestedPagingEnabled);
-    m_machine.SetMemorySize(m_cache.m_iRAMSize);
-    m_machine.SetCPUCount(m_cache.m_cCPUCount);
-    m_machine.SetChipsetType(m_cache.m_chipsetType);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -529,5 +545,49 @@ bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
     }
 
     return QWidget::eventFilter (aObject, aEvent);
+}
+
+void UIMachineSettingsSystem::polishPage()
+{
+    /* Polish page depending on dialog type: */
+    switch (dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            /* Motherboard tab: */
+            mLbMemory->setEnabled(false);
+            mLbMemoryMin->setEnabled(false);
+            mLbMemoryMax->setEnabled(false);
+            mLbMemoryUnit->setEnabled(false);
+            mSlMemory->setEnabled(false);
+            mLeMemory->setEnabled(false);
+            mLbBootOrder->setEnabled(false);
+            mTwBootOrder->setEnabled(false);
+            mTbBootItemUp->setEnabled(false);
+            mTbBootItemDown->setEnabled(false);
+            mLbChipset->setEnabled(false);
+            mCbChipset->setEnabled(false);
+            mLbMotherboardExtended->setEnabled(false);
+            mCbApic->setEnabled(false);
+            mCbEFI->setEnabled(false);
+            mCbTCUseUTC->setEnabled(false);
+            mCbUseAbsHID->setEnabled(false);
+            /* Processor tab: */
+            mLbCPU->setEnabled(false);
+            mLbCPUMin->setEnabled(false);
+            mLbCPUMax->setEnabled(false);
+            mSlCPU->setEnabled(false);
+            mLeCPU->setEnabled(false);
+            mLbProcessorExtended->setEnabled(false);
+            mCbPae->setEnabled(false);
+            /* Acceleration tab: */
+            mLbVirt->setEnabled(false);
+            mCbVirt->setEnabled(false);
+            mCbNestedPaging->setEnabled(false);
+            break;
+        default:
+            break;
+    }
 }
 

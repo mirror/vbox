@@ -51,6 +51,7 @@ enum UIActionIndex
 {
     /* "Machine" menu actions: */
     UIActionIndex_Menu_Machine,
+    UIActionIndex_Simple_SettingsDialog,
     UIActionIndex_Simple_TakeSnapshot,
     UIActionIndex_Simple_InformationDialog,
     UIActionIndex_Menu_MouseIntegration,

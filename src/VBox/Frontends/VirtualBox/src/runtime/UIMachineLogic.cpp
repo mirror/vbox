@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,8 +37,7 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
-#include "UIMachineSettingsNetwork.h"
-#include "UIMachineSettingsSF.h"
+#include "UISettingsDialogSpecific.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
@@ -101,154 +100,6 @@ struct USBTarget
     QString id;
 };
 Q_DECLARE_METATYPE(USBTarget);
-
-class UINetworkAdaptersDialog : public QIWithRetranslateUI<QDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    UINetworkAdaptersDialog(QWidget *pParent, CSession &session)
-        : QIWithRetranslateUI<QDialog>(pParent)
-        , m_pSettings(0)
-        , m_session(session)
-    {
-        /* Setup Dialog's options */
-        setModal(true);
-        setWindowIcon(QIcon(":/nw_16px.png"));
-        setSizeGripEnabled(true);
-
-        /* Setup main dialog's layout */
-        QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        VBoxGlobal::setLayoutMargin(pMainLayout, 10);
-        pMainLayout->setSpacing(10);
-
-        /* Setup settings layout */
-        m_pSettings = new UIMachineSettingsNetworkPage(true);
-        m_pSettings->setOrderAfter(this);
-        VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
-        m_pSettings->loadDirectlyFrom(m_session.GetMachine());
-        pMainLayout->addWidget(m_pSettings);
-
-        /* Setup button's layout */
-        QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-
-        connect(pButtonBox, SIGNAL(helpRequested()), &vboxProblem(), SLOT(showHelpHelpDialog()));
-        connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-        connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
-        pMainLayout->addWidget(pButtonBox);
-
-        retranslateUi();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        setWindowTitle(QApplication::translate("VBoxNetworkDialog", "Network Adapters"));
-    }
-
-protected slots:
-
-    virtual void accept()
-    {
-        CMachine machine = m_session.GetMachine();
-        m_pSettings->saveDirectlyTo(machine);
-        machine.SaveSettings();
-        if (!machine.isOk())
-            vboxProblem().cannotSaveMachineSettings(machine);
-        QDialog::accept();
-    }
-
-protected:
-
-    void showEvent(QShowEvent *pEvent)
-    {
-        resize(450, 300);
-        VBoxGlobal::centerWidget(this, parentWidget());
-        setMinimumWidth(400);
-        QDialog::showEvent(pEvent);
-    }
-
-private:
-
-    UIMachineSettingsNetworkPage *m_pSettings;
-    CSession &m_session;
-};
-
-class UISharedFoldersDialog : public QIWithRetranslateUI<QDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    UISharedFoldersDialog(QWidget *pParent, CSession &session)
-        : QIWithRetranslateUI<QDialog>(pParent)
-        , m_pSettings(0)
-        , m_session(session)
-    {
-        /* Setup Dialog's options */
-        setModal(true);
-        setWindowIcon(QIcon(":/select_file_16px.png"));
-        setSizeGripEnabled(true);
-
-        /* Setup main dialog's layout */
-        QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        VBoxGlobal::setLayoutMargin(pMainLayout, 10);
-        pMainLayout->setSpacing(10);
-
-        /* Setup settings layout */
-        m_pSettings = new UIMachineSettingsSF;
-        VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
-        m_pSettings->loadDirectlyFrom(m_session.GetConsole());
-        pMainLayout->addWidget(m_pSettings);
-
-        /* Setup button's layout */
-        QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-
-        connect(pButtonBox, SIGNAL(helpRequested()), &vboxProblem(), SLOT(showHelpHelpDialog()));
-        connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-        connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
-        pMainLayout->addWidget(pButtonBox);
-
-        retranslateUi();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        setWindowTitle(QApplication::translate("VBoxSFDialog", "Shared Folders"));
-    }
-
-protected slots:
-
-    virtual void accept()
-    {
-        CMachine machine = m_session.GetMachine();
-        CConsole console = m_session.GetConsole();
-        m_pSettings->saveDirectlyTo(console);
-        machine.SaveSettings();
-        if (!machine.isOk())
-            vboxProblem().cannotSaveMachineSettings(machine);
-        QDialog::accept();
-    }
-
-protected:
-
-    void showEvent (QShowEvent *aEvent)
-    {
-        resize(450, 300);
-        VBoxGlobal::centerWidget(this, parentWidget());
-        setMinimumWidth(400);
-        QDialog::showEvent(aEvent);
-    }
-
-private:
-
-    UIMachineSettingsSF *m_pSettings;
-    CSession &m_session;
-};
 
 UIMachineLogic* UIMachineLogic::create(QObject *pParent,
                                        UISession *pSession,
@@ -473,10 +324,12 @@ void UIMachineLogic::prepareSessionConnections()
 void UIMachineLogic::prepareActionConnections()
 {
     /* "Machine" actions connections: */
-    connect(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleGuestAutoresize(bool)));
-    connect(actionsPool()->action(UIActionIndex_Simple_AdjustWindow), SIGNAL(triggered()),
-            this, SLOT(sltAdjustWindow()));
+    connect(actionsPool()->action(UIActionIndex_Simple_SettingsDialog), SIGNAL(triggered()),
+            this, SLOT(sltOpenVMSettingsDialog()));
+    connect(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot), SIGNAL(triggered()),
+            this, SLOT(sltTakeSnapshot()));
+    connect(actionsPool()->action(UIActionIndex_Simple_InformationDialog), SIGNAL(triggered()),
+            this, SLOT(sltShowInformationDialog()));
     connect(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleMouseIntegration(bool)));
     connect(actionsPool()->action(UIActionIndex_Simple_TypeCAD), SIGNAL(triggered()),
@@ -485,10 +338,6 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionsPool()->action(UIActionIndex_Simple_TypeCABS), SIGNAL(triggered()),
             this, SLOT(sltTypeCABS()));
 #endif
-    connect(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot), SIGNAL(triggered()),
-            this, SLOT(sltTakeSnapshot()));
-    connect(actionsPool()->action(UIActionIndex_Simple_InformationDialog), SIGNAL(triggered()),
-            this, SLOT(sltShowInformationDialog()));
     connect(actionsPool()->action(UIActionIndex_Toggle_Pause), SIGNAL(toggled(bool)),
             this, SLOT(sltPause(bool)));
     connect(actionsPool()->action(UIActionIndex_Simple_Reset), SIGNAL(triggered()),
@@ -497,6 +346,12 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltACPIShutdown()));
     connect(actionsPool()->action(UIActionIndex_Simple_Close), SIGNAL(triggered()),
             this, SLOT(sltClose()));
+
+    /* "View" actions connections: */
+    connect(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleGuestAutoresize(bool)));
+    connect(actionsPool()->action(UIActionIndex_Simple_AdjustWindow), SIGNAL(triggered()),
+            this, SLOT(sltAdjustWindow()));
 
     /* "Devices" actions connections: */
     connect(actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
@@ -549,23 +404,24 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->setExclusive(false);
 
     /* Move actions into running actions group: */
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Scale));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCAD));
 #ifdef Q_WS_X11
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCABS));
 #endif
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Reset));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Shutdown));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Scale));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
 
     /* Move actions into running-n-paused actions group: */
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_SettingsDialog));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InformationDialog));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Pause));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_OpticalDevices));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_FloppyDevices));
@@ -1089,6 +945,63 @@ void UIMachineLogic::sltClose()
     defaultMachineWindow()->sltTryClose();
 }
 
+void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Open shared session: */
+    CSession sharedSession = vboxGlobal().openSession(session().GetMachine().GetId(), true);
+    if (sharedSession.isNull())
+        return;
+
+    /* Get machine: */
+    CMachine sharedMachine = sharedSession.GetMachine();
+    if (sharedMachine.isNull())
+        return;
+
+    /* Prepare VM settings dialog: */
+    UISettingsDialog *pDlg = new UISettingsDialogMachine(defaultMachineWindow()->machineWindow(),
+                                                         VBoxDefs::SettingsDialogType_Runtime,
+                                                         sharedMachine, session().GetConsole(),
+                                                         strCategory, QString());
+    pDlg->getFrom();
+
+    /* Show VM settings dialog: */
+    if (pDlg->exec() == QDialog::Accepted)
+    {
+        /* If dialog was accepted => save changed settings: */
+        pDlg->putBackTo();
+        sharedMachine.SaveSettings();
+        /* If settings were failed to be saved => show the error: */
+        if (!sharedMachine.isOk())
+            vboxProblem().cannotSaveMachineSettings(sharedMachine);
+    }
+
+    /* Delete VM settings dialog: */
+    delete pDlg;
+
+    /* Unlock machine: */
+    sharedSession.UnlockMachine();
+}
+
+void UIMachineLogic::sltOpenNetworkAdaptersDialog()
+{
+    /* Open VM settings : Network page: */
+    sltOpenVMSettingsDialog("#network");
+}
+
+void UIMachineLogic::sltOpenSharedFoldersDialog()
+{
+    /* Do not process if additions are not loaded! */
+    if (!uisession()->isGuestAdditionsActive())
+        vboxProblem().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
+
+    /* Open VM settings : Shared folders page: */
+    sltOpenVMSettingsDialog("#sfolders");
+}
+
 void UIMachineLogic::sltPrepareStorageMenu()
 {
     /* Get the sender() menu: */
@@ -1513,30 +1426,6 @@ void UIMachineLogic::sltAttachUSBDevice()
     }
 }
 
-void UIMachineLogic::sltOpenNetworkAdaptersDialog()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Show network settings dialog: */
-    UINetworkAdaptersDialog dlg(defaultMachineWindow()->machineWindow(), session());
-    dlg.exec();
-}
-
-void UIMachineLogic::sltOpenSharedFoldersDialog()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Show shared folders settings dialog: */
-    UISharedFoldersDialog dlg(defaultMachineWindow()->machineWindow(), session());
-    if (!uisession()->isGuestAdditionsActive())
-        vboxProblem().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
-    dlg.exec();
-}
-
 void UIMachineLogic::sltSwitchVrde(bool fOn)
 {
     /* Enable VRDE server if possible: */
@@ -1777,6 +1666,4 @@ void UIMachineLogic::dbgAdjustRelativePos()
     }
 }
 #endif
-
-#include "UIMachineLogic.moc"
 

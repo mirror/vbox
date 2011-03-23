@@ -42,7 +42,6 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_pValidator(0)
     , m_iSlot(-1)
     , m_fPolished(false)
-    , m_fDisableStaticControls(fDisableStaticControls)
 {
     /* Apply UI decorations: */
     Ui::UIMachineSettingsNetwork::setupUi(this);
@@ -59,6 +58,28 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
 
     /* Applying language settings: */
     retranslateUi();
+}
+
+void UIMachineSettingsNetwork::polishTab()
+{
+    /* Polish tab depending on dialog type: */
+    switch (m_pParent->dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            sltToggleAdvanced();
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            mCbEnableAdapter->setEnabled(false);
+            m_pAdapterTypeLabel->setEnabled(false);
+            m_pAdapterTypeCombo->setEnabled(false);
+            m_pMACLabel->setEnabled(false);
+            m_pMACEditor->setEnabled(false);
+            m_pMACButton->setEnabled(false);
+            m_pAdvancedArrow->animateClick();
+            break;
+        default:
+            break;
+    }
 }
 
 void UIMachineSettingsNetwork::fetchAdapterData(const UINetworkAdapterData &data)
@@ -165,14 +186,12 @@ void UIMachineSettingsNetwork::setValidator(QIWidgetValidator *pValidator)
 {
     m_pValidator = pValidator;
 
-    if (!m_fDisableStaticControls)
-        connect(mCbEnableAdapter, SIGNAL(toggled(bool)), m_pValidator, SLOT(revalidate()));
+    connect(mCbEnableAdapter, SIGNAL(toggled(bool)), m_pValidator, SLOT(revalidate()));
     connect(m_pAttachmentTypeCombo, SIGNAL(activated(const QString&)), this, SLOT(sltUpdateAttachmentAlternative()));
     connect(m_pAdapterNameCombo, SIGNAL(activated(const QString&)), this, SLOT(sltUpdateAlternativeName()));
     connect(m_pAdapterNameCombo, SIGNAL(editTextChanged(const QString&)), this, SLOT(sltUpdateAlternativeName()));
 
-    if (!m_fDisableStaticControls)
-        m_pValidator->revalidate();
+    m_pValidator->revalidate();
 }
 
 bool UIMachineSettingsNetwork::revalidate(QString &strWarning, QString &strTitle)
@@ -270,32 +289,14 @@ QString UIMachineSettingsNetwork::alternativeName(int type) const
 
 void UIMachineSettingsNetwork::showEvent(QShowEvent *pEvent)
 {
+    /* Polish page if necessary: */
     if (!m_fPolished)
     {
         m_fPolished = true;
-
         /* Give the minimum size hint to the first layout column: */
         m_pNetworkChildGridLayout->setColumnMinimumWidth (0, m_pAttachmentTypeLabel->width());
-
-        if (m_fDisableStaticControls)
-        {
-            /* Disable controls for dynamically displayed page: */
-            mCbEnableAdapter->setEnabled(false);
-            m_pAdapterTypeCombo->setEnabled(false);
-            m_pPromiscuousModeCombo->setEnabled(false);
-            m_pMACEditor->setEnabled(false);
-            m_pMACButton->setEnabled(false);
-            m_pAdapterTypeLabel->setEnabled(false);
-            m_pPromiscuousModeLabel->setEnabled(false);
-            m_pMACLabel->setEnabled(false);
-            m_pAdvancedArrow->animateClick();
-        }
-        else
-        {
-            /* Hide advanced items initially: */
-            sltToggleAdvanced();
-        }
     }
+    /* Call for base-class: */
     QWidget::showEvent(pEvent);
 }
 
@@ -317,8 +318,12 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
     m_pAdapterNameCombo->blockSignals(true);
 
     /* Update alternative-name combo-box availability: */
+    m_pAdapterNameLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
+                                    attachmentType() != KNetworkAttachmentType_NAT);
     m_pAdapterNameCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
+    m_pPromiscuousModeLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_NAT);
     m_pPromiscuousModeCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
 
@@ -615,10 +620,9 @@ void UIMachineSettingsNetwork::populateComboboxes()
 }
 
 /* UIMachineSettingsNetworkPage Stuff */
-UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage(bool fDisableStaticControls)
+UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     : m_pValidator(0)
     , m_pTwAdapters(0)
-    , m_fDisableStaticControls(fDisableStaticControls)
 {
     /* Setup main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -634,28 +638,10 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage(bool fDisableStaticCo
     for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
     {
         /* Creating adapter's page: */
-        UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this, m_fDisableStaticControls);
+        UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this);
         /* Attach adapter's page to Tab Widget: */
         m_pTwAdapters->addTab(pPage, pPage->pageTitle());
     }
-}
-
-void UIMachineSettingsNetworkPage::loadDirectlyFrom(const CMachine &machine)
-{
-    qRegisterMetaType<UISettingsDataMachine>();
-    UISettingsDataMachine data(machine);
-    QVariant wrapper = QVariant::fromValue(data);
-    loadToCacheFrom(wrapper);
-    getFromCache();
-}
-
-void UIMachineSettingsNetworkPage::saveDirectlyTo(CMachine &machine)
-{
-    qRegisterMetaType<UISettingsDataMachine>();
-    UISettingsDataMachine data(machine);
-    QVariant wrapper = QVariant::fromValue(data);
-    putToCache();
-    saveFromCacheTo(wrapper);
 }
 
 QStringList UIMachineSettingsNetworkPage::brgList(bool fRefresh)
@@ -835,10 +821,6 @@ void UIMachineSettingsNetworkPage::getFromCache()
         /* Loading adapter's data into page: */
         pPage->fetchAdapterData(m_cache.m_items[iSlot]);
 
-        /* Disable tab page of disabled adapter if it is being configured dynamically: */
-        if (m_fDisableStaticControls && !m_cache.m_items[iSlot].m_fAdapterEnabled)
-            m_pTwAdapters->setTabEnabled(iSlot, false);
-
         /* Setup page validation: */
         pPage->setValidator(m_pValidator);
 
@@ -884,55 +866,71 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
         /* Get cached data for this adapter: */
         const UINetworkAdapterData &data = m_cache.m_items[iSlot];
 
-        /* Save main options: */
-        adapter.SetEnabled(data.m_fAdapterEnabled);
-        switch (data.m_attachmentType)
+        /* Save settings depending on dialog type: */
+        switch (dialogType())
         {
-            case KNetworkAttachmentType_Null:
-                adapter.Detach();
-                break;
-            case KNetworkAttachmentType_NAT:
-                adapter.AttachToNAT();
-                break;
-            case KNetworkAttachmentType_Bridged:
-                adapter.SetHostInterface(data.m_strBridgedAdapterName);
-                adapter.AttachToBridgedInterface();
-                break;
-            case KNetworkAttachmentType_Internal:
-                adapter.SetInternalNetwork(data.m_strInternalNetworkName);
-                adapter.AttachToInternalNetwork();
-                break;
-            case KNetworkAttachmentType_HostOnly:
-                adapter.SetHostInterface(data.m_strHostInterfaceName);
-                adapter.AttachToHostOnlyInterface();
-                break;
+            /* Here come the properties which could be changed only in offline state: */
+            case VBoxDefs::SettingsDialogType_Offline:
+            {
+                /* Basic attributes: */
+                adapter.SetEnabled(data.m_fAdapterEnabled);
+                adapter.SetAdapterType(data.m_adapterType);
+                adapter.SetMACAddress(data.m_strMACAddress);
+                /* After that come the properties which could be changed at runtime too: */
+            }
+            /* Here come the properties which could be changed at runtime too: */
+            case VBoxDefs::SettingsDialogType_Runtime:
+            {
+                /* Attachment type: */
+                switch (data.m_attachmentType)
+                {
+                    case KNetworkAttachmentType_Null:
+                        adapter.Detach();
+                        break;
+                    case KNetworkAttachmentType_NAT:
+                        adapter.AttachToNAT();
+                        break;
+                    case KNetworkAttachmentType_Bridged:
+                        adapter.SetHostInterface(data.m_strBridgedAdapterName);
+                        adapter.AttachToBridgedInterface();
+                        break;
+                    case KNetworkAttachmentType_Internal:
+                        adapter.SetInternalNetwork(data.m_strInternalNetworkName);
+                        adapter.AttachToInternalNetwork();
+                        break;
+                    case KNetworkAttachmentType_HostOnly:
+                        adapter.SetHostInterface(data.m_strHostInterfaceName);
+                        adapter.AttachToHostOnlyInterface();
+                        break;
 #ifdef VBOX_WITH_VDE
-            case KNetworkAttachmentType_VDE:
-                adapter.SetVDENetwork(data.m_strVDENetworkName);
-                adapter.AttachToVDE();
-                break;
+                    case KNetworkAttachmentType_VDE:
+                        adapter.SetVDENetwork(data.m_strVDENetworkName);
+                        adapter.AttachToVDE();
+                        break;
 #endif /* VBOX_WITH_VDE */
+                    default:
+                        break;
+                }
+                /* Advanced attributes: */
+                adapter.SetPromiscModePolicy(data.m_promiscuousMode);
+                /* Cable connected flag: */
+                adapter.SetCableConnected(data.m_fCableConnected);
+                /* Redirect options: */
+                QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
+                for (int i = 0; i < oldRedirects.size(); ++i)
+                    adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
+                UIPortForwardingDataList newRedirects = data.m_redirects;
+                for (int i = 0; i < newRedirects.size(); ++i)
+                {
+                    UIPortForwardingData newRedirect = newRedirects[i];
+                    adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
+                                                       newRedirect.hostIp, newRedirect.hostPort.value(),
+                                                       newRedirect.guestIp, newRedirect.guestPort.value());
+                }
+                break;
+            }
             default:
                 break;
-        }
-
-        /* Save advanced options: */
-        adapter.SetAdapterType(data.m_adapterType);
-        adapter.SetPromiscModePolicy(data.m_promiscuousMode);
-        adapter.SetMACAddress(data.m_strMACAddress);
-        adapter.SetCableConnected(data.m_fCableConnected);
-
-        /* Save redirect options: */
-        QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
-        for (int i = 0; i < oldRedirects.size(); ++i)
-            adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
-        UIPortForwardingDataList newRedirects = data.m_redirects;
-        for (int i = 0; i < newRedirects.size(); ++i)
-        {
-            UIPortForwardingData newRedirect = newRedirects[i];
-            adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                               newRedirect.hostIp, newRedirect.hostPort.value(),
-                                               newRedirect.guestIp, newRedirect.guestPort.value());
         }
     }
 
@@ -984,3 +982,30 @@ void UIMachineSettingsNetworkPage::updatePages()
             QTimer::singleShot(0, pPage, SLOT(sltUpdateAttachmentAlternative()));
     }
 }
+
+void UIMachineSettingsNetworkPage::polishPage()
+{
+    /* Get the count of network adapter tabs: */
+    int iCount = qMin(m_pTwAdapters->count(), m_cache.m_items.size());
+    for (int iSlot = 0; iSlot < iCount; ++iSlot)
+    {
+        /* Polish iterated tab depending on dialog type: */
+        switch (dialogType())
+        {
+            case VBoxDefs::SettingsDialogType_Offline:
+                break;
+            case VBoxDefs::SettingsDialogType_Runtime:
+            {
+                if (!m_cache.m_items[iSlot].m_fAdapterEnabled)
+                    m_pTwAdapters->setTabEnabled(iSlot, false);
+                break;
+            }
+            default:
+                break;
+        }
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        Assert(pTab);
+        pTab->polishTab();
+    }
+}
+

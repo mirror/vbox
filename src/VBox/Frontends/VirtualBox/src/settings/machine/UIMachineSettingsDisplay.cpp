@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -231,21 +231,38 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
-    m_machine.SetVRAMSize(m_cache.m_iCurrentVRAM);
-    m_machine.SetMonitorCount(m_cache.m_cMonitorCount);
-    m_machine.SetAccelerate3DEnabled(m_cache.m_f3dAccelerationEnabled);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
-#endif
-    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
-    if (!vrdeServer.isNull())
+    /* Save settings depending on dialog type: */
+    switch (dialogType())
     {
-        vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
-        vrdeServer.SetVRDEProperty("TCP/Ports", m_cache.m_strVRDEPort);
-        vrdeServer.SetAuthType(m_cache.m_iVRDEAuthType);
-        vrdeServer.SetAuthTimeout(m_cache.m_uVRDETimeout);
-        vrdeServer.SetAllowMultiConnection(m_cache.m_fMultipleConnectionsAllowed);
+        /* Here come the properties which could be changed only in offline state: */
+        case VBoxDefs::SettingsDialogType_Offline:
+        {
+            /* Video tab: */
+            m_machine.SetVRAMSize(m_cache.m_iCurrentVRAM);
+            m_machine.SetMonitorCount(m_cache.m_cMonitorCount);
+            m_machine.SetAccelerate3DEnabled(m_cache.m_f3dAccelerationEnabled);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+            /* After that come the properties which could be changed at runtime too: */
+        }
+        /* Here come the properties which could be changed at runtime too: */
+        case VBoxDefs::SettingsDialogType_Runtime:
+        {
+            /* VRDE tab: */
+            CVRDEServer vrdeServer = m_machine.GetVRDEServer();
+            if (!vrdeServer.isNull())
+            {
+                vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
+                vrdeServer.SetVRDEProperty("TCP/Ports", m_cache.m_strVRDEPort);
+                vrdeServer.SetAuthType(m_cache.m_iVRDEAuthType);
+                vrdeServer.SetAuthTimeout(m_cache.m_uVRDETimeout);
+                vrdeServer.SetAllowMultiConnection(m_cache.m_fMultipleConnectionsAllowed);
+            }
+            break;
+        }
+        default:
+            break;
     }
 
     /* Upload machine to data: */
@@ -414,5 +431,37 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
     mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAMVisible, this));
     mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_maxVRAMVisible));
     /* ... or just call retranslateUi()? */
+}
+
+void UIMachineSettingsDisplay::polishPage()
+{
+    /* Polish page depending on dialog type: */
+    switch (dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            /* Video tab: */
+            mLbMemory->setEnabled(false);
+            mLbMemoryMin->setEnabled(false);
+            mLbMemoryMax->setEnabled(false);
+            mLbMemoryUnit->setEnabled(false);
+            mSlMemory->setEnabled(false);
+            mLeMemory->setEnabled(false);
+            mLbMonitors->setEnabled(false);
+            mLbMonitorsMin->setEnabled(false);
+            mLbMonitorsMax->setEnabled(false);
+            mLbMonitorsUnit->setEnabled(false);
+            mSlMonitors->setEnabled(false);
+            mLeMonitors->setEnabled(false);
+            mLbOptions->setEnabled(false);
+            mCb3D->setEnabled(false);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            mCb2DVideo->setEnabled(false);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+            break;
+        default:
+            break;
+    }
 }
 

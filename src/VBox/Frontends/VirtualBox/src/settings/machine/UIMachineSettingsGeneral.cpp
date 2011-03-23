@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,17 +135,42 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
-    m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
-    m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
-    m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
-    m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
-    m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
-    m_machine.SetClipboardMode(m_cache.m_clipboardMode);
-    m_machine.SetDescription(m_cache.m_strDescription);
-    /* Must be last as otherwise its VM rename magic can collide with other
-     * settings in the config, especially with the snapshot folder. */
-    m_machine.SetName(m_cache.m_strName);
+    /* Save settings depending on dialog type: */
+    switch (dialogType())
+    {
+        /* Here come the properties which could be changed only in offline state: */
+        case VBoxDefs::SettingsDialogType_Offline:
+        {
+            /* Basic tab: */
+            m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
+            /* Advanced tab: */
+            m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
+            m_machine.SetClipboardMode(m_cache.m_clipboardMode);
+            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
+            /* Description tab: */
+            m_machine.SetDescription(m_cache.m_strDescription);
+            /* VM name must be last as otherwise its VM rename magic can collide with other settings in the config,
+             * especially with the snapshot folder: */
+            m_machine.SetName(m_cache.m_strName);
+            break;
+        }
+        /* Here come the properties which could be changed at runtime too: */
+        case VBoxDefs::SettingsDialogType_Runtime:
+        {
+            /* Advanced tab: */
+            m_machine.SetClipboardMode(m_cache.m_clipboardMode);
+            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
+            /* Description tab: */
+            m_machine.SetDescription(m_cache.m_strDescription);
+            break;
+        }
+        default:
+            break;
+    }
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -191,5 +216,26 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbClipboard->setItemText (1, vboxGlobal().toString (KClipboardMode_HostToGuest));
     mCbClipboard->setItemText (2, vboxGlobal().toString (KClipboardMode_GuestToHost));
     mCbClipboard->setItemText (3, vboxGlobal().toString (KClipboardMode_Bidirectional));
+}
+
+void UIMachineSettingsGeneral::polishPage()
+{
+    /* Polish page depending on dialog type: */
+    switch (dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            /* Basic tab: */
+            mLbName->setEnabled(false);
+            mLeName->setEnabled(false);
+            mOSTypeSelector->setEnabled(false);
+            /* Advanced tab: */
+            mLbSnapshot->setEnabled(false);
+            mPsSnapshot->setEnabled(false);
+            break;
+        default:
+            break;
+    }
 }
 

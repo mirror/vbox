@@ -287,8 +287,8 @@ protected:
 
 UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
 
-UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
-    : UISettingsDialog(pParent)
+UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent, VBoxDefs::SettingsDialogType type)
+    : UISettingsDialog(pParent, type)
 {
     /* Window icon: */
 #ifndef Q_WS_MAC
@@ -370,7 +370,10 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                     break;
             }
             if (pSettingsPage)
+            {
+                pSettingsPage->setDialogType(dialogType());
                 pSettingsPage->setId(iPageIndex);
+            }
         }
     }
 
@@ -503,12 +506,12 @@ bool UISettingsDialogGlobal::isAvailable(int id)
     return true;
 }
 
-UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent,
-                                                 const CMachine &machine,
-                                                 const QString &strCategory,
-                                                 const QString &strControl)
-    : UISettingsDialog(pParent)
+UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, VBoxDefs::SettingsDialogType type,
+                                                 const CMachine &machine, const CConsole &console,
+                                                 const QString &strCategory, const QString &strControl)
+    : UISettingsDialog(pParent, type)
     , m_machine(machine)
+    , m_console(console)
     , m_fAllowResetFirstRunFlag(false)
     , m_fResetFirstRunFlag(false)
 {
@@ -632,7 +635,10 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent,
                     break;
             }
             if (pSettingsPage)
+            {
+                pSettingsPage->setDialogType(dialogType());
                 pSettingsPage->setId(iPageIndex);
+            }
         }
     }
 
@@ -677,7 +683,7 @@ void UISettingsDialogMachine::getFrom()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
-    UISettingsDataMachine data(m_machine);
+    UISettingsDataMachine data(m_machine, m_console);
     /* Create machine settings loader,
      * it will load machine settings & delete itself in the appropriate time: */
     UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
@@ -697,7 +703,7 @@ void UISettingsDialogMachine::putBackTo()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
-    UISettingsDataMachine data(m_machine);
+    UISettingsDataMachine data(m_machine, m_console);
     /* Create machine settings saver,
      * it will save machine settings & delete itself in the appropriate time: */
     UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Save);
@@ -710,6 +716,7 @@ void UISettingsDialogMachine::putBackTo()
 
     /* Get updated machine: */
     m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
+    m_console = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_console;
     /* If machine is ok => perform final operations: */
     if (m_machine.isOk())
     {

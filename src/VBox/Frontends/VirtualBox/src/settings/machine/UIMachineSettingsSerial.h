@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,8 @@
 #include "UIMachineSettingsSerial.gen.h"
 #include "COMDefs.h"
 
+/* Forward declarations */
+class UIMachineSettingsSerialPage;
 class QITabWidget;
 
 /* Machine settings / Network page / Port data: */
@@ -50,7 +52,9 @@ class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    UIMachineSettingsSerial();
+    UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent);
+
+    void polishTab();
 
     void fetchPortData(const UISerialPortData &data);
     void uploadPortData(UISerialPortData &data);
@@ -74,6 +78,7 @@ private slots:
 
 private:
 
+    UIMachineSettingsSerialPage *m_pParent;
     QIWidgetValidator *mValidator;
     int m_iSlot;
 };
@@ -109,6 +114,8 @@ protected:
     void retranslateUi();
 
 private:
+
+    void polishPage();
 
     QIWidgetValidator *mValidator;
     QITabWidget *mTabWidget;
