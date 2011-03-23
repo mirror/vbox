@@ -102,7 +102,7 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
  */
 static void rtThreadNativeUninitComAndOle(void)
 {
-#if 0 /* experimental code */
+#if 1 /* experimental code */
     /*
      * Read the counters.
      */
