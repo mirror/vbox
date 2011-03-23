@@ -38,6 +38,7 @@ extern char             g_szrtProcExePath[RTPATH_MAX];
 extern size_t           g_cchrtProcExePath;
 extern size_t           g_cchrtProcDir;
 extern size_t           g_offrtProcName;
+extern bool volatile    g_frtAtExitCalled;
 
 /**
  * Validates and sets the process priority.

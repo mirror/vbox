@@ -113,6 +113,12 @@ RTPROCESS   g_ProcessSelf = NIL_RTPROCESS;
  */
 RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
+/**
+ * Set if the atexit callback has been called, i.e. indicating 
+ * that the process is terminating. 
+ */
+bool volatile   g_frtAtExitCalled = false;
+
 #ifdef IPRT_WITH_ALIGNMENT_CHECKS
 /**
  * Whether alignment checks are enabled.
@@ -130,6 +136,8 @@ RTDATADECL(bool) g_fRTAlignmentChecks = false;
  */
 static void rtR3ExitCallback(void)
 {
+    ASMAtomicWriteBool(&g_frtAtExitCalled, true);
+
     if (g_cUsers > 0)
     {
         PRTLOGGER pLogger = RTLogGetDefaultInstance();
