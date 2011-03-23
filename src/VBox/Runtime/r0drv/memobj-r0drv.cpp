@@ -63,7 +63,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
         cbSelf = sizeof(*pNew);
     Assert(cbSelf >= sizeof(*pNew));
     Assert(cbSelf == (uint32_t)cbSelf);
-    AssertMsg(RT_ALIGN_Z(cb, PAGE_SIZE) == cb, ("%#zx\n", pMem->cb));
+    AssertMsg(RT_ALIGN_Z(cb, PAGE_SIZE) == cb, ("%#zx\n", cb));
 
     /*
      * Allocate and initialize the object.
