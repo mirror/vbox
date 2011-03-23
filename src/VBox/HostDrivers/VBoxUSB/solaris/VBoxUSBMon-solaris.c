@@ -871,7 +871,7 @@ static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIE
 
             mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-            LogFlow((DEVICE_NAME ":vboxUSBMonSolarisClientInfo found. %s\n", pClientInfo->achDeviceIdent));
+            LogFlow((DEVICE_NAME ":vboxUSBMonSolarisClientInfo found. %s\n", pClientInfo->szDeviceIdent));
             return VINF_SUCCESS;
         }
         pPrev = pCur;
@@ -915,7 +915,7 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
                 mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
                 LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient registered. %d %s %s\n",
-                            pClient->Info.Instance, pClient->Info.szClientPath, pClient->Info.achDeviceIdent));
+                            pClient->Info.Instance, pClient->Info.szClientPath, pClient->Info.szDeviceIdent));
 
                 return VINF_SUCCESS;
             }
