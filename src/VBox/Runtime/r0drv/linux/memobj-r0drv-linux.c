@@ -890,11 +890,25 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
      * Classify the memory and check that we can deal with it.
      */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    fLinearMapping = virt_addr_valid(pvLast)          && virt_addr_valid(pv);
+    fLinearMapping = virt_addr_valid(pvLast) && virt_addr_valid(pv);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     fLinearMapping = VALID_PAGE(virt_to_page(pvLast)) && VALID_PAGE(virt_to_page(pv));
 #else
 # error "not supported"
+#endif
+    /*
+     * kmap()'ed memory. Only relevant for 32-bit Linux kernels with HIGHMEM
+     * enabled. Unfortunately there is no easy way to retrieve the page object
+     * for such temporarily mapped memory, virt_to_page() does not work here.
+     * There is even no function to check if a virtual address is inside the
+     * kmap() area or not :-( kmap_atomic_to_page() looks promising but the test
+     * 'if (vaddr < FIXADDR_START)' if wrong -- the kmap() area is located
+     * below the fixmap area. vmalloc_to_page() would work but is only allowed
+     * for vmalloc'ed memory.
+     */
+#ifdef CONFIG_HIGHMEM
+    if (pv < PKMAP_BASE + LAST_PKMAP*PAGE_SIZE && pvLast >= PKMAP_BASE)
+        return VERR_INVALID_PARAMETER;
 #endif
     if (!fLinearMapping)
     {
