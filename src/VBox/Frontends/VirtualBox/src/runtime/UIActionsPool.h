@@ -51,19 +51,14 @@ enum UIActionIndex
 {
     /* "Machine" menu actions: */
     UIActionIndex_Menu_Machine,
-    UIActionIndex_Toggle_Fullscreen,
-    UIActionIndex_Toggle_Seamless,
-    UIActionIndex_Toggle_Scale,
-    UIActionIndex_Toggle_GuestAutoresize,
-    UIActionIndex_Simple_AdjustWindow,
+    UIActionIndex_Simple_TakeSnapshot,
+    UIActionIndex_Simple_InformationDialog,
     UIActionIndex_Menu_MouseIntegration,
     UIActionIndex_Toggle_MouseIntegration,
     UIActionIndex_Simple_TypeCAD,
 #ifdef Q_WS_X11
     UIActionIndex_Simple_TypeCABS,
 #endif
-    UIActionIndex_Simple_TakeSnapshot,
-    UIActionIndex_Simple_InformationDialog,
     UIActionIndex_Toggle_Pause,
     UIActionIndex_Simple_Reset,
     UIActionIndex_Simple_Shutdown,
@@ -71,6 +66,11 @@ enum UIActionIndex
 
     /* "View" menu actions: */
     UIActionIndex_Menu_View,
+    UIActionIndex_Toggle_Fullscreen,
+    UIActionIndex_Toggle_Seamless,
+    UIActionIndex_Toggle_Scale,
+    UIActionIndex_Toggle_GuestAutoresize,
+    UIActionIndex_Simple_AdjustWindow,
 
     /* "Devices" menu actions: */
     UIActionIndex_Menu_Devices,
