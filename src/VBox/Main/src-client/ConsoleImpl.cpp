@@ -6802,10 +6802,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_RESETTING:
         {
-    #ifdef VBOX_WITH_GUEST_PROPS
+#ifdef VBOX_WITH_GUEST_PROPS
             /* Do not take any read/write locks here! */
             that->guestPropertiesHandleVMReset();
-    #endif
+#endif
             break;
         }
 
