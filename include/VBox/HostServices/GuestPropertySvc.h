@@ -178,6 +178,7 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
  */
 DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
 {
+    /* Putting READONLY before the other RDONLY flags keeps the result short. */
     static const uint32_t s_aFlagList[] =
     {
         TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST, TRANSRESET
