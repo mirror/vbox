@@ -1455,7 +1455,14 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 /* We've received an announce about address assignment,
                  * let's do an ARP cache update
                  */
-                slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
+                static bool fGratuitousArpReported;
+                if (!fGratuitousArpReported)
+                {
+                    LogRel(("NAT: Gratuitous ARP [IP:%R[IP4], ether:%R[ether]]\n",
+                            ah->ar_sip, ah->ar_sha));
+                    fGratuitousArpReported = true;
+                }
+                slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]);
             }
             break;
 
@@ -1947,7 +1954,8 @@ int slirp_arp_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
 
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
-        if (ac->ip == ip)
+        if (   ac->ip == ip
+            && memcmp(ac->ether, broadcast_ethaddr, ETH_ALEN) != 0)
         {
             memcpy(ether, ac->ether, ETH_ALEN);
             return VINF_SUCCESS;
@@ -2026,9 +2034,11 @@ int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *
 int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
 {
     struct arp_cache_entry *ac;
+    if (!memcmp(mac, broadcast_ethaddr, ETH_ALEN))
+        return 1;
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
-        if (memcmp(ac->ether, mac, ETH_ALEN) == 0)
+        if (!memcmp(ac->ether, mac, ETH_ALEN))
         {
             ac->ip = dst;
             return 0;
@@ -2047,6 +2057,18 @@ void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
         return;
     }
     ac->ip = ip;
+    if(!memcmp(ether, broadcast_ethaddr, ETH_ALEN))
+    {
+        static bool fBroadcastEtherAddReported;
+        if (!fBroadcastEtherAddReported)
+        {
+            LogRel(("NAT: Attept to add pair [%R[ether]:%R[IP4]] was ignored\n",
+                    ether, ip));
+            fBroadcastEtherAddReported = true;
+        }
+        RTMemFree(ac);
+        return;
+    }
     memcpy(ac->ether, ether, ETH_ALEN);
     LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
 }
