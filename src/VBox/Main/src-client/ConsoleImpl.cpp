@@ -674,8 +674,13 @@ void Console::uninit()
 
 /**
  * Handles guest properties on a VM reset.
- * At the moment we only delete properties which have the flag
- * "TRANSRESET".
+ *
+ * We must delete properties that are flagged TRANSRESET.
+ *
+ * @todo r=bird: Would be more efficient if we added a request to the HGCM
+ *       service to do this instead of detouring thru VBoxSVC.
+ *       (IMachine::SetGuestProperty ends up in VBoxSVC, which in turns calls
+ *       back into the VM process and the HGCM service.)
  */
 void Console::guestPropertiesHandleVMReset(void)
 {
