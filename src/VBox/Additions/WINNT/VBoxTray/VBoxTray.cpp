@@ -708,7 +708,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             hlpReportStatus(VBoxGuestFacilityStatus_Terminated);
     }
 
-	if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("VBoxTray: Error while starting, rc=%Rrc\n", rc));
         hlpReportStatus(VBoxGuestFacilityStatus_Failed);
