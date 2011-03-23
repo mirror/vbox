@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Threads, Win32.
+ * IPRT - Threads, Windows.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,6 +96,93 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 
 
 /**
+ * Bitch about dangling COM and OLE references, dispose of them 
+ * afterwards so we don't end up deadlocked somewhere below 
+ * OLE32!DllMain. 
+ */
+static void rtThreadNativeUninitComAndOle(void)
+{
+#if 0 /* experimental code */
+    /*
+     * Read the counters.
+     */
+    struct MySOleTlsData
+    {
+        void       *apvReserved0[2];    /**< x86=0x00  W7/64=0x00 */
+        DWORD       adwReserved0[3];    /**< x86=0x08  W7/64=0x10 */
+        void       *apvReserved1[1];    /**< x86=0x14  W7/64=0x20 */
+        DWORD       cComInits;          /**< x86=0x18  W7/64=0x28 */
+        DWORD       cOleInits;          /**< x86=0x1c  W7/64=0x2c */
+        DWORD       dwReserved1;        /**< x86=0x20  W7/64=0x30 */
+        void       *apvReserved2[4];    /**< x86=0x24  W7/64=0x38 */
+        DWORD       adwReserved2[1];    /**< x86=0x34  W7/64=0x58 */
+        void       *pvCurrentCtx;       /**< x86=0x38  W7/64=0x60 */
+        IUnknown   *pCallState;         /**< x86=0x3c  W7/64=0x68 */
+    }      *pOleTlsData = NULL;         /* outside the try/except for debugging */
+    DWORD   cComInits   = 0;
+    DWORD   cOleInits   = 0;
+    __try
+    {
+        void *pvTeb = NtCurrentTeb();
+# ifdef RT_ARCH_AMD64
+        pOleTlsData = *(struct MySOleTlsData **)((uintptr_t)pvTeb + 0x1758); /*TEB.ReservedForOle*/
+# elif RT_ARCH_X86
+        pOleTlsData = *(struct MySOleTlsData **)((uintptr_t)pvTeb + 0x0f80); /*TEB.ReservedForOle*/
+# else
+#  error "Port me!"
+# endif
+        if (pOleTlsData)
+        {
+            cComInits = pOleTlsData->cComInits;
+            cOleInits = pOleTlsData->cOleInits;
+        }
+    } 
+    __except(EXCEPTION_EXECUTE_HANDLER)
+    {
+        AssertFailedReturnVoid();
+    }
+    
+    /*
+     * Assert sanity. If any of these breaks, the structure layout above is 
+     * probably not correct any longer.
+     */
+    AssertMsgReturnVoid(cComInits < 1000, ("%u (%#x)\n", cComInits, cComInits));
+    AssertMsgReturnVoid(cOleInits < 1000, ("%u (%#x)\n", cOleInits, cOleInits));
+    AssertMsgReturnVoid(cComInits >= cOleInits, ("cComInits=%#x cOleInits=%#x\n", cComInits, cOleInits));
+
+    /*
+     * Do the uninitializing.
+     */
+    if (cComInits)
+    {
+        AssertMsgFailed(("cComInits=%u (%#x) cOleInits=%u (%#x) - dangling COM/OLE inits!\n", 
+                         cComInits, cComInits, cOleInits, cOleInits));
+
+        HMODULE hOle32 = GetModuleHandle("OLE32");
+        AssertReturnVoid(hOle32 != NULL);
+
+        typedef void (WINAPI *PFNOLEUNINITIALIZE)(void);
+        PFNOLEUNINITIALIZE  pfnOleUninitialize = (PFNOLEUNINITIALIZE)GetProcAddress(hOle32, "OleUninitialize");
+        AssertReturnVoid(pfnOleUninitialize);
+
+        typedef void (WINAPI *PFNCOUNINITIALIZE)(void);
+        PFNCOUNINITIALIZE   pfnCoUninitialize  = (PFNCOUNINITIALIZE)GetProcAddress(hOle32, "CoUninitialize");
+        AssertReturnVoid(pfnCoUninitialize);
+
+        while (cOleInits-- > 0)
+        {
+            pfnOleUninitialize();
+            cComInits--;
+        }
+
+        while (cComInits-- > 0)
+            pfnCoUninitialize();
+    }
+#endif
+}
+
+
+/**
  * Wrapper which unpacks the param stuff and calls thread function.
  */
 static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
@@ -109,6 +196,7 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
     int rc = rtThreadMain(pThread, dwThreadId, &pThread->szName[0]);
 
     TlsSetValue(g_dwSelfTLS, NULL);
+    rtThreadNativeUninitComAndOle();
     _endthreadex(rc);
     return rc;
 }
@@ -245,3 +333,4 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     AssertMsgFailed(("GetThreadTimes failed, LastError=%d\n", iLastError));
     return RTErrConvertFromWin32(iLastError);
 }
+
