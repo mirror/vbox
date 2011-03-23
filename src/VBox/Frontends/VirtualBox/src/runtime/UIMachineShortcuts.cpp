@@ -25,16 +25,11 @@ template <> UIMachineShortcuts* UIShortcuts<UIMachineShortcuts>::m_pInstance = 0
 UIMachineShortcuts::UIMachineShortcuts()
 {
     /* Defaults */
-    m_Shortcuts[FullscreenModeShortcut]        = UIKeySequence("FullscreenMode",        "F");
-    m_Shortcuts[SeamlessModeShortcut]          = UIKeySequence("SeamlessMode",          "L");
-    m_Shortcuts[ScaleModeShortcut]             = UIKeySequence("ScaleMode",             "C");
-    m_Shortcuts[GuestAutoresizeShortcut]       = UIKeySequence("GuestAutoresize",       "G");
-    m_Shortcuts[WindowAdjustShortcut]          = UIKeySequence("WindowAdjust",          "A");
+    m_Shortcuts[TakeSnapshotShortcut]          = UIKeySequence("TakeSnapshot",          "S");
+    m_Shortcuts[InformationDialogShortcut]     = UIKeySequence("InformationDialog",     "N");
     m_Shortcuts[MouseIntegrationShortcut]      = UIKeySequence("MouseIntegration" ,     "I");
     m_Shortcuts[TypeCADShortcut]               = UIKeySequence("TypeCAD",               "Del");
     m_Shortcuts[TypeCABSShortcut]              = UIKeySequence("TypeCABS",              "Backspace");
-    m_Shortcuts[TakeSnapshotShortcut]          = UIKeySequence("TakeSnapshot",          "S");
-    m_Shortcuts[InformationDialogShortcut]     = UIKeySequence("InformationDialog",     "N");
     m_Shortcuts[PauseShortcut]                 = UIKeySequence("Pause",                 "P");
     m_Shortcuts[ResetShortcut]                 = UIKeySequence("Reset",                 "R");
 #ifdef Q_WS_MAC
@@ -43,6 +38,11 @@ UIMachineShortcuts::UIMachineShortcuts()
     m_Shortcuts[ShutdownShortcut]              = UIKeySequence("Shutdown",              "H");
 #endif /* Q_WS_MAC */
     m_Shortcuts[CloseShortcut]                 = UIKeySequence("Close",                 "Q");
+    m_Shortcuts[FullscreenModeShortcut]        = UIKeySequence("FullscreenMode",        "F");
+    m_Shortcuts[SeamlessModeShortcut]          = UIKeySequence("SeamlessMode",          "L");
+    m_Shortcuts[ScaleModeShortcut]             = UIKeySequence("ScaleMode",             "C");
+    m_Shortcuts[GuestAutoresizeShortcut]       = UIKeySequence("GuestAutoresize",       "G");
+    m_Shortcuts[WindowAdjustShortcut]          = UIKeySequence("WindowAdjust",          "A");
     m_Shortcuts[NetworkAdaptersDialogShortcut] = UIKeySequence("NetworkAdaptersDialog");
     m_Shortcuts[SharedFoldersDialogShortcut]   = UIKeySequence("SharedFoldersDialog");
     m_Shortcuts[VRDPServerShortcut]            = UIKeySequence("VRDPServer");
