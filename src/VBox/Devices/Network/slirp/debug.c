@@ -252,7 +252,7 @@ print_ether_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     AssertReturn(strcmp(pszType, "ether") == 0, 0);
     if (ether)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-            "[ether %RX8:%RX8:%RX8:%RX8:%RX8:%RX8]",
+            "[ether %hhx:%hhx:%hhx:%hhx:%hhx:%hhx]",
             ether[0], ether[1], ether[2],
             ether[3], ether[4], ether[5]);
     else
