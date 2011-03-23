@@ -63,6 +63,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
         cbSelf = sizeof(*pNew);
     Assert(cbSelf >= sizeof(*pNew));
     Assert(cbSelf == (uint32_t)cbSelf);
+    AssertMsg(RT_ALIGN_Z(cb, PAGE_SIZE) == cb, ("%#zx\n", pMem->cb));
 
     /*
      * Allocate and initialize the object.
@@ -225,7 +226,12 @@ RT_EXPORT_SYMBOL(RTR0MemObjAddressR3);
 /**
  * Gets the size of a ring-0 memory object.
  *
- * @returns The address of the memory object.
+ * The returned value may differ from the one specified to the API creating the
+ * object because of alignment adjustments.  The minimal alignment currently
+ * employed by any API is PAGE_SIZE, so the result can safely be shifted by
+ * PAGE_SHIFT to calculate a page count.
+ *
+ * @returns The object size.
  * @returns 0 if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
  * @param   MemObj  The ring-0 memory object handle.
  */
@@ -240,6 +246,7 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
     pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), 0);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), 0);
+    AssertMsg(RT_ALIGN_Z(pMem->cb, PAGE_SIZE) == pMem->cb, ("%#zx\n", pMem->cb));
 
     /* return the size. */
     return pMem->cb;

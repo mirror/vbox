@@ -83,8 +83,13 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj);
 /**
  * Gets the size of a ring-0 memory object.
  *
- * @returns The address of the memory object.
- * @returns NULL if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
+ * The returned value may differ from the one specified to the API creating the
+ * object because of alignment adjustments.  The minimal alignment currently
+ * employed by any API is PAGE_SIZE, so the result can safely be shifted by
+ * PAGE_SHIFT to calculate a page count.
+ *
+ * @returns The object size.
+ * @returns 0 if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
  * @param   MemObj  The ring-0 memory object handle.
  */
 RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj);
