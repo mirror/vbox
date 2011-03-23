@@ -52,17 +52,6 @@
 #include <sys/mac_provider.h>
 #include <sys/dls.h>
 
-#if 0
-#include "include/mac_provider.h"       /* dependency for other headers */
-#include "include/mac_client.h"         /* for mac_* */
-#include "include/mac_client_priv.h"    /* for mac_info, mac_capab_get etc. */
-#if 1
-#include "include/dls.h"                /* for dls_mgmt_* */
-#include "include/dld_ioc.h"            /* required by vnic.h */
-#include "include/vnic.h"               /* for vnic_ioc_diag_t */
-#include "include/vnic_impl.h"          /* for vnic_dev_create */
-#endif
-#endif
 
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
