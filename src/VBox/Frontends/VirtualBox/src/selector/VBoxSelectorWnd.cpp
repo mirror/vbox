@@ -594,7 +594,7 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    UISettingsDialog *dlg = new UISettingsDialogGlobal(this);
+    UISettingsDialog *dlg = new UISettingsDialogGlobal(this, VBoxDefs::SettingsDialogType_Offline);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -719,40 +719,37 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
         }
     }
 
-    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById(aUuid);
+    UIVMItem *pItem = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
+    AssertMsgReturnVoid(pItem, ("Item must be always selected here"));
 
-    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+    bool fMachineOffline = pItem->sessionState() == KSessionState_Unlocked;
+    VBoxDefs::SettingsDialogType dialogType = fMachineOffline ? VBoxDefs::SettingsDialogType_Offline : VBoxDefs::SettingsDialogType_Runtime;
 
-    // open a direct session to modify VM settings
-    QString id = item->id();
-    CSession session = vboxGlobal().openSession(id);
-    if (session.isNull())
-        return;
+    CSession session = vboxGlobal().openSession(pItem->id(), !fMachineOffline /* connect to existing? */);
+    AssertMsgReturn(!session.isNull(), ("Session must not be null"), (void)0);
+    CMachine machine = session.GetMachine();
+    AssertMsgReturn(!machine.isNull(), ("Machine must not be null"), (void)0);
+    CConsole console = fMachineOffline ? CConsole() : session.GetConsole();
 
-    CMachine m = session.GetMachine();
-    AssertMsgReturn(!m.isNull(), ("Machine must not be null"), (void) 0);
-
-    /* Don't show the inaccessible warning if the user open the vm settings. */
+    /* Don't show the inaccessible warning if the user open the vm settings: */
     mDoneInaccessibleWarningOnce = true;
 
-    UISettingsDialog *dlg = new UISettingsDialogMachine(this, m, strCategory, strControl);
-    dlg->getFrom();
+    UISettingsDialog *pDlg = new UISettingsDialogMachine(this, dialogType, machine, console, strCategory, strControl);
+    pDlg->getFrom();
 
-    if (dlg->exec() == QDialog::Accepted)
+    if (pDlg->exec() == QDialog::Accepted)
     {
-        QString oldName = m.GetName();
-        dlg->putBackTo();
+        pDlg->putBackTo();
 
-        m.SaveSettings();
-        if (!m.isOk())
-            vboxProblem().cannotSaveMachineSettings(m);
+        machine.SaveSettings();
+        if (!machine.isOk())
+            vboxProblem().cannotSaveMachineSettings(machine);
 
-        /* To check use the result in future
+        /* To check use the result in future:
          * vboxProblem().cannotApplyMachineSettings(m, res); */
     }
 
-    delete dlg;
+    delete pDlg;
 
     mVMListView->setFocus();
 
@@ -1327,7 +1324,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         KMachineState state = item->machineState();
         bool running = item->sessionState() != KSessionState_Unlocked;
-        bool modifyEnabled = !running && state != KMachineState_Saved;
+        bool modifyEnabled = state != KMachineState_Stuck;
 
         if (   aRefreshDetails
             || aRefreshDescription)

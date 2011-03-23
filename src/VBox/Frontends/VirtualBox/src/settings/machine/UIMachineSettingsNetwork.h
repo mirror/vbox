@@ -66,6 +66,8 @@ public:
 
     UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent, bool fDisableStaticControls = false);
 
+    void polishTab();
+
     void fetchAdapterData(const UINetworkAdapterData &data);
     void uploadAdapterData(UINetworkAdapterData &data);
 
@@ -110,7 +112,6 @@ private:
 #endif /* VBOX_WITH_VDE */
 
     bool m_fPolished;
-    bool m_fDisableStaticControls;
     UIPortForwardingDataList m_portForwardingRules;
 };
 
@@ -121,10 +122,7 @@ class UIMachineSettingsNetworkPage : public UISettingsPageMachine
 
 public:
 
-    UIMachineSettingsNetworkPage(bool fDisableStaticControls = false);
-
-    void loadDirectlyFrom(const CMachine &machine);
-    void saveDirectlyTo(CMachine &machine);
+    UIMachineSettingsNetworkPage();
 
     QStringList brgList(bool aRefresh = false);
     QStringList intList(bool aRefresh = false);
@@ -158,14 +156,14 @@ private slots:
 
 private:
 
+    void polishPage();
+
     QIWidgetValidator *m_pValidator;
     QITabWidget *m_pTwAdapters;
 
     QStringList m_brgList;
     QStringList m_intList;
     QStringList m_hoiList;
-
-    bool m_fDisableStaticControls;
 
     /* Cache: */
     UISettingsCacheMachineNetwork m_cache;

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -765,6 +765,7 @@ StorageModel::StorageModel (QObject *aParent)
     , mRootItem (new RootItem)
     , mToolTipType (DefaultToolTip)
     , m_chipsetType(KChipsetType_PIIX3)
+    , m_dialogType(VBoxDefs::SettingsDialogType_Wrong)
 {
 }
 
@@ -934,28 +935,33 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         }
         case R_IsMoreIDEControllersPossible:
         {
-            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_IDE) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_IDE);
+            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
-            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SATA) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SATA);
+            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
-            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SCSI) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SCSI);
+            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
-            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_Floppy) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_Floppy);
+            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
-            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SAS) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SAS);
+            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
         case R_IsMoreAttachmentsPossible:
         {
@@ -965,8 +971,9 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 {
                     ControllerItem *ctr = static_cast <ControllerItem*> (item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-                    return (uint) rowCount (aIndex) < sp.GetMaxPortCountForStorageBus (ctr->ctrBusType()) *
-                                                      sp.GetMaxDevicesPerPortForStorageBus (ctr->ctrBusType());
+                    return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                           ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
+                                                     sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
                 }
             }
             return false;
@@ -1410,6 +1417,11 @@ KChipsetType StorageModel::chipsetType() const
 void StorageModel::setChipsetType(KChipsetType type)
 {
     m_chipsetType = type;
+}
+
+void StorageModel::setDialogType(VBoxDefs::SettingsDialogType dialogType)
+{
+    m_dialogType = dialogType;
 }
 
 QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
@@ -1884,63 +1896,130 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Remove currently present controllers & attachments */
-    const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
-    for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
+    /* Save settings depending on dialog type: */
+    switch (dialogType())
     {
-        const CStorageController &controller = controllers[iControllerIndex];
-        QString strControllerName(controller.GetName());
-        const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(strControllerName);
-        for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
+        /* Here come the properties which could be changed only in offline state: */
+        case VBoxDefs::SettingsDialogType_Offline:
         {
-            const CMediumAttachment &attachment = attachments[iAttachmentIndex];
-            m_machine.DetachDevice(strControllerName, attachment.GetPort(), attachment.GetDevice());
-        }
-        m_machine.RemoveStorageController(strControllerName);
-    }
-    /* Save created controllers: */
-    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
-    {
-        const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
-        CStorageController controller = m_machine.AddStorageController(controllerData.m_strControllerName, controllerData.m_controllerBus);
-        controller.SetControllerType(controllerData.m_controllerType);
-        controller.SetUseHostIOCache(controllerData.m_fUseHostIOCache);
-        int cMaxUsedPort = -1;
-        /* Save created attachments: */
-        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
-        {
-            const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
-            VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
-            CMedium comMedium = vboxMedium.medium();
-            m_machine.AttachDevice(controllerData.m_strControllerName,
-                                   attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
-                                   attachmentData.m_attachmentType, comMedium);
-            if (m_machine.isOk())
+            /* Remove currently present controllers & attachments */
+            const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
+            for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
             {
-                if (attachmentData.m_attachmentType == KDeviceType_DVD)
-                    m_machine.PassthroughDevice(controllerData.m_strControllerName,
-                                                attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
-                                                attachmentData.m_fAttachmentPassthrough);
-                cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
+                /* Get iterated controller: */
+                const CStorageController &controller = controllers[iControllerIndex];
+                QString strControllerName(controller.GetName());
+                const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(strControllerName);
+                /* Remove all the attachments first: */
+                for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
+                {
+                    /* Get iterated attachment: */
+                    const CMediumAttachment &attachment = attachments[iAttachmentIndex];
+                    m_machine.DetachDevice(strControllerName, attachment.GetPort(), attachment.GetDevice());
+                }
+                /* Remove the controller itself finally: */
+                m_machine.RemoveStorageController(strControllerName);
             }
-            else
+            /* Save created controllers: */
+            for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
             {
-                /* Mark the page as failed: */
-                setFailed(true);
-                /* Show error message: */
-                vboxProblem().cannotAttachDevice(m_machine, VBoxDefs::MediumType_HardDisk, vboxMedium.location(),
-                                                 StorageSlot(controllerData.m_controllerBus,
-                                                             attachmentData.m_iAttachmentPort,
-                                                             attachmentData.m_iAttachmentDevice), this);
+                /* Get iterated controller's data: */
+                const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
+                CStorageController controller = m_machine.AddStorageController(controllerData.m_strControllerName, controllerData.m_controllerBus);
+                controller.SetControllerType(controllerData.m_controllerType);
+                controller.SetUseHostIOCache(controllerData.m_fUseHostIOCache);
+                int cMaxUsedPort = -1;
+                /* Save created attachments: */
+                for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
+                {
+                    /* Get iterated attachment: */
+                    const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
+                    /* Search for newly assigned medium in GUI cache: */
+                    VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
+                    /* Get corresponding COM-wrapped medium object: */
+                    CMedium comMedium = vboxMedium.medium();
+                    /* Add corresponding attachment: */
+                    m_machine.AttachDevice(controllerData.m_strControllerName,
+                                           attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
+                                           attachmentData.m_attachmentType, comMedium);
+                    if (m_machine.isOk())
+                    {
+                        if (attachmentData.m_attachmentType == KDeviceType_DVD)
+                            m_machine.PassthroughDevice(controllerData.m_strControllerName,
+                                                        attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
+                                                        attachmentData.m_fAttachmentPassthrough);
+                        cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
+                    }
+                    else
+                    {
+                        /* Mark the page as failed: */
+                        setFailed(true);
+                        /* Show error message: */
+                        vboxProblem().cannotAttachDevice(m_machine,
+                                                         vboxGlobal().mediumTypeToLocal(attachmentData.m_attachmentType),
+                                                         vboxMedium.location(),
+                                                         StorageSlot(controllerData.m_controllerBus,
+                                                                     attachmentData.m_iAttachmentPort,
+                                                                     attachmentData.m_iAttachmentDevice),
+                                                         this);
+                    }
+                }
+                if (!failed() && controllerData.m_controllerBus == KStorageBus_SATA)
+                {
+                    ULONG uSataPortsCount = cMaxUsedPort + 1;
+                    uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
+                    uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
+                    controller.SetPortCount(uSataPortsCount);
+                }
             }
+            break;
         }
-        if (!failed() && controllerData.m_controllerBus == KStorageBus_SATA)
+        /* Here come the properties which could be changed at runtime too: */
+        case VBoxDefs::SettingsDialogType_Runtime:
         {
-            ULONG uSataPortsCount = cMaxUsedPort + 1;
-            uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
-            uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
-            controller.SetPortCount(uSataPortsCount);
+            /* Iterate all the controllers and update changed CD/DVD and floppy attachments: */
+            for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
+            {
+                /* Get iterated controller: */
+                const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
+                CStorageController controller = m_machine.GetStorageControllerByName(controllerData.m_strControllerName);
+                AssertMsg(!controller.isNull(), ("Corresponding storage controller must be present!\n"));
+                /* Save changed attachments: */
+                for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
+                {
+                    /* Get iterated attachment: */
+                    const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
+                    /* Update only DVD and floppy attachments: */
+                    if (attachmentData.m_attachmentType != KDeviceType_DVD &&
+                        attachmentData.m_attachmentType != KDeviceType_Floppy)
+                        continue;
+                    /* Search for newly assigned medium in GUI cache: */
+                    VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
+                    /* Get corresponding COM-wrapped medium object: */
+                    CMedium comMedium = vboxMedium.medium();
+                    /* Update corresponding medium: */
+                    m_machine.MountMedium(controllerData.m_strControllerName,
+                                          attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
+                                          comMedium, true /* may the force be with you */);
+                    if (!m_machine.isOk())
+                    {
+                        /* Mark the page as failed: */
+                        setFailed(true);
+                        /* Show error message: */
+                        vboxProblem().cannotAttachDevice(m_machine,
+                                                         vboxGlobal().mediumTypeToLocal(attachmentData.m_attachmentType),
+                                                         vboxMedium.location(),
+                                                         StorageSlot(controllerData.m_controllerBus,
+                                                                     attachmentData.m_iAttachmentPort,
+                                                                     attachmentData.m_iAttachmentDevice),
+                                                         this);
+                    }
+                }
+            }
+            break;
         }
+        default:
+            break;
     }
 
     /* Upload machine to data: */
@@ -2300,6 +2379,8 @@ void UIMachineSettingsStorage::getInformation()
                 }
                 m_pMediumIdHolder->setType(vboxGlobal().mediumTypeToLocal(device));
                 m_pMediumIdHolder->setId(mStorageModel->data(index, StorageModel::R_AttMediumId).toString());
+                mLbMedium->setEnabled(dialogType() == VBoxDefs::SettingsDialogType_Offline || device != KDeviceType_HardDisk);
+                mTbOpen->setEnabled(dialogType() == VBoxDefs::SettingsDialogType_Offline || device != KDeviceType_HardDisk);
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
@@ -2520,8 +2601,8 @@ void UIMachineSettingsStorage::updateActionsState()
     mAddCDAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddFDAttAction->setEnabled (isController && isAttachmentsPossible);
 
-    mDelCtrAction->setEnabled (isController);
-    mDelAttAction->setEnabled (isAttachment);
+    mDelCtrAction->setEnabled (dialogType() == VBoxDefs::SettingsDialogType_Offline && isController);
+    mDelAttAction->setEnabled (dialogType() == VBoxDefs::SettingsDialogType_Offline && isAttachment);
 }
 
 void UIMachineSettingsStorage::onRowInserted (const QModelIndex &aParent, int aPosition)
@@ -2981,6 +3062,35 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, VB
                                                                             this, SLOT(sltChooseRecentMedium()));
             pChooseRecentMediumAction->setData(QString("%1,%2").arg(recentMediumType).arg(strRecentMediumLocation));
         }
+    }
+}
+
+void UIMachineSettingsStorage::setDialogType(VBoxDefs::SettingsDialogType settingsDialogType)
+{
+    UISettingsPageMachine::setDialogType(settingsDialogType);
+    mStorageModel->setDialogType(dialogType());
+}
+
+void UIMachineSettingsStorage::polishPage()
+{
+    /* Polish page depending on dialog type: */
+    switch (dialogType())
+    {
+        case VBoxDefs::SettingsDialogType_Offline:
+            break;
+        case VBoxDefs::SettingsDialogType_Runtime:
+            /* Controller stuff: */
+            mLbName->setEnabled(false);
+            mLeName->setEnabled(false);
+            mLbType->setEnabled(false);
+            mCbType->setEnabled(false);
+            mCbIoCache->setEnabled(false);
+            /* Attachment stuff: */
+            mCbSlot->setEnabled(false);
+            mCbPassthrough->setEnabled(false);
+            break;
+        default:
+            break;
     }
 }
 

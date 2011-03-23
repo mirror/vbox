@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -392,7 +392,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
-	src/runtime/UIMachineLogic.cpp \
 	src/runtime/UIMachineMenuBar.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \

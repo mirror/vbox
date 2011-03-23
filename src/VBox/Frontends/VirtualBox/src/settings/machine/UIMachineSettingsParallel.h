@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,8 @@
 #include "UIMachineSettingsParallel.gen.h"
 #include "COMDefs.h"
 
+/* Forward declarations */
+class UIMachineSettingsParallelPage;
 class QITabWidget;
 
 struct UIParallelPortData
@@ -47,7 +49,9 @@ class UIMachineSettingsParallel : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    UIMachineSettingsParallel();
+    UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent);
+
+    void polishTab();
 
     void fetchPortData(const UIParallelPortData &data);
     void uploadPortData(UIParallelPortData &data);
@@ -70,6 +74,7 @@ private slots:
 
 private:
 
+    UIMachineSettingsParallelPage *m_pParent;
     QIWidgetValidator *mValidator;
     int m_iSlot;
 };
@@ -105,6 +110,8 @@ protected:
     void retranslateUi();
 
 private:
+
+    void polishPage();
 
     QIWidgetValidator *mValidator;
     QITabWidget *mTabWidget;

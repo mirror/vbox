@@ -27,6 +27,7 @@ class UIMachineShortcuts: public UIShortcuts<UIMachineShortcuts>
 public:
     enum MachineShortcutType
     {
+        SettingsDialogShortcut,
         TakeSnapshotShortcut,
         InformationDialogShortcut,
         MouseIntegrationShortcut,

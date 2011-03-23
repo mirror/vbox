@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,12 +26,7 @@
 /* Local forwards */
 class SFTreeViewItem;
 
-enum UISharedFolderType
-{
-    WrongType   = 0x00,
-    MachineType = 0x01,
-    ConsoleType = 0x02
-};
+enum UISharedFolderType { MachineType, ConsoleType };
 typedef QPair <QString, UISharedFolderType> SFolderName;
 typedef QList <SFolderName> SFoldersNameList;
 
@@ -61,16 +56,13 @@ public:
 
     UIMachineSettingsSF();
 
-    void loadDirectlyFrom(const CConsole &console);
-    void saveDirectlyTo(CConsole &console);
-
 protected:
 
     /* Load data to cashe from corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     void loadToCacheFrom(QVariant &data);
-    void loadToCacheFromMachine(const CMachine &machine);
-    void loadToCacheFromConsole(const CConsole &console);
+    void loadToCacheFromMachine();
+    void loadToCacheFromConsole();
     void loadToCacheFromVector(const CSharedFolderVector &vector, UISharedFolderType type);
     /* Load data to corresponding widgets from cache,
      * this task SHOULD be performed in GUI thread only: */
@@ -82,8 +74,8 @@ protected:
     /* Save data from cache to corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
-    void saveFromCacheToMachine(CMachine &machine);
-    void saveFromCacheToConsole(CConsole &console);
+    void saveFromCacheToMachine();
+    void saveFromCacheToConsole();
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -110,6 +102,8 @@ private:
 
     SFTreeViewItem* root(UISharedFolderType type);
     SFoldersNameList usedList (bool aIncludeSelected);
+
+    void setDialogType(VBoxDefs::SettingsDialogType settingsDialogType);
 
     UISharedFolderType m_type;
 

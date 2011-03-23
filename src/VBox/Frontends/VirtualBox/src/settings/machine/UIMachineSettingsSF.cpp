@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -165,7 +165,7 @@ private:
 };
 
 UIMachineSettingsSF::UIMachineSettingsSF()
-    : m_type(WrongType)
+    : m_type(MachineType)
     , mNewAction(0), mEdtAction(0), mDelAction(0)
     , mIsListViewChanged(false)
 {
@@ -211,21 +211,6 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     retranslateUi();
 }
 
-void UIMachineSettingsSF::loadDirectlyFrom(const CConsole &console)
-{
-    loadToCacheFromMachine(console.GetMachine());
-    loadToCacheFromConsole(console);
-    getFromCache();
-}
-
-void UIMachineSettingsSF::saveDirectlyTo(CConsole &console)
-{
-    putToCache();
-    saveFromCacheToConsole(console);
-    CMachine machine = console.GetMachine();
-    saveFromCacheToMachine(machine);
-}
-
 void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
 {
     NOREF(aEvent);
@@ -240,28 +225,25 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Fill internal variables with corresponding values: */
-    loadToCacheFromMachine(m_machine);
+    if (!m_machine.isNull())
+        loadToCacheFromMachine();
+    if (!m_console.isNull())
+        loadToCacheFromConsole();
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSF::loadToCacheFromMachine(const CMachine &machine)
+void UIMachineSettingsSF::loadToCacheFromMachine()
 {
-    /* Update dialog type: */
-    if (m_type == WrongType)
-        m_type = MachineType;
     /* Load machine items into internal cache: */
-    loadToCacheFromVector(machine.GetSharedFolders(), MachineType);
+    loadToCacheFromVector(m_machine.GetSharedFolders(), MachineType);
 }
 
-void UIMachineSettingsSF::loadToCacheFromConsole(const CConsole &console)
+void UIMachineSettingsSF::loadToCacheFromConsole()
 {
-    /* Update dialog type: */
-    if (m_type == WrongType || m_type == MachineType)
-        m_type = ConsoleType;
     /* Load console items into internal cache: */
-    loadToCacheFromVector(console.GetSharedFolders(), ConsoleType);
+    loadToCacheFromVector(m_console.GetSharedFolders(), ConsoleType);
 }
 
 void UIMachineSettingsSF::loadToCacheFromVector(const CSharedFolderVector &vector, UISharedFolderType type)
@@ -323,7 +305,6 @@ void UIMachineSettingsSF::putToCache()
     {
         SFTreeViewItem *pFolderTypeRoot = static_cast<SFTreeViewItem*>(pMainRootItem->child(iFodlersTypeIndex));
         UISharedFolderType type = (UISharedFolderType)pFolderTypeRoot->text(1).toInt();
-        AssertMsg(type != WrongType, ("Incorrent folders type!"));
         /* Iterate other all the folder items: */
         for (int iFoldersIndex = 0; iFoldersIndex < pFolderTypeRoot->childCount(); ++iFoldersIndex)
         {
@@ -347,32 +328,35 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Gather corresponding values from internal variables: */
-    saveFromCacheToMachine(m_machine);
+    if (!m_machine.isNull())
+        saveFromCacheToMachine();
+    if (!m_console.isNull())
+        saveFromCacheToConsole();
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
+void UIMachineSettingsSF::saveFromCacheToMachine()
 {
     /* Check if items were NOT changed: */
     if (!mIsListViewChanged)
         return;
 
     /* Delete all machine folders first: */
-    const CSharedFolderVector &folders = machine.GetSharedFolders();
+    const CSharedFolderVector &folders = m_machine.GetSharedFolders();
     for (int iFolderIndex = 0; iFolderIndex < folders.size() && !failed(); ++iFolderIndex)
     {
         const CSharedFolder &folder = folders[iFolderIndex];
         QString strFolderName = folder.GetName();
         QString strFolderPath = folder.GetHostPath();
-        machine.RemoveSharedFolder(strFolderName);
-        if (!machine.isOk())
+        m_machine.RemoveSharedFolder(strFolderName);
+        if (!m_machine.isOk())
         {
             /* Mark the page as failed: */
             setFailed(true);
             /* Show error message: */
-            vboxProblem().cannotRemoveSharedFolder(machine, strFolderName, strFolderPath);
+            vboxProblem().cannotRemoveSharedFolder(m_machine, strFolderName, strFolderPath);
         }
     }
 
@@ -382,38 +366,38 @@ void UIMachineSettingsSF::saveFromCacheToMachine(CMachine &machine)
         const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
         if (data.m_type == MachineType)
         {
-            machine.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
-            if (!machine.isOk())
+            m_machine.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
+            if (!m_machine.isOk())
             {
                 /* Mark the page as failed: */
                 setFailed(true);
                 /* Show error message: */
-                vboxProblem().cannotCreateSharedFolder(machine, data.m_strName, data.m_strHostPath);
+                vboxProblem().cannotCreateSharedFolder(m_machine, data.m_strName, data.m_strHostPath);
             }
         }
     }
 }
 
-void UIMachineSettingsSF::saveFromCacheToConsole(CConsole &console)
+void UIMachineSettingsSF::saveFromCacheToConsole()
 {
     /* Check if items were NOT changed: */
     if (!mIsListViewChanged)
         return;
 
     /* Delete all console folders first: */
-    const CSharedFolderVector &folders = console.GetSharedFolders();
+    const CSharedFolderVector &folders = m_console.GetSharedFolders();
     for (int iFolderIndex = 0; iFolderIndex < folders.size() && !failed(); ++iFolderIndex)
     {
         const CSharedFolder &folder = folders[iFolderIndex];
         QString strFolderName = folder.GetName();
         QString strFolderPath = folder.GetHostPath();
-        console.RemoveSharedFolder(strFolderName);
-        if (!console.isOk())
+        m_console.RemoveSharedFolder(strFolderName);
+        if (!m_console.isOk())
         {
             /* Mark the page as failed: */
             setFailed(true);
             /* Show error message: */
-            vboxProblem().cannotRemoveSharedFolder(console, strFolderName, strFolderPath);
+            vboxProblem().cannotRemoveSharedFolder(m_console, strFolderName, strFolderPath);
         }
     }
 
@@ -423,13 +407,13 @@ void UIMachineSettingsSF::saveFromCacheToConsole(CConsole &console)
         const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
         if (data.m_type == ConsoleType)
         {
-            console.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
-            if (!console.isOk())
+            m_console.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
+            if (!m_console.isOk())
             {
                 /* Mark the page as failed: */
                 setFailed(true);
                 /* Show error message: */
-                vboxProblem().cannotCreateSharedFolder(console, data.m_strName, data.m_strHostPath);
+                vboxProblem().cannotCreateSharedFolder(m_console, data.m_strName, data.m_strHostPath);
             }
         }
     }
@@ -714,5 +698,11 @@ SFoldersNameList UIMachineSettingsSF::usedList (bool aIncludeSelected)
         ++ it;
     }
     return list;
+}
+
+void UIMachineSettingsSF::setDialogType(VBoxDefs::SettingsDialogType settingsDialogType)
+{
+    UISettingsPageMachine::setDialogType(settingsDialogType);
+    m_type = dialogType() == VBoxDefs::SettingsDialogType_Runtime ? ConsoleType : MachineType;
 }
 
