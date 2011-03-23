@@ -472,7 +472,10 @@ static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vadd
     }
 #endif
 
-    page = alloc_page(GFP_HIGHUSER);
+    /* Don't use GFP_HIGHUSER as long as sf_reg_read_aux() calls vboxCallRead()
+     * which works on virtual addresses. On Linux cannot reliably determine the
+     * physical address for high memory, see rtR0MemObjNativeLockKernel(). */
+    page = alloc_page(GFP_USER);
     if (!page) {
         LogRelFunc(("failed to allocate page\n"));
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
