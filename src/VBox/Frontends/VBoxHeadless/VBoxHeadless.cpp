@@ -216,7 +216,7 @@ public:
                         if (!mfNoLoggedInUsers) /* Only if the property really changes. */
                         {
                             if (   utf8Value == "true"
-                                /* Guest property got deleted due to hard reset,
+                                /* Guest property got deleted due to reset,
                                  * so it has no value anymore. */
                                 || utf8Value.isEmpty())
                             {
@@ -226,7 +226,7 @@ public:
                         }
                         else if (utf8Value == "false")
                             mfNoLoggedInUsers = false;
-                        /* Guest property got deleted due to hard reset,
+                        /* Guest property got deleted due to reset,
                          * take the shortcut without touching the mfNoLoggedInUsers
                          * state. */
                         else if (utf8Value.isEmpty())
