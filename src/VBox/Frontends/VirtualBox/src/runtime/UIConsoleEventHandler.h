@@ -41,6 +41,7 @@ signals:
     void sigAdditionsChange();
     void sigNetworkAdapterChange(CNetworkAdapter adapter);
     void sigMediumChange(CMediumAttachment attachment);
+    void sigVRDEChange();
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(CUSBDevice device, bool fAttached, CVirtualBoxErrorInfo error);
     void sigSharedFolderChange();

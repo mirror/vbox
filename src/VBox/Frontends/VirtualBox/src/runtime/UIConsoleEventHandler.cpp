@@ -71,6 +71,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
         << KVBoxEventType_OnAdditionsStateChanged
         << KVBoxEventType_OnNetworkAdapterChanged
         << KVBoxEventType_OnMediumChanged
+        << KVBoxEventType_OnVRDEServerChanged
+        << KVBoxEventType_OnVRDEServerInfoChanged
         << KVBoxEventType_OnUSBControllerChanged
         << KVBoxEventType_OnUSBDeviceStateChanged
         << KVBoxEventType_OnSharedFolderChanged
@@ -108,6 +110,10 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
 
     connect(pListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
             this, SIGNAL(sigMediumChange(CMediumAttachment)),
+            Qt::QueuedConnection);
+
+    connect(pListener->getWrapped(), SIGNAL(sigVRDEChange()),
+            this, SIGNAL(sigVRDEChange()),
             Qt::QueuedConnection);
 
     connect(pListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
