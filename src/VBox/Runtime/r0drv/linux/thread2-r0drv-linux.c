@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,74 +42,59 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
     return rtThreadGetByNative((RTNATIVETHREAD)current);
 }
 
+
 int rtThreadNativeInit(void)
 {
     return VINF_SUCCESS;
 }
 
-/*
- * Following is verbatim comment from Linux's sched.h.
- *
- * Priority of a process goes from 0..MAX_PRIO-1, valid RT
- * priority is 0..MAX_RT_PRIO-1, and SCHED_NORMAL/SCHED_BATCH
- * tasks are in the range MAX_RT_PRIO..MAX_PRIO-1. Priority
- * values are inverted: lower p->prio value means higher priority.
- *
- * The MAX_USER_RT_PRIO value allows the actual maximum
- * RT priority to be separate from the value exported to
- * user-space.  This allows kernel threads to set their
- * priority to a value higher than any user task. Note:
- * MAX_RT_PRIO must not be smaller than MAX_USER_RT_PRIO.
- */
 
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    int    sched_class = SCHED_NORMAL;
-    struct sched_param param = { .sched_priority = MAX_PRIO-1 };
+    /* See comment near MAX_RT_PRIO in linux/sched.h for details on
+       sched_priority. */
+    int                 iSchedClass = SCHED_NORMAL;
+    struct sched_param  Param       = { .sched_priority = MAX_PRIO - 1 };
     switch (enmType)
     {
         case RTTHREADTYPE_INFREQUENT_POLLER:
-        {
-            param.sched_priority = MAX_RT_PRIO + 5;
+            Param.sched_priority = MAX_RT_PRIO + 5;
             break;
-        }
+
         case RTTHREADTYPE_EMULATION:
-        {
-            param.sched_priority = MAX_RT_PRIO + 4;
+            Param.sched_priority = MAX_RT_PRIO + 4;
             break;
-        }
+
         case RTTHREADTYPE_DEFAULT:
-        {
-            param.sched_priority = MAX_RT_PRIO + 3;
+            Param.sched_priority = MAX_RT_PRIO + 3;
             break;
-        }
+
         case RTTHREADTYPE_MSG_PUMP:
-        {
-            param.sched_priority = MAX_RT_PRIO + 2;
+            Param.sched_priority = MAX_RT_PRIO + 2;
             break;
-        }
+
         case RTTHREADTYPE_IO:
-        {
-            sched_class = SCHED_FIFO;
-            param.sched_priority = MAX_RT_PRIO - 1;
+            iSchedClass = SCHED_FIFO;
+            Param.sched_priority = MAX_RT_PRIO - 1;
             break;
-        }
+
         case RTTHREADTYPE_TIMER:
-        {
-            sched_class = SCHED_FIFO;
-            param.sched_priority = 1; /* not 0 just in case */
-        }
+            iSchedClass = SCHED_FIFO;
+            Param.sched_priority = 1; /* not 0 just in case */
+            break;
+
         default:
             AssertMsgFailed(("enmType=%d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
-    sched_setscheduler(current, sched_class, &param);
+    sched_setscheduler(current, iSchedClass, &Param);
 #endif
 
     return VINF_SUCCESS;
 }
+
 
 int rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
@@ -122,6 +107,8 @@ void rtThreadNativeDestroy(PRTTHREADINT pThread)
     NOREF(pThread);
 }
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4)
 /**
  * Native kernel thread wrapper function.
  *
@@ -136,6 +123,7 @@ static int rtThreadNativeMain(void *pvArg)
     rtThreadMain(pThread, (RTNATIVETHREAD)current, &pThread->szName[0]);
     return 0;
 }
+#endif
 
 
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
@@ -156,3 +144,4 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
