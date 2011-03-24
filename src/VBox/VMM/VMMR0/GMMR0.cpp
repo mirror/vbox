@@ -150,6 +150,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GMM
+#include <VBox/rawpci.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/gmm.h>
 #include "GMMR0Internal.h"
@@ -2091,6 +2092,12 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                                 else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                     pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
                                 /* else: NIL_RTHCPHYS nothing */
+#if 0
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                if (pVM->rawpci.s.pfnContigMemInfo)
+                                    pVM->rawpci.s.pfnContigMemInfo(pVM, paPages[iPage].HCPhysGCPhys, 0, PAGE_SIZE, PCIRAW_MEMINFO_MAP);
+#endif
+#endif
 
                                 paPages[iPage].idPage = NIL_GMM_PAGEID;
                                 paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;

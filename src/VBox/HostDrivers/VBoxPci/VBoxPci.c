@@ -86,6 +86,18 @@ DECLINLINE(void) vboxPciDevUnlock(PVBOXRAWPCIINS pThis)
     RTSemFastMutexRelease(pThis->hFastMtx);
 }
 
+DECLINLINE(int) vboxPciVmLock(PVBOXRAWPCIDRVVM pThis)
+{
+    int rc = RTSemFastMutexRequest(pThis->hFastMtx);
+    AssertRC(rc);
+    return rc;
+}
+
+DECLINLINE(void) vboxPciVmUnlock(PVBOXRAWPCIDRVVM pThis)
+{
+    RTSemFastMutexRelease(pThis->hFastMtx);
+}
+
 DECLINLINE(int) vboxPciGlobalsLock(PVBOXRAWPCIGLOBALS pGlobals)
 {
     int rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
@@ -379,7 +391,7 @@ DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTAT
     vboxPciDevLock(pThis);
 
     rc = vboxPciOsDevPowerStateChange(pThis, aState);
-    
+
     vboxPciDevUnlock(pThis);
 
     return rc;
