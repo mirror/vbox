@@ -259,6 +259,15 @@ static void *buildWireListFromDevices(PUSBDEVICE pDevices, int *pLen)
                                    + RT_BOOL(pEntry->oProduct)
                                    + RT_BOOL(pEntry->oSerialNumber),
                          free(pBuf), NULL);
+        AssertReturnStmt(   pEntry->oManufacturer == 0
+                         || pBuf[iCurrent + pEntry->oManufacturer] != '\0',
+                         free(pBuf), NULL);
+        AssertReturnStmt(   pEntry->oProduct == 0
+                         || pBuf[iCurrent + pEntry->oProduct] != '\0',
+                         free(pBuf), NULL);
+        AssertReturnStmt(   pEntry->oSerialNumber == 0
+                         || pBuf[iCurrent + pEntry->oSerialNumber] != '\0',
+                         free(pBuf), NULL);
         AssertReturnStmt(cZeros == 0 || pBuf[iCurrent + iNext - 1] == '\0',
                          free(pBuf), NULL);
     }
