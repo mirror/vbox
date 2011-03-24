@@ -988,7 +988,7 @@ static void dsound_audio_fini (void *opaque)
     dsound *s = opaque;
 
     if (!s->dsound) {
-        return;
+        goto dsound_audio_fini_exit;
     }
 
     hr = IDirectSound_Release (s->dsound);
@@ -998,7 +998,7 @@ static void dsound_audio_fini (void *opaque)
     s->dsound = NULL;
 
     if (!s->dsound_capture) {
-        return;
+        goto dsound_audio_fini_exit;
     }
 
     hr = IDirectSoundCapture_Release (s->dsound_capture);
@@ -1006,6 +1006,9 @@ static void dsound_audio_fini (void *opaque)
         dsound_logerr (hr, "Could not release DirectSoundCapture\n");
     }
     s->dsound_capture = NULL;
+
+dsound_audio_fini_exit:
+    CoUninitialize();
 }
 
 static void *dsound_audio_init (void)
@@ -1039,6 +1042,7 @@ static void *dsound_audio_init (void)
         LogRel(("DSound: Could not create DirectSound instance\n"));
         dsound_log_hresult(hr);
 #endif
+        CoUninitialize();
         return NULL;
     }
 
@@ -1056,6 +1060,7 @@ static void *dsound_audio_init (void)
             dsound_logerr (hr, "Could not release DirectSound\n");
         }
         s->dsound = NULL;
+        CoUninitialize();
         return NULL;
     }
 
