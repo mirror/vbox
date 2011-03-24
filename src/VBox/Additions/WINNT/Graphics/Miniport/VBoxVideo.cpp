@@ -4297,7 +4297,7 @@ BOOLEAN FASTCALL VBoxVideoQueryCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     dprintf(("VBoxVideo::VBoxVideoQueryCurrentMode\n"));
 
     StatusBlock->Information = sizeof(VIDEO_MODE_INFORMATION);
-    VideoPortMoveMemory(VideoModeInfo, VideoModes + DeviceExtension->CurrentMode - 1, 1);
+    VideoPortMoveMemory(VideoModeInfo, VideoModes + DeviceExtension->CurrentMode - 1, sizeof(VIDEO_MODE_INFORMATION));
 
     return TRUE;
 }
