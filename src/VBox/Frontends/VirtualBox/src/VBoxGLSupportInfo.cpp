@@ -603,7 +603,7 @@ bool VBoxVHWAInfo::isVHWASupported() const
 /* static */
 bool VBoxVHWAInfo::checkVHWASupport()
 {
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[] = { NULL, "-test", "2D", NULL};
     int rc;
