@@ -930,7 +930,7 @@ DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 
 
 /**
- * Selects the switcher to be used for switching to GC.
+ * Selects the switcher to be used for switching to raw-mode context.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
