@@ -304,7 +304,7 @@ static int rtR0SemEventMultiSolWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFl
                     else
                     {
                         /* Do the wait and then recheck the conditions. */
-                        rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx);
+                        rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx, &pThis->fStateAndGen, fOrgStateAndGen);
                         continue;
                     }
                 }

@@ -64,8 +64,8 @@ typedef struct RTSEMEVENTSOLENTRY
     RTLISTNODE          Node;
     /** The thread. */
     kthread_t          *pThread;
-    /** Flag set when waking up the thread by signal or destroy. */
-    bool volatile       fWokenUp;
+    /** Set to @c true when waking up the thread by signal or destroy. */
+    uint32_t volatile  fWokenUp;
 } RTSEMEVENTSOLENTRY;
 /** Pointer to waiter entry. */
 typedef RTSEMEVENTSOLENTRY *PRTSEMEVENTSOLENTRY;
@@ -299,7 +299,7 @@ static int rtR0SemEventSolWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, uint6
                     else
                     {
                         /* Do the wait and then recheck the conditions. */
-                        rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx);
+                        rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx, &Waiter.fWokenUp, false);
                         continue;
                     }
                 }
