@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -597,7 +597,8 @@ public:
     const ElementNode* getRootElement() const;
     ElementNode* getRootElement();
 
-    ElementNode* createRootElement(const char *pcszRootElementName);
+    ElementNode* createRootElement(const char *pcszRootElementName,
+                                   const char *pcszComment = NULL);
 
 private:
     friend class XmlMemParser;

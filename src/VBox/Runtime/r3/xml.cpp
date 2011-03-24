@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1307,11 +1307,13 @@ struct Document::Data
 {
     xmlDocPtr   plibDocument;
     ElementNode *pRootElement;
+    ElementNode *pComment;
 
     Data()
     {
         plibDocument = NULL;
         pRootElement = NULL;
+        pComment = NULL;
     }
 
     ~Data()
@@ -1402,7 +1404,8 @@ ElementNode* Document::getRootElement()
  * Creates a new element node and sets it as the root element. This will
  * only work if the document is empty; otherwise EDocumentNotEmpty is thrown.
  */
-ElementNode* Document::createRootElement(const char *pcszRootElementName)
+ElementNode* Document::createRootElement(const char *pcszRootElementName,
+                                         const char *pcszComment /* = NULL */)
 {
     if (m->pRootElement || m->plibDocument)
         throw EDocumentNotEmpty(RT_SRC_POS);
@@ -1414,9 +1417,20 @@ ElementNode* Document::createRootElement(const char *pcszRootElementName)
                                     (const xmlChar*)pcszRootElementName)))
         throw std::bad_alloc();
     xmlDocSetRootElement(m->plibDocument, plibRootNode);
-
     // now wrap this in C++
     m->pRootElement = new ElementNode(NULL, NULL, plibRootNode);
+
+    // add document global comment if specified
+    if (pcszComment != NULL)
+    {
+        xmlNode *pComment;
+        if (!(pComment = xmlNewDocComment(m->plibDocument,
+                                          (const xmlChar *)pcszComment)))
+            throw std::bad_alloc();
+        xmlAddPrevSibling(plibRootNode, pComment);
+        // now wrap this in C++
+        m->pComment = new ElementNode(NULL, NULL, pComment);
+    }
 
     return m->pRootElement;
 }
