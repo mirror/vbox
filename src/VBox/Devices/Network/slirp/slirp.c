@@ -1458,7 +1458,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 static bool fGratuitousArpReported;
                 if (!fGratuitousArpReported)
                 {
-                    LogRel(("NAT: Gratuitous ARP [IP:%R[IP4], ether:%R[ether]]\n",
+                    LogRel(("NAT: Gratuitous ARP [IP:%R[IP4], ether:%RTmac]\n",
                             ah->ar_sip, ah->ar_sha));
                     fGratuitousArpReported = true;
                 }
@@ -2072,7 +2072,7 @@ int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *
         static bool fBroadcastEtherAddReported;
         if (!fBroadcastEtherAddReported)
         {
-            LogRel(("NAT: Attempt to add pair [%R[ether]:%R[IP4]] in ARP cache was ignored\n",
+            LogRel(("NAT: Attempt to add pair [%RTmac:%R[IP4]] in ARP cache was ignored\n",
                     mac, &dst));
             fBroadcastEtherAddReported = true;
         }
@@ -2122,7 +2122,7 @@ void slirp_info(PNATState pData, PCDBGFINFOHLP pHlp, const char *pszArgs)
     pHlp->pfnPrintf(pHlp, "NAT ARP cache:\n");
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
-        pHlp->pfnPrintf(pHlp, " %R[IP4] %R[ether]\n", &ac->ip, &ac->ether);
+        pHlp->pfnPrintf(pHlp, " %R[IP4] %RTmac\n", &ac->ip, &ac->ether);
     }
 
     pHlp->pfnPrintf(pHlp, "NAT rules:\n");
