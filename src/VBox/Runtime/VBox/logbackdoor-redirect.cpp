@@ -103,9 +103,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER)
 /* Do nothing. */
 RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        RTUINT fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                        uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
-                        const char *pszFilenameFmt, ...)
+                        RTUINT fDestFlags, const char *pszFilenameFmt, ...)
 {
     return VERR_NOT_IMPLEMENTED;
 }

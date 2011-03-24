@@ -188,9 +188,7 @@ int _init(void)
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
         rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
                          "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                         RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER,
-                         NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                         NULL);
+                         RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
         if (RT_SUCCESS(rc))
             RTLogRelSetDefaultInstance(pRelLogger);
         else
