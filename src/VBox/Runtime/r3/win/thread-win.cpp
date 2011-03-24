@@ -170,10 +170,7 @@ static void rtThreadNativeUninitComAndOle(void)
         AssertReturnVoid(pfnCoUninitialize);
 
         while (cOleInits-- > 0)
-        {
             pfnOleUninitialize();
-            cComInits--;
-        }
 
         while (cComInits-- > 0)
             pfnCoUninitialize();
