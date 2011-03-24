@@ -693,6 +693,11 @@ void ConfigFileBase::readMedium(MediaType t,
             // DVD and floppy images before 1.11 had no format attribute. assign the default.
             med.strFormat = "RAW";
         }
+    
+        if (t == DVDImage)
+            med.hdType = MediumType_Readonly;
+        else if (t == FloppyImage)
+            med.hdType = MediumType_Writethrough;
     }
 
     if (fNeedsLocation)
@@ -1012,7 +1017,8 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
 
     if (devType == DeviceType_HardDisk || RTStrICmp(mdm.strFormat.c_str(), "RAW"))
         pelmMedium->setAttribute("format", mdm.strFormat);
-    if (mdm.fAutoReset)
+    if (   devType == DeviceType_HardDisk
+        && mdm.fAutoReset)
         pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
     if (mdm.strDescription.length())
         pelmMedium->setAttribute("Description", mdm.strDescription);
@@ -1029,21 +1035,23 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
     // only for base hard disks, save the type
     if (level == 0)
     {
-        const char *pcszType =
-            mdm.hdType == MediumType_Normal ? "Normal" :
-            mdm.hdType == MediumType_Immutable ? "Immutable" :
-            mdm.hdType == MediumType_Writethrough ? "Writethrough" :
-            mdm.hdType == MediumType_Shareable ? "Shareable" :
-            mdm.hdType == MediumType_Readonly ? "Readonly" :
-            mdm.hdType == MediumType_MultiAttach ? "MultiAttach" :
-            "INVALID";
         // no need to save the usual DVD/floppy medium types
         if (   (   devType != DeviceType_DVD
                 || (   mdm.hdType != MediumType_Writethrough // shouldn't happen
                     && mdm.hdType != MediumType_Readonly))
             && (   devType != DeviceType_Floppy
                 || mdm.hdType != MediumType_Writethrough))
+        {
+            const char *pcszType =
+                mdm.hdType == MediumType_Normal ? "Normal" :
+                mdm.hdType == MediumType_Immutable ? "Immutable" :
+                mdm.hdType == MediumType_Writethrough ? "Writethrough" :
+                mdm.hdType == MediumType_Shareable ? "Shareable" :
+                mdm.hdType == MediumType_Readonly ? "Readonly" :
+                mdm.hdType == MediumType_MultiAttach ? "MultiAttach" :
+                "INVALID";
             pelmMedium->setAttribute("type", pcszType);
+        }
     }
 
     for (MediaList::const_iterator it = mdm.llChildren.begin();
