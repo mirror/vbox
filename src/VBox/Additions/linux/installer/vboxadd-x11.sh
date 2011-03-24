@@ -319,7 +319,7 @@ setup()
         esac
     fi
     case $x_version in
-        1.10.99.* )
+        1.*.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
             dox11config=""
@@ -332,24 +332,7 @@ setup()
             # Does Fedora still ship without vboxvideo detection?
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
-        1.9.99.901 )
-            echo "Warning: you are using a pre-release version of X.Org server 1.5 which is known"
-            echo "not to work with the VirtualBox Guest Additions.  Please update to a more"
-            echo "recent version (for example by installing all updates in your guest) and then"
-            echo "set up the Guest Additions for X.Org server by running"
-            echo ""
-            echo "  /usr/lib[64]/VBoxGuestAdditions/vboxadd-x11 setup"
-            dox11config=""
-            ;;
-        1.9.99.* )
-            begin "Installing X.Org Server 1.10rc modules"
-            vboxvideo_src=vboxvideo_drv_110rc.so
-            vboxmouse_src=vboxmouse_drv_110rc.so
-            doxorgconfd="true"
-            # Does Fedora still ship without vboxvideo detection?
-            # test "$system" = "redhat" || setupxorgconf=""
-            ;;
-        1.8.99.* | 1.9.* )
+        1.9.* )
             begin "Installing X.Org Server 1.9 modules"
             vboxvideo_src=vboxvideo_drv_19.so
             vboxmouse_src=vboxmouse_drv_19.so
@@ -357,7 +340,7 @@ setup()
             # Fedora 14 looks likely to ship without vboxvideo detection
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
-        1.7.99.* | 1.8.* )
+        1.8.* )
             begin "Installing X.Org Server 1.8 modules"
             vboxvideo_src=vboxvideo_drv_18.so
             vboxmouse_src=vboxmouse_drv_18.so
@@ -365,30 +348,21 @@ setup()
             # Fedora 13 shipped without vboxvideo detection
             test "$system" = "redhat" || setupxorgconf=""
             ;;
-        1.6.99.* | 1.7.* )
+        1.7.* )
             begin "Installing X.Org Server 1.7 modules"
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
             test "$system" = "debian" && doxorgconfd="true"
             ;;
-        1.5.99.* | 1.6.* )
+        1.6.* )
             begin "Installing X.Org Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
             # SUSE with X.Org Server 1.6 knows about vboxvideo
             test "$system" = "suse" && setupxorgconf=""
             ;;
-        1.4.99.901 | 1.4.99.902 )
-            echo "Warning: you are using a pre-release version of X.Org server 1.5 which is known"
-            echo "not to work with the VirtualBox Guest Additions.  Please update to a more"
-            echo "recent version (for example by installing all updates in your guest) and then"
-            echo "set up the Guest Additions for X.Org server by running"
-            echo ""
-            echo "  /usr/lib[64]/VBoxGuestAdditions/vboxadd-x11 setup"
-            dox11config=""
-            ;;
-        1.4.99.* | 1.5.* )
+        1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
             # in its released version
             begin "Installing X.Org Server 1.5 modules"
