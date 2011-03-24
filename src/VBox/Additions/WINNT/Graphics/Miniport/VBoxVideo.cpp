@@ -3800,6 +3800,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
                 rc = VbglGRPerform (&req->header);
 
+                VbglGRFree (&req->header);
+
                 if (RT_SUCCESS(rc))
                 {
                     Result = TRUE;
