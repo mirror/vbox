@@ -302,7 +302,6 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
     RTTIME Time;
     RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
     rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE,
-                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
                      "./%04d-%02d-%02d-%02d-%02d-%02d.%03d-%s-%d.log",
                      Time.i32Year, Time.u8Month, Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second, Time.u32Nanosecond / 10000000,
                      RTPathFilename(szExecName), RTProcSelf());
@@ -412,21 +411,14 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 
 # else  /* IN_GUEST */
     /* The user destination is backdoor logging. */
-    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG",
-                     RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER,
-                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                      "VBox.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox.log");
 # endif /* IN_GUEST */
 
 #else /* IN_RING0 */
 # ifndef IN_GUEST
-    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE,
-                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                     "VBox-ring0.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE, "VBox-ring0.log");
 # else  /* IN_GUEST */
-    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER,
-                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                     "VBox-ring0.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox-ring0.log");
 # endif /* IN_GUEST */
     if (RT_SUCCESS(rc))
     {

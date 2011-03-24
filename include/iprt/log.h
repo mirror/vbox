@@ -177,7 +177,9 @@ typedef enum RTLOGPHASE
     /** Before rotating the log file. */
     RTLOGPHASE_PREROTATE,
     /** After rotating the log file. */
-    RTLOGPHASE_POSTROTATE
+    RTLOGPHASE_POSTROTATE,
+    /** 32-bit type blow up hack.  */
+    RTLOGPHASE_32BIT_HACK = 0x7fffffff
 } RTLOGPHASE;
 
 
@@ -223,8 +225,10 @@ typedef FNRTLOGPHASEMSG *PFNRTLOGPHASEMSG;
 /**
  * Log file header/footer callback.
  *
- * @param   pLogger     Pointer to the logger instance.
- * @param   enmLogPhase Indicates at what time the callback is invoked.
+ * @param   pLogger         Pointer to the logger instance.
+ * @param   enmLogPhase     Indicates at what time the callback is invoked.
+ * @param   pfnLogPhaseMsg  Callback for writing the header/footer (RTLogPrintf
+ *                          and others are out of bounds).
  */
 typedef DECLCALLBACK(void) FNRTLOGPHASE(PRTLOGGER pLogger, RTLOGPHASE enmLogPhase, PFNRTLOGPHASEMSG pfnLogPhaseMsg);
 /** Pointer to log header/footer callback function. */
@@ -286,37 +290,8 @@ struct RTLOGGERRC
 
 #ifndef IN_RC
 
-#ifdef IN_RING3
-/**
- * File logging bits for the logger.
- */
-typedef struct RTLOGGERFILE
-{
-    /** Pointer to the function called when starting logging, and when
-     * ending or starting a new log file as part of history rotation. */
-    PFNRTLOGPHASE           pfnPhase;
-    /** Handle to log file (if open). */
-    RTFILE                  File;
-    /** Pointer to filename.
-     * (The memory is allocated in the same block as RTLOGGER.) */
-    char                   *pszFilename;
-    /** Log file history settings: number of older files to keep.
-     * 0 means no history. */
-    uint32_t                cHistory;
-    /** Log file history settings: maximum amount of data to put in a file. */
-    uint64_t                cbHistoryFileMax;
-    /** Log file history settings: current amount of data in a file. */
-    uint64_t                cbHistoryFileWritten;
-    /** Log file history settings: maximum time to use a file. */
-    uint32_t                uHistoryTimeSlotLength;
-    /** Log file history settings: in what time slot was the file created. */
-    uint32_t                uHistoryTimeSlotStart;
-} RTLOGGERFILE;
-#else /* !IN_RING3 */
-typedef void RTLOGGERFILE;
-#endif /* !IN_RING3 */
 /** Pointer to file logging bits for the logger. */
-typedef RTLOGGERFILE *PRTLOGGERFILE;
+typedef struct RTLOGGERFILE *PRTLOGGERFILE;
 
 /**
  * Logger instance structure.
@@ -350,7 +325,7 @@ struct RTLOGGER
     uint32_t                fFlags;
     /** Destination flags - RTLOGDEST. */
     uint32_t                fDestFlags;
-    /** currently unused field. */
+    /** Currently unused field. */
     uint32_t                uUnused;
     /** Pointer to the file related logging information.
      * (The memory is allocated in the same block as RTLOGGER.) */
@@ -1449,25 +1424,23 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void);
  * @returns iprt status code.
  *
  * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
+ * @param   fFlags              Logger instance flags, a combination of the
+ *                              RTLOGFLAGS_* values.
  * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
+ * @param   pszEnvVarBase       Base name for the environment variables for
+ *                              this instance.
  * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
- * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
+ * @param   papszGroups         Pointer to array of groups.  This must stick
+ *                              around for the life of the logger instance.
+ * @param   fDestFlags          The destination flags.  RTLOGDEST_FILE is ORed
+ *                              if pszFilenameFmt specified.
+ * @param   pszFilenameFmt      Log filename format string.  Standard
+ *                              RTStrFormat().
  * @param   ...                 Format arguments.
  */
 RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                        uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
-                        const char *pszFilenameFmt, ...);
+                        uint32_t fDestFlags, const char *pszFilenameFmt, ...);
 
 /**
  * Create a logger instance.
@@ -1475,17 +1448,26 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
  * @returns iprt status code.
  *
  * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
+ * @param   fFlags              Logger instance flags, a combination of the
+ *                              RTLOGFLAGS_* values.
  * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
+ * @param   pszEnvVarBase       Base name for the environment variables for
+ *                              this instance.
  * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
+ * @param   papszGroups         Pointer to array of groups.  This must stick
+ *                              around for the life of the logger instance.
+ * @param   fDestFlags          The destination flags.  RTLOGDEST_FILE is ORed
+ *                              if pszFilenameFmt specified.
+ * @param   pfnPhase            Callback function for starting logging and for
+ *                              ending or starting a new file for log history
+ *                              rotation.  NULL is OK.
+ * @param   cHistory            Number of old log files to keep when performing
+ *                              log history rotation.  0 means no history.
+ * @param   cbHistoryFileMax    Maximum size of log file when performing
+ *                              history rotation. 0 means no size limit.
+ * @param   cSecsHistoryTimeSlot Maximum time interval per log file when
+ *                              performing history rotation, in seconds.
+ *                              0 means time limit.
  * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
  * @param   cchErrorMsg         The size of the error message buffer.
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
@@ -1494,7 +1476,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                          uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
+                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                           char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...);
 
 /**
@@ -1503,26 +1485,37 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
  * @returns iprt status code.
  *
  * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
+ * @param   fFlags              Logger instance flags, a combination of the
+ *                              RTLOGFLAGS_* values.
  * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
+ * @param   pszEnvVarBase       Base name for the environment variables for
+ *                              this instance.
  * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
- * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
+ * @param   papszGroups         Pointer to array of groups.  This must stick
+ *                              around for the life of the logger instance.
+ * @param   fDestFlags          The destination flags.  RTLOGDEST_FILE is ORed
+ *                              if pszFilenameFmt specified.
+ * @param   pfnPhase            Callback function for starting logging and for
+ *                              ending or starting a new file for log history
+ *                              rotation.
+ * @param   cHistory            Number of old log files to keep when performing
+ *                              log history rotation.  0 means no history.
+ * @param   cbHistoryFileMax    Maximum size of log file when performing
+ *                              history rotation.  0 means no size limit.
+ * @param   cSecsHistoryTimeSlot  Maximum time interval per log file when
+ *                              performing history rotation, in seconds.
+ *                              0 means no time limit.
+ * @param   pszErrorMsg         A buffer which is filled with an error message
+ *                              if something fails.  May be NULL.
  * @param   cchErrorMsg         The size of the error message buffer.
- * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
+ * @param   pszFilenameFmt      Log filename format string.  Standard
+ *                              RTStrFormat().
  * @param   args                Format arguments.
  */
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                           uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
+                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                            char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args);
 
 /**

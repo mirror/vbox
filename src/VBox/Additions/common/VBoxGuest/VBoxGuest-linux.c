@@ -465,9 +465,7 @@ static int __init vboxguestLinuxModInit(void)
      */
     rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
                      "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER,
-                     NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
-                     NULL);
+                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER, NULL);
     if (RT_SUCCESS(rc))
     {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)

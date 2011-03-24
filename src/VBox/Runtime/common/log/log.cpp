@@ -78,6 +78,35 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
     unsigned    iGroup;
 } RTLOGOUTPUTPREFIXEDARGS, *PRTLOGOUTPUTPREFIXEDARGS;
 
+#ifdef IN_RING3
+/**
+ * File logging bits for the logger.
+ */
+typedef struct RTLOGGERFILE
+{
+    /** Pointer to the function called when starting logging, and when
+     * ending or starting a new log file as part of history rotation.
+     * This can be NULL. */
+    PFNRTLOGPHASE           pfnPhase;
+    /** Handle to log file (if open). */
+    RTFILE                  File;
+    /** Pointer to filename.
+     * (The memory is allocated in the same block as RTLOGGER.) */
+    char                   *pszFilename;
+    /** Log file history settings: number of older files to keep.
+     * 0 means no history. */
+    uint32_t                cHistory;
+    /** Log file history settings: maximum amount of data to put in a file. */
+    uint64_t                cbHistoryFileMax;
+    /** Log file history settings: current amount of data in a file. */
+    uint64_t                cbHistoryFileWritten;
+    /** Log file history settings: maximum time to use a file (in seconds). */
+    uint32_t                cSecsHistoryTimeSlot;
+    /** Log file history settings: in what time slot was the file created. */
+    uint32_t                uHistoryTimeSlotStart;
+} RTLOGGERFILE;
+#endif /* IN_RING3 */
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -95,7 +124,7 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst);
 static void rtlogFlush(PRTLOGGER pLogger);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
-static void rtlogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
+static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
 
 
 /*******************************************************************************
@@ -127,7 +156,8 @@ static struct RTLOGGERPERTHREAD
     /** The logger instance.*/
     PRTLOGGER volatile      pLogger;
 } g_aPerThreadLoggers[8] =
-{   { NIL_RTNATIVETHREAD, 0, 0},
+{
+    { NIL_RTNATIVETHREAD, 0, 0},
     { NIL_RTNATIVETHREAD, 0, 0},
     { NIL_RTNATIVETHREAD, 0, 0},
     { NIL_RTNATIVETHREAD, 0, 0},
@@ -147,8 +177,7 @@ static struct
     size_t      cchInstr;               /**< The size of the name. */
     uint32_t    fFlag;                  /**< The flag value. */
     bool        fInverted;              /**< Inverse meaning? */
-}
-const s_aLogFlags[] =
+} const s_aLogFlags[] =
 {
     { "disabled",     sizeof("disabled"    ) - 1,   RTLOGFLAGS_DISABLED,            false },
     { "enabled",      sizeof("enabled"     ) - 1,   RTLOGFLAGS_DISABLED,            true  },
@@ -238,9 +267,9 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
     return;
 }
 
-
 #ifndef IN_RC
 # ifdef IN_RING3
+
 /**
  * Logging to file, output callback.
  *
@@ -254,6 +283,7 @@ static DECLCALLBACK(size_t) rtlogPhaseWrite(void *pvArg, const char *pachChars, 
     RTFileWrite(pLogger->pFile->File, pachChars, cbChars, NULL);
     return cbChars;
 }
+
 
 /**
  * Callback to format VBox formatting extentions.
@@ -282,6 +312,7 @@ static DECLCALLBACK(size_t) rtlogPhaseFormatStr(void *pvArg, PFNRTSTROUTPUT pfnO
     return 0;
 }
 
+
 /**
  * Log phase callback function, assumes the lock is already held
  *
@@ -297,12 +328,13 @@ static DECLCALLBACK(void) rtlogPhaseMsgLocked(PRTLOGGER pLogger, const char *psz
     Assert(pLogger->hSpinMtx != NIL_RTSEMSPINMUTEX);
 
     va_start(args, pszFormat);
-    rtlogLoggerExV(pLogger, 0, ~0, pszFormat, args);
+    rtlogLoggerExVLocked(pLogger, 0, ~0, pszFormat, args);
     va_end(args);
 }
 
+
 /**
- * Log phase callback function, assumes the lock is not held
+ * Log phase callback function, assumes the lock is not held.
  *
  * @param   pLogger     The logger instance.
  * @param   pszFormat   Format string.
@@ -319,34 +351,13 @@ static DECLCALLBACK(void) rtlogPhaseMsgNormal(PRTLOGGER pLogger, const char *psz
     RTLogLoggerExV(pLogger, 0, ~0, pszFormat, args);
     va_end(args);
 }
+
 # endif /* IN_RING3 */
 
-/**
- * Create a logger instance, comprehensive version.
- *
- * @returns iprt status code.
- *
- * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
- * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
- * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength     Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
- * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
- * @param   cchErrorMsg         The size of the error message buffer.
- * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
- * @param   ...                 Format arguments.
- */
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                           uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
+                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                            char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
 {
     int        rc;
@@ -357,8 +368,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
      * Validate input.
      */
     if (    (cGroups && !papszGroups)
-        ||  !VALID_PTR(ppLogger)
-       )
+        ||  !VALID_PTR(ppLogger) )
     {
         AssertMsgFailed(("Invalid parameters!\n"));
         return VERR_INVALID_PARAMETER;
@@ -367,6 +377,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 
     if (pszErrorMsg)
         RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("unknown error"));
+
+    AssertMsgReturn(cHistory < _1M, ("%#x", cHistory), VERR_OUT_OF_RANGE);
 
     /*
      * Allocate a logger instance.
@@ -396,11 +408,11 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             pLogger->pFile->cbHistoryFileMax = UINT64_MAX;
         else
             pLogger->pFile->cbHistoryFileMax = cbHistoryFileMax;
-        if (uHistoryTimeSlotLength == 0)
-            pLogger->pFile->uHistoryTimeSlotLength = UINT32_MAX;
+        if (cSecsHistoryTimeSlot == 0)
+            pLogger->pFile->cSecsHistoryTimeSlot = UINT32_MAX;
         else
-            pLogger->pFile->uHistoryTimeSlotLength = uHistoryTimeSlotLength;
-#else /* !IN_RING3 */
+            pLogger->pFile->cSecsHistoryTimeSlot = cSecsHistoryTimeSlot;
+#else  /* !IN_RING3 */
         pLogger->pFile       = NULL;
 #endif /* !IN_RING3 */
         pLogger->fFlags      = fFlags;
@@ -449,6 +461,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
              */
             if (pszFilenameFmt)
             {
+                /** @todo validate the length, fail on overflow. */
                 RTStrPrintfV(pLogger->pFile->pszFilename, RTPATH_MAX, pszFilenameFmt, args);
                 pLogger->fDestFlags |= RTLOGDEST_FILE;
             }
@@ -499,8 +512,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 if (pLogger->fFlags & RTLOGFLAGS_APPEND)
                 {
                     rc = rtlogFileOpen(pLogger, pszErrorMsg, cchErrorMsg);
+
                     /* Rotate in case of appending to a too big log file,
-                     * otherwise this simply doesn't do anything. */
+                       otherwise this simply doesn't do anything. */
                     rtlogRotate(pLogger, 0, true /* fFirst */);
                 }
                 else
@@ -508,6 +522,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     /* Force rotation if it is configured. */
                     pLogger->pFile->cbHistoryFileWritten = UINT64_MAX;
                     rtlogRotate(pLogger, 0, true /* fFirst */);
+
                     /* If the file is not open then rotation is not set up. */
                     if (pLogger->pFile->File == NIL_RTFILE)
                     {
@@ -520,7 +535,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             /* Use the callback to generate some initial log contents. */
             Assert(VALID_PTR(pLogger->pFile->pfnPhase) || pLogger->pFile->pfnPhase == NULL);
             if (pLogger->pFile->pfnPhase)
-                pfnPhase(pLogger, RTLOGPHASE_BEGIN, rtlogPhaseMsgNormal);
+                pLogger->pFile->pfnPhase(pLogger, RTLOGPHASE_BEGIN, rtlogPhaseMsgNormal);
 #endif  /* IN_RING3 */
 
             /*
@@ -569,76 +584,36 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 RT_EXPORT_SYMBOL(RTLogCreateExV);
 
 
-/**
- * Create a logger instance.
- *
- * @returns iprt status code.
- *
- * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
- * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
- * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength     Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
- * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
- * @param   ...                 Format arguments.
- */
 RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                        uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
-                        const char *pszFilenameFmt, ...)
+                        uint32_t fDestFlags, const char *pszFilenameFmt, ...)
 {
     va_list args;
     int rc;
 
     va_start(args, pszFilenameFmt);
-    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups, fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, uHistoryTimeSlotLength, NULL, 0, pszFilenameFmt, args);
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
+                        fDestFlags, NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                        NULL /*pszErrorMsg*/, 0 /*cchErrorMsg*/, pszFilenameFmt, args);
     va_end(args);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLogCreate);
 
 
-/**
- * Create a logger instance.
- *
- * @returns iprt status code.
- *
- * @param   ppLogger            Where to store the logger instance.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
- * @param   pszGroupSettings    The initial group settings.
- * @param   pszEnvVarBase       Base name for the environment variables for this instance.
- * @param   cGroups             Number of groups in the array.
- * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
- *                              logger instance.
- * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
- * @param   pfnPhase            Callback function for starting logging and for ending or starting a new file for log history rotation.
- * @param   cHistory            Number of old log files to keep when performing log history rotation.
- * @param   cbHistoryFileMax    Maximum size of log file when performing history rotation. 0=no size limit.
- * @param   uHistoryTimeSlotLength     Maximum time interval per log file when performing history rotation, in seconds. 0=no time limit.
- * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
- * @param   cchErrorMsg         The size of the error message buffer.
- * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
- * @param   ...                 Format arguments.
- */
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
-                          uint64_t cbHistoryFileMax, uint32_t uHistoryTimeSlotLength,
+                          uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                           char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
 {
     va_list args;
     int rc;
 
     va_start(args, pszFilenameFmt);
-    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups, fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, uHistoryTimeSlotLength, pszErrorMsg, cchErrorMsg, pszFilenameFmt, args);
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
+                        fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
+                        pszErrorMsg, cchErrorMsg, pszFilenameFmt, args);
     va_end(args);
     return rc;
 }
@@ -687,7 +662,8 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Add end of logging message.
      */
-    if (pLogger->fDestFlags & RTLOGDEST_FILE && pLogger->pFile->File != NIL_RTFILE)
+    if (   (pLogger->fDestFlags & RTLOGDEST_FILE)
+        && pLogger->pFile->File != NIL_RTFILE)
         pLogger->pFile->pfnPhase(pLogger, RTLOGPHASE_END, rtlogPhaseMsgLocked);
 
     /*
@@ -1611,9 +1587,8 @@ RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered)
 }
 RT_EXPORT_SYMBOL(RTLogSetBuffering);
 
-
-
 #ifndef IN_RC
+
 /**
  * Get the current log flags as a string.
  *
@@ -1740,7 +1715,7 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                     pszEnd = strchr(pszVar, ';');
                     if (!pszEnd)
                         pszEnd = strchr(pszVar, '\0');
-#ifndef IN_RING0
+# ifdef IN_RING3
                     size_t cch = pszEnd - pszVar;
 
                     /* log file name */
@@ -1772,13 +1747,13 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                     {
                         if (!fNo)
                         {
-                            char szTmp[32];
+                            uint32_t    cHistory = 0;
+                            char        szTmp[32];
                             int rc = RTStrCopyEx(szTmp, sizeof(szTmp), pszVar, cch);
                             if (RT_SUCCESS(rc))
-                                rc = RTStrToUInt32Full(szTmp, 0, &pLogger->pFile->cHistory);
-                            if (RT_FAILURE(rc))
-                                AssertMsgFailedReturn(("Invalid history value %s (%Rrc)!\n",
-                                                       szTmp, rc), rc);
+                                rc = RTStrToUInt32Full(szTmp, 0, &cHistory);
+                            AssertMsgReturn(RT_SUCCESS(rc) && cHistory < _1M, ("Invalid history value %s (%Rrc)!\n", szTmp, rc), rc);
+                            pLogger->pFile->cHistory = cHistory;
                         }
                         else
                             pLogger->pFile->cHistory = 0;
@@ -1791,9 +1766,7 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                             int rc = RTStrCopyEx(szTmp, sizeof(szTmp), pszVar, cch);
                             if (RT_SUCCESS(rc))
                                 rc = RTStrToUInt64Full(szTmp, 0, &pLogger->pFile->cbHistoryFileMax);
-                            if (RT_FAILURE(rc))
-                                AssertMsgFailedReturn(("Invalid history file size value %s (%Rrc)!\n",
-                                                       szTmp, rc), rc);
+                            AssertMsgRCReturn(rc, ("Invalid history file size value %s (%Rrc)!\n", szTmp, rc), rc);
                             if (pLogger->pFile->cbHistoryFileMax == 0)
                                 pLogger->pFile->cbHistoryFileMax = UINT64_MAX;
                         }
@@ -1807,21 +1780,19 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                             char szTmp[32];
                             int rc = RTStrCopyEx(szTmp, sizeof(szTmp), pszVar, cch);
                             if (RT_SUCCESS(rc))
-                                rc = RTStrToUInt32Full(szTmp, 0, &pLogger->pFile->uHistoryTimeSlotLength);
-                            if (RT_FAILURE(rc))
-                                AssertMsgFailedReturn(("Invalid history timespan value %s (%Rrc)!\n",
-                                                       szTmp, rc), rc);
-                            if (pLogger->pFile->uHistoryTimeSlotLength == 0)
-                                pLogger->pFile->uHistoryTimeSlotLength = UINT32_MAX;
+                                rc = RTStrToUInt32Full(szTmp, 0, &pLogger->pFile->cSecsHistoryTimeSlot);
+                            AssertMsgRCReturn(rc, ("Invalid history time slot value %s (%Rrc)!\n", szTmp, rc), rc);
+                            if (pLogger->pFile->cSecsHistoryTimeSlot == 0)
+                                pLogger->pFile->cSecsHistoryTimeSlot = UINT32_MAX;
                         }
                         else
-                            pLogger->pFile->uHistoryTimeSlotLength = UINT32_MAX;
+                            pLogger->pFile->cSecsHistoryTimeSlot = UINT32_MAX;
                     }
                     else
                         AssertMsgFailedReturn(("Invalid destination value! %s%s doesn't take a value!\n",
                                                fNo ? "no" : "", s_aLogDst[i].pszInstr),
                                               VERR_INVALID_PARAMETER);
-#endif
+# endif /* IN_RING3 */
                     pszVar = pszEnd + (*pszEnd != '\0');
                 }
                 break;
@@ -1859,7 +1830,8 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
     uint32_t    fDestFlags;
     unsigned    i;
 
-    Assert(cchBuf);
+    AssertReturn(cchBuf, VERR_INVALID_PARAMETER);
+    *pszBuf = '\0';
 
     /*
      * Resolve defaults.
@@ -1868,14 +1840,8 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
     {
         pLogger = RTLogDefaultInstance();
         if (!pLogger)
-        {
-            *pszBuf = '\0';
             return VINF_SUCCESS;
-        }
     }
-#define APPEND_PSZ(psz,cch) do { memcpy(pszBuf, (psz), (cch)); pszBuf += (cch); cchBuf -= (cch); } while (0)
-#define APPEND_SZ(sz)       APPEND_PSZ(sz, sizeof(sz) - 1)
-#define APPEND_CH(ch)       do { *pszBuf++ = (ch); cchBuf--; } while (0)
 
     /*
      * Add the flags in the list.
@@ -1884,16 +1850,16 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
     for (i = 2; i < RT_ELEMENTS(s_aLogDst); i++)
         if (s_aLogDst[i].fFlag & fDestFlags)
         {
-            size_t cchInstr = s_aLogDst[i].cchInstr;
-            if (cchInstr + fNotFirst + 1 > cchBuf)
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
             if (fNotFirst)
-                APPEND_CH(' ');
+            {
+                rc = RTStrCopyP(&pszBuf, &cchBuf, " ");
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+            rc = RTStrCopyP(&pszBuf, &cchBuf, s_aLogDst[i].pszInstr);
+            if (RT_FAILURE(rc))
+                return rc;
             fNotFirst = true;
-            APPEND_PSZ(s_aLogDst[i].pszInstr, cchInstr);
         }
 
 #ifdef IN_RING3
@@ -1901,33 +1867,49 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
      * Add the filename.
      */
     if (    (fDestFlags & RTLOGDEST_FILE)
-        &&  VALID_PTR(pLogger->pFile->pszFilename)
-        &&  RT_SUCCESS(rc))
+        &&  VALID_PTR(pLogger->pFile->pszFilename))
     {
-        size_t cchFilename = strlen(pLogger->pFile->pszFilename);
-        if (cchFilename + sizeof("file=") - 1 + fNotFirst + 1 <= cchBuf)
-        {
-            if (fNotFirst)
-                APPEND_SZ(" file=");
-            else
-                APPEND_SZ("file=");
-            APPEND_PSZ(pLogger->pFile->pszFilename, cchFilename);
-        }
-        else
-            rc = VERR_BUFFER_OVERFLOW;
+        rc = RTStrCopyP(&pszBuf, &cchBuf, fNotFirst ? " file=" : "file=");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = RTStrCopyP(&pszBuf, &cchBuf, pLogger->pFile->pszFilename);
+        if (RT_FAILURE(rc))
+            return rc;
+        fNotFirst = true;
     }
-#endif
 
-#undef APPEND_PSZ
-#undef APPEND_SZ
-#undef APPEND_CH
+    if (fDestFlags & RTLOGDEST_FILE)
+    {
+        char szNum[32];
+        if (pLogger->pFile->cHistory)
+        {
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "history=%u" : " history=%u", pLogger->pFile->cHistory);
+            rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        if (pLogger->pFile->cbHistoryFileMax != UINT64_MAX)
+        {
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "histsize=%llu" : " histsize=%llu", pLogger->pFile->cbHistoryFileMax);
+            rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        if (pLogger->pFile->cSecsHistoryTimeSlot != UINT32_MAX)
+        {
+            RTStrPrintf(szNum, sizeof(szNum), fNotFirst ? "histtime=%llu" : " histtime=%llu", pLogger->pFile->cSecsHistoryTimeSlot);
+            rc = RTStrCopyP(&pszBuf, &cchBuf, szNum);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+    }
+#endif /* IN_RING3 */
 
-    *pszBuf = '\0';
-    return rc;
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTLogGetDestinations);
-#endif /* !IN_RC */
 
+#endif /* !IN_RC */
 
 /**
  * Flushes the specified logger.
@@ -2228,7 +2210,7 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
     /*
      * Call worker.
      */
-    rtlogLoggerExV(pLogger, fFlags, iGroup, pszFormat, args);
+    rtlogLoggerExVLocked(pLogger, fFlags, iGroup, pszFormat, args);
 
     /*
      * Release the semaphore.
@@ -2398,14 +2380,15 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 }
 RT_EXPORT_SYMBOL(RTLogPrintfV);
 
-
 #ifdef IN_RING3
+
 /**
  * Opens/creates the log file.
  *
- * @param   pLogger     The logger instance to update. NULL is not allowed!
- * @param   pszErrorMsg A buffer which is filled with an error message if something fails. May be NULL.
- * @param   cchErrorMsg The size of the error message buffer.
+ * @param   pLogger         The logger instance to update. NULL is not allowed!
+ * @param   pszErrorMsg     A buffer which is filled with an error message if
+ *                          something fails.  May be NULL.
+ * @param   cchErrorMsg     The size of the error message buffer.
  */
 static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg)
 {
@@ -2416,6 +2399,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
         fOpen |= RTFILE_O_CREATE_REPLACE;
     if (pLogger->fFlags & RTLOGFLAGS_WRITE_THROUGH)
         fOpen |= RTFILE_O_WRITE_THROUGH;
+
     int rc = RTFileOpen(&pLogger->pFile->File, pLogger->pFile->pszFilename, fOpen);
     if (RT_FAILURE(rc))
     {
@@ -2439,11 +2423,14 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
 
 /**
  * Closes, rotates and opens the log files if necessary.
- * Used by the rtlogFlush() function.
+ *
+ * Used by the rtlogFlush() function as well as RTLogCreateExV.
  *
  * @param   pLogger     The logger instance to update. NULL is not allowed!
  * @param   uTimeSlit   Current time slot (for tikme based rotation).
- * @param   fFirst      Flag whether this is the beginning of logging.
+ * @param   fFirst      Flag whether this is the beginning of logging, i.e.
+ *                      called from RTLogCreateExV.  Prevents pfnPhase from
+ *                      being called.
  */
 static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
 {
@@ -2456,18 +2443,24 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
                   && uTimeSlot == pLogger->pFile->uHistoryTimeSlotStart))
         return;
 
-    /* Save "disabled" log flag and make sure logging is disabled.
+    /*
+     * Save "disabled" log flag and make sure logging is disabled.
      * The logging in the functions called during log file history
-     * rotation would cause severe trouble otherwise. */
-    uint32_t fOFlags = pLogger->fFlags;
+     * rotation would cause severe trouble otherwise.
+     */
+    uint32_t const fSavedFlags = pLogger->fFlags;
     pLogger->fFlags |= RTLOGFLAGS_DISABLED;
 
-    /* Disable log rotation temporarily, otherwise with extreme settings and
-     * chatty phase logging we could run into endless rotation. */
-    uint32_t cOHistory = pLogger->pFile->cHistory;
+    /*
+     * Disable log rotation temporarily, otherwise with extreme settings and
+     * chatty phase logging we could run into endless rotation.
+     */
+    uint32_t const cSavedHistory = pLogger->pFile->cHistory;
     pLogger->pFile->cHistory = 0;
 
-    /* Close the old log file. */
+    /*
+     * Close the old log file.
+     */
     if (pLogger->pFile->File != NIL_RTFILE)
     {
         /* Use the callback to generate some final log contents, but only if
@@ -2484,10 +2477,12 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
         pLogger->pFile->File = NIL_RTFILE;
     }
 
-    /* Rotate the log files. */
-    if (cOHistory)
+    if (cSavedHistory)
     {
-        for (uint32_t i = cOHistory - 1; i + 1 > 0; i--)
+        /*
+         * Rotate the log files.
+         */
+        for (uint32_t i = cSavedHistory - 1; i + 1 > 0; i--)
         {
             char szOldName[RTPATH_MAX];
             if (i > 0)
@@ -2500,41 +2495,46 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
                              RTFILEMOVE_FLAGS_REPLACE) == VERR_FILE_NOT_FOUND)
                 RTFileDelete(szNewName);
         }
-    }
-    /* Delete excess log files. */
-    for (uint32_t i = cOHistory + 1; i++; )
-    {
-        char szExcessName[RTPATH_MAX];
-        RTStrPrintf(szExcessName, sizeof(szExcessName), "%s.%u", pLogger->pFile->pszFilename, i);
-        int rc = RTFileDelete(szExcessName);
-        if (RT_FAILURE(rc))
-            break;
+
+        /*
+         * Delete excess log files.
+         */
+        for (uint32_t i = cSavedHistory + 1; ; i++)
+        {
+            char szExcessName[RTPATH_MAX];
+            RTStrPrintf(szExcessName, sizeof(szExcessName), "%s.%u", pLogger->pFile->pszFilename, i);
+            int rc = RTFileDelete(szExcessName);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
 
-    /* Update logger state and create new log file. */
+    /*
+     * Update logger state and create new log file.
+     */
     pLogger->pFile->cbHistoryFileWritten = 0;
     pLogger->pFile->uHistoryTimeSlotStart = uTimeSlot;
     rtlogFileOpen(pLogger, NULL, 0);
 
-    /* Use the callback to generate some initial log contents, but only if this
-     * is a rotation with a fully set up logger. Leave the other case to the
-     * RTLogCreateExV function. */
+    /*
+     * Use the callback to generate some initial log contents, but only if this
+     * is a rotation with a fully set up logger.  Leave the other case to the
+     * RTLogCreateExV function.
+     */
     if (pLogger->pFile->pfnPhase && !fFirst)
     {
-        uint32_t fODestFlags = pLogger->fDestFlags;
+        uint32_t const fSavedDestFlags = pLogger->fDestFlags;
         pLogger->fDestFlags &= RTLOGDEST_FILE;
         pLogger->pFile->pfnPhase(pLogger, RTLOGPHASE_POSTROTATE, rtlogPhaseMsgLocked);
-        pLogger->fDestFlags = fODestFlags;
+        pLogger->fDestFlags = fSavedDestFlags;
     }
 
-    /* Restore log rotation to the previous value. */
-    pLogger->pFile->cHistory = cOHistory;
-
-    /* Restore the log flags to the previous value. */
-    pLogger->fFlags = fOFlags;
+    /* Restore saved values. */
+    pLogger->pFile->cHistory = cSavedHistory;
+    pLogger->fFlags          = fSavedFlags;
 }
-#endif /* IN_RING3 */
 
+#endif /* IN_RING3 */
 
 /**
  * Writes the buffer to the given log device without checking for buffered
@@ -2587,16 +2587,17 @@ static void rtlogFlush(PRTLOGGER pLogger)
     /* empty the buffer. */
     pLogger->offScratch = 0;
 
-# ifdef IN_RING3
-    /* Rotate the log file if configured. Must be done after everything is
+#ifdef IN_RING3
+    /*
+     * Rotate the log file if configured.  Must be done after everything is
      * flushed, since this will also use logging/flushing to write the header
-     * and footer messages. */
-    if ((pLogger->fDestFlags & RTLOGDEST_FILE) && pLogger->pFile->cHistory)
-    {
+     * and footer messages.
+     */
+    if (   (pLogger->fDestFlags & RTLOGDEST_FILE)
+        && pLogger->pFile->cHistory)
         rtlogRotate(pLogger,
-                    RTTimeProgramSecTS() / pLogger->pFile->uHistoryTimeSlotLength,
+                    RTTimeProgramSecTS() / pLogger->pFile->cSecsHistoryTimeSlot,
                     false /* fFirst */);
-    }
 #endif
 }
 
@@ -3065,6 +3066,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
     }
 }
 
+
 /**
  * Write to a logger instance (worker function).
  *
@@ -3079,7 +3081,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
  */
-static void rtlogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args)
+static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args)
 {
     /*
      * Format the message and perhaps flush it.
@@ -3088,8 +3090,8 @@ static void rtlogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, 
     {
         RTLOGOUTPUTPREFIXEDARGS OutputArgs;
         OutputArgs.pLogger = pLogger;
-        OutputArgs.iGroup = iGroup;
-        OutputArgs.fFlags = fFlags;
+        OutputArgs.iGroup  = iGroup;
+        OutputArgs.fFlags  = fFlags;
         RTLogFormatV(rtLogOutputPrefixed, &OutputArgs, pszFormat, args);
     }
     else
