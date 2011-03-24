@@ -2976,7 +2976,7 @@ void VBoxGlobal::retranslateUi()
     mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_Deny] =
         tr ("Deny", "NetworkAdapterPromiscModePolicyType");
     mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_AllowNetwork] =
-        tr ("Allow Network", "NetworkAdapterPromiscModePolicyType");
+        tr ("Allow VMs", "NetworkAdapterPromiscModePolicyType");
     mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_AllowAll] =
         tr ("Allow All", "NetworkAdapterPromiscModePolicyType");
 
