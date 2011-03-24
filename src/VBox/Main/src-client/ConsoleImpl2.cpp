@@ -508,7 +508,19 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
     PCFGMNODE pPciDevs = NULL;
 
     if (assignments.size() > 0)
+    {
         InsertConfigNode(pDevices,     "pciraw",  &pPciDevs);
+
+        /*
+         * Currently, using IOMMU needed for PCI passthrough
+         * requires RAM preallocation.
+         * @todo: check if we can lift this requirement
+         */
+        PCFGMNODE pRoot = CFGMR3GetParent(pDevices);
+        Assert(pRoot);
+        CFGMR3RemoveValue(pRoot, "RamPreAlloc");
+        CFGMR3InsertInteger(pRoot, "RamPreAlloc",    1);
+    }
 
     for (size_t iDev = 0; iDev < assignments.size(); iDev++)
     {

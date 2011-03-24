@@ -99,9 +99,10 @@ typedef struct VBOXRAWPCIDRVVM
 
 #ifdef RT_OS_LINUX
 # ifdef VBOX_WITH_IOMMU
-    struct iommu_domain* iommu_domain;
+    struct iommu_domain* pIommuDomain;
 # endif
 #endif
+    int32_t        fFlags;
 } VBOXRAWPCIDRVVM;
 
 /**

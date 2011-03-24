@@ -26,7 +26,8 @@
 #ifndef ___VBox_rawpci_h
 #define ___VBox_rawpci_h
 
-#include <iprt/types.h>
+#include <VBox/types.h>
+#include <VBox/sup.h>
 
 RT_C_DECLS_BEGIN
 
@@ -35,11 +36,44 @@ RT_C_DECLS_BEGIN
  */
 typedef uint32_t PCIRAWDEVHANDLE;
 
+/**
+ * Physical memory action enumeration.
+ */
+typedef enum PCIRAWMEMINFOACTION
+{
+    /* Pages mapped. */
+    PCIRAW_MEMINFO_MAP,
+    /* Pages unmapped. */
+    PCIRAW_MEMINFO_UNMAP,
+    /** The usual 32-bit type blow up. */
+    PCIRAW_MEMINFO_32BIT_HACK = 0x7fffffff
+} PCIRAWMEMINFOACTION;
+
+/**
+ * Callback to notify raw PCI subsystem about mapping/unmapping of
+ * host pages to the guest. Typical usecase is to register physical
+ * RAM pages with IOMMU, so that it could allow DMA for PCI devices
+ * directly from the guest RAM.
+ * Region shall be one or more contigous (both host and guest) pages 
+ * of physical memory.  
+ * 
+ * @param   pVM           VM pointer.
+ * @param   HostStart     Physical address of region start on the host.  
+ * @param   GuestStart    Physical address of region start on the guest.
+ * @param   cMemSize      Region size in bytes.
+ * @param   Action        Action performed.
+
+ */
+typedef DECLCALLBACK(void) FNRAWPCICONTIGPHYSMEMINFO(PVM pVM, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
+typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
+
 /** Data being part of the VM structure. */
 typedef struct RAWPCIVM
 {
     /* Shall only be interpreted by the host PCI driver. */
-    RTR0PTR  pDriverData;
+    RTR0PTR                     pDriverData;
+    /* Callback called when mapping of host pages to the guest changes. */
+    PFNRAWPCICONTIGPHYSMEMINFO  pfnContigMemInfo;
 } RAWPCIVM;
 typedef RAWPCIVM *PRAWPCIVM;
 
