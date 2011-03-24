@@ -29,7 +29,8 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
   PROGRAMS.linux += \
-	$(if $(VBOX_WITH_USB),tstHostHardwareLinux,)
+	$(if $(VBOX_WITH_USB),tstHostHardwareLinux,) \
+	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
 if defined(VBOX_ONLY_SDK) || !defined(VBOX_WITH_XPCOM)
@@ -162,6 +163,26 @@ tstHostHardwareLinux_DEFS      = \
 	$(if $(VBOX_USB_WITH_INOTIFY),VBOX_USB_WITH_INOTIFY,)
 tstHostHardwareLinux_LIBS     += \
 	$(PATH_OUT)/lib/USBLib.a
+
+
+#
+# tstUSBProxyLinux
+#
+tstUSBProxyLinux_TEMPLATE  = VBOXR3TSTNPEXE
+tstUSBProxyLinux_SOURCES   = \
+	tstUSBProxyLinux.cpp \
+	../src-server/linux/USBProxyServiceLinux.cpp
+tstUSBProxyLinux_INCS      = \
+	. \
+	../include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom
+tstUSBProxyLinux_DEFS      = \
+	TESTCASE \
+	VBOX_USB_WITH_SYSFS \
+	VBOX_WITH_SYSFS_BY_DEFAULT \
+	VBOX_WITH_XPCOM
 
 
 # generate rules.

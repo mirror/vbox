@@ -92,33 +92,48 @@ HRESULT USBProxyServiceLinux::init(void)
 #else
     bool fUseSysfs = false;
 #endif
-    const char *pszUsbFromEnv = RTEnvGet("VBOX_USB");
-    if (pszUsbFromEnv)
+    const char *pcszUsbFromEnv = RTEnvGet("VBOX_USB");
+    const char *pcszUsbRoot = NULL;
+    if (pcszUsbFromEnv)
     {
-        if (!RTStrICmp(pszUsbFromEnv, "USBFS"))
+        bool fValidVBoxUSB = true;
+
+        pcszUsbRoot = RTEnvGet("VBOX_USB_ROOT");
+        if (!RTStrICmp(pcszUsbFromEnv, "USBFS"))
         {
             LogRel(("Default USB access method set to \"usbfs\" from environment\n"));
             fUseSysfs = false;
         }
-        else if (!RTStrICmp(pszUsbFromEnv, "SYSFS"))
+        else if (!RTStrICmp(pcszUsbFromEnv, "SYSFS"))
         {
             LogRel(("Default USB method set to \"sysfs\" from environment\n"));
             fUseSysfs = true;
         }
         else
+        {
             LogRel(("Invalid VBOX_USB environment variable setting \"%s\"\n",
-                    pszUsbFromEnv));
+                    pcszUsbFromEnv));
+            fValidVBoxUSB = false;
+        }
+        if (!fValidVBoxUSB && pcszUsbRoot)
+            pcszUsbRoot = NULL;
     }
-    PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(fUseSysfs);
-    if (pcLocation)
+    if (!pcszUsbRoot)
     {
-        mUsingUsbfsDevices = !pcLocation->fUseSysfs;
-        mDevicesRoot = pcLocation->szDevicesRoot;
+        PCUSBDEVTREELOCATION pcLocation;
+        pcLocation = USBProxyLinuxGetDeviceRoot(fUseSysfs);
+        pcszUsbRoot = pcLocation->szDevicesRoot;
+        fUseSysfs = pcLocation->fUseSysfs;
+    }
+    if (pcszUsbRoot)
+    {
+        mUsingUsbfsDevices = !fUseSysfs;
+        mDevicesRoot = pcszUsbRoot;
         int rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
         /* For the day when we have VBoxSVC release logging... */
         LogRel((RT_SUCCESS(rc) ? "Successfully initialised host USB using %s\n"
                                : "Failed to initialise host USB using %s\n",
-                mUsingUsbfsDevices ? "USBFS" : "sysfs/hal"));
+                mUsingUsbfsDevices ? "USBFS" : "sysfs"));
         mLastError = rc;
     }
     else
