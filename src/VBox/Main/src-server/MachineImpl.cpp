@@ -4993,30 +4993,22 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
 HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
                                       IN_BSTR aFlags)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
-    if ((aValue != NULL) && !VALID_PTR(aValue))
-        return E_INVALIDARG;
-    if ((aFlags != NULL) && !VALID_PTR(aFlags))
-        return E_INVALIDARG;
-
     HRESULT rc;
 
-    try {
-        ComPtr<IInternalSessionControl> directControl =
-            mData->mSession.mDirectControl;
+    try
+    {
+        ComPtr<IInternalSessionControl> directControl = mData->mSession.mDirectControl;
 
         BSTR dummy = NULL; /* will not be changed (setter) */
         LONG64 dummy64;
         if (!directControl)
             rc = E_ACCESSDENIED;
         else
-            rc = directControl->AccessGuestProperty
-                     (aName,
-                      /** @todo Fix when adding DeleteGuestProperty(),
-                                   see defect. */
-                      aValue, aFlags,
-                      true /* isSetter */,
-                      &dummy, &dummy64, &dummy);
+            /** @todo Fix when adding DeleteGuestProperty(),
+                         see defect. */
+            rc = directControl->AccessGuestProperty(aName, aValue, aFlags,
+                                                    true /* isSetter */,
+                                                    &dummy, &dummy64, &dummy);
     }
     catch (std::bad_alloc &)
     {
@@ -5034,10 +5026,12 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
     CheckComArgStrNotEmptyOrNull(aName);
-    if ((aFlags != NULL) && !VALID_PTR(aFlags))
-        return E_INVALIDARG;
+    CheckComArgMaybeNull(aFlags);
+    CheckComArgMaybeNull(aValue);
+
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     HRESULT rc = setGuestPropertyToVM(aName, aValue, aFlags);
     if (rc == E_ACCESSDENIED)
@@ -5148,9 +5142,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    if (!VALID_PTR(aPatterns) && (aPatterns != NULL))
-        return E_POINTER;
-
+    CheckComArgMaybeNull(aPatterns);
     CheckComArgOutSafeArrayPointerValid(aNames);
     CheckComArgOutSafeArrayPointerValid(aValues);
     CheckComArgOutSafeArrayPointerValid(aTimestamps);
@@ -11293,8 +11285,8 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
     using namespace guestProp;
 
     CheckComArgStrNotEmptyOrNull(aName);
-    if (aValue != NULL && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
-        return E_POINTER;  /* aValue can be NULL to indicate deletion */
+    CheckComArgMaybeNull(aValue);
+    CheckComArgMaybeNull(aFlags);
 
     try
     {
