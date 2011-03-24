@@ -1,7 +1,7 @@
 /* Native implementation of soft float functions */
 #include <math.h>
 
-#if (defined(_BSD) && !defined(__APPLE__) && !defined(__FreeBSD__)) || defined(HOST_SOLARIS)
+#if (defined(_BSD) && !defined(__APPLE__) && !defined(__FreeBSD__)) || defined(HOST_SOLARIS) /* VBox: Added __FreeBSD__ */
 #include <ieeefp.h>
 #define fabsf(f) ((float)fabs(f))
 #else
