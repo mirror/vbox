@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -17,12 +17,6 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-
-#
-# Include sub-makefile(s).
-#
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-
 if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardened VBoxBFE on darwin (.m).
 
 #
@@ -79,9 +73,6 @@ VBoxBFE_SOURCES = \
 	MachineDebuggerImpl.cpp \
 	VMControl.cpp \
 	$(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))
-
-$(VBoxBFE_SOURCES): \
-    $(addprefix $$(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_HDRS)))
 
 ifdef VBOX_WITH_HGCM
 VBoxBFE_DEFS += VBOX_WITH_HGCM
@@ -175,7 +166,7 @@ $$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x0
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
 # Files we share with Main needs to be copied into the output dir.
-VBoxBFE_INTERMEDIATES += $(addprefix $(VBoxBFE_0_OUTDIR)/,$(VBOXBFE_MAIN_HDRS))
+VBoxBFE_INTERMEDIATES  = $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS))
 VBoxBFE_CLEAN         += $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS) $(notdir $(VBOXBFE_MAIN_SRCS)))
 
 define def_copy_main_file
@@ -186,6 +177,24 @@ endef
 $(foreach file,$(addprefix include/,$(VBOXBFE_MAIN_HDRS)), $(evalval def_copy_main_file))
 $(foreach file,$(VBOXBFE_MAIN_SRCS), $(evalval def_copy_main_file))
 
+
+
+if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_TESTCASES)
+ #
+ # tstMouseImpl
+ #
+ PROGRAMS += tstMouseImpl
+ tstMouseImpl_TEMPLATE = VBOXR3TSTEXE
+ tstMouseImpl_DEFS = VBOXBFE_WITHOUT_COM
+ tstMouseImpl_SOURCES  = \
+ 	testcase/tstMouseImpl.cpp \
+ 	$(addprefix $(VBoxBFE_0_OUTDIR)/,$(notdir $(VBOXBFE_MAIN_SRCS)))
+ tstMouseImpl_INCS     = \
+ 	$(VBoxBFE_0_OUTDIR) \
+ 	$(VBOX_PATH_SDK)/include \
+ 	.
+ tstMouseImpl_INTERMEDIATES = $(addprefix $(VBoxBFE_0_OUTDIR)/, $(VBOXBFE_MAIN_HDRS))
+endif # !VBOX_ONLY_SDK
 
 
 endif # !VBOX_WITH_HARDENING || !darwin
