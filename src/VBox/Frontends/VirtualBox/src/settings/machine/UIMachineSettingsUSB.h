@@ -90,6 +90,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
+    bool revalidate(QString &strWarningText, QString &strTitle);
 
     void setOrderAfter (QWidget *aWidget);
 

@@ -2657,6 +2657,11 @@ void VBoxProblemReporter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWant
     emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);
 }
 
+void VBoxProblemReporter::remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
+{
+    emit sigRemindAboutUnsupportedUSB2(strExtPackName, pParent);
+}
+
 void VBoxProblemReporter::showHelpWebDialog()
 {
     vboxGlobal().openURL ("http://www.virtualbox.org");
@@ -2889,6 +2894,23 @@ void VBoxProblemReporter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uW
             kName);
 }
 
+void VBoxProblemReporter::sltRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
+{
+    if (isAlreadyShown("sltRemindAboutUnsupportedUSB2"))
+        return;
+    setShownStatus("sltRemindAboutUnsupportedUSB2");
+
+    message(pParent ? pParent : mainMachineWindowShown(), Warning,
+            tr("<p>USB 2.0 is currently enabled for this virtual machine. "
+               "However this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
+               "<p>Please install the Extension Pack from the VirtualBox download site. "
+               "After this you will be able to re-enable USB 2.0. "
+               "It will be disabled in the meantime unless you cancel the current settings changes.</p>")
+               .arg(strExtPackName));
+
+    clearShownStatus("sltRemindAboutUnsupportedUSB2");
+}
+
 VBoxProblemReporter::VBoxProblemReporter()
 {
     /* Register required objects as meta-types: */
@@ -2930,6 +2952,8 @@ VBoxProblemReporter::VBoxProblemReporter()
             Qt::BlockingQueuedConnection);
     connect(this, SIGNAL(sigRemindAboutWrongColorDepth(ulong, ulong)),
             this, SLOT(sltRemindAboutWrongColorDepth(ulong, ulong)), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigRemindAboutUnsupportedUSB2(const QString&, QWidget*)),
+            this, SLOT(sltRemindAboutUnsupportedUSB2(const QString&, QWidget*)), Qt::QueuedConnection);
 }
 
 /* Returns a reference to the global VirtualBox problem reporter instance: */
