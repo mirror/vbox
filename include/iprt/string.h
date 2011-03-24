@@ -2150,6 +2150,47 @@ RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc);
 RTDECL(int) RTStrCopyEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchSrcMax);
 
 /**
+ * String copy with overflow handling and buffer advancing.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   ppszDst             Pointer to the destination buffer pointer.
+ *                              This will be advanced to the end of the copied
+ *                              bytes (points at the terminator).  This is also
+ *                              updated on overflow.
+ * @param   pcbDst              Pointer to the destination buffer size
+ *                              variable.  This will be updated in accord with
+ *                              the buffer pointer.
+ * @param   pszSrc              The source string.  NULL is not OK.
+ */
+RTDECL(int) RTStrCopyP(char **ppszDst, size_t *pcbDst, const char *pszSrc);
+
+/**
+ * String copy with overflow handling.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   ppszDst             Pointer to the destination buffer pointer.
+ *                              This will be advanced to the end of the copied
+ *                              bytes (points at the terminator).  This is also
+ *                              updated on overflow.
+ * @param   pcbDst              Pointer to the destination buffer size
+ *                              variable.  This will be updated in accord with
+ *                              the buffer pointer.
+ * @param   pszSrc              The source string.  NULL is not OK.
+ * @param   cchSrcMax           The maximum number of chars (not code points) to
+ *                              copy from the source string, not counting the
+ *                              terminator as usual.
+ */
+RTDECL(int) RTStrCopyPEx(char **ppszDst, size_t *pcbDst, const char *pszSrc, size_t cchSrcMax);
+
+/**
  * String concatenation with overflow handling.
  *
  * @retval  VINF_SUCCESS on success.
@@ -2179,6 +2220,47 @@ RTDECL(int) RTStrCat(char *pszDst, size_t cbDst, const char *pszSrc);
  *                              terminator as usual.
  */
 RTDECL(int) RTStrCatEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchSrcMax);
+
+/**
+ * String concatenation with overflow handling.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   ppszDst             Pointer to the destination buffer pointer.
+ *                              This will be advanced to the end of the copied
+ *                              bytes (points at the terminator).  This is also
+ *                              updated on overflow.
+ * @param   pcbDst              Pointer to the destination buffer size
+ *                              variable.  This will be updated in accord with
+ *                              the buffer pointer.
+ * @param   pszSrc              The source string.  NULL is not OK.
+ */
+RTDECL(int) RTStrCatP(char **ppszDst, size_t *pcbDst, const char *pszSrc);
+
+/**
+ * String concatenation with overflow handling and buffer advancing.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   ppszDst             Pointer to the destination buffer pointer.
+ *                              This will be advanced to the end of the copied
+ *                              bytes (points at the terminator).  This is also
+ *                              updated on overflow.
+ * @param   pcbDst              Pointer to the destination buffer size
+ *                              variable.  This will be updated in accord with
+ *                              the buffer pointer.
+ * @param   pszSrc              The source string.  NULL is not OK.
+ * @param   cchSrcMax           The maximum number of chars (not code points) to
+ *                              copy from the source string, not counting the
+ *                              terminator as usual.
+ */
+RTDECL(int) RTStrCatPEx(char **ppszDst, size_t *pcbDst, const char *pszSrc, size_t cchSrcMax);
 
 /**
  * Performs a case sensitive string compare between two UTF-8 strings.

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -353,10 +353,14 @@ RuntimeR3_SOURCES       = \
 	common/sort/shellsort.cpp \
 	common/string/RTStrCat.cpp \
 	common/string/RTStrCatEx.cpp \
+	common/string/RTStrCatP.cpp \
+	common/string/RTStrCatPEx.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrConvertHexBytes.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
+	common/string/RTStrCopyP.cpp \
+	common/string/RTStrCopyPEx.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
@@ -1072,9 +1076,13 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathStripTrailingSlash.cpp \
 	common/string/RTStrCat.cpp \
 	common/string/RTStrCatEx.cpp \
+	common/string/RTStrCatP.cpp \
+	common/string/RTStrCatPEx.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
+	common/string/RTStrCopyP.cpp \
+	common/string/RTStrCopyPEx.cpp \
 	common/string/RTStrNCmp.cpp \
         common/string/RTStrNLen.cpp \
         common/string/RTStrNLenEx.cpp \
@@ -1417,8 +1425,12 @@ RuntimeR0_SOURCES       = \
 	common/string/strpbrk.cpp \
 	common/string/RTStrCat.cpp \
 	common/string/RTStrCatEx.cpp \
+	common/string/RTStrCatP.cpp \
+	common/string/RTStrCatPEx.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
+	common/string/RTStrCopyP.cpp \
+	common/string/RTStrCopyPEx.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/table/avlgcptr.cpp \
@@ -1555,9 +1567,13 @@ RuntimeR0Drv_SOURCES    = \
 	common/rand/randparkmiller.cpp \
 	common/string/RTStrCat.cpp \
 	common/string/RTStrCatEx.cpp \
+	common/string/RTStrCatP.cpp \
+	common/string/RTStrCatPEx.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
+	common/string/RTStrCopyP.cpp \
+	common/string/RTStrCopyPEx.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
