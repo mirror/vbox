@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,10 @@
 /** The resolution (nanoseconds) specified when using timeout_generic. */
 #define RTR0SEMSOLWAIT_RESOLUTION   50000
 
+/** Disables the cyclic fallback code for old S10 installs - see @bugref{5342}.
+ * @todo Fixed by @bugref{5595}, can be reenabled after checking out
+ *       CY_HIGH_LEVEL. */
+#define RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
 
 /**
  * Solaris semaphore wait structure.
@@ -59,6 +63,9 @@ typedef struct RTR0SEMSOLWAIT
     bool            fHighRes;
     /** Set if it's an indefinite wait. */
     bool            fIndefinite;
+    /** Set if the waiting thread is ready to be woken up.
+     * Avoids false setrun() calls due to temporary mutex exits. */
+    bool volatile   fWantWakeup;
     /** Set if we've already timed out.
      * Set by rtR0SemSolWaitDoIt or rtR0SemSolWaitHighResTimeout, read by
      * rtR0SemSolWaitHasTimedOut. */
@@ -69,7 +76,7 @@ typedef struct RTR0SEMSOLWAIT
     bool            fInterruptible;
     /** The thread to wake up. */
     kthread_t      *pThread;
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
     /** Cylic timer ID (used by the timeout callback). */
     cyclic_id_t     idCy;
 #endif
@@ -136,7 +143,10 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
         pWait->fIndefinite      = false;
         if (  (   (fFlags & (RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE))
                || pWait->cNsRelTimeout < UINT32_C(1000000000) / 100 /*Hz*/ * 4)
-            && g_pfnrtR0Sol_timeout_generic != NULL /* See @bugref{5342} */)
+#ifdef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
+            && g_pfnrtR0Sol_timeout_generic != NULL
+#endif
+           )
             pWait->fHighRes     = true;
         else
         {
@@ -160,12 +170,13 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
         pWait->u.lTimeout       = LONG_MAX;
     }
 
+    pWait->fWantWakeup      = false;
     pWait->fTimedOut        = false;
     pWait->fInterrupted     = false;
     pWait->fInterruptible   = !!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE);
     pWait->pThread          = curthread;
     pWait->pvMtx            = NULL;
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
     pWait->idCy             = CYCLIC_NONE;
 #endif
 
@@ -173,7 +184,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
 }
 
 
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
 /**
  * Cyclic timeout callback that sets the timeout indicator and wakes up the
  * waiting thread.
@@ -190,18 +201,18 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
         /* Enter the mutex here to make sure the thread has gone to sleep
            before we wake it up.
            Note: Trying to take the cpu_lock here doesn't work. */
-        /** @todo LOCK ORDER INVERSION (pMtx & cpu_lock when arming the timer, here it's inverted).
-         *  Possible fix: Use the thread lock for sleep/wakeup race prevention
-         *  instead of the mutex associated with the cv/event. */
         mutex_enter(pMtx);
         if (mutex_owner(&cpu_lock) == curthread)
         {
             cyclic_remove(pWait->idCy);
             pWait->idCy = CYCLIC_NONE;
         }
+        bool const fWantWakeup = pWait->fWantWakeup;
         ASMAtomicWriteBool(&pWait->fTimedOut, true);
         mutex_exit(pMtx);
-        setrun(pThread);
+
+        if (fWantWakeup)
+            setrun(pThread);
     }
 }
 #endif
@@ -223,9 +234,12 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
         /* Enter the mutex here to make sure the thread has gone to sleep
            before we wake it up. */
         mutex_enter(pMtx);
+        bool const fWantWakeup = pWait->fWantWakeup;
         ASMAtomicWriteBool(&pWait->fTimedOut, true);
         mutex_exit(pMtx);
-        setrun(pThread);
+
+        if (fWantWakeup)
+            setrun(pThread);
     }
 }
 
@@ -237,10 +251,16 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
  * @param   pCnd                The condition variable to wait on.
  * @param   pMtx                The mutex related to the condition variable.
  *                              The caller has entered this.
+ * @param   pfState             The state variable to check if have changed
+ *                              after leaving the mutex (spinlock).
+ * @param   fCurState           The current value of @a pfState.  We'll return
+ *                              without sleeping if @a pfState doesn't hold
+ *                              this value after reacquiring the mutex.
  *
  * @remarks This must be call with the object mutex (spinlock) held.
  */
-DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx)
+DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx,
+                                    uint32_t volatile *pfState, uint32_t const fCurState)
 {
     union
     {
@@ -250,31 +270,36 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
     /*
      * Arm the timeout callback.
+     *
+     * We will have to leave the mutex (spinlock) when doing this because S10
+     * (didn't check S11) will not correctly preserve PIL across calls to
+     * timeout_generic() - @bugref{5595}.  We do it for all timeout methods to
+     * be on the safe side, the nice sideeffect of which is that it solves the
+     * lock inversion problem found in @bugref{5342}.
      */
-    bool const fHasTimeout = !pWait->fIndefinite;
+    bool const  fHasTimeout = !pWait->fIndefinite;
+    bool        fGoToSleep  = !fHasTimeout;
     if (fHasTimeout)
     {
+        pWait->fWantWakeup = false;             /* only want fTimedOut */
         ASMAtomicWritePtr(&pWait->pvMtx, pMtx); /* atomic is paranoia */
+        mutex_exit(pMtx);
 
         if (pWait->fHighRes)
         {
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
             if (g_pfnrtR0Sol_timeout_generic != NULL)
 #endif
             {
                 /*
                  * High resolution timeout - arm a high resolution timeout callback
                  * for waking up the thread at the desired time.
-                 *
-                 * Release and reacquire the mutex across calls to timeout_generic(), @bugref{5595}.
                  */
-                mutex_exit(pMtx);
                 u.idCo = g_pfnrtR0Sol_timeout_generic(CALLOUT_REALTIME, rtR0SemSolWaitTimeout, pWait,
                                                       pWait->uNsAbsTimeout, RTR0SEMSOLWAIT_RESOLUTION,
                                                       CALLOUT_FLAG_ABSOLUTE);
-                mutex_enter(pMtx);
             }
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
             else
             {
                 /*
@@ -302,25 +327,26 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
              * Normal timeout.
              * We're better off with our own callback like on the timeout man page,
              * than calling cv_timedwait[_sig]().
-             *
-             * Release and reacquire the mutex across calls to realtime_timeout(), @bugref{5595}.
              */
-            mutex_exit(pMtx);
             u.idTom = realtime_timeout(rtR0SemSolWaitTimeout, pWait, pWait->u.lTimeout);
-            mutex_enter(pMtx);
         }
+
+        /*
+         * Reacquire the mutex and check if the sleep condition still holds and
+         * that we didn't already time out.
+         */
+        mutex_enter(pMtx);
+        pWait->fWantWakeup = true;
+        fGoToSleep = !ASMAtomicUoReadBool(&pWait->fTimedOut)
+                  && ASMAtomicReadU32(pfState) == fCurState;
     }
 
     /*
-     * Check if the timeout has already fired in the time when the mutex was released.
-     * Required since we release/reacquire the mutex, @bugref{5595}.
+     * Do the waiting if that's still desirable.
+     * (rc > 0 - normal wake-up; rc == 0 - interruption; rc == -1 - timeout)
      */
-    if (ASMAtomicReadBool(&pWait->fTimedOut) == false)
+    if (fGoToSleep)
     {
-        /*
-         * Do the waiting.
-         * (rc > 0 - normal wake-up; rc == 0 - interruption; rc == -1 - timeout)
-         */
         if (pWait->fInterruptible)
         {
             int rc = cv_wait_sig(pCnd, pMtx);
@@ -338,26 +364,25 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
     /*
      * Remove the timeout callback.  Drop the lock while we're doing that
-     * to reduce lock contention / deadlocks.  (Too bad we are stuck with the
-     * cv_* API here, it's doing a little bit too much.)
+     * to reduce lock contention / deadlocks.  Before dropping the lock,
+     * indicate that the callback shouldn't do anything.
+     *
+     * (Too bad we are stuck with the cv_* API here, it's doing a little
+     * bit too much.)
      */
     if (fHasTimeout)
     {
-        /*
-         * Invalidate the mutex pointer here so that if the timer fires just after we
-         * exit the mutex or has already fired and the callback is waiting on the mutex,
-         * we can simply ignore it in the callback as we've completed waiting.
-         */
+        pWait->fWantWakeup = false;
         ASMAtomicWritePtr(&pWait->pvMtx, NULL);
         mutex_exit(pMtx);
 
         if (pWait->fHighRes)
         {
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
             if (g_pfnrtR0Sol_timeout_generic != NULL)
 #endif
                 g_pfnrtR0Sol_untimeout_generic(u.idCo, 0 /*nowait*/);
-#if 0 /* @bugref{5342} */
+#ifndef RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
             else
             {
                 mutex_enter(&cpu_lock);
