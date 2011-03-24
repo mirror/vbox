@@ -21,6 +21,7 @@
 #include "QIWidgetValidator.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 #include "UIToolBar.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
@@ -279,8 +280,12 @@ void UIMachineSettingsUSB::putToCache()
         case UISettingsPageType_Machine:
         {
             /* Gather internal variables data from QWidget(s): */
+            /* USB 1.0 (OHCI): */
             m_cache.m_fUSBEnabled = mGbUSB->isChecked();
-            m_cache.m_fEHCIEnabled = mCbUSB2->isChecked();
+            /* USB 2.0 (EHCI): */
+            QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
+            CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
+            m_cache.m_fEHCIEnabled = extPack.isNull() ? false : mCbUSB2->isChecked();
             break;
         }
         default:
@@ -407,6 +412,26 @@ void UIMachineSettingsUSB::setValidator (QIWidgetValidator *aVal)
 {
     mValidator = aVal;
     connect (mGbUSB, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
+    connect(mCbUSB2, SIGNAL(stateChanged(int)), mValidator, SLOT(revalidate()));
+}
+
+bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTitle */)
+{
+    /* USB 2.0 Extension Pack presence test: */
+    QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
+    if (mCbUSB2->isChecked() && extPack.isNull())
+    {
+        strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
+                            "However this requires the <b>%1</b> to be installed. "
+                            "Please install the Extension Pack from the VirtualBox download site. "
+                            "After this you will be able to re-enable USB 2.0. "
+                            "It will be disabled in the meantime unless you cancel the current settings changes.")
+                            .arg(strExtPackName);
+        vboxProblem().remindAboutUnsupportedUSB2(strExtPackName, this);
+        return true;
+    }
+    return true;
 }
 
 void UIMachineSettingsUSB::setOrderAfter (QWidget *aWidget)
