@@ -211,7 +211,13 @@ public:
     virtual int releaseDevice(HostUSBDevice *aDevice);
 
 protected:
+#ifdef TESTCASE
+    virtual
+#endif
     int initUsbfs(void);
+#ifdef TESTCASE
+    virtual
+#endif
     int initSysfs(void);
     void doUsbfsCleanupAsNeeded(void);
     virtual int wait(RTMSINTERVAL aMillies);
