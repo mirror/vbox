@@ -722,7 +722,7 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
     UIVMItem *pItem = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
     AssertMsgReturnVoid(pItem, ("Item must be always selected here"));
 
-    bool fMachineOffline = pItem->sessionState() == KSessionState_Unlocked;
+    bool fMachineOffline = pItem->sessionState() == KSessionState_Unlocked && pItem->machineState() != KMachineState_Saved;
     VBoxDefs::SettingsDialogType dialogType = fMachineOffline ? VBoxDefs::SettingsDialogType_Offline : VBoxDefs::SettingsDialogType_Runtime;
 
     CSession session = vboxGlobal().openSession(pItem->id(), !fMachineOffline /* connect to existing? */);
