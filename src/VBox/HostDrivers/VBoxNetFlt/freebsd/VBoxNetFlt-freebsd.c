@@ -97,6 +97,22 @@ static int        ng_vboxnetflt_mod_event(module_t mod, int event, void *data);
 /** mbuf packet tag */
 #define PACKET_TAG_VBOX        128
 
+#if defined(__FreeBSD_version) && __FreeBSD_version >= 800500
+# include <sys/jail.h>
+# include <net/vnet.h>
+
+# define VBOXCURVNET_SET(arg)		CURVNET_SET_QUIET(arg)
+# define VBOXCURVNET_SET_FROM_UCRED()	VBOXCURVNET_SET(CRED_TO_VNET(curthread->td_ucred))
+# define VBOXCURVNET_RESTORE()		CURVNET_RESTORE()
+
+#else /* !defined(__FreeBSD_version) || __FreeBSD_version < 800500 */
+
+# define VBOXCURVNET_SET(arg)
+# define VBOXCURVNET_SET_FROM_UCRED()
+# define VBOXCURVNET_RESTORE()
+
+#endif /* !defined(__FreeBSD_version) || __FreeBSD_version < 800500 */
+
 /*
  * Netgraph command list, we don't support any
  * additional commands.
@@ -322,6 +338,7 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
     struct m_tag *mtag;
     bool fActive;
 
+    VBOXCURVNET_SET(ifp->if_vnet);
     fActive = vboxNetFltTryRetainBusyActive(pThis);
 
     NGI_GET_M(item, m);
@@ -346,6 +363,7 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
             ether_demux(ifp, m);
             if (fActive)
                 vboxNetFltRelease(pThis, true /*fBusy*/);
+            VBOXCURVNET_RESTORE();
             return (0);
         }
         mtx_lock_spin(&pThis->u.s.inq.ifq_mtx);
@@ -363,6 +381,7 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
             int rc = ether_output_frame(ifp, m);
             if (fActive)
                 vboxNetFltRelease(pThis, true /*fBusy*/);
+            VBOXCURVNET_RESTORE();
             return rc;
         }
         mtx_lock_spin(&pThis->u.s.outq.ifq_mtx);
@@ -377,6 +396,7 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
 
     if (fActive)
         vboxNetFltRelease(pThis, true /*fBusy*/);
+    VBOXCURVNET_RESTORE();
     return (0);
 }
 
@@ -409,6 +429,7 @@ static void vboxNetFltFreeBSDinput(void *arg, int pending)
     bool fDropIt = false, fActive;
     PINTNETSG pSG;
 
+    VBOXCURVNET_SET(ifp->if_vnet);
     vboxNetFltRetain(pThis, true /* fBusy */);
     for (;;)
     {
@@ -438,6 +459,7 @@ static void vboxNetFltFreeBSDinput(void *arg, int pending)
             ether_demux(ifp, m);
     }
     vboxNetFltRelease(pThis, true /* fBusy */);
+    VBOXCURVNET_RESTORE();
 }
 
 /**
@@ -452,6 +474,7 @@ static void vboxNetFltFreeBSDoutput(void *arg, int pending)
     bool fDropIt = false, fActive;
     PINTNETSG pSG;
 
+    VBOXCURVNET_SET(ifp->if_vnet);
     vboxNetFltRetain(pThis, true /* fBusy */);
     for (;;)
     {
@@ -481,6 +504,7 @@ static void vboxNetFltFreeBSDoutput(void *arg, int pending)
             ether_output_frame(ifp, m);
     }
     vboxNetFltRelease(pThis, true /* fBusy */);
+    VBOXCURVNET_RESTORE();
 }
 
 /**
@@ -498,6 +522,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
     int error;
 
     ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
+    VBOXCURVNET_SET(ifp->if_vnet);
 
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
@@ -539,6 +564,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
         m->m_pkthdr.rcvif = ifp;
         ifp->if_input(ifp, m);
     }
+    VBOXCURVNET_RESTORE();
     return VINF_SUCCESS;
 }
 
@@ -556,6 +582,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     node_p node;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
+    VBOXCURVNET_SET_FROM_UCRED();
     NOREF(pvContext);
     ifp = ifunit(pThis->szName);
     if (ifp == NULL)
@@ -602,6 +629,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
         vboxNetFltRelease(pThis, true /*fBusy*/);
     }
+    VBOXCURVNET_RESTORE();
 
     return VINF_SUCCESS;
 }
@@ -611,6 +639,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
     struct ifnet *ifp, *ifp0;
 
     ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
+    VBOXCURVNET_SET(ifp->if_vnet);
     /*
      * Attempt to check if the interface is still there and re-initialize if
      * something has changed.
@@ -628,6 +657,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
         vboxNetFltOsDeleteInstance(pThis);
         vboxNetFltOsInitInstance(pThis, NULL);
     }
+    VBOXCURVNET_RESTORE();
 
     return !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
 }
@@ -669,6 +699,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     Log(("%s: fActive:%d\n", __func__, fActive));
 
     ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
+    VBOXCURVNET_SET(ifp->if_vnet);
     node = ASMAtomicUoReadPtrT(&pThis->u.s.node, node_p);
 
     memset(&ifreq, 0, sizeof(struct ifreq));
@@ -742,6 +773,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         strlcpy(rm->ourhook, "output", NG_HOOKSIZ);
         NG_SEND_MSG_PATH(error, node, msg, path, 0);
     }
+    VBOXCURVNET_RESTORE();
 }
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
