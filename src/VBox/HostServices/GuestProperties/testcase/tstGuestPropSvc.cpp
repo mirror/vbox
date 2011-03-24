@@ -80,8 +80,10 @@ g_validFlagStrings[] =
     { " rdonlyguest",                                   "RDONLYGUEST" },
     { "rdonlyhost     ",                                "RDONLYHOST" },
     { "transient, transreset, rdonlyhost",              "TRANSIENT, RDONLYHOST, TRANSRESET" },
-    { "transient, transreset, rdonlyguest",             "TRANSIENT, RDONLYGUEST, TRANSRESET" },
-    { "rdonlyguest, rdonlyhost",                        "READONLY" }
+    { "transient, transreset, rdonlyguest",             "TRANSIENT, RDONLYGUEST, TRANSRESET" },     /* max length */
+    { "rdonlyguest, rdonlyhost",                        "READONLY" },
+    { "transient,   transreset, ",                      "TRANSIENT, TRANSRESET" }, /* Don't combine them ... */
+    { "transreset, ",                                   "TRANSIENT, TRANSRESET" }, /* ... instead expand transreset for old adds. */
 };
 
 /**

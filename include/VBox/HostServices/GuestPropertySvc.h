@@ -178,20 +178,22 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
  */
 DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
 {
-    /* Putting READONLY before the other RDONLY flags keeps the result short. */
     static const uint32_t s_aFlagList[] =
     {
         TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST, TRANSRESET
     };
-    char *pszNext = pszFlags;
     int rc = VINF_SUCCESS;
+
     AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
-    if ((fFlags & ~ALLFLAGS) != NILFLAG)
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
+    if ((fFlags & ~ALLFLAGS) == NILFLAG)
     {
-        unsigned i = 0;
-        for (; i < RT_ELEMENTS(s_aFlagList); ++i)
+        /* TRANSRESET implies TRANSIENT.  For compatability with old clients we
+           always set TRANSIENT when TRANSRESET appears. */
+        if (fFlags & TRANSRESET)
+            fFlags |= TRANSIENT;
+
+        char *pszNext = pszFlags;
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aFlagList); ++i)
         {
             if (s_aFlagList[i] == (fFlags & s_aFlagList[i]))
             {
@@ -206,9 +208,11 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
             }
         }
         *pszNext = '\0';
-        if (fFlags != NILFLAG)
-            rc = VERR_INVALID_PARAMETER;  /* But pszFlags will still be set right. */
+
+        Assert(fFlags == NILFLAG); /* bad s_aFlagList */
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
     return rc;
 }
 
