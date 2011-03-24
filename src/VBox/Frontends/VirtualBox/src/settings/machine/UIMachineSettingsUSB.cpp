@@ -285,7 +285,7 @@ void UIMachineSettingsUSB::putToCache()
             /* USB 2.0 (EHCI): */
             QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
             CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
-            m_cache.m_fEHCIEnabled = extPack.isNull() ? false : mCbUSB2->isChecked();
+            m_cache.m_fEHCIEnabled = extPack.isNull() || !extPack.GetUsable() ? false : mCbUSB2->isChecked();
             break;
         }
         default:
@@ -420,7 +420,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
     /* USB 2.0 Extension Pack presence test: */
     QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
-    if (mCbUSB2->isChecked() && extPack.isNull())
+    if (mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
         strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
                             "However this requires the <b>%1</b> to be installed. "
