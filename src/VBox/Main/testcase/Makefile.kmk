@@ -183,6 +183,8 @@ tstUSBProxyLinux_DEFS      = \
 	VBOX_USB_WITH_SYSFS \
 	VBOX_WITH_SYSFS_BY_DEFAULT \
 	VBOX_WITH_XPCOM
+tstUSBProxyLinux_DEPS     = \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 
 # generate rules.
