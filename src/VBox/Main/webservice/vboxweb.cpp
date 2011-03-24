@@ -624,11 +624,11 @@ void WebLogSoapError(struct soap *soap)
 static void WebLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
 {
     /* some introductory information */
-    static RTTIMESPEC timeSpec = {0};
+    static RTTIMESPEC s_TimeSpec;
     char szTmp[256];
     if (enmPhase == RTLOGPHASE_BEGIN)
-        RTTimeNow(&timeSpec);
-    RTTimeSpecToString(&timeSpec, szTmp, sizeof(szTmp));
+        RTTimeNow(&s_TimeSpec);
+    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
 
     switch (enmPhase)
     {
@@ -759,7 +759,7 @@ int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
     return 0;
 }
 
-#ifdef RT_OS_WINDOWS 
+#ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
 #endif
