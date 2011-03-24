@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -205,6 +205,7 @@ typedef struct PGMR0DYNMAPENTRY
     void                       *pvPage;
     /** The number of references. */
     int32_t volatile            cRefs;
+#ifndef IN_RC
     /** PTE pointer union. */
     union PGMR0DYNMAPENTRY_PPTE
     {
@@ -215,6 +216,16 @@ typedef struct PGMR0DYNMAPENTRY
         /** PTE pointer, the void version. */
         void                   *pv;
     } uPte;
+#else
+    /** PTE pointers. */
+    struct PGMR0DYNMAPENTRY_PPTE
+    {
+        /** PTE pointer, 32-bit legacy version. */
+        PX86PTE                 pLegacy;
+        /** PTE pointer, PAE version. */
+        PX86PTEPAE              pPae;
+    } uPte;
+#endif
 # ifndef IN_RC
     /** CPUs that haven't invalidated this entry after it's last update. */
     RTCPUSET                    PendingSet;
@@ -247,8 +258,10 @@ typedef struct PGMR0DYNMAP
     PPGMR0DYNMAPENTRY           paPages;
     /** The cache size given as a number of pages. */
     uint32_t                    cPages;
+# ifndef IN_RC
     /** Whether it's 32-bit legacy or PAE/AMD64 paging mode. */
     bool                        fLegacyMode;
+# endif
     /** The current load.
      * This does not include guard pages. */
     uint32_t                    cLoad;
@@ -1276,7 +1289,6 @@ VMMRCDECL(int) PGMRCDynMapInit(PVM pVM)
     pThis->u32Magic     = PGMRZDYNMAP_MAGIC;
     pThis->paPages      = RT_ALIGN_PT(pThis + 1, 32, PPGMRZDYNMAPENTRY);
     pThis->cPages       = cPages;
-    pThis->fLegacyMode  = PGMGetHostMode(pVM) == PGMMODE_32_BIT;
     pThis->cLoad        = 0;
     pThis->cMaxLoad     = 0;
     pThis->cGuardPages  = 0;
@@ -1287,10 +1299,8 @@ VMMRCDECL(int) PGMRCDynMapInit(PVM pVM)
         pThis->paPages[iPage].HCPhys = NIL_RTHCPHYS;
         pThis->paPages[iPage].pvPage = pVM->pgm.s.pbDynPageMapBaseGC + iPage * PAGE_SIZE;
         pThis->paPages[iPage].cRefs  = 0;
-        if (pThis->fLegacyMode)
-            pThis->paPages[iPage].uPte.pLegacy = &pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage];
-        else
-            pThis->paPages[iPage].uPte.pPae    = (PX86PTEPAE)&pVM->pgm.s.paDynPageMapPaePTEsGC[iPage];
+        pThis->paPages[iPage].uPte.pLegacy = &pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage];
+        pThis->paPages[iPage].uPte.pPae    = (PX86PTEPAE)&pVM->pgm.s.paDynPageMapPaePTEsGC[iPage];
     }
 
     pVM->pgm.s.pRCDynMap = pThis;
@@ -1421,8 +1431,9 @@ static uint32_t pgmR0DynMapPageSlow(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, uint32_
     paPages[iFreePage].HCPhys = HCPhys;
 #ifndef IN_RC
     RTCpuSetFill(&paPages[iFreePage].PendingSet);
-#endif
+
     if (pThis->fLegacyMode)
+#endif
     {
         X86PGUINT       uOld  = paPages[iFreePage].uPte.pLegacy->u;
         X86PGUINT       uOld2 = uOld; NOREF(uOld2);
@@ -1433,7 +1444,9 @@ static uint32_t pgmR0DynMapPageSlow(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, uint32_
             AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
         Assert(paPages[iFreePage].uPte.pLegacy->u == uNew);
     }
+#ifndef IN_RC
     else
+#endif
     {
         X86PGPAEUINT    uOld  = paPages[iFreePage].uPte.pPae->u;
         X86PGPAEUINT    uOld2 = uOld; NOREF(uOld2);
