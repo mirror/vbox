@@ -242,24 +242,6 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 }
 
 static DECLCALLBACK(size_t)
-print_ether_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                   const char *pszType, void const *pvValue,
-                   int cchWidth, int cchPrecision, unsigned fFlags,
-                   void *pvUser)
-{
-    char *ether = (char *)pvValue;
-
-    AssertReturn(strcmp(pszType, "ether") == 0, 0);
-    if (ether)
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-            "[ether %hhx:%hhx:%hhx:%hhx:%hhx:%hhx]",
-            ether[0], ether[1], ether[2],
-            ether[3], ether[4], ether[5]);
-    else
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[ether null]");
-}
-
-static DECLCALLBACK(size_t)
 print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
              const char *pszType, void const *pvValue,
              int cchWidth, int cchPrecision, unsigned fFlags,
@@ -389,18 +371,17 @@ debug_init()
 
     if (!g_fFormatRegistered)
     {
-        /*
-         * XXX(r - frank): Move this to IPRT using RTNETADDRIPV4.
-         * Use the specifier %RNAipv4.
+        /** @todo r=frank: XXX Move this to IPRT using RTNETADDRIPV4.
+         * Use the specifier %RTnaipv4 (tip: takes an "uint32_t" instead of an
+         * address).
          */
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
         AssertRC(rc);
-        rc = RTStrFormatTypeRegister("ether", print_ether_address, NULL);
-        AssertRC(rc);
+
         rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("natwinnetevents",
-            print_networkevents, NULL);
+                                     print_networkevents, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);
         AssertRC(rc);
