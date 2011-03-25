@@ -197,14 +197,15 @@ public:
     }
 
     /**
-     * String length in UTF-8 codepoints.
+     * String length in unicode codepoints.
      *
-     * As opposed to length(), which returns the length in bytes, this counts the number
-     * of UTF-8 codepoints. This is *not* cached so calling this is expensive.
+     * As opposed to length(), which returns the length in bytes, this counts
+     * the number of unicode codepoints.  This is *not* cached so calling this
+     * is expensive.
      *
      * @returns Number of codepoints in the member string.
      */
-    size_t utf8length() const
+    size_t uniLength() const
     {
         return m_psz ? RTStrUniLen(m_psz) : 0;
     }
