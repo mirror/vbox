@@ -1,13 +1,10 @@
 /* $Id$ */
-
 /** @file
- *
- * MS COM / XPCOM Abstraction Layer:
- * UTF-8 and UTF-16 string classes
+ * MS COM / XPCOM Abstraction Layer - UTF-8 and UTF-16 string classes.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +19,7 @@
 
 #include <iprt/err.h>
 #include <iprt/path.h>
+#include <iprt/log.h>
 
 namespace com
 {
@@ -30,7 +28,7 @@ namespace com
 // this will work on Windows as well as other platforms where BSTR does
 // not use length prefixes
 const OLECHAR g_achEmptyBstr[3] = { 0, 0, 0 };
-const BSTR g_bstrEmpty = (BSTR)(&g_achEmptyBstr[2]);
+const BSTR g_bstrEmpty = (BSTR)&g_achEmptyBstr[2];
 
 /* static */
 const Bstr Bstr::Empty; /* default ctor is OK */
