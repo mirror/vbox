@@ -396,9 +396,9 @@ HRESULT Console::FinalConstruct()
     pVmm2UserMethods->u32Magic          = VMM2USERMETHODS_MAGIC;
     pVmm2UserMethods->u32Version        = VMM2USERMETHODS_VERSION;
     pVmm2UserMethods->pfnSaveState      = Console::vmm2User_SaveState;
-    pVmm2UserMethods->pfnNotifyEmtInit  = NULL;
+    pVmm2UserMethods->pfnNotifyEmtInit  = Console::vmm2User_NotifyEmtInit;
     pVmm2UserMethods->pfnNotifyEmtTerm  = Console::vmm2User_NotifyEmtTerm;
-    pVmm2UserMethods->pfnNotifyPdmtInit = NULL;
+    pVmm2UserMethods->pfnNotifyPdmtInit = Console::vmm2User_NotifyPdmtInit;
     pVmm2UserMethods->pfnNotifyPdmtTerm = Console::vmm2User_NotifyPdmtTerm;
     pVmm2UserMethods->u32EndMagic       = VMM2USERMETHODS_MAGIC;
     pVmm2UserMethods->pConsole          = this;
@@ -7822,15 +7822,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     AssertReturn(!task->mConsole.isNull(), VERR_INVALID_PARAMETER);
     AssertReturn(!task->mProgress.isNull(), VERR_INVALID_PARAMETER);
 
-#if defined(RT_OS_WINDOWS)
-    {
-        /* initialize COM */
-        HRESULT hrc = CoInitializeEx(NULL,
-                                     COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE |
-                                     COINIT_SPEED_OVER_MEMORY);
-        LogFlowFunc(("CoInitializeEx()=%Rhrc\n", hrc));
-    }
-#endif
+    VirtualBoxBase::initializeComForThread();
 
     HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
@@ -8809,15 +8801,33 @@ Console::vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM)
 }
 
 /**
+ * @interface_method_impl{VMM2USERMETHODS,pfnNotifyEmtInit}
+ */
+/*static*/ DECLCALLBACK(void)
+Console::vmm2User_NotifyEmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu)
+{
+    NOREF(pThis); NOREF(pUVM); NOREF(pUVCpu);
+    VirtualBoxBase::initializeComForThread();
+}
+
+/**
  * @interface_method_impl{VMM2USERMETHODS,pfnNotifyEmtTerm}
  */
 /*static*/ DECLCALLBACK(void)
 Console::vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu)
 {
     NOREF(pThis); NOREF(pUVM); NOREF(pUVCpu);
-#ifdef RT_OS_WINDOWS
-    CoUninitialize();
-#endif
+    VirtualBoxBase::uninitializeComForThread();
+}
+
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnNotifyPdmtInit}
+ */
+/*static*/ DECLCALLBACK(void)
+Console::vmm2User_NotifyPdmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM)
+{
+    NOREF(pThis); NOREF(pUVM);
+    VirtualBoxBase::initializeComForThread();
 }
 
 /**
@@ -8827,9 +8837,7 @@ Console::vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVC
 Console::vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM)
 {
     NOREF(pThis); NOREF(pUVM);
-#ifdef RT_OS_WINDOWS
-    CoUninitialize();
-#endif
+    VirtualBoxBase::uninitializeComForThread();
 }
 
 

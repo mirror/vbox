@@ -585,17 +585,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
 
-#if !defined(VBOX_WITH_XPCOM)
-    {
-        /* initialize COM */
-        HRESULT hrc = CoInitializeEx(NULL,
-                                     COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE |
-                                     COINIT_SPEED_OVER_MEMORY);
-        LogFlow(("Console::configConstructor(): CoInitializeEx()=%08X\n", hrc));
-        AssertComRCReturn(hrc, VERR_GENERAL_FAILURE);
-    }
-#endif
-
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
     ComObjPtr<Console> pConsole = static_cast<Console *>(pvConsole);
 
