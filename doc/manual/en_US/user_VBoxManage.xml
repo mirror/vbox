@@ -2378,7 +2378,7 @@ Value: 2006.01.01</screen>
           runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
-          <screen>VBoxManage guestcontrol exec[ute] &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; exec[ute]
             &lt;path to program&gt;
             --username &lt;name&gt; --password &lt;password&gt;
             [--arguments "&lt;arguments&gt;"]
@@ -2538,7 +2538,7 @@ Value: 2006.01.01</screen>
           files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
-          <screen>VBoxManage copyto|cp &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; copyto|cp
             &lt;source on host&gt; &lt;destination on guest&gt;
             --username &lt;name&gt; --password &lt;password&gt;
             [--dryrun] [--follow] [--recursive] [--verbose]</screen>
@@ -2643,7 +2643,7 @@ Value: 2006.01.01</screen>
           copying files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
-          <screen>VBoxManage createdir[ectory]|mkdir|md &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; createdir[ectory]|mkdir|md 
             &lt;directory to create on guest&gt;
             [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
             [--parents] [--mode &lt;mode&gt;] [--verbose]</screen>
