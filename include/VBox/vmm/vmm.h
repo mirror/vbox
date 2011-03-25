@@ -152,13 +152,64 @@ typedef struct VMM2USERMETHODS
      *
      * @returns VBox status code.
      * @param   pThis       Pointer to the callback method table.
-     * @param   pVM         The VM handle.
+     * @param   pUVM        The user mode VM handle.
      *
      * @remarks This member shall be set to NULL if the operation is not
      *          supported.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSaveState,(PCVMM2USERMETHODS pThis, PVM pVM));
+    DECLR3CALLBACKMEMBER(int, pfnSaveState,(PCVMM2USERMETHODS pThis, PUVM pUVM));
     /** @todo Move pfnVMAtError and pfnCFGMConstructor here? */
+
+    /**
+     * EMT initialization notification callback.
+     *
+     * This is intended for doing per-thread initialization for EMTs (like COM
+     * init).
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     * @param   pUVCpu      The user mode virtual CPU handle.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyEmtInit,(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu));
+
+    /**
+     * EMT termination notification callback.
+     *
+     * This is intended for doing per-thread cleanups for EMTs (like COM).
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     * @param   pUVCpu      The user mode virtual CPU handle.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyEmtTerm,(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu));
+
+    /**
+     * PDM thread initialization notification callback.
+     *
+     * This is intended for doing per-thread initialization (like COM init).
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyPdmtInit,(PCVMM2USERMETHODS pThis, PUVM pUVM));
+
+    /**
+     * EMT termination notification callback.
+     *
+     * This is intended for doing per-thread cleanups for EMTs (like COM).
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyPdmtTerm,(PCVMM2USERMETHODS pThis, PUVM pUVM));
 
     /** Magic value (VMM2USERMETHODS_MAGIC) marking the end of the structure. */
     uint32_t    u32EndMagic;
@@ -167,7 +218,7 @@ typedef struct VMM2USERMETHODS
 /** Magic value of the VMM2USERMETHODS (Franz Kafka). */
 #define VMM2USERMETHODS_MAGIC         UINT32_C(0x18830703)
 /** The VMM2USERMETHODS structure version. */
-#define VMM2USERMETHODS_VERSION       UINT32_C(0x00010000)
+#define VMM2USERMETHODS_VERSION       UINT32_C(0x00020000)
 
 
 VMMDECL(RTRCPTR)     VMMGetStackRC(PVMCPU pVCpu);

@@ -758,6 +758,11 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
     Log(("PDMThread: Initializing thread %RTthrd / %p / '%s'...\n", Thread, pThread, RTThreadGetName(Thread)));
     pThread->Thread = Thread;
 
+    PUVM pUVM = pThread->Internal.s.pVM->pUVM;
+    if (   pUVM->pVmm2UserMethods
+        && pUVM->pVmm2UserMethods->pfnNotifyPdmtInit)
+        pUVM->pVmm2UserMethods->pfnNotifyPdmtInit(pUVM->pVmm2UserMethods, pUVM);
+
     /*
      * The run loop.
      *
@@ -839,6 +844,9 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
     ASMAtomicXchgSize(&pThread->enmState, PDMTHREADSTATE_TERMINATED);
     int rc2 = RTThreadUserSignal(Thread); AssertRC(rc2);
 
+    if (   pUVM->pVmm2UserMethods
+        && pUVM->pVmm2UserMethods->pfnNotifyPdmtTerm)
+        pUVM->pVmm2UserMethods->pfnNotifyPdmtTerm(pUVM->pVmm2UserMethods, pUVM);
     Log(("PDMThread: Terminating thread %RTthrd / %p / '%s': %Rrc\n", Thread, pThread, RTThreadGetName(Thread), rc));
     return rc;
 }

@@ -589,7 +589,9 @@ private:
     static DECLCALLBACK(int)   saveStateThread(RTTHREAD Thread, void *pvUser);
     static DECLCALLBACK(int)   powerDownThread(RTTHREAD Thread, void *pvUser);
 
-    static DECLCALLBACK(int)    vmm2User_SaveState(PCVMM2USERMETHODS pThis, PVM pVM);
+    static DECLCALLBACK(int)    vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM);
+    static DECLCALLBACK(void)   vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu);
+    static DECLCALLBACK(void)   vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM);
 
     static DECLCALLBACK(void *) drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
@@ -681,9 +683,11 @@ private:
     /** true if we already listed the disk type of the snapshot folder. */
     bool mfSnapshotFolderDiskTypeShown : 1;
 
-    /** Pointer to the VMM -> User (that's us) callbacks.
-     * This structure is followed by a pointer to the Console object. */
-    PCVMM2USERMETHODS mpVmm2UserMethods;
+    /** Pointer to the VMM -> User (that's us) callbacks. */
+    struct MYVMM2USERMETHODS : public VMM2USERMETHODS
+    {
+        Console *pConsole;
+    } *mpVmm2UserMethods;
 
     /** The current network attachment type in the VM.
      * This doesn't have to match the network attachment type maintained in the
