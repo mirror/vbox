@@ -1847,9 +1847,9 @@ void remR3ChangeCpuMode(CPUState *env)
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
-
 #ifdef TARGET_X86_64
     efer = env->efer;
+    pCtx->msrEFER = efer;
 #else
     efer = 0;
 #endif
