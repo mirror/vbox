@@ -2913,8 +2913,10 @@ typedef struct PGM
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
     bool                            fNoMorePhysWrites;
+    /** Set if PCI passthrough is enabled. */
+    bool                            fPciPassthrough;
     /** Alignment padding that makes the next member start on a 8 byte boundary. */
-    bool                            afAlignment1[3];
+    bool                            afAlignment1[2];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */

@@ -271,6 +271,7 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static int hwaccmR3InitCPU(PVM pVM);
+static int hwaccmR3InitFinalizeR0(PVM pVM);
 static int hwaccmR3TermCPU(PVM pVM);
 
 
@@ -639,10 +640,12 @@ VMMR3_INT_DECL(int) HWACCMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     switch (enmWhat)
     {
-    case VMINITCOMPLETED_RING3:
-        return hwaccmR3InitCPU(pVM);
-    default:
-        return VINF_SUCCESS;
+        case VMINITCOMPLETED_RING3:
+            return hwaccmR3InitCPU(pVM);
+        case VMINITCOMPLETED_RING0:
+            return HWACCMR3InitFinalizeR0(pVM);
+        default:
+            return VINF_SUCCESS;
     }
 }
 
@@ -685,7 +688,7 @@ static void hwaccmR3DisableRawMode(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  */
-VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
+static int hwaccmR3InitFinalizeR0(PVM pVM)
 {
     int rc;
 

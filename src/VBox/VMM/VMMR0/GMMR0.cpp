@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2104,14 +2104,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                             {
                                 AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
                                 if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
-                                {
                                     pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
-#if 0 /* Not sure if this is the right place to tell pciraw about mappings. */
-                                    if (PciRawIsEnabled(pGVM/pVM))
-                                        PciRawR0NotifyGuestPageAssignment(pGVM, paPages[iPage].HCPhysGCPhys,
-                                                                          gmmR0GetPageHCPhys(pGMM, paPages[iPage].idPage));
-#endif
-                                }
                                 else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                     pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
                                 /* else: NIL_RTHCPHYS nothing */

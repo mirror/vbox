@@ -1031,13 +1031,12 @@ static int vmR3InitRing0(PVM pVM)
      */
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
-
-    /** @todo Move this to the VMINITCOMPLETED_RING0 notification handler. */
     if (RT_SUCCESS(rc))
-    {
-        rc = HWACCMR3InitFinalizeR0(pVM);
+        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_HWACCM);
+
+    /** @todo Move this to the VMINITCOMPLETED_HWACCM notification handler. */
+    if (RT_SUCCESS(rc))
         CPUMR3SetHWVirtEx(pVM, HWACCMIsEnabled(pVM));
-    }
 
     LogFlow(("vmR3InitRing0: returns %Rrc\n", rc));
     return rc;
@@ -1088,6 +1087,8 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     int rc = VMMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = HWACCMR3InitCompleted(pVM, enmWhat);
+    if (RT_SUCCESS(rc))
+        rc = PGMR3InitCompleted(pVM, enmWhat);
     return rc;
 }
 

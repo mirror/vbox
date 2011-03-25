@@ -301,10 +301,13 @@ typedef VMREQ *PVMREQ;
  */
 typedef enum VMINITCOMPLETED
 {
-    /** The Ring3 init is completed. */
+    /** The ring-3 init is completed. */
     VMINITCOMPLETED_RING3 = 1,
-    /** The Ring0 init is completed. */
+    /** The ring-0 init is completed. */
     VMINITCOMPLETED_RING0,
+    /** The hardware accelerated virtualization init is completed.
+     * Used to make decisision depending on whether HWACCMIsEnabled(). */
+    VMINITCOMPLETED_HWACCM,
     /** The GC init is completed. */
     VMINITCOMPLETED_GC
 } VMINITCOMPLETED;
