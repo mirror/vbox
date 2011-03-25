@@ -427,11 +427,11 @@ typedef struct _VRDEUSBDEVICEDESC
     uint16_t        idProduct;
     /** Revision, integer part. */
     uint16_t        bcdRev;
-    /** Manufacturer string. */
+    /** Offset of the UTF8 manufacturer string relative to the structure start. */
     uint16_t        oManufacturer;
-    /** Product string. */
+    /** Offset of the UTF8 product string relative to the structure start. */
     uint16_t        oProduct;
-    /** Serial number string. */
+    /** Offset of the UTF8 serial number string relative to the structure start. */
     uint16_t        oSerialNumber;
     /** Physical USB port the device is connected to. */
     uint16_t        idPort;
@@ -587,6 +587,7 @@ typedef struct _VRDEUSBREQNEGOTIATERET_2
 #define VRDE_INTERFACE_VERSION_1 (1)
 #define VRDE_INTERFACE_VERSION_2 (2)
 #define VRDE_INTERFACE_VERSION_3 (3)
+#define VRDE_INTERFACE_VERSION_4 (4)
 
 /** The header that does not change when the interface changes. */
 typedef struct _VRDEINTERFACEHDR
@@ -1461,16 +1462,19 @@ typedef struct _VRDEENTRYPOINTS_4
      * @param pInterface The interface structure to be initialized by the VRDE server.
      *                   Only VRDEINTERFACEHDR is initialized by the caller.
      * @param pCallbacks Callbacks required by the interface. The server makes a local copy.
+     *                   VRDEINTERFACEHDR version must correspond to the requested interface version.
      * @param pvContext  The context to be used in callbacks.
      */
 
-    int VRDEGetInterface(HVRDESERVER hServer,
-                         const char *pszId,
-                         VRDEINTERFACEHDR *pInterface,
-                         const VRDEINTERFACEHDR *pCallbacks,
-                         void *pvContext);
+    DECLR3CALLBACKMEMBER(int, VRDEGetInterface, (HVRDESERVER hServer,
+                                                 const char *pszId,
+                                                 VRDEINTERFACEHDR *pInterface,
+                                                 const VRDEINTERFACEHDR *pCallbacks,
+                                                 void *pvContext));
 } VRDEENTRYPOINTS_4;
 
+/* Callbacks are the same for the version 3 and version 4 interfaces. */
+typedef VRDECALLBACKS_3 VRDECALLBACKS_4;
 
 /**
  * Create a new VRDE server instance. The instance is fully functional but refuses
