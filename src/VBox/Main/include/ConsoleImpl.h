@@ -590,7 +590,9 @@ private:
     static DECLCALLBACK(int)   powerDownThread(RTTHREAD Thread, void *pvUser);
 
     static DECLCALLBACK(int)    vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM);
+    static DECLCALLBACK(void)   vmm2User_NotifyEmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu);
     static DECLCALLBACK(void)   vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu);
+    static DECLCALLBACK(void)   vmm2User_NotifyPdmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM);
     static DECLCALLBACK(void)   vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM);
 
     static DECLCALLBACK(void *) drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);

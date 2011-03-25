@@ -753,6 +753,26 @@ public:
     HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...);
 
+
+    /** Initialize COM for a new thread. */
+    static HRESULT initializeComForThread(void)
+    {
+#ifndef VBOX_WITH_XPCOM
+        HRESULT hrc = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
+        AssertComRCReturn(hrc, hrc);
+#endif
+        return S_OK;
+    }
+
+    /** Uninitializes COM for a dying thread. */
+    static void uninitializeComForThread(void)
+    {
+#ifndef VBOX_WITH_XPCOM
+        CoUninitialize();
+#endif
+    }
+
+
 private:
 
     void setState(State aState)
