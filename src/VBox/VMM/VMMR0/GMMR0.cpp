@@ -1422,6 +1422,22 @@ DECLINLINE(PGMMPAGE) gmmR0GetPage(PGMM pGMM, uint32_t idPage)
 
 
 /**
+ * Gets the host physical address for a page given by it's ID.
+ *
+ * @returns The host physical address or NIL_RTHCPHYS.
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   idPage      The ID of the page to find.
+ */
+DECLINLINE(RTHCPHYS) gmmR0GetPageHCPhys(PGMM pGMM,  uint32_t idPage)
+{
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    if (RT_LIKELY(pChunk))
+        return RTR0MemObjGetPagePhysAddr(pChunk->MemObj, idPage & GMM_PAGEID_IDX_MASK);
+    return NIL_RTHCPHYS;
+}
+
+
+/**
  * Unlinks the chunk from the free list it's currently on (if any).
  *
  * @param   pChunk      The allocation chunk.
@@ -2088,16 +2104,17 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                             {
                                 AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
                                 if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
+                                {
                                     pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
+#if 0 /* Not sure if this is the right place to tell pciraw about mappings. */
+                                    if (PciRawIsEnabled(pGVM/pVM))
+                                        PciRawR0NotifyGuestPageAssignment(pGVM, paPages[iPage].HCPhysGCPhys,
+                                                                          gmmR0GetPageHCPhys(pGMM, paPages[iPage].idPage));
+#endif
+                                }
                                 else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                     pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
                                 /* else: NIL_RTHCPHYS nothing */
-#if 0
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                                if (pVM->rawpci.s.pfnContigMemInfo)
-                                    pVM->rawpci.s.pfnContigMemInfo(pVM, paPages[iPage].HCPhysGCPhys, 0, PAGE_SIZE, PCIRAW_MEMINFO_MAP);
-#endif
-#endif
 
                                 paPages[iPage].idPage = NIL_GMM_PAGEID;
                                 paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
