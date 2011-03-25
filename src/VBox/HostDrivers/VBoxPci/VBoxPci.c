@@ -562,6 +562,10 @@ static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
     {
         PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)pPciData->pDriverData;
 
+#ifdef VBOX_WITH_IOMMU
+        /* If we have IOMMU, need to unmap all guest's physical pages from IOMMU on VM termination. */
+#endif
+
         vboxPciOsDeinitVm(pThis, pVM);
 
         if (pThis->hFastMtx)
