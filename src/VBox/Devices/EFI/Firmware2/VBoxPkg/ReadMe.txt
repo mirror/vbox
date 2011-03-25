@@ -55,6 +55,10 @@ The binaries are available at:
 
   http://sourceforge.net/projects/mingw-w64/files/
 
+on recent Ubuntu systems mingw-w64 is available in repository:
+
+   apt-get install mingw-w64
+
 Some non-fatal warnings might appears while compiling on Linux machine so it
 is recommended to disable -Werror at Conf/tools_def.txt:*_UNIXGCC_X64_CC_FLAGS.
 
