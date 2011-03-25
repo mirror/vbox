@@ -52,22 +52,26 @@ void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
      */
     size_t cwc;
     int vrc = ::RTStrCalcUtf16LenEx(a_pszSrc, a_cchMax, &cwc);
-    AssertRCReturnVoid(vrc); /* throw instead? */
+    if (RT_FAILURE(vrc))
+    {
+        /* ASSUME: input is valid Utf-8. Fake out of memory error. */
+        AssertLogRelMsgFailed(("%Rrc %.*Rhxs\n", vrc, RTStrNLen(a_pszSrc, a_cchMax), a_pszSrc));
+        throw std::bad_alloc();
+    }
 
     m_bstr = ::SysAllocStringByteLen(NULL, cwc * sizeof(OLECHAR));
-    if (m_bstr)
-    {
-        PRTUTF16 pwsz = (PRTUTF16)m_bstr;
-        vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
-        if (RT_FAILURE(vrc))
-        {
-            /* This should not happen! */
-            AssertRC(vrc);
-            cleanup();
-        }
-    }
-    else
+    if (RT_UNLIKELY(!m_bstr))
         throw std::bad_alloc();
+
+    PRTUTF16 pwsz = (PRTUTF16)m_bstr;
+    vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
+    if (RT_FAILURE(vrc))
+    {
+        /* This should not happen! */
+        AssertRC(vrc);
+        cleanup();
+        throw std::bad_alloc();
+    }
 }
 
 
@@ -79,7 +83,7 @@ void Utf8Str::cloneTo(char **pstr) const
 {
     size_t cb = length() + 1;
     *pstr = (char*)nsMemory::Alloc(cb);
-    if (!*pstr)
+    if (RT_UNLIKELY(!*pstr))
         throw std::bad_alloc();
     memcpy(*pstr, c_str(), cb);
 }
@@ -136,40 +140,46 @@ Utf8Str& Utf8Str::stripExt()
  * Internal function used in Utf8Str copy constructors and assignment when
  * copying from a UTF-16 string.
  *
- * As with the iprt::ministring::copyFrom() variants, this unconditionally
- * sets the members to a copy of the given other strings and makes
- * no assumptions about previous contents. This can therefore be used
- * both in copy constructors, when member variables have no defined
- * value, and in assignments after having called cleanup().
+ * As with the iprt::ministring::copyFrom() variants, this unconditionally sets
+ * the members to a copy of the given other strings and makes no assumptions
+ * about previous contents.  This can therefore be used both in copy
+ * constructors, when member variables have no defined value, and in
+ * assignments after having called cleanup().
  *
  * This variant converts from a UTF-16 string, most probably from
  * a Bstr assignment.
  *
- * @param s
+ * @param   a_pbstr         The source string.  The caller guarantees that this
+ *                          is valid UTF-16.
+ *
+ * @sa      iprt::MiniString::copyFromN
  */
-void Utf8Str::copyFrom(CBSTR s)
+void Utf8Str::copyFrom(CBSTR a_pbstr)
 {
-    if (s && *s)
+    if (a_pbstr && *a_pbstr)
     {
-        int vrc = RTUtf16ToUtf8Ex((PRTUTF16)s,      // PCRTUTF16 pwszString
+        int vrc = RTUtf16ToUtf8Ex((PCRTUTF16)a_pbstr,
                                   RTSTR_MAX,        // size_t cwcString: translate entire string
                                   &m_psz,           // char **ppsz: output buffer
                                   0,                // size_t cch: if 0, func allocates buffer in *ppsz
                                   &m_cch);          // size_t *pcch: receives the size of the output string, excluding the terminator.
-        if (RT_FAILURE(vrc))
+        if (RT_SUCCESS(vrc))
+            m_cbAllocated = m_cch + 1;
+        else
         {
-            if (    vrc == VERR_NO_STR_MEMORY
-                 || vrc == VERR_NO_MEMORY
-               )
-                throw std::bad_alloc();
+            if (   vrc != VERR_NO_STR_MEMORY
+                && vrc != VERR_NO_MEMORY)
+            {
+                /* ASSUME: input is valid Utf-16. Fake out of memory error. */
+                AssertLogRelMsgFailed(("%Rrc %.*Rhxs\n", vrc, RTUtf16Len(a_pbstr) * sizeof(RTUTF16), a_pbstr));
+            }
 
-            // @todo what do we do with bad input strings? throw also? for now just keep an empty string
             m_cch = 0;
             m_cbAllocated = 0;
             m_psz = NULL;
+
+            throw std::bad_alloc();
         }
-        else
-            m_cbAllocated = m_cch + 1;
     }
     else
     {
