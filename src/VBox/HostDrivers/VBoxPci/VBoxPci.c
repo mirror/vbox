@@ -520,7 +520,7 @@ static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
  */
 static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
                                                PVM                  pVM,
-                                               PRAWPCIVM            pPciData)
+                                               PRAWPCIVM            pVmData)
 {
     PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)RTMemAllocZ(sizeof(VBOXRAWPCIDRVVM));
     int rc;
@@ -531,11 +531,15 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
     rc = RTSemFastMutexCreate(&pThis->hFastMtx);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxPciOsInitVm(pThis, pVM);
+        rc = vboxPciOsInitVm(pThis, pVM, pVmData);
+#ifdef VBOX_WITH_IOMMU
+        /* If IOMMU notification routine in pVmData->pfnContigMemInfo
+           is not set - we have no IOMMU hardware. */
+#endif
 
         if (RT_SUCCESS(rc))
         {
-            pPciData->pDriverData = pThis;
+            pVmData->pDriverData = pThis;
             return VINF_SUCCESS;
         }
 
