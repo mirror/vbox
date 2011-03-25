@@ -49,22 +49,26 @@ typedef enum PCIRAWMEMINFOACTION
     PCIRAW_MEMINFO_32BIT_HACK = 0x7fffffff
 } PCIRAWMEMINFOACTION;
 
+/* Forward declaration. */
+struct RAWPCIVM;
+
 /**
  * Callback to notify raw PCI subsystem about mapping/unmapping of
  * host pages to the guest. Typical usecase is to register physical
  * RAM pages with IOMMU, so that it could allow DMA for PCI devices
  * directly from the guest RAM.
- * Region shall be one or more contigous (both host and guest) pages 
- * of physical memory.  
- * 
+ * Region shall be one or more contigous (both host and guest) pages
+ * of physical memory.
+ *
+ * @returns VBox status code.
+ *
  * @param   pVM           VM pointer.
- * @param   HostStart     Physical address of region start on the host.  
+ * @param   HostStart     Physical address of region start on the host.
  * @param   GuestStart    Physical address of region start on the guest.
  * @param   cMemSize      Region size in bytes.
- * @param   Action        Action performed.
-
+ * @param   Action        Action performed (i.e. if page was mapped or unmapped).
  */
-typedef DECLCALLBACK(void) FNRAWPCICONTIGPHYSMEMINFO(PVM pVM, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
+typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIVM* pVmData, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
 typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
 
 /** Data being part of the VM structure. */
@@ -306,7 +310,7 @@ typedef enum PCIRAWPOWERSTATE
     /* Suspend. */
     PCIRAW_POWER_SUSPEND,
     /* Resume. */
-    PCIRAW_POWER_RESUME,  
+    PCIRAW_POWER_RESUME,
     /** The usual 32-bit type blow up. */
     PCIRAW_POWER_32BIT_HACK = 0x7fffffff
 } PCIRAWPOWERSTATE;
