@@ -155,11 +155,13 @@ void HostPowerService::notify(HostPowerEvent aEvent)
                     continue;
 
                 /* Wait until the operation has been completed. */
-                LONG iRc;
                 rc = progress->WaitForCompletion(-1);
                 if (SUCCEEDED(rc))
-                    progress->COMGETTER(ResultCode) (&iRc);
-                rc = iRc;
+                {
+                    LONG iRc;
+                    progress->COMGETTER(ResultCode)(&iRc);
+                    rc = iRc;
+                }
 
                 AssertMsg (SUCCEEDED(rc), ("SaveState WaitForCompletion "
                                             "failed with %Rhrc (%#08X)\n", rc, rc));
