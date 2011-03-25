@@ -2039,7 +2039,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         /*
          * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio
          */
-        BOOL fAudioEnabled;
+        BOOL fAudioEnabled = FALSE;
         ComPtr<IAudioAdapter> audioAdapter;
         hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());                 H();
         if (audioAdapter)
