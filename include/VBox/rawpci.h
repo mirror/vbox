@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, raw PCI Devices. (VMM)
+ * Raw PCI Devices (aka PCI pass-through). (VMM)
  */
 
 /*
@@ -41,9 +41,9 @@ typedef uint32_t PCIRAWDEVHANDLE;
  */
 typedef enum PCIRAWMEMINFOACTION
 {
-    /* Pages mapped. */
+    /** Pages mapped. */
     PCIRAW_MEMINFO_MAP,
-    /* Pages unmapped. */
+    /** Pages unmapped. */
     PCIRAW_MEMINFO_UNMAP,
     /** The usual 32-bit type blow up. */
     PCIRAW_MEMINFO_32BIT_HACK = 0x7fffffff
@@ -74,9 +74,9 @@ typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
 /** Data being part of the VM structure. */
 typedef struct RAWPCIVM
 {
-    /* Shall only be interpreted by the host PCI driver. */
+    /** Shall only be interpreted by the host PCI driver. */
     RTR0PTR                     pDriverData;
-    /* Callback called when mapping of host pages to the guest changes. */
+    /** Callback called when mapping of host pages to the guest changes. */
     PFNRAWPCICONTIGPHYSMEMINFO  pfnContigMemInfo;
 } RAWPCIVM;
 typedef RAWPCIVM *PRAWPCIVM;

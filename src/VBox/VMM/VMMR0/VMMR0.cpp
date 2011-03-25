@@ -974,6 +974,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_CPU_ID;
             return PGMR0PhysAllocateLargeHandyPage(pVM, &pVM->aCpus[idCpu]);
 
+        case VMMR0_DO_PGM_PHYS_SETUP_IOMMU:
+            if (idCpu != 0)
+                return VERR_INVALID_CPU_ID;
+            return PGMR0PhysSetupIommu(pVM);
+
         /*
          * GMM wrappers.
          */

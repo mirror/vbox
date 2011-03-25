@@ -1276,6 +1276,13 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         return rc;
     }
 
+    /*
+     * Check for PCI pass-through.
+     */
+    rc = CFGMR3QueryBoolDef(pCfgPGM, "PciPassThrough", &pVM->pgm.s.fPciPassthrough, false);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"PciPassThrough\", rc=%Rrc.\n", rc), rc);
+    AssertLogRelReturn(!pVM->pgm.s.fPciPassthrough || pVM->pgm.s.fRamPreAlloc, VERR_INVALID_PARAMETER);
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Allocate memory for the statistics before someone tries to use them.
@@ -2130,6 +2137,49 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 
     LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
+}
+
+
+/**
+ * Init phase completed callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   enmWhat             What has been completed.
+ * @thread  EMT(0)
+ */
+VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+    switch (enmWhat)
+    {
+        case VMINITCOMPLETED_HWACCM:
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+            if (pVM->pgm.s.fPciPassthrough)
+            {
+                AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_INVALID_PARAMETER);
+                AssertLogRelReturn(HWACCMIsEnabled(pVM), VERR_INVALID_PARAMETER);
+                AssertLogRelReturn(HWACCMIsNestedPagingActive(pVM), VERR_INVALID_PARAMETER);
+
+                /*
+                 * Report assignments to the IOMMU (hope that's good enough for now).
+                 */
+                if (pVM->pgm.s.fPciPassthrough)
+                {
+                    int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_PHYS_SETUP_IOMMU, 0, NULL);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+#else
+            AssertLogRelReturn(!pVM->pgm.s.fPciPassthrough, VERR_INTERNAL_ERROR_5);
+#endif
+            break;
+
+        default:
+            /* shut up gcc */
+            break;
+    }
+
+    return VINF_SUCCESS;
 }
 
 

@@ -1007,14 +1007,14 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                             /* Remember this dirty page for the next (memory) sync. */
                             PGM_PAGE_SET_FT_DIRTY(pPage);
                         }
-    
+
                         pgmPhysPageWriteMonitor(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                         break;
-    
+
                     case PGM_PAGE_STATE_SHARED:
                         AssertFailed();
                         break;
-    
+
                     case PGM_PAGE_STATE_WRITE_MONITORED:    /* nothing to change. */
                     default:
                         break;

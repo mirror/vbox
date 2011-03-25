@@ -364,6 +364,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
     /** Call PGMR0AllocateLargePage(). */
     VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
+    /** Call PGMR0PhysSetupIommu(). */
+    VMMR0_DO_PGM_PHYS_SETUP_IOMMU,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION,
