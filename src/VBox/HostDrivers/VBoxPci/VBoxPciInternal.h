@@ -25,7 +25,7 @@
 
 #ifdef RT_OS_LINUX
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
 # ifdef DEBUG_nike
 #  define VBOX_WITH_IOMMU
 # endif
@@ -138,7 +138,7 @@ typedef struct VBOXRAWPCIGLOBALS
 DECLHIDDEN(int)  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals);
 DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
-DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis,   PVM pVM);
+DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis,   PVM pVM, PRAWPCIVM pVmData);
 DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);
