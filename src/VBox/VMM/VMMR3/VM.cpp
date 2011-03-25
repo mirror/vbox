@@ -168,11 +168,11 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  * @returns 0 on success.
  * @returns VBox error code on failure.
  * @param   cCpus               Number of virtual CPUs for the new VM.
- * @param   pVmm2UserMethods    An optional method table that the VMM can use to
- *                              make the user perform various action, like for
- *                              instance state saving.
+ * @param   pVmm2UserMethods    An optional method table that the VMM can use
+ *                              to make the user perform various action, like
+ *                              for instance state saving.
  * @param   pfnVMAtError        Pointer to callback function for setting VM
- *                              errors. This was added as an implicit call to
+ *                              errors.  This was added as an implicit call to
  *                              VMR3AtErrorRegister() since there is no way the
  *                              caller can get to the VM handle early enough to
  *                              do this on its own.
@@ -196,7 +196,11 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
         AssertPtrReturn(pVmm2UserMethods, VERR_INVALID_POINTER);
         AssertReturn(pVmm2UserMethods->u32Magic    == VMM2USERMETHODS_MAGIC,   VERR_INVALID_PARAMETER);
         AssertReturn(pVmm2UserMethods->u32Version  == VMM2USERMETHODS_VERSION, VERR_INVALID_PARAMETER);
-        AssertPtrReturn(pVmm2UserMethods->pfnSaveState, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnSaveState, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyEmtInit, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyEmtTerm, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyPdmtInit, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyPdmtTerm, VERR_INVALID_POINTER);
         AssertReturn(pVmm2UserMethods->u32EndMagic == VMM2USERMETHODS_MAGIC,   VERR_INVALID_PARAMETER);
     }
     AssertPtrNullReturn(pfnVMAtError, VERR_INVALID_POINTER);

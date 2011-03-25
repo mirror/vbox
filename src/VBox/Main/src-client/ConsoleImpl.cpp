@@ -345,6 +345,7 @@ private:
 
 typedef ListenerImpl<VmEventListener, Console*> VmEventListenerImpl;
 
+
 VBOX_LISTENER_DECLARE(VmEventListenerImpl)
 
 
@@ -389,14 +390,18 @@ HRESULT Console::FinalConstruct()
     for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++ i)
         maStorageDevType[i] = DeviceType_Null;
 
-    VMM2USERMETHODS *pVmm2UserMethods = (VMM2USERMETHODS *)RTMemAlloc(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
+    MYVMM2USERMETHODS *pVmm2UserMethods = (MYVMM2USERMETHODS *)RTMemAllocZ(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
     if (!pVmm2UserMethods)
         return E_OUTOFMEMORY;
-    pVmm2UserMethods->u32Magic      = VMM2USERMETHODS_MAGIC;
-    pVmm2UserMethods->u32Version    = VMM2USERMETHODS_VERSION;
-    pVmm2UserMethods->pfnSaveState  = Console::vmm2User_SaveState;
-    pVmm2UserMethods->u32EndMagic   = VMM2USERMETHODS_MAGIC;
-    *(Console **)(pVmm2UserMethods + 1) = this; /* lazy bird. */
+    pVmm2UserMethods->u32Magic          = VMM2USERMETHODS_MAGIC;
+    pVmm2UserMethods->u32Version        = VMM2USERMETHODS_VERSION;
+    pVmm2UserMethods->pfnSaveState      = Console::vmm2User_SaveState;
+    pVmm2UserMethods->pfnNotifyEmtInit  = NULL;
+    pVmm2UserMethods->pfnNotifyEmtTerm  = Console::vmm2User_NotifyEmtTerm;
+    pVmm2UserMethods->pfnNotifyPdmtInit = NULL;
+    pVmm2UserMethods->pfnNotifyPdmtTerm = Console::vmm2User_NotifyPdmtTerm;
+    pVmm2UserMethods->u32EndMagic       = VMM2USERMETHODS_MAGIC;
+    pVmm2UserMethods->pConsole          = this;
     mpVmm2UserMethods = pVmm2UserMethods;
 
     return BaseFinalConstruct();
@@ -8789,10 +8794,11 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
 /**
  * @interface_method_impl{VMM2USERMETHODS,pfnSaveState}
  */
-/*static*/
-DECLCALLBACK(int) Console::vmm2User_SaveState(PCVMM2USERMETHODS pThis, PVM pVM)
+/*static*/ DECLCALLBACK(int)
+Console::vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM)
 {
-    Console *pConsole = *(Console **)(pThis + 1); /* lazy bird */
+    Console *pConsole = ((MYVMM2USERMETHODS *)pThis)->pConsole;
+    NOREF(pUVM);
 
     /*
      * For now, just call SaveState.  We should probably try notify the GUI so
@@ -8801,6 +8807,31 @@ DECLCALLBACK(int) Console::vmm2User_SaveState(PCVMM2USERMETHODS pThis, PVM pVM)
     HRESULT hrc = pConsole->SaveState(NULL);
     return SUCCEEDED(hrc) ? VINF_SUCCESS : Global::vboxStatusCodeFromCOM(hrc);
 }
+
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnNotifyEmtTerm}
+ */
+/*static*/ DECLCALLBACK(void)
+Console::vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu)
+{
+    NOREF(pThis); NOREF(pUVM); NOREF(pUVCpu);
+#ifdef RT_OS_WINDOWS
+    CoUninitialize();
+#endif
+}
+
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnNotifyPdmtTerm}
+ */
+/*static*/ DECLCALLBACK(void)
+Console::vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM)
+{
+    NOREF(pThis); NOREF(pUVM);
+#ifdef RT_OS_WINDOWS
+    CoUninitialize();
+#endif
+}
+
 
 
 
