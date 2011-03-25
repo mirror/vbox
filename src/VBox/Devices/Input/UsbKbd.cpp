@@ -1225,7 +1225,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 
 
 /**
- * @copydoc PDMUSBREG::pfnQueue
+ * @copydoc PDMUSBREG::pfnUrbQueue
  */
 static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
@@ -1474,7 +1474,7 @@ const PDMUSBREG g_UsbHidKbd =
     usbHidUsbClearHaltedEndpoint,
     /* pfnUrbNew */
     NULL/*usbHidUrbNew*/,
-    /* pfnQueue */
+    /* pfnUrbQueue */
     usbHidQueue,
     /* pfnUrbCancel */
     usbHidUrbCancel,
