@@ -47,6 +47,9 @@ namespace iprt
  * behave the same. In both cases, MiniString allocates no memory, reports
  * a zero length and zero allocated bytes for both, and returns an empty
  * C string from c_str().
+ *
+ * @note    MiniString ASSUMES that all strings it deals with are valid UTF-8.
+ *          The caller is responsible for not breaking this assumption.
  */
 #ifdef VBOX
  /** @remarks Much of the code in here used to be in com::Utf8Str so that
@@ -838,7 +841,7 @@ protected:
      *
      * @param   pcszSrc         The source string.
      * @param   cchSrc          The number of chars (bytes) to copy from the
-     *                          source strings.
+     *                          source strings.  RTSTR_MAX is NOT accepted.
      *
      * @throws  std::bad_alloc  On allocation failure.  The object is left
      *                          describing a NULL string.
