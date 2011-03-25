@@ -438,6 +438,18 @@ typedef struct _VRDEUSBDEVICEDESC
 
 } VRDEUSBDEVICEDESC;
 
+typedef struct _VRDEUSBDEVICEDESCEXT
+{
+    VRDEUSBDEVICEDESC desc;
+
+    /* Extended info.
+     */
+
+    /** Version of the physical USB port the device is connected to. */
+    uint16_t        bcdPortVersion;
+
+} VRDEUSBDEVICEDESCEXT;
+
 typedef struct _VRDE_USB_REQ_DEVICE_LIST_RET
 {
     VRDEUSBDEVICEDESC body;
@@ -446,6 +458,20 @@ typedef struct _VRDE_USB_REQ_DEVICE_LIST_RET
      * which means that an empty list consists of 2 zero bytes.
      */
 } VRDE_USB_REQ_DEVICE_LIST_RET;
+
+typedef struct _VRDE_USB_REQ_DEVICE_LIST_EXT_RET
+{
+    VRDEUSBDEVICEDESCEXT body;
+    /* Other devices may follow.
+     * The list ends with (uint16_t)0,
+     * which means that an empty list consists of 2 zero bytes.
+     */
+} VRDE_USB_REQ_DEVICE_LIST_EXT_RET;
+
+/* The server requests the version of the port the device is attached to.
+ * The client must use VRDEUSBDEVICEDESCEXT structure.
+ */
+#define VRDE_USB_SERVER_CAPS_PORT_VERSION 0x0001
 
 typedef struct _VRDEUSBREQNEGOTIATEPARM
 {
@@ -458,19 +484,27 @@ typedef struct _VRDEUSBREQNEGOTIATEPARM
      *  a new capability without increasing the protocol version.
      */
     uint16_t version;
-    uint16_t flags;
+    uint16_t flags; /* See VRDE_USB_SERVER_CAPS_* */
 
 } VRDEUSBREQNEGOTIATEPARM;
 
+/* VRDEUSBREQNEGOTIATERET flags. */
 #define VRDE_USB_CAPS_FLAG_ASYNC    (0x0)
 #define VRDE_USB_CAPS_FLAG_POLL     (0x1)
 /* VRDE_USB_VERSION_2: New flag. */
 #define VRDE_USB_CAPS2_FLAG_VERSION (0x2) /* The client is negotiating the protocol version. */
+/* VRDE_USB_VERSION_3: New flag. */
+#define VRDE_USB_CAPS3_FLAG_EXT     (0x4) /* The client is negotiating the extended flags.
+                                           * If this flag is set, then the VRDE_USB_CAPS2_FLAG_VERSION
+                                           * must also be set.
+                                           */
 
 
 #define VRDE_USB_CAPS_VALID_FLAGS   (VRDE_USB_CAPS_FLAG_POLL)
 /* VRDE_USB_VERSION_2: A set of valid flags. */
 #define VRDE_USB_CAPS2_VALID_FLAGS  (VRDE_USB_CAPS_FLAG_POLL | VRDE_USB_CAPS2_FLAG_VERSION)
+/* VRDE_USB_VERSION_3: A set of valid flags. */
+#define VRDE_USB_CAPS3_VALID_FLAGS  (VRDE_USB_CAPS_FLAG_POLL | VRDE_USB_CAPS2_FLAG_VERSION | VRDE_USB_CAPS3_FLAG_EXT)
 
 typedef struct _VRDEUSBREQNEGOTIATERET
 {
@@ -482,6 +516,21 @@ typedef struct _VRDEUSBREQNEGOTIATERET_2
     uint8_t flags;
     uint32_t u32Version; /* This field presents only if the VRDE_USB_CAPS2_FLAG_VERSION flag is set. */
 } VRDEUSBREQNEGOTIATERET_2;
+
+/* The server requests the version of the port the device is attached to.
+ * The client must use VRDEUSBDEVICEDESCEXT structure.
+ */
+#define VRDE_USB_CLIENT_CAPS_PORT_VERSION 0x00000001
+
+typedef struct _VRDEUSBREQNEGOTIATERET_3
+{
+    uint8_t flags;
+    uint32_t u32Version; /* This field presents only if the VRDE_USB_CAPS2_FLAG_VERSION flag is set. */
+    uint32_t u32Flags;   /* This field presents only if both VRDE_USB_CAPS2_FLAG_VERSION and
+                          * VRDE_USB_CAPS2_FLAG_EXT flag are set.
+                          * See VRDE_USB_CLIENT_CAPS_*
+                          */
+} VRDEUSBREQNEGOTIATERET_3;
 #pragma pack()
 
 #define VRDE_CLIPBOARD_FORMAT_NULL         (0x0)
