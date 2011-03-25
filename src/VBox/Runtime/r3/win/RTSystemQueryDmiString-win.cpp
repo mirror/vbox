@@ -61,6 +61,8 @@ static HRESULT rtSystemDmiWinInitialize(void)
                                    NULL);                       /* Reserved. */
         if (hrc == RPC_E_TOO_LATE)
             hrc = S_OK;
+        else if (FAILED())
+            CoUninitialize();
     }
     return hrc;
 }
