@@ -122,8 +122,11 @@ HRESULT USBProxyServiceLinux::init(void)
     {
         PCUSBDEVTREELOCATION pcLocation;
         pcLocation = USBProxyLinuxGetDeviceRoot(fUseSysfs);
-        pcszUsbRoot = pcLocation->szDevicesRoot;
-        fUseSysfs = pcLocation->fUseSysfs;
+        if (pcLocation)
+        {
+            pcszUsbRoot = pcLocation->szDevicesRoot;
+            fUseSysfs = pcLocation->fUseSysfs;
+        }
     }
     if (pcszUsbRoot)
     {
