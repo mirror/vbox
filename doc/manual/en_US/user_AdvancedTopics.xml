@@ -168,7 +168,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
         most likely not work correctly with 3rd party GINA modules.</para>
       </note>
 
-      <para>To manually install the VirtualBox credential module, extract the
+      <para>To manually install the VirtualBox credential provider module, extract the
       Guest Additions (see <xref linkend="windows-guest-file-extraction" />)
       and copy the file <computeroutput>VBoxCredProv.dll</computeroutput> to
       the Windows <computeroutput>SYSTEM32</computeroutput> directory. Then,
