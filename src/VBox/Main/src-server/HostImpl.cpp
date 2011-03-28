@@ -753,7 +753,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = checkUSBProxyService();
+    HRESULT rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
     return m->pUSBProxyService->getDeviceCollection(ComSafeArrayOutArg(aUSBDevices));
@@ -780,7 +780,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters)(ComSafeArrayOut(IHostUSBDeviceFil
 
     AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = checkUSBProxyService();
+    HRESULT rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
     SafeIfaceArray<IHostUSBDeviceFilter> collection(m->llUSBDeviceFilters);
@@ -1195,6 +1195,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
 
     AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
 
+    clearError();
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
@@ -1256,6 +1257,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
 
     AutoMultiWriteLock2 alock(this->lockHandle(), &m->usbListsLock COMMA_LOCKVAL_SRC_POS);
 
+    clearError();
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
 

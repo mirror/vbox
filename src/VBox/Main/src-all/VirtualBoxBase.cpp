@@ -509,6 +509,29 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
     return rc;
 }
 
+/**
+ * Clear the current error information.
+ */
+/*static*/
+void VirtualBoxBase::clearError(void)
+{
+#if !defined(VBOX_WITH_XPCOM)
+    ::SetErrorInfo (0, NULL);
+#else
+    HRESULT rc = S_OK;
+    nsCOMPtr <nsIExceptionService> es;
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+    if (NS_SUCCEEDED(rc))
+    {
+        nsCOMPtr <nsIExceptionManager> em;
+        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        if (SUCCEEDED(rc))
+            em->SetCurrentException(NULL);
+    }
+#endif
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // AutoInitSpan methods

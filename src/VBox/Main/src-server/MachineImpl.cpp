@@ -2202,6 +2202,8 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    clearError();
     MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
@@ -10923,6 +10925,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 
 #ifdef VBOX_WITH_USB
     /* if captureDeviceForVM() fails, it must have set extended error info */
+    clearError();
     MultiResult rc = mParent->host()->checkUSBProxyService();
     if (FAILED(rc)) return rc;
 
@@ -11980,6 +11983,7 @@ HRESULT SessionMachine::lockMedia()
     /* bail out if trying to lock things with already set up locking */
     AssertReturn(mData->mSession.mLockedMedia.IsEmpty(), E_FAIL);
 
+    clearError();
     MultiResult mrc(S_OK);
 
     /* Collect locking information for all medium objects attached to the VM. */
