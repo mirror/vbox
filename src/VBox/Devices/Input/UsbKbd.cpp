@@ -604,11 +604,11 @@ static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, size_t cbData)
 
 /**
  * Reset worker for usbHidUsbReset, usbHidUsbSetConfiguration and
- * usbHidUrbHandleDefaultPipe.
+ * usbHidHandleDefaultPipe.
  *
  * @returns VBox status code.
  * @param   pThis               The HID instance.
- * @param   pUrb                Set when usbHidUrbHandleDefaultPipe is the
+ * @param   pUrb                Set when usbHidHandleDefaultPipe is the
  *                              caller.
  * @param   fSetConfig          Set when usbHidUsbSetConfiguration is the
  *                              caller.
