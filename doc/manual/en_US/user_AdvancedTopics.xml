@@ -226,6 +226,14 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
             original user name (internally, Windows never renames user
             accounts).</para>
           </listitem>
+
+          <listitem>
+            <para>Auto-logon handling of the built-in Windows Remote Desktop Service
+              (formerly known as Terminal Services) is disabled by default. To enable
+              it, create the registry key
+              <screen>HKEY_LOCAL_MACHINE\SOFTWARE\Oracle\VirtualBox Guest Additions\AutoLogon</screen>
+              with a <computeroutput>DWORD</computeroutput> value of <computeroutput>1</computeroutput>.</para>
+          </listitem>
         </orderedlist></para>
 
       <para>The following command forces VirtualBox to keep the credentials
