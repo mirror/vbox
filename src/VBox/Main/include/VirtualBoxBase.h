@@ -748,6 +748,7 @@ public:
                                     const Utf8Str &aText,
                                     bool aWarning,
                                     bool aLogIt);
+    static void clearError(void);
 
     HRESULT setError(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
