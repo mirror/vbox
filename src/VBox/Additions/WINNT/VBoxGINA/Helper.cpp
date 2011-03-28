@@ -87,7 +87,8 @@ DWORD loadConfiguration(void)
         }
         RegCloseKey(hKey);
     }
-    return dwRet;
+    /* Do not report back an error here yet. */
+    return ERROR_SUCCESS;
 }
 
 /**
