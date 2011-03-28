@@ -1012,17 +1012,9 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-    /** RAWPCIVM part. */
-    union
-    {
-#ifdef ___VBox_rawpci_h
-        struct RAWPCIVM s;
-#endif
-        uint8_t     padding[64];         /* multiple of 8 */
-    } rawpci;
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[1438];
+    uint8_t         abAlignment2[1502];
 
     /* ---- end small stuff ---- */
 
