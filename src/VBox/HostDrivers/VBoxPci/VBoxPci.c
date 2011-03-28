@@ -408,8 +408,9 @@ DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTAT
 static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
                               uint32_t           u32HostAddress,
                               uint32_t           fFlags,
-                              PRAWPCIVM          pVmCtx,
-                              PRAWPCIDEVPORT     *ppDevPort)
+                              PRAWPCIPERVM       pVmCtx,
+                              PRAWPCIDEVPORT     *ppDevPort,
+                              uint32_t           *pfDevFlags)
 {
     int             rc;
     PVBOXRAWPCIINS  pNew = (PVBOXRAWPCIINS)RTMemAllocZ(sizeof(*pNew));
@@ -475,8 +476,9 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
 static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFactory,
                                                         uint32_t             u32HostAddress,
                                                         uint32_t             fFlags,
-                                                        PRAWPCIVM            pVmCtx,
-                                                        PRAWPCIDEVPORT       *ppDevPort)
+                                                        PRAWPCIPERVM         pVmCtx,
+                                                        PRAWPCIDEVPORT       *ppDevPort,
+                                                        uint32_t             *pfDevFlags)
 {
     PVBOXRAWPCIGLOBALS pGlobals = (PVBOXRAWPCIGLOBALS)((uint8_t *)pFactory - RT_OFFSETOF(VBOXRAWPCIGLOBALS, RawPciFactory));
     int rc;
@@ -495,7 +497,7 @@ static DECLCALLBACK(int) vboxPciFactoryCreateAndConnect(PRAWPCIFACTORY       pFa
         goto unlock;
     }
 
-    rc = vboxPciNewInstance(pGlobals, u32HostAddress, fFlags, pVmCtx, ppDevPort);
+    rc = vboxPciNewInstance(pGlobals, u32HostAddress, fFlags, pVmCtx, ppDevPort, pfDevFlags);
 
 unlock:
     vboxPciGlobalsUnlock(pGlobals);
@@ -520,7 +522,7 @@ static DECLCALLBACK(void) vboxPciFactoryRelease(PRAWPCIFACTORY pFactory)
  */
 static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
                                                PVM                  pVM,
-                                               PRAWPCIVM            pVmData)
+                                               PRAWPCIPERVM         pVmData)
 {
     PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)RTMemAllocZ(sizeof(VBOXRAWPCIDRVVM));
     int rc;
@@ -532,13 +534,15 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
     if (RT_SUCCESS(rc))
     {
         rc = vboxPciOsInitVm(pThis, pVM, pVmData);
-#ifdef VBOX_WITH_IOMMU
-        /* If IOMMU notification routine in pVmData->pfnContigMemInfo
-           is not set - we have no IOMMU hardware. */
-#endif
 
         if (RT_SUCCESS(rc))
         {
+#ifdef VBOX_WITH_IOMMU
+            /* If IOMMU notification routine in pVmData->pfnContigMemInfo
+               is set - we have functional IOMMU hardware. */
+            if (pVmData->pfnContigMemInfo)
+                pVmData->fVmCaps |= PCIRAW_VMFLAGS_HAS_IOMMU;
+#endif
             pVmData->pDriverData = pThis;
             return VINF_SUCCESS;
         }
@@ -556,7 +560,7 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
  */
 static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
                                                   PVM                  pVM,
-                                                  PRAWPCIVM            pPciData)
+                                                  PRAWPCIPERVM         pPciData)
 {
     if (pPciData->pDriverData)
     {

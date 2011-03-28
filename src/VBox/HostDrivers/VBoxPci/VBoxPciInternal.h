@@ -85,7 +85,7 @@ typedef struct VBOXRAWPCIINS
     PFNRAWPCIISR       pfnIrqHandler;
     void              *pIrqContext;
 
-    PRAWPCIVM         pVmCtx;
+    PRAWPCIPERVM       pVmCtx;
 } VBOXRAWPCIINS;
 
 /**
@@ -138,7 +138,7 @@ typedef struct VBOXRAWPCIGLOBALS
 DECLHIDDEN(int)  vboxPciInit(PVBOXRAWPCIGLOBALS pGlobals);
 DECLHIDDEN(void) vboxPciShutdown(PVBOXRAWPCIGLOBALS pGlobals);
 
-DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis,   PVM pVM, PRAWPCIVM pVmData);
+DECLHIDDEN(int)  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis,   PVM pVM, PRAWPCIPERVM pVmData);
 DECLHIDDEN(void) vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM);
 
 DECLHIDDEN(int)  vboxPciOsDevInit  (PVBOXRAWPCIINS pIns, uint32_t fFlags);

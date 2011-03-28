@@ -19,8 +19,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM
+#include <VBox/rawpci.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/gmm.h>
+#include <VBox/vmm/gvm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"
@@ -193,7 +195,7 @@ VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
 /* Interface sketch.  The interface belongs to a global PCI pass-through
    manager.  It shall use the global VM handle, not the user VM handle to
    store the per-VM info (domain) since that is all ring-0 stuff, thus
-   passing pGVM here.  I've tentitively prefixed the functions 'GPicRawR0',
+   passing pGVM here.  I've tentitively prefixed the functions 'GPciRawR0',
    we can discuss the PciRaw code re-organtization when I'm back from
    vacation.
 
@@ -234,6 +236,11 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageAssign(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
 {
     AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
     AssertReturn(!(HCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
+
+    if (pGVM->rawpci.s.pfnContigMemInfo)
+        /** @todo: what do we do on failure? */
+        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, HCPhys, GCPhys, PAGE_SIZE, PCIRAW_MEMINFO_MAP);
+
     return VINF_SUCCESS;
 }
 
@@ -253,6 +260,11 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageAssign(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
 VMMR0_INT_DECL(int) GPciRawR0GuestPageUnassign(PGVM pGVM, RTGCPHYS GCPhys)
 {
     AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
+
+    if (pGVM->rawpci.s.pfnContigMemInfo)
+        /** @todo: what do we do on failure? */
+        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, 0, GCPhys, PAGE_SIZE, PCIRAW_MEMINFO_UNMAP);
+
     return VINF_SUCCESS;
 }
 

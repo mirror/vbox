@@ -49,8 +49,18 @@ typedef enum PCIRAWMEMINFOACTION
     PCIRAW_MEMINFO_32BIT_HACK = 0x7fffffff
 } PCIRAWMEMINFOACTION;
 
+/**
+ * Per-VM capability flag bits.
+ */
+typedef enum PCIRAWVMFLAGS
+{
+    /** If we can use IOMMU in this VM. */
+    PCIRAW_VMFLAGS_HAS_IOMMU = (1 << 0),
+    PCIRAW_VMFLAGS_32BIT_HACK = 0x7fffffff
+} PCIRAWVMFLAGS;
+
 /* Forward declaration. */
-struct RAWPCIVM;
+struct RAWPCIPERVM;
 
 /**
  * Callback to notify raw PCI subsystem about mapping/unmapping of
@@ -68,18 +78,20 @@ struct RAWPCIVM;
  * @param   cMemSize      Region size in bytes.
  * @param   Action        Action performed (i.e. if page was mapped or unmapped).
  */
-typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIVM* pVmData, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
+typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIPERVM* pVmData, RTHCPHYS HostStart, RTGCPHYS GuestStart, uint64_t cMemSize, PCIRAWMEMINFOACTION Action);
 typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
 
 /** Data being part of the VM structure. */
-typedef struct RAWPCIVM
+typedef struct RAWPCIPERVM
 {
     /** Shall only be interpreted by the host PCI driver. */
     RTR0PTR                     pDriverData;
     /** Callback called when mapping of host pages to the guest changes. */
     PFNRAWPCICONTIGPHYSMEMINFO  pfnContigMemInfo;
-} RAWPCIVM;
-typedef RAWPCIVM *PRAWPCIVM;
+    /** Flags describing VM capabilities (such as IOMMU presence). */
+    uint32_t                    fVmCaps;
+} RAWPCIPERVM;
+typedef RAWPCIPERVM *PRAWPCIPERVM;
 
 /** Parameters buffer for PCIRAWR0_DO_OPEN_DEVICE call */
 typedef struct
@@ -89,6 +101,7 @@ typedef struct
     uint32_t fFlags;
     /* out */
     PCIRAWDEVHANDLE Device;
+    uint32_t        fDevFlags;
 } PCIRAWREQOPENDEVICE;
 
 /** Parameters buffer for PCIRAWR0_DO_CLOSE_DEVICE call */
@@ -495,8 +508,9 @@ typedef struct RAWPCIFACTORY
     DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory,
                                                    uint32_t             u32HostAddress,
                                                    uint32_t             fFlags,
-                                                   PRAWPCIVM            pVmCtx,
-                                                   PRAWPCIDEVPORT       *ppDevPort));
+                                                   PRAWPCIPERVM         pVmCtx,
+                                                   PRAWPCIDEVPORT       *ppDevPort,
+                                                   uint32_t             *pfDevFlags));
 
 
     /**
@@ -510,7 +524,7 @@ typedef struct RAWPCIFACTORY
      */
     DECLR0CALLBACKMEMBER(int, pfnInitVm,(PRAWPCIFACTORY       pFactory,
                                          PVM                  pVM,
-                                         PRAWPCIVM            pPciData));
+                                         PRAWPCIPERVM         pPciData));
 
     /**
      * Deinitialize per-VM data related to PCI passthrough.
@@ -523,7 +537,7 @@ typedef struct RAWPCIFACTORY
      */
     DECLR0CALLBACKMEMBER(void, pfnDeinitVm,(PRAWPCIFACTORY       pFactory,
                                             PVM                  pVM,
-                                            PRAWPCIVM            pPciData));
+                                            PRAWPCIPERVM         pPciData));
 } RAWPCIFACTORY;
 
 #define RAWPCIFACTORY_UUID_STR   "ea089839-4171-476f-adfb-9e7ab1cbd0fb"

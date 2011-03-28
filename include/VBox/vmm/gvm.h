@@ -101,6 +101,16 @@ typedef struct GVM
 #endif
         uint8_t             padding[256];
     } gmm;
+    
+    /** The RAWPCIVM per vm data. */
+    union
+    {
+#ifdef ___VBox_rawpci_h
+        struct RAWPCIPERVM s;
+#endif
+        uint8_t     padding[64];
+    } rawpci;
+
 
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
