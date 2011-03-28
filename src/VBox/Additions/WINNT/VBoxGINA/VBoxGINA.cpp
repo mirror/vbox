@@ -111,12 +111,22 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
     RTLogGroupSettings(RTLogDefaultInstance(), "all=~0");
 #endif
 
-    Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %d\n", dwWinlogonVersion));
+    Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion));
 
-    /* load the standard Microsoft GINA DLL */
+    /* Load global configuration from registry. */
+    DWORD dwRet = loadConfiguration();
+    if (ERROR_SUCCESS != dwRet)
+        Log(("VBoxGINA: Error loading global configuration, error=%ld\n", dwRet));
+
+    /* If we have a remote session (that is, a connection via remote desktop /
+     * terminal services) deny it if not specified explicitly. */
+    if (!handleCurrentSession())
+        Log(("VBoxGINA: Handling of remote desktop sessions is disabled.\n"));
+
+    /* Load the standard Microsoft GINA DLL. */
     if (!(hDll = LoadLibrary(TEXT("MSGINA.DLL"))))
     {
-        Log(("VBoxGINA::WlxNegotiate: failed loading MSGINA! last error = %d\n", GetLastError()));
+        Log(("VBoxGINA::WlxNegotiate: failed loading MSGINA! Last error=%ld\n", GetLastError()));
         return FALSE;
     }
 
@@ -443,7 +453,7 @@ BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
 /*
  * GINA 1.3 entry points
  */
-BOOL WINAPI WlxNetworkProviderLoad (PVOID pWlxContext, PWLX_MPR_NOTIFY_INFO pNprNotifyInfo)
+BOOL WINAPI WlxNetworkProviderLoad(PVOID pWlxContext, PWLX_MPR_NOTIFY_INFO pNprNotifyInfo)
 {
     Log(("VBoxGINA::WlxNetworkProviderLoad\n"));
 
