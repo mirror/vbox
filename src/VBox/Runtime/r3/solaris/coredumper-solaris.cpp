@@ -52,6 +52,9 @@
 # include <sys/sysmacros.h>
 # include <sys/systeminfo.h>
 # include <sys/mman.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
 # include <ucontext.h>
 #endif  /* RT_OS_SOLARIS */
 
@@ -211,15 +214,15 @@ static inline bool IsProcessArchNative(PVBOXPROCESS pVBoxProc)
 static size_t GetFileSize(const char *pszPath)
 {
     uint64_t cb = 0;
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int fd = open(pszPath, O_RDONLY);
+    if (fd >= 0)
     {
+        RTFILE hFile = fd;
         RTFileGetSize(hFile, &cb);
         RTFileClose(hFile);
     }
     else
-        CORELOGRELSYS((CORELOG_NAME "GetFileSize failed to open %s rc=%Rrc\n", pszPath, rc));
+        CORELOGRELSYS((CORELOG_NAME "GetFileSize: failed to open %s rc=%Rrc\n", pszPath, RTErrConvertFromErrno(fd)));
     return cb < ~(size_t)0 ? (size_t)cb : ~(size_t)0;
 }
 
@@ -349,7 +352,9 @@ static void *GetMemoryChunk(PVBOXCORE pVBoxCore, size_t cb)
  * @param ppv               Where to store the allocated buffer.
  * @param pcb               Where to store size of the buffer.
  *
- * @return IPRT status code.
+ * @return IPRT status code. If the proc file is 0 bytes, VINF_SUCCESS is
+ *          returned with pointed to values of @c ppv, @c pcb set to NULL and 0
+ *          respectively.
  */
 static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, void **ppv, size_t *pcb)
 {
@@ -357,10 +362,11 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
 
     char szPath[PATH_MAX];
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/%s", (int)pVBoxCore->VBoxProc.Process, pszProcFileName);
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    int fd = open(szPath, O_RDONLY);
+    if (fd >= 0)
     {
+        RTFILE hFile = fd;
         uint64_t u64Size;
         RTFileGetSize(hFile, &u64Size);
         *pcb = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -376,11 +382,15 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
         {
             *pcb =  0;
             *ppv = NULL;
+            rc = VINF_SUCCESS;
         }
         RTFileClose(hFile);
     }
     else
+    {
+        rc = RTErrConvertFromErrno(fd);
         CORELOGRELSYS((CORELOG_NAME "ProcReadFileInto: failed to open %s. rc=%Rrc\n", szPath, rc));
+    }
     return rc;
 }
 
@@ -398,17 +408,23 @@ static int ProcReadInfo(PVBOXCORE pVBoxCore)
 
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
     char szPath[PATH_MAX];
-    RTFILE hFile;
+    int rc = VINF_SUCCESS;
 
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/psinfo", (int)pVBoxProc->Process);
-    int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int fd = open(szPath, O_RDONLY);
+    if (fd >= 0)
     {
+        RTFILE hFile = fd;
         size_t cbProcInfo = sizeof(psinfo_t);
         rc = ReadFileNoIntr(hFile, &pVBoxProc->ProcInfo, cbProcInfo);
+        RTFileClose(hFile);
+    }
+    else
+    {
+        rc = RTErrConvertFromErrno(fd);
+        CORELOGRELSYS((CORELOG_NAME "ProcReadInfo: failed to open %s. rc=%Rrc\n", szPath, rc));
     }
 
-    RTFileClose(hFile);
     return rc;
 }
 
@@ -427,18 +443,24 @@ static int ProcReadStatus(PVBOXCORE pVBoxCore)
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
 
     char szPath[PATH_MAX];
-    RTFILE hFile;
+    int rc = VINF_SUCCESS;
 
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/status", (int)pVBoxProc->Process);
-    int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int fd = open(szPath, O_RDONLY);
+    if (fd >= 0)
     {
+        RTFILE hFile = fd;
         size_t cbRead;
         size_t cbProcStatus = sizeof(pstatus_t);
         AssertCompile(sizeof(pstatus_t) == sizeof(pVBoxProc->ProcStatus));
         rc = ReadFileNoIntr(hFile, &pVBoxProc->ProcStatus, cbProcStatus);
+        RTFileClose(hFile);
     }
-    RTFileClose(hFile);
+    else
+    {
+        rc = RTErrConvertFromErrno(fd);
+        CORELOGRELSYS((CORELOG_NAME "ProcReadStatus: failed to open %s. rc=%Rrc\n", szPath, rc));
+    }
     return rc;
 }
 
@@ -517,15 +539,17 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
 
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
     char szPath[PATH_MAX];
-    RTFILE hFile = NIL_RTFILE;
+    int rc = VINF_SUCCESS;
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/auxv", (int)pVBoxProc->Process);
-    int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_FAILURE(rc))
+    int fd = open(szPath, O_RDONLY);
+    if (fd < 0)
     {
-        CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: RTFileOpen %s failed rc=%Rrc\n", szPath, rc));
+        rc = RTErrConvertFromErrno(fd);
+        CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: failed to open %s rc=%Rrc\n", szPath, rc));
         return rc;
     }
 
+    RTFILE hFile = fd;
     uint64_t u64Size;
     RTFileGetSize(hFile, &u64Size);
     size_t cbAuxFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -567,7 +591,10 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
         }
     }
     else
+    {
         CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: aux file too small %u, expecting %u or more\n", cbAuxFile, sizeof(auxv_t)));
+        rc = VERR_READ_ERROR;
+    }
 
     RTFileClose(hFile);
     return rc;
@@ -607,16 +634,23 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
 
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
     char szPath[PATH_MAX];
-    RTFILE hFile = NIL_RTFILE;
+    int rc = VINF_SUCCESS;
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/map", (int)pVBoxProc->Process);
-    int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
-    rc = RTFileOpen(&pVBoxProc->hAs, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int fd = open(szPath, O_RDONLY);
+    if (fd < 0)
     {
+        rc = RTErrConvertFromErrno(fd);
+        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: failed to open %s. rc=%Rrc\n", szPath, rc));
+        return rc;
+    }
+
+    RTFILE hFile = fd;
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
+    fd = open(szPath, O_RDONLY);
+    if (fd >= 0)
+    {
+        pVBoxProc->hAs = fd;
+
         /*
          * Allocate and read all the prmap_t objects from proc.
          */
@@ -1146,10 +1180,11 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
     char szLpsInfoPath[PATH_MAX];
     RTStrPrintf(szLpsInfoPath, sizeof(szLpsInfoPath), "/proc/%d/lpsinfo", (int)pVBoxProc->Process);
 
-    RTFILE hFile = NIL_RTFILE;
-    int rc = RTFileOpen(&hFile, szLpsInfoPath, RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    int fd = open(szLpsInfoPath, O_RDONLY);
+    if (fd >= 0)
     {
+        RTFILE hFile = fd;
         uint64_t u64Size;
         RTFileGetSize(hFile, &u64Size);
         size_t cbInfoHdrAndData = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -1176,6 +1211,8 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
             rc = VERR_NO_MEMORY;
         RTFileClose(hFile);
     }
+    else
+        rc = RTErrConvertFromErrno(rc);
 
     return rc;
 }
@@ -1751,7 +1788,8 @@ static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
  * @param pVBoxCore         Pointer to the core object.
  * @param pfnWriter         Pointer to the writer function to override default writer (NULL uses default).
  *
- * @remarks Resumes all suspended threads, unless it's an invalid core.
+ * @remarks Resumes all suspended threads, unless it's an invalid core. This
+ *          function must be called only -after- rtCoreDumperCreateCore().
  * @return VBox status.
  */
 static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
@@ -1766,28 +1804,34 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
 
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
     char szPath[PATH_MAX];
+    int rc = VINF_SUCCESS;
 
     /*
      * Open the process address space file.
      */
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
-    int rc = RTFileOpen(&pVBoxProc->hAs, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
-    if (RT_FAILURE(rc))
+    int fd = open(szPath, O_RDONLY);
+    if (fd < 0)
     {
+        rc = RTErrConvertFromErrno(fd);
         CORELOGRELSYS((CORELOG_NAME "WriteCore: Failed to open address space, %s. rc=%Rrc\n", szPath, rc));
         goto WriteCoreDone;
     }
 
+    pVBoxProc->hAs = fd;
+
     /*
      * Create the core file.
      */
-    rc = RTFileOpen(&pVBoxCore->hCoreFile, pVBoxCore->szCorePath,
-                    RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_READWRITE | RTFILE_O_DENY_ALL);
-    if (RT_FAILURE(rc))
+    fd = open(pVBoxCore->szCorePath, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR);
+    if (fd < 0)
     {
+        rc = RTErrConvertFromErrno(fd);
         CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pVBoxCore->szCorePath, rc));
         goto WriteCoreDone;
     }
+
+    pVBoxCore->hCoreFile = fd;
 
     pVBoxCore->offWrite = 0;
     uint32_t cProgHdrs  = pVBoxProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
@@ -1903,13 +1947,13 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
 
 
 WriteCoreDone:
-    if (pVBoxCore->hCoreFile != NIL_RTFILE)
+    if (pVBoxCore->hCoreFile != NIL_RTFILE)     /* Initialized in rtCoreDumperCreateCore() */
     {
         RTFileClose(pVBoxCore->hCoreFile);
         pVBoxCore->hCoreFile = NIL_RTFILE;
     }
 
-    if (pVBoxProc->hAs != NIL_RTFILE)
+    if (pVBoxProc->hAs != NIL_RTFILE)           /* Initialized in rtCoreDumperCreateCore() */
     {
         RTFileClose(pVBoxProc->hAs);
         pVBoxProc->hAs = NIL_RTFILE;
