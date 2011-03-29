@@ -19,6 +19,6 @@ MOD_OBJS = test_drm.o
 MOD_INCL = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
 MOD_CLEAN = . linux r0drv r0drv/linux
 # These are present in the shared folders Makefile but not the main one.
-# MOD_FLAGS = -DEXPORT_SYMTAB -DVBGL_VBOXGUEST -DRT_WITH_VBOX
+# MOD_CFLAGS = -DEXPORT_SYMTAB -DVBGL_VBOXGUEST -DRT_WITH_VBOX
 
 include $(obj)/Makefile.include.footer
