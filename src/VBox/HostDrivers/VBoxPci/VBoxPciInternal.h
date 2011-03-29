@@ -26,9 +26,9 @@
 #ifdef RT_OS_LINUX
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
-# ifdef DEBUG_nike
+//# ifdef DEBUG_nike
 #  define VBOX_WITH_IOMMU
-# endif
+//# endif
 #endif
 
 #ifdef VBOX_WITH_IOMMU
@@ -89,7 +89,7 @@ typedef struct VBOXRAWPCIINS
 } VBOXRAWPCIINS;
 
 /**
- * Per-VM data of the VBox PCI driver. Pointed to by pVM->rawpci.s.pOsData.
+ * Per-VM data of the VBox PCI driver. Pointed to by pGVM->rawpci.s.pDriverData.
  *
  */
 typedef struct VBOXRAWPCIDRVVM
@@ -99,10 +99,12 @@ typedef struct VBOXRAWPCIDRVVM
 
 #ifdef RT_OS_LINUX
 # ifdef VBOX_WITH_IOMMU
+    /* IOMMU domain. */
     struct iommu_domain* pIommuDomain;
 # endif
 #endif
-    int32_t        fFlags;
+    /* Back pointer to pGVM->rawpci.s. */
+    PRAWPCIPERVM pPerVmData;
 } VBOXRAWPCIDRVVM;
 
 /**

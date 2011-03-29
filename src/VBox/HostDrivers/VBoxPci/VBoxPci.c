@@ -383,7 +383,7 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHo
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTATE  aState)
+DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTATE  aState, uint64_t *pu64Param)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -391,6 +391,17 @@ DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTAT
     vboxPciDevLock(pThis);
 
     rc = vboxPciOsDevPowerStateChange(pThis, aState);
+
+    if (aState == PCIRAW_POWER_ON)
+    {
+        /*
+         * Let virtual device know about VM caps.
+         */
+        *pu64Param = VBOX_DRV_VMDATA(pThis)->pPerVmData->fVmCaps;
+    }
+    else
+        pu64Param = 0;
+
 
     vboxPciDevUnlock(pThis);
 
@@ -543,6 +554,7 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
             if (pVmData->pfnContigMemInfo)
                 pVmData->fVmCaps |= PCIRAW_VMFLAGS_HAS_IOMMU;
 #endif
+            pThis->pPerVmData = pVmData;
             pVmData->pDriverData = pThis;
             return VINF_SUCCESS;
         }
