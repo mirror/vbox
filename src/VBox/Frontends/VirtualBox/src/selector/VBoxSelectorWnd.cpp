@@ -1236,7 +1236,8 @@ void VBoxSelectorWnd::retranslateUi()
 
     /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
 
-    mVmDiscardAction->setText(tr("D&iscard"));
+    mVmDiscardAction->setIconText(tr("Discard"));
+    mVmDiscardAction->setText(tr("D&iscard Saved State"));
     mVmDiscardAction->setShortcut(gSS->keySequence(UISelectorShortcuts::DiscardVMShortcut));
     mVmDiscardAction->setStatusTip(
         tr("Discard the saved state of the selected virtual machine"));
