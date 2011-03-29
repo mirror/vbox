@@ -229,7 +229,17 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
             FreeLibrary(hSFC);
     }
 
-    /* Push simple return value on stack. */
-    SUCCEEDED(hr) ? pushstring("0") : pushstring("1");
+    TCHAR szErr[MAX_PATH + 1];
+    if (FAILED(hr))
+    {
+        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, hr, 0, szErr, MAX_PATH, NULL))
+            szErr[MAX_PATH] = '\0';
+        else
+            StringCchPrintf(szErr, sizeof(szErr),
+                            "FormatMessage failed! Error = %ld", GetLastError());
+    }
+    else
+        StringCchPrintf(szErr, sizeof(szErr), "0");
+    pushstring(szErr);
 }
 
