@@ -236,6 +236,8 @@ typedef struct PCIRAWREQPOWERSTATECHANGE
 {
     /* in */
     uint32_t             iState;
+    /* in/out */
+    uint64_t             u64Param;
 } PCIRAWREQPOWERSTATECHANGE;
 
 /**
@@ -420,20 +422,22 @@ typedef struct RAWPCIDEVPORT
      * Read device PCI register.
      *
      * @param   pPort     Pointer to this structure.
-     * @param   fFlags    Initialization flags.
+     * @param   Register  PCI register.
+     * @param   pValue    Read value (with desired read width).
      */
     DECLR0CALLBACKMEMBER(int,  pfnPciCfgRead,(PRAWPCIDEVPORT pPort,
-                                              uint32_t          Register,
-                                              PCIRAWMEMLOC      *pValue));
+                                              uint32_t       Register,
+                                              PCIRAWMEMLOC   *pValue));
 
 
     /**
      * Write device PCI register.
      *
      * @param   pPort     Pointer to this structure.
-     * @param   fFlags    Initialization flags.
+     * @param   Register  PCI register.
+     * @param   pValue    Write value (with desired write width).
      */
-    DECLR0CALLBACKMEMBER(int,  pfnPciCfgWrite,(PRAWPCIDEVPORT pPort,
+    DECLR0CALLBACKMEMBER(int,  pfnPciCfgWrite,(PRAWPCIDEVPORT    pPort,
                                                uint32_t          Register,
                                                PCIRAWMEMLOC      *pValue));
 
@@ -446,9 +450,9 @@ typedef struct RAWPCIDEVPORT
      * @param   piHostIrq   Which host IRQ is used.
      */
     DECLR0CALLBACKMEMBER(int,  pfnRegisterIrqHandler,(PRAWPCIDEVPORT pPort,
-                                                      PFNRAWPCIISR pfnHandler,
-                                                      void* pIrqContext,
-                                                      int32_t *piHostIrq));
+                                                      PFNRAWPCIISR   pfnHandler,
+                                                      void*          pIrqContext,
+                                                      int32_t        *piHostIrq));
 
     /**
      * Request to unregister interrupt handler.
@@ -457,16 +461,18 @@ typedef struct RAWPCIDEVPORT
      * @param   iHostIrq    Which host IRQ was used (retured by earlier pfnRegisterIrqHandler).
      */
     DECLR0CALLBACKMEMBER(int,  pfnUnregisterIrqHandler,(PRAWPCIDEVPORT pPort,
-                                                        int32_t iHostIrq));
+                                                        int32_t        iHostIrq));
 
     /**
      * Power state change notification.
      *
      * @param   pPort       Pointer to this structure.
      * @param   aState      New power state.
+     * @param   pu64Param   State-specific in/out parameter.
      */
-    DECLR0CALLBACKMEMBER(int,  pfnPowerStateChange,(PRAWPCIDEVPORT pPort,
-                                                    PCIRAWPOWERSTATE  aState));
+    DECLR0CALLBACKMEMBER(int,  pfnPowerStateChange,(PRAWPCIDEVPORT    pPort,
+                                                    PCIRAWPOWERSTATE  aState,
+                                                    uint64_t          *pu64Param));
 
     /** Structure version number. (RAWPCIDEVPORT_VERSION) */
     uint32_t u32VersionEnd;
