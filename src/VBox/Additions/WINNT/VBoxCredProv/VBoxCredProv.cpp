@@ -152,6 +152,7 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
             if (!HandleCurrentSession())
             {
                 LogRel(("VBoxCredProv: Handling of remote desktop sessions is disabled.\n"));
+                hr = S_OK; /* Just report back that everything is fine to prevent winlogon from stopping. */
                 break;
             }
 
