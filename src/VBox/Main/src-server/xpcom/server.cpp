@@ -614,95 +614,22 @@ NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC(VirtualBox, VirtualBoxClassFact
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef NSFactoryDestructorProcPtr NSFactoryConsructorProcPtr;
+typedef NSFactoryDestructorProcPtr NSFactoryConstructorProcPtr;
 
 /**
  *  Enhanced module component information structure.
  *
  *  nsModuleComponentInfo lacks the factory construction callback, here we add
- *  it. This callback is called by NS_NewGenericFactoryEx() after a
- *  nsGenericFactory instance is successfully created.
+ *  it. This callback is called straight after a nsGenericFactory instance is
+ *  successfully created in RegisterSelfComponents.
  */
-struct nsModuleComponentInfoEx : nsModuleComponentInfo
+struct nsModuleComponentInfoPlusFactoryConstructor
 {
-    nsModuleComponentInfoEx() {}
-    nsModuleComponentInfoEx(int) {}
-
-    nsModuleComponentInfoEx(
-        const char*                                 aDescription,
-        const nsCID&                                aCID,
-        const char*                                 aContractID,
-        NSConstructorProcPtr                        aConstructor,
-        NSRegisterSelfProcPtr                       aRegisterSelfProc,
-        NSUnregisterSelfProcPtr                     aUnregisterSelfProc,
-        NSFactoryDestructorProcPtr                  aFactoryDestructor,
-        NSGetInterfacesProcPtr                      aGetInterfacesProc,
-        NSGetLanguageHelperProcPtr                  aGetLanguageHelperProc,
-        nsIClassInfo **                             aClassInfoGlobal,
-        PRUint32                                    aFlags,
-        NSFactoryConsructorProcPtr                  aFactoryConstructor)
-    {
-        mDescription = aDescription;
-        mCID = aCID;
-        mContractID = aContractID;
-        mConstructor = aConstructor;
-        mRegisterSelfProc = aRegisterSelfProc;
-        mUnregisterSelfProc = aUnregisterSelfProc;
-        mFactoryDestructor = aFactoryDestructor;
-        mGetInterfacesProc = aGetInterfacesProc;
-        mGetLanguageHelperProc = aGetLanguageHelperProc;
-        mClassInfoGlobal = aClassInfoGlobal;
-        mFlags = aFlags;
-        mFactoryConstructor = aFactoryConstructor;
-    }
-
+    /** standard module component information */
+    const nsModuleComponentInfo *mpModuleComponentInfo;
     /** (optional) Factory Construction Callback */
-    NSFactoryConsructorProcPtr mFactoryConstructor;
+    NSFactoryConstructorProcPtr mFactoryConstructor;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-static const nsModuleComponentInfoEx components[] =
-{
-    nsModuleComponentInfoEx(
-        "VirtualBox component",
-        CLSID_VirtualBox,
-        NS_VIRTUALBOX_CONTRACTID,
-        VirtualBoxConstructor, // constructor function
-        NULL, // registration function
-        NULL, // deregistration function
-        VirtualBoxClassFactory::FactoryDestructor, // factory destructor function
-        NS_CI_INTERFACE_GETTER_NAME(VirtualBox),
-        NULL, // language helper
-        &NS_CLASSINFO_NAME(VirtualBox),
-        0, // flags
-        VirtualBoxClassFactory::FactoryConstructor // factory constructor function
-    )
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Extends NS_NewGenericFactory() by immediately calling
- *  nsModuleComponentInfoEx::mFactoryConstructor before returning to the
- *  caller.
- */
-nsresult
-NS_NewGenericFactoryEx(nsIGenericFactory **result,
-                       const nsModuleComponentInfoEx *info)
-{
-    AssertReturn(result, NS_ERROR_INVALID_POINTER);
-
-    nsresult rv = NS_NewGenericFactory(result, info);
-    if (NS_SUCCEEDED(rv) && info && info->mFactoryConstructor)
-    {
-        rv = info->mFactoryConstructor();
-        if (NS_FAILED(rv))
-            NS_RELEASE(*result);
-    }
-
-    return rv;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -712,26 +639,32 @@ NS_NewGenericFactoryEx(nsIGenericFactory **result,
  */
 static nsresult
 RegisterSelfComponents(nsIComponentRegistrar *registrar,
-                       const nsModuleComponentInfoEx *aComponents,
+                       const nsModuleComponentInfoPlusFactoryConstructor *aComponents,
                        PRUint32 count)
 {
     nsresult rc = NS_OK;
-    const nsModuleComponentInfoEx *info = aComponents;
+    const nsModuleComponentInfoPlusFactoryConstructor *info = aComponents;
     for (PRUint32 i = 0; i < count && NS_SUCCEEDED(rc); i++, info++)
     {
         /* skip components w/o a constructor */
-        if (!info->mConstructor)
+        if (!info->mpModuleComponentInfo->mConstructor)
             continue;
         /* create a new generic factory for a component and register it */
         nsIGenericFactory *factory;
-        rc = NS_NewGenericFactoryEx(&factory, info);
+        rc = NS_NewGenericFactory(&factory, info->mpModuleComponentInfo);
+        if (NS_SUCCEEDED(rc) && info->mFactoryConstructor)
+        {
+            rc = info->mFactoryConstructor();
+            if (NS_FAILED(rc))
+                NS_RELEASE(factory);
+        }
         if (NS_SUCCEEDED(rc))
         {
-            rc = registrar->RegisterFactory(info->mCID,
-                                            info->mDescription,
-                                            info->mContractID,
+            rc = registrar->RegisterFactory(info->mpModuleComponentInfo->mCID,
+                                            info->mpModuleComponentInfo->mDescription,
+                                            info->mpModuleComponentInfo->mContractID,
                                             factory);
-            factory->Release();
+            NS_RELEASE(factory);
         }
     }
     return rc;
@@ -923,6 +856,27 @@ int main(int argc, char **argv)
     daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
     RTEnvUnset("NSPR_INHERIT_FDS");
 
+    const nsModuleComponentInfo VirtualBoxInfo = {
+        "VirtualBox component",
+        CLSID_VirtualBox,
+        NS_VIRTUALBOX_CONTRACTID,
+        VirtualBoxConstructor, // constructor function
+        NULL, // registration function
+        NULL, // deregistration function
+        VirtualBoxClassFactory::FactoryDestructor, // factory destructor function
+        NS_CI_INTERFACE_GETTER_NAME(VirtualBox),
+        NULL, // language helper
+        &NS_CLASSINFO_NAME(VirtualBox),
+        0 // flags
+    };
+
+    const nsModuleComponentInfoPlusFactoryConstructor components[] = {
+        {
+            &VirtualBoxInfo,
+            VirtualBoxClassFactory::FactoryConstructor // factory constructor function
+        }
+    };
+
     do
     {
         rc = com::Initialize();
@@ -942,7 +896,7 @@ int main(int argc, char **argv)
 
         registrar->AutoRegister(nsnull);
         rc = RegisterSelfComponents(registrar, components,
-                                    NS_ARRAY_LENGTH (components));
+                                    NS_ARRAY_LENGTH(components));
         if (NS_FAILED(rc))
         {
             RTMsgError("Failed to register server components! (rc=%Rhrc)", rc);

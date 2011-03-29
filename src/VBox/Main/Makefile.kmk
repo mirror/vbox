@@ -244,10 +244,6 @@ VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.freebsd += VBOX_USE_LIBHAL
 
 VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
-## @todo We're disabling optimizations on FreeBSD to work around strange linker
-#        errors in release builds. Figure out why and how to work around it in a
-#        more optimal fashion.
-VBoxSVC_CXXFLAGS.freebsd = -O0
 
 VBoxSVC_INCS = \
 	include \
