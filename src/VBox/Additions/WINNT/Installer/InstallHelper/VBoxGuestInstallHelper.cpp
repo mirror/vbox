@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,9 @@
 
 HINSTANCE g_hInstance;
 HWND g_hwndParent;
+
+typedef DWORD (__stdcall *fnSfcFileException) (DWORD param1, PWCHAR param2, DWORD param3);
+fnSfcFileException g_pfnSfcFileException = NULL;
 
 #define VBOXINSTALLHELPER_EXPORT extern "C" void __declspec(dllexport)
 
@@ -178,5 +181,53 @@ BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
 {
     g_hInstance = (HINSTANCE)hInst;
     return TRUE;
+}
+
+/**
+ * Disables the Windows File Protection for a specified file
+ * using an undocumented SFC API call. Don't try this at home!
+ *
+ * @param   hwndParent          Window handle of parent.
+ * @param   string_size         Size of variable string.
+ * @param   variables           The actual variable string.
+ * @param   stacktop            Pointer to a pointer to the current stack.
+ */
+VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
+                                    TCHAR *variables, stack_t **stacktop)
+{
+    TCHAR szFile[MAX_PATH + 1];
+    HRESULT hr = VBoxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
+    if (SUCCEEDED(hr))
+    {
+        HMODULE hSFC = LoadLibrary("sfc_os.dll");
+        if (NULL != hSFC)
+        {
+            g_pfnSfcFileException = (fnSfcFileException)GetProcAddress(hSFC, "SfcFileException");
+            if (g_pfnSfcFileException == NULL)
+            {
+                /* If we didn't get the proc address with the call above, try it harder with
+                 * the (zero based) index of the function list. */
+                g_pfnSfcFileException = (fnSfcFileException)GetProcAddress(hSFC, (LPCSTR)5);
+                if (g_pfnSfcFileException == NULL)
+                    hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
+            }
+        }
+        else
+            hr = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+
+        if (SUCCEEDED(hr))
+        {
+            WCHAR wszFile[MAX_PATH + 1];
+            hr = StringCchPrintfW(wszFile, sizeof(wszFile), L"%s", szFile);
+            if (SUCCEEDED(hr))
+                hr = HRESULT_FROM_WIN32(g_pfnSfcFileException(0, wszFile, -1));
+        }
+
+        if (hSFC)
+            FreeLibrary(hSFC);
+    }
+
+    /* Push simple return value on stack. */
+    SUCCEEDED(hr) ? pushstring("0") : pushstring("1");
 }
 
