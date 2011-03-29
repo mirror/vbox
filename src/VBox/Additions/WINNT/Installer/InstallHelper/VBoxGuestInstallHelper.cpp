@@ -195,6 +195,8 @@ BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
 VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
                                     TCHAR *variables, stack_t **stacktop)
 {
+    EXDLL_INIT();
+
     TCHAR szFile[MAX_PATH + 1];
     HRESULT hr = VBoxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
