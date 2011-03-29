@@ -203,9 +203,10 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         rc = ::RegQueryValueEx(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)szVal, &dwLen);
         if(rc == ERROR_SUCCESS)
             LogString(hModule, TEXT("InstallPythonAPI: Path \"%s\" detected."), szVal);
-    }
 
-    ::RegCloseKey (hkPythonCore);
+        ::RegCloseKey(hkPythonInstPath);
+    }
+    ::RegCloseKey(hkPythonCore);
 
     /* Python path found? */
     TCHAR szExec[MAX_PATH] = { 0 };
