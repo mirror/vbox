@@ -702,12 +702,14 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
             <para>On On Mac OS X only the Python versions bundled with the OS
             are officially supported. This means Python 2.3 for 10.4, Python
             2.5 for 10.5 and Python 2.5 and 2.6 for 10.6.</para>
-          </footnote>), and you cannot connect to VirtualBox remotely. On
-        Windows, you can use the Main API from Python if the Win32 extensions
-        package for Python<footnote>
+          </footnote>). On Windows, you can use the Main API from Python if the Win32 extensions
+          package for Python<footnote>
             <para>See <ulink
             url="http://sourceforge.net/project/showfiles.php?group_id=78018">http://sourceforge.net/project/showfiles.php?group_id=78018</ulink>.</para>
-          </footnote> is installed.</para>
+          </footnote> is installed. Version of Python Win32 extensions earlier than 2.16 are known to have bugs, \
+          leading to issues with VirtualBox Python bindings, and also some early builds of Python 2.5 for Windows have issues with 
+          reporting platform name on some Windows versions, so please make sure to use latest available Python 
+          and Win32 extensions.</para>
 
         <para>The VirtualBox OOWS for Python relies on the Python ZSI SOAP
         implementation (see <ulink
