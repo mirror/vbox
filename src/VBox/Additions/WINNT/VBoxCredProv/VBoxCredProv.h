@@ -85,8 +85,12 @@ class VBoxCredProv : public ICredentialProvider
 
     public:
 
+        DWORD LoadConfiguration();
+        bool HandleCurrentSession();
+
         /** Events. */
         void OnCredentialsProvided();
+
     private:
 
         /** Interface reference count. */
@@ -103,6 +107,9 @@ class VBoxCredProv : public ICredentialProvider
         CREDENTIAL_PROVIDER_USAGE_SCENARIO       m_cpUsageScenario;
         /** Flag indicating we got some credentials to work with. */
         bool                                     m_fGotCredentials;
+        /** Flag whether we need to handle remote session over Windows Remote
+         *  Desktop Service. */
+        bool                                     m_fHandleRemoteSessions;
 };
 
 #endif /* ___VBoxCredProv_h */

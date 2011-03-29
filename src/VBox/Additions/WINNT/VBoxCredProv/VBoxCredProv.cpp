@@ -6,7 +6,7 @@
 //
 // Copyright (c) 2006 Microsoft Corporation. All rights reserved.
 //
-// Modifications (c) 2009-2010 Oracle Corporation
+// Modifications (c) 2009-2011 Oracle Corporation
 //
 
 #include <credentialprovider.h>
@@ -24,7 +24,8 @@ VBoxCredProv::VBoxCredProv(void) :
     m_pPoller(NULL),
     m_pCred(NULL),
     m_pCredProvEvents(NULL),
-    m_fGotCredentials(false)
+    m_fGotCredentials(false),
+    m_fHandleRemoteSessions(false)
 {
     LONG l = DllAddRef();
 
@@ -68,6 +69,56 @@ VBoxCredProv::~VBoxCredProv(void)
 }
 
 
+/**
+ * Loads the global configuration from registry.
+ *
+ * @return  DWORD       Windows error code.
+ */
+DWORD VBoxCredProv::LoadConfiguration(void)
+{
+    HKEY hKey;
+    /** @todo Add some registry wrapper function(s) as soon as we got more values to retrieve. */
+    DWORD dwRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Oracle\\VirtualBox Guest Additions\\AutoLogon",
+                               0L, KEY_QUERY_VALUE, &hKey);
+    if (dwRet == ERROR_SUCCESS)
+    {
+        DWORD dwValue;
+        DWORD dwType = REG_DWORD;
+        DWORD dwSize = sizeof(DWORD);
+
+        dwRet = RegQueryValueEx(hKey, L"HandleRemoteSessions", NULL, &dwType, (LPBYTE)&dwValue, &dwSize);
+        if (   dwRet  == ERROR_SUCCESS
+            && dwType == REG_DWORD
+            && dwSize == sizeof(DWORD))
+        {
+            m_fHandleRemoteSessions = true;
+        }
+        RegCloseKey(hKey);
+    }
+    /* Do not report back an error here yet. */
+    return ERROR_SUCCESS;
+}
+
+
+/**
+ * Determines whether we should handle the current session or not.
+ *
+ * @return  bool        true if we should handle this session, false if not.
+ */
+bool VBoxCredProv::HandleCurrentSession(void)
+{
+    bool fHandle = false;
+    if (isRemoteSession())
+    {
+        if (m_fHandleRemoteSessions) /* Force remote session handling. */
+            fHandle = true;
+    }
+    else /* No remote session. */
+        fHandle = true;
+    return fHandle;
+}
+
+
 /*
  * SetUsageScenario is the provider's cue that it's going to be asked for tiles
  * in a subsequent call. This call happens after the user pressed CTRL+ALT+DEL
@@ -78,6 +129,7 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
 {
     UNREFERENCED_PARAMETER(dwFlags);
     HRESULT hr;
+    DWORD dwErr;
 
     m_cpUsageScenario = cpUsageScenario;
 
@@ -87,6 +139,21 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
     {
         case CPUS_LOGON:
         case CPUS_UNLOCK_WORKSTATION:
+
+            dwErr = LoadConfiguration();
+            if (dwErr != ERROR_SUCCESS)
+                LogRel(("VBoxCredProv: Error while loading configuration, error=%ld\n", dwErr));
+            /* Do not stop running on a misconfigured system. */
+
+            /*
+             * If we're told to not handle the current session just bail out and let the
+             * user know.
+             */
+            if (!HandleCurrentSession())
+            {
+                LogRel(("VBoxCredProv: Handling of remote desktop sessions is disabled.\n"));
+                break;
+            }
 
             if (m_pPoller == NULL)
             {
