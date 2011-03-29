@@ -9,7 +9,7 @@
 // Helper functions for copying parameters and packaging the buffer
 // for GetSerialization.
 //
-// Modifications (c) 2009-2010 Oracle Corporation
+// Modifications (c) 2009-2011 Oracle Corporation
 //
 
 #include "helpers.h"
@@ -17,14 +17,22 @@
 
 #include <VBox/log.h>
 
+/**
+ * Detects whether our process is running in a remote session or not.
+ *
+ * @return  bool        true if running in a remote session, false if not.
+ */
+bool isRemoteSession(void)
+{
+    return (0 != GetSystemMetrics(SM_REMOTESESSION)) ? true : false;
+}
+
 //
 // Copies the field descriptor pointed to by rcpfd into a buffer allocated
 // using CoTaskMemAlloc. Returns that buffer in ppcpfd.
 //
-HRESULT FieldDescriptorCoAllocCopy(
-                                   const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-                                   CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd
-                                   )
+HRESULT FieldDescriptorCoAllocCopy(const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
+                                   CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd)
 {
     HRESULT hr;
     DWORD cbStruct = sizeof(CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR);
@@ -70,10 +78,8 @@ HRESULT FieldDescriptorCoAllocCopy(
 // allocating pcpfd. This function uses CoTaskMemAlloc to allocate memory for
 // pcpfd->pszLabel.
 //
-HRESULT FieldDescriptorCopy(
-                            const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-                            CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd
-                            )
+HRESULT FieldDescriptorCopy(const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
+                            CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd)
 {
     HRESULT hr;
     CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR cpfd;
@@ -106,10 +112,8 @@ HRESULT FieldDescriptorCopy(
 // Be very, very sure that this is what you want, because it probably isn't outside of the
 // exact GetSerialization call where the sample uses it.
 //
-HRESULT UnicodeStringInitWithString(
-                                    PWSTR pwz,
-                                    UNICODE_STRING* pus
-                                    )
+HRESULT UnicodeStringInitWithString(PWSTR pwz,
+                                    UNICODE_STRING* pus)
 {
     HRESULT hr;
     if (pwz)
@@ -155,11 +159,8 @@ HRESULT UnicodeStringInitWithString(
 // You can read more about the UNICODE_STRING type at:
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/secauthn/security/unicode_string.asp
 //
-static void _UnicodeStringPackedUnicodeStringCopy(
-    const UNICODE_STRING& rus,
-    PWSTR pwzBuffer,
-    UNICODE_STRING* pus
-    )
+static void _UnicodeStringPackedUnicodeStringCopy(const UNICODE_STRING& rus,
+                                                  PWSTR pwzBuffer, UNICODE_STRING* pus)
 {
     pus->Length = rus.Length;
     pus->MaximumLength = rus.Length;
@@ -185,11 +186,8 @@ static void _UnicodeStringPackedUnicodeStringCopy(
 // There's more information on this at:
 // http://msdn.microsoft.com/msdnmag/issues/05/06/SecurityBriefs/#void
 //
-HRESULT KerbInteractiveUnlockLogonPack(
-                                       const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
-                                       BYTE** prgb,
-                                       DWORD* pcb
-                                       )
+HRESULT KerbInteractiveUnlockLogonPack(const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
+                                       BYTE** prgb, DWORD* pcb)
 {
     HRESULT hr;
 
@@ -253,9 +251,7 @@ HRESULT KerbInteractiveUnlockLogonPack(
 // being real pointers.  This means, of course, that passing the resultant struct across any sort of
 // memory space boundary is not going to work -- repack it if necessary!
 //
-void KerbInteractiveUnlockLogonUnpackInPlace(
-    __inout_bcount(cb) KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
-    )
+void KerbInteractiveUnlockLogonUnpackInPlace(__inout_bcount(cb) KERB_INTERACTIVE_UNLOCK_LOGON* pkiul)
 {
     KERB_INTERACTIVE_LOGON* pkil = &pkiul->Logon;
 
@@ -340,3 +336,4 @@ PRTLOGGER RTLogDefaultInit(void)
 {
     return NULL;
 }
+

@@ -9,7 +9,7 @@
 // Helper functions for copying parameters and packaging the buffer
 // for GetSerialization.
 //
-// Modifications (c) 2009-2010 Oracle Corporation
+// Modifications (c) 2009-2011 Oracle Corporation
 //
 
 #pragma once
@@ -23,39 +23,27 @@
 #pragma warning(pop)
 
 
+bool isRemoteSession(void);
 
 //makes a copy of a field descriptor using CoTaskMemAlloc
-HRESULT FieldDescriptorCoAllocCopy(
-    const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-    CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd
-    );
+HRESULT FieldDescriptorCoAllocCopy(const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
+                                   CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR** ppcpfd);
 
 //makes a copy of a field descriptor on the normal heap
-HRESULT FieldDescriptorCopy(
-    const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
-    CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd
-    );
+HRESULT FieldDescriptorCopy(const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR& rcpfd,
+                            CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* pcpfd);
 
 //creates a UNICODE_STRING from a normal string
-HRESULT UnicodeStringInitWithString(
-    PWSTR pwz,
-    UNICODE_STRING* pus
-    );
+HRESULT UnicodeStringInitWithString(PWSTR pwz,
+                                    UNICODE_STRING* pus);
 
 //packages the credentials into the buffer that the system expects
-HRESULT KerbInteractiveUnlockLogonPack(
-    const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
-    BYTE** prgb,
-    DWORD* pcb
-    );
+HRESULT KerbInteractiveUnlockLogonPack(const KERB_INTERACTIVE_UNLOCK_LOGON& rkiulIn,
+                                       BYTE** prgb, DWORD* pcb);
 
 //unpacks the "packed" version of the creds in-place into the "unpacked" version
-void KerbInteractiveUnlockLogonUnpackInPlace(
-    KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
-    );
+void KerbInteractiveUnlockLogonUnpackInPlace(KERB_INTERACTIVE_UNLOCK_LOGON* pkiul);
 
 //get the authentication package that will be used for our logon attempt
-HRESULT RetrieveNegotiateAuthPackage(
-    ULONG * pulAuthPackage
-    );
+HRESULT RetrieveNegotiateAuthPackage(ULONG * pulAuthPackage);
 
