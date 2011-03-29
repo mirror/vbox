@@ -3,7 +3,7 @@
 #
 # (For 2.6.x, the main file must be called 'Makefile'!)
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,10 @@
 # include Makefile.include
 # MOD_NAME = <name of the module to be built, without extension>
 # MOD_OBJS = <list of object files which should be included>
+# MOD_DEFS = <any additional defines which this module needs>
+# MOD_INCL = <any additional include paths which this module needs>
 # MOD_FLAGS = <any additional CFLAGS which this module needs>
+# MOD_CLEAN = <list of directories that the clean target should look at>
 #
 # The kmk kBuild define KBUILD_TARGET_ARCH is available.
 #
@@ -120,7 +123,8 @@ else # neq($(KERNELRELEASE),)
  #
 
  # guess kernel version (24 or 26)
- ifeq ($(shell if echo "$(VERSION).$(PATCHLEVEL)." | grep '2\.4\.' > /dev/null; then echo yes; fi),yes) 
+# MOD_OBJS = <list of object files which should be included>
+ ifeq ($(shell if echo "$(VERSION).$(PATCHLEVEL)." | grep '2\.4\.' > /dev/null; then echo yes; fi),yes)
   KERN_VERSION := 24
  else
   KERN_VERSION := 26
@@ -146,12 +150,12 @@ ifndef INCL
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
- INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+ INCL    += $(MOD_INCL)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 \
-	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM \
-	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE -DIN_GUEST_R0
+KFLAGS   := -D__KERNEL__ -DMODULE \
+		-DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_MODULE \
+		-DRT_WITH_VBOX $(MOD_DEFS)
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -DRT_ARCH_AMD64 -DVBOX_WITH_64_BITS_GUESTS
 else
@@ -166,7 +170,12 @@ ifeq ($(KERN_VERSION), 24)
 # 2.4
 #
 
-CFLAGS := -O2 -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB $(INCL) $(KFLAGS) $(KDEBUG)
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ KFLAGS  += -mcmodel=kernel
+endif
+
+CFLAGS := -O2 -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB $(INCL) $(KFLAGS) $(KDEBUG) \
+		$(MOD_CFLAGS)
 MODULE_EXT := o
 
 # 2.4 Module linking
@@ -187,7 +196,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG) $(MOD_CFLAGS)
 
 all: $(MODULE)
 
@@ -206,5 +215,5 @@ install: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	for f in $(MOD_CLEAN); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .$(MOD_NAME)* .tmp_ver* $(MOD_NAME).* Module.symvers Modules.symvers modules.order
