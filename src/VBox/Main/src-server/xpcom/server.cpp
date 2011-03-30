@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -858,7 +858,7 @@ int main(int argc, char **argv)
 
     const nsModuleComponentInfo VirtualBoxInfo = {
         "VirtualBox component",
-        CLSID_VirtualBox,
+        NS_VIRTUALBOX_CID,
         NS_VIRTUALBOX_CONTRACTID,
         VirtualBoxConstructor, // constructor function
         NULL, // registration function
