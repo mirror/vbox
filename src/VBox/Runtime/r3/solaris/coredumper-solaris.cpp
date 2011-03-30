@@ -902,7 +902,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
                     }
                 }
                 else
-                    CORELOGRELSYS((CORELOG_NAME "ProcReadThreads: Invalid state information for threads.\n", rc));
+                    CORELOGRELSYS((CORELOG_NAME "ProcReadThreads: Invalid state information for threads. rc=%Rrc\n", rc));
             }
             else
             {
