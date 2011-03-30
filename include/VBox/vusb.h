@@ -196,6 +196,8 @@ typedef struct VUSBDESCCONFIGEX
     /** Pointer to an array of the interfaces referenced in the configuration.
      * Core.bNumInterfaces in size. */
     const struct VUSBINTERFACE *paIfs;
+    /** Pointer to the original descriptor data read from the device. */
+    const void *pvOriginal;
 } VUSBDESCCONFIGEX;
 /** Pointer to a parsed USB configuration descriptor. */
 typedef VUSBDESCCONFIGEX *PVUSBDESCCONFIGEX;
