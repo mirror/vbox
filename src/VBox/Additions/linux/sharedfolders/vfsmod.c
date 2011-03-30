@@ -446,27 +446,38 @@ sf_read_super_26(struct super_block *sb, void *data, int flags)
     return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 static struct super_block *sf_get_sb(struct file_system_type *fs_type, int flags,
-        const char *dev_name, void *data)
+                                     const char *dev_name, void *data)
 {
     TRACE();
     return get_sb_nodev(fs_type, flags, data, sf_read_super_26);
 }
-#else
+# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 static int sf_get_sb(struct file_system_type *fs_type, int flags,
                      const char *dev_name, void *data, struct vfsmount *mnt)
 {
     TRACE();
     return get_sb_nodev(fs_type, flags, data, sf_read_super_26, mnt);
 }
-#endif
+# else
+static struct dentry *sf_mount(struct file_system_type *fs_type, int flags,
+                               const char *dev_name, void *data)
+{
+    TRACE();
+    return mount_nodev(fs_type, flags, data, sf_read_super_26);
+}
+# endif
 
 static struct file_system_type vboxsf_fs_type =
 {
     .owner   = THIS_MODULE,
     .name    = "vboxsf",
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
     .get_sb  = sf_get_sb,
+# else
+    .mount   = sf_mount,
+# endif
     .kill_sb = kill_anon_super
 };
 #endif
