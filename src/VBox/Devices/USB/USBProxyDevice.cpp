@@ -319,7 +319,13 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
                 pIf->paSettings = cur_if;
 
             memcpy(cur_if, ifd, sizeof(cur_if->Core));
-            /** @todo copy any additional descriptor bytes into pvMore */
+
+            /* Point to additional interface descriptor bytes, if any. */
+            AssertCompile(sizeof(cur_if->Core) == VUSB_DT_INTERFACE_MIN_LEN);
+            if (cur_if->Core.bLength - VUSB_DT_INTERFACE_MIN_LEN > 0)
+                cur_if->pvMore = tmp + VUSB_DT_INTERFACE_MIN_LEN;
+            else
+                cur_if->pvMore = NULL;
 
             pIf->cSettings++;
 
@@ -342,7 +348,14 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
                 return 0;
 
             memcpy(cur_ep, epd, sizeof(cur_ep->Core));
-            /** @todo copy any additional descriptor bytes into pvMore */
+
+            /* Point to additional endpoint descriptor bytes, if any. */
+            AssertCompile(sizeof(cur_ep->Core) == VUSB_DT_ENDPOINT_MIN_LEN);
+            if (cur_ep->Core.bLength - VUSB_DT_ENDPOINT_MIN_LEN > 0)
+                cur_ep->pvMore = tmp + VUSB_DT_ENDPOINT_MIN_LEN;
+            else
+                cur_ep->pvMore = NULL;
+
             cur_ep->Core.wMaxPacketSize = RT_LE2H_U16(cur_ep->Core.wMaxPacketSize);
 
             num_ep++;
@@ -404,6 +417,9 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
         return false;
     }
 
+    /* Stash a pointer to the raw config descriptor; we may need bits of it later.  */
+    out->pvOriginal = descs;
+
     pIf = (PVUSBINTERFACE)out->paIfs;
     ifd = (PVUSBDESCINTERFACEEX)&pIf[cnt.num_if];
     epd = (PVUSBDESCENDPOINTEX)&ifd[cnt.num_id];
@@ -425,7 +441,6 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
                     goto err;
                 }
 
-    free_desc(descs);
     return true;
 err:
     Log(("usb-proxy: config%u: Corrupted configuration descriptor\n", idx));
@@ -668,7 +683,10 @@ static DECLCALLBACK(void) usbProxyDestruct(PPDMUSBINS pUsbIns)
     if (pThis->paCfgDescs)
     {
         for (unsigned i = 0; i < pThis->DevDesc.bNumConfigurations; i++)
+        {
             RTMemFree((void *)pThis->paCfgDescs[i].paIfs);
+            RTMemFree((void *)pThis->paCfgDescs[i].pvOriginal);
+        }
         /** @todo bugref{2693} cleanup */
         RTMemFree(pThis->paCfgDescs);
         pThis->paCfgDescs = NULL;
