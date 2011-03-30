@@ -66,63 +66,83 @@
 #include "vboxvideo_drm.h"
 
 static struct pci_device_id pciidlist[] = {
-	vboxvideo_PCI_IDS
+        vboxvideo_PCI_IDS
 };
 
 int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 28)
-	return drm_vblank_init(dev, 1);
+    return drm_vblank_init(dev, 1);
 #else
     return 0;
 #endif
 }
 
-static struct drm_driver driver = {
-	/* .driver_features = DRIVER_USE_MTRR, */
-	.load = vboxvideo_driver_load,
-	.reclaim_buffers = drm_core_reclaim_buffers,
-        /* As of Linux 2.65.37, always the internal functions are used. */
+static struct drm_driver driver =
+{
+    /* .driver_features = DRIVER_USE_MTRR, */
+    .load = vboxvideo_driver_load,
+    .reclaim_buffers = drm_core_reclaim_buffers,
+    /* As of Linux 2.65.37, always the internal functions are used. */
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 37)
-	.get_map_ofs = drm_core_get_map_ofs,
-	.get_reg_ofs = drm_core_get_reg_ofs,
+    .get_map_ofs = drm_core_get_map_ofs,
+    .get_reg_ofs = drm_core_get_reg_ofs,
 #endif
-	.fops = {
-		 .owner = THIS_MODULE,
-		 .open = drm_open,
-		 .release = drm_release,
-                 /* This was changed with Linux 2.6.33 but Fedora backported this
-                  * change to their 2.6.32 kernel. */
+    .fops =
+    {
+        .owner = THIS_MODULE,
+        .open = drm_open,
+        .release = drm_release,
+        /* This was changed with Linux 2.6.33 but Fedora backported this
+         * change to their 2.6.32 kernel. */
 #if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 33)
-		 .unlocked_ioctl = drm_ioctl,
+        .unlocked_ioctl = drm_ioctl,
 #else
-		 .ioctl = drm_ioctl,
+        .ioctl = drm_ioctl,
 #endif
-		 .mmap = drm_mmap,
-		 .poll = drm_poll,
-		 .fasync = drm_fasync,
-	},
-	.pci_driver = {
-		 .name = DRIVER_NAME,
-		 .id_table = pciidlist,
-	},
-
-	.name = DRIVER_NAME,
-	.desc = DRIVER_DESC,
-	.date = DRIVER_DATE,
-	.major = DRIVER_MAJOR,
-	.minor = DRIVER_MINOR,
-	.patchlevel = DRIVER_PATCHLEVEL,
+        .mmap = drm_mmap,
+        .poll = drm_poll,
+        .fasync = drm_fasync,
+    },
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+    .pci_driver =
+    {
+        .name = DRIVER_NAME,
+        .id_table = pciidlist,
+    },
+#endif
+    .name = DRIVER_NAME,
+    .desc = DRIVER_DESC,
+    .date = DRIVER_DATE,
+    .major = DRIVER_MAJOR,
+    .minor = DRIVER_MINOR,
+    .patchlevel = DRIVER_PATCHLEVEL,
 };
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39)
+static struct pci_driver pci_driver =
+{
+    .name = DRIVER_NAME,
+    .id_table = pciidlist,
+};
+#endif
 
 static int __init vboxvideo_init(void)
 {
-	return drm_init(&driver);
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+    return drm_init(&driver);
+#else
+    return drm_pci_init(&driver, &pci_driver);
+#endif
 }
 
 static void __exit vboxvideo_exit(void)
 {
-	drm_exit(&driver);
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+    drm_exit(&driver);
+#else
+    drm_pci_exit(&driver, &pci_driver);
+#endif
 }
 
 module_init(vboxvideo_init);
