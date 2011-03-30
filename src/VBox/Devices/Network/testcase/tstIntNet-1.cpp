@@ -447,7 +447,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
         WaitReq.hIf = hIf;
         WaitReq.cMillies = cMillies - (uint32_t)cElapsedMillies;
         int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
-        if (rc == VERR_TIMEOUT)
+        if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
             break;
         if (RT_FAILURE(rc))
         {
