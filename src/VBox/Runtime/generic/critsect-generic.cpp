@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define CRITSECT_WITHOUT_REMAPPING
 #include <iprt/critsect.h>
 #include "internal/iprt.h"
 
@@ -40,7 +41,6 @@
 #include "internal/strict.h"
 
 
-#undef RTCritSectInit
 RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 {
     return RTCritSectInitEx(pCritSect, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTCritSect");
@@ -163,7 +163,6 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
 }
 
 
-#undef RTCritSectTryEnter
 RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
 {
 #ifndef RTCRTISECT_STRICT
@@ -282,7 +281,6 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 }
 
 
-#undef RTCritSectEnter
 RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
 {
 #ifndef RTCRITSECT_STRICT
@@ -425,7 +423,6 @@ static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects,
 }
 
 
-#undef RTCritSectEnterMultiple
 RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
 {
 #ifndef RTCRITSECT_STRICT

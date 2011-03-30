@@ -332,7 +332,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 }
 
 /* Lock strict build: Remap the three enter calls to the debug versions. */
-#ifdef RT_LOCK_STRICT
+#if defined(RT_LOCK_STRICT) && !defined(CRITSECT_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # ifdef ___iprt_asm_h
 #  define RTCritSectEnter(pCritSect)                        RTCritSectEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectTryEnter(pCritSect)                     RTCritSectTryEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -345,7 +345,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 #endif
 
 /* Strict lock order: Automatically classify locks by init location. */
-#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(CRITSECT_WITHOUT_REMAPPING) &&!defined(RT_WITH_MANGLING)
 # define RTCritSectInit(pCritSect) \
     RTCritSectInitEx((pCritSect), 0 /*fFlags*/, \
                      RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
