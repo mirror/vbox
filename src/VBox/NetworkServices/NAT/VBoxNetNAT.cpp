@@ -227,7 +227,7 @@ void VBoxNetNAT::run()
         int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
         if (RT_FAILURE(rc))
         {
-            if (rc == VERR_TIMEOUT)
+            if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
                 continue;
             LogRel(("VBoxNetNAT: VMMR0_DO_INTNET_IF_WAIT returned %Rrc\n", rc));
             return;
