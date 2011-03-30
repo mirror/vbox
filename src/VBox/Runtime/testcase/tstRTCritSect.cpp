@@ -30,6 +30,7 @@
 #ifdef TRY_WIN32_CRIT
 # include <Windows.h>
 #endif
+#define CRITSECT_WITHOUT_REMAPPING
 #include <iprt/critsect.h>
 
 #include <iprt/asm.h>
@@ -58,14 +59,12 @@
 #define PRTCRITSECT     LPCRITICAL_SECTION
 #define LOCKERS(sect)   (*(LONG volatile *)&(sect).LockCount)
 
-#undef RTCritSectInit
 DECLINLINE(int) RTCritSectInit(PCRITICAL_SECTION pCritSect)
 {
     InitializeCriticalSection(pCritSect);
     return VINF_SUCCESS;
 }
 
-#undef RTCritSectEnter
 DECLINLINE(int) RTCritSectEnter(PCRITICAL_SECTION pCritSect)
 {
     EnterCriticalSection(pCritSect);
