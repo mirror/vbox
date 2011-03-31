@@ -1989,7 +1989,8 @@ Virtual system 0:
           <computeroutput>sdelete</computeroutput> tool provided by Microsoft.
           Execute <computeroutput>sdelete -c</computeroutput> in the guest to
           zero the free disk space before compressing the virtual disk
-          image.</para>
+          image. For Linux, use the <code>zerofree</code> utility which
+          supports ext2/ext3 filesystems.</para>
 
           <para>Please note that compacting is currently only available for
           VDI images. A similar effect can be achieved by zeroing out free
