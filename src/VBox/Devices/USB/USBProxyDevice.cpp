@@ -394,8 +394,7 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
             num_ep++;
             break;
         default:
-            /** @todo Here be dragons! Additional descriptors needs copying into pvClass
-             *        (RTMemDup be your friend). @bugref{2693} */
+            /* Skip unknown descriptors. */
             break;
         }
     }
@@ -720,7 +719,6 @@ static DECLCALLBACK(void) usbProxyDestruct(PPDMUSBINS pUsbIns)
             RTMemFree((void *)pThis->paCfgDescs[i].paIfs);
             RTMemFree((void *)pThis->paCfgDescs[i].pvOriginal);
         }
-        /** @todo bugref{2693} cleanup */
         RTMemFree(pThis->paCfgDescs);
         pThis->paCfgDescs = NULL;
     }
