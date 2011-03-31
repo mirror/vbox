@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# Linux Additions Guest Additions service daemon init script.
+# VirtualBox web service API daemon init script.
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,7 @@
 #
 
 # chkconfig: 35 35 65
-# description: VirtualBox Additions service
+# description: VirtualBox web service API
 #
 ### BEGIN INIT INFO
 # Provides:       vboxweb-service
@@ -22,7 +22,7 @@
 # Required-Stop:  vboxdrv
 # Default-Start:  2 3 4 5
 # Default-Stop:   0 1 6
-# Description:    VirtualBox Additions Service
+# Description:    VirtualBox web service API
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
@@ -297,6 +297,9 @@ start() {
         [ -n "$VBOXWEB_THREADS" ]        && PARAMS="$PARAMS -T $VBOXWEB_THREADS"
         [ -n "$VBOXWEB_KEEPALIVE" ]      && PARAMS="$PARAMS -k $VBOXWEB_KEEPALIVE"
         [ -n "$VBOXWEB_LOGFILE" ]        && PARAMS="$PARAMS -F $VBOXWEB_LOGFILE"
+        [ -n "$VBOXWEB_ROTATE" ]         && PARAMS="$PARAMS -R $VBOXWEB_ROTATE"
+        [ -n "$VBOXWEB_LOGSIZE" ]        && PARAMS="$PARAMS -S $VBOXWEB_LOGSIZE"
+        [ -n "$VBOXWEB_LOGINTERVAL" ]    && PARAMS="$PARAMS -I $VBOXWEB_LOGINTERVAL"
         # prevent inheriting this setting to VBoxSVC
         unset VBOX_RELEASE_LOG_DEST
         start_daemon $VBOXWEB_USER $binary $PARAMS > /dev/null 2>&1

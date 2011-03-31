@@ -1,7 +1,7 @@
 #!/sbin/sh
 # $Id$
 
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +47,12 @@ case $VW_OPT in
         [ $? != 0 ] && VW_CHECK_INTERVAL=
         VW_KEEPALIVE=`/usr/bin/svcprop -p config/keepalive $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_KEEPALIVE=
+        VW_ROTATE=`/usr/bin/svcprop -p config/logrotate $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_ROTATE=
+        VW_LOGSIZE=`/usr/bin/svcprop -p config/logsize $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_LOGSIZE=
+        VW_LOGINTERVAL=`/usr/bin/svcprop -p config/loginterval $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_LOGINTERVAL=
 
         # Provide sensible defaults
         [ -z "$VW_USER" ] && VW_USER=root
@@ -55,7 +61,10 @@ case $VW_OPT in
         [ -z "$VW_TIMEOUT" ] && VW_TIMEOUT=20
         [ -z "$VW_CHECK_INTERVAL" ] && VW_CHECK_INTERVAL=5
         [ -z "$VW_KEEPALIVE" ] && VW_KEEPALIVE=1000
-        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --keepalive \"$VW_KEEPALIVE\""
+        [ -z "$VW_ROTATE" ] && VW_ROTATE=10
+        [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
+        [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=604800
+        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --keepalive \"$VW_KEEPALIVE\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
         VW_EXIT=$?
         if [ $VW_EXIT != 0 ]; then
