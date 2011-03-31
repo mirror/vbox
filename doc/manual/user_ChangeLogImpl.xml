@@ -57,6 +57,10 @@
           from the host</para>
       </listitem>
 
+      <listitem>
+        <para>Webservice: use own log file, with log rotation to limit size</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
