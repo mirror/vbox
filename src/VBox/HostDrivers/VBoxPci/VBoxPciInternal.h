@@ -32,6 +32,7 @@
 #endif
 
 #ifdef VBOX_WITH_IOMMU
+#include <linux/errno.h>
 #include <linux/iommu.h>
 #endif
 
