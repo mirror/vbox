@@ -3304,6 +3304,13 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         if (RT_FAILURE(rc))
             goto out;
 
+        if (   pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
+            && uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
+        {
+            rc = VERR_NOT_SUPPORTED;
+            goto out;
+        }
+
         rc = vmdkReadMetaExtent(pImage, pExtent);
         if (RT_FAILURE(rc))
             goto out;
