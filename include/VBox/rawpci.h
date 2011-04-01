@@ -218,23 +218,14 @@ typedef struct
     PCIRAWMEMLOC         Value;
 } PCIRAWREQPCICFGREAD;
 
-/** Parameters buffer for PCIRAWR0_DO_REGISTER_R0_IRQ_HANDLER call. */
-typedef struct
+/** Parameters buffer for PCIRAWR0_DO_GET_IRQ call. */
+typedef struct PCIRAWREQGETIRQ
 {
     /* in */
-    int32_t              iGuestIrq;
-    RTR0PTR              pfnHandler;
-    RTR0PTR              pfnHandlerContext;
+    int64_t              iTimeout;
     /* out */
-    int32_t              iHostIrq;
-} PCIRAWREQREGISTERR0IRQHANDLER;
-
-/** Parameters buffer for PCIRAWR0_DO_UNREGISTER_R0_IRQ_HANDLER call. */
-typedef struct
-{
-    /* in */
-    int32_t              iHostIrq;
-} PCIRAWREQUNREGISTERR0IRQHANDLER;
+    int32_t              iIrq;
+} PCIRAWREQGETIRQ;
 
 /** Parameters buffer for PCIRAWR0_DO_POWER_STATE_CHANGE call. */
 typedef struct PCIRAWREQPOWERSTATECHANGE
@@ -263,19 +254,18 @@ typedef struct PCIRAWSENDREQ
     /** Call parameters. */
     union
     {
-        PCIRAWREQOPENDEVICE    aOpenDevice;
-        PCIRAWREQCLOSEDEVICE   aCloseDevice;
-        PCIRAWREQGETREGIONINFO aGetRegionInfo;
-        PCIRAWREQMAPREGION     aMapRegion;
-        PCIRAWREQUNMAPREGION   aUnmapRegion;
-        PCIRAWREQPIOWRITE      aPioWrite;
-        PCIRAWREQPIOREAD       aPioRead;
-        PCIRAWREQMMIOWRITE     aMmioWrite;
-        PCIRAWREQMMIOREAD      aMmioRead;
-        PCIRAWREQPCICFGWRITE   aPciCfgWrite;
-        PCIRAWREQPCICFGREAD    aPciCfgRead;
-        PCIRAWREQREGISTERR0IRQHANDLER   aRegisterR0IrqHandler;
-        PCIRAWREQUNREGISTERR0IRQHANDLER aUnregisterR0IrqHandler;
+        PCIRAWREQOPENDEVICE       aOpenDevice;
+        PCIRAWREQCLOSEDEVICE      aCloseDevice;
+        PCIRAWREQGETREGIONINFO    aGetRegionInfo;
+        PCIRAWREQMAPREGION        aMapRegion;
+        PCIRAWREQUNMAPREGION      aUnmapRegion;
+        PCIRAWREQPIOWRITE         aPioWrite;
+        PCIRAWREQPIOREAD          aPioRead;
+        PCIRAWREQMMIOWRITE        aMmioWrite;
+        PCIRAWREQMMIOREAD         aMmioRead;
+        PCIRAWREQPCICFGWRITE      aPciCfgWrite;
+        PCIRAWREQPCICFGREAD       aPciCfgRead;
+        PCIRAWREQGETIRQ           aGetIrq;
         PCIRAWREQPOWERSTATECHANGE aPowerStateChange;
     } u;
 } PCIRAWSENDREQ;
@@ -308,10 +298,8 @@ typedef enum PCIRAWR0OPERATION
     PCIRAWR0_DO_PCICFG_WRITE,
     /* Perform PCI config read. */
     PCIRAWR0_DO_PCICFG_READ,
-    /* Register device IRQ R0 handler. */
-    PCIRAWR0_DO_REGISTER_R0_IRQ_HANDLER,
-    /* Unregister device IRQ R0 handler. */
-    PCIRAWR0_DO_UNREGISTER_R0_IRQ_HANDLER,
+    /* Get next IRQ for the device. */
+    PCIRAWR0_DO_GET_IRQ,
     /* Notify driver about guest power state change. */
     PCIRAWR0_DO_POWER_STATE_CHANGE,
     /** The usual 32-bit type blow up. */
