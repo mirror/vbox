@@ -68,6 +68,7 @@ PROGRAMS += \
 	tstRTHeapSimple \
 	tstRTInlineAsm \
 	tstIprtMiniString \
+	tstIprtList \
 	tstLdr \
 	tstLdrLoad \
 	tstRTList \
@@ -262,6 +263,9 @@ tstRTInlineAsmPIC3_DEFS = PIC
 
 tstIprtMiniString_TEMPLATE = VBOXR3TSTEXE
 tstIprtMiniString_SOURCES = tstIprtMiniString.cpp
+
+tstIprtList_TEMPLATE = VBOXR3TSTEXE
+tstIprtList_SOURCES = tstIprtList.cpp
 
 tstLdr_SOURCES = tstLdr.cpp
 
