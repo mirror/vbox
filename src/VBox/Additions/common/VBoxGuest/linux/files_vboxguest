@@ -81,6 +81,8 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+    ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.header \
+    ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.footer \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/assert.h=>include/internal/assert.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
