@@ -33,8 +33,9 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_lock       RTLock - Scope-based Locking (C++).
- * @ingroup grp_rt
+/**
+ * @defgroup grp_rt_cpp_lock       C++ Scope-based Locking
+ * @ingroup grp_rt_cpp
  * @{
  */
 

@@ -28,13 +28,14 @@
 
 #include <iprt/cpp/ministring.h>
 
-/** @defgroup grp_rt_cppxcpt    C++ Exceptions
- * @ingroup grp_rt
- * @{
- */
-
 namespace iprt
 {
+
+/**
+ * @defgroup grp_rt_cpp_exceptions    C++ Exceptions
+ * @ingroup grp_rt_cpp
+ * @{
+ */
 
 /**
  * Base exception class for IPRT, derived from std::exception.
@@ -88,9 +89,9 @@ private:
     iprt::MiniString m_s;
 };
 
-} /* namespace iprt */
-
 /** @} */
+
+} /* namespace iprt */
 
 #endif
 

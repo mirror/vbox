@@ -35,6 +35,12 @@
 
 #include <iprt/cpp/exception.h>
 
+/**
+ * @defgroup grp_rt_cpp_xml    C++ XML support
+ * @ingroup grp_rt_cpp
+ * @{
+ */
+
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
 typedef xmlParserInput *xmlParserInputPtr;
@@ -46,8 +52,15 @@ typedef xmlError *xmlErrorPtr;
 typedef struct _xmlAttr xmlAttr;
 typedef struct _xmlNode xmlNode;
 
+/** @} */
+
 namespace xml
 {
+
+/**
+ * @addtogroup grp_rt_cpp_xml
+ * @{
+ */
 
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
