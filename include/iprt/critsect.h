@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -332,7 +332,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 }
 
 /* Lock strict build: Remap the three enter calls to the debug versions. */
-#if defined(RT_LOCK_STRICT) && !defined(CRITSECT_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
+#if defined(RT_LOCK_STRICT) && !defined(RTCRITSECT_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
 # ifdef ___iprt_asm_h
 #  define RTCritSectEnter(pCritSect)                        RTCritSectEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectTryEnter(pCritSect)                     RTCritSectTryEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -345,7 +345,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 #endif
 
 /* Strict lock order: Automatically classify locks by init location. */
-#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(CRITSECT_WITHOUT_REMAPPING) &&!defined(RT_WITH_MANGLING)
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(RTCRITSECT_WITHOUT_REMAPPING) &&!defined(RT_WITH_MANGLING)
 # define RTCritSectInit(pCritSect) \
     RTCritSectInitEx((pCritSect), 0 /*fFlags*/, \
                      RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
