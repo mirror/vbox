@@ -342,7 +342,7 @@ vbi_internal_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
 	ptr = contig_alloc(size, &attr, PAGESIZE, 1);
 
 	if (ptr == NULL) {
-		cmn_err(CE_NOTE, "vbi_internal_alloc() failure for %lu bytes", size);
+		cmn_err(CE_NOTE, "vbi_internal_alloc() failure for %lu bytes contig=%d", size, contig);
 		return (NULL);
 	}
 
