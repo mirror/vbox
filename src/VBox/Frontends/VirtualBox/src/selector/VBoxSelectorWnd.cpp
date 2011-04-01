@@ -1393,7 +1393,6 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
             || state == KMachineState_TeleportingPausedVM /*?*/
            )
         {
-            mVmPauseAction->setText(tr("R&esume"));
             mVmPauseAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PauseVMShortcut));
             mVmPauseAction->setStatusTip(
                 tr("Resume the execution of the virtual machine"));
@@ -1403,7 +1402,6 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         }
         else
         {
-            mVmPauseAction->setText(tr("&Pause"));
             mVmPauseAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PauseVMShortcut));
             mVmPauseAction->setStatusTip(
                 tr("Suspend the execution of the virtual machine"));
