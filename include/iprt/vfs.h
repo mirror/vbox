@@ -38,7 +38,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_fs    RTVfs - Virtual Filesystem
+/** @defgroup grp_rt_vfs   RTVfs - Virtual Filesystem
  * @ingroup grp_rt
  *
  * The virtual filesystem APIs are intended to make it possible to work on
