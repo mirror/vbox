@@ -29,8 +29,7 @@
 namespace iprt
 {
 
-/**
- * @defgroup grp_rt_cpp_meta   C++ Meta programming utilities
+/** @defgroup grp_rt_cpp_meta   C++ Meta programming utilities
  * @ingroup grp_rt_cpp
  * @{
  */

@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -199,8 +199,7 @@ MiniString &MiniString::appendCodePoint(RTUNICP uc)
     return *this;
 }
 
-size_t MiniString::find(const char *pcszFind, size_t pos /*= 0*/)
-    const
+size_t MiniString::find(const char *pcszFind, size_t pos /*= 0*/) const
 {
     const char *pszThis, *p;
 
@@ -223,8 +222,7 @@ void MiniString::findReplace(char cFind, char cReplace)
     }
 }
 
-MiniString MiniString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/)
-    const
+MiniString MiniString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/) const
 {
     MiniString ret;
 
@@ -287,8 +285,7 @@ bool MiniString::endsWith(const MiniString &that, CaseSensitivity cs /*= CaseSen
     size_t l = l1 - l2;
     if (cs == CaseSensitive)
         return ::RTStrCmp(&m_psz[l], that.m_psz) == 0;
-    else
-        return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
+    return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
 }
 
 bool MiniString::startsWith(const MiniString &that, CaseSensitivity cs /*= CaseSensitive*/) const
@@ -303,8 +300,7 @@ bool MiniString::startsWith(const MiniString &that, CaseSensitivity cs /*= CaseS
 
     if (cs == CaseSensitive)
         return ::RTStrNCmp(m_psz, that.m_psz, l2) == 0;
-    else
-        return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
+    return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
 }
 
 bool MiniString::contains(const MiniString &that, CaseSensitivity cs /*= CaseSensitive*/) const
@@ -313,8 +309,7 @@ bool MiniString::contains(const MiniString &that, CaseSensitivity cs /*= CaseSen
      *        endsWith only does half way). */
     if (cs == CaseSensitive)
         return ::RTStrStr(m_psz, that.m_psz) != NULL;
-    else
-        return ::RTStrIStr(m_psz, that.m_psz) != NULL;
+    return ::RTStrIStr(m_psz, that.m_psz) != NULL;
 }
 
 int MiniString::toInt(uint64_t &i) const
@@ -331,70 +326,73 @@ int MiniString::toInt(uint32_t &i) const
     return RTStrToUInt32Ex(m_psz, NULL, 0, &i);
 }
 
-iprt::list<iprt::MiniString, iprt::MiniString*> MiniString::split(const iprt::MiniString &strSep, SplitMode mode /* = RemoveEmptyParts */)
+iprt::list<iprt::MiniString, iprt::MiniString *>
+MiniString::split(const iprt::MiniString &a_rstrSep, SplitMode mode /* = RemoveEmptyParts */)
 {
-    iprt::list<iprt::MiniString> res;
+    iprt::list<iprt::MiniString> strRet;
     if (!m_psz)
-        return res;
-    if (strSep.isEmpty())
+        return strRet;
+    if (a_rstrSep.isEmpty())
     {
-        res.append(iprt::MiniString(m_psz));
-        return res;
+        strRet.append(iprt::MiniString(m_psz));
+        return strRet;
     }
 
-    size_t cch = m_cch;
-    char *pszTmp = m_psz;
-    while(cch > 0)
+    size_t      cch    = m_cch;
+    char const *pszTmp = m_psz;
+    while (cch > 0)
     {
-        char *pszNext = strstr(pszTmp, strSep.c_str());
+        char const *pszNext = strstr(pszTmp, a_rstrSep.c_str());
         if (!pszNext)
+        {
+            strRet.append(iprt::MiniString(pszTmp, cch));
             break;
-        size_t chNext = pszNext - pszTmp;
-        if (   chNext > 0
+        }
+        size_t cchNext = pszNext - pszTmp;
+        if (   cchNext > 0
             || mode == KeepEmptyParts)
-            res.append(iprt::MiniString(pszTmp, chNext));
-        pszTmp += chNext + strSep.length();
-        cch    -= chNext + strSep.length();
+            strRet.append(iprt::MiniString(pszTmp, cchNext));
+        pszTmp += cchNext + a_rstrSep.length();
+        cch    -= cchNext + a_rstrSep.length();
     }
-    /* Some characters left at the end? */
-    if (cch > 0)
-        res.append(iprt::MiniString(pszTmp, cch));
 
-    return res;
+    return strRet;
 }
 
 /* static */
-iprt::MiniString MiniString::join(const iprt::list<iprt::MiniString, iprt::MiniString*> &list, const iprt::MiniString &strSep /* = "" */)
+iprt::MiniString
+MiniString::join(const iprt::list<iprt::MiniString, iprt::MiniString*> &a_rList,
+                 const iprt::MiniString &a_rstrSep /* = "" */)
 {
-    MiniString res;
-    if (list.size() > 1)
+    MiniString strRet;
+    if (a_rList.size() > 1)
     {
-        for(size_t i = 0; i < list.size() - 1; ++i)
-            res += list.at(i) + strSep;
-        res += list.last();
+        for (size_t i = 0; i < a_rList.size() - 1; ++i)
+            strRet += a_rList.at(i) + a_rstrSep;
+        strRet += a_rList.last();
     }
 
-    return res;
+    return strRet;
 }
 
-const iprt::MiniString operator+(const iprt::MiniString &one, const iprt::MiniString &other)
+const iprt::MiniString operator+(const iprt::MiniString &a_rStr1, const iprt::MiniString &a_rStr2)
 {
-    iprt::MiniString res(one);
-
-    return res += other;
+    iprt::MiniString strRet(a_rStr1);
+    strRet += a_rStr2;
+    return strRet;
 }
 
-const iprt::MiniString operator+(const iprt::MiniString &one, const char *pcszOther)
+const iprt::MiniString operator+(const iprt::MiniString &a_rStr1, const char *a_pszStr2)
 {
-    iprt::MiniString res(one);
-
-    return res += pcszOther;
+    iprt::MiniString strRet(a_rStr1);
+    strRet += a_pszStr2;
+    return strRet;
 }
 
-const iprt::MiniString operator+(const char *pcszOne, const iprt::MiniString &other)
+const iprt::MiniString operator+(const char *a_psz1, const iprt::MiniString &a_rStr2)
 {
-    iprt::MiniString res(pcszOne);
-
-    return res += other;
+    iprt::MiniString strRet(a_psz1);
+    strRet += a_rStr2;
+    return strRet;
 }
 

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,14 +36,12 @@
 namespace iprt
 {
 
-/**
- * @defgroup grp_rt_cpp_string     C++ String support
+/** @defgroup grp_rt_cpp_string     C++ String support
  * @ingroup grp_rt_cpp
  * @{
  */
 
-/**
- * @brief Mini C++ string class.
+/** @brief  Mini C++ string class.
  *
  * "MiniString" is a small C++ string class that does not depend on anything
  * else except IPRT memory management functions.  Semantics are like in
@@ -824,21 +822,23 @@ public:
     /**
      * Splits a string separated by strSep into its parts.
      *
-     * @param   strSep       The separator to search for.
-     * @param   mode         How should empty parts be handled.
+     * @param   a_rstrSep   The separator to search for.
+     * @param   a_enmMode   How should empty parts be handled.
      * @returns separated strings as string list.
      */
-    iprt::list<iprt::MiniString, iprt::MiniString*> split(const iprt::MiniString &strSep, SplitMode mode = RemoveEmptyParts);
+    iprt::list<iprt::MiniString, iprt::MiniString *> split(const iprt::MiniString &a_rstrSep,
+                                                           SplitMode a_enmMode = RemoveEmptyParts);
 
     /**
      * Joins a list of strings together using the provided separator.
      *
-     * @param   list         The list to join.
-     * @param   strSep       The separator used for joining.
+     * @param   a_rList     The list to join.
+     * @param   a_rstrSep   The separator used for joining.
      * @returns joined string.
      */
-    static iprt::MiniString join(const iprt::list<iprt::MiniString, iprt::MiniString*> &list, const iprt::MiniString &strSep = "");
-	
+    static iprt::MiniString join(const iprt::list<iprt::MiniString, iprt::MiniString *> &a_rList,
+                                 const iprt::MiniString &a_rstrSep = "");
+
 protected:
 
     /**
@@ -918,43 +918,42 @@ protected:
 
 } /* namespace iprt */
 
-/**
- * @addtogroup grp_rt_cpp_string
+/** @addtogroup grp_rt_cpp_string
  * @{
  */
 
 /**
- * @relates iprt::MiniString
- *
  * Concatenate two strings.
  *
- * @param   one        String one.
- * @param   other      String two.
+ * @param   a_rstr1     String one.
+ * @param   a_rstr2     String two.
  * @returns the concatenate string.
+ *
+ * @relates iprt::MiniString
  */
-RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &one, const iprt::MiniString &other);
+RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &a_rstr1, const iprt::MiniString &a_rstr2);
 
 /**
- * @relates iprt::MiniString
- *
  * Concatenate two strings.
  *
- * @param   one        String one.
- * @param   pcszOther  String two.
+ * @param   a_rstr1     String one.
+ * @param   a_psz2      String two.
  * @returns the concatenate string.
+ *
+ * @relates iprt::MiniString
  */
-RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &one, const char *pcszOther);
+RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &a_rstr1, const char *a_psz2);
 
 /**
- * @relates iprt::MiniString
- *
  * Concatenate two strings.
  *
- * @param   pcszOne    String one.
- * @param   other      String two.
+ * @param   a_psz1      String one.
+ * @param   a_rstr2     String two.
  * @returns the concatenate string.
+ *
+ * @relates iprt::MiniString
  */
-RTDECL(const iprt::MiniString) operator+(const char *pcszOne, const iprt::MiniString &other);
+RTDECL(const iprt::MiniString) operator+(const char *a_psz1, const iprt::MiniString &a_rstr2);
 
 /** @} */
 

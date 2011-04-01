@@ -28,14 +28,14 @@
 
 #include <iprt/cpp/meta.h>
 #include <iprt/mem.h>
+#include <iprt/string.h> /* for memcpy */
 
 #include <new> /* For std::bad_alloc */
 
 namespace iprt
 {
 
-/**
- * @defgroup grp_rt_cpp_list   C++ List support
+/** @defgroup grp_rt_cpp_list   C++ List support
  * @ingroup grp_rt_cpp
  *
  * @brief  Generic C++ list class support.
@@ -311,9 +311,12 @@ public:
     ListBase<T, TYPE> &operator=(const ListBase<T, TYPE>& other)
     {
         /* Prevent self assignment */
-        if (this == &other) return *this;
+        if (this == &other)
+            return *this;
+
         /* Values cleanup */
         ListHelper<T, list_type>::eraseRange(m_pArray, 0, m_cSize);
+
         /* Copy */
         if (other.m_cSize != m_cCapacity)
             realloc_grow(other.m_cSize);
@@ -519,13 +522,14 @@ public:
 private:
 
     /**
-      * Generic realloc, which does some kind of boundary checking.
+     * Generic realloc, which does some kind of boundary checking.
      */
     void realloc(size_t cNewSize)
     {
         /* Same size? */
         if (cNewSize == m_cCapacity)
             return;
+
         /* If we get smaller we have to delete some of the objects at the end
            of the list. */
         if (   cNewSize < m_cSize
@@ -534,6 +538,7 @@ private:
             ListHelper<T, list_type>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
             m_cSize -= m_cSize - cNewSize;
         }
+
         /* If we get zero we delete the array it self. */
         if (   cNewSize == 0
             && m_pArray)
@@ -542,17 +547,19 @@ private:
             m_pArray = 0;
         }
         m_cCapacity = cNewSize;
+
         /* Resize the array. */
         if (cNewSize > 0)
         {
             m_pArray = static_cast<list_type*>(RTMemRealloc(m_pArray, sizeof(list_type) * cNewSize));
             if (!m_pArray)
             {
+                /** @todo you leak memory. */
                 m_cCapacity = 0;
                 m_cSize = 0;
 #ifdef RT_EXCEPTIONS_ENABLED
                 throw std::bad_alloc();
-#endif /* RT_EXCEPTIONS_ENABLED */
+#endif
             }
         }
     }
@@ -569,11 +576,12 @@ private:
         m_pArray = static_cast<list_type*>(RTMemRealloc(m_pArray, sizeof(list_type) * cNewSize));
         if (!m_pArray)
         {
+            /** @todo you leak memory. */
             m_cCapacity = 0;
             m_cSize = 0;
 #ifdef RT_EXCEPTIONS_ENABLED
             throw std::bad_alloc();
-#endif /* RT_EXCEPTIONS_ENABLED */
+#endif
         }
     }
 
@@ -603,7 +611,7 @@ const size_t ListBase<T, TYPE>::DefaultCapacity = 10;
  * @see ListBase
  */
 template <class T, typename TYPE = typename if_<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class list: public ListBase<T, TYPE> {};
+class list : public ListBase<T, TYPE> {};
 
 /**
  * Specialization class for using the native type list for unsigned 64-bit
@@ -627,5 +635,5 @@ class list<int64_t>: public ListBase<int64_t, int64_t> {};
 
 } /* namespace iprt */
 
-#endif /* ___iprt_cpp_list_h */
+#endif /* !___iprt_cpp_list_h */
 

@@ -33,10 +33,12 @@
 #include <iprt/test.h>
 #include <iprt/rand.h>
 
+
 /*******************************************************************************
-*   Test Data                                                                  *
+*   Global Variables                                                           *
 *******************************************************************************/
-static const char *gs_apcszTestStrings[] =
+/** Used for the string test. */
+static const char *g_apszTestStrings[] =
 {
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     "Vestibulum non turpis vel metus pellentesque tincidunt at id massa.",
@@ -140,13 +142,20 @@ static const char *gs_apcszTestStrings[] =
     "Donec eu tellus nisl, ac vehicula tortor."
 };
 
-/*******************************************************************************
-*   Tests                                                                      *
-*******************************************************************************/
+
+/**
+ * Does a list test.
+ *
+ * @param   T1          The list type.
+ * @param   T2          The input type
+ * @param   pcszDesc    The test description.
+ * @param   paTestData  Pointer to the array with the test input data.
+ * @param   cTestItems  The size of the input data.
+ */
 template<typename T1, typename T2>
-static void test(const char* pcszDesc, T2 aTestData[], size_t cSize)
+static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
 {
-    RTTestISubF("%s with size of %u (items=%u)", pcszDesc, sizeof(T1), cSize);
+    RTTestISubF("%s with size of %u (items=%u)", pcszDesc, sizeof(T1), cTestItems);
 
     /*
      * Construction
@@ -165,86 +174,94 @@ static void test(const char* pcszDesc, T2 aTestData[], size_t cSize)
 
     /* Add the second half of the test data */
     size_t cAdded = 1;
+
     /* Start adding the second half of our test list */
-    for (size_t i = cSize / 2; i < cSize; ++i, ++cAdded)
+    for (size_t i = cTestItems / 2; i < cTestItems; ++i, ++cAdded)
     {
-        testList.append(aTestData[i]);
+        testList.append(paTestData[i]);
         RTTESTI_CHECK_RETV(testList.size()    == cAdded);
-        RTTESTI_CHECK(testList.at(0)          == aTestData[cSize / 2]);
-        RTTESTI_CHECK(testList[0]             == aTestData[cSize / 2]);
-        RTTESTI_CHECK(testList.first()        == aTestData[cSize / 2]);
-        RTTESTI_CHECK(testList.at(cAdded - 1) == aTestData[i]);
-        RTTESTI_CHECK(testList[cAdded - 1]    == aTestData[i]);
-        RTTESTI_CHECK(testList.last()         == aTestData[i]);
+        RTTESTI_CHECK(testList.at(0)          == paTestData[cTestItems / 2]);
+        RTTESTI_CHECK(testList[0]             == paTestData[cTestItems / 2]);
+        RTTESTI_CHECK(testList.first()        == paTestData[cTestItems / 2]);
+        RTTESTI_CHECK(testList.at(cAdded - 1) == paTestData[i]);
+        RTTESTI_CHECK(testList[cAdded - 1]    == paTestData[i]);
+        RTTESTI_CHECK(testList.last()         == paTestData[i]);
     }
+
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList.size()        == cSize / 2);
+    RTTESTI_CHECK_RETV(testList.size()        == cTestItems / 2);
     RTTESTI_CHECK_RETV(testList.isEmpty()     == false);
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList.at(i) == aTestData[cSize / 2 + i]);
+        RTTESTI_CHECK(testList.at(i) == paTestData[cTestItems / 2 + i]);
+
     /* Start prepending the first half of our test list. Iterate reverse to get
      * the correct sorting back. */
-    for (size_t i = cSize / 2; i > 0; --i, ++cAdded)
+    for (size_t i = cTestItems / 2; i > 0; --i, ++cAdded)
     {
-        testList.prepend(aTestData[i - 1]);
+        testList.prepend(paTestData[i - 1]);
         RTTESTI_CHECK_RETV(testList.size()    == cAdded);
-        RTTESTI_CHECK(testList.at(0)          == aTestData[i - 1]);
-        RTTESTI_CHECK(testList[0]             == aTestData[i - 1]);
-        RTTESTI_CHECK(testList.first()        == aTestData[i - 1]);
-        RTTESTI_CHECK(testList.at(cAdded - 1) == aTestData[cSize - 1]);
-        RTTESTI_CHECK(testList[cAdded - 1]    == aTestData[cSize - 1]);
-        RTTESTI_CHECK(testList.last()         == aTestData[cSize - 1]);
+        RTTESTI_CHECK(testList.at(0)          == paTestData[i - 1]);
+        RTTESTI_CHECK(testList[0]             == paTestData[i - 1]);
+        RTTESTI_CHECK(testList.first()        == paTestData[i - 1]);
+        RTTESTI_CHECK(testList.at(cAdded - 1) == paTestData[cTestItems - 1]);
+        RTTESTI_CHECK(testList[cAdded - 1]    == paTestData[cTestItems - 1]);
+        RTTESTI_CHECK(testList.last()         == paTestData[cTestItems - 1]);
     }
+
     /* Check that all is correctly prepended. */
-    RTTESTI_CHECK_RETV(testList.size()        == cSize);
+    RTTESTI_CHECK_RETV(testList.size()        == cTestItems);
     RTTESTI_CHECK_RETV(testList.isEmpty()     == false);
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList.at(i) == aTestData[i]);
+        RTTESTI_CHECK(testList.at(i) == paTestData[i]);
 
     /*
      * Copy operator
      */
     iprt::list<T1> testList2(testList);
+
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cSize);
+    RTTESTI_CHECK_RETV(testList2.size() == cTestItems);
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == aTestData[i]);
+        RTTESTI_CHECK(testList2.at(i) == paTestData[i]);
 
     /*
      * "=" operator
      */
     iprt::list<T1> testList3;
     testList3 = testList;
+
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList3.size() == cSize);
+    RTTESTI_CHECK_RETV(testList3.size() == cTestItems);
     for (size_t i = 0; i < testList3.size(); ++i)
-        RTTESTI_CHECK(testList3.at(i) == aTestData[i]);
+        RTTESTI_CHECK(testList3.at(i) == paTestData[i]);
 
     /*
      * Append list
      */
     testList2.append(testList3);
+
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cSize * 2);
+    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 2);
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == aTestData[i % cSize]);
+        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
 
     /*
      * Prepend list
      */
     testList2.prepend(testList3);
+
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cSize * 3);
+    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 3);
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == aTestData[i % cSize]);
+        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
 
     /*
      * "value" method
      */
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.value(i)       == aTestData[i % cSize]);
+        RTTESTI_CHECK(testList2.value(i)       == paTestData[i % cTestItems]);
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.value(i, T1()) == aTestData[i % cSize]);
+        RTTESTI_CHECK(testList2.value(i, T1()) == paTestData[i % cTestItems]);
     RTTESTI_CHECK(testList2.value(testList2.size() + 1) == T1());       /* Invalid index */
     RTTESTI_CHECK(testList2.value(testList2.size() + 1, T1()) == T1()); /* Invalid index */
 
@@ -252,70 +269,74 @@ static void test(const char* pcszDesc, T2 aTestData[], size_t cSize)
      * operator[] (reading)
      */
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList[i] == aTestData[i]);
+        RTTESTI_CHECK(testList[i] == paTestData[i]);
+
     /*
      * operator[] (writing)
      *
      * Replace with inverted array.
      */
-    for (size_t i = 0; i < cSize; ++i)
-        testList[i] = aTestData[cSize - i - 1];
-    RTTESTI_CHECK_RETV(testList.size() == cSize);
+    for (size_t i = 0; i < cTestItems; ++i)
+        testList[i] = paTestData[cTestItems - i - 1];
+    RTTESTI_CHECK_RETV(testList.size() == cTestItems);
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList[i] == aTestData[cSize - i - 1]);
+        RTTESTI_CHECK(testList[i] == paTestData[cTestItems - i - 1]);
 
     /*
      * Replace
      *
      * Replace with inverted array (Must be original array when finished).
      */
-    for (size_t i = 0; i < cSize; ++i)
-        testList.replace(i, aTestData[i]);
-    RTTESTI_CHECK_RETV(testList.size() == cSize);
+    for (size_t i = 0; i < cTestItems; ++i)
+        testList.replace(i, paTestData[i]);
+    RTTESTI_CHECK_RETV(testList.size() == cTestItems);
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList[i] == aTestData[i]);
+        RTTESTI_CHECK(testList[i] == paTestData[i]);
 
     /*
      * Removing
      */
 
     /* Remove Range */
-    testList2.removeRange(cSize, cSize * 2);
-    RTTESTI_CHECK_RETV(testList2.size() == cSize * 2);
+    testList2.removeRange(cTestItems, cTestItems * 2);
+    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 2);
     for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == aTestData[i % cSize]);
+        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
 
     /* Remove the first half (reverse) */
     size_t cRemoved = 1;
-    for (size_t i = cSize / 2; i > 0; --i, ++cRemoved)
+    for (size_t i = cTestItems / 2; i > 0; --i, ++cRemoved)
     {
         testList.removeAt(i - 1);
-        RTTESTI_CHECK_RETV(testList.size() == cSize - cRemoved);
+        RTTESTI_CHECK_RETV(testList.size() == cTestItems - cRemoved);
     }
-    RTTESTI_CHECK_RETV(testList.size() == cSize / 2);
+    RTTESTI_CHECK_RETV(testList.size() == cTestItems / 2);
+
     /* Check that all is correctly removed and only the second part of the list
      * is still there. */
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList.at(i) == aTestData[cSize / 2 + i]);
+        RTTESTI_CHECK(testList.at(i) == paTestData[cTestItems / 2 + i]);
 
     /*
      * setCapacitiy
      */
-    testList.setCapacity(cSize * 5);
-    RTTESTI_CHECK(testList.capacity()  == cSize * 5);
-    RTTESTI_CHECK_RETV(testList.size() == cSize / 2);
+    testList.setCapacity(cTestItems * 5);
+    RTTESTI_CHECK(testList.capacity()  == cTestItems * 5);
+    RTTESTI_CHECK_RETV(testList.size() == cTestItems / 2);
+
     /* As the capacity just increased, we should still have all entries from
      * the previous list. */
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList.at(i) == aTestData[cSize / 2 + i]);
+        RTTESTI_CHECK(testList.at(i) == paTestData[cTestItems / 2 + i]);
+
     /* Decrease the capacity so it will be smaller than the count of items in
      * the list. The list should be shrink automatically, but the remaining
      * items should be still valid. */
-    testList.setCapacity(cSize / 4);
-    RTTESTI_CHECK_RETV(testList.size() == cSize / 4);
-    RTTESTI_CHECK(testList.capacity()  == cSize / 4);
+    testList.setCapacity(cTestItems / 4);
+    RTTESTI_CHECK_RETV(testList.size() == cTestItems / 4);
+    RTTESTI_CHECK(testList.capacity()  == cTestItems / 4);
     for (size_t i = 0; i < testList.size(); ++i)
-        RTTESTI_CHECK(testList.at(i) == aTestData[cSize / 2 + i]);
+        RTTESTI_CHECK(testList.at(i) == paTestData[cTestItems / 2 + i]);
 
     /* Clear all */
     testList.clear();
@@ -324,15 +345,16 @@ static void test(const char* pcszDesc, T2 aTestData[], size_t cSize)
     RTTESTI_CHECK(testList.capacity()  == iprt::list<T1>::DefaultCapacity);
 }
 
+
 int main()
 {
     /* How many integer test items should be created. */
     static const size_t s_cTestCount = 1000;
 
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstIprtList", &hTest);
-    if (rc)
-        return rc;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstIprtList", &hTest);
+    if (rcExit)
+        return rcExit;
     RTTestBanner(hTest);
 
     /* Some host info. */
@@ -347,16 +369,19 @@ int main()
      */
     uint8_t au8TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au8TestInts); ++i)
-        au8TestInts[i] = (float)RTRandU32() / UINT32_MAX * UINT8_MAX;
+        au8TestInts[i] = (uint8_t)RTRandU32Ex(0, UINT8_MAX);
     test<uint8_t, uint8_t>("Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
+
     uint16_t au16TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au16TestInts); ++i)
-        au16TestInts[i] = (float)RTRandU32() / UINT32_MAX * UINT16_MAX;
+        au16TestInts[i] = (uint16_t)RTRandU32Ex(0, UINT16_MAX);
     test<uint16_t, uint16_t>("Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
+
     uint32_t au32TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au32TestInts); ++i)
         au32TestInts[i] = RTRandU32();
     test<uint32_t, uint32_t>("Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
+
     /*
      * Specialized type.
      */
@@ -364,10 +389,11 @@ int main()
     for (size_t i = 0; i < RT_ELEMENTS(au64TestInts); ++i)
         au64TestInts[i] = RTRandU64();
     test<uint64_t, uint64_t>("Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
+
     /*
      * Big size type (translate to internal pointer list).
      */
-    test<iprt::MiniString, const char*>("Class type", gs_apcszTestStrings, RT_ELEMENTS(gs_apcszTestStrings));
+    test<iprt::MiniString, const char *>("Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
 
     /*
      * Summary.

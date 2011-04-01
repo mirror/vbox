@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,8 +31,7 @@
 namespace iprt
 {
 
-/**
- * @defgroup grp_rt_cpp_exceptions    C++ Exceptions
+/** @defgroup grp_rt_cpp_exceptions     C++ Exceptions
  * @ingroup grp_rt_cpp
  * @{
  */

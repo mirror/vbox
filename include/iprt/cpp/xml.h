@@ -35,8 +35,7 @@
 
 #include <iprt/cpp/exception.h>
 
-/**
- * @defgroup grp_rt_cpp_xml    C++ XML support
+/** @defgroup grp_rt_cpp_xml    C++ XML support
  * @ingroup grp_rt_cpp
  * @{
  */
@@ -746,3 +745,4 @@ private:
 } // end namespace xml
 
 #endif /* !___iprt_xml_h */
+

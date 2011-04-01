@@ -31,7 +31,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt    IPRT APIs
+/** @defgroup grp_rt    IPRT C/C++ APIs
  * @{
  */
 
