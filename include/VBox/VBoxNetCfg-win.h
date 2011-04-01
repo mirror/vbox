@@ -58,9 +58,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface (IN const GUID *pGUID, OUT BSTR *pErrMsg);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(IN LPCWSTR lpszPnPId);
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInfInstall(IN LPCWSTR lpszInfPath);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInfUninstallAll(IN const GUID * pGuidClass, IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD Flags);
-
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(OUT PULONG pNetIp, OUT PULONG pNetMask);
 
 typedef struct _ADAPTER_SETTINGS
