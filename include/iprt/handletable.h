@@ -91,11 +91,11 @@ typedef FNRTHANDLETABLEDELETE *PFNRTHANDLETABLEDELETE;
  * handle management. */
 #define RTHANDLETABLE_FLAGS_CONTEXT     RT_BIT_32(0)
 /** Whether the handle table should take care of the serialization.
- * If not specfied the caller will have to take care of that. */
+ * If not specified the caller will have to take care of that. */
 #define RTHANDLETABLE_FLAGS_LOCKED      RT_BIT_32(1)
 /** The mask of valid flags. */
 #define RTHANDLETABLE_FLAGS_MASK        UINT32_C(0x00000003)
-/* @} */
+/** @} */
 
 
 /**
