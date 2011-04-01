@@ -37,6 +37,11 @@ RT_C_DECLS_BEGIN
 typedef uint32_t PCIRAWDEVHANDLE;
 
 /**
+ * Handle for the ISR.
+ */
+typedef uint32_t PCIRAWISRHANDLE;
+
+/**
  * Physical memory action enumeration.
  */
 typedef enum PCIRAWMEMINFOACTION
@@ -97,8 +102,8 @@ typedef RAWPCIPERVM *PRAWPCIPERVM;
 typedef struct
 {
     /* in */
-    uint32_t PciAddress;
-    uint32_t fFlags;
+    uint32_t        PciAddress;
+    uint32_t        fFlags;
     /* out */
     PCIRAWDEVHANDLE Device;
     uint32_t        fDevFlags;
@@ -338,7 +343,7 @@ typedef struct RAWPCIDEVPORT *PRAWPCIDEVPORT;
 /**
  * Interrupt service routine callback.
  *
- * @param   pvContext       Opaque user data which to the handler.
+ * @param   pvContext       Opaque user data passed to the handler.
  * @param   iIrq            Interrupt number.
  */
 typedef DECLCALLBACK(void) FNRAWPCIISR(void *pvContext, int32_t iIrq);
@@ -447,21 +452,21 @@ typedef struct RAWPCIDEVPORT
      * @param   pPort       Pointer to this structure.
      * @param   pfnHandler  Pointer to the handler.
      * @param   pIrqContext Context passed to the handler.
-     * @param   piHostIrq   Which host IRQ is used.
+     * @param   phIsr       Handle for the ISR, .
      */
-    DECLR0CALLBACKMEMBER(int,  pfnRegisterIrqHandler,(PRAWPCIDEVPORT pPort,
-                                                      PFNRAWPCIISR   pfnHandler,
-                                                      void*          pIrqContext,
-                                                      int32_t        *piHostIrq));
+    DECLR0CALLBACKMEMBER(int,  pfnRegisterIrqHandler,(PRAWPCIDEVPORT    pPort,
+                                                      PFNRAWPCIISR      pfnHandler,
+                                                      void*             pIrqContext,
+                                                      PCIRAWISRHANDLE   *phIsr));
 
     /**
      * Request to unregister interrupt handler.
      *
      * @param   pPort       Pointer to this structure.
-     * @param   iHostIrq    Which host IRQ was used (retured by earlier pfnRegisterIrqHandler).
+     * @param   hIsr        Handle of ISR to unregister (retured by earlier pfnRegisterIrqHandler).
      */
-    DECLR0CALLBACKMEMBER(int,  pfnUnregisterIrqHandler,(PRAWPCIDEVPORT pPort,
-                                                        int32_t        iHostIrq));
+    DECLR0CALLBACKMEMBER(int,  pfnUnregisterIrqHandler,(PRAWPCIDEVPORT  pPort,
+                                                        PCIRAWISRHANDLE hIsr));
 
     /**
      * Power state change notification.
@@ -478,7 +483,7 @@ typedef struct RAWPCIDEVPORT
     uint32_t u32VersionEnd;
 } RAWPCIDEVPORT;
 /** Version number for the RAWPCIDEVPORT::u32Version and RAWPCIIFPORT::u32VersionEnd fields. */
-#define RAWPCIDEVPORT_VERSION   UINT32_C(0xAFBDCC01)
+#define RAWPCIDEVPORT_VERSION   UINT32_C(0xAFBDCC02)
 
 /**
  * The component factory interface for create a raw PCI interfaces.
