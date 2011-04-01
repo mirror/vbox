@@ -31,6 +31,7 @@
 #endif
 
 /** @defgroup grp_rt_runtime_loader     Runtime Loader Generation
+ * @ingroup grp_rt
  *
  * How to use this loader generator
  *

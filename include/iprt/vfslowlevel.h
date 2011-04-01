@@ -108,7 +108,6 @@ RTDECL(void) RTVfsLockAcquireReadSlow(RTVFSLOCK hLock);
 RTDECL(void) RTVfsLockReleaseReadSlow(RTVFSLOCK hLock);
 RTDECL(void) RTVfsLockAcquireWriteSlow(RTVFSLOCK hLock);
 RTDECL(void) RTVfsLockReleaseWriteSlow(RTVFSLOCK hLock);
-/** @}  */
 
 /**
  * Acquire a read lock.
