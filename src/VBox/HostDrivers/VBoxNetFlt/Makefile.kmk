@@ -42,7 +42,7 @@ VBoxNetFlt_SOURCES.win = \
 	win/drv/VBoxNetFltRt-win.cpp \
 	win/drv/VBoxNetFlt-win.rc
 # with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
-# otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition 
+# otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition
 # in ntoskrnl.lib and our object files
 VBoxNetFlt_DEFS.win += WIN9X_COMPAT_SPINLOCK=1
 VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
@@ -117,17 +117,17 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf: $(PATH_SUB_CURRENT)/win/drv/VBo
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetFltM.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
-	
+
  ifdef VBOX_SIGNING_MODE
 VBoxNetFlt-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll \
 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat
 
-$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir $$@)
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(VBoxNetFlt_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
-  
-$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll: $$(TARGET_VBoxNetFltNobj) | $$(dir $$@)
+
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNobj.dll: $$(VBoxNetFltNobj_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
@@ -158,8 +158,9 @@ PROGRAMS.win  += NetFltInstall
 NetFltInstall_TEMPLATE = VBOXR3STATIC
 NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltInstall_SOURCES  = win/tools/VBoxNetFltInstall.cpp
-NetFltInstall_LIBS     = $(TARGET_WinNetConfig) \
-    $(TARGET_VBoxDrvCfg) \
+NetFltInstall_LIBS     = \
+	$(WinNetConfig_1_TARGET) \
+	$(VBoxDrvCfg_1_TARGET) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -171,8 +172,9 @@ PROGRAMS.win  += NetFltUninstall
 NetFltUninstall_TEMPLATE = VBOXR3STATIC
 NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltUninstall_SOURCES  = win/tools/VBoxNetFltUninstall.cpp
-NetFltUninstall_LIBS     = $(TARGET_WinNetConfig) \
-    $(TARGET_VBoxDrvCfg) \
+NetFltUninstall_LIBS     = \
+	$(WinNetConfig_1_TARGET) \
+	$(VBoxDrvCfg_1_TARGET) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -183,8 +185,9 @@ PROGRAMS.win  += NetAdpInstall
 NetAdpInstall_TEMPLATE = VBOXR3STATIC
 NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetAdpInstall_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
-NetAdpInstall_LIBS     = $(TARGET_WinNetConfig) \
-    $(TARGET_VBoxDrvCfg) \
+NetAdpInstall_LIBS     = \
+	$(WinNetConfig_1_TARGET) \
+	$(VBoxDrvCfg_1_TARGET) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -196,8 +199,9 @@ PROGRAMS.win  += NetAdpUninstall
 NetAdpUninstall_TEMPLATE = VBOXR3STATIC
 NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
-NetAdpUninstall_LIBS     = $(TARGET_WinNetConfig) \
-    $(TARGET_VBoxDrvCfg) \
+NetAdpUninstall_LIBS     = \
+	$(WinNetConfig_1_TARGET) \
+	$(VBoxDrvCfg_1_TARGET) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -296,7 +300,7 @@ VBoxNetAdp-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys \
 	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat
 
-$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys: $$(TARGET_VBoxNetAdp) | $$(dir $$@)
+$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.sys: $$(VBoxNetAdp_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
