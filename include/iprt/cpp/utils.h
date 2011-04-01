@@ -26,8 +26,14 @@
 #ifndef ___iprt_cpputils_h
 #define ___iprt_cpputils_h
 
-/** @defgroup grp_rt_cpputils   C++ Utilities
+/**
+ * @defgroup grp_rt_cpp         IPRT C++ support
  * @ingroup grp_rt
+ */
+
+/**
+ * @defgroup grp_rt_cpp_util    C++ Utilitis
+ * @ingroup grp_rt_cpp
  * @{
  */
 
@@ -60,9 +66,15 @@ inline C& unconst(const C &that) { return const_cast<C&>(that); }
 template <class C>
 inline C* unconst(const C *that) { return const_cast<C*>(that); }
 
+/** @} */
 
 namespace iprt
 {
+
+/**
+ * @ingroup grp_rt_cpp_util
+ * @{
+ */
 
 /**
  * A simple class used to prevent copying and assignment.  Inherit from this
@@ -79,9 +91,9 @@ private:
     non_copyable const &operator=(non_copyable const&);
 };
 
-} // namespace iprt
-
 /** @} */
+
+} // namespace iprt
 
 #endif // ___iprt_cpputils_h
 

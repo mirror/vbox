@@ -29,6 +29,10 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 
+/**
+ * @addtogroup grp_rt_cpp_util
+ * @{
+ */
 
 /**
  * A simple class used to prevent copying and assignment.
@@ -46,6 +50,13 @@ private:
     RTCNonCopyable const &operator=(RTCNonCopyable const &);
 };
 
+/** @} */
+
+/**
+ * @defgroup grp_rt_cpp_autores    C++ Resource Management
+ * @ingroup grp_rt_cpp
+ * @{
+ */
 
 /**
  * A callable class template which returns the correct value against which an
@@ -202,6 +213,8 @@ public:
         return m_hRes;
     }
 };
+
+/** @} */
 
 
 /* include after template definition */
