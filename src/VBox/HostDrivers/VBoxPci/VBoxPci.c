@@ -188,14 +188,14 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
 
-    /* Bit racy, better check under lock. */
-    if (pThis->iHostIrq != -1)
-    {
-        pPort->pfnUnregisterIrqHandler(pPort, pThis->iHostIrq);
-        pThis->iHostIrq = -1;
-    }
-
     vboxPciDevLock(pThis);
+    
+    if (pThis->IrqHandler.pfnIrqHandler)
+    {
+        pPort->pfnUnregisterIrqHandler(pPort, pThis->IrqHandler.iHostIrq);
+        pThis->IrqHandler.iHostIrq = -1;
+        pThis->IrqHandler.pfnIrqHandler = NULL;
+    }
 
     rc = vboxPciOsDevDeinit(pThis, fFlags);
 
@@ -338,45 +338,54 @@ DECLHIDDEN(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, P
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR pfnHandler, void* pIrqContext, int32_t *piHostIrq)
+DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR pfnHandler, void* pIrqContext, PCIRAWISRHANDLE *phIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
-    int rc;
+    int     rc;
+    int32_t iHostIrq = 0;    
+
+    if (pfnHandler == NULL)
+        return VERR_INVALID_PARAMETER;
 
     vboxPciDevLock(pThis);
 
-    pThis->pfnIrqHandler = pfnHandler;
-    pThis->pIrqContext   = pIrqContext;
-    rc = vboxPciOsDevRegisterIrqHandler(pThis, pfnHandler, pIrqContext, piHostIrq);
-    if (RT_FAILURE(rc))
+    if (pThis->IrqHandler.pfnIrqHandler)
     {
-        pThis->pfnIrqHandler = NULL;
-        pThis->pIrqContext   = NULL;
-        pThis->iHostIrq      = -1;
-        *piHostIrq = -1;
+        rc = VERR_ALREADY_EXISTS;
     }
     else
-        pThis->iHostIrq      = *piHostIrq;
-
+    {
+        rc = vboxPciOsDevRegisterIrqHandler(pThis, pfnHandler, pIrqContext, &iHostIrq);
+        if (RT_SUCCESS(rc))
+        {
+            *phIsr = 0xcafe0000;
+            pThis->IrqHandler.iHostIrq      = iHostIrq;
+            pThis->IrqHandler.pfnIrqHandler = pfnHandler;
+            pThis->IrqHandler.pIrqContext   = pIrqContext;
+        }
+    }
+        
     vboxPciDevUnlock(pThis);
 
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, int32_t iHostIrq)
+DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, PCIRAWISRHANDLE hIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
 
+    if (hIsr != 0xcafe0000)
+        return VERR_INVALID_PARAMETER;
+
     vboxPciDevLock(pThis);
 
-    Assert(iHostIrq == pThis->iHostIrq);
-    rc = vboxPciOsDevUnregisterIrqHandler(pThis, iHostIrq);
+    rc = vboxPciOsDevUnregisterIrqHandler(pThis, pThis->IrqHandler.iHostIrq);
     if (RT_SUCCESS(rc))
     {
-        pThis->pfnIrqHandler = NULL;
-        pThis->pIrqContext   = NULL;
-        pThis->iHostIrq = -1;
+        pThis->IrqHandler.pfnIrqHandler = NULL;
+        pThis->IrqHandler.pIrqContext   = NULL;
+        pThis->IrqHandler.iHostIrq = -1;
     }
     vboxPciDevUnlock(pThis);
 
@@ -392,15 +401,18 @@ DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTAT
 
     rc = vboxPciOsDevPowerStateChange(pThis, aState);
 
-    if (aState == PCIRAW_POWER_ON)
+    switch (aState)
     {
-        /*
-         * Let virtual device know about VM caps.
-         */
-        *pu64Param = VBOX_DRV_VMDATA(pThis)->pPerVmData->fVmCaps;
+        case PCIRAW_POWER_ON:
+            /*
+             * Let virtual device know about VM caps.
+             */
+            *pu64Param = VBOX_DRV_VMDATA(pThis)->pPerVmData->fVmCaps;
+            break;
+        default:
+            pu64Param = 0;
+            break;
     }
-    else
-        pu64Param = 0;
 
 
     vboxPciDevUnlock(pThis);
@@ -433,7 +445,6 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->cRefs                         = 1;
     pNew->pNext                         = NULL;
     pNew->HostPciAddress                = u32HostAddress;
-    pNew->iHostIrq                      = -1;
     pNew->pVmCtx                        = pVmCtx;
 
     pNew->DevPort.u32Version            = RAWPCIDEVPORT_VERSION;
