@@ -1693,7 +1693,8 @@ static int dmgOpen(const char *pszFilename, unsigned uOpenFlags,
      * simple backend and can expect the caller to be the only user and already
      * have validate what it passes thru to us.
      */
-    if (!(uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_ASYNC_IO)))
+    if (   !(uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        || (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO))
     {
         rc = VERR_NOT_SUPPORTED;
         goto out;
