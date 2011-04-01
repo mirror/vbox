@@ -152,7 +152,7 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                         ctx.rc = VINF_SUCCESS;
 
                         png_set_write_fn(png_ptr,
-                                         (voidp)&ctx,
+                                         (png_voidp)&ctx,
                                          png_write_data_fn,
                                          png_output_flush_fn);
 
@@ -173,8 +173,8 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                         png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
                         png_set_bgr(png_ptr);
 
-                        if (info_ptr->valid & PNG_INFO_IDAT)
-                            png_write_image(png_ptr, info_ptr->row_pointers);
+                        if (png_get_valid(png_ptr, info_ptr, PNG_INFO_IDAT))
+                            png_write_image(png_ptr, png_get_rows(png_ptr, info_ptr));
 
                         png_write_end(png_ptr, info_ptr);
 
