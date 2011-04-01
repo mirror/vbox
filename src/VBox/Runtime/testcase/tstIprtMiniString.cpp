@@ -255,6 +255,39 @@ static void test1(RTTEST hTest)
     size_t pos = strTest.find("ß");
     CHECK_EQUAL(strTest.substr(pos), "ßäbcdef");
 
+    /* split */
+    iprt::list<iprt::MiniString> spList1 = iprt::MiniString("##abcdef##abcdef####abcdef##").split("##", iprt::MiniString::RemoveEmptyParts);
+    RTTESTI_CHECK(spList1.size() == 3);
+    for (size_t i = 0; i < spList1.size(); ++i)
+        RTTESTI_CHECK(spList1.at(i) == "abcdef");
+    iprt::list<iprt::MiniString> spList2 = iprt::MiniString("##abcdef##abcdef####abcdef##").split("##", iprt::MiniString::KeepEmptyParts);
+    RTTESTI_CHECK_RETV(spList2.size() == 5);
+    RTTESTI_CHECK(spList2.at(0) == "");
+    RTTESTI_CHECK(spList2.at(1) == "abcdef");
+    RTTESTI_CHECK(spList2.at(2) == "abcdef");
+    RTTESTI_CHECK(spList2.at(3) == "");
+    RTTESTI_CHECK(spList2.at(4) == "abcdef");
+    iprt::list<iprt::MiniString> spList3 = iprt::MiniString().split("##", iprt::MiniString::KeepEmptyParts);
+    RTTESTI_CHECK(spList3.size() == 0);
+    iprt::list<iprt::MiniString> spList4 = iprt::MiniString().split("");
+    RTTESTI_CHECK(spList4.size() == 0);
+    iprt::list<iprt::MiniString> spList5 = iprt::MiniString("abcdef").split("");
+    RTTESTI_CHECK_RETV(spList5.size() == 1);
+    RTTESTI_CHECK(spList5.at(0) == "abcdef");
+
+    /* join */
+    iprt::list<iprt::MiniString> jnList;
+    strTest = iprt::MiniString::join(jnList);
+    RTTESTI_CHECK(strTest == "");
+    strTest = iprt::MiniString::join(jnList, "##");
+    RTTESTI_CHECK(strTest == "");
+    for (size_t i = 0; i < 5; ++i)
+        jnList.append("abcdef");
+    strTest = iprt::MiniString::join(jnList);
+    RTTESTI_CHECK(strTest == "abcdefabcdefabcdefabcdefabcdef");
+    strTest = iprt::MiniString::join(jnList, "##");
+    RTTESTI_CHECK(strTest == "abcdef##abcdef##abcdef##abcdef##abcdef");
+
     /* special constructor and assignment arguments */
     iprt::MiniString StrCtor1("");
     RTTESTI_CHECK(StrCtor1.isEmpty());

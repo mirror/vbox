@@ -29,11 +29,18 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
+#include <iprt/cpp/list.h>
 
 #include <new>
 
 namespace iprt
 {
+
+/**
+ * @defgroup grp_rt_cpp_string     C++ String support
+ * @ingroup grp_rt_cpp
+ * @{
+ */
 
 /**
  * @brief Mini C++ string class.
@@ -807,6 +814,31 @@ public:
      */
     int toInt(uint32_t &i) const;
 
+    /** Splitting behavior regarding empty sections in the string. */
+    enum SplitMode
+    {
+        KeepEmptyParts,  /**< Empty parts are added as empty strings to the result list. */
+        RemoveEmptyParts /**< Empty parts are skipped. */
+    };
+
+    /**
+     * Splits a string separated by strSep into its parts.
+     *
+     * @param   strSep       The separator to search for.
+     * @param   mode         How should empty parts be handled.
+     * @returns separated strings as string list.
+     */
+    iprt::list<iprt::MiniString, iprt::MiniString*> split(const iprt::MiniString &strSep, SplitMode mode = RemoveEmptyParts);
+
+    /**
+     * Joins a list of strings together using the provided separator.
+     *
+     * @param   list         The list to join.
+     * @param   strSep       The separator used for joining.
+     * @returns joined string.
+     */
+    static iprt::MiniString join(const iprt::list<iprt::MiniString, iprt::MiniString*> &list, const iprt::MiniString &strSep = "");
+	
 protected:
 
     /**
@@ -882,7 +914,49 @@ protected:
     size_t  m_cbAllocated;              /**< Size of buffer that m_psz points to; at least m_cbLength + 1. */
 };
 
-} // namespace iprt
+/** @} */
+
+} /* namespace iprt */
+
+/**
+ * @addtogroup grp_rt_cpp_string
+ * @{
+ */
+
+/**
+ * @relates iprt::MiniString
+ *
+ * Concatenate two strings.
+ *
+ * @param   one        String one.
+ * @param   other      String two.
+ * @returns the concatenate string.
+ */
+RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &one, const iprt::MiniString &other);
+
+/**
+ * @relates iprt::MiniString
+ *
+ * Concatenate two strings.
+ *
+ * @param   one        String one.
+ * @param   pcszOther  String two.
+ * @returns the concatenate string.
+ */
+RTDECL(const iprt::MiniString) operator+(const iprt::MiniString &one, const char *pcszOther);
+
+/**
+ * @relates iprt::MiniString
+ *
+ * Concatenate two strings.
+ *
+ * @param   pcszOne    String one.
+ * @param   other      String two.
+ * @returns the concatenate string.
+ */
+RTDECL(const iprt::MiniString) operator+(const char *pcszOne, const iprt::MiniString &other);
+
+/** @} */
 
 #endif
 
