@@ -1414,6 +1414,7 @@ DECLINLINE(void) e1kCancelTimer(E1KSTATE *pState, PTMTIMER pTimer)
 }
 
 #ifdef E1K_GLOBAL_MUTEX
+
 DECLINLINE(int) e1kCsEnter(E1KSTATE *pState, int iBusyRc)
 {
     return VINF_SUCCESS;
@@ -1423,11 +1424,11 @@ DECLINLINE(void) e1kCsLeave(E1KSTATE *pState)
 {
 }
 
-#define e1kCsRxEnter(ps, rc) VINF_SUCCESS
-#define e1kCsRxLeave(ps) do { } while (0)
+# define e1kCsRxEnter(ps, rc) VINF_SUCCESS
+# define e1kCsRxLeave(ps) do { } while (0)
 
-#define e1kCsTxEnter(ps, rc) VINF_SUCCESS
-#define e1kCsTxLeave(ps) do { } while (0)
+# define e1kCsTxEnter(ps, rc) VINF_SUCCESS
+# define e1kCsTxLeave(ps) do { } while (0)
 
 
 DECLINLINE(int) e1kMutexAcquire(E1KSTATE *pState, int iBusyRc, RT_SRC_POS_DECL)
@@ -1455,18 +1456,18 @@ DECLINLINE(void) e1kMutexRelease(E1KSTATE *pState)
 }
 
 #else /* !E1K_GLOBAL_MUTEX */
-#define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
-#define e1kCsLeave(ps) PDMCritSectLeave(&ps->cs)
+# define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
+# define e1kCsLeave(ps) PDMCritSectLeave(&ps->cs)
 
-#define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
-#define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
+# define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
+# define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
 
-#define e1kCsTxEnter(ps, rc) VINF_SUCCESS
-#define e1kCsTxLeave(ps) do { } while (0)
-//#define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
-//#define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
+# define e1kCsTxEnter(ps, rc) VINF_SUCCESS
+# define e1kCsTxLeave(ps) do { } while (0)
+//# define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
+//# define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
 
-#if 0
+# if 0
 DECLINLINE(int) e1kCsEnter(E1KSTATE *pState, PPDMCRITSECT pCs, int iBusyRc, RT_SRC_POS_DECL)
 {
     int rc = PDMCritSectEnter(pCs, iBusyRc);
@@ -1490,7 +1491,7 @@ DECLINLINE(void) e1kCsLeave(E1KSTATE *pState, PPDMCRITSECT pCs)
     //E1kLog2(("%s <== Leaving critical section\n", INSTANCE(pState)));
     PDMCritSectLeave(&pState->cs);
 }
-#endif
+# endif
 DECLINLINE(int) e1kMutexAcquire(E1KSTATE *pState, int iBusyRc, RT_SRC_POS_DECL)
 {
     return VINF_SUCCESS;
@@ -1499,9 +1500,10 @@ DECLINLINE(int) e1kMutexAcquire(E1KSTATE *pState, int iBusyRc, RT_SRC_POS_DECL)
 DECLINLINE(void) e1kMutexRelease(E1KSTATE *pState)
 {
 }
-#endif /* !E1K_GLOBAL_MUTEX */
 
+#endif /* !E1K_GLOBAL_MUTEX */
 #ifdef IN_RING3
+
 /**
  * Wakeup the RX thread.
  */
@@ -1522,7 +1524,7 @@ static void e1kWakeupReceive(PPDMDEVINS pDevIns)
  *
  * @param   pState      The device state structure.
  */
-PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
+static void e1kHardReset(E1KSTATE *pState)
 {
     E1kLog(("%s Hard reset triggered\n", INSTANCE(pState)));
     memset(pState->auRegs,        0, sizeof(pState->auRegs));
@@ -1543,7 +1545,8 @@ PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
     if (pState->pDrvR3)
         pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3, false);
 }
-#endif
+
+#endif /* IN_RING3 */
 
 /**
  * Compute Internet checksum.
@@ -1733,7 +1736,7 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
  *
  * @param   pState      The device state structure.
  */
-PDMBOTHCBDECL(int) e1kRaiseInterrupt(E1KSTATE *pState, int rcBusy, uint32_t u32IntCause = 0)
+static int e1kRaiseInterrupt(E1KSTATE *pState, int rcBusy, uint32_t u32IntCause = 0)
 {
     int rc = e1kCsEnter(pState, rcBusy);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -4431,7 +4434,7 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
  * @thread  EMT
  */
 PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
-              RTIOPORT port, uint32_t *pu32, unsigned cb)
+                               RTIOPORT port, uint32_t *pu32, unsigned cb)
 {
     E1KSTATE   *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     int         rc     = VINF_SUCCESS;
@@ -4482,7 +4485,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
  * @thread  EMT
  */
 PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
-              RTIOPORT port, uint32_t u32, unsigned cb)
+                                RTIOPORT port, uint32_t u32, unsigned cb)
 {
     E1KSTATE   *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     int         rc     = VINF_SUCCESS;
