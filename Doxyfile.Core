@@ -34,6 +34,7 @@ ALIASES                = \
 # Interface method implementation macros.
 ALIASES                += \
     interface_method_impl{2}="Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
+ALIASES                += \
     interface_method_impl{3}="\3. \
 \
 Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
@@ -41,6 +42,7 @@ Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
 # Callback method implementation macros.
 ALIASES                += \
     callback_method_impl{1}="Implements the callback \link \1 \1  \endlink @copydoc \1 "
+ALIASES                += \
     callback_method_impl{2}="\2. \
 \
 Implements the callback \link \1 \1 "
