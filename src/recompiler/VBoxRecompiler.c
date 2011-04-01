@@ -3145,7 +3145,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
-    cpu_register_physical_memory(GCPhys, cb, GCPhys);
+    cpu_register_physical_memory_offset(GCPhys, cb, GCPhys, GCPhys);
     PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
@@ -3181,7 +3181,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
-    cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
+    cpu_register_physical_memory_offset(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM), GCPhys);
     PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
@@ -3213,7 +3213,7 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
     ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
-    cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+    cpu_register_physical_memory_offset(GCPhys, cb, IO_MEM_UNASSIGNED, GCPhys);
     PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
@@ -3246,9 +3246,9 @@ static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
-        cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iMMIOMemType);
+        cpu_register_physical_memory_offset(GCPhys, cb, pVM->rem.s.iMMIOMemType, GCPhys);
     else if (fHasHCHandler)
-        cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iHandlerMemType);
+        cpu_register_physical_memory_offset(GCPhys, cb, pVM->rem.s.iHandlerMemType, GCPhys);
     PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
@@ -3295,19 +3295,19 @@ static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     /** @todo this isn't right, MMIO can (in theory) be restored as RAM. */
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
-        cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+        cpu_register_physical_memory_offset(GCPhys, cb, IO_MEM_UNASSIGNED, GCPhys);
     else if (fHasHCHandler)
     {
         if (!fRestoreAsRAM)
         {
             Assert(GCPhys > MMR3PhysGetRamSize(pVM));
-            cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+            cpu_register_physical_memory_offset(GCPhys, cb, IO_MEM_UNASSIGNED, GCPhys);
         }
         else
         {
             Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
             Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
-            cpu_register_physical_memory(GCPhys, cb, GCPhys);
+            cpu_register_physical_memory_offset(GCPhys, cb, GCPhys, GCPhys);
         }
     }
     PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
@@ -3359,13 +3359,13 @@ static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
          */
         PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
         if (!fRestoreAsRAM)
-            cpu_register_physical_memory(GCPhysOld, cb, IO_MEM_UNASSIGNED);
+            cpu_register_physical_memory_offset(GCPhysOld, cb, IO_MEM_UNASSIGNED, GCPhysOld);
         else
         {
             /* This is not perfect, but it'll do for PD monitoring... */
             Assert(cb == PAGE_SIZE);
             Assert(RT_ALIGN_T(GCPhysOld, PAGE_SIZE, RTGCPHYS) == GCPhysOld);
-            cpu_register_physical_memory(GCPhysOld, cb, GCPhysOld);
+            cpu_register_physical_memory_offset(GCPhysOld, cb, GCPhysOld, GCPhysOld);
         }
 
         /*
@@ -3373,7 +3373,7 @@ static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
          */
         Assert(RT_ALIGN_T(GCPhysNew, PAGE_SIZE, RTGCPHYS) == GCPhysNew);
         Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
-        cpu_register_physical_memory(GCPhysNew, cb, pVM->rem.s.iHandlerMemType);
+        cpu_register_physical_memory_offset(GCPhysNew, cb, pVM->rem.s.iHandlerMemType, GCPhysNew);
         PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
         ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
