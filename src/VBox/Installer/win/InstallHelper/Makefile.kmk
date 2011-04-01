@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -36,10 +36,11 @@ endif
 VBoxInstallHelper_SDKS     = WINPSDK W2K3DDK
 VBoxInstallHelper_LIBS     = $(PATH_SDK_W2K3DDK_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
- VBoxInstallHelper_LIBS   += $(TARGET_WinNetConfig) \
-    $(TARGET_VBoxDrvCfg) \
+ VBoxInstallHelper_LIBS   += \
+ 	$(WinNetConfig_1_TARGET) \
+ 	$(VBoxDrvCfg_1_TARGET) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
 ifeq ($(KBUILD_TARGET),win)
