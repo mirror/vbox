@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,15 +30,14 @@
 #include <iprt/assert.h>
 
 /**
- * @addtogroup grp_rt_cpp_util
- * @{
- */
-
-/**
  * A simple class used to prevent copying and assignment.
  *
  * Inherit from this class in order to prevent automatic generation
  * of the copy constructor and assignment operator in your class.
+ *
+ * @todo Functionality duplicated by iprt::non_copyable. grr!
+ *
+ * @addtogroup grp_rt_cpp_util
  */
 class RTCNonCopyable
 {
@@ -50,10 +49,8 @@ private:
     RTCNonCopyable const &operator=(RTCNonCopyable const &);
 };
 
-/** @} */
 
-/**
- * @defgroup grp_rt_cpp_autores    C++ Resource Management
+/** @defgroup grp_rt_cpp_autores    C++ Resource Management
  * @ingroup grp_rt_cpp
  * @{
  */
@@ -84,10 +81,10 @@ inline RTFILE RTAutoResNil(void)
  * @warning This template *must* be specialised for the types it is to work with.
  */
 template <class T>
-inline void RTAutoResDestruct(T aHandle)
+inline void RTAutoResDestruct(T a_h)
 {
     AssertFatalMsgFailed(("Unspecialized template!\n"));
-    NOREF(aHandle);
+    NOREF(a_h);
 }
 
 /**

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,8 +33,7 @@
 
 RT_C_DECLS_BEGIN
 
-/**
- * @defgroup grp_rt_cpp_lock       C++ Scope-based Locking
+/** @defgroup grp_rt_cpp_lock       C++ Scope-based Locking
  * @ingroup grp_rt_cpp
  * @{
  */
@@ -52,54 +51,54 @@ class RTLock;
  */
 class RTLockMtx
 {
-    friend class RTLock;
+friend class RTLock;
 
-    private:
-        RTCRITSECT      mMtx;
+private:
+    RTCRITSECT      mMtx;
 
-    public:
-        RTLockMtx()
-        {
+public:
+    RTLockMtx()
+    {
 #ifdef RT_LOCK_STRICT_ORDER
-            RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
-                             RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
-                             RTLOCKVAL_SUB_CLASS_NONE, NULL);
+        RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
+                         RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
+                         RTLOCKVAL_SUB_CLASS_NONE, NULL);
 #else
-            RTCritSectInit(&mMtx);
+        RTCritSectInit(&mMtx);
 #endif
-        }
+    }
 
-        /** Use to when creating locks that belongs in the same "class".  */
-        RTLockMtx(RT_SRC_POS_DECL, uint32_t uSubClass = RTLOCKVAL_SUB_CLASS_NONE)
-        {
+    /** Use to when creating locks that belongs in the same "class".  */
+    RTLockMtx(RT_SRC_POS_DECL, uint32_t uSubClass = RTLOCKVAL_SUB_CLASS_NONE)
+    {
 #ifdef RT_LOCK_STRICT_ORDER
-            RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
-                             RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, NULL),
-                             uSubClass, NULL);
+        RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
+                         RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, NULL),
+                         uSubClass, NULL);
 #else
-            NOREF(uSubClass);
-            RTCritSectInit(&mMtx);
-            RT_SRC_POS_NOREF();
+        NOREF(uSubClass);
+        RTCritSectInit(&mMtx);
+        RT_SRC_POS_NOREF();
 #endif
-        }
+    }
 
-        ~RTLockMtx()
-        {
-            RTCritSectDelete(&mMtx);
-        }
+    ~RTLockMtx()
+    {
+        RTCritSectDelete(&mMtx);
+    }
 
-    // lock() and unlock() are private so that only
-    // friend RTLock can access them
-    private:
-        inline void lock()
-        {
-            RTCritSectEnter(&mMtx);
-        }
+// lock() and unlock() are private so that only
+// friend RTLock can access them
+private:
+    inline void lock()
+    {
+        RTCritSectEnter(&mMtx);
+    }
 
-        inline void unlock()
-        {
-            RTCritSectLeave(&mMtx);
-        }
+    inline void unlock()
+    {
+        RTCritSectLeave(&mMtx);
+    }
 };
 
 
@@ -128,32 +127,32 @@ class RTLockMtx
  */
 class RTLock
 {
-    private:
-        RTLockMtx  &mMtx;
-        bool        mfLocked;
+private:
+    RTLockMtx  &mMtx;
+    bool        mfLocked;
 
-    public:
-        RTLock(RTLockMtx &aMtx)
-            : mMtx(aMtx)
-        {
-            mMtx.lock();
-            mfLocked = true;
-        }
+public:
+    RTLock(RTLockMtx &aMtx)
+        : mMtx(aMtx)
+    {
+        mMtx.lock();
+        mfLocked = true;
+    }
 
-        ~RTLock()
-        {
-            if (mfLocked)
-                mMtx.unlock();
-        }
+    ~RTLock()
+    {
+        if (mfLocked)
+            mMtx.unlock();
+    }
 
-        inline void release()
+    inline void release()
+    {
+        if (mfLocked)
         {
-            if (mfLocked)
-            {
-                mMtx.unlock();
-                mfLocked = false;
-            }
+            mMtx.unlock();
+            mfLocked = false;
         }
+    }
 };
 
 
