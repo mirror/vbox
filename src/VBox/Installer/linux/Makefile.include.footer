@@ -77,13 +77,7 @@ ifndef INCL
  export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE \
-		-DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_MODULE \
-		-DRT_WITH_VBOX $(MOD_DEFS)
-ifeq ($(BUILD_TARGET_ARCH),amd64)
- KFLAGS  += -DRT_ARCH_AMD64
-else
- KFLAGS  += -DRT_ARCH_X86
-endif
+		-DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
 KFLAGS   += -DDEBUG
 endif
@@ -119,7 +113,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG) $(MOD_CFLAGS)
+EXTRA_CFLAGS += $(MOD_CFLAGS) $(INCL) $(KFLAGS) $(KDEBUG)
 
 all: $(MODULE)
 
