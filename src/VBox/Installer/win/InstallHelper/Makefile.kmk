@@ -36,7 +36,8 @@ endif
 VBoxInstallHelper_SDKS     = WINPSDK W2K3DDK
 VBoxInstallHelper_LIBS     = $(PATH_SDK_W2K3DDK_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
- VBoxInstallHelper_LIBS   += $(PATH_LIB)/WinNetConfig.lib \
+ VBoxInstallHelper_LIBS   += $(TARGET_WinNetConfig) \
+    $(TARGET_VBoxDrvCfg) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif

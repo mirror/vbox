@@ -16,6 +16,7 @@
  */
 
 #include <VBox/VBoxNetCfg-win.h>
+#include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
 
 #include <devguid.h>
@@ -39,7 +40,7 @@ static int VBoxNetAdpUninstall()
         hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(L"sun_VBoxNetAdp");
         if(hr == S_OK)
         {
-            hr = VBoxNetCfgWinInfUninstallAll(&GUID_DEVCLASS_NET, L"Net", L"sun_VBoxNetAdp", 0/* could be SUOI_FORCEDELETE */);
+            hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", L"sun_VBoxNetAdp", 0/* could be SUOI_FORCEDELETE */);
             if(hr == S_OK)
             {
                 printf("uninstalled successfully\n");

@@ -377,7 +377,8 @@ ifdef VBOX_WITH_NETFLT
  #       needing it.
  src-server/win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
-	$(PATH_LIB)/WinNetConfig.lib \
+	$(TARGET_WinNetConfig) \
+	$(TARGET_VBoxDrvCfg) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
  ifdef VBOX_NETFLT_ONDEMAND_BIND
@@ -609,7 +610,8 @@ VBoxC_LIBS += \
 	$(LIB_REM)
 
 ifdef VBOX_WITH_NETFLT
- VBoxC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib \
+ VBoxC_LIBS.win += $(TARGET_VBoxDrvCfg) \
+    $(TARGET_WinNetConfig) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
