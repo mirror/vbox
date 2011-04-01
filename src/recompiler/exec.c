@@ -2330,14 +2330,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
            We can't use the high bits of pd for this because
            IO_MEM_ROMD uses these as a ram address.  */
         iotlb = (pd & ~TARGET_PAGE_MASK);
-#ifndef VBOX
         if (p) {
-#else
-        if (   p
-            && p->phys_offset
-            && (pd & ~TARGET_PAGE_MASK) != env->pVM->rem.s.iMMIOMemType
-            && (pd & ~TARGET_PAGE_MASK) != env->pVM->rem.s.iHandlerMemType) {
-#endif
             iotlb += p->region_offset;
         } else {
             iotlb += paddr;
