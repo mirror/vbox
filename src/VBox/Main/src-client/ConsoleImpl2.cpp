@@ -2266,6 +2266,16 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 }
 #endif
 
+# if 0  /* Virtual Web Cam */
+
+                InsertConfigNode(pUsbDevices, "WebCam", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+# if 0 /* Experiments with attaching */
+                InsertConfigInteger(pCfg, "USBVER", RT_BIT(2));
+# endif
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+# endif
 # if 0  /* Virtual MSD*/
 
                 InsertConfigNode(pUsbDevices, "Msd", &pDev);
