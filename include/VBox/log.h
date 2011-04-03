@@ -313,6 +313,8 @@ typedef enum LOGGROUP
     LOG_GROUP_TM,
     /** TRPM group. */
     LOG_GROUP_TRPM,
+    /** USB video camera. */
+    LOG_GROUP_USB_CAM,
     /** USB driver group. */
     LOG_GROUP_USB_DRV,
     /** USBFilter group. */
@@ -493,6 +495,7 @@ typedef enum LOGGROUP
     "SUP_DRV",      \
     "TM",           \
     "TRPM",         \
+    "USB_CAM",      \
     "USB_DRV",      \
     "USB_FILTER",   \
     "USB_KBD",      \
