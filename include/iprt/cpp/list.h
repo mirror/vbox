@@ -53,8 +53,8 @@ namespace iprt
  * Appending items is usually also fast, cause the internal array is
  * preallocated. To minimize the memory overhead, native types (that is
  * everything smaller then the size of void*) are directly saved in the array.
- * If bigger types are used (e.g. iprt::MiniString) the internal array is an
- * array of pointers to the objects.
+ * If bigger types are used (e.g. RTCString) the internal array is an array of
+ * pointers to the objects.
  *
  * The size of the internal array will usually not shrink, but grow
  * automatically. Only certain methods, like list::clear or the "=" operator

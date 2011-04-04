@@ -141,7 +141,7 @@ struct ConfigFileBase::Data
         cleanup();
     }
 
-    iprt::MiniString        strFilename;
+    RTCString        strFilename;
     bool                    fFileExists;
 
     xml::Document           *pDoc;

@@ -335,9 +335,9 @@ int handleCreateHardDisk(HandlerArg *a)
     if (!RTPathHaveExt(strName.c_str()))
     {
         Utf8Str strFormat(format);
-        if (strFormat.compare("vmdk", iprt::MiniString::CaseInsensitive) == 0)
+        if (strFormat.compare("vmdk", RTCString::CaseInsensitive) == 0)
             strName.append(".vmdk");
-        else if (strFormat.compare("vhd", iprt::MiniString::CaseInsensitive) == 0)
+        else if (strFormat.compare("vhd", RTCString::CaseInsensitive) == 0)
             strName.append(".vhd");
         else
             strName.append(".vdi");

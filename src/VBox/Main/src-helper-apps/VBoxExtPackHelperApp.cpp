@@ -868,7 +868,7 @@ static RTEXITCODE DoInstall(int argc, char **argv)
     /*
      * Ok, down to business.
      */
-    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    RTCString *pstrMangledName = VBoxExtPackMangleName(pszName);
     if (!pstrMangledName)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to mangle name ('%s)", pszName);
 
@@ -954,10 +954,10 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
     /*
      * Mangle the name so we can construct the directory names.
      */
-    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    RTCString *pstrMangledName = VBoxExtPackMangleName(pszName);
     if (!pstrMangledName)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to mangle name ('%s)", pszName);
-    iprt::MiniString strMangledName(*pstrMangledName);
+    RTCString strMangledName(*pstrMangledName);
     delete pstrMangledName;
 
     /*

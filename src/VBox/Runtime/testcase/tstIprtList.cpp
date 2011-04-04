@@ -566,8 +566,8 @@ int main()
     /*
      * Big size type (translate to internal pointer list).
      */
-    test1<iprt::list,   iprt::MiniString, iprt::MiniString*, const char *>("ST: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
-    test1<iprt::mtlist, iprt::MiniString, iprt::MiniString*, const char *>("MT: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<iprt::list,   RTCString, RTCString *, const char *>("ST: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<iprt::mtlist, RTCString, RTCString *, const char *>("MT: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
 
     /*
      * Multi-threading test.

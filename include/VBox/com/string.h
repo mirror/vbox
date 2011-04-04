@@ -71,7 +71,7 @@ extern const BSTR g_bstrEmpty;
  * functions.
  *
  * The Bstr class hides all this handling behind a std::string-like interface
- * and also provides automatic conversions to MiniString and Utf8Str instances.
+ * and also provides automatic conversions to RTCString and Utf8Str instances.
  *
  * The one advantage of using the SysString* routines is that this makes it
  * possible to use it as a type of member variables of COM/XPCOM components and
@@ -116,7 +116,7 @@ public:
     }
 #endif
 
-    Bstr(const iprt::MiniString &that)
+    Bstr(const RTCString &that)
     {
         copyFrom(that.c_str());
     }
@@ -425,13 +425,13 @@ inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
 /**
  * String class used universally in Main for UTF-8 strings.
  *
- * This is based on iprt::MiniString, to which some functionality has been
+ * This is based on RTCString, to which some functionality has been
  * moved.  Here we keep things that are specific to Main, such as conversions
  * with UTF-16 strings (Bstr).
  *
- * Like iprt::MiniString, Utf8Str does not differentiate between NULL strings
+ * Like RTCString, Utf8Str does not differentiate between NULL strings
  * and empty strings.  In other words, Utf8Str("") and Utf8Str(NULL) behave the
- * same.  In both cases, MiniString allocates no memory, reports
+ * same.  In both cases, RTCString allocates no memory, reports
  * a zero length and zero allocated bytes for both, and returns an empty
  * C string from c_str().
  *
@@ -439,18 +439,18 @@ inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
  *          The VirtualBox policy in this regard is to validate strings coming
  *          from external sources before passing them to Utf8Str or Bstr.
  */
-class Utf8Str : public iprt::MiniString
+class Utf8Str : public RTCString
 {
 public:
 
     Utf8Str() {}
 
-    Utf8Str(const MiniString &that)
-        : MiniString(that)
+    Utf8Str(const RTCString &that)
+        : RTCString(that)
     {}
 
     Utf8Str(const char *that)
-        : MiniString(that)
+        : RTCString(that)
     {}
 
     Utf8Str(const Bstr &that)
@@ -471,22 +471,22 @@ public:
      *                          @see pg_rt_str_format.
      * @param   a_va            Argument vector containing the arguments
      *                          specified by the format string.
-     * @sa      iprt::MiniString::printfV
+     * @sa      RTCString::printfV
      */
     Utf8Str(const char *a_pszFormat, va_list a_va)
-        : MiniString(a_pszFormat, a_va)
+        : RTCString(a_pszFormat, a_va)
     {
     }
 
-    Utf8Str& operator=(const MiniString &that)
+    Utf8Str& operator=(const RTCString &that)
     {
-        MiniString::operator=(that);
+        RTCString::operator=(that);
         return *this;
     }
 
     Utf8Str& operator=(const char *that)
     {
-        MiniString::operator=(that);
+        RTCString::operator=(that);
         return *this;
     }
 
@@ -571,7 +571,7 @@ protected:
 };
 
 /**
- * Class with iprt::MiniString::printf as constructor for your convenience.
+ * Class with RTCString::printf as constructor for your convenience.
  *
  * Constructing a Utf8Str string object from a format string and a variable
  * number of arguments can easily be confused with the other Utf8Str

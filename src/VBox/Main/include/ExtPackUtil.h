@@ -65,13 +65,13 @@
 typedef struct VBOXEXTPACKPLUGINDESC
 {
     /** The name. */
-    iprt::MiniString        strName;
+    RTCString        strName;
     /** The module name. */
-    iprt::MiniString        strModule;
+    RTCString        strModule;
     /** The description. */
-    iprt::MiniString        strDescription;
+    RTCString        strDescription;
     /** The frontend or component which it plugs into. */
-    iprt::MiniString        strFrontend;
+    RTCString        strFrontend;
 } VBOXEXTPACKPLUGINDESC;
 /** Pointer to a plug-in descriptor. */
 typedef VBOXEXTPACKPLUGINDESC *PVBOXEXTPACKPLUGINDESC;
@@ -84,17 +84,17 @@ typedef VBOXEXTPACKPLUGINDESC *PVBOXEXTPACKPLUGINDESC;
 typedef struct VBOXEXTPACKDESC
 {
     /** The name. */
-    iprt::MiniString        strName;
+    RTCString        strName;
     /** The description. */
-    iprt::MiniString        strDescription;
+    RTCString        strDescription;
     /** The version string. */
-    iprt::MiniString        strVersion;
+    RTCString        strVersion;
     /** The internal revision number. */
     uint32_t                uRevision;
     /** The name of the main module. */
-    iprt::MiniString        strMainModule;
+    RTCString        strMainModule;
     /** The name of the VRDE module, empty if none. */
-    iprt::MiniString        strVrdeModule;
+    RTCString        strVrdeModule;
     /** The number of plug-in descriptors. */
     uint32_t                cPlugIns;
     /** Pointer to an array of plug-in descriptors. */
@@ -110,14 +110,14 @@ typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
 void                VBoxExtPackInitDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
-iprt::MiniString   *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
-iprt::MiniString   *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
-iprt::MiniString   *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
+RTCString   *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+RTCString   *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+RTCString   *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
 void                VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
 bool                VBoxExtPackIsValidName(const char *pszName);
 bool                VBoxExtPackIsValidMangledName(const char *pszMangledName, size_t cchMax = RTSTR_MAX);
-iprt::MiniString   *VBoxExtPackMangleName(const char *pszName);
-iprt::MiniString   *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
+RTCString   *VBoxExtPackMangleName(const char *pszName);
+RTCString   *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
 int                 VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *pszParentDir, const char *pszName);
 bool                VBoxExtPackIsValidVersionString(const char *pszName);
 bool                VBoxExtPackIsValidModuleString(const char *pszModule);

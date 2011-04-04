@@ -255,9 +255,9 @@ int handleImportAppliance(HandlerArg *arg)
         CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
         char *pszAbsFilePath;
-        if (strOvfFilename.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
-            strOvfFilename.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
-            strOvfFilename.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
+        if (strOvfFilename.startsWith("S3://", RTCString::CaseInsensitive) ||
+            strOvfFilename.startsWith("SunCloud://", RTCString::CaseInsensitive) ||
+            strOvfFilename.startsWith("webdav://", RTCString::CaseInsensitive))
             pszAbsFilePath = RTStrDup(strOvfFilename.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
@@ -927,9 +927,9 @@ int handleExportAppliance(HandlerArg *a)
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
         char *pszAbsFilePath = 0;
-        if (strOutputFile.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
-            strOutputFile.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
-            strOutputFile.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
+        if (strOutputFile.startsWith("S3://", RTCString::CaseInsensitive) ||
+            strOutputFile.startsWith("SunCloud://", RTCString::CaseInsensitive) ||
+            strOutputFile.startsWith("webdav://", RTCString::CaseInsensitive))
             pszAbsFilePath = RTStrDup(strOutputFile.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());

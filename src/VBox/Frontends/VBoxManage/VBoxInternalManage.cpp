@@ -1927,11 +1927,11 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
     bool                fEnablePresent = false;
     bool                fEnable        = false;
     bool                fFlagsPresent  = false;
-    iprt::MiniString    strFlags;
+    RTCString    strFlags;
     bool                fGroupsPresent = false;
-    iprt::MiniString    strGroups;
+    RTCString    strGroups;
     bool                fDestsPresent  = false;
-    iprt::MiniString    strDests;
+    RTCString    strDests;
 
     static const RTGETOPTDEF s_aOptions[] =
     {

@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VBox Performance Classes declaration.
+ * VirtualBox Main - Performance Classes declaration.
  */
 
 /*
@@ -533,7 +531,7 @@ namespace pm
         void query(ULONG **data, ULONG *count, ULONG *sequenceNumber);
 
     private:
-        iprt::MiniString mName;
+        RTCString mName;
         BaseMetric *mBaseMetric;
         SubMetric  *mSubMetric;
         Aggregate  *mAggregate;
@@ -548,12 +546,12 @@ namespace pm
                ComSafeArrayIn(IUnknown * , objects));
         static bool patternMatch(const char *pszPat, const char *pszName,
                                  bool fSeenColon = false);
-        bool match(const ComPtr<IUnknown> object, const iprt::MiniString &name) const;
+        bool match(const ComPtr<IUnknown> object, const RTCString &name) const;
     private:
         void init(ComSafeArrayIn(IN_BSTR, metricNames),
                   ComSafeArrayIn(IUnknown * , objects));
 
-        typedef std::pair<const ComPtr<IUnknown>, const iprt::MiniString> FilterElement;
+        typedef std::pair<const ComPtr<IUnknown>, const RTCString> FilterElement;
         typedef std::list<FilterElement> ElementList;
 
         ElementList mElements;
