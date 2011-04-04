@@ -1,5 +1,5 @@
 #!/bin/sh
-#
+## @file
 # VirtualBox privileged execution helper script for Linux and Solaris
 #
 
