@@ -29,6 +29,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/assert.h>
 
 
 #ifdef IN_RC
