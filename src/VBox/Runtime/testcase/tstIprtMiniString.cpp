@@ -256,27 +256,27 @@ static void test1(RTTEST hTest)
     CHECK_EQUAL(strTest.substr(pos), "ßäbcdef");
 
     /* split */
-    iprt::list<RTCString> spList1 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::RemoveEmptyParts);
+    RTCList<RTCString> spList1 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::RemoveEmptyParts);
     RTTESTI_CHECK(spList1.size() == 3);
     for (size_t i = 0; i < spList1.size(); ++i)
         RTTESTI_CHECK(spList1.at(i) == "abcdef");
-    iprt::list<RTCString> spList2 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::KeepEmptyParts);
+    RTCList<RTCString> spList2 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::KeepEmptyParts);
     RTTESTI_CHECK_RETV(spList2.size() == 5);
     RTTESTI_CHECK(spList2.at(0) == "");
     RTTESTI_CHECK(spList2.at(1) == "abcdef");
     RTTESTI_CHECK(spList2.at(2) == "abcdef");
     RTTESTI_CHECK(spList2.at(3) == "");
     RTTESTI_CHECK(spList2.at(4) == "abcdef");
-    iprt::list<RTCString> spList3 = RTCString().split("##", RTCString::KeepEmptyParts);
+    RTCList<RTCString> spList3 = RTCString().split("##", RTCString::KeepEmptyParts);
     RTTESTI_CHECK(spList3.size() == 0);
-    iprt::list<RTCString> spList4 = RTCString().split("");
+    RTCList<RTCString> spList4 = RTCString().split("");
     RTTESTI_CHECK(spList4.size() == 0);
-    iprt::list<RTCString> spList5 = RTCString("abcdef").split("");
+    RTCList<RTCString> spList5 = RTCString("abcdef").split("");
     RTTESTI_CHECK_RETV(spList5.size() == 1);
     RTTESTI_CHECK(spList5.at(0) == "abcdef");
 
     /* join */
-    iprt::list<RTCString> jnList;
+    RTCList<RTCString> jnList;
     strTest = RTCString::join(jnList);
     RTTESTI_CHECK(strTest == "");
     strTest = RTCString::join(jnList, "##");

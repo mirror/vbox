@@ -824,8 +824,8 @@ public:
      * @param   a_enmMode   How should empty parts be handled.
      * @returns separated strings as string list.
      */
-    iprt::list<RTCString, RTCString *> split(const RTCString &a_rstrSep,
-                                             SplitMode a_enmMode = RemoveEmptyParts);
+    RTCList<RTCString, RTCString *> split(const RTCString &a_rstrSep,
+                                          SplitMode a_enmMode = RemoveEmptyParts);
 
     /**
      * Joins a list of strings together using the provided separator.
@@ -834,7 +834,7 @@ public:
      * @param   a_rstrSep   The separator used for joining.
      * @returns joined string.
      */
-    static RTCString join(const iprt::list<RTCString, RTCString *> &a_rList,
+    static RTCString join(const RTCList<RTCString, RTCString *> &a_rList,
                           const RTCString &a_rstrSep = "");
 
 protected:

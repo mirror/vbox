@@ -326,10 +326,10 @@ int RTCString::toInt(uint32_t &i) const
     return RTStrToUInt32Ex(m_psz, NULL, 0, &i);
 }
 
-iprt::list<RTCString, RTCString *>
+RTCList<RTCString, RTCString *>
 RTCString::split(const RTCString &a_rstrSep, SplitMode mode /* = RemoveEmptyParts */)
 {
-    iprt::list<RTCString> strRet;
+    RTCList<RTCString> strRet;
     if (!m_psz)
         return strRet;
     if (a_rstrSep.isEmpty())
@@ -361,8 +361,8 @@ RTCString::split(const RTCString &a_rstrSep, SplitMode mode /* = RemoveEmptyPart
 
 /* static */
 RTCString
-RTCString::join(const iprt::list<RTCString, RTCString*> &a_rList,
-                 const RTCString &a_rstrSep /* = "" */)
+RTCString::join(const RTCList<RTCString, RTCString *> &a_rList,
+                const RTCString &a_rstrSep /* = "" */)
 {
     RTCString strRet;
     if (a_rList.size() > 1)
