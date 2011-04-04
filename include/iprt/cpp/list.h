@@ -177,6 +177,7 @@ class ListBase
      * value.
      */
     typedef typename if_ptr<ITYPE, T&, T>::result GET_RTYPE;
+    typedef typename if_ptr<ITYPE, const T&, const T>::result GET_CRTYPE;
 
 public:
     /**
@@ -409,10 +410,10 @@ public:
      *
      * @return   The first item.
      */
-    const GET_RTYPE first() const
+    GET_CRTYPE first() const
     {
         m_guard.enterRead();
-        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
+        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
         m_guard.leaveRead();
         return res;
     }
@@ -441,10 +442,10 @@ public:
      *
      * @return   The last item.
      */
-    const GET_RTYPE last() const
+    GET_CRTYPE last() const
     {
         m_guard.enterRead();
-        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
+        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
         m_guard.leaveRead();
         return res;
     }
@@ -474,10 +475,10 @@ public:
      * @param   i     The position of the item to return.
      * @return  The item at position @a i.
      */
-    const GET_RTYPE at(size_t i) const
+    GET_CRTYPE at(size_t i) const
     {
         m_guard.enterRead();
-        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
