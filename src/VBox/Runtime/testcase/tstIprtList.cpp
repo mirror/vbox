@@ -32,6 +32,7 @@
 #include <iprt/cpp/ministring.h>
 #include <iprt/test.h>
 #include <iprt/rand.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
