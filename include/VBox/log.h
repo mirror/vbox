@@ -313,8 +313,6 @@ typedef enum LOGGROUP
     LOG_GROUP_TM,
     /** TRPM group. */
     LOG_GROUP_TRPM,
-    /** USB video camera. */
-    LOG_GROUP_USB_CAM,
     /** USB driver group. */
     LOG_GROUP_USB_DRV,
     /** USBFilter group. */
@@ -323,6 +321,8 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_KBD,
     /** MSD USB device group. */
     LOG_GROUP_USB_MSD,
+    /** USB webcam. */
+    LOG_GROUP_USB_WEBCAM,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
     /** iSCSI virtual disk backend. */
@@ -495,11 +495,11 @@ typedef enum LOGGROUP
     "SUP_DRV",      \
     "TM",           \
     "TRPM",         \
-    "USB_CAM",      \
     "USB_DRV",      \
     "USB_FILTER",   \
     "USB_KBD",      \
     "USB_MSD",      \
+    "USB_WEBCAM",   \
     "VD",           \
     "VD_ISCSI",     \
     "VD_PARALLELS", \
