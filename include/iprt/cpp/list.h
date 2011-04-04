@@ -77,6 +77,20 @@ namespace iprt
  * The native types like int, bool, ptr, ..., are meeting this criteria, so
  * they are save to use.
  *
+ * Please note that the return type of some of the getter methods are slightly
+ * different depending on the list type. Native types return the item by value,
+ * items with a size greater than sizeof(void*) by reference. As native types
+ * saved directly in the internal array, returning a reference to them (and
+ * saving them in a reference as well) would make them invalid (or pointing to
+ * a wrong item) when the list is changed in the meanwhile. Returning a
+ * reference for bigger types isn't problematic and makes sure we get out the
+ * best speed of the list. The one exception to this rule is the index
+ * operator[]. This operator always return a reference to make it possible to
+ * use it as a lvalue. Its your responsibility to make sure the list isn't
+ * changed when using the value as reference returned by this operator.
+ *
+ * The list class is reentrant. For a thread-safe variant see mtlist.
+ *
  * Implementation details:
  * It is possible to specialize any type. This might be necessary to get the
  * best speed out of the list. Examples are the 64-bit types, which use the
@@ -89,6 +103,25 @@ namespace iprt
  *
  * @{
  */
+
+/**
+ * The guard definition.
+ */
+template <bool G>
+class ListGuard;
+
+/**
+ * The default guard which does nothing.
+ */
+template <>
+class ListGuard<false>
+{
+public:
+    inline void enterRead() const {}
+    inline void leaveRead() const {}
+    inline void enterWrite() {}
+    inline void leaveWrite() {}
+};
 
 /**
  * General helper template for managing native values in ListBase.
@@ -135,9 +168,16 @@ public:
  * necessary list functionality in a type independent way and offers the public
  * list interface to the user.
  */
-template <class T, typename TYPE>
+template <class T, typename ITYPE, bool MT>
 class ListBase
 {
+    /**
+     * Defines the return type of most of the getter methods. If the internal
+     * used type is a pointer, we return a reference. If not we return by
+     * value.
+     */
+    typedef typename if_ptr<ITYPE, T&, T>::result GET_RTYPE;
+
 public:
     /**
      * Creates a new list.
@@ -164,13 +204,13 @@ public:
      * @param   other          The list to copy.
      * @throws  std::bad_alloc
      */
-    ListBase(const ListBase<T, TYPE>& other)
+    ListBase(const ListBase<T, ITYPE, MT>& other)
       : m_pArray(0)
       , m_cSize(0)
       , m_cCapacity(0)
     {
         realloc_grow(other.m_cSize);
-        ListHelper<T, list_type>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_cSize = other.m_cSize;
     }
 
@@ -179,7 +219,7 @@ public:
      */
     ~ListBase()
     {
-        ListHelper<T, list_type>::eraseRange(m_pArray, 0, m_cSize);
+        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
         if (m_pArray)
             RTMemFree(m_pArray);
     }
@@ -195,7 +235,12 @@ public:
      * @param   cCapacity   The new capacity within the list.
      * @throws  std::bad_alloc
      */
-    void setCapacity(size_t cCapacity) { realloc(cCapacity); }
+    void setCapacity(size_t cCapacity)
+    {
+        m_guard.enterWrite();
+        realloc(cCapacity);
+        m_guard.leaveWrite();
+    }
 
     /**
      * Return the current capacity of the list.
@@ -226,13 +271,15 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, TYPE> &insert(size_t i, const T &val)
+    ListBase<T, ITYPE, MT> &insert(size_t i, const T &val)
     {
+        m_guard.enterWrite();
         if (m_cSize == m_cCapacity)
             realloc_grow(m_cCapacity + DefaultCapacity);
-        memmove(&m_pArray[i + 1], &m_pArray[i], (m_cSize - i) * sizeof(list_type));
-        ListHelper<T, list_type>::set(m_pArray, i, val);
+        memmove(&m_pArray[i + 1], &m_pArray[i], (m_cSize - i) * sizeof(ITYPE));
+        ListHelper<T, ITYPE>::set(m_pArray, i, val);
         ++m_cSize;
+        m_guard.leaveWrite();
 
         return *this;
     }
@@ -244,7 +291,7 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, TYPE> &prepend(const T &val)
+    ListBase<T, ITYPE, MT> &prepend(const T &val)
     {
         return insert(0, val);
     }
@@ -256,13 +303,15 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, TYPE> &prepend(const ListBase<T, TYPE> &other)
+    ListBase<T, ITYPE, MT> &prepend(const ListBase<T, ITYPE, MT> &other)
     {
+        m_guard.enterWrite();
         if (m_cCapacity - m_cSize < other.m_cSize)
             realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
-        memmove(&m_pArray[other.m_cSize], &m_pArray[0], m_cSize * sizeof(list_type));
-        ListHelper<T, list_type>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        memmove(&m_pArray[other.m_cSize], &m_pArray[0], m_cSize * sizeof(ITYPE));
+        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_cSize += other.m_cSize;
+        m_guard.leaveWrite();
 
         return *this;
     }
@@ -274,12 +323,14 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, TYPE> &append(const T &val)
+    ListBase<T, ITYPE, MT> &append(const T &val)
     {
+        m_guard.enterWrite();
         if (m_cSize == m_cCapacity)
             realloc_grow(m_cCapacity + DefaultCapacity);
-        ListHelper<T, list_type>::set(m_pArray, m_cSize, val);
+        ListHelper<T, ITYPE>::set(m_pArray, m_cSize, val);
         ++m_cSize;
+        m_guard.leaveWrite();
 
         return *this;
     }
@@ -291,12 +342,14 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, TYPE> &append(const ListBase<T, TYPE> &other)
+    ListBase<T, ITYPE, MT> &append(const ListBase<T, ITYPE, MT> &other)
     {
+        m_guard.enterWrite();
         if (m_cCapacity - m_cSize < other.m_cSize)
             realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
-        ListHelper<T, list_type>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
+        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
         m_cSize += other.m_cSize;
+        m_guard.leaveWrite();
 
         return *this;
     }
@@ -308,20 +361,22 @@ public:
      * @param   other   The list to copy.
      * @return  a reference to this list.
      */
-    ListBase<T, TYPE> &operator=(const ListBase<T, TYPE>& other)
+    ListBase<T, ITYPE, MT> &operator=(const ListBase<T, ITYPE, MT>& other)
     {
         /* Prevent self assignment */
         if (this == &other)
             return *this;
 
+        m_guard.enterWrite();
         /* Values cleanup */
-        ListHelper<T, list_type>::eraseRange(m_pArray, 0, m_cSize);
+        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
 
         /* Copy */
         if (other.m_cSize != m_cCapacity)
             realloc_grow(other.m_cSize);
         m_cSize = other.m_cSize;
-        ListHelper<T, list_type>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        m_guard.leaveWrite();
 
         return *this;
     }
@@ -336,68 +391,82 @@ public:
      * @param   val   The new value.
      * @return  a reference to this list.
      */
-    ListBase<T, TYPE> &replace(size_t i, const T &val)
+    ListBase<T, ITYPE, MT> &replace(size_t i, const T &val)
     {
-        ListHelper<T, list_type>::erase(m_pArray, i);
-        ListHelper<T, list_type>::set(m_pArray, i, val);
+        m_guard.enterWrite();
+        ListHelper<T, ITYPE>::erase(m_pArray, i);
+        ListHelper<T, ITYPE>::set(m_pArray, i, val);
+        m_guard.leaveWrite();
 
         return *this;
     }
 
     /**
-     * Return the first item as constant reference.
+     * Return the first item as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
      *
      * @return   The first item.
      */
-    const T &first() const
+    const GET_RTYPE first() const
     {
-        return ListHelper<T, list_type>::at(m_pArray, 0);
+        m_guard.enterRead();
+        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
-     * Return the first item as mutable reference.
+     * Return the first item.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
      *
      * @return   The first item.
      */
-    T &first()
+    GET_RTYPE first()
     {
-        return ListHelper<T, list_type>::at(m_pArray, 0);
+        m_guard.enterRead();
+        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
-     * Return the last item as constant reference.
+     * Return the last item as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
      *
      * @return   The last item.
      */
-    const T &last() const
+    const GET_RTYPE last() const
     {
-        return ListHelper<T, list_type>::at(m_pArray, m_cSize - 1);
+        m_guard.enterRead();
+        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
-     * Return the last item as mutable reference.
+     * Return the last item.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
      *
      * @return   The last item.
      */
-    T &last()
+    GET_RTYPE last()
     {
-        return ListHelper<T, list_type>::at(m_pArray, m_cSize - 1);
+        m_guard.enterRead();
+        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
-     * Return the item at position @a i as constant reference.
+     * Return the item at position @a i as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
@@ -405,13 +474,16 @@ public:
      * @param   i     The position of the item to return.
      * @return  The item at position @a i.
      */
-    const T &at(size_t i) const
+    const GET_RTYPE at(size_t i) const
     {
-        return ListHelper<T, list_type>::at(m_pArray, i);
+        m_guard.enterRead();
+        const GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
-     * Return the item at position @a i as mutable reference.
+     * Return the item at position @a i.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
      *       and smaller than list::size.
@@ -419,9 +491,12 @@ public:
      * @param   i     The position of the item to return.
      * @return   The item at position @a i.
      */
-    T &at(size_t i)
+    GET_RTYPE at(size_t i)
     {
-        return ListHelper<T, list_type>::at(m_pArray, i);
+        m_guard.enterRead();
+        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
@@ -435,7 +510,10 @@ public:
      */
     T &operator[](size_t i)
     {
-        return ListHelper<T, list_type>::at(m_pArray, i);
+        m_guard.enterRead();
+        T &res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
@@ -447,9 +525,15 @@ public:
      */
     T value(size_t i) const
     {
+        m_guard.enterRead();
         if (i >= m_cSize)
+        {
+            m_guard.leaveRead();
             return T();
-        return ListHelper<T, list_type>::at(m_pArray, i);
+        }
+        T res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
@@ -462,9 +546,15 @@ public:
      */
     T value(size_t i, const T &defaultVal) const
     {
+        m_guard.enterRead();
         if (i >= m_cSize)
+        {
+            m_guard.leaveRead();
             return defaultVal;
-        return ListHelper<T, list_type>::at(m_pArray, i);
+        }
+        T res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
@@ -477,11 +567,13 @@ public:
      */
     void removeAt(size_t i)
     {
-        ListHelper<T, list_type>::erase(m_pArray, i);
+        m_guard.enterWrite();
+        ListHelper<T, ITYPE>::erase(m_pArray, i);
         /* Not last element? */
         if (i < m_cSize - 1)
-            memmove(&m_pArray[i], &m_pArray[i + 1], (m_cSize - i - 1) * sizeof(list_type));
+            memmove(&m_pArray[i], &m_pArray[i + 1], (m_cSize - i - 1) * sizeof(ITYPE));
         --m_cSize;
+        m_guard.leaveWrite();
     }
 
     /**
@@ -496,11 +588,13 @@ public:
      */
     void removeRange(size_t iFrom, size_t iTo)
     {
-        ListHelper<T, list_type>::eraseRange(m_pArray, iFrom, iTo - iFrom);
+        m_guard.enterWrite();
+        ListHelper<T, ITYPE>::eraseRange(m_pArray, iFrom, iTo - iFrom);
         /* Not last elements? */
         if (m_cSize - iTo > 0)
-            memmove(&m_pArray[iFrom], &m_pArray[iTo], (m_cSize - iTo) * sizeof(list_type));
+            memmove(&m_pArray[iFrom], &m_pArray[iTo], (m_cSize - iTo) * sizeof(ITYPE));
         m_cSize -= iTo - iFrom;
+        m_guard.leaveWrite();
     }
 
     /**
@@ -508,11 +602,13 @@ public:
      */
     void clear()
     {
+        m_guard.enterWrite();
         /* Values cleanup */
-        ListHelper<T, list_type>::eraseRange(m_pArray, 0, m_cSize);
+        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
         if (m_cSize != DefaultCapacity)
             realloc_grow(DefaultCapacity);
         m_cSize = 0;
+        m_guard.leaveWrite();
     }
 
     /**
@@ -535,7 +631,7 @@ private:
         if (   cNewSize < m_cSize
             && m_pArray)
         {
-            ListHelper<T, list_type>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
+            ListHelper<T, ITYPE>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
             m_cSize -= m_cSize - cNewSize;
         }
 
@@ -551,7 +647,7 @@ private:
         /* Resize the array. */
         if (cNewSize > 0)
         {
-            m_pArray = static_cast<list_type*>(RTMemRealloc(m_pArray, sizeof(list_type) * cNewSize));
+            m_pArray = static_cast<ITYPE*>(RTMemRealloc(m_pArray, sizeof(ITYPE) * cNewSize));
             if (!m_pArray)
             {
                 /** @todo you leak memory. */
@@ -573,7 +669,7 @@ private:
     {
         /* Resize the array. */
         m_cCapacity = cNewSize;
-        m_pArray = static_cast<list_type*>(RTMemRealloc(m_pArray, sizeof(list_type) * cNewSize));
+        m_pArray = static_cast<ITYPE*>(RTMemRealloc(m_pArray, sizeof(ITYPE) * cNewSize));
         if (!m_pArray)
         {
             /** @todo you leak memory. */
@@ -585,51 +681,44 @@ private:
         }
     }
 
-    /**
-     * Which type of list should be created. This depends on the size of T. If
-     * T is a native type (int, bool, ptr, ...), the list will contain the
-     * values itself. If the size is bigger than the size of a void*, the list
-     * contains pointers to the values. This could be specialized like for the
-     * 64-bit integer types.
-     */
-    typedef TYPE list_type;
-
     /** The internal list array. */
-    list_type *m_pArray;
+    ITYPE *m_pArray;
     /** The current count of items in use. */
     size_t m_cSize;
     /** The current capacity of the internal array. */
     size_t m_cCapacity;
+    /** The guard used to serialize the access to the items. */
+    ListGuard<MT> m_guard;
 };
 
-template <class T, typename TYPE>
-const size_t ListBase<T, TYPE>::DefaultCapacity = 10;
+template <class T, typename ITYPE, bool MT>
+const size_t ListBase<T, ITYPE, MT>::DefaultCapacity = 10;
 
 /**
  * Template class which automatically determines the type of list to use.
  *
  * @see ListBase
  */
-template <class T, typename TYPE = typename if_<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class list : public ListBase<T, TYPE> {};
+template <class T, typename ITYPE = typename if_<(sizeof(T) > sizeof(void*)), T*, T>::result>
+class list : public ListBase<T, ITYPE, false> {};
 
 /**
- * Specialization class for using the native type list for unsigned 64-bit
+ * Specialized class for using the native type list for unsigned 64-bit
  * values even on a 32-bit host.
  *
  * @see ListBase
  */
 template <>
-class list<uint64_t>: public ListBase<uint64_t, uint64_t> {};
+class list<uint64_t>: public ListBase<uint64_t, uint64_t, false> {};
 
 /**
- * Specialization class for using the native type list for signed 64-bit
+ * Specialized class for using the native type list for signed 64-bit
  * values even on a 32-bit host.
  *
  * @see ListBase
  */
 template <>
-class list<int64_t>: public ListBase<int64_t, int64_t> {};
+class list<int64_t>: public ListBase<int64_t, int64_t, false> {};
 
 /** @} */
 
