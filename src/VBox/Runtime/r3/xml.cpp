@@ -108,7 +108,7 @@ namespace xml
 ////////////////////////////////////////////////////////////////////////////////
 
 LogicError::LogicError(RT_SRC_POS_DECL)
-    : Error(NULL)
+    : RTCError(NULL)
 {
     char *msg = NULL;
     RTStrAPrintf(&msg, "In '%s', '%s' at #%d",
@@ -1572,7 +1572,7 @@ struct IOContext
     {
     }
 
-    void setError(const iprt::Error &x)
+    void setError(const RTCError &x)
     {
         error = x.what();
     }
@@ -1644,7 +1644,7 @@ int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
         return pContext->file.read(aBuf, aLen);
     }
     catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
-    catch (const iprt::Error &err) { pContext->setError(err); }
+    catch (const RTCError &err) { pContext->setError(err); }
     catch (const std::exception &err) { pContext->setError(err); }
     catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
 
@@ -1769,7 +1769,7 @@ int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
         return pContext->file.write(aBuf, aLen);
     }
     catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
-    catch (const iprt::Error &err) { pContext->setError(err); }
+    catch (const RTCError &err) { pContext->setError(err); }
     catch (const std::exception &err) { pContext->setError(err); }
     catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
 

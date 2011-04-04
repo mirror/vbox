@@ -931,7 +931,7 @@ HRESULT Appliance::readFSImpl(TaskOVF *pTask, PVDINTERFACEIO pCallbacks, PSHA1ST
         /* Read & parse the XML structure of the OVF file */
         m->pReader = new ovf::OVFReader(pvTmpBuf, cbSize, pTask->locInfo.strPath);
     }
-    catch (iprt::Error &x)      // includes all XML exceptions
+    catch (RTCError &x)      // includes all XML exceptions
     {
         rc = setError(VBOX_E_FILE_ERROR,
                       x.what());

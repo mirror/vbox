@@ -316,14 +316,14 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
 #endif
 
 
-class ConfigError : public iprt::Error
+class ConfigError : public RTCError
 {
 public:
 
     ConfigError(const char *pcszFunction,
                 int vrc,
                 const char *pcszName)
-        : iprt::Error(Utf8StrFmt("%s failed: rc=%Rrc, pcszName=%s", pcszFunction, vrc, pcszName)),
+        : RTCError(Utf8StrFmt("%s failed: rc=%Rrc, pcszName=%s", pcszFunction, vrc, pcszName)),
           m_vrc(vrc)
     {
         AssertMsgFailed(("%s\n", what())); // in strict mode, hit a breakpoint here
@@ -334,7 +334,7 @@ public:
 
 
 /**
- * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
+ * Helper that calls CFGMR3InsertString and throws an RTCError if that
  * fails (C-string variant).
  * @param   pParent         See CFGMR3InsertStringN.
  * @param   pcszNodeName    See CFGMR3InsertStringN.
@@ -352,7 +352,7 @@ static void InsertConfigString(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
+ * Helper that calls CFGMR3InsertString and throws an RTCError if that
  * fails (Utf8Str variant).
  * @param   pParent         See CFGMR3InsertStringN.
  * @param   pcszNodeName    See CFGMR3InsertStringN.
@@ -371,7 +371,7 @@ static void InsertConfigString(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
+ * Helper that calls CFGMR3InsertString and throws an RTCError if that
  * fails (Bstr variant).
  *
  * @param   pParent         See CFGMR3InsertStringN.
@@ -386,7 +386,7 @@ static void InsertConfigString(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertBytes and throws an iprt::Error if that fails.
+ * Helper that calls CFGMR3InsertBytes and throws an RTCError if that fails.
  *
  * @param   pNode           See CFGMR3InsertBytes.
  * @param   pcszName        See CFGMR3InsertBytes.
@@ -407,7 +407,7 @@ static void InsertConfigBytes(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertInteger and throws an iprt::Error if that
+ * Helper that calls CFGMR3InsertInteger and throws an RTCError if that
  * fails.
  *
  * @param   pNode           See CFGMR3InsertInteger.
@@ -426,7 +426,7 @@ static void InsertConfigInteger(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertNode and throws an iprt::Error if that fails.
+ * Helper that calls CFGMR3InsertNode and throws an RTCError if that fails.
  *
  * @param   pNode           See CFGMR3InsertNode.
  * @param   pcszName        See CFGMR3InsertNode.
@@ -442,7 +442,7 @@ static void InsertConfigNode(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3RemoveValue and throws an iprt::Error if that fails.
+ * Helper that calls CFGMR3RemoveValue and throws an RTCError if that fails.
  *
  * @param   pNode           See CFGMR3RemoveValue.
  * @param   pcszName        See CFGMR3RemoveValue.

@@ -3889,7 +3889,7 @@ HRESULT VirtualBox::handleUnexpectedExceptions(RT_SRC_POS_DECL)
         /* re-throw the current exception */
         throw;
     }
-    catch (const iprt::Error &err)      // includes all XML exceptions
+    catch (const RTCError &err)      // includes all XML exceptions
     {
         return setErrorStatic(E_FAIL,
                               Utf8StrFmt(tr("%s.\n%s[%d] (%s)"),
