@@ -192,8 +192,8 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
     
     if (pThis->IrqHandler.pfnIrqHandler)
     {
-        pPort->pfnUnregisterIrqHandler(pPort, pThis->IrqHandler.iHostIrq);
-        pThis->IrqHandler.iHostIrq = -1;
+        vboxPciOsDevUnregisterIrqHandler(pThis, pThis->IrqHandler.iHostIrq);
+        pThis->IrqHandler.iHostIrq = 0;
         pThis->IrqHandler.pfnIrqHandler = NULL;
     }
 
@@ -385,7 +385,7 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, PCIRAWISRHA
     {
         pThis->IrqHandler.pfnIrqHandler = NULL;
         pThis->IrqHandler.pIrqContext   = NULL;
-        pThis->IrqHandler.iHostIrq = -1;
+        pThis->IrqHandler.iHostIrq = 0;
     }
     vboxPciDevUnlock(pThis);
 

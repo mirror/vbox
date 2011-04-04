@@ -300,6 +300,10 @@ typedef enum PCIRAWR0OPERATION
     PCIRAWR0_DO_PCICFG_READ,
     /* Get next IRQ for the device. */
     PCIRAWR0_DO_GET_IRQ,
+    /* Enable getting IRQs for the device. */
+    PCIRAWR0_DO_ENABLE_IRQ,
+    /* Disable getting IRQs for the device. */
+    PCIRAWR0_DO_DISABLE_IRQ,
     /* Notify driver about guest power state change. */
     PCIRAWR0_DO_POWER_STATE_CHANGE,
     /** The usual 32-bit type blow up. */
