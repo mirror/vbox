@@ -97,6 +97,10 @@ public:
     /* Settings dialog type stuff: */
     VBoxDefs::SettingsDialogType dialogType() const { return m_dialogType; }
     virtual void setDialogType(VBoxDefs::SettingsDialogType dialogType) { m_dialogType = dialogType; }
+    bool isMachineOffline() const { return dialogType() == VBoxDefs::SettingsDialogType_Offline; }
+    bool isMachineSaved() const { return dialogType() == VBoxDefs::SettingsDialogType_Saved; }
+    bool isMachineOnline() const { return dialogType() == VBoxDefs::SettingsDialogType_Runtime; }
+    bool isMachineInValidMode() const { return isMachineOffline() || isMachineSaved() || isMachineOnline(); }
 
     /* Page 'ID' stuff: */
     int id() const { return m_cId; }

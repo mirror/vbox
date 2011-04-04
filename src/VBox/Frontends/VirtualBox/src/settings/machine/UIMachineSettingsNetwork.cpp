@@ -62,24 +62,35 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
 
 void UIMachineSettingsNetwork::polishTab()
 {
-    /* Polish tab depending on dialog type: */
-    switch (m_pParent->dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            sltToggleAdvanced();
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            mCbEnableAdapter->setEnabled(false);
-            m_pAdapterTypeLabel->setEnabled(false);
-            m_pAdapterTypeCombo->setEnabled(false);
-            m_pMACLabel->setEnabled(false);
-            m_pMACEditor->setEnabled(false);
-            m_pMACButton->setEnabled(false);
-            m_pAdvancedArrow->animateClick();
-            break;
-        default:
-            break;
-    }
+    /* Basic attributes: */
+    mCbEnableAdapter->setEnabled(m_pParent->isMachineOffline());
+    m_pAttachmentTypeLabel->setEnabled(m_pParent->isMachineInValidMode());
+    m_pAttachmentTypeCombo->setEnabled(m_pParent->isMachineInValidMode());
+    m_pAdapterNameLabel->setEnabled(m_pParent->isMachineInValidMode() &&
+                                    attachmentType() != KNetworkAttachmentType_Null &&
+                                    attachmentType() != KNetworkAttachmentType_NAT);
+    m_pAdapterNameCombo->setEnabled(m_pParent->isMachineInValidMode() &&
+                                    attachmentType() != KNetworkAttachmentType_Null &&
+                                    attachmentType() != KNetworkAttachmentType_NAT);
+    m_pAdvancedArrow->setEnabled(m_pParent->isMachineInValidMode());
+
+    /* Advanced attributes: */
+    m_pAdapterTypeLabel->setEnabled(m_pParent->isMachineOffline());
+    m_pAdapterTypeCombo->setEnabled(m_pParent->isMachineOffline());
+    m_pPromiscuousModeLabel->setEnabled(m_pParent->isMachineInValidMode() &&
+                                        attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_NAT);
+    m_pPromiscuousModeCombo->setEnabled(m_pParent->isMachineInValidMode() &&
+                                        attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_NAT);
+    m_pMACLabel->setEnabled(m_pParent->isMachineOffline());
+    m_pMACEditor->setEnabled(m_pParent->isMachineOffline());
+    m_pMACButton->setEnabled(m_pParent->isMachineOffline());
+
+    /* Postprocessing: */
+    if ((m_pParent->isMachineSaved() || m_pParent->isMachineOnline()) && !m_pAdvancedArrow->isExpanded())
+        m_pAdvancedArrow->animateClick();
+    sltToggleAdvanced();
 }
 
 void UIMachineSettingsNetwork::fetchAdapterData(const UINetworkAdapterData &data)
@@ -866,71 +877,61 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
         /* Get cached data for this adapter: */
         const UINetworkAdapterData &data = m_cache.m_items[iSlot];
 
-        /* Save settings depending on dialog type: */
-        switch (dialogType())
+        if (isMachineOffline())
         {
-            /* Here come the properties which could be changed only in offline state: */
-            case VBoxDefs::SettingsDialogType_Offline:
+            /* Basic attributes: */
+            adapter.SetEnabled(data.m_fAdapterEnabled);
+            adapter.SetAdapterType(data.m_adapterType);
+            adapter.SetMACAddress(data.m_strMACAddress);
+        }
+        if (isMachineInValidMode())
+        {
+            /* Attachment type: */
+            switch (data.m_attachmentType)
             {
-                /* Basic attributes: */
-                adapter.SetEnabled(data.m_fAdapterEnabled);
-                adapter.SetAdapterType(data.m_adapterType);
-                adapter.SetMACAddress(data.m_strMACAddress);
-                /* After that come the properties which could be changed at runtime too: */
-            }
-            /* Here come the properties which could be changed at runtime too: */
-            case VBoxDefs::SettingsDialogType_Runtime:
-            {
-                /* Attachment type: */
-                switch (data.m_attachmentType)
-                {
-                    case KNetworkAttachmentType_Null:
-                        adapter.Detach();
-                        break;
-                    case KNetworkAttachmentType_NAT:
-                        adapter.AttachToNAT();
-                        break;
-                    case KNetworkAttachmentType_Bridged:
-                        adapter.SetHostInterface(data.m_strBridgedAdapterName);
-                        adapter.AttachToBridgedInterface();
-                        break;
-                    case KNetworkAttachmentType_Internal:
-                        adapter.SetInternalNetwork(data.m_strInternalNetworkName);
-                        adapter.AttachToInternalNetwork();
-                        break;
-                    case KNetworkAttachmentType_HostOnly:
-                        adapter.SetHostInterface(data.m_strHostInterfaceName);
-                        adapter.AttachToHostOnlyInterface();
-                        break;
+                case KNetworkAttachmentType_Null:
+                    adapter.Detach();
+                    break;
+                case KNetworkAttachmentType_NAT:
+                    adapter.AttachToNAT();
+                    break;
+                case KNetworkAttachmentType_Bridged:
+                    adapter.SetHostInterface(data.m_strBridgedAdapterName);
+                    adapter.AttachToBridgedInterface();
+                    break;
+                case KNetworkAttachmentType_Internal:
+                    adapter.SetInternalNetwork(data.m_strInternalNetworkName);
+                    adapter.AttachToInternalNetwork();
+                    break;
+                case KNetworkAttachmentType_HostOnly:
+                    adapter.SetHostInterface(data.m_strHostInterfaceName);
+                    adapter.AttachToHostOnlyInterface();
+                    break;
 #ifdef VBOX_WITH_VDE
-                    case KNetworkAttachmentType_VDE:
-                        adapter.SetVDENetwork(data.m_strVDENetworkName);
-                        adapter.AttachToVDE();
-                        break;
+                case KNetworkAttachmentType_VDE:
+                    adapter.SetVDENetwork(data.m_strVDENetworkName);
+                    adapter.AttachToVDE();
+                    break;
 #endif /* VBOX_WITH_VDE */
-                    default:
-                        break;
-                }
-                /* Advanced attributes: */
-                adapter.SetPromiscModePolicy(data.m_promiscuousMode);
-                /* Cable connected flag: */
-                adapter.SetCableConnected(data.m_fCableConnected);
-                /* Redirect options: */
-                QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
-                for (int i = 0; i < oldRedirects.size(); ++i)
-                    adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
-                UIPortForwardingDataList newRedirects = data.m_redirects;
-                for (int i = 0; i < newRedirects.size(); ++i)
-                {
-                    UIPortForwardingData newRedirect = newRedirects[i];
-                    adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                                       newRedirect.hostIp, newRedirect.hostPort.value(),
-                                                       newRedirect.guestIp, newRedirect.guestPort.value());
-                }
-                break;
+                default:
+                    break;
             }
-            default:
-                break;
+            /* Advanced attributes: */
+            adapter.SetPromiscModePolicy(data.m_promiscuousMode);
+            /* Cable connected flag: */
+            adapter.SetCableConnected(data.m_fCableConnected);
+            /* Redirect options: */
+            QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
+            for (int i = 0; i < oldRedirects.size(); ++i)
+                adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
+            UIPortForwardingDataList newRedirects = data.m_redirects;
+            for (int i = 0; i < newRedirects.size(); ++i)
+            {
+                UIPortForwardingData newRedirect = newRedirects[i];
+                adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
+                                                   newRedirect.hostIp, newRedirect.hostPort.value(),
+                                                   newRedirect.guestIp, newRedirect.guestPort.value());
+            }
         }
     }
 
@@ -989,20 +990,9 @@ void UIMachineSettingsNetworkPage::polishPage()
     int iCount = qMin(m_pTwAdapters->count(), m_cache.m_items.size());
     for (int iSlot = 0; iSlot < iCount; ++iSlot)
     {
-        /* Polish iterated tab depending on dialog type: */
-        switch (dialogType())
-        {
-            case VBoxDefs::SettingsDialogType_Offline:
-                break;
-            case VBoxDefs::SettingsDialogType_Runtime:
-            {
-                if (!m_cache.m_items[iSlot].m_fAdapterEnabled)
-                    m_pTwAdapters->setTabEnabled(iSlot, false);
-                break;
-            }
-            default:
-                break;
-        }
+        m_pTwAdapters->setTabEnabled(iSlot,
+                                     isMachineOffline() ||
+                                     (isMachineInValidMode() && m_cache.m_items[iSlot].m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
         Assert(pTab);
         pTab->polishTab();

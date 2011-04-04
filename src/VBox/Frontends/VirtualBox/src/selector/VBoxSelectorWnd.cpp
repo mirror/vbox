@@ -722,14 +722,15 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
     UIVMItem *pItem = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
     AssertMsgReturnVoid(pItem, ("Item must be always selected here"));
 
-    bool fMachineOffline = pItem->sessionState() == KSessionState_Unlocked && pItem->machineState() != KMachineState_Saved;
-    VBoxDefs::SettingsDialogType dialogType = fMachineOffline ? VBoxDefs::SettingsDialogType_Offline : VBoxDefs::SettingsDialogType_Runtime;
+    VBoxDefs::SettingsDialogType dialogType = pItem->machineState() == KMachineState_Saved ? VBoxDefs::SettingsDialogType_Saved :
+                                              pItem->sessionState() == KSessionState_Unlocked ? VBoxDefs::SettingsDialogType_Offline :
+                                              VBoxDefs::SettingsDialogType_Runtime;
 
-    CSession session = vboxGlobal().openSession(pItem->id(), !fMachineOffline /* connect to existing? */);
+    CSession session = vboxGlobal().openSession(pItem->id(), dialogType != VBoxDefs::SettingsDialogType_Offline /* connect to existing? */);
     AssertMsgReturn(!session.isNull(), ("Session must not be null"), (void)0);
     CMachine machine = session.GetMachine();
     AssertMsgReturn(!machine.isNull(), ("Machine must not be null"), (void)0);
-    CConsole console = fMachineOffline ? CConsole() : session.GetConsole();
+    CConsole console = dialogType == VBoxDefs::SettingsDialogType_Offline ? CConsole() : session.GetConsole();
 
     /* Don't show the inaccessible warning if the user open the vm settings: */
     mDoneInaccessibleWarningOnce = true;
@@ -1325,7 +1326,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         KMachineState state = item->machineState();
         bool running = item->sessionState() != KSessionState_Unlocked;
-        bool modifyEnabled = state != KMachineState_Stuck;
+        bool modifyEnabled = state != KMachineState_Stuck && state != KMachineState_Saved /* for now! */;
 
         if (   aRefreshDetails
             || aRefreshDescription)

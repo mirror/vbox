@@ -231,38 +231,31 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
+    if (isMachineOffline())
     {
-        /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
-        {
-            /* Video tab: */
-            m_machine.SetVRAMSize(m_cache.m_iCurrentVRAM);
-            m_machine.SetMonitorCount(m_cache.m_cMonitorCount);
-            m_machine.SetAccelerate3DEnabled(m_cache.m_f3dAccelerationEnabled);
+        /* Video tab: */
+        m_machine.SetVRAMSize(m_cache.m_iCurrentVRAM);
+        m_machine.SetMonitorCount(m_cache.m_cMonitorCount);
+        m_machine.SetAccelerate3DEnabled(m_cache.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
+        m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-            /* After that come the properties which could be changed at runtime too: */
-        }
-        /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
+    }
+    /* VRDE tab: */
+    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
+    if (!vrdeServer.isNull())
+    {
+        if (isMachineInValidMode())
         {
-            /* VRDE tab: */
-            CVRDEServer vrdeServer = m_machine.GetVRDEServer();
-            if (!vrdeServer.isNull())
-            {
-                vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
-                vrdeServer.SetVRDEProperty("TCP/Ports", m_cache.m_strVRDEPort);
-                vrdeServer.SetAuthType(m_cache.m_iVRDEAuthType);
-                vrdeServer.SetAuthTimeout(m_cache.m_uVRDETimeout);
-                vrdeServer.SetAllowMultiConnection(m_cache.m_fMultipleConnectionsAllowed);
-            }
-            break;
+            vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
+            vrdeServer.SetVRDEProperty("TCP/Ports", m_cache.m_strVRDEPort);
+            vrdeServer.SetAuthType(m_cache.m_iVRDEAuthType);
+            vrdeServer.SetAuthTimeout(m_cache.m_uVRDETimeout);
         }
-        default:
-            break;
+        if (isMachineOffline() || isMachineSaved())
+        {
+            vrdeServer.SetAllowMultiConnection(m_cache.m_fMultipleConnectionsAllowed);
+        }
     }
 
     /* Upload machine to data: */
@@ -435,33 +428,33 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
 
 void UIMachineSettingsDisplay::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            /* Video tab: */
-            mLbMemory->setEnabled(false);
-            mLbMemoryMin->setEnabled(false);
-            mLbMemoryMax->setEnabled(false);
-            mLbMemoryUnit->setEnabled(false);
-            mSlMemory->setEnabled(false);
-            mLeMemory->setEnabled(false);
-            mLbMonitors->setEnabled(false);
-            mLbMonitorsMin->setEnabled(false);
-            mLbMonitorsMax->setEnabled(false);
-            mLbMonitorsUnit->setEnabled(false);
-            mSlMonitors->setEnabled(false);
-            mLeMonitors->setEnabled(false);
-            mLbOptions->setEnabled(false);
-            mCb3D->setEnabled(false);
+    /* Video tab: */
+    mLbMemory->setEnabled(isMachineOffline());
+    mLbMemoryMin->setEnabled(isMachineOffline());
+    mLbMemoryMax->setEnabled(isMachineOffline());
+    mLbMemoryUnit->setEnabled(isMachineOffline());
+    mSlMemory->setEnabled(isMachineOffline());
+    mLeMemory->setEnabled(isMachineOffline());
+    mLbMonitors->setEnabled(isMachineOffline());
+    mLbMonitorsMin->setEnabled(isMachineOffline());
+    mLbMonitorsMax->setEnabled(isMachineOffline());
+    mLbMonitorsUnit->setEnabled(isMachineOffline());
+    mSlMonitors->setEnabled(isMachineOffline());
+    mLeMonitors->setEnabled(isMachineOffline());
+    mLbOptions->setEnabled(isMachineOffline());
+    mCb3D->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            mCb2DVideo->setEnabled(false);
+    mCb2DVideo->setEnabled(isMachineOffline());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-            break;
-        default:
-            break;
-    }
+    /* VRDE tab: */
+    mCbVRDE->setEnabled(isMachineInValidMode());
+    mLbVRDPPort->setEnabled(isMachineInValidMode());
+    mLeVRDEPort->setEnabled(isMachineInValidMode());
+    mLbVRDPMethod->setEnabled(isMachineInValidMode());
+    mCbVRDEMethod->setEnabled(isMachineInValidMode());
+    mLbVRDPTimeout->setEnabled(isMachineInValidMode());
+    mLeVRDETimeout->setEnabled(isMachineInValidMode());
+    mLbOptions2->setEnabled(isMachineOffline() || isMachineSaved());
+    mCbMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
 }
 

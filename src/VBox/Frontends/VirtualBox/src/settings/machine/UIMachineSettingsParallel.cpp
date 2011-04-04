@@ -60,25 +60,15 @@ UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPa
 
 void UIMachineSettingsParallel::polishTab()
 {
-    /* Polish tab depending on dialog type: */
-    switch (m_pParent->dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            mGbParallel->setEnabled(false);
-            mLbNumber->setEnabled(false);
-            mCbNumber->setEnabled(false);
-            mLbIRQ->setEnabled(false);
-            mLeIRQ->setEnabled(false);
-            mLbIOPort->setEnabled(false);
-            mLeIOPort->setEnabled(false);
-            mLbPath->setEnabled(false);
-            mLePath->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    mGbParallel->setEnabled(m_pParent->isMachineOffline());
+    mLbNumber->setEnabled(m_pParent->isMachineOffline());
+    mCbNumber->setEnabled(m_pParent->isMachineOffline());
+    mLbIRQ->setEnabled(m_pParent->isMachineOffline());
+    mLeIRQ->setEnabled(m_pParent->isMachineOffline());
+    mLbIOPort->setEnabled(m_pParent->isMachineOffline());
+    mLeIOPort->setEnabled(m_pParent->isMachineOffline());
+    mLbPath->setEnabled(m_pParent->isMachineOffline());
+    mLePath->setEnabled(m_pParent->isMachineOffline());
 }
 
 void UIMachineSettingsParallel::fetchPortData(const UIParallelPortData &data)
@@ -271,34 +261,23 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
+    if (isMachineOffline())
     {
-        /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
+        /* Gather corresponding values from internal variables: */
+        for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
         {
-            /* Gather corresponding values from internal variables: */
-            for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
-            {
-                /* Get adapter: */
-                CParallelPort port = m_machine.GetParallelPort(iSlot);
+            /* Get adapter: */
+            CParallelPort port = m_machine.GetParallelPort(iSlot);
 
-                /* Get cached data for this slot: */
-                const UIParallelPortData &data = m_cache.m_items[iSlot];
+            /* Get cached data for this slot: */
+            const UIParallelPortData &data = m_cache.m_items[iSlot];
 
-                /* Save options: */
-                port.SetIRQ(data.m_uIRQ);
-                port.SetIOBase(data.m_uIOBase);
-                port.SetPath(data.m_strPath);
-                port.SetEnabled(data.m_fPortEnabled);
-            }
-            break;
+            /* Save options: */
+            port.SetIRQ(data.m_uIRQ);
+            port.SetIOBase(data.m_uIOBase);
+            port.SetPath(data.m_strPath);
+            port.SetEnabled(data.m_fPortEnabled);
         }
-        /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
-            break;
-        default:
-            break;
     }
 
     /* Upload machine to data: */
@@ -374,20 +353,9 @@ void UIMachineSettingsParallelPage::polishPage()
     /* Get the count of parallel port tabs: */
     for (int iTabIndex = 0; iTabIndex < mTabWidget->count(); ++iTabIndex)
     {
-        /* Polish iterated tab depending on dialog type: */
-        switch (dialogType())
-        {
-            case VBoxDefs::SettingsDialogType_Offline:
-                break;
-            case VBoxDefs::SettingsDialogType_Runtime:
-            {
-                if (!m_cache.m_items[iTabIndex].m_fPortEnabled)
-                    mTabWidget->setTabEnabled(iTabIndex, false);
-                break;
-            }
-            default:
-                break;
-        }
+        mTabWidget->setTabEnabled(iTabIndex,
+                                  isMachineOffline() ||
+                                  (isMachineInValidMode() && m_cache.m_items[iTabIndex].m_fPortEnabled));
         UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iTabIndex));
         Assert(pTab);
         pTab->polishTab();

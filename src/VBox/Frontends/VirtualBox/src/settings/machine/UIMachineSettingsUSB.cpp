@@ -306,44 +306,34 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
         /* Here come the global USB properties: */
         case UISettingsPageType_Global:
         {
-            /* Save settings depending on dialog type: */
-            switch (dialogType())
+            if (isMachineInValidMode())
             {
-                /* Here come the properties which could be changed only in offline state: */
-                case VBoxDefs::SettingsDialogType_Offline:
-                /* Here come the properties which could be changed at runtime too: */
-                case VBoxDefs::SettingsDialogType_Runtime:
+                /* Gather corresponding values from internal variables: */
+                if (mUSBFilterListModified)
                 {
-                    /* Gather corresponding values from internal variables: */
-                    if (mUSBFilterListModified)
+                    /* Get host: */
+                    CHost host = vboxGlobal().virtualBox().GetHost();
+                    /* First, remove all old filters: */
+                    for (ulong count = host.GetUSBDeviceFilters().size(); count; --count)
+                        host.RemoveUSBDeviceFilter(0);
+                    /* Then add all new filters: */
+                    for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
                     {
-                        /* Get host: */
-                        CHost host = vboxGlobal().virtualBox().GetHost();
-                        /* First, remove all old filters: */
-                        for (ulong count = host.GetUSBDeviceFilters().size(); count; --count)
-                            host.RemoveUSBDeviceFilter(0);
-                        /* Then add all new filters: */
-                        for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
-                        {
-                            UIUSBFilterData data = m_cache.m_items[iFilterIndex];
-                            CHostUSBDeviceFilter hostFilter = host.CreateUSBDeviceFilter(data.m_strName);
-                            hostFilter.SetActive(data.m_fActive);
-                            hostFilter.SetVendorId(data.m_strVendorId);
-                            hostFilter.SetProductId(data.m_strProductId);
-                            hostFilter.SetRevision(data.m_strRevision);
-                            hostFilter.SetManufacturer(data.m_strManufacturer);
-                            hostFilter.SetProduct(data.m_strProduct);
-                            hostFilter.SetSerialNumber(data.m_strSerialNumber);
-                            hostFilter.SetPort(data.m_strPort);
-                            hostFilter.SetRemote(data.m_strRemote);
-                            hostFilter.SetAction(data.m_action);
-                            host.InsertUSBDeviceFilter(host.GetUSBDeviceFilters().size(), hostFilter);
-                        }
+                        UIUSBFilterData data = m_cache.m_items[iFilterIndex];
+                        CHostUSBDeviceFilter hostFilter = host.CreateUSBDeviceFilter(data.m_strName);
+                        hostFilter.SetActive(data.m_fActive);
+                        hostFilter.SetVendorId(data.m_strVendorId);
+                        hostFilter.SetProductId(data.m_strProductId);
+                        hostFilter.SetRevision(data.m_strRevision);
+                        hostFilter.SetManufacturer(data.m_strManufacturer);
+                        hostFilter.SetProduct(data.m_strProduct);
+                        hostFilter.SetSerialNumber(data.m_strSerialNumber);
+                        hostFilter.SetPort(data.m_strPort);
+                        hostFilter.SetRemote(data.m_strRemote);
+                        hostFilter.SetAction(data.m_action);
+                        host.InsertUSBDeviceFilter(host.GetUSBDeviceFilters().size(), hostFilter);
                     }
-                    break;
                 }
-                default:
-                    break;
             }
             break;
         }
@@ -357,45 +347,35 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
             /* Gather corresponding values from internal variables: */
             if (!ctl.isNull())
             {
-                /* Save settings depending on dialog type: */
-                switch (dialogType())
+                if (isMachineOffline())
                 {
-                    /* Here come the properties which could be changed only in offline state: */
-                    case VBoxDefs::SettingsDialogType_Offline:
+                    ctl.SetEnabled(m_cache.m_fUSBEnabled);
+                    ctl.SetEnabledEhci(m_cache.m_fEHCIEnabled);
+                }
+                if (isMachineInValidMode())
+                {
+                    if (mUSBFilterListModified)
                     {
-                        ctl.SetEnabled(m_cache.m_fUSBEnabled);
-                        ctl.SetEnabledEhci(m_cache.m_fEHCIEnabled);
-                        /* And after that come the properties which could be changed at runtime too: */
-                    }
-                    /* Here come the properties which could be changed at runtime too: */
-                    case VBoxDefs::SettingsDialogType_Runtime:
-                    {
-                        if (mUSBFilterListModified)
+                        /* First, remove all old filters: */
+                        for (ulong count = ctl.GetDeviceFilters().size(); count; --count)
+                            ctl.RemoveDeviceFilter(0);
+                        /* Then add all new filters: */
+                        for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
                         {
-                            /* First, remove all old filters: */
-                            for (ulong count = ctl.GetDeviceFilters().size(); count; --count)
-                                ctl.RemoveDeviceFilter(0);
-                            /* Then add all new filters: */
-                            for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
-                            {
-                                const UIUSBFilterData &data = m_cache.m_items[iFilterIndex];
-                                CUSBDeviceFilter filter = ctl.CreateDeviceFilter(data.m_strName);
-                                filter.SetActive(data.m_fActive);
-                                filter.SetVendorId(data.m_strVendorId);
-                                filter.SetProductId(data.m_strProductId);
-                                filter.SetRevision(data.m_strRevision);
-                                filter.SetManufacturer(data.m_strManufacturer);
-                                filter.SetProduct(data.m_strProduct);
-                                filter.SetSerialNumber(data.m_strSerialNumber);
-                                filter.SetPort(data.m_strPort);
-                                filter.SetRemote(data.m_strRemote);
-                                ctl.InsertDeviceFilter(~0, filter);
-                            }
+                            const UIUSBFilterData &data = m_cache.m_items[iFilterIndex];
+                            CUSBDeviceFilter filter = ctl.CreateDeviceFilter(data.m_strName);
+                            filter.SetActive(data.m_fActive);
+                            filter.SetVendorId(data.m_strVendorId);
+                            filter.SetProductId(data.m_strProductId);
+                            filter.SetRevision(data.m_strRevision);
+                            filter.SetManufacturer(data.m_strManufacturer);
+                            filter.SetProduct(data.m_strProduct);
+                            filter.SetSerialNumber(data.m_strSerialNumber);
+                            filter.SetPort(data.m_strPort);
+                            filter.SetRemote(data.m_strRemote);
+                            ctl.InsertDeviceFilter(~0, filter);
                         }
-                        break;
                     }
-                    default:
-                        break;
                 }
             }
             break;
@@ -866,17 +846,9 @@ void UIMachineSettingsUSB::uploadData(QVariant &data) const
 
 void UIMachineSettingsUSB::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            mGbUSB->setEnabled(false);
-            mCbUSB2->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    mGbUSB->setEnabled(isMachineOffline());
+    mCbUSB2->setEnabled(isMachineOffline());
+    mGbUSBFilters->setEnabled(isMachineInValidMode());
+    mTwFilters->setEnabled(isMachineInValidMode());
 }
 

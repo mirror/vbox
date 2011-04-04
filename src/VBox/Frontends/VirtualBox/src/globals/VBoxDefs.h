@@ -103,6 +103,7 @@ struct VBoxDefs
     {
         SettingsDialogType_Wrong,
         SettingsDialogType_Offline,
+        SettingsDialogType_Saved,
         SettingsDialogType_Runtime
     };
 

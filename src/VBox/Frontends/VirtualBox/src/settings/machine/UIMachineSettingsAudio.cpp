@@ -72,23 +72,12 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
+    if (isMachineOffline())
     {
-        /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
-        {
-            CAudioAdapter audio = m_machine.GetAudioAdapter();
-            audio.SetEnabled(m_cache.m_fAudioEnabled);
-            audio.SetAudioDriver(m_cache.m_audioDriverType);
-            audio.SetAudioController(m_cache.m_audioControllerType);
-            break;
-        }
-        /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
-            break;
-        default:
-            break;
+        CAudioAdapter audio = m_machine.GetAudioAdapter();
+        audio.SetEnabled(m_cache.m_fAudioEnabled);
+        audio.SetAudioDriver(m_cache.m_audioDriverType);
+        audio.SetAudioController(m_cache.m_audioControllerType);
     }
 
     /* Upload machine to data: */
@@ -164,20 +153,10 @@ void UIMachineSettingsAudio::prepareComboboxes()
 
 void UIMachineSettingsAudio::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            mGbAudio->setEnabled(false);
-            mLbAudioDriver->setEnabled(false);
-            mCbAudioDriver->setEnabled(false);
-            mLbAudioController->setEnabled(false);
-            mCbAudioController->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    mGbAudio->setEnabled(isMachineOffline());
+    mLbAudioDriver->setEnabled(isMachineOffline());
+    mCbAudioDriver->setEnabled(isMachineOffline());
+    mLbAudioController->setEnabled(isMachineOffline());
+    mCbAudioController->setEnabled(isMachineOffline());
 }
 

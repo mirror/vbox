@@ -981,7 +981,9 @@ void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
 void UIDetailsPagePrivate::setMachine(const CMachine& machine)
 {
     m_machine = machine;
-    m_fChangeable = m_machine.isNull() ? false : m_machine.GetState() != KMachineState_Stuck;
+    m_fChangeable = m_machine.isNull() ? false :
+                    m_machine.GetState() != KMachineState_Stuck &&
+                    m_machine.GetState() != KMachineState_Saved /* for now! */;
 
     sltUpdateGeneral();
     sltUpdateSystem();

@@ -135,41 +135,26 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
+    if (isMachineInValidMode())
     {
-        /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
-        {
-            /* Basic tab: */
-            m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
-            /* Advanced tab: */
-            m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
-            m_machine.SetClipboardMode(m_cache.m_clipboardMode);
-            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
-            /* Description tab: */
-            m_machine.SetDescription(m_cache.m_strDescription);
-            /* VM name must be last as otherwise its VM rename magic can collide with other settings in the config,
-             * especially with the snapshot folder: */
-            m_machine.SetName(m_cache.m_strName);
-            break;
-        }
-        /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
-        {
-            /* Advanced tab: */
-            m_machine.SetClipboardMode(m_cache.m_clipboardMode);
-            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
-            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
-            /* Description tab: */
-            m_machine.SetDescription(m_cache.m_strDescription);
-            break;
-        }
-        default:
-            break;
+        /* Advanced tab: */
+        m_machine.SetClipboardMode(m_cache.m_clipboardMode);
+        m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
+        m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
+        m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
+        /* Description tab: */
+        m_machine.SetDescription(m_cache.m_strDescription);
+    }
+    if (isMachineOffline())
+    {
+        /* Basic tab: */
+        m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
+        /* Advanced tab: */
+        m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
+        /* Basic (again) tab: */
+        /* VM name must be last as otherwise its VM rename magic can collide with other settings in the config,
+         * especially with the snapshot folder: */
+        m_machine.SetName(m_cache.m_strName);
     }
 
     /* Upload machine to data: */
@@ -220,22 +205,19 @@ void UIMachineSettingsGeneral::retranslateUi()
 
 void UIMachineSettingsGeneral::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            /* Basic tab: */
-            mLbName->setEnabled(false);
-            mLeName->setEnabled(false);
-            mOSTypeSelector->setEnabled(false);
-            /* Advanced tab: */
-            mLbSnapshot->setEnabled(false);
-            mPsSnapshot->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    /* Basic tab: */
+    mLbName->setEnabled(isMachineOffline());
+    mLeName->setEnabled(isMachineOffline());
+    mOSTypeSelector->setEnabled(isMachineOffline());
+    /* Advanced tab: */
+    mLbSnapshot->setEnabled(isMachineOffline());
+    mPsSnapshot->setEnabled(isMachineOffline());
+    mLbClipboard->setEnabled(isMachineInValidMode());
+    mCbClipboard->setEnabled(isMachineInValidMode());
+    mLbMedia->setEnabled(isMachineInValidMode());
+    mCbSaveMounted->setEnabled(isMachineInValidMode());
+    mLbToolBar->setEnabled(isMachineInValidMode());
+    mCbShowToolBar->setEnabled(isMachineInValidMode());
+    mCbToolBarAlignment->setEnabled(isMachineInValidMode());
 }
 

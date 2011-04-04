@@ -285,45 +285,34 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
+    if (isMachineOffline())
     {
-        /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
+        /* Motherboard tab: */
+        m_machine.SetMemorySize(m_cache.m_iRAMSize);
+        int iBootIndex = 0;
+        /* Save boot-items of current VM: */
+        for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
         {
-            /* Motherboard tab: */
-            m_machine.SetMemorySize(m_cache.m_iRAMSize);
-            int iBootIndex = 0;
-            /* Save boot-items of current VM: */
-            for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
-            {
-                if (m_cache.m_bootItems[i].m_fEnabled)
-                    m_machine.SetBootOrder(++iBootIndex, m_cache.m_bootItems[i].m_type);
-            }
-            /* Save other unique boot-items: */
-            for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
-            {
-                if (!m_cache.m_bootItems[i].m_fEnabled)
-                    m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
-            }
-            m_machine.SetChipsetType(m_cache.m_chipsetType);
-            m_machine.GetBIOSSettings().SetIOAPICEnabled(m_cache.m_fIoApicEnabled);
-            m_machine.SetFirmwareType(m_cache.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
-            m_machine.SetRTCUseUTC(m_cache.m_fUTCEnabled);
-            m_machine.SetPointingHidType(m_cache.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
-            /* Processor tab: */
-            m_machine.SetCPUCount(m_cache.m_cCPUCount);
-            m_machine.SetCPUProperty(KCPUPropertyType_PAE, m_cache.m_fPAEEnabled);
-            /* Acceleration tab: */
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, m_cache.m_fHwVirtExEnabled);
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, m_cache.m_fNestedPagingEnabled);
-            break;
+            if (m_cache.m_bootItems[i].m_fEnabled)
+                m_machine.SetBootOrder(++iBootIndex, m_cache.m_bootItems[i].m_type);
         }
-        /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
-            break;
-        default:
-            break;
+        /* Save other unique boot-items: */
+        for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+        {
+            if (!m_cache.m_bootItems[i].m_fEnabled)
+                m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+        }
+        m_machine.SetChipsetType(m_cache.m_chipsetType);
+        m_machine.GetBIOSSettings().SetIOAPICEnabled(m_cache.m_fIoApicEnabled);
+        m_machine.SetFirmwareType(m_cache.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+        m_machine.SetRTCUseUTC(m_cache.m_fUTCEnabled);
+        m_machine.SetPointingHidType(m_cache.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
+        /* Processor tab: */
+        m_machine.SetCPUCount(m_cache.m_cCPUCount);
+        m_machine.SetCPUProperty(KCPUPropertyType_PAE, m_cache.m_fPAEEnabled);
+        /* Acceleration tab: */
+        m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, m_cache.m_fHwVirtExEnabled);
+        m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, m_cache.m_fNestedPagingEnabled);
     }
 
     /* Upload machine to data: */
@@ -549,45 +538,35 @@ bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
 
 void UIMachineSettingsSystem::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            /* Motherboard tab: */
-            mLbMemory->setEnabled(false);
-            mLbMemoryMin->setEnabled(false);
-            mLbMemoryMax->setEnabled(false);
-            mLbMemoryUnit->setEnabled(false);
-            mSlMemory->setEnabled(false);
-            mLeMemory->setEnabled(false);
-            mLbBootOrder->setEnabled(false);
-            mTwBootOrder->setEnabled(false);
-            mTbBootItemUp->setEnabled(false);
-            mTbBootItemDown->setEnabled(false);
-            mLbChipset->setEnabled(false);
-            mCbChipset->setEnabled(false);
-            mLbMotherboardExtended->setEnabled(false);
-            mCbApic->setEnabled(false);
-            mCbEFI->setEnabled(false);
-            mCbTCUseUTC->setEnabled(false);
-            mCbUseAbsHID->setEnabled(false);
-            /* Processor tab: */
-            mLbCPU->setEnabled(false);
-            mLbCPUMin->setEnabled(false);
-            mLbCPUMax->setEnabled(false);
-            mSlCPU->setEnabled(false);
-            mLeCPU->setEnabled(false);
-            mLbProcessorExtended->setEnabled(false);
-            mCbPae->setEnabled(false);
-            /* Acceleration tab: */
-            mLbVirt->setEnabled(false);
-            mCbVirt->setEnabled(false);
-            mCbNestedPaging->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    /* Motherboard tab: */
+    mLbMemory->setEnabled(isMachineOffline());
+    mLbMemoryMin->setEnabled(isMachineOffline());
+    mLbMemoryMax->setEnabled(isMachineOffline());
+    mLbMemoryUnit->setEnabled(isMachineOffline());
+    mSlMemory->setEnabled(isMachineOffline());
+    mLeMemory->setEnabled(isMachineOffline());
+    mLbBootOrder->setEnabled(isMachineOffline());
+    mTwBootOrder->setEnabled(isMachineOffline());
+    mTbBootItemUp->setEnabled(isMachineOffline());
+    mTbBootItemDown->setEnabled(isMachineOffline());
+    mLbChipset->setEnabled(isMachineOffline());
+    mCbChipset->setEnabled(isMachineOffline());
+    mLbMotherboardExtended->setEnabled(isMachineOffline());
+    mCbApic->setEnabled(isMachineOffline());
+    mCbEFI->setEnabled(isMachineOffline());
+    mCbTCUseUTC->setEnabled(isMachineOffline());
+    mCbUseAbsHID->setEnabled(isMachineOffline());
+    /* Processor tab: */
+    mLbCPU->setEnabled(isMachineOffline());
+    mLbCPUMin->setEnabled(isMachineOffline());
+    mLbCPUMax->setEnabled(isMachineOffline());
+    mSlCPU->setEnabled(isMachineOffline());
+    mLeCPU->setEnabled(isMachineOffline());
+    mLbProcessorExtended->setEnabled(isMachineOffline());
+    mCbPae->setEnabled(isMachineOffline());
+    /* Acceleration tab: */
+    mLbVirt->setEnabled(isMachineOffline());
+    mCbVirt->setEnabled(isMachineOffline());
+    mCbNestedPaging->setEnabled(isMachineOffline());
 }
 

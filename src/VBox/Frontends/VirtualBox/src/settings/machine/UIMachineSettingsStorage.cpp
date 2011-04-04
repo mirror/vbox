@@ -2379,8 +2379,8 @@ void UIMachineSettingsStorage::getInformation()
                 }
                 m_pMediumIdHolder->setType(vboxGlobal().mediumTypeToLocal(device));
                 m_pMediumIdHolder->setId(mStorageModel->data(index, StorageModel::R_AttMediumId).toString());
-                mLbMedium->setEnabled(dialogType() == VBoxDefs::SettingsDialogType_Offline || device != KDeviceType_HardDisk);
-                mTbOpen->setEnabled(dialogType() == VBoxDefs::SettingsDialogType_Offline || device != KDeviceType_HardDisk);
+                mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
+                mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
@@ -2601,8 +2601,8 @@ void UIMachineSettingsStorage::updateActionsState()
     mAddCDAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddFDAttAction->setEnabled (isController && isAttachmentsPossible);
 
-    mDelCtrAction->setEnabled (dialogType() == VBoxDefs::SettingsDialogType_Offline && isController);
-    mDelAttAction->setEnabled (dialogType() == VBoxDefs::SettingsDialogType_Offline && isAttachment);
+    mDelCtrAction->setEnabled (isMachineOffline() && isController);
+    mDelAttAction->setEnabled (isMachineOffline() && isAttachment);
 }
 
 void UIMachineSettingsStorage::onRowInserted (const QModelIndex &aParent, int aPosition)
@@ -3073,25 +3073,40 @@ void UIMachineSettingsStorage::setDialogType(VBoxDefs::SettingsDialogType settin
 
 void UIMachineSettingsStorage::polishPage()
 {
-    /* Polish page depending on dialog type: */
-    switch (dialogType())
-    {
-        case VBoxDefs::SettingsDialogType_Offline:
-            break;
-        case VBoxDefs::SettingsDialogType_Runtime:
-            /* Controller stuff: */
-            mLbName->setEnabled(false);
-            mLeName->setEnabled(false);
-            mLbType->setEnabled(false);
-            mCbType->setEnabled(false);
-            mCbIoCache->setEnabled(false);
-            /* Attachment stuff: */
-            mCbSlot->setEnabled(false);
-            mCbPassthrough->setEnabled(false);
-            break;
-        default:
-            break;
-    }
+    /* Left pane: */
+    mLsLeftPane->setEnabled(isMachineInValidMode());
+    mTwStorageTree->setEnabled(isMachineInValidMode());
+    /* Empty information pane: */
+    mLsEmpty->setEnabled(isMachineInValidMode());
+    mLbInfo->setEnabled(isMachineInValidMode());
+    /* Controllers pane: */
+    mLsParameters->setEnabled(isMachineInValidMode());
+    mLbName->setEnabled(isMachineOffline());
+    mLeName->setEnabled(isMachineOffline());
+    mLbType->setEnabled(isMachineOffline());
+    mCbType->setEnabled(isMachineOffline());
+    mCbIoCache->setEnabled(isMachineOffline());
+    /* Attachments pane: */
+    mLsAttributes->setEnabled(isMachineInValidMode());
+    mLbMedium->setEnabled(isMachineInValidMode());
+    mCbSlot->setEnabled(isMachineOffline());
+    mTbOpen->setEnabled(isMachineInValidMode());
+    mCbPassthrough->setEnabled(isMachineOffline());
+    mLsInformation->setEnabled(isMachineInValidMode());
+    mLbHDFormat->setEnabled(isMachineInValidMode());
+    mLbHDFormatValue->setEnabled(isMachineInValidMode());
+    mLbCDFDType->setEnabled(isMachineInValidMode());
+    mLbCDFDTypeValue->setEnabled(isMachineInValidMode());
+    mLbHDVirtualSize->setEnabled(isMachineInValidMode());
+    mLbHDVirtualSizeValue->setEnabled(isMachineInValidMode());
+    mLbHDActualSize->setEnabled(isMachineInValidMode());
+    mLbHDActualSizeValue->setEnabled(isMachineInValidMode());
+    mLbSize->setEnabled(isMachineInValidMode());
+    mLbSizeValue->setEnabled(isMachineInValidMode());
+    mLbLocation->setEnabled(isMachineInValidMode());
+    mLbLocationValue->setEnabled(isMachineInValidMode());
+    mLbUsage->setEnabled(isMachineInValidMode());
+    mLbUsageValue->setEnabled(isMachineInValidMode());
 }
 
 #include "UIMachineSettingsStorage.moc"
