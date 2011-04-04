@@ -281,7 +281,10 @@ static void test1(RTTEST hTest)
     RTTESTI_CHECK(strTest == "");
     strTest = RTCString::join(jnList, "##");
     RTTESTI_CHECK(strTest == "");
-    for (size_t i = 0; i < 5; ++i)
+    jnList.append("abcdef");
+    strTest = RTCString::join(jnList, "##");
+    RTTESTI_CHECK(strTest == "abcdef");
+    for (size_t i = 0; i < 4; ++i)
         jnList.append("abcdef");
     strTest = RTCString::join(jnList);
     RTTESTI_CHECK(strTest == "abcdefabcdefabcdefabcdefabcdef");
