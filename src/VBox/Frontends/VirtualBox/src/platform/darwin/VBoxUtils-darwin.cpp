@@ -20,6 +20,7 @@
 #include "UICocoaApplication.h"
 
 #include <iprt/mem.h>
+#include <iprt/assert.h>
 
 #include <QMainWindow>
 #include <QApplication>
