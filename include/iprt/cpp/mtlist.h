@@ -30,9 +30,6 @@
 
 #include <iprt/semaphore.h>
 
-namespace iprt
-{
-
 /** @addtogroup grp_rt_cpp_list
  * @{
  */
@@ -41,11 +38,11 @@ namespace iprt
  * A guard class for thread-safe read/write access.
  */
 template <>
-class ListGuard<true>
+class RTCListGuard<true>
 {
 public:
-    ListGuard() { int rc = RTSemRWCreate(&m_hRWSem); AssertRC(rc); }
-    ~ListGuard() { RTSemRWDestroy(m_hRWSem); }
+    RTCListGuard() { int rc = RTSemRWCreate(&m_hRWSem); AssertRC(rc); }
+    ~RTCListGuard() { RTSemRWDestroy(m_hRWSem); }
     inline void enterRead() const { int rc = RTSemRWRequestRead(m_hRWSem, RT_INDEFINITE_WAIT); AssertRC(rc); }
     inline void leaveRead() const { int rc = RTSemRWReleaseRead(m_hRWSem); AssertRC(rc); }
     inline void enterWrite()      { int rc = RTSemRWRequestWrite(m_hRWSem, RT_INDEFINITE_WAIT); AssertRC(rc); }
@@ -58,7 +55,7 @@ private:
 /**
  * @brief Generic thread-safe list class.
  *
- * mtlist is a thread-safe implementation of the list class. It uses a
+ * RTCMTList is a thread-safe implementation of the list class. It uses a
  * read/write semaphore to serialize the access to the items. Several readers
  * can simultaneous access different or the same item. If one thread is writing
  * to an item, the other accessors are blocked until the write has finished.
@@ -69,32 +66,30 @@ private:
  * restrictions, use your own locking mechanism and the standard list
  * implementation.
  *
- * @see ListBase
+ * @see RTCListBase
  */
-template <class T, typename ITYPE = typename if_<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class mtlist : public ListBase<T, ITYPE, true> {};
+template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
+class RTCMTList : public RTCListBase<T, ITYPE, true> {};
 
 /**
  * Specialized thread-safe list class for using the native type list for
  * unsigned 64-bit values even on a 32-bit host.
  *
- * @see ListBase
+ * @see RTCListBase
  */
 template <>
-class mtlist<uint64_t>: public ListBase<uint64_t, uint64_t, true> {};
+class RTCMTList<uint64_t>: public RTCListBase<uint64_t, uint64_t, true> {};
 
 /**
  * Specialized thread-safe list class for using the native type list for
  * signed 64-bit values even on a 32-bit host.
  *
- * @see ListBase
+ * @see RTCListBase
  */
 template <>
-class mtlist<int64_t>: public ListBase<int64_t, uint64_t, true> {};
+class RTCMTList<int64_t>: public RTCListBase<int64_t, uint64_t, true> {};
 
 /** @} */
-
-} /* namespace iprt */
 
 #endif /* !___iprt_cpp_mtlist_h */
 

@@ -26,9 +26,6 @@
 #ifndef ___iprt_cpp_meta_h
 #define ___iprt_cpp_meta_h
 
-namespace iprt
-{
-
 /** @defgroup grp_rt_cpp_meta   C++ Meta programming utilities
  * @ingroup grp_rt_cpp
  * @{
@@ -43,7 +40,7 @@ namespace iprt
  * @param   FalseResult   Result when condition is false
  */
 template <bool Condition, typename TrueResult, typename FalseResult>
-struct if_;
+struct RTCIf;
 
 /**
  * True specialization of if_.
@@ -52,7 +49,7 @@ struct if_;
  * @param   FalseResult   Result when condition is false
  */
 template <typename TrueResult, typename FalseResult>
-struct if_<true, TrueResult, FalseResult>
+struct RTCIf<true, TrueResult, FalseResult>
 {
     typedef TrueResult result;
 };
@@ -64,7 +61,7 @@ struct if_<true, TrueResult, FalseResult>
  * @param   FalseResult   Result when condition is false
  */
 template <typename TrueResult, typename FalseResult>
-struct if_<false, TrueResult, FalseResult>
+struct RTCIf<false, TrueResult, FalseResult>
 {
     typedef FalseResult result;
 };
@@ -80,7 +77,7 @@ struct if_<false, TrueResult, FalseResult>
  * @param   FalseResult   Result when condition is false
  */
 template <class T, typename TrueResult, typename FalseResult>
-struct if_ptr
+struct RTCIfPtr
 {
     typedef FalseResult result;
 };
@@ -96,14 +93,12 @@ struct if_ptr
  * @param   FalseResult   Result when condition is false
  */
 template <class T, typename TrueResult, typename FalseResult>
-struct if_ptr<T*, TrueResult, FalseResult>
+struct RTCIfPtr<T*, TrueResult, FalseResult>
 {
     typedef TrueResult result;
 };
 
 /** @} */
-
-} /* namespace iprt */
 
 #endif /* !___iprt_cpp_meta_h */
 

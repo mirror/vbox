@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - iprt::list.
+ * IPRT Testcase - RTCList/RTCMTList.
  */
 
 /*
@@ -347,9 +347,9 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
     RTTESTI_CHECK(testList.capacity()  == defCap);
 }
 
-/* define iprt::list here to see what happens without MT support ;)
+/* define RTCList here to see what happens without MT support ;)
  * (valgrind is the preferred tool to check). */
-#define MTTESTLISTTYPE iprt::mtlist
+#define MTTESTLISTTYPE RTCMTList
 #define MTTESTTYPE uint32_t
 #define MTTESTITEMS 1000
 
@@ -420,7 +420,7 @@ DECLCALLBACK(int) mttest4(RTTHREAD hSelf, void *pvUser)
     {
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty()) {};
-        a = pTestList->at(RTRandU32Ex(0, pTestList->size() - 1));
+        a = pTestList->at(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
     }
 
     return VINF_SUCCESS;
@@ -441,7 +441,7 @@ DECLCALLBACK(int) mttest5(RTTHREAD hSelf, void *pvUser)
     {
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty()) {};
-        pTestList->replace(RTRandU32Ex(0, pTestList->size() - 1), 0xFF00FF00);
+        pTestList->replace(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1), 0xFF00FF00);
     }
 
     return VINF_SUCCESS;
@@ -462,7 +462,7 @@ DECLCALLBACK(int) mttest6(RTTHREAD hSelf, void *pvUser)
     {
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty()) {};
-        pTestList->removeAt(RTRandU32Ex(0, pTestList->size() - 1));
+        pTestList->removeAt(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
     }
 
     return VINF_SUCCESS;
@@ -539,20 +539,20 @@ int main()
     uint8_t au8TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au8TestInts); ++i)
         au8TestInts[i] = (uint8_t)RTRandU32Ex(0, UINT8_MAX);
-    test1<iprt::list,   uint8_t, uint8_t, uint8_t>("ST: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
-    test1<iprt::mtlist, uint8_t, uint8_t, uint8_t>("MT: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
+    test1<RTCList,   uint8_t, uint8_t, uint8_t>("ST: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
+    test1<RTCMTList, uint8_t, uint8_t, uint8_t>("MT: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
 
     uint16_t au16TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au16TestInts); ++i)
         au16TestInts[i] = (uint16_t)RTRandU32Ex(0, UINT16_MAX);
-    test1<iprt::list,   uint16_t, uint16_t, uint16_t>("ST: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
-    test1<iprt::mtlist, uint16_t, uint16_t, uint16_t>("MT: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
+    test1<RTCList,   uint16_t, uint16_t, uint16_t>("ST: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
+    test1<RTCMTList, uint16_t, uint16_t, uint16_t>("MT: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
 
     uint32_t au32TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au32TestInts); ++i)
         au32TestInts[i] = RTRandU32();
-    test1<iprt::list,   uint32_t, uint32_t, uint32_t>("ST: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
-    test1<iprt::mtlist, uint32_t, uint32_t, uint32_t>("MT: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
+    test1<RTCList,   uint32_t, uint32_t, uint32_t>("ST: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
+    test1<RTCMTList, uint32_t, uint32_t, uint32_t>("MT: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
 
     /*
      * Specialized type.
@@ -560,14 +560,14 @@ int main()
     uint64_t au64TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au64TestInts); ++i)
         au64TestInts[i] = RTRandU64();
-    test1<iprt::list,   uint64_t, uint64_t, uint64_t>("ST: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
-    test1<iprt::mtlist, uint64_t, uint64_t, uint64_t>("MT: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
+    test1<RTCList,   uint64_t, uint64_t, uint64_t>("ST: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
+    test1<RTCMTList, uint64_t, uint64_t, uint64_t>("MT: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
 
     /*
      * Big size type (translate to internal pointer list).
      */
-    test1<iprt::list,   RTCString, RTCString *, const char *>("ST: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
-    test1<iprt::mtlist, RTCString, RTCString *, const char *>("MT: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<RTCList,   RTCString, RTCString *, const char *>("ST: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<RTCMTList, RTCString, RTCString *, const char *>("MT: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
 
     /*
      * Multi-threading test.

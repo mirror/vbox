@@ -32,9 +32,6 @@
 
 #include <new> /* For std::bad_alloc */
 
-namespace iprt
-{
-
 /** @defgroup grp_rt_cpp_list   C++ List support
  * @ingroup grp_rt_cpp
  *
@@ -57,13 +54,13 @@ namespace iprt
  * pointers to the objects.
  *
  * The size of the internal array will usually not shrink, but grow
- * automatically. Only certain methods, like list::clear or the "=" operator
- * will reset any previously allocated memory. You can call list::setCapacity
- * for manual adjustment. If the size of an new list will be known, calling the
- * constructor with the necessary capacity will speed up the insertion of the
- * new items.
+ * automatically. Only certain methods, like RTCList::clear or the "=" operator
+ * will reset any previously allocated memory. You can call
+ * RTCList::setCapacity for manual adjustment. If the size of an new list will
+ * be known, calling the constructor with the necessary capacity will speed up
+ * the insertion of the new items.
  *
- * For the full public interface these list classes offer see ListBase.
+ * For the full public interface these list classes offer see RTCListBase.
  *
  * There are some requirements for the types used which follow:
  * -# They need a default and a copy constructor.
@@ -89,7 +86,7 @@ namespace iprt
  * use it as a lvalue. Its your responsibility to make sure the list isn't
  * changed when using the value as reference returned by this operator.
  *
- * The list class is reentrant. For a thread-safe variant see mtlist.
+ * The list class is reentrant. For a thread-safe variant see RTCMTList.
  *
  * Implementation details:
  * It is possible to specialize any type. This might be necessary to get the
@@ -98,8 +95,8 @@ namespace iprt
  * source code for more details.
  *
  * Current specialized implementations:
- * - int64_t: iprt::list<int64_t>
- * - uint64_t: iprt::list<uint64_t>
+ * - int64_t: RTCList<int64_t>
+ * - uint64_t: RTCList<uint64_t>
  *
  * @{
  */
@@ -108,13 +105,13 @@ namespace iprt
  * The guard definition.
  */
 template <bool G>
-class ListGuard;
+class RTCListGuard;
 
 /**
  * The default guard which does nothing.
  */
 template <>
-class ListGuard<false>
+class RTCListGuard<false>
 {
 public:
     inline void enterRead() const {}
@@ -124,10 +121,10 @@ public:
 };
 
 /**
- * General helper template for managing native values in ListBase.
+ * General helper template for managing native values in RTCListBase.
  */
 template <typename T1, typename T2>
-class ListHelper
+class RTCListHelper
 {
 public:
     static inline void      set(T2 *p, size_t i, const T1 &v) { p[i] = v; }
@@ -142,10 +139,10 @@ public:
 };
 
 /**
- * Specialized helper template for managing pointer values in ListBase.
+ * Specialized helper template for managing pointer values in RTCListBase.
  */
 template <typename T1>
-class ListHelper<T1, T1*>
+class RTCListHelper<T1, T1*>
 {
 public:
     static inline void      set(T1 **p, size_t i, const T1 &v) { p[i] = new T1(v); }
@@ -169,15 +166,15 @@ public:
  * list interface to the user.
  */
 template <class T, typename ITYPE, bool MT>
-class ListBase
+class RTCListBase
 {
     /**
      * Defines the return type of most of the getter methods. If the internal
      * used type is a pointer, we return a reference. If not we return by
      * value.
      */
-    typedef typename if_ptr<ITYPE, T&, T>::result GET_RTYPE;
-    typedef typename if_ptr<ITYPE, const T&, const T>::result GET_CRTYPE;
+    typedef typename RTCIfPtr<ITYPE, T&, T>::result GET_RTYPE;
+    typedef typename RTCIfPtr<ITYPE, const T&, const T>::result GET_CRTYPE;
 
 public:
     /**
@@ -188,7 +185,7 @@ public:
      * @param   cCapacitiy   The initial capacity the list has.
      * @throws  std::bad_alloc
      */
-    ListBase(size_t cCapacity = DefaultCapacity)
+    RTCListBase(size_t cCapacity = DefaultCapacity)
       : m_pArray(0)
       , m_cSize(0)
       , m_cCapacity(0)
@@ -205,22 +202,22 @@ public:
      * @param   other          The list to copy.
      * @throws  std::bad_alloc
      */
-    ListBase(const ListBase<T, ITYPE, MT>& other)
+    RTCListBase(const RTCListBase<T, ITYPE, MT>& other)
       : m_pArray(0)
       , m_cSize(0)
       , m_cCapacity(0)
     {
         realloc_grow(other.m_cSize);
-        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_cSize = other.m_cSize;
     }
 
     /**
      * Destructor.
      */
-    ~ListBase()
+    ~RTCListBase()
     {
-        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
+        RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
         if (m_pArray)
             RTMemFree(m_pArray);
     }
@@ -272,13 +269,13 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, ITYPE, MT> &insert(size_t i, const T &val)
+    RTCListBase<T, ITYPE, MT> &insert(size_t i, const T &val)
     {
         m_guard.enterWrite();
         if (m_cSize == m_cCapacity)
             realloc_grow(m_cCapacity + DefaultCapacity);
         memmove(&m_pArray[i + 1], &m_pArray[i], (m_cSize - i) * sizeof(ITYPE));
-        ListHelper<T, ITYPE>::set(m_pArray, i, val);
+        RTCListHelper<T, ITYPE>::set(m_pArray, i, val);
         ++m_cSize;
         m_guard.leaveWrite();
 
@@ -292,7 +289,7 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, ITYPE, MT> &prepend(const T &val)
+    RTCListBase<T, ITYPE, MT> &prepend(const T &val)
     {
         return insert(0, val);
     }
@@ -304,13 +301,13 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, ITYPE, MT> &prepend(const ListBase<T, ITYPE, MT> &other)
+    RTCListBase<T, ITYPE, MT> &prepend(const RTCListBase<T, ITYPE, MT> &other)
     {
         m_guard.enterWrite();
         if (m_cCapacity - m_cSize < other.m_cSize)
             realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
         memmove(&m_pArray[other.m_cSize], &m_pArray[0], m_cSize * sizeof(ITYPE));
-        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_cSize += other.m_cSize;
         m_guard.leaveWrite();
 
@@ -324,12 +321,12 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, ITYPE, MT> &append(const T &val)
+    RTCListBase<T, ITYPE, MT> &append(const T &val)
     {
         m_guard.enterWrite();
         if (m_cSize == m_cCapacity)
             realloc_grow(m_cCapacity + DefaultCapacity);
-        ListHelper<T, ITYPE>::set(m_pArray, m_cSize, val);
+        RTCListHelper<T, ITYPE>::set(m_pArray, m_cSize, val);
         ++m_cSize;
         m_guard.leaveWrite();
 
@@ -343,12 +340,12 @@ public:
      * @return  a reference to this list.
      * @throws  std::bad_alloc
      */
-    ListBase<T, ITYPE, MT> &append(const ListBase<T, ITYPE, MT> &other)
+    RTCListBase<T, ITYPE, MT> &append(const RTCListBase<T, ITYPE, MT> &other)
     {
         m_guard.enterWrite();
         if (m_cCapacity - m_cSize < other.m_cSize)
             realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
-        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
+        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
         m_cSize += other.m_cSize;
         m_guard.leaveWrite();
 
@@ -362,7 +359,7 @@ public:
      * @param   other   The list to copy.
      * @return  a reference to this list.
      */
-    ListBase<T, ITYPE, MT> &operator=(const ListBase<T, ITYPE, MT>& other)
+    RTCListBase<T, ITYPE, MT> &operator=(const RTCListBase<T, ITYPE, MT>& other)
     {
         /* Prevent self assignment */
         if (this == &other)
@@ -370,13 +367,13 @@ public:
 
         m_guard.enterWrite();
         /* Values cleanup */
-        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
+        RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
 
         /* Copy */
         if (other.m_cSize != m_cCapacity)
             realloc_grow(other.m_cSize);
         m_cSize = other.m_cSize;
-        ListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
+        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_guard.leaveWrite();
 
         return *this;
@@ -386,17 +383,17 @@ public:
      * Replace an item in the list.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @param   i     The position of the item to replace.
      * @param   val   The new value.
      * @return  a reference to this list.
      */
-    ListBase<T, ITYPE, MT> &replace(size_t i, const T &val)
+    RTCListBase<T, ITYPE, MT> &replace(size_t i, const T &val)
     {
         m_guard.enterWrite();
-        ListHelper<T, ITYPE>::erase(m_pArray, i);
-        ListHelper<T, ITYPE>::set(m_pArray, i, val);
+        RTCListHelper<T, ITYPE>::erase(m_pArray, i);
+        RTCListHelper<T, ITYPE>::set(m_pArray, i, val);
         m_guard.leaveWrite();
 
         return *this;
@@ -406,14 +403,14 @@ public:
      * Return the first item as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @return   The first item.
      */
     GET_CRTYPE first() const
     {
         m_guard.enterRead();
-        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
+        GET_CRTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, 0);
         m_guard.leaveRead();
         return res;
     }
@@ -422,14 +419,14 @@ public:
      * Return the first item.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @return   The first item.
      */
     GET_RTYPE first()
     {
         m_guard.enterRead();
-        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, 0);
+        GET_RTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, 0);
         m_guard.leaveRead();
         return res;
     }
@@ -438,14 +435,14 @@ public:
      * Return the last item as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @return   The last item.
      */
     GET_CRTYPE last() const
     {
         m_guard.enterRead();
-        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
+        GET_CRTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
         m_guard.leaveRead();
         return res;
     }
@@ -454,14 +451,14 @@ public:
      * Return the last item.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @return   The last item.
      */
     GET_RTYPE last()
     {
         m_guard.enterRead();
-        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
+        GET_RTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, m_cSize - 1);
         m_guard.leaveRead();
         return res;
     }
@@ -470,7 +467,7 @@ public:
      * Return the item at position @a i as constant object.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @param   i     The position of the item to return.
      * @return  The item at position @a i.
@@ -478,7 +475,7 @@ public:
     GET_CRTYPE at(size_t i) const
     {
         m_guard.enterRead();
-        GET_CRTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        GET_CRTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
@@ -487,7 +484,7 @@ public:
      * Return the item at position @a i.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @param   i     The position of the item to return.
      * @return   The item at position @a i.
@@ -495,7 +492,7 @@ public:
     GET_RTYPE at(size_t i)
     {
         m_guard.enterRead();
-        GET_RTYPE res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        GET_RTYPE res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
@@ -504,7 +501,7 @@ public:
      * Return the item at position @a i as mutable reference.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @param   i     The position of the item to return.
      * @return   The item at position @a i.
@@ -512,7 +509,7 @@ public:
     T &operator[](size_t i)
     {
         m_guard.enterRead();
-        T &res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        T &res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
@@ -532,7 +529,7 @@ public:
             m_guard.leaveRead();
             return T();
         }
-        T res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
@@ -553,7 +550,7 @@ public:
             m_guard.leaveRead();
             return defaultVal;
         }
-        T res = ListHelper<T, ITYPE>::at(m_pArray, i);
+        T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
         return res;
     }
@@ -562,14 +559,14 @@ public:
      * Remove the item at position @a i.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than list::size.
+     *       and smaller than RTCList::size.
      *
      * @param   i   The position of the item to remove.
      */
     void removeAt(size_t i)
     {
         m_guard.enterWrite();
-        ListHelper<T, ITYPE>::erase(m_pArray, i);
+        RTCListHelper<T, ITYPE>::erase(m_pArray, i);
         /* Not last element? */
         if (i < m_cSize - 1)
             memmove(&m_pArray[i], &m_pArray[i + 1], (m_cSize - i - 1) * sizeof(ITYPE));
@@ -581,8 +578,8 @@ public:
      * Remove a range of items from the list.
      *
      * @note No boundary checks are done. Make sure @a iFrom is equal or
-     *       greater zero and smaller than list::size. @a iTo has to be
-     *       greater than @a iFrom and equal or smaller than list::size.
+     *       greater zero and smaller than RTCList::size. @a iTo has to be
+     *       greater than @a iFrom and equal or smaller than RTCList::size.
      *
      * @param   iFrom   The start position of the items to remove.
      * @param   iTo     The end position of the items to remove (excluded).
@@ -590,7 +587,7 @@ public:
     void removeRange(size_t iFrom, size_t iTo)
     {
         m_guard.enterWrite();
-        ListHelper<T, ITYPE>::eraseRange(m_pArray, iFrom, iTo - iFrom);
+        RTCListHelper<T, ITYPE>::eraseRange(m_pArray, iFrom, iTo - iFrom);
         /* Not last elements? */
         if (m_cSize - iTo > 0)
             memmove(&m_pArray[iFrom], &m_pArray[iTo], (m_cSize - iTo) * sizeof(ITYPE));
@@ -605,7 +602,7 @@ public:
     {
         m_guard.enterWrite();
         /* Values cleanup */
-        ListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
+        RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
         if (m_cSize != DefaultCapacity)
             realloc_grow(DefaultCapacity);
         m_cSize = 0;
@@ -632,7 +629,7 @@ private:
         if (   cNewSize < m_cSize
             && m_pArray)
         {
-            ListHelper<T, ITYPE>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
+            RTCListHelper<T, ITYPE>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
             m_cSize -= m_cSize - cNewSize;
         }
 
@@ -689,41 +686,39 @@ private:
     /** The current capacity of the internal array. */
     size_t m_cCapacity;
     /** The guard used to serialize the access to the items. */
-    ListGuard<MT> m_guard;
+    RTCListGuard<MT> m_guard;
 };
 
 template <class T, typename ITYPE, bool MT>
-const size_t ListBase<T, ITYPE, MT>::DefaultCapacity = 10;
+const size_t RTCListBase<T, ITYPE, MT>::DefaultCapacity = 10;
 
 /**
  * Template class which automatically determines the type of list to use.
  *
- * @see ListBase
+ * @see RTCListBase
  */
-template <class T, typename ITYPE = typename if_<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class list : public ListBase<T, ITYPE, false> {};
+template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
+class RTCList : public RTCListBase<T, ITYPE, false> {};
 
 /**
  * Specialized class for using the native type list for unsigned 64-bit
  * values even on a 32-bit host.
  *
- * @see ListBase
+ * @see RTCListBase
  */
 template <>
-class list<uint64_t>: public ListBase<uint64_t, uint64_t, false> {};
+class RTCList<uint64_t>: public RTCListBase<uint64_t, uint64_t, false> {};
 
 /**
  * Specialized class for using the native type list for signed 64-bit
  * values even on a 32-bit host.
  *
- * @see ListBase
+ * @see RTCListBase
  */
 template <>
-class list<int64_t>: public ListBase<int64_t, int64_t, false> {};
+class RTCList<int64_t>: public RTCListBase<int64_t, int64_t, false> {};
 
 /** @} */
-
-} /* namespace iprt */
 
 #endif /* !___iprt_cpp_list_h */
 
