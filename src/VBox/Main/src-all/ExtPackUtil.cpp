@@ -46,7 +46,7 @@
  * @param   paPlugIns           Where to return the plug-in descriptor array.
  *                              (RTMemFree it even on failure)
  */
-static iprt::MiniString *
+static RTCString *
 vboxExtPackLoadPlugInDescs(const xml::ElementNode *pVBoxExtPackElm,
                            uint32_t *pcPlugIns, PVBOXEXTPACKPLUGINDESC *paPlugIns)
 {
@@ -97,7 +97,7 @@ void VBoxExtPackInitDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
  * @param   a_pDoc              Pointer to the the XML document.
  * @param   a_pExtPackDesc      Where to store the extension pack descriptor.
  */
-static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACKDESC a_pExtPackDesc)
+static RTCString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACKDESC a_pExtPackDesc)
 {
     /*
      * Get the main element and check its version.
@@ -105,41 +105,41 @@ static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOX
     const xml::ElementNode *pVBoxExtPackElm = a_pDoc->getRootElement();
     if (   !pVBoxExtPackElm
         || strcmp(pVBoxExtPackElm->getName(), "VirtualBoxExtensionPack") != 0)
-        return new iprt::MiniString("No VirtualBoxExtensionPack element");
+        return new RTCString("No VirtualBoxExtensionPack element");
 
-    iprt::MiniString strFormatVersion;
+    RTCString strFormatVersion;
     if (!pVBoxExtPackElm->getAttributeValue("version", strFormatVersion))
-        return new iprt::MiniString("Missing format version");
+        return new RTCString("Missing format version");
     if (!strFormatVersion.equals("1.0"))
-        return &(new iprt::MiniString("Unsupported format version: "))->append(strFormatVersion);
+        return &(new RTCString("Unsupported format version: "))->append(strFormatVersion);
 
     /*
      * Read and validate mandatory bits.
      */
     const xml::ElementNode *pNameElm = pVBoxExtPackElm->findChildElement("Name");
     if (!pNameElm)
-        return new iprt::MiniString("The 'Name' element is missing");
+        return new RTCString("The 'Name' element is missing");
     const char *pszName = pNameElm->getValue();
     if (!VBoxExtPackIsValidName(pszName))
-        return &(new iprt::MiniString("Invalid name: "))->append(pszName);
+        return &(new RTCString("Invalid name: "))->append(pszName);
 
     const xml::ElementNode *pDescElm = pVBoxExtPackElm->findChildElement("Description");
     if (!pDescElm)
-        return new iprt::MiniString("The 'Description' element is missing");
+        return new RTCString("The 'Description' element is missing");
     const char *pszDesc = pDescElm->getValue();
     if (!pszDesc || *pszDesc == '\0')
-        return new iprt::MiniString("The 'Description' element is empty");
+        return new RTCString("The 'Description' element is empty");
     if (strpbrk(pszDesc, "\n\r\t\v\b") != NULL)
-        return new iprt::MiniString("The 'Description' must not contain control characters");
+        return new RTCString("The 'Description' must not contain control characters");
 
     const xml::ElementNode *pVersionElm = pVBoxExtPackElm->findChildElement("Version");
     if (!pVersionElm)
-        return new iprt::MiniString("The 'Version' element is missing");
+        return new RTCString("The 'Version' element is missing");
     const char *pszVersion = pVersionElm->getValue();
     if (!pszVersion || *pszVersion == '\0')
-        return new iprt::MiniString("The 'Version' element is empty");
+        return new RTCString("The 'Version' element is empty");
     if (!VBoxExtPackIsValidVersionString(pszVersion))
-        return &(new iprt::MiniString("Invalid version string: "))->append(pszVersion);
+        return &(new RTCString("Invalid version string: "))->append(pszVersion);
 
     uint32_t uRevision;
     if (!pVersionElm->getAttributeValue("revision", uRevision))
@@ -147,12 +147,12 @@ static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOX
 
     const xml::ElementNode *pMainModuleElm = pVBoxExtPackElm->findChildElement("MainModule");
     if (!pMainModuleElm)
-        return new iprt::MiniString("The 'MainModule' element is missing");
+        return new RTCString("The 'MainModule' element is missing");
     const char *pszMainModule = pMainModuleElm->getValue();
     if (!pszMainModule || *pszMainModule == '\0')
-        return new iprt::MiniString("The 'MainModule' element is empty");
+        return new RTCString("The 'MainModule' element is empty");
     if (!VBoxExtPackIsValidModuleString(pszMainModule))
-        return &(new iprt::MiniString("Invalid main module string: "))->append(pszMainModule);
+        return &(new RTCString("Invalid main module string: "))->append(pszMainModule);
 
     /*
      * The VRDE module, optional.
@@ -166,7 +166,7 @@ static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOX
         if (!pszVrdeModule || *pszVrdeModule == '\0')
             pszVrdeModule = NULL;
         else if (!VBoxExtPackIsValidModuleString(pszVrdeModule))
-            return &(new iprt::MiniString("Invalid VRDE module string: "))->append(pszVrdeModule);
+            return &(new RTCString("Invalid VRDE module string: "))->append(pszVrdeModule);
     }
 
     /*
@@ -180,7 +180,7 @@ static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOX
      */
     uint32_t                cPlugIns  = 0;
     PVBOXEXTPACKPLUGINDESC  paPlugIns = NULL;
-    iprt::MiniString *pstrRet = vboxExtPackLoadPlugInDescs(pVBoxExtPackElm, &cPlugIns, &paPlugIns);
+    RTCString *pstrRet = vboxExtPackLoadPlugInDescs(pVBoxExtPackElm, &cPlugIns, &paPlugIns);
     if (pstrRet)
     {
         RTMemFree(paPlugIns);
@@ -213,7 +213,7 @@ static iprt::MiniString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOX
  * @param   a_pObjInfo      Where to store the object info for the file (unix
  *                          attribs). Optional.
  */
-iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo)
+RTCString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo)
 {
     vboxExtPackClearDesc(a_pExtPackDesc);
 
@@ -223,19 +223,19 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     char szFilePath[RTPATH_MAX];
     int vrc = RTPathJoin(szFilePath, sizeof(szFilePath), a_pszDir, VBOX_EXTPACK_DESCRIPTION_NAME);
     if (RT_FAILURE(vrc))
-        return new iprt::MiniString("RTPathJoin failed with %Rrc", vrc);
+        return new RTCString("RTPathJoin failed with %Rrc", vrc);
 
     RTFSOBJINFO ObjInfo;
     vrc = RTPathQueryInfoEx(szFilePath, &ObjInfo,  RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_FAILURE(vrc))
-        return &(new iprt::MiniString())->printf("RTPathQueryInfoEx failed with %Rrc", vrc);
+        return &(new RTCString())->printf("RTPathQueryInfoEx failed with %Rrc", vrc);
     if (a_pObjInfo)
         *a_pObjInfo = ObjInfo;
     if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
     {
         if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
-            return new iprt::MiniString("The XML file is symlinked, that is not allowed");
-        return &(new iprt::MiniString)->printf("The XML file is not a file (fMode=%#x)", ObjInfo.Attr.fMode);
+            return new RTCString("The XML file is symlinked, that is not allowed");
+        return &(new RTCString)->printf("The XML file is not a file (fMode=%#x)", ObjInfo.Attr.fMode);
     }
 
     xml::Document       Doc;
@@ -247,7 +247,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
         }
         catch (xml::XmlError Err)
         {
-            return new iprt::MiniString(Err.what());
+            return new RTCString(Err.what());
         }
     }
 
@@ -267,7 +267,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
  * @param   a_pObjInfo      Where to store the object info for the file (unix
  *                          attribs). Optional.
  */
-iprt::MiniString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo)
+RTCString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo)
 {
     vboxExtPackClearDesc(a_pExtPackDesc);
 
@@ -277,7 +277,7 @@ iprt::MiniString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPAC
     RTFSOBJINFO ObjInfo;
     int rc = RTVfsFileQueryInfo(hVfsFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
     if (RT_FAILURE(rc))
-        return &(new iprt::MiniString)->printf("RTVfsFileQueryInfo failed: %Rrc", rc);
+        return &(new RTCString)->printf("RTVfsFileQueryInfo failed: %Rrc", rc);
     if (a_pObjInfo)
         *a_pObjInfo = ObjInfo;
 
@@ -288,23 +288,23 @@ iprt::MiniString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPAC
 
     /* Check the file size. */
     if (ObjInfo.cbObject > _1M || ObjInfo.cbObject < 0)
-        return &(new iprt::MiniString)->printf("The XML file is too large (%'RU64 bytes)", ObjInfo.cbObject);
+        return &(new RTCString)->printf("The XML file is too large (%'RU64 bytes)", ObjInfo.cbObject);
     size_t const cbFile = (size_t)ObjInfo.cbObject;
 
     /* Rewind to the start of the file. */
     rc = RTVfsFileSeek(hVfsFile, 0, RTFILE_SEEK_BEGIN, NULL);
     if (RT_FAILURE(rc))
-        return &(new iprt::MiniString)->printf("RTVfsFileSeek(,0,BEGIN) failed: %Rrc", rc);
+        return &(new RTCString)->printf("RTVfsFileSeek(,0,BEGIN) failed: %Rrc", rc);
 
     /* Allocate memory and read the file content into it. */
     void *pvFile = RTMemTmpAlloc(cbFile);
     if (!pvFile)
-        return &(new iprt::MiniString)->printf("RTMemTmpAlloc(%zu) failed", cbFile);
+        return &(new RTCString)->printf("RTMemTmpAlloc(%zu) failed", cbFile);
 
-    iprt::MiniString *pstrErr = NULL;
+    RTCString *pstrErr = NULL;
     rc = RTVfsFileRead(hVfsFile, pvFile, cbFile, NULL);
     if (RT_FAILURE(rc))
-        pstrErr = &(new iprt::MiniString)->printf("RTVfsFileRead failed: %Rrc", rc);
+        pstrErr = &(new RTCString)->printf("RTVfsFileRead failed: %Rrc", rc);
 
     /*
      * Parse the file.
@@ -313,14 +313,14 @@ iprt::MiniString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPAC
     if (RT_SUCCESS(rc))
     {
         xml::XmlMemParser   Parser;
-        iprt::MiniString    strFileName = VBOX_EXTPACK_DESCRIPTION_NAME;
+        RTCString    strFileName = VBOX_EXTPACK_DESCRIPTION_NAME;
         try
         {
             Parser.read(pvFile, cbFile, strFileName, Doc);
         }
         catch (xml::XmlError Err)
         {
-            pstrErr = new iprt::MiniString(Err.what());
+            pstrErr = new RTCString(Err.what());
             rc = VERR_PARSE_ERROR;
         }
     }
@@ -365,7 +365,7 @@ void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
  *          NULL if no valid name was found or if we ran out of memory.
  * @param   pszTarball          The path to the tarball.
  */
-iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
+RTCString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
 {
     /*
      * Skip ahead to the filename part and count the number of characters
@@ -469,7 +469,7 @@ bool VBoxExtPackIsValidMangledName(const char *pszMangledName, size_t cchMax /*=
  * @param   pszName             The unmangled name.
  * @sa      VBoxExtPackUnmangleName, VBoxExtPackIsValidMangledName
  */
-iprt::MiniString *VBoxExtPackMangleName(const char *pszName)
+RTCString *VBoxExtPackMangleName(const char *pszName)
 {
     AssertReturn(VBoxExtPackIsValidName(pszName), NULL);
 
@@ -485,7 +485,7 @@ iprt::MiniString *VBoxExtPackMangleName(const char *pszName)
     szTmp[off] = '\0';
     Assert(VBoxExtPackIsValidMangledName(szTmp));
 
-    return new iprt::MiniString(szTmp, off);
+    return new RTCString(szTmp, off);
 }
 
 /**
@@ -497,7 +497,7 @@ iprt::MiniString *VBoxExtPackMangleName(const char *pszName)
  * @param   cchMax              The max name length.  RTSTR_MAX is fine.
  * @sa      VBoxExtPackMangleName, VBoxExtPackIsValidMangledName
  */
-iprt::MiniString *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cchMax)
+RTCString *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cchMax)
 {
     AssertReturn(VBoxExtPackIsValidMangledName(pszMangledName, cchMax), NULL);
 
@@ -516,7 +516,7 @@ iprt::MiniString *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cch
     szTmp[off] = '\0';
     AssertReturn(VBoxExtPackIsValidName(szTmp), NULL);
 
-    return new iprt::MiniString(szTmp, off);
+    return new RTCString(szTmp, off);
 }
 
 /**
@@ -534,7 +534,7 @@ int VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *psz
 {
     AssertReturn(VBoxExtPackIsValidName(pszName), VERR_INTERNAL_ERROR_5);
 
-    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    RTCString *pstrMangledName = VBoxExtPackMangleName(pszName);
     if (!pstrMangledName)
         return VERR_INTERNAL_ERROR_4;
 
@@ -664,7 +664,7 @@ static int vboxExtPackVerifyXml(RTVFSFILE hXmlFile, const char *pszExtPackName, 
      * Load the XML.
      */
     VBOXEXTPACKDESC     ExtPackDesc;
-    iprt::MiniString   *pstrErr = VBoxExtPackLoadDescFromVfsFile(hXmlFile, &ExtPackDesc, NULL);
+    RTCString   *pstrErr = VBoxExtPackLoadDescFromVfsFile(hXmlFile, &ExtPackDesc, NULL);
     if (pstrErr)
     {
         RTStrCopy(pszError, cbError, pstrErr->c_str());

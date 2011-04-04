@@ -1,8 +1,8 @@
 /* $Id$ */
 /** @file
+ * OVF reader declarations.
  *
- * OVF reader declarations. Depends only on IPRT, including the iprt::MiniString
- * and IPRT XML classes.
+ * Depends only on IPRT, including the RTCString and IPRT XML classes.
  */
 
 /*
@@ -20,7 +20,6 @@
 #include "ovfreader.h"
 
 using namespace std;
-using namespace iprt;
 using namespace ovf;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +35,7 @@ using namespace ovf;
  * @param cbSize the size of the memory buffer
  * @param path   path to a filename for error messages.
  */
-OVFReader::OVFReader(const void *pvBuf, size_t cbSize, const MiniString &path)
+OVFReader::OVFReader(const void *pvBuf, size_t cbSize, const RTCString &path)
     : m_strPath(path)
 {
     xml::XmlMemParser parser;
@@ -52,7 +51,7 @@ OVFReader::OVFReader(const void *pvBuf, size_t cbSize, const MiniString &path)
  * on XML or OVF invalidity.
  * @param path
  */
-OVFReader::OVFReader(const MiniString &path)
+OVFReader::OVFReader(const RTCString &path)
     : m_strPath(path)
 {
     xml::XmlFileParser parser;
@@ -652,8 +651,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             <rasd:Address>0</rasd:Address>
                             <rasd:BusNumber>0</rasd:BusNumber>
                         </Item> */
-                        if (    i.strCaption.startsWith("sataController", MiniString::CaseInsensitive)
-                             && !i.strResourceSubType.compare("AHCI", MiniString::CaseInsensitive)
+                        if (    i.strCaption.startsWith("sataController", RTCString::CaseInsensitive)
+                             && !i.strResourceSubType.compare("AHCI", RTCString::CaseInsensitive)
                            )
                         {
                             HardDiskController hdc;

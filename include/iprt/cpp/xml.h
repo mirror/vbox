@@ -464,8 +464,8 @@ public:
 
     const AttributeNode* findAttribute(const char *pcszMatch) const;
     bool getAttributeValue(const char *pcszMatch, const char *&ppcsz) const;
-    bool getAttributeValue(const char *pcszMatch, iprt::MiniString &str) const;
-    bool getAttributeValuePath(const char *pcszMatch, iprt::MiniString &str) const;
+    bool getAttributeValue(const char *pcszMatch, RTCString &str) const;
+    bool getAttributeValuePath(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
@@ -475,17 +475,17 @@ public:
     ElementNode* createChild(const char *pcszElementName);
 
     ContentNode* addContent(const char *pcszContent);
-    ContentNode* addContent(const iprt::MiniString &strContent)
+    ContentNode* addContent(const RTCString &strContent)
     {
         return addContent(strContent.c_str());
     }
 
     AttributeNode* setAttribute(const char *pcszName, const char *pcszValue);
-    AttributeNode* setAttribute(const char *pcszName, const iprt::MiniString &strValue)
+    AttributeNode* setAttribute(const char *pcszName, const RTCString &strValue)
     {
         return setAttribute(pcszName, strValue.c_str());
     }
-    AttributeNode* setAttributePath(const char *pcszName, const iprt::MiniString &strValue);
+    AttributeNode* setAttributePath(const char *pcszName, const RTCString &strValue);
     AttributeNode* setAttribute(const char *pcszName, int32_t i);
     AttributeNode* setAttribute(const char *pcszName, uint32_t i);
     AttributeNode* setAttribute(const char *pcszName, int64_t i);
@@ -549,7 +549,7 @@ protected:
                   const char **ppcszKey);
     AttributeNode(const AttributeNode &x);      // no copying
 
-    iprt::MiniString    m_strKey;
+    RTCString    m_strKey;
 
     friend class Node;
     friend class ElementNode;
@@ -650,7 +650,7 @@ public:
     XmlMemParser();
     ~XmlMemParser();
 
-    void read(const void* pvBuf, size_t cbSize, const iprt::MiniString &strFilename, Document &doc);
+    void read(const void* pvBuf, size_t cbSize, const RTCString &strFilename, Document &doc);
 };
 
 /*
@@ -664,7 +664,7 @@ public:
     XmlFileParser();
     ~XmlFileParser();
 
-    void read(const iprt::MiniString &strFilename, Document &doc);
+    void read(const RTCString &strFilename, Document &doc);
 
 private:
     /* Obscure class data */

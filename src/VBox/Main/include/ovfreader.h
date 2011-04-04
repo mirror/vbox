@@ -1,8 +1,8 @@
 /* $Id$ */
 /** @file
- * OVF reader declarations.
+ * VirtualBox Main - OVF reader declarations.
  *
- * Depends only on IPRT, including the iprt::MiniString and IPRT XML classes.
+ * Depends only on IPRT, including the RTCString and IPRT XML classes.
  */
 
 /*
@@ -159,23 +159,23 @@ enum CIMOSType_T
 struct DiskImage
 {
     // fields from /DiskSection/Disk
-    iprt::MiniString strDiskId;     // value from DiskSection/Disk/@diskId
+    RTCString strDiskId;     // value from DiskSection/Disk/@diskId
     int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
                                     // (maximum size for dynamic images, I guess; we always translate this to bytes)
     int64_t iPopulatedSize;         // optional value from DiskSection/Disk/@populatedSize
                                     // (actual used size of disk, always in bytes; can be an estimate of used disk
                                     // space, but cannot be larger than iCapacity; -1 if not set)
-    iprt::MiniString strFormat;              // value from DiskSection/Disk/@format
+    RTCString strFormat;              // value from DiskSection/Disk/@format
                 // typically http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized
-    iprt::MiniString uuidVbox;      // optional; if the file was exported by VirtualBox >= 3.2,
+    RTCString uuidVbox;      // optional; if the file was exported by VirtualBox >= 3.2,
                                     // then this has the UUID with which the disk was registered
 
     // fields from /References/File; the spec says the file reference from disk can be empty,
     // so in that case, strFilename will be empty, then a new disk should be created
-    iprt::MiniString strHref;       // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
+    RTCString strHref;       // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
     int64_t iSize;                  // value from /References/File/@size (optional according to spec; then we set -1 here)
     int64_t iChunkSize;             // value from /References/File/@chunkSize (optional, unsupported)
-    iprt::MiniString strCompression; // value from /References/File/@compression (optional, can be "gzip" according to spec)
+    RTCString strCompression; // value from /References/File/@compression (optional, can be "gzip" according to spec)
 
     // additional field which has a descriptive size in megabytes derived from the above; this can be used for progress reports
     uint32_t ulSuggestedSizeMB;
@@ -206,39 +206,39 @@ enum ResourceType_T
 
 struct VirtualHardwareItem
 {
-    iprt::MiniString strDescription;
-    iprt::MiniString strCaption;
-    iprt::MiniString strElementName;
+    RTCString strDescription;
+    RTCString strCaption;
+    RTCString strElementName;
 
     uint32_t ulInstanceID;
     uint32_t ulParent;
 
     ResourceType_T resourceType;
-    iprt::MiniString strOtherResourceType;
-    iprt::MiniString strResourceSubType;
+    RTCString strOtherResourceType;
+    RTCString strResourceSubType;
     bool fResourceRequired;
 
-    iprt::MiniString strHostResource;   // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
+    RTCString strHostResource;   // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
                                         // Not all devices need a backing." Used with disk items, for which this references a virtual
                                         // disk from the Disks section.
     bool fAutomaticAllocation;
     bool fAutomaticDeallocation;
-    iprt::MiniString strConnection;     // "All Ethernet adapters that specify the same abstract network connection name within an OVF
+    RTCString strConnection;     // "All Ethernet adapters that specify the same abstract network connection name within an OVF
                                         // package shall be deployed on the same network. The abstract network connection name shall be
                                         // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
                                         // a network adapter depending on the network name.
-    iprt::MiniString strAddress;        // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    RTCString strAddress;        // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
     int32_t lAddress;                   // strAddress as an integer, if applicable.
-    iprt::MiniString strAddressOnParent;         // "For a device, this specifies its location on the controller."
-    iprt::MiniString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
+    RTCString strAddressOnParent;         // "For a device, this specifies its location on the controller."
+    RTCString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
     uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
     uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
     uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
     uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
 
-    iprt::MiniString strConsumerVisibility;
-    iprt::MiniString strMappingBehavior;
-    iprt::MiniString strPoolID;
+    RTCString strConsumerVisibility;
+    RTCString strMappingBehavior;
+    RTCString strPoolID;
     uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
 
     uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
@@ -256,7 +256,7 @@ struct VirtualHardwareItem
     {};
 };
 
-typedef std::map<iprt::MiniString, DiskImage> DiskImagesMap;
+typedef std::map<RTCString, DiskImage> DiskImagesMap;
 
 struct VirtualSystem;
 
@@ -269,7 +269,7 @@ struct HardDiskController
     enum ControllerSystemType { IDE, SATA, SCSI };
     ControllerSystemType    system;             // one of IDE, SATA, SCSI
 
-    iprt::MiniString        strControllerType;
+    RTCString        strControllerType;
             // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
             // note that we treat LsiLogicSAS as a SCSI controller (system == SCSI) even though VirtualBox
             // treats it as a fourth class besides IDE, SATA, SCSI
@@ -295,12 +295,12 @@ struct VirtualDisk
                                                 // points into VirtualSystem.mapControllers
     uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
                                                 // and possibly higher for disks attached to SCSI controllers (untested)
-    iprt::MiniString    strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
+    RTCString    strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
                                                 // this receives the <id> component; points to one of the
                                                 // references in Appliance::Data.mapDisks
 };
 
-typedef std::map<iprt::MiniString, VirtualDisk> VirtualDisksMap;
+typedef std::map<RTCString, VirtualDisk> VirtualDisksMap;
 
 /**
  * A list of EthernetAdapters is contained in VirtualSystem, representing the
@@ -308,8 +308,8 @@ typedef std::map<iprt::MiniString, VirtualDisk> VirtualDisksMap;
  */
 struct EthernetAdapter
 {
-    iprt::MiniString    strAdapterType;         // "PCNet32" or "E1000" or whatever; from <rasd:ResourceSubType>
-    iprt::MiniString    strNetworkName;         // from <rasd:Connection>
+    RTCString    strAdapterType;         // "PCNet32" or "E1000" or whatever; from <rasd:ResourceSubType>
+    RTCString    strNetworkName;         // from <rasd:Connection>
 };
 
 typedef std::list<EthernetAdapter> EthernetAdaptersList;
@@ -320,15 +320,15 @@ typedef std::list<EthernetAdapter> EthernetAdaptersList;
  */
 struct VirtualSystem
 {
-    iprt::MiniString    strName;                // copy of VirtualSystem/@id
+    RTCString    strName;                // copy of VirtualSystem/@id
 
-    iprt::MiniString    strDescription;         // copy of VirtualSystem/AnnotationSection content, if any
+    RTCString    strDescription;         // copy of VirtualSystem/AnnotationSection content, if any
 
     CIMOSType_T         cimos;
-    iprt::MiniString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
-    iprt::MiniString    strTypeVbox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
+    RTCString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
+    RTCString    strTypeVbox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
 
-    iprt::MiniString    strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
+    RTCString    strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
 
     HardwareItemsMap    mapHardwareItems;       // map of virtual hardware items, sorted by unique instance ID
@@ -349,16 +349,16 @@ struct VirtualSystem
     bool                fHasCdromDrive;         // true if there's a CD-ROM item in mapHardwareItems; ISO images are not yet supported by OVFtool
     bool                fHasUsbController;      // true if there's a USB controller item in mapHardwareItems
 
-    iprt::MiniString    strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
+    RTCString    strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
                                                 // VMware Workstation 6.5 uses "ensoniq1371" for example
 
-    iprt::MiniString    strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
+    RTCString    strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
 
-    iprt::MiniString    strProduct;             // product info if any; receives contents of VirtualSystem/ProductSection/Product
-    iprt::MiniString    strVendor;              // product info if any; receives contents of VirtualSystem/ProductSection/Vendor
-    iprt::MiniString    strVersion;             // product info if any; receives contents of VirtualSystem/ProductSection/Version
-    iprt::MiniString    strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
-    iprt::MiniString    strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
+    RTCString    strProduct;             // product info if any; receives contents of VirtualSystem/ProductSection/Product
+    RTCString    strVendor;              // product info if any; receives contents of VirtualSystem/ProductSection/Vendor
+    RTCString    strVersion;             // product info if any; receives contents of VirtualSystem/ProductSection/Version
+    RTCString    strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
+    RTCString    strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
 
     const xml::ElementNode                      // pointer to <vbox:Machine> element under <VirtualSystem> element or NULL if not present
                         *pelmVboxMachine;
@@ -407,11 +407,11 @@ struct VirtualSystem
 class OVFReader
 {
 public:
-    OVFReader(const void *pvBuf, size_t cbSize, const iprt::MiniString &path);
-    OVFReader(const iprt::MiniString &path);
+    OVFReader(const void *pvBuf, size_t cbSize, const RTCString &path);
+    OVFReader(const RTCString &path);
 
     // Data fields
-    iprt::MiniString            m_strPath;            // file name given to constructor
+    RTCString            m_strPath;            // file name given to constructor
     DiskImagesMap               m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
     std::list<VirtualSystem>    m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
 

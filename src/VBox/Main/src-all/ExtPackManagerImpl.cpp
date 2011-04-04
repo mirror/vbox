@@ -241,7 +241,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
     m->ptrExtPackMgr                = a_pExtPackMgr;
     m->pVirtualBox                  = a_pVirtualBox;
 
-    iprt::MiniString *pstrTarName = VBoxExtPackExtractNameFromTarballPath(a_pszFile);
+    RTCString *pstrTarName = VBoxExtPackExtractNameFromTarballPath(a_pszFile);
     if (pstrTarName)
     {
         m->Desc.strName = *pstrTarName;
@@ -283,8 +283,8 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, ExtPackManager *a_pExtP
     /*
      * Parse the XML.
      */
-    iprt::MiniString strSavedName(m->Desc.strName);
-    iprt::MiniString *pStrLoadErr = VBoxExtPackLoadDescFromVfsFile(hXmlFile, &m->Desc, &m->ObjInfoDesc);
+    RTCString strSavedName(m->Desc.strName);
+    RTCString *pStrLoadErr = VBoxExtPackLoadDescFromVfsFile(hXmlFile, &m->Desc, &m->ObjInfoDesc);
     RTVfsFileRelease(hXmlFile);
     if (pStrLoadErr != NULL)
     {
@@ -1224,8 +1224,8 @@ void ExtPack::probeAndLoad(void)
     /*
      * Read the description file.
      */
-    iprt::MiniString strSavedName(m->Desc.strName);
-    iprt::MiniString *pStrLoadErr = VBoxExtPackLoadDesc(m->strExtPackPath.c_str(), &m->Desc, &m->ObjInfoDesc);
+    RTCString strSavedName(m->Desc.strName);
+    RTCString *pStrLoadErr = VBoxExtPackLoadDesc(m->strExtPackPath.c_str(), &m->Desc, &m->ObjInfoDesc);
     if (pStrLoadErr != NULL)
     {
         m->strWhyUnusable.printf(tr("Failed to load '%s/%s': %s"),
@@ -1902,7 +1902,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
                 AssertLogRelRC(vrc);
                 if (RT_SUCCESS(vrc))
                 {
-                    iprt::MiniString *pstrName = VBoxExtPackUnmangleName(Entry.szName, RTSTR_MAX);
+                    RTCString *pstrName = VBoxExtPackUnmangleName(Entry.szName, RTSTR_MAX);
                     AssertLogRel(pstrName);
                     if (pstrName)
                     {
@@ -2562,8 +2562,8 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnusableIs
 HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo)
 {
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
-    iprt::MiniString const * const pStrName     = &a_pExtPackFile->m->Desc.strName;
-    iprt::MiniString const * const pStrTarball  = &a_pExtPackFile->m->strExtPackFile;
+    RTCString const * const pStrName     = &a_pExtPackFile->m->Desc.strName;
+    RTCString const * const pStrTarball  = &a_pExtPackFile->m->strExtPackFile;
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();

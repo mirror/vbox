@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Classes for handling hardware detection under Linux.
+ * VirtualBox Main - Classes for handling hardware detection under Linux.
  *
  * Please feel free to expand these to work for other systems (Solaris!) or to
  * add new ones for other systems.
@@ -39,18 +39,18 @@ public:
     struct DriveInfo
     {
         /** The device node of the drive. */
-        iprt::MiniString mDevice;
+        RTCString mDevice;
         /** A unique identifier for the device, if available.  This should be
          * kept consistent across different probing methods of a given
          * platform if at all possible. */
-        iprt::MiniString mUdi;
+        RTCString mUdi;
         /** A textual description of the drive. */
-        iprt::MiniString mDescription;
+        RTCString mDescription;
 
         /** Constructors */
-        DriveInfo(const iprt::MiniString &aDevice,
-                  const iprt::MiniString &aUdi = "",
-                  const iprt::MiniString &aDescription = "")
+        DriveInfo(const RTCString &aDevice,
+                  const RTCString &aUdi = "",
+                  const RTCString &aDescription = "")
             : mDevice(aDevice),
               mUdi(aUdi),
               mDescription(aDescription)

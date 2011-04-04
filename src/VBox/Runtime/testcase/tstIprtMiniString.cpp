@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - iprt::MiniString.
+ * IPRT Testcase - RTCString.
  */
 
 /*
@@ -41,7 +41,7 @@ static void test1Hlp1(const char *pszExpect, const char *pszFormat, ...)
 #if 0
     va_list va;
     va_start(va, pszFormat);
-    iprt::MiniString strTst(pszFormat, va);
+    RTCString strTst(pszFormat, va);
     va_end(va);
     RTTESTI_CHECK_MSG(strTst.equals(pszExpect),  ("strTst='%s' expected='%s'\n",  strTst.c_str(), pszExpect));
 #endif
@@ -69,15 +69,15 @@ static void test1(RTTEST hTest)
             RTTestIFailed("line %u: expected \"%s\" got \"%s\"", __LINE__, szExpect, (Str).c_str()); \
     } while (0)
 
-    iprt::MiniString empty;
+    RTCString empty;
     CHECK(empty.length() == 0);
     CHECK(empty.capacity() == 0);
 
-    iprt::MiniString sixbytes("12345");
+    RTCString sixbytes("12345");
     CHECK(sixbytes.length() == 5);
     CHECK(sixbytes.capacity() == 6);
 
-    sixbytes.append(iprt::MiniString("678"));
+    sixbytes.append(RTCString("678"));
     CHECK(sixbytes.length() == 8);
     CHECK(sixbytes.capacity() >= 9);
 
@@ -94,20 +94,20 @@ static void test1(RTTEST hTest)
     CHECK(sixbytes.length() == 6);
     CHECK(sixbytes.capacity() == 7);
 
-    iprt::MiniString morebytes("tobereplaced");
+    RTCString morebytes("tobereplaced");
     morebytes = "newstring ";
     morebytes.append(sixbytes);
 
     CHECK_DUMP(morebytes == "newstring 123456", morebytes.c_str());
 
-    iprt::MiniString third(morebytes);
+    RTCString third(morebytes);
     third.reserve(100 * 1024);      // 100 KB
     CHECK_DUMP(third == "newstring 123456", morebytes.c_str() );
     CHECK(third.capacity() == 100 * 1024);
     CHECK(third.length() == morebytes.length());          // must not have changed
 
-    iprt::MiniString copy1(morebytes);
-    iprt::MiniString copy2 = morebytes;
+    RTCString copy1(morebytes);
+    RTCString copy2 = morebytes;
     CHECK(copy1 == copy2);
 
     copy1 = NULL;
@@ -116,38 +116,38 @@ static void test1(RTTEST hTest)
     copy1 = "";
     CHECK(copy1.length() == 0);
 
-    CHECK(iprt::MiniString("abc") <  iprt::MiniString("def"));
-    CHECK(iprt::MiniString("") <  iprt::MiniString("def"));
-    CHECK(iprt::MiniString("abc") > iprt::MiniString(""));
-    CHECK(iprt::MiniString("abc") != iprt::MiniString("def"));
-    CHECK_DUMP_I(iprt::MiniString("def") > iprt::MiniString("abc"));
-    CHECK(iprt::MiniString("abc") == iprt::MiniString("abc"));
-    CHECK(iprt::MiniString("").compare("") == 0);
-    CHECK(iprt::MiniString("").compare(NULL) == 0);
-    CHECK(iprt::MiniString("").compare("a") < 0);
-    CHECK(iprt::MiniString("a").compare("") > 0);
-    CHECK(iprt::MiniString("a").compare(NULL) > 0);
+    CHECK(RTCString("abc") <  RTCString("def"));
+    CHECK(RTCString("") <  RTCString("def"));
+    CHECK(RTCString("abc") > RTCString(""));
+    CHECK(RTCString("abc") != RTCString("def"));
+    CHECK_DUMP_I(RTCString("def") > RTCString("abc"));
+    CHECK(RTCString("abc") == RTCString("abc"));
+    CHECK(RTCString("").compare("") == 0);
+    CHECK(RTCString("").compare(NULL) == 0);
+    CHECK(RTCString("").compare("a") < 0);
+    CHECK(RTCString("a").compare("") > 0);
+    CHECK(RTCString("a").compare(NULL) > 0);
 
-    CHECK(iprt::MiniString("abc") <  "def");
-    CHECK(iprt::MiniString("abc") != "def");
-    CHECK_DUMP_I(iprt::MiniString("def") > "abc");
-    CHECK(iprt::MiniString("abc") == "abc");
+    CHECK(RTCString("abc") <  "def");
+    CHECK(RTCString("abc") != "def");
+    CHECK_DUMP_I(RTCString("def") > "abc");
+    CHECK(RTCString("abc") == "abc");
 
-    CHECK(iprt::MiniString("abc").equals("abc"));
-    CHECK(!iprt::MiniString("abc").equals("def"));
-    CHECK(iprt::MiniString("abc").equalsIgnoreCase("Abc"));
-    CHECK(iprt::MiniString("abc").equalsIgnoreCase("ABc"));
-    CHECK(iprt::MiniString("abc").equalsIgnoreCase("ABC"));
-    CHECK(!iprt::MiniString("abc").equalsIgnoreCase("dBC"));
-    CHECK(iprt::MiniString("").equals(""));
-    CHECK(iprt::MiniString("").equals(NULL));
-    CHECK(!iprt::MiniString("").equals("a"));
-    CHECK(!iprt::MiniString("a").equals(""));
-    CHECK(!iprt::MiniString("a").equals(NULL));
-    CHECK(iprt::MiniString("").equalsIgnoreCase(""));
-    CHECK(iprt::MiniString("").equalsIgnoreCase(NULL));
-    CHECK(!iprt::MiniString("").equalsIgnoreCase("a"));
-    CHECK(!iprt::MiniString("a").equalsIgnoreCase(""));
+    CHECK(RTCString("abc").equals("abc"));
+    CHECK(!RTCString("abc").equals("def"));
+    CHECK(RTCString("abc").equalsIgnoreCase("Abc"));
+    CHECK(RTCString("abc").equalsIgnoreCase("ABc"));
+    CHECK(RTCString("abc").equalsIgnoreCase("ABC"));
+    CHECK(!RTCString("abc").equalsIgnoreCase("dBC"));
+    CHECK(RTCString("").equals(""));
+    CHECK(RTCString("").equals(NULL));
+    CHECK(!RTCString("").equals("a"));
+    CHECK(!RTCString("a").equals(""));
+    CHECK(!RTCString("a").equals(NULL));
+    CHECK(RTCString("").equalsIgnoreCase(""));
+    CHECK(RTCString("").equalsIgnoreCase(NULL));
+    CHECK(!RTCString("").equalsIgnoreCase("a"));
+    CHECK(!RTCString("a").equalsIgnoreCase(""));
 
     copy2.setNull();
     for (int i = 0; i < 100; ++i)
@@ -166,7 +166,7 @@ static void test1(RTTEST hTest)
     CHECK(copy2.length() == 100);
 
     /* printf */
-    iprt::MiniString StrFmt;
+    RTCString StrFmt;
     CHECK(StrFmt.printf("%s-%s-%d", "abc", "def", 42).equals("abc-def-42"));
     test1Hlp1("abc-42-def", "%s-%d-%s", "abc", 42, "def");
     test1Hlp1("", "");
@@ -174,44 +174,44 @@ static void test1(RTTEST hTest)
     test1Hlp1("foobar", "%s", "foobar");
 
     /* substring constructors */
-    iprt::MiniString SubStr1("", (size_t)0);
+    RTCString SubStr1("", (size_t)0);
     CHECK_EQUAL(SubStr1, "");
 
-    iprt::MiniString SubStr2("abcdef", 2);
+    RTCString SubStr2("abcdef", 2);
     CHECK_EQUAL(SubStr2, "ab");
 
-    iprt::MiniString SubStr3("abcdef", 1);
+    RTCString SubStr3("abcdef", 1);
     CHECK_EQUAL(SubStr3, "a");
 
-    iprt::MiniString SubStr4("abcdef", 6);
+    RTCString SubStr4("abcdef", 6);
     CHECK_EQUAL(SubStr4, "abcdef");
 
-    iprt::MiniString SubStr5("abcdef", 7);
+    RTCString SubStr5("abcdef", 7);
     CHECK_EQUAL(SubStr5, "abcdef");
 
 
-    iprt::MiniString SubStrBase("abcdef");
+    RTCString SubStrBase("abcdef");
 
-    iprt::MiniString SubStr10(SubStrBase, 0);
+    RTCString SubStr10(SubStrBase, 0);
     CHECK_EQUAL(SubStr10, "abcdef");
 
-    iprt::MiniString SubStr11(SubStrBase, 1);
+    RTCString SubStr11(SubStrBase, 1);
     CHECK_EQUAL(SubStr11, "bcdef");
 
-    iprt::MiniString SubStr12(SubStrBase, 1, 1);
+    RTCString SubStr12(SubStrBase, 1, 1);
     CHECK_EQUAL(SubStr12, "b");
 
-    iprt::MiniString SubStr13(SubStrBase, 2, 3);
+    RTCString SubStr13(SubStrBase, 2, 3);
     CHECK_EQUAL(SubStr13, "cde");
 
-    iprt::MiniString SubStr14(SubStrBase, 2, 4);
+    RTCString SubStr14(SubStrBase, 2, 4);
     CHECK_EQUAL(SubStr14, "cdef");
 
-    iprt::MiniString SubStr15(SubStrBase, 2, 5);
+    RTCString SubStr15(SubStrBase, 2, 5);
     CHECK_EQUAL(SubStr15, "cdef");
 
     /* substr() and substrCP() functions */
-    iprt::MiniString strTest("");
+    RTCString strTest("");
     CHECK_EQUAL(strTest.substr(0), "");
     CHECK_EQUAL(strTest.substrCP(0), "");
     CHECK_EQUAL(strTest.substr(1), "");
@@ -256,58 +256,58 @@ static void test1(RTTEST hTest)
     CHECK_EQUAL(strTest.substr(pos), "ßäbcdef");
 
     /* split */
-    iprt::list<iprt::MiniString> spList1 = iprt::MiniString("##abcdef##abcdef####abcdef##").split("##", iprt::MiniString::RemoveEmptyParts);
+    iprt::list<RTCString> spList1 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::RemoveEmptyParts);
     RTTESTI_CHECK(spList1.size() == 3);
     for (size_t i = 0; i < spList1.size(); ++i)
         RTTESTI_CHECK(spList1.at(i) == "abcdef");
-    iprt::list<iprt::MiniString> spList2 = iprt::MiniString("##abcdef##abcdef####abcdef##").split("##", iprt::MiniString::KeepEmptyParts);
+    iprt::list<RTCString> spList2 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::KeepEmptyParts);
     RTTESTI_CHECK_RETV(spList2.size() == 5);
     RTTESTI_CHECK(spList2.at(0) == "");
     RTTESTI_CHECK(spList2.at(1) == "abcdef");
     RTTESTI_CHECK(spList2.at(2) == "abcdef");
     RTTESTI_CHECK(spList2.at(3) == "");
     RTTESTI_CHECK(spList2.at(4) == "abcdef");
-    iprt::list<iprt::MiniString> spList3 = iprt::MiniString().split("##", iprt::MiniString::KeepEmptyParts);
+    iprt::list<RTCString> spList3 = RTCString().split("##", RTCString::KeepEmptyParts);
     RTTESTI_CHECK(spList3.size() == 0);
-    iprt::list<iprt::MiniString> spList4 = iprt::MiniString().split("");
+    iprt::list<RTCString> spList4 = RTCString().split("");
     RTTESTI_CHECK(spList4.size() == 0);
-    iprt::list<iprt::MiniString> spList5 = iprt::MiniString("abcdef").split("");
+    iprt::list<RTCString> spList5 = RTCString("abcdef").split("");
     RTTESTI_CHECK_RETV(spList5.size() == 1);
     RTTESTI_CHECK(spList5.at(0) == "abcdef");
 
     /* join */
-    iprt::list<iprt::MiniString> jnList;
-    strTest = iprt::MiniString::join(jnList);
+    iprt::list<RTCString> jnList;
+    strTest = RTCString::join(jnList);
     RTTESTI_CHECK(strTest == "");
-    strTest = iprt::MiniString::join(jnList, "##");
+    strTest = RTCString::join(jnList, "##");
     RTTESTI_CHECK(strTest == "");
     for (size_t i = 0; i < 5; ++i)
         jnList.append("abcdef");
-    strTest = iprt::MiniString::join(jnList);
+    strTest = RTCString::join(jnList);
     RTTESTI_CHECK(strTest == "abcdefabcdefabcdefabcdefabcdef");
-    strTest = iprt::MiniString::join(jnList, "##");
+    strTest = RTCString::join(jnList, "##");
     RTTESTI_CHECK(strTest == "abcdef##abcdef##abcdef##abcdef##abcdef");
 
     /* special constructor and assignment arguments */
-    iprt::MiniString StrCtor1("");
+    RTCString StrCtor1("");
     RTTESTI_CHECK(StrCtor1.isEmpty());
     RTTESTI_CHECK(StrCtor1.length() == 0);
 
-    iprt::MiniString StrCtor2(NULL);
+    RTCString StrCtor2(NULL);
     RTTESTI_CHECK(StrCtor2.isEmpty());
     RTTESTI_CHECK(StrCtor2.length() == 0);
 
-    iprt::MiniString StrCtor1d(StrCtor1);
+    RTCString StrCtor1d(StrCtor1);
     RTTESTI_CHECK(StrCtor1d.isEmpty());
     RTTESTI_CHECK(StrCtor1d.length() == 0);
 
-    iprt::MiniString StrCtor2d(StrCtor2);
+    RTCString StrCtor2d(StrCtor2);
     RTTESTI_CHECK(StrCtor2d.isEmpty());
     RTTESTI_CHECK(StrCtor2d.length() == 0);
 
     for (unsigned i = 0; i < 2; i++)
     {
-        iprt::MiniString StrAssign;
+        RTCString StrAssign;
         if (i) StrAssign = "abcdef";
         StrAssign = (char *)NULL;
         RTTESTI_CHECK(StrAssign.isEmpty());
@@ -361,14 +361,14 @@ static void test2(RTTEST hTest)
         RTTESTI_CHECK(mymemcmp((str1).c_str(), (str2).c_str(), (str2).length() + 1) == 0); \
     } while (0)
 
-    iprt::MiniString strTmp;
+    RTCString strTmp;
     char szDst[16];
 
     /* Collect all upper and lower case code points. */
-    iprt::MiniString strLower("");
+    RTCString strLower("");
     strLower.reserve(_4M);
 
-    iprt::MiniString strUpper("");
+    RTCString strUpper("");
     strUpper.reserve(_4M);
 
     for (RTUNICP uc = 1; uc <= 0x10fffd; uc++)
@@ -391,7 +391,7 @@ static void test2(RTTEST hTest)
        into the same or less number of bytes. */
     size_t      cch    = 0;
     const char *pszCur = strLower.c_str();
-    iprt::MiniString    strUpper2("");
+    RTCString    strUpper2("");
     strUpper2.reserve(strLower.length() + 64);
     for (;;)
     {
@@ -435,7 +435,7 @@ static void test2(RTTEST hTest)
     /* Ditto for the upper case string. */
     cch    = 0;
     pszCur = strUpper.c_str();
-    iprt::MiniString    strLower2("");
+    RTCString    strLower2("");
     strLower2.reserve(strUpper.length() + 64);
     for (;;)
     {

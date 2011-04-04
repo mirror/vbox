@@ -48,7 +48,7 @@ public:
     {
     }
 
-    RTCError(const iprt::MiniString &a_rstrMessage)
+    RTCError(const RTCString &a_rstrMessage)
         : m_strMsg(a_rstrMessage)
     {
     }
@@ -86,7 +86,7 @@ private:
     RTCError();
 
     /** The exception message. */
-    iprt::MiniString m_strMsg;
+    RTCString m_strMsg;
 };
 
 /** @} */
