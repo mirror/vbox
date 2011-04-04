@@ -174,7 +174,7 @@ class RTCListBase
      * value.
      */
     typedef typename RTCIfPtr<ITYPE, T&, T>::result GET_RTYPE;
-    typedef typename RTCIfPtr<ITYPE, const T&, const T>::result GET_CRTYPE;
+    typedef typename RTCIfPtr<ITYPE, const T&, T>::result GET_CRTYPE;
 
 public:
     /**
