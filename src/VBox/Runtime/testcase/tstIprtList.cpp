@@ -27,7 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/cpp/list.h>
+#include <iprt/cpp/mtlist.h>
 
 #include <iprt/cpp/ministring.h>
 #include <iprt/test.h>
@@ -152,8 +152,8 @@ static const char *g_apszTestStrings[] =
  * @param   paTestData  Pointer to the array with the test input data.
  * @param   cTestItems  The size of the input data.
  */
-template<typename T1, typename T2>
-static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
+template<template <class, typename> class L, typename T1, typename T2, typename T3>
+static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
 {
     RTTestISubF("%s with size of %u (items=%u)", pcszDesc, sizeof(T1), cTestItems);
 
@@ -162,11 +162,12 @@ static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
      */
 
     /* Create a test list */
-    iprt::list<T1> testList;
+    L<T1, T2> testList;
 
+    const size_t defCap = L<T1, T2>::DefaultCapacity;
     RTTESTI_CHECK(testList.isEmpty());
     RTTESTI_CHECK(testList.size()     == 0);
-    RTTESTI_CHECK(testList.capacity() == iprt::list<T1>::DefaultCapacity);
+    RTTESTI_CHECK(testList.capacity() == defCap);
 
     /*
      * Adding
@@ -217,7 +218,7 @@ static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
     /*
      * Copy operator
      */
-    iprt::list<T1> testList2(testList);
+    L<T1, T2> testList2(testList);
 
     /* Check that all is correctly appended. */
     RTTESTI_CHECK_RETV(testList2.size() == cTestItems);
@@ -227,7 +228,7 @@ static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
     /*
      * "=" operator
      */
-    iprt::list<T1> testList3;
+    L<T1, T2> testList3;
     testList3 = testList;
 
     /* Check that all is correctly appended. */
@@ -342,9 +343,176 @@ static void test(const char *pcszDesc, T2 paTestData[], size_t cTestItems)
     testList.clear();
     RTTESTI_CHECK_RETV(testList.isEmpty());
     RTTESTI_CHECK_RETV(testList.size() == 0);
-    RTTESTI_CHECK(testList.capacity()  == iprt::list<T1>::DefaultCapacity);
+    RTTESTI_CHECK(testList.capacity()  == defCap);
 }
 
+/* define iprt::list here to see what happens without MT support ;)
+ * (valgrind is the preferred tool to check). */
+#define MTTESTLISTTYPE iprt::mtlist
+#define MTTESTTYPE uint32_t
+#define MTTESTITEMS 1000
+
+/**
+ * Thread for prepending items to a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest1(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    /* Prepend new items at the start of the list. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+        pTestList->prepend(0x0);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Thread for appending items to a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest2(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    /* Append new items at the end of the list. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+        pTestList->append(0xFFFFFFFF);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Thread for inserting items to a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest3(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    /* Insert new items in the middle of the list. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+        pTestList->insert(pTestList->size() / 2, 0xF0F0F0F0);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Thread for reading items from a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest4(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    MTTESTTYPE a;
+    /* Try to read C items from random places. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    {
+        /* Make sure there is at least one item in the list. */
+        while (pTestList->isEmpty()) {};
+        a = pTestList->at(RTRandU32Ex(0, pTestList->size() - 1));
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Thread for replacing items in a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest5(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    /* Try to replace C items from random places. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    {
+        /* Make sure there is at least one item in the list. */
+        while (pTestList->isEmpty()) {};
+        pTestList->replace(RTRandU32Ex(0, pTestList->size() - 1), 0xFF00FF00);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Thread for erasing items from a shared list.
+ *
+ * @param   hSelf       The thread handle.
+ * @param   pvUser      The provided user data.
+ */
+DECLCALLBACK(int) mttest6(RTTHREAD hSelf, void *pvUser)
+{
+    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+
+    /* Try to delete items from random places. */
+    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    {
+        /* Make sure there is at least one item in the list. */
+        while (pTestList->isEmpty()) {};
+        pTestList->removeAt(RTRandU32Ex(0, pTestList->size() - 1));
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Does a multi-threading list test. Several list additions, reading, replacing
+ * and erasing are done simultaneous.
+ *
+ */
+static void test2()
+{
+    RTTestISubF("MT test with 6 threads (%u tests per thread).", MTTESTITEMS);
+
+    RTTHREAD hThread1, hThread2, hThread3, hThread4, hThread5, hThread6;
+    int rc = VINF_SUCCESS;
+
+    MTTESTLISTTYPE<MTTESTTYPE> testList;
+    rc = RTThreadCreate(&hThread1, &mttest1, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest1");
+    AssertRC(rc);
+    rc = RTThreadCreate(&hThread2, &mttest2, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest2");
+    AssertRC(rc);
+    rc = RTThreadCreate(&hThread3, &mttest3, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest3");
+    AssertRC(rc);
+    rc = RTThreadCreate(&hThread4, &mttest4, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest4");
+    AssertRC(rc);
+    rc = RTThreadCreate(&hThread5, &mttest5, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest5");
+    AssertRC(rc);
+    rc = RTThreadCreate(&hThread6, &mttest6, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest6");
+    AssertRC(rc);
+
+    rc = RTThreadWait(hThread1, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+    rc = RTThreadWait(hThread2, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+    rc = RTThreadWait(hThread3, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+    rc = RTThreadWait(hThread4, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+    rc = RTThreadWait(hThread5, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+    rc = RTThreadWait(hThread6, RT_INDEFINITE_WAIT, 0);
+    AssertRC(rc);
+
+    RTTESTI_CHECK_RETV(testList.size() == MTTESTITEMS * 2);
+    for (size_t i = 0; i < testList.size(); ++i)
+    {
+        uint32_t a = testList.at(i);
+        RTTESTI_CHECK(a == 0x0 || a == 0xFFFFFFFF || a == 0xF0F0F0F0 || a == 0xFF00FF00);
+    }
+}
 
 int main()
 {
@@ -370,17 +538,20 @@ int main()
     uint8_t au8TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au8TestInts); ++i)
         au8TestInts[i] = (uint8_t)RTRandU32Ex(0, UINT8_MAX);
-    test<uint8_t, uint8_t>("Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
+    test1<iprt::list,   uint8_t, uint8_t, uint8_t>("ST: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
+    test1<iprt::mtlist, uint8_t, uint8_t, uint8_t>("MT: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
 
     uint16_t au16TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au16TestInts); ++i)
         au16TestInts[i] = (uint16_t)RTRandU32Ex(0, UINT16_MAX);
-    test<uint16_t, uint16_t>("Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
+    test1<iprt::list,   uint16_t, uint16_t, uint16_t>("ST: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
+    test1<iprt::mtlist, uint16_t, uint16_t, uint16_t>("MT: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
 
     uint32_t au32TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au32TestInts); ++i)
         au32TestInts[i] = RTRandU32();
-    test<uint32_t, uint32_t>("Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
+    test1<iprt::list,   uint32_t, uint32_t, uint32_t>("ST: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
+    test1<iprt::mtlist, uint32_t, uint32_t, uint32_t>("MT: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
 
     /*
      * Specialized type.
@@ -388,12 +559,19 @@ int main()
     uint64_t au64TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au64TestInts); ++i)
         au64TestInts[i] = RTRandU64();
-    test<uint64_t, uint64_t>("Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
+    test1<iprt::list,   uint64_t, uint64_t, uint64_t>("ST: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
+    test1<iprt::mtlist, uint64_t, uint64_t, uint64_t>("MT: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
 
     /*
      * Big size type (translate to internal pointer list).
      */
-    test<iprt::MiniString, const char *>("Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<iprt::list,   iprt::MiniString, iprt::MiniString*, const char *>("ST: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+    test1<iprt::mtlist, iprt::MiniString, iprt::MiniString*, const char *>("MT: Class type", g_apszTestStrings, RT_ELEMENTS(g_apszTestStrings));
+
+    /*
+     * Multi-threading test.
+     */
+    test2();
 
     /*
      * Summary.

@@ -39,7 +39,7 @@ RT_C_DECLS_BEGIN
  *
  * This module implements all kinds of event and mutex semaphores; in addition
  * to these, IPRT implements "critical sections", which are fast recursive
- * mutexes (see @ref grp_rt_critsect ).  C++ users may find @ref grp_rt_lock
+ * mutexes (see @ref grp_rt_critsect ).  C++ users may find @ref grp_rt_cpp_lock
  * interesting.
  *
  * @ingroup grp_rt

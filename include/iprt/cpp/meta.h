@@ -69,6 +69,38 @@ struct if_<false, TrueResult, FalseResult>
     typedef FalseResult result;
 };
 
+/**
+ * Check if @a T is a pointer or not at compile time and dependent of the
+ * result TrueResult or FalseResult will be defined.
+ *
+ * False version of if_ptr.
+ *
+ * @param   Condition     Condition to check.
+ * @param   TrueResult    Result when condition is true.
+ * @param   FalseResult   Result when condition is false
+ */
+template <class T, typename TrueResult, typename FalseResult>
+struct if_ptr
+{
+    typedef FalseResult result;
+};
+
+/**
+ * Check if @a T is a pointer or not at compile time and dependent of the
+ * result TrueResult or FalseResult will be defined.
+ *
+ * True specialization of of_ptr.
+ *
+ * @param   Condition     Condition to check.
+ * @param   TrueResult    Result when condition is true.
+ * @param   FalseResult   Result when condition is false
+ */
+template <class T, typename TrueResult, typename FalseResult>
+struct if_ptr<T*, TrueResult, FalseResult>
+{
+    typedef TrueResult result;
+};
+
 /** @} */
 
 } /* namespace iprt */
