@@ -489,6 +489,10 @@ void SoapThread::process()
                cIdleThreads,
                cThreads);
 
+        // Ensure that we don't get stuck indefinitely for connections using
+        // keepalive, otherwise stale connections tie up worker threads.
+        m_soap->send_timeout = 60;
+        m_soap->recv_timeout = 60;
         // process the request; this goes into the COM code in methodmaps.cpp
         soap_serve(m_soap);
 
