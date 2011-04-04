@@ -30,7 +30,7 @@
 *******************************************************************************/
 #include <iprt/string.h>
 #ifndef VBOX_VBGLR3_XFREE86
-# include <iprt/mem.h>
+# include <iprt/cpp/mem.h>
 #endif
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
@@ -606,7 +606,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     char const **ppszFlags)
 {
     /* Create the handle. */
-    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
+    RTCMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
     Handle = (PVBGLR3GUESTPROPENUM)RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
     if (!Handle)
         return VERR_NO_MEMORY;
@@ -617,7 +617,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
         cchPatterns += strlen(papszPatterns[i]) + 1;
 
     /* Pack the pattern array */
-    RTMemAutoPtr<char> Patterns;
+    RTCMemAutoPtr<char> Patterns;
     Patterns = (char *)RTMemAlloc(cchPatterns);
     size_t off = 0;
     for (uint32_t i = 0; i < cPatterns; ++i)
@@ -631,7 +631,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     /* Randomly chosen initial size for the buffer to hold the enumeration
      * information. */
     uint32_t cchBuf = 4096;
-    RTMemAutoPtr<char> Buf;
+    RTCMemAutoPtr<char> Buf;
 
     /* In reading the guest property data we are racing against the host
      * adding more of it, so loop a few times and retry on overflow. */

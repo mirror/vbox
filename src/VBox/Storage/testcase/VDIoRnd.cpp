@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox HDD container test utility - I/O data generator.
  */
 
@@ -14,11 +14,13 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #define LOGGROUP LOGGROUP_DEFAULT
 #include <iprt/log.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/rand.h>
+#include <iprt/assert.h>
 
 #include "VDIoRnd.h"
 

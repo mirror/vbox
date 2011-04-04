@@ -149,7 +149,7 @@ typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
 /**
  * Class containing the shared information service functionality.
  */
-class Service : public iprt::non_copyable
+class Service : public RTCNonCopyable
 {
 private:
     /** Type definition for use in callback functions. */
