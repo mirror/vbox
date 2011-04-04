@@ -184,6 +184,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
  endif
  GUESTADDITIONS_FILESPEC.linux.x86 = \
 	$(VBOX_LNX_ADD_X86_RUN_PKG)=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run \
+	runasroot.sh=$(VBOX_PATH_ADDITIONS.linux.x86)/runasroot.sh \
 	autorun.sh=$(VBOX_PATH_ADDITIONS.linux.x86)/autorun.sh
 endif
 

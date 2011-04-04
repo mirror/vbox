@@ -329,7 +329,9 @@ lnx_add_inst-license_SOURCES = \
 INSTALLS += AutoRun-sh
 AutoRun-sh_INST = bin/additions/
 AutoRun-sh_MODE = a+rx,u+w
-AutoRun-sh_SOURCES = $(VBOX_REL_LNX_ADD_INST)autorun.sh
+AutoRun-sh_SOURCES = \
+	$(VBOX_REL_LNX_INST_SRC)runasroot.sh \
+	$(VBOX_REL_LNX_ADD_INST)autorun.sh
 
 
 #

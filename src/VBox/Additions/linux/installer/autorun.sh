@@ -40,9 +40,14 @@ esac
 
 # execute the installer
 if test "$ostype" = "Linux"; then
-    if test -f "$path/VBoxLinuxAdditions.run"; then
-      exec gksu /bin/sh "$path/VBoxLinuxAdditions.run"
-    fi
+    for i in "$path/VBoxLinuxAdditions.run" \
+        "$path/VBoxLinuxAdditions-$arch.run"; do
+        if test -f "$i"; then
+            exec /bin/sh "$path/runasroot.sh" \
+                "VirtualBox Guest Additions installation" "$i" \
+                "Please try running $i manually."
+        fi
+    done
 
     # else: unknown failure
     echo "Linux guest additions installer not found -- try to start them manually."
