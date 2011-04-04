@@ -27,9 +27,7 @@
 #define ___iprt_cpp_exception_h
 
 #include <iprt/cpp/ministring.h>
-
-namespace iprt
-{
+#include <exception>
 
 /** @defgroup grp_rt_cpp_exceptions     C++ Exceptions
  * @ingroup grp_rt_cpp
@@ -40,57 +38,58 @@ namespace iprt
  * Base exception class for IPRT, derived from std::exception.
  * The XML exceptions are based on this.
  */
-class RT_DECL_CLASS Error
+class RT_DECL_CLASS RTCError
     : public std::exception
 {
 public:
 
-    Error(const char *pcszMessage)
-        : m_s(pcszMessage)
+    RTCError(const char *pszMessage)
+        : m_strMsg(pszMessage)
     {
     }
 
-    Error(const iprt::MiniString &s)
-        : m_s(s)
+    RTCError(const iprt::MiniString &a_rstrMessage)
+        : m_strMsg(a_rstrMessage)
     {
     }
 
-    Error(const Error &s)
-        : std::exception(s),
-          m_s(s.what())
+    RTCError(const RTCError &a_rSrc)
+        : std::exception(a_rSrc),
+          m_strMsg(a_rSrc.what())
     {
     }
 
-    virtual ~Error() throw()
+    virtual ~RTCError() throw()
     {
     }
 
-    void operator=(const Error &s)
+    void operator=(const RTCError &a_rSrc)
     {
-        m_s = s.what();
+        m_strMsg = a_rSrc.what();
     }
 
-    void setWhat(const char *pcszMessage)
+    void setWhat(const char *a_pszMessage)
     {
-        m_s = pcszMessage;
+        m_strMsg = a_pszMessage;
     }
 
-    virtual const char* what() const throw()
+    virtual const char *what() const throw()
     {
-        return m_s.c_str();
+        return m_strMsg.c_str();
     }
 
 private:
-    /* Hide the default constructor to make sure the extended one above is
-       always used. */
-    Error();
+    /**
+     * Hidden default constructor making sure that the extended one above is
+     * always used.
+     */
+    RTCError();
 
-    iprt::MiniString m_s;
+    /** The exception message. */
+    iprt::MiniString m_strMsg;
 };
 
 /** @} */
-
-} /* namespace iprt */
 
 #endif
 

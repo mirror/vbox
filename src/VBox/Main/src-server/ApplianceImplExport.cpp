@@ -1879,7 +1879,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                strMfFilePath.c_str(), vrc);
         }
     }
-    catch (iprt::Error &x)  // includes all XML exceptions
+    catch (RTCError &x)  // includes all XML exceptions
     {
         rc = setError(VBOX_E_FILE_ERROR,
                       x.what());

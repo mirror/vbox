@@ -64,23 +64,23 @@ namespace xml
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
 
-class RT_DECL_CLASS LogicError : public iprt::Error
+class RT_DECL_CLASS LogicError : public RTCError
 {
 public:
 
     LogicError(const char *aMsg = NULL)
-        : iprt::Error(aMsg)
+        : RTCError(aMsg)
     {}
 
     LogicError(RT_SRC_POS_DECL);
 };
 
-class RT_DECL_CLASS RuntimeError : public iprt::Error
+class RT_DECL_CLASS RuntimeError : public RTCError
 {
 public:
 
     RuntimeError(const char *aMsg = NULL)
-        : iprt::Error(aMsg)
+        : RTCError(aMsg)
     {}
 };
 
