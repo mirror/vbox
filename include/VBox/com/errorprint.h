@@ -28,6 +28,8 @@
 #ifndef ___VBox_com_errorprint_h
 #define ___VBox_com_errorprint_h
 
+#include <VBox/com/ErrorInfo.h>
+
 namespace com
 {
 

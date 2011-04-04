@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
- * VBoxDrvCfg-win.h - Windows Driver Manipulation API
+ * Windows Driver Manipulation API.
  */
+
 /*
  * Copyright (C) 2011 Oracle Corporation
  *
@@ -13,12 +14,11 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef ___VBoxDrvCfg_win_h___
-#define ___VBoxDrvCfg_win_h___
+
+#ifndef ___VBox_VBoxDrvCfg_win_h
+#define ___VBox_VBoxDrvCfg_win_h
 
 #include <Windows.h>
-
-#include <iprt/cdefs.h>
 #include <VBox/cdefs.h>
 
 RT_C_DECLS_BEGIN
@@ -26,13 +26,13 @@ RT_C_DECLS_BEGIN
 #if 0
 /* enable this in case we include this in a dll*/
 # ifdef IN_VBOXDRVCFG
-#  define VBOXDRVCFG_DECL(_type) DECLEXPORT(_type)
+#  define VBOXDRVCFG_DECL(a_Type) DECLEXPORT(a_Type)
 # else
-#  define VBOXDRVCFG_DECL(_type) DECLIMPORT(_type)
+#  define VBOXDRVCFG_DECL(a_Type) DECLIMPORT(a_Type)
 # endif
 #else
 /*enable this in case we include this in a static lib*/
-# define VBOXDRVCFG_DECL(_type) _type VBOXCALL
+# define VBOXDRVCFG_DECL(a_Type) a_Type VBOXCALL
 #endif
 
 typedef enum
@@ -42,7 +42,7 @@ typedef enum
     VBOXDRVCFG_LOG_SEVERITY_REL
 } VBOXDRVCFG_LOG_SEVERITY;
 
-typedef DECLCALLBACK(void) FNVBOXDRVCFG_LOG(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * msg, void * pvContext);
+typedef DECLCALLBACK(void) FNVBOXDRVCFG_LOG(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext);
 typedef FNVBOXDRVCFG_LOG *PFNVBOXDRVCFG_LOG;
 
 VBOXDRVCFG_DECL(void) VBoxDrvCfgLoggerSet(PFNVBOXDRVCFG_LOG pfnLog, void *pvLog);
@@ -52,10 +52,11 @@ typedef FNVBOXDRVCFG_PANIC *PFNVBOXDRVCFG_PANIC;
 VBOXDRVCFG_DECL(void) VBoxDrvCfgPanicSet(PFNVBOXDRVCFG_PANIC pfnPanic, void *pvPanic);
 
 VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfInstall(IN LPCWSTR lpszInfPath);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstall(IN LPCWSTR lpszInfPath, IN DWORD Flags);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidClass, IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD Flags);
-VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD Flags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstall(IN LPCWSTR lpszInfPath, IN DWORD fFlags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidClass, IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD fFlags);
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(IN LPCWSTR lpszClassName, IN LPCWSTR lpszPnPId, IN DWORD fFlags);
 
 RT_C_DECLS_END
 
-#endif /* #ifndef ___VBoxDrvCfg_win_h___ */
+#endif
+
