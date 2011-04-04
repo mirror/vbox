@@ -43,7 +43,10 @@ template <bool Condition, typename TrueResult, typename FalseResult>
 struct RTCIf;
 
 /**
- * True specialization of if_.
+ * Check for a condition on compile time and dependent of the result TrueResult
+ * or FalseResult will be defined.
+ *
+ * True specialization of RTCIf.
  *
  * @param   TrueResult    Result when condition is true.
  * @param   FalseResult   Result when condition is false
@@ -55,7 +58,10 @@ struct RTCIf<true, TrueResult, FalseResult>
 };
 
 /**
- * False specialization of if_.
+ * Check for a condition on compile time and dependent of the result TrueResult
+ * or FalseResult will be defined.
+ *
+ * False specialization of RTCIf.
  *
  * @param   TrueResult    Result when condition is true.
  * @param   FalseResult   Result when condition is false
@@ -70,7 +76,7 @@ struct RTCIf<false, TrueResult, FalseResult>
  * Check if @a T is a pointer or not at compile time and dependent of the
  * result TrueResult or FalseResult will be defined.
  *
- * False version of if_ptr.
+ * False version of RTCIfPtr.
  *
  * @param   Condition     Condition to check.
  * @param   TrueResult    Result when condition is true.
@@ -86,7 +92,7 @@ struct RTCIfPtr
  * Check if @a T is a pointer or not at compile time and dependent of the
  * result TrueResult or FalseResult will be defined.
  *
- * True specialization of of_ptr.
+ * True specialization of RTCIfPtr.
  *
  * @param   Condition     Condition to check.
  * @param   TrueResult    Result when condition is true.
