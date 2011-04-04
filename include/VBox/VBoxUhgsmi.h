@@ -1,3 +1,7 @@
+/** @file
+ * Document me, pretty please.
+ */
+
 /*
  * Copyright (C) 2010 Oracle Corporation
  *
@@ -18,8 +22,9 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
-#ifndef ___VBoxUhgsmi_h__
-#define ___VBoxUhgsmi_h__
+
+#ifndef ___VBox_VBoxUhgsmi_h
+#define ___VBox_VBoxUhgsmi_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
@@ -61,8 +66,8 @@ typedef struct VBOXUHGSMI_BUFFER_SUBMIT_FLAGS
         {
             uint32_t bHostReadOnly          : 1;
             uint32_t bHostWriteOnly         : 1;
-            uint32_t bDoNotRetire           : 1; /* <- the buffer will be uset in a subsequent command */
-            uint32_t bDoNotSignalCompletion : 1; /* <- do not signal notification object on completion for this alloc */
+            uint32_t bDoNotRetire           : 1; /**< the buffer will be uset in a subsequent command */
+            uint32_t bDoNotSignalCompletion : 1; /**< do not signal notification object on completion for this alloc */
             uint32_t bEntireBuffer          : 1;
             uint32_t Reserved               : 27;
         };
@@ -101,9 +106,9 @@ typedef struct VBOXUHGSMI
 {
     PFNVBOXUHGSMI_BUFFER_CREATE pfnBufferCreate;
     PFNVBOXUHGSMI_BUFFER_SUBMIT_ASYNCH pfnBufferSubmitAsynch;
-    /* user custom data */
+    /** User custom data. */
     void *pvUserData;
-} VBOXUHGSMI, *PVBOXUHGSMI;
+} VBOXUHGSMI;
 
 typedef struct VBOXUHGSMI_BUFFER
 {
@@ -117,8 +122,9 @@ typedef struct VBOXUHGSMI_BUFFER
     VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
     uint32_t cbBuffer;
     bool bSynchCreated;
-    /* user custom data */
+    /** User custom data. */
     void *pvUserData;
-} VBOXUHGSMI_BUFFER, *PVBOXUHGSMI_BUFFER;
+} VBOXUHGSMI_BUFFER;
 
-#endif /* #ifndef ___VBoxUhgsmi_h__ */
+#endif
+

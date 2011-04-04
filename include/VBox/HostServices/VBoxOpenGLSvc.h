@@ -1,10 +1,9 @@
 /** @file
- * OpenGL:
- * Common header for host service and guest clients.
+ * OpenGL: Common header for host service and guest clients.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +29,7 @@
 #include <VBox/types.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/VMMDev.h>
 
 /* OpenGL command buffer size */
 #define VBOX_OGL_MAX_CMD_BUFFER                     (128*1024)
@@ -199,3 +199,4 @@ typedef struct
 
 
 #endif
+

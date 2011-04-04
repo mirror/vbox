@@ -18,8 +18,8 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
-#ifndef ___VBoxCrHgsmi_h__
-#define ___VBoxCrHgsmi_h__
+#ifndef ___VBox_VBoxCrHgsmi_h
+#define ___VBox_VBoxCrHgsmi_h
 
 #include <iprt/cdefs.h>
 #include <VBox/VBoxUhgsmi.h>
@@ -29,13 +29,13 @@ RT_C_DECLS_BEGIN
 #if 0
 /* enable this in case we include this in a dll*/
 # ifdef IN_VBOXCRHGSMI
-#  define VBOXCRHGSMI_DECL(_type) DECLEXPORT(_type)
+#  define VBOXCRHGSMI_DECL(a_Type) DECLEXPORT(a_Type)
 # else
-#  define VBOXCRHGSMI_DECL(_type) DECLIMPORT(_type)
+#  define VBOXCRHGSMI_DECL(a_Type) DECLIMPORT(a_Type)
 # endif
 #else
 /*enable this in case we include this in a static lib*/
-# define VBOXCRHGSMI_DECL(_type) _type
+# define VBOXCRHGSMI_DECL(a_Type) a_Type
 #endif
 
 #ifdef VBOX_CRHGSMI_WITH_D3DDEV
@@ -56,14 +56,15 @@ typedef struct VBOXCRHGSMI_CALLBACKS
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient();
 #else
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit();
-VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate();
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(void);
+VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate(void);
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiDestroy(PVBOXUHGSMI pHgsmi);
 #endif
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm();
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
 
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString);
 
 RT_C_DECLS_END
 
-#endif /* #ifndef ___VBoxCrHgsmi_h__ */
+#endif
+

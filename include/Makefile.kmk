@@ -25,13 +25,16 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 cpp_features_hdrs := \
 	VBox/vmm/hwaccm.h \
 	VBox/vmm/hwacc_vmx.h \
-	VBox/HostServices/GuestControlSvc.h
+	VBox/HostServices/GuestControlSvc.h \
+	VBox/VBoxCrHgsmi.h \
+	VBox/VBoxUhgsmi.h
 
 # Omit headers that are C++ and ring-3.
 r3_cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
 	VBox/com/Guid.h \
+	VBox/HostServices/GuestPropertySvc.h \
 	$(wildcard iprt/*_cpp.h iprt/cpp/*.h VBox/com/*.h )
 
 # Ring-3 only headers.
@@ -40,7 +43,12 @@ r3_only_hdrs := \
         VBox/vrdpusb.h \
 	VBox/VBoxHDD.h \
 	VBox/VBoxHDD-Plugin.h \
+	VBox/VBoxCrHgsmi.h \
+	VBox/VBoxUhgsmi.h \
 	VBox/dbus.h \
+	VBox/vd.h \
+	VBox/vd-plugin.h \
+	VBox/vd-cache-plugin.h \
 	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
 	$(wildcard VBox/ExtPack/*.h ) \
@@ -52,26 +60,36 @@ r3_only_hdrs := \
 
 # We omit a few headers which have platform specific issues or are templates.
 hdrs := $(filter-out \
+	VBox/HostServices/glext.h \
+	VBox/HostServices/glxext.h \
+	VBox/HostServices/wglext.h \
 	VBox/VBoxGuest16.h \
 	VBox/VBoxGL2D.h \
 	VBox/WinNetConfig.h \
 	VBox/usblib-win.h \
 	VBox/usblib-solaris.h \
 	VBox/VDEPlug.h \
+	$(if-expr "$(KBUILD_TARGET)" != "win", \
+		VBox/VBoxDrvCfg-win.h \
+		VBox/VBoxNetCfg-win.h \
+	,) \
 	\
 	VBox/dbus-calls.h \
 	VBox/VDEPlugSymDefs.h \
 	VBox/VBoxKeyboard.h \
 	iprt/runtime-loader.h \
+	iprt/mangling.h \
 	\
 	$(foreach os,$(filter-out $(KBUILD_TARGET),$(KBUILD_OSES)),iprt/$(os)/% VBox/$(os)/%) \
 	$(xforeach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%) \
 	, $(wildcard VBox/*.h VBox/*/*.h iprt/*.h iprt/*/*.h))
 
 # ring-3, ring-0 and raw-mode context specific exclusions.
-hdrs.r3 := $(filter-out , $(hdrs))
-hdrs.r0 := $(filter-out $(r3_cpp_hdrs) $(r3_only_hdrs), $(hdrs))
-hdrs.rc := $(filter-out \
+hdrs.r3   := $(filter-out , $(hdrs))
+hdrs-c.r3 := $(filter-out $(cpp_features_hdrs) $(r3_cpp_hdrs), $(hdrs.r3))
+hdrs.r0   := $(filter-out $(r3_cpp_hdrs) $(r3_only_hdrs), $(hdrs))
+hdrs-c.r0 := $(filter-out $(cpp_features_hdrs), $(hdrs.r0))
+hdrs.rc   := $(filter-out \
 	VBox/VBoxGuestLib.h \
 	VBox/vmm/gvm.h \
 	iprt/thread.h \
@@ -80,26 +98,27 @@ hdrs.rc := $(filter-out \
 	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \
 	, $(hdrs))
+hdrs-c.rc := $(filter-out $(cpp_features_hdrs), $(hdrs.rc))
 
 SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeR3_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR3_SOURCES := \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r3)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs-c.r3)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r3))))
 
 SyntaxVBoxIncludeR0_TEMPLATE = VBoxR0
 SyntaxVBoxIncludeR0_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeR0_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR0_SOURCES := \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs-c.r0)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
 SyntaxVBoxIncludeRC_TEMPLATE = VBoxRc
 SyntaxVBoxIncludeRC_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeRC_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeRC_SOURCES := \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.rc)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs-c.rc)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.rc))))
 
 
@@ -114,14 +133,14 @@ $(eval flatname := $(subst /,_,$(basename $(hdr))))
 $$(PATH_TARGET)/$(flatname)-cpp.cpp: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
+$$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
+	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+
 $(subst .h,.o,$(notdir $(hdr)))::
 if1of ($(hdr), $(r3_cpp_hdrs) $(cpp_features_hdrs))
 	$$(MAKE) -f $(MAKEFILE) $(flatname)-cpp.o
 else
 	$$(MAKE) -f $(MAKEFILE) $(flatname)-c.o $(flatname)-cpp.o
-
-$$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
-	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 endif
 
 endef

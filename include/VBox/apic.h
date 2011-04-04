@@ -28,6 +28,8 @@
 #ifndef ___VBox_apic_h
 #define ___VBox_apic_h
 
+#include <iprt/types.h>
+
 #define APIC_REG_VERSION                        0x0030
 #define   APIC_REG_VERSION_GET_VER(u32)         (u32 & 0xff)
 #define   APIC_REG_VERSION_GET_MAX_LVT(u32)     ((u32 & 0xff0000) >> 16)
@@ -53,3 +55,4 @@ DECLINLINE(uint32_t) ApicRegRead(void *pBase, uint32_t reg)
 }
 
 #endif
+

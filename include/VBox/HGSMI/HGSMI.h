@@ -26,8 +26,8 @@
  */
 
 
-#ifndef __HGSMI_h__
-#define __HGSMI_h__
+#ifndef ___VBox_HGSMI_HGSMI_h
+#define ___VBox_HGSMI_HGSMI_h
 
 #include <iprt/assert.h>
 #include <iprt/types.h>
@@ -311,6 +311,7 @@ DECLINLINE(HGSMIOFFSET) HGSMIHeapOffset(HGSMIHEAP *pHeap)
     return pHeap->area.offBase;
 }
 
+#ifdef IN_RING3
 /* needed for heap relocation */
 DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
 {
@@ -322,6 +323,7 @@ DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
         ? (HGSMIOFFSET)(pHeap->area.pu8Base - (uint8_t*)pHeap->u.hPtr)
         : HGSMIOFFSET_VOID;
 }
+#endif /* IN_RING3 */
 
 DECLINLINE(HGSMISIZE) HGSMIHeapSize(HGSMIHEAP *pHeap)
 {
@@ -340,4 +342,5 @@ int HGSMIBufferProcess (HGSMIAREA *pArea,
                          HGSMIOFFSET offBuffer);
 RT_C_DECLS_END
 
-#endif /* __HGSMI_h__*/
+#endif /* !___VBox_HGSMI_HGSMI_h */
+

@@ -1,10 +1,9 @@
 /** @file
- *
- * Shared Clipboard
+ * Shared Clipboard - Common Guest and Host Code.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,13 +23,14 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___GUESTHOST_VBOXCLIPBOARD__H
-#define ___GUESTHOST_VBOXCLIPBOARD__H
+#ifndef ___VBox_GuestHost_SharedClipboard_h
+#define ___VBox_GuestHost_SharedClipboard_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-enum {
+enum
+{
     /** The number of milliseconds before the clipboard times out. */
 #ifndef TESTCASE
     CLIPBOARD_TIMEOUT = 5000
@@ -47,14 +47,19 @@ typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
 struct _CLIPBACKEND;
 typedef struct _CLIPBACKEND CLIPBACKEND;
 
-/** Opaque request structure for clipboard data. */
+/** Opaque request structure for clipboard data.
+ * @todo All use of single and double underscore prefixes is banned! */
 struct _CLIPREADCBREQ;
 typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 
 /* APIs exported by the X11 backend */
 extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
+#ifdef __cplusplus
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab = false);
+#else
+extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
+#endif
 extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
                                     uint32_t u32Formats);
@@ -66,8 +71,9 @@ extern int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
                                  uint32_t u32Format, void **ppv,
                                  uint32_t *pcb);
 extern void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
-                                             uint32_t u32Formats);
+                                 uint32_t u32Formats);
 extern void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                            CLIPREADCBREQ *pReq, void *pv,
                                            uint32_t cb);
-#endif  /* ___GUESTHOST_VBOXCLIPBOARD__H */
+#endif
+
