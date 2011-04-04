@@ -1,5 +1,5 @@
 /** @file
- * IPRT - RTLock Classes for Scope-based Locking.
+ * IPRT - Classes for Scope-based Locking.
  */
 
 /*
@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-class RTLock;
+class RTCLock;
 
 /**
  * The mutex lock.
@@ -47,17 +47,17 @@ class RTLock;
  * a single object. This can also be used statically, initialized in
  * a global variable, for class wide purposes.
  *
- * This is best used together with RTLock.
+ * This is best used together with RTCLock.
  */
-class RTLockMtx
+class RTCLockMtx
 {
-friend class RTLock;
+friend class RTCLock;
 
 private:
     RTCRITSECT      mMtx;
 
 public:
-    RTLockMtx()
+    RTCLockMtx()
     {
 #ifdef RT_LOCK_STRICT_ORDER
         RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
@@ -69,7 +69,7 @@ public:
     }
 
     /** Use to when creating locks that belongs in the same "class".  */
-    RTLockMtx(RT_SRC_POS_DECL, uint32_t uSubClass = RTLOCKVAL_SUB_CLASS_NONE)
+    RTCLockMtx(RT_SRC_POS_DECL, uint32_t uSubClass = RTLOCKVAL_SUB_CLASS_NONE)
     {
 #ifdef RT_LOCK_STRICT_ORDER
         RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
@@ -82,13 +82,13 @@ public:
 #endif
     }
 
-    ~RTLockMtx()
+    ~RTCLockMtx()
     {
         RTCritSectDelete(&mMtx);
     }
 
-// lock() and unlock() are private so that only
-// friend RTLock can access them
+    /* lock() and unlock() are private so that only friend RTCLock can access
+       them. */
 private:
     inline void lock()
     {
@@ -105,51 +105,50 @@ private:
 /**
  * The stack object for automatic locking and unlocking.
  *
- * This is a helper class for automatic locks, to simplify
- * requesting a RTLockMtx and to not forget releasing it.
- * To request a RTLockMtx, simply create an instance of RTLock
- * on the stack and pass the mutex to it:
+ * This is a helper class for automatic locks, to simplify requesting a
+ * RTCLockMtx and to not forget releasing it.  To request a RTCLockMtx, simply
+ * create an instance of RTCLock on the stack and pass the mutex to it:
  *
  * @code
-    extern RTLockMtx gMtx;     // wherever this is
+    extern RTCLockMtx gMtx;     // wherever this is
     ...
     if (...)
     {
-        RTLock lock(gMtx);
+        RTCLock lock(gMtx);
         ... // do stuff
         // when lock goes out of scope, destructor releases the mutex
     }
    @endcode
  *
- * You can also explicitly release the mutex by calling RTLock::release().
+ * You can also explicitly release the mutex by calling RTCLock::release().
  * This might be helpful if the lock doesn't go out of scope early enough
  * for your mutex to be released.
  */
-class RTLock
+class RTCLock
 {
 private:
-    RTLockMtx  &mMtx;
+    RTCLockMtx &m_rMtx;
     bool        mfLocked;
 
 public:
-    RTLock(RTLockMtx &aMtx)
-        : mMtx(aMtx)
+    RTCLock(RTCLockMtx &a_rMtx)
+        : m_rMtx(a_rMtx)
     {
-        mMtx.lock();
+        m_rMtx.lock();
         mfLocked = true;
     }
 
-    ~RTLock()
+    ~RTCLock()
     {
         if (mfLocked)
-            mMtx.unlock();
+            m_rMtx.unlock();
     }
 
     inline void release()
     {
         if (mfLocked)
         {
-            mMtx.unlock();
+            m_rMtx.unlock();
             mfLocked = false;
         }
     }

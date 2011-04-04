@@ -90,7 +90,7 @@ public:
 
         /** Used to provide some thread safety missing in libxml2 (see e.g.
          *  XmlTreeBackend::read()) */
-        RTLockMtx lock;
+        RTCLockMtx lock;
     }
     sxml;  /* XXX naming this xml will break with gcc-3.3 */
 }
@@ -386,7 +386,7 @@ int MemoryBuf::read (char *aBuf, int aLen)
 struct GlobalLock::Data
 {
     PFNEXTERNALENTITYLOADER pOldLoader;
-    RTLock lock;
+    RTCLock lock;
 
     Data()
         : pOldLoader(NULL),
