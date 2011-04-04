@@ -138,11 +138,11 @@ Utf8Str& Utf8Str::stripExt()
  * Internal function used in Utf8Str copy constructors and assignment when
  * copying from a UTF-16 string.
  *
- * As with the iprt::ministring::copyFrom() variants, this unconditionally sets
- * the members to a copy of the given other strings and makes no assumptions
- * about previous contents.  This can therefore be used both in copy
- * constructors, when member variables have no defined value, and in
- * assignments after having called cleanup().
+ * As with the RTCString::copyFrom() variants, this unconditionally sets the
+ * members to a copy of the given other strings and makes no assumptions about
+ * previous contents.  This can therefore be used both in copy constructors,
+ * when member variables have no defined value, and in assignments after having
+ * called cleanup().
  *
  * This variant converts from a UTF-16 string, most probably from
  * a Bstr assignment.
