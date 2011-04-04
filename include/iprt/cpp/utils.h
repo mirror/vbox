@@ -34,6 +34,25 @@
  */
 
 /**
+ * A simple class used to prevent copying and assignment.
+ *
+ * Inherit from this class in order to prevent automatic generation
+ * of the copy constructor and assignment operator in your class.
+ *
+ * @addtogroup grp_rt_cpp_util
+ */
+class RTCNonCopyable
+{
+protected:
+    RTCNonCopyable() {}
+    ~RTCNonCopyable() {}
+private:
+    RTCNonCopyable(RTCNonCopyable const &);
+    RTCNonCopyable const &operator=(RTCNonCopyable const &);
+};
+
+
+/**
  * Shortcut to |const_cast<C &>()| that automatically derives the correct
  * type (class) for the const_cast template's argument from its own argument.
  *
@@ -44,6 +63,8 @@
  *      ...
  *      unconst(That) = SomeValue;
  * @endcode
+ *
+ * @todo What to do about the prefix here?
  */
 template <class C>
 inline C &unconst(const C &that)
@@ -63,6 +84,8 @@ inline C &unconst(const C &that)
  *      ...
  *      unconst(pThat) = SomeValue;
  * @endcode
+ *
+ * @todo What to do about the prefix here?
  */
 template <class C>
 inline C *unconst(const C *that)
@@ -71,30 +94,6 @@ inline C *unconst(const C *that)
 }
 
 /** @} */
-
-namespace iprt
-{
-
-/**
- * A simple class used to prevent copying and assignment.
- *
- * Inherit from this class in order to prevent automatic generation of the copy
- * constructor and assignment operator in your class.
- *
- * @ingroup grp_rt_cpp_util
- * @todo Functionality duplicated by RTCNonCopyable. grr!
- */
-class non_copyable
-{
-protected:
-    non_copyable() {}
-    ~non_copyable() {}
-private:
-    non_copyable(non_copyable const &);
-    non_copyable const &operator=(non_copyable const &);
-};
-
-} /* namespace iprt */
 
 #endif
 

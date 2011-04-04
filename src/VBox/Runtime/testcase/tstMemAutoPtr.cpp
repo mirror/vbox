@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Testcase the RTMemAutoPtr template.
+ * IPRT - Testcase the RTCMemAutoPtr template.
  */
 
 /*
@@ -27,7 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/mem.h>
+#include <iprt/cpp/mem.h>
 #include <iprt/stream.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
@@ -60,7 +60,7 @@ static unsigned g_cFrees;
  */
 extern "C" int tstMemAutoPtrDisas1(void **ppv)
 {
-    RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
+    RTCMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Handle(1);
     if (!Handle)
     {
         Handle->a = RTRandU32();
@@ -134,7 +134,7 @@ int main()
      * Some simple stuff.
      */
     {
-        RTMemAutoPtr<char> NilObj;
+        RTCMemAutoPtr<char> NilObj;
         CHECK_EXPR(!NilObj);
         CHECK_EXPR(NilObj.get() == NULL);
         CHECK_EXPR(NilObj.release() == NULL);
@@ -142,13 +142,13 @@ int main()
     }
 
     {
-        RTMemAutoPtr<char> Alloc(10);
+        RTCMemAutoPtr<char> Alloc(10);
         CHECK_EXPR(Alloc.get() != NULL);
         char *pch = Alloc.release();
         CHECK_EXPR(pch != NULL);
         CHECK_EXPR(Alloc.get() == NULL);
 
-        RTMemAutoPtr<char> Manage(pch);
+        RTCMemAutoPtr<char> Manage(pch);
         CHECK_EXPR(Manage.get() == pch);
         CHECK_EXPR(&Manage[0] == pch);
         CHECK_EXPR(&Manage[1] == &pch[1]);
@@ -160,7 +160,7 @@ int main()
      * arguments and also check some subscript / reference limit thing.
      */
     {
-        RTMemAutoPtr<char, RTMemEfAutoFree<char>, RTMemEfReallocNP> Electric(10);
+        RTCMemAutoPtr<char, RTCMemEfAutoFree<char>, RTMemEfReallocNP> Electric(10);
         CHECK_EXPR(Electric.get() != NULL);
         Electric[0] = '0';
         CHECK_EXPR(Electric[0]  == '0');
@@ -177,14 +177,14 @@ int main()
      */
     g_cFrees = 0;
     {
-        RTMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt(128);
+        RTCMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt(128);
         FreeIt[127] = '0';
     }
     CHECK_EXPR(g_cFrees == 1);
 
     g_cFrees = 0;
     {
-        RTMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt2(128);
+        RTCMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt2(128);
         FreeIt2[127] = '1';
         FreeIt2.reset();
         FreeIt2.alloc(128);
@@ -195,7 +195,7 @@ int main()
 
     g_cFrees = 0;
     {
-        RTMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> DontFreeIt(256);
+        RTCMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> DontFreeIt(256);
         DontFreeIt[255] = '0';
         RTMemEfFreeNP(DontFreeIt.release());
     }
@@ -203,7 +203,7 @@ int main()
 
     g_cFrees = 0;
     {
-        RTMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt3(128);
+        RTCMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt3(128);
         FreeIt3[127] = '0';
         CHECK_EXPR(FreeIt3.realloc(128));
         FreeIt3[127] = '0';
@@ -218,7 +218,7 @@ int main()
 
     g_cFrees = 0;
     {
-        RTMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt4;
+        RTCMemAutoPtr<char, tstMemAutoPtrDestructorCounter, RTMemEfReallocNP> FreeIt4;
         CHECK_EXPR(FreeIt4.alloc(123));
         CHECK_EXPR(FreeIt4.realloc(543));
         FreeIt4 = (char *)NULL;
@@ -230,7 +230,7 @@ int main()
      * Check the ->, [] and * (unary) operators with some useful struct.
      */
     {
-        RTMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Struct1(1);
+        RTCMemAutoPtr<TSTMEMAUTOPTRSTRUCT> Struct1(1);
         Struct1->a = 0x11223344;
         Struct1->b = 0x55667788;
         Struct1->c = 0x99aabbcc;
@@ -265,12 +265,12 @@ int main()
      * Check the zeroing of memory.
      */
     {
-        RTMemAutoPtr<uint64_t, RTMemAutoDestructor<uint64_t>, tstMemAutoPtrAllocatorNoZero> Zeroed1(1, true);
+        RTCMemAutoPtr<uint64_t, RTCMemAutoDestructor<uint64_t>, tstMemAutoPtrAllocatorNoZero> Zeroed1(1, true);
         CHECK_EXPR(*Zeroed1 == 0);
     }
 
     {
-        RTMemAutoPtr<uint64_t, RTMemAutoDestructor<uint64_t>, tstMemAutoPtrAllocatorNoZero> Zeroed2;
+        RTCMemAutoPtr<uint64_t, RTCMemAutoDestructor<uint64_t>, tstMemAutoPtrAllocatorNoZero> Zeroed2;
         Zeroed2.alloc(5, true);
         CHECK_EXPR(Zeroed2[0] == 0);
         CHECK_EXPR(Zeroed2[1] == 0);

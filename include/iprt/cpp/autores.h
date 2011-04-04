@@ -1,5 +1,5 @@
 /** @file
- * IPRT - C++ Extensions: resource lifetime management
+ * IPRT - C++ Resource Management.
  */
 
 /*
@@ -28,26 +28,8 @@
 
 #include <iprt/types.h>
 #include <iprt/assert.h>
+#include <iprt/cpp/utils.h>
 
-/**
- * A simple class used to prevent copying and assignment.
- *
- * Inherit from this class in order to prevent automatic generation
- * of the copy constructor and assignment operator in your class.
- *
- * @todo Functionality duplicated by iprt::non_copyable. grr!
- *
- * @addtogroup grp_rt_cpp_util
- */
-class RTCNonCopyable
-{
-protected:
-    RTCNonCopyable() {}
-    ~RTCNonCopyable() {}
-private:
-    RTCNonCopyable(RTCNonCopyable const &);
-    RTCNonCopyable const &operator=(RTCNonCopyable const &);
-};
 
 
 /** @defgroup grp_rt_cpp_autores    C++ Resource Management
@@ -92,14 +74,14 @@ inline void RTAutoResDestruct(T a_h)
  * (RTMemFree() or equivalent).
  *
  * The idea of this class is to manage resources which the current code is
- * responsible for freeing.  By wrapping the resource in an RTAutoRes, you
+ * responsible for freeing.  By wrapping the resource in an RTCAutoRes, you
  * ensure that the resource will be freed when you leave the scope in which
- * the RTAutoRes is defined, unless you explicitly release the resource.
+ * the RTCAutoRes is defined, unless you explicitly release the resource.
  *
  * A typical use case is when a function is allocating a number of resources.
  * If any single allocation fails then all other resources must be freed.  If
  * all allocations succeed, then the resources should be returned to the
- * caller.  By placing all allocated resources in RTAutoRes containers, you
+ * caller.  By placing all allocated resources in RTCAutoRes containers, you
  * ensure that they will be freed on failure, and only have to take care of
  * releasing them when you return them.
  *
@@ -115,7 +97,7 @@ inline void RTAutoResDestruct(T a_h)
  *          to the lack of a copy constructor. This is intentional.
  */
 template <class T, void Destruct(T) = RTAutoResDestruct<T>, T NilRes(void) = RTAutoResNil<T> >
-class RTAutoRes
+class RTCAutoRes
     : public RTCNonCopyable
 {
 protected:
@@ -128,7 +110,7 @@ public:
      *
      * @param   a_hRes      The handle to resource to manage. Defaults to NIL.
      */
-    RTAutoRes(T a_hRes = NilRes())
+    RTCAutoRes(T a_hRes = NilRes())
         : m_hRes(a_hRes)
     {
     }
@@ -138,7 +120,7 @@ public:
      *
      * This destroys any resource currently managed by the object.
      */
-    ~RTAutoRes()
+    ~RTCAutoRes()
     {
         if (m_hRes != NilRes())
             Destruct(m_hRes);
@@ -152,7 +134,7 @@ public:
      *
      * @param   a_hRes      The handle to the new resource.
      */
-    RTAutoRes &operator=(T a_hRes)
+    RTCAutoRes &operator=(T a_hRes)
     {
         if (m_hRes != NilRes())
             Destruct(m_hRes);
