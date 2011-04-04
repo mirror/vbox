@@ -127,29 +127,32 @@ private:
 class RTCLock
 {
 private:
+    /** Reference to the lock we're holding. */
     RTCLockMtx &m_rMtx;
-    bool        mfLocked;
+    /** Whether we're currently holding the lock of if it was already
+     *  explictily released by the release() method. */
+    bool        m_fLocked;
 
 public:
     RTCLock(RTCLockMtx &a_rMtx)
         : m_rMtx(a_rMtx)
     {
         m_rMtx.lock();
-        mfLocked = true;
+        m_fLocked = true;
     }
 
     ~RTCLock()
     {
-        if (mfLocked)
+        if (m_fLocked)
             m_rMtx.unlock();
     }
 
     inline void release()
     {
-        if (mfLocked)
+        if (m_fLocked)
         {
             m_rMtx.unlock();
-            mfLocked = false;
+            m_fLocked = false;
         }
     }
 };
