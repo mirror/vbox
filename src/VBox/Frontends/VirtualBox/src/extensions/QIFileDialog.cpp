@@ -858,6 +858,8 @@ QString QIFileDialog::getFirstExistingDir (const QString &aStartDir)
     while (!dir.exists() && !dir.isRoot())
     {
         QFileInfo dirInfo (dir.absolutePath());
+        if (dir == QDir(dirInfo.absolutePath()))
+            break;
         dir = dirInfo.absolutePath();
     }
     if (dir.exists() && !dir.isRoot())
