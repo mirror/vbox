@@ -1,7 +1,6 @@
 /** @file
- *
- * Module to dynamically load libdbus and load all symbols
- * which are needed by VirtualBox.
+ * Module to dynamically load libdbus and load all symbols which are needed by
+ * VirtualBox.
  */
 
 /*
@@ -25,11 +24,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_DBus_h
-#define ___VBox_DBus_h
+#ifndef ___VBox_dbus_h
+#define ___VBox_dbus_h
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
+
+#ifndef __cplusplus
+# error "This header requires C++ to avoid name clashes."
+#endif
 
 /** Types and defines from the dbus header files which we need.  These are
  * taken more or less verbatim from the DBus public interface header files. */
@@ -97,15 +100,15 @@ typedef enum
   DBUS_HANDLER_RESULT_NEED_MEMORY
 } DBusHandlerResult;
 
-typedef DBusHandlerResult (*DBusHandleMessageFunction) (DBusConnection *,
+typedef DBusHandlerResult (* DBusHandleMessageFunction)(DBusConnection *,
                                                         DBusMessage *, void *);
-typedef void (*DBusFreeFunction) (void *);
+typedef void (* DBusFreeFunction) (void *);
 
 /* Declarations of the functions that we need from libdbus-1 */
 #define VBOX_DBUS_GENERATE_HEADER
-RT_C_DECLS_BEGIN
+
 #include <VBox/dbus-calls.h>
-RT_C_DECLS_END
+
 #undef VBOX_DBUS_GENERATE_HEADER
 
 #endif /* ___VBox_DBus_h not defined */
