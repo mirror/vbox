@@ -53,13 +53,13 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
 RT_EXPORT_SYMBOL(RTMpNotificationDeregister);
 
 
-int rtR0MpNotificationInit(void)
+DECLHIDDEN(int) rtR0MpNotificationInit(void)
 {
     return VINF_SUCCESS;
 }
 
 
-void rtR0MpNotificationTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationTerm(void)
 {
 }
 

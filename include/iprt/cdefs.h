@@ -90,6 +90,7 @@
 # define RT_LITTLE_ENDIAN
 # define RT_COMPILER_GROKS_64BIT_BITFIELDS
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# define RT_NO_VISIBILITY_HIDDEN
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -595,6 +596,14 @@
 # define RT_THROW(type)
 #endif
 
+/** @def RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
+ * Indicates that the "hidden" visibility attribute can be used (GCC) */
+#if defined(__GNUC__)
+# if __GNUC__ >= 4 && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
+#  define RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
+# endif
+#endif
+
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
  */
@@ -635,10 +644,22 @@
  * How to declare a non-exported function or variable.
  * @param   type    The return type of the function or the data type of the variable.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || !defined(RT_USE_VISIBILITY_HIDDEN) || defined(DOXYGEN_RUNNING)
+#if !defined(RT_GCC_SUPPORTS_VISIBILITY_HIDDEN) || defined(RT_NO_VISIBILITY_HIDDEN)
 # define DECLHIDDEN(type)       type
 #else
 # define DECLHIDDEN(type)       __attribute__((visibility("hidden"))) type
+#endif
+
+/** @def DECL_HIDDEN_CONST
+ * Workaround for g++ warnings when applying the hidden attribute to a const
+ * definition.  Use DECLHIDDEN for the declaration.
+ * @param   a_Type      The return type of the function or the data type of
+ *                      the variable.
+ */
+#if defined(__cplusplus) && defined(__GNUC__)
+# define DECL_HIDDEN_CONST(a_Type)   a_Type
+#else
+# define DECL_HIDDEN_CONST(a_Type)   DECLHIDDEN(a_Type)
 #endif
 
 /** @def DECL_INVALID

@@ -158,32 +158,16 @@ typedef struct RTRANDINT
 
 RT_C_DECLS_BEGIN
 
-/**
- * Initialize OS facilities for generating random bytes.
- */
-void rtRandLazyInitNative(void);
-
-/**
- * Generate random bytes using OS facilities.
- *
- * @returns VINF_SUCCESS on success, some error status code on failure.
- * @param   pv      Where to store the random bytes.
- * @param   cb      How many random bytes to store.
- */
-int rtRandGenBytesNative(void *pv, size_t cb);
-
-void rtRandGenBytesFallback(void *pv, size_t cb) RT_NO_THROW;
-
-DECLCALLBACK(void)      rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb);
-DECLCALLBACK(void)      rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *pb, size_t cb);
-DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
-DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
-DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
-DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
-DECLCALLBACK(int)       rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed);
-DECLCALLBACK(int)       rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState);
-DECLCALLBACK(int)       rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState);
-DECLCALLBACK(int)       rtRandAdvDefaultDestroy(PRTRANDINT pThis);
+DECLHIDDEN(DECLCALLBACK(void))      rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb);
+DECLHIDDEN(DECLCALLBACK(void))      rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *pb, size_t cb);
+DECLHIDDEN(DECLCALLBACK(uint32_t))  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
+DECLHIDDEN(DECLCALLBACK(uint32_t))  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
+DECLHIDDEN(DECLCALLBACK(uint64_t))  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+DECLHIDDEN(DECLCALLBACK(uint64_t))  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+DECLHIDDEN(DECLCALLBACK(int))       rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed);
+DECLHIDDEN(DECLCALLBACK(int))       rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState);
+DECLHIDDEN(DECLCALLBACK(int))       rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState);
+DECLHIDDEN(DECLCALLBACK(int))       rtRandAdvDefaultDestroy(PRTRANDINT pThis);
 
 RT_C_DECLS_END
 

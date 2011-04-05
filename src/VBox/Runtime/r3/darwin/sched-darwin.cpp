@@ -220,7 +220,7 @@ static int rtSchedDarwinGetBasePriority(void)
 }
 
 
-int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
 
@@ -254,7 +254,7 @@ int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 }
 
 
-int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
+DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 {
     Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
 
@@ -275,7 +275,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 }
 
 
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     Assert(pThread->Core.Key == pthread_self());
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);

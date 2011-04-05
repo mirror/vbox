@@ -38,14 +38,14 @@
 #include "internal/initterm.h"
 
 
-int rtR0InitNative(void)
+DECLHIDDEN(int) rtR0InitNative(void)
 {
     /* nothing to do */
     return VINF_SUCCESS;
 }
 
 
-void rtR0TermNative(void)
+DECLHIDDEN(void) rtR0TermNative(void)
 {
     /* nothing to undo */
 }

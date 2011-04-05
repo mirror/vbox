@@ -41,7 +41,7 @@
  *            >= (above): The node where you last turned left.
  *            <= (below): the node where you last turned right.
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(GetBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key, bool fAbove)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(GetBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key, bool fAbove)
 {
     register PKAVLNODECORE  pNode = KAVL_GET_POINTER_NULL(ppTree);
     if (pNode)

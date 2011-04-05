@@ -171,14 +171,6 @@ typedef enum RTTHREADTYPE
 RTDECL(RTTHREAD) RTThreadSelf(void);
 
 /**
- * Get the thread handle of the current thread, automatically adopting alien
- * threads.
- *
- * @returns Thread handle.
- */
-RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
-
-/**
  * Get the native thread handle of the current thread.
  *
  * @returns Native thread handle.
@@ -549,6 +541,14 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread);
  * @param   pThread         Where to store the thread handle. Optional.
  */
 RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszName, PRTTHREAD pThread);
+
+/**
+ * Get the thread handle of the current thread, automatically adopting alien
+ * threads.
+ *
+ * @returns Thread handle.
+ */
+RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
 
 /**
  * Gets the affinity mask of the current thread.

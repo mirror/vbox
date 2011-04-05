@@ -47,14 +47,14 @@ RT_C_DECLS_BEGIN
 # define RTStrAssertMsgReturn(expr, msg, rc)    do { if (!(expr)) return rc; } while (0)
 #endif
 
-size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
-                     int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
-size_t rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
-                       int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
+DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
+                                 int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
+DECLHIDDEN(size_t) rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
+                                   int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
 
 #ifdef RT_WITH_ICONV_CACHE
-void rtStrIconvCacheInit(struct RTTHREADINT *pThread);
-void rtStrIconvCacheDestroy(struct RTTHREADINT *pThread);
+DECLHIDDEN(void) rtStrIconvCacheInit(struct RTTHREADINT *pThread);
+DECLHIDDEN(void) rtStrIconvCacheDestroy(struct RTTHREADINT *pThread);
 #endif
 
 /**
@@ -74,11 +74,11 @@ typedef enum RTSTRICONV
     RTSTRICONV_END
 } RTSTRICONV;
 
-int rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
-                 char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
-                 unsigned cFactor, RTSTRICONV enmCacheIdx);
-const char *rtStrGetLocaleCodeset(void);
-int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchActual);
+DECLHIDDEN(int) rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                             char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                             unsigned cFactor, RTSTRICONV enmCacheIdx);
+DECLHIDDEN(const char *) rtStrGetLocaleCodeset(void);
+DECLHIDDEN(int) rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchActual);
 
 RT_C_DECLS_END
 

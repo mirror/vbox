@@ -44,7 +44,7 @@
 /**
  * OS specific allocation function.
  */
-int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
+DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     size_t      cbAllocated = cb;
     PRTMEMHDR   pHdr;
@@ -84,7 +84,7 @@ int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 /**
  * OS specific free function.
  */
-void rtR0MemFree(PRTMEMHDR pHdr)
+DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
 #ifdef RT_ARCH_AMD64

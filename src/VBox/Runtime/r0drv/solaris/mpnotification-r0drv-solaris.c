@@ -65,7 +65,7 @@ static int rtMpNotificationSolarisCallback(cpu_setup_t enmSolarisEvent, int iCpu
 }
 
 
-int rtR0MpNotificationNativeInit(void)
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     mutex_enter(&cpu_lock);
     register_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);
@@ -74,7 +74,7 @@ int rtR0MpNotificationNativeInit(void)
 }
 
 
-void rtR0MpNotificationNativeTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
     mutex_enter(&cpu_lock);
     unregister_cpu_setup_func(rtMpNotificationSolarisCallback, NULL);

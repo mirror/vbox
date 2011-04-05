@@ -1602,18 +1602,8 @@ RuntimeR0Drv_SOURCES    = \
 	r0drv/generic/semspinmutex-r0drv-generic.c \
 	VBox/log-vbox.cpp \
 
-## @todo: Linking against RuntimeR0Drv on Linux will result in unresolved external
-## references to several string functions (e.g. strlen). We could include the
-## missing functions here but our own implementations conflict with declarations
-## of some Linux kernels (inline versus not inline, size_t versus unsigned int).
-##
-## The prototypes for the unresolved externals are declared in <linux/string.h>.
-## This file is not included with extern "C" { ... } and therefore the function
-## prototypes are mangled during C++ compilation. That's why we have to provide
-## implementations with mangled function names.
-##
-## bird: Why don't we just extern "C" {} that file then?
 RuntimeR0Drv_SOURCES.linux = \
+	common/misc/thread.cpp \
 	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -2211,18 +2201,82 @@ test-doxygen::
 	@echo $(DOXYGEN_OUTPUT_PREV)
 	@echo $(IPRT_DOXYFILE_INPUT)
 
-test-mangling:: $(RuntimeR3_1_TARGET)
-ifn1of ($(KBUILD_TARGET),win)
+test-mangling: \
+		$$(RuntimeR3_1_TARGET) \
+		$$(RuntimeR0_1_TARGET) \
+		$$(RuntimeR0Drv_1_TARGET) \
+		$$(RuntimeRC_1_TARGET)
+if1of ($(KBUILD_TARGET), win os2)
+	$(ECHO) skipped
+else if1of ($(KBUILD_TARGET), linux)
 	rcExit=0; \
-	for fn in ` nm $(RuntimeR3_1_TARGET) \
+	for fn in ` readelf -Ws $^ \
+			| $(SED) \
+				-e '/^  *[[:digit:]]\+:/!d' \
+				-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
+				-e '/^SECTION/d' \
+				-e '/^FILE/d' \
+				-e 's/^[[:alpha:]]\+ \+//' \
+				-e '/LOCAL/d' \
+				-e 's/^[[:alpha:]]\+ \+//' \
+				-e '/^HIDDEN/d' \
+				-e 's/^[[:alpha:]]\+ \+//' \
+				-e '/^UND/d' \
+				-e 's/^[[:digit:]]\+ \+//' \
+				\
+				-e '/^nocrt_/d' \
+				-e '/^memchr/d' \
+				-e '/^memcmp/d' \
+				-e '/^memcpy/d' \
+				-e '/^mempcpy/d' \
+				-e '/^memmove/d' \
+				-e '/^memset/d' \
+				-e '/^strchr/d' \
+				-e '/^strpbrk/d' \
+				-e '/^strcmp/d' \
+				-e '/^strcpy/d' \
+				-e '/^strlen/d' \
+				-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
+				\
+				-e '/^dbus/d' \
+				-e '/^RTDBusLoadLib/d' \
+				\
+				-e '/^VBoxHost_/d'\
+				-e '/^VBoxGuest_/d'\
+			| sort -u \
+	          `; \
+	do \
+		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
+			echo "mangling.h: Missing '"$${fn}"'"; \
+			rcExit=1;\
+		fi \
+	done; \
+	exit $${rcExit}
+else
+	rcExit=0; \
+	for fn in ` nm $^ \
 			| $(SED) -n \
 				-e 's/^[0-9a-f][0-9a-f]* //' \
-				-e '/^[TUD]/!d' \
+				-e '/^[TUDB] /!d' \
 				-e 's/^. //' \
+				\
+				-e '/^g_cchrt/d'\
+				-e '/^g_frt/d'\
+				-e '/^g_offrt/d'\
+				-e '/^g_szrt/d'\
+				-e '/^g_ProcessSelf/d'\
+				-e '/^g_u64ProgramStart/d'\
+				-e '/^g_enmProcessPriority/d'\
+				-e '/^g_hDbgModStrCache/d'\
+				\
+				-e '/^RTDBusLoadLib/d' \
+				\
 				-e '/^RT/p' \
-				-e '/^g_/p' `; \
+				-e '/^g_/p' \
+			| sort -u \
+	          `; \
 	do \
-		if $(SED) -ne '/\#define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
+		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
 			echo "mangling.h: Missing '"$${fn}"'"; \
 			rcExit=1;\
 		fi \

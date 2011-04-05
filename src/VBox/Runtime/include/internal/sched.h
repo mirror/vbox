@@ -40,7 +40,7 @@ RT_C_DECLS_BEGIN
  * @returns iprt status code.
  * @param   enmType     The thread type to be assumed for the current thread.
  */
-int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType);
+DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType);
 
 RT_C_DECLS_END
 

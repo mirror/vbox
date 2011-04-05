@@ -56,7 +56,7 @@ AssertCompile(sizeof(iconv_t) <= sizeof(void *));
  *
  * @returns Pointer to read-only string with the codeset name.
  */
-const char *rtStrGetLocaleCodeset(void)
+DECLHIDDEN(const char *) rtStrGetLocaleCodeset(void)
 {
     return nl_langinfo(CODESET);
 }
@@ -69,7 +69,7 @@ const char *rtStrGetLocaleCodeset(void)
  *
  * @param   pThread             The thread in question.
  */
-void rtStrIconvCacheInit(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtStrIconvCacheInit(PRTTHREADINT pThread)
 {
     for (size_t i = 0; i < RT_ELEMENTS(pThread->ahIconvs); i++)
         pThread->ahIconvs[i] = (iconv_t)-1;
@@ -80,7 +80,7 @@ void rtStrIconvCacheInit(PRTTHREADINT pThread)
  *
  * @param   pThread             The thread in question.
  */
-void rtStrIconvCacheDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtStrIconvCacheDestroy(PRTTHREADINT pThread)
 {
     for (size_t i = 0; i < RT_ELEMENTS(pThread->ahIconvs); i++)
     {
@@ -408,9 +408,9 @@ DECLINLINE(int) rtStrConvertWrapper(const char *pchInput, size_t cchInput, const
  * @param   cFactor         Input vs. output size factor.
  * @param   enmCacheIdx     The iconv cache index.
  */
-int rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
-                 char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
-                 unsigned cFactor, RTSTRICONV enmCacheIdx)
+DECLHIDDEN(int) rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                             char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                             unsigned cFactor, RTSTRICONV enmCacheIdx)
 {
     Assert(enmCacheIdx >= 0 && enmCacheIdx < RTSTRICONV_END);
     return rtStrConvertWrapper(pchInput, cchInput, pszInputCS,

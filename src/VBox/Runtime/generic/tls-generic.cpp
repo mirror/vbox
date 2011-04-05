@@ -140,7 +140,7 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
  *
  * @param   pThread     The current thread.
  */
-void rtThreadTlsDestruction(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadTlsDestruction(PRTTHREADINT pThread)
 {
     for (RTTLS iTls = 0; iTls < RTTHREAD_TLS_ENTRIES; iTls++)
     {

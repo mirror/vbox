@@ -37,7 +37,7 @@
  * @param     pfnCallBack  Pointer to callback function.
  * @param     pvParam      Userparameter passed on to the callback function.
  */
-RTDECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBACK pfnCallBack, void * pvParam)
+KAVL_DECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBACK pfnCallBack, void * pvParam)
 {
     KAVLSTACK2      AVLStack;
     PKAVLNODECORE   pNode;

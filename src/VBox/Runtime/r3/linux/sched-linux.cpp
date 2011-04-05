@@ -467,7 +467,7 @@ static void *rtSchedNativeProberThread(void *pvUser)
  * @returns iprt status code.
  * @param   enmType     The thread type to be assumed for the current thread.
  */
-int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
 
@@ -548,7 +548,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
  * @returns iprt status code.
  * @param   enmPriority     The priority to validate and set.
  */
-int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
+DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 {
     Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
 
@@ -599,7 +599,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
  * @param   pThread     The thread in question.
  * @param   enmType     The thread type.
  */
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /* sanity */
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);

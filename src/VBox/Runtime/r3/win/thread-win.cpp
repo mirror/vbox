@@ -56,7 +56,7 @@ static DWORD g_dwSelfTLS = TLS_OUT_OF_INDEXES;
 static unsigned __stdcall rtThreadNativeMain(void *pvArgs);
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     g_dwSelfTLS = TlsAlloc();
     if (g_dwSelfTLS == TLS_OUT_OF_INDEXES)
@@ -65,7 +65,7 @@ int rtThreadNativeInit(void)
 }
 
 
-void rtThreadNativeDetach(void)
+DECLHIDDEN(void) rtThreadNativeDetach(void)
 {
     /*
      * Deal with alien threads.
@@ -80,14 +80,14 @@ void rtThreadNativeDetach(void)
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     if (pThread == (PRTTHREADINT)TlsGetValue(g_dwSelfTLS))
         TlsSetValue(g_dwSelfTLS, NULL);
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         return VERR_FAILED_TO_SET_SELF_TLS;
@@ -96,9 +96,9 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 
 
 /**
- * Bitch about dangling COM and OLE references, dispose of them 
- * afterwards so we don't end up deadlocked somewhere below 
- * OLE32!DllMain. 
+ * Bitch about dangling COM and OLE references, dispose of them
+ * afterwards so we don't end up deadlocked somewhere below
+ * OLE32!DllMain.
  */
 static void rtThreadNativeUninitComAndOle(void)
 {
@@ -136,14 +136,14 @@ static void rtThreadNativeUninitComAndOle(void)
             cComInits = pOleTlsData->cComInits;
             cOleInits = pOleTlsData->cOleInits;
         }
-    } 
+    }
     __except(EXCEPTION_EXECUTE_HANDLER)
     {
         AssertFailedReturnVoid();
     }
-    
+
     /*
-     * Assert sanity. If any of these breaks, the structure layout above is 
+     * Assert sanity. If any of these breaks, the structure layout above is
      * probably not correct any longer.
      */
     AssertMsgReturnVoid(cComInits < 1000, ("%u (%#x)\n", cComInits, cComInits));
@@ -155,7 +155,7 @@ static void rtThreadNativeUninitComAndOle(void)
      */
     if (cComInits)
     {
-        AssertMsgFailed(("cComInits=%u (%#x) cOleInits=%u (%#x) - dangling COM/OLE inits!\n", 
+        AssertMsgFailed(("cComInits=%u (%#x) cOleInits=%u (%#x) - dangling COM/OLE inits!\n",
                          cComInits, cComInits, cOleInits, cOleInits));
 
         HMODULE hOle32 = GetModuleHandle("OLE32");
@@ -202,7 +202,7 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
 {
     AssertReturn(pThread->cbStack < ~(unsigned)0, VERR_INVALID_PARAMETER);
 

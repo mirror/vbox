@@ -43,7 +43,7 @@
  *            <= (below): the node where you last turned right.
  * @remark    This implementation should be speeded up slightly!
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(RemoveBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key, bool fAbove)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(RemoveBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key, bool fAbove)
 {
     /*
      * If we find anything we'll have to remove the node and return it.

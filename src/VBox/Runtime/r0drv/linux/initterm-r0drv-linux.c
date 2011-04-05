@@ -40,17 +40,17 @@
 *******************************************************************************/
 #ifdef RT_ARCH_AMD64
 /* in alloc-r0drv0-linux.c */
-extern void rtR0MemExecCleanup(void);
+DECLHIDDEN(void) rtR0MemExecCleanup(void);
 #endif
 
 
-int rtR0InitNative(void)
+DECLHIDDEN(int) rtR0InitNative(void)
 {
     return VINF_SUCCESS;
 }
 
 
-void rtR0TermNative(void)
+DECLHIDDEN(void) rtR0TermNative(void)
 {
 #ifdef RT_ARCH_AMD64
     rtR0MemExecCleanup();

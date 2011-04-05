@@ -32,6 +32,8 @@
  * @ingroup grp_rt
  * @{ */
 
+RT_C_DECLS_BEGIN
+
 /**
  * Callback for comparing two array elements.
  *
@@ -118,6 +120,7 @@ RTDECL(bool) RTSortIsSorted(void const *pvArray, size_t cElements, size_t cbElem
  */
 RTDECL(bool) RTSortApvIsSorted(void const * const *papvArray, size_t cElements, PFNRTSORTCMP pfnCmp, void *pvUser);
 
+RT_C_DECLS_END
 
 /** @} */
 

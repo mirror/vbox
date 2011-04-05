@@ -43,7 +43,7 @@
 lck_grp_t *g_pDarwinLockGroup = NULL;
 
 
-int rtR0InitNative(void)
+DECLHIDDEN(int) rtR0InitNative(void)
 {
     /*
      * Create the lock group.
@@ -62,7 +62,7 @@ int rtR0InitNative(void)
 }
 
 
-void rtR0TermNative(void)
+DECLHIDDEN(void) rtR0TermNative(void)
 {
     /*
      * Preemption hacks before the lock group.

@@ -58,13 +58,13 @@ typedef struct RTMPARGS
 typedef RTMPARGS *PRTMPARGS;
 
 /* Called from initterm-r0drv.cpp: */
-int rtR0MpNotificationInit(void);
-void rtR0MpNotificationTerm(void);
+DECLHIDDEN(int)  rtR0MpNotificationInit(void);
+DECLHIDDEN(void) rtR0MpNotificationTerm(void);
 
 /* The following is only relevant when using mpnotifcation-r0drv.cpp: */
-int rtR0MpNotificationNativeInit(void);
-void rtR0MpNotificationNativeTerm(void);
-void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
+DECLHIDDEN(int)  rtR0MpNotificationNativeInit(void);
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void);
+DECLHIDDEN(void) rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
 
 RT_C_DECLS_END
 

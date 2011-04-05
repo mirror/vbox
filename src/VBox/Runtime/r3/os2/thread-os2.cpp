@@ -63,7 +63,7 @@ static PRTTHREADINT *g_ppCurThread;
 static void rtThreadNativeMain(void *pvArgs);
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     /*
      * Allocate thread local memory.
@@ -77,7 +77,7 @@ int rtThreadNativeInit(void)
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     /*
      * Block SIGALRM - required for timer-posix.cpp.
@@ -94,7 +94,7 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     if (pThread == *g_ppCurThread)
         *g_ppCurThread = NULL;
@@ -133,7 +133,7 @@ static void rtThreadNativeMain(void *pvArgs)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
 {
     /*
      * Default stack size.

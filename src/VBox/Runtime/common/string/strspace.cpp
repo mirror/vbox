@@ -40,6 +40,7 @@
 /*
  * AVL configuration.
  */
+#define KAVL_DECL(a_Type)           static a_Type
 #define KAVL_FN(a)                  rtstrspace##a
 #define KAVL_MAX_STACK              27  /* Up to 2^24 nodes. */
 #define KAVL_EQUAL_ALLOWED          1

@@ -306,17 +306,38 @@ RTDECL(int) RTManifestReadStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos);
 RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, char *pszErr, size_t cbErr);
 
 /**
+ * Reads in a "standard" manifest from the specified file.
+ *
+ * This reads the format used by OVF, the distinfo in FreeBSD ports, and
+ * others.
+ *
+ * @returns IPRT status code.
+ * @param   hManifest           The handle to the manifest where to add the
+ *                              manifest that's read in.
+ * @param   pszFilename         The name of the file to read in.
+ */
+RTDECL(int) RTManifestReadStandardFromFile(RTMANIFEST hManifest, const char *pszFilename);
+
+/**
  * Writes a "standard" manifest.
  *
  * This writes the format used by OVF, the distinfo in FreeBSD ports, and
  * others.
  *
  * @returns IPRT status code.
- * @param   hManifest           The handle to the manifest where to add the
- *                              manifest that's read in.
+ * @param   hManifest           The handle to the manifest to write.
  * @param   hVfsIos             The I/O stream to read the manifest from.
  */
 RTDECL(int) RTManifestWriteStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Writes a "standard" manifest to the specified file.
+ *
+ * @returns IPRT status code.
+ * @param   hManifest           The handle to the manifest to write.
+ * @param   pszFilename         The name of the file.
+ */
+RTDECL(int) RTManifestWriteStandardToFile(RTMANIFEST hManifest, const char *pszFilename);
 
 
 

@@ -36,7 +36,7 @@
  *
  * @param   ppTree      Pointer to pointer to the tree root node.
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(GetRoot)(PPKAVLNODECORE ppTree)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(GetRoot)(PPKAVLNODECORE ppTree)
 {
     return KAVL_GET_POINTER_NULL(ppTree);
 }
@@ -50,7 +50,7 @@ RTDECL(PKAVLNODECORE) KAVL_FN(GetRoot)(PPKAVLNODECORE ppTree)
  *
  * @param   pNode       The current node.
  */
-RTDECL(PKAVLNODECORE)    KAVL_FN(GetRight)(PKAVLNODECORE pNode)
+KAVL_DECL(PKAVLNODECORE)    KAVL_FN(GetRight)(PKAVLNODECORE pNode)
 {
     if (pNode)
         return KAVL_GET_POINTER_NULL(&pNode->pRight);
@@ -66,7 +66,7 @@ RTDECL(PKAVLNODECORE)    KAVL_FN(GetRight)(PKAVLNODECORE pNode)
  *
  * @param   pNode       The current node.
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(GetLeft)(PKAVLNODECORE pNode)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(GetLeft)(PKAVLNODECORE pNode)
 {
     if (pNode)
         return KAVL_GET_POINTER_NULL(&pNode->pLeft);
@@ -83,7 +83,7 @@ RTDECL(PKAVLNODECORE) KAVL_FN(GetLeft)(PKAVLNODECORE pNode)
  *
  * @param   pNode       The current node.
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(GetNextEqual)(PKAVLNODECORE pNode)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(GetNextEqual)(PKAVLNODECORE pNode)
 {
     if (pNode)
         return KAVL_GET_POINTER_NULL(&pNode->pList);
