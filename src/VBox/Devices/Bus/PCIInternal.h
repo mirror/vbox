@@ -87,7 +87,10 @@ enum {
      * This one is set by MsixInit().  */
     PCIDEV_FLAG_MSIX_CAPABLE       = 1<<4,
     /** Flag if device represents real physical device in passthrough mode. */
-    PCIDEV_FLAG_PASSTHROUGH        = 1<<5
+    PCIDEV_FLAG_PASSTHROUGH        = 1<<5,
+    /** Flag whether the device is capable of MSI using 64-bit address.  */
+    PCIDEV_FLAG_MSI64_CAPABLE      = 1<<6
+    
 };
 
 /**
