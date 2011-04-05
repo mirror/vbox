@@ -105,6 +105,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	     PATH_OUT=$(current)/debian/builddir \
+	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_DO_STRIP_MODULES= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
