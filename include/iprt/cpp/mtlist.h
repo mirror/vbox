@@ -69,7 +69,13 @@ private:
  * @see RTCListBase
  */
 template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class RTCMTList : public RTCListBase<T, ITYPE, true> {};
+class RTCMTList : public RTCListBase<T, ITYPE, true>
+{
+    typedef RTCListBase<T, ITYPE, true> BASE;
+public:
+    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /**
  * Specialized thread-safe list class for using the native type list for
@@ -78,7 +84,13 @@ class RTCMTList : public RTCListBase<T, ITYPE, true> {};
  * @see RTCListBase
  */
 template <>
-class RTCMTList<uint64_t>: public RTCListBase<uint64_t, uint64_t, true> {};
+class RTCMTList<uint64_t>: public RTCListBase<uint64_t, uint64_t, true>
+{
+    typedef RTCListBase<uint64_t, uint64_t, true> BASE;
+public:
+    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /**
  * Specialized thread-safe list class for using the native type list for
@@ -87,7 +99,13 @@ class RTCMTList<uint64_t>: public RTCListBase<uint64_t, uint64_t, true> {};
  * @see RTCListBase
  */
 template <>
-class RTCMTList<int64_t>: public RTCListBase<int64_t, uint64_t, true> {};
+class RTCMTList<int64_t>: public RTCListBase<int64_t, int64_t, true>
+{
+    typedef RTCListBase<int64_t, int64_t, true> BASE;
+public:
+    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /** @} */
 
