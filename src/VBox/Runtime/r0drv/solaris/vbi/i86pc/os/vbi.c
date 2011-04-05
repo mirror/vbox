@@ -70,6 +70,15 @@ extern void contig_free(void *, size_t);
 static void (*p_contig_free)(void *, size_t) = contig_free;
 
 /*
+ * We have to use dl_lookup to find kflt_init() and thereby use kernel pages from
+ * the freelists if we no longer get user pages from freelist and cachelists.
+ */
+/* Introduced in v9 */
+static int use_kflt = 0;
+page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr);
+
+
+/*
  * Workarounds for running on old versions of solaris with different cross call
  * interfaces. If we find xc_init_cpu() in the kernel, then just use the defined
  * interfaces for xc_call() from the include file where the xc_call()
@@ -242,6 +251,17 @@ vbi_init(void)
 			return (EINVAL);
 		}
 	}
+
+	/*
+	 * Use kernel page freelist flags to get pages from kernel page freelists
+	 * while allocating physical pages, once the userpages are exhausted.
+	 * snv_161+, see @bugref{5632}.
+	 */
+	if (kobj_getsymvalue("kflt_init", 1) != NULL)
+	{
+		use_kflt = 1;
+	}
+
 
 	/*
 	 * Check if this is S10 or Nevada
@@ -1304,19 +1324,15 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 				 * get pages from kseg, the 'virtAddr' here is only for colouring but unfortunately
 				 * we don't have the 'virtAddr' to which this memory may be mapped.
 				 */
-				seg_t kernseg;
-				kernseg.s_as = &kas;
 				caddr_t virtAddr = NULL;
 				for (int64_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
 				{
-					/* get a page from the freelist */
-					page_t *ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
-										PAGESIZE, 0 /* flags */, NULL /* local group */);
+					/* get a page from the freelists */
+					page_t *ppage = vbi_page_get_fromlist(1 /* freelist */, virtAddr);
 					if (!ppage)
 					{
-						/* try from the cachelist */
-						ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
-										0 /* flags */, NULL /* local group */);
+						/* try from the cachelists */
+						ppage = vbi_page_get_fromlist(2 /* cachelist */, virtAddr);
 						if (!ppage)
 						{
 							/* damn */
@@ -1412,10 +1428,50 @@ vbi_page_to_pa(page_t **pp_pages, pgcnt_t i)
 	return (uint64_t)pfn << PAGESHIFT;
 }
 
+
+/*
+ * This is revision 9 of the interface.
+ */
+page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr)
+{
+	seg_t kernseg;
+	kernseg.s_as = &kas;
+	page_t *ppage = NULL;
+	if (freelist == 1)
+	{
+		ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+							PAGESIZE, 0 /* flags */, NULL /* local group */);
+		if (!ppage)
+		{
+			if (use_kflt)
+			{
+				ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+							PAGESIZE, 0x0200 /* PG_KFLT */, NULL /* local group */);
+			}
+		}
+	}
+	else
+	{
+		/* cachelist */
+		ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+							0 /* flags */, NULL /* local group */);
+		if (!ppage)
+		{
+			if (use_kflt)
+			{
+				ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+							0x0200 /* PG_KFLT */, NULL /* local group */);
+			}
+		}
+	}
+	return ppage;
+}
+
+
 /*
  * As more functions are added, they should start with a comment indicating
  * the revision and above this point in the file and the revision level should
  * be increased. Also change vbi_modlmisc at the top of the file.
  */
-uint_t vbi_revision_level = 8;
+uint_t vbi_revision_level = 9;
 
