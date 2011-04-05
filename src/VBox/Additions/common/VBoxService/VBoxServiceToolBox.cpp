@@ -196,6 +196,7 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
                     rc = VINF_SUCCESS;
                 else
                     RTMsgError("cat: Error while reading input, rc=%Rrc\n", rc);
+                break;
             }
         }
     }
