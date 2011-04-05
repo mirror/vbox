@@ -564,7 +564,9 @@ typedef struct _SVM_VMCB
         /** Offset 0x0C - Intercept control field 2. */
         uint32_t    u32InterceptCtrl2;
         /** Offset 0x14-0x3F - Reserved. */
-        uint8_t     u8Reserved[0x40-0x14];
+        uint8_t     u8Reserved[0x3e - 0x14];
+        /** Offset 0x3e - PAUSE intercept filter count. */
+        uint16_t    u16PauseFilterCount;
         /** Offset 0x40 - Physical address of IOPM. */
         uint64_t    u64IOPMPhysAddr;
         /** Offset 0x48 - Physical address of MSRPM. */
@@ -703,6 +705,7 @@ typedef struct _SVM_VMCB
 #pragma pack()
 AssertCompileSize(SVM_VMCB, 0x1000);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.u16InterceptRdCRx, 0x000);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.u16PauseFilterCount,0x03e);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.TLBCtrl,           0x058);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.ExitIntInfo,       0x088);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.EventInject,       0x0A8);
