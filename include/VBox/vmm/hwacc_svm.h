@@ -39,12 +39,30 @@
 /** @name SVM features for cpuid 0x8000000a
  * @{
  */
+/** Bit 0 - NP - Nested Paging supported. */
 #define AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING             RT_BIT(0)
+/** Bit 1 - LbrVirt - Support for saving five debug MSRs. */
 #define AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT                  RT_BIT(1)
+/** Bit 2 - SVML - SVM locking bit supported. */
 #define AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK                  RT_BIT(2)
+/** Bit 3 - NRIPS - Saving the next instruction pointer is supported. */
 #define AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE                 RT_BIT(3)
+/** Bit 4 - TscRateMsr - Support for MSR TSC ratio. */
+#define AMD_CPUID_SVM_FEATURE_EDX_TSC_RATE_MSR              RT_BIT(4)
+/** Bit 5 - VmcbClean - Support VMCB clean bits. */
+#define AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN                RT_BIT(5)
+/** Bit 6 - FlushByAsid - Indicate TLB flushing for current ASID only, and that
+ *  VMCB.TLB_Control is supported. */
+#define AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID             RT_BIT(6)
+/** Bit 7 - DecodeAssist - Indicate decode assist is supported. */
+#define AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST             RT_BIT(7)
+/** Where did we get this from? */
 #define AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE           RT_BIT(9)
+/** Bit 10 - PauseFilter - Indicates support for the PAUSE intercept filter. */
 #define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER              RT_BIT(10)
+/** Bit 12 - PauseFilterThreshold - Indicates support for the PAUSE
+ *  intercept filter cycle count threshold. */
+#define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD    RT_BIT(12)
 /** @} */
 
 
