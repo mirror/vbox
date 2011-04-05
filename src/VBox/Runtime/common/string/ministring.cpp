@@ -367,11 +367,23 @@ RTCString::join(const RTCList<RTCString, RTCString *> &a_rList,
     RTCString strRet;
     if (a_rList.size() > 1)
     {
+        /* calc the required size */
+        size_t cbNeeded = a_rstrSep.length() * (a_rList.size() - 1) + 1;
+        for (size_t i = 0; i < a_rList.size(); ++i)
+            cbNeeded += a_rList.at(i).length();
+        strRet.reserve(cbNeeded);
+
+        /* do the appending. */
         for (size_t i = 0; i < a_rList.size() - 1; ++i)
-            strRet += a_rList.at(i) + a_rstrSep;
+        {
+            strRet.append(a_rList.at(i));
+            strRet.append(a_rstrSep);
+        }
+        strRet.append(a_rList.last());
     }
-    if (a_rList.size() > 0)
-        strRet += a_rList.last();
+    /* special case: one list item. */
+    else if (a_rList.size() > 0)
+        strRet.append(a_rList.last());
 
     return strRet;
 }
