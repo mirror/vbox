@@ -32,13 +32,13 @@
 
 RT_C_DECLS_BEGIN
 
-extern RTPROCESS        g_ProcessSelf;
-extern RTPROCPRIORITY   g_enmProcessPriority;
-extern char             g_szrtProcExePath[RTPATH_MAX];
-extern size_t           g_cchrtProcExePath;
-extern size_t           g_cchrtProcDir;
-extern size_t           g_offrtProcName;
-extern bool volatile    g_frtAtExitCalled;
+extern DECLHIDDEN(RTPROCESS)        g_ProcessSelf;
+extern DECLHIDDEN(RTPROCPRIORITY)   g_enmProcessPriority;
+extern DECLHIDDEN(char)             g_szrtProcExePath[RTPATH_MAX];
+extern DECLHIDDEN(size_t)           g_cchrtProcExePath;
+extern DECLHIDDEN(size_t)           g_cchrtProcDir;
+extern DECLHIDDEN(size_t)           g_offrtProcName;
+extern DECLHIDDEN(bool volatile)    g_frtAtExitCalled;
 
 /**
  * Validates and sets the process priority.
