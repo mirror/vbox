@@ -74,50 +74,50 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The number of calls to RTR3Init. */
-static int32_t volatile g_cUsers = 0;
+static int32_t volatile     g_cUsers = 0;
 /** Whether we're currently initializing the IPRT. */
-static bool volatile    g_fInitializing = false;
+static bool volatile        g_fInitializing = false;
 
 /** The process path.
  * This is used by RTPathExecDir and RTProcGetExecutablePath and set by rtProcInitName. */
-char        g_szrtProcExePath[RTPATH_MAX];
+DECLHIDDEN(char)            g_szrtProcExePath[RTPATH_MAX];
 /** The length of g_szrtProcExePath. */
-size_t      g_cchrtProcExePath;
+DECLHIDDEN(size_t)          g_cchrtProcExePath;
 /** The length of directory path component of g_szrtProcExePath. */
-size_t      g_cchrtProcDir;
+DECLHIDDEN(size_t)          g_cchrtProcDir;
 /** The offset of the process name into g_szrtProcExePath. */
-size_t      g_offrtProcName;
+DECLHIDDEN(size_t)          g_offrtProcName;
 
 /**
  * Program start nanosecond TS.
  */
-uint64_t    g_u64ProgramStartNanoTS;
+DECLHIDDEN(uint64_t)        g_u64ProgramStartNanoTS;
 
 /**
  * Program start microsecond TS.
  */
-uint64_t    g_u64ProgramStartMicroTS;
+DECLHIDDEN(uint64_t)        g_u64ProgramStartMicroTS;
 
 /**
  * Program start millisecond TS.
  */
-uint64_t    g_u64ProgramStartMilliTS;
+DECLHIDDEN(uint64_t)        g_u64ProgramStartMilliTS;
 
 /**
  * The process identifier of the running process.
  */
-RTPROCESS   g_ProcessSelf = NIL_RTPROCESS;
+DECLHIDDEN(RTPROCESS)       g_ProcessSelf = NIL_RTPROCESS;
 
 /**
  * The current process priority.
  */
-RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
+DECLHIDDEN(RTPROCPRIORITY)  g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
 /**
- * Set if the atexit callback has been called, i.e. indicating 
- * that the process is terminating. 
+ * Set if the atexit callback has been called, i.e. indicating
+ * that the process is terminating.
  */
-bool volatile   g_frtAtExitCalled = false;
+DECLHIDDEN(bool volatile)   g_frtAtExitCalled = false;
 
 #ifdef IPRT_WITH_ALIGNMENT_CHECKS
 /**
