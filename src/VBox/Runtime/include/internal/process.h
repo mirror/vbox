@@ -49,7 +49,7 @@ extern DECLHIDDEN(bool volatile)    g_frtAtExitCalled;
  * @param   enmPriority     The priority to validate and set.
  * @remark  Located in sched.
  */
-int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority);
+DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority);
 
 /**
  * Determines the full path to the executable image.

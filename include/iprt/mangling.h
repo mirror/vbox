@@ -48,6 +48,7 @@
  * Stable functions (alphabetical order):
  */
 # define ASMAtomicCmpXchgExU64                          RT_MANGLER(ASMAtomicCmpXchgExU64)   /* not-some-systems... */
+# define ASMAtomicCmpXchgExU64                          RT_MANGLER(ASMAtomicCmpXchgExU64)   /* not-some-systems... */
 # define ASMAtomicCmpXchgU64                            RT_MANGLER(ASMAtomicCmpXchgU64)     /* not-some-systems... */
 # define ASMAtomicReadU64                               RT_MANGLER(ASMAtomicReadU64)        /* not-some-systems... */
 # define ASMAtomicUoReadU64                             RT_MANGLER(ASMAtomicUoReadU64)      /* not-some-systems... */
@@ -308,6 +309,7 @@
 # define RTDbgAsFirstAddr                               RT_MANGLER(RTDbgAsFirstAddr)
 # define RTDbgAsLastAddr                                RT_MANGLER(RTDbgAsLastAddr)
 # define RTDbgAsLineAdd                                 RT_MANGLER(RTDbgAsLineAdd)
+# define RTDbgAsLineByAddr                              RT_MANGLER(RTDbgAsLineByAddr)
 # define RTDbgAsLineByAddrA                             RT_MANGLER(RTDbgAsLineByAddrA)
 # define RTDbgAsModuleByAddr                            RT_MANGLER(RTDbgAsModuleByAddr)
 # define RTDbgAsModuleByIndex                           RT_MANGLER(RTDbgAsModuleByIndex)
@@ -665,6 +667,7 @@
 # define RTManifestPtIosAddEntryNow                     RT_MANGLER(RTManifestPtIosAddEntryNow)
 # define RTManifestReadStandard                         RT_MANGLER(RTManifestReadStandard)
 # define RTManifestReadStandardEx                       RT_MANGLER(RTManifestReadStandardEx)
+# define RTManifestReadStandardFromFile                 RT_MANGLER(RTManifestReadStandardFromFile)
 # define RTManifestRelease                              RT_MANGLER(RTManifestRelease)
 # define RTManifestRetain                               RT_MANGLER(RTManifestRetain)
 # define RTManifestSetAttr                              RT_MANGLER(RTManifestSetAttr)
@@ -675,6 +678,7 @@
 # define RTManifestWriteFiles                           RT_MANGLER(RTManifestWriteFiles)
 # define RTManifestWriteFilesBuf                        RT_MANGLER(RTManifestWriteFilesBuf)
 # define RTManifestWriteStandard                        RT_MANGLER(RTManifestWriteStandard)
+# define RTManifestWriteStandardToFile                  RT_MANGLER(RTManifestWriteStandardToFile)
 # define RTMd5                                          RT_MANGLER(RTMd5)
 # define RTMd5Final                                     RT_MANGLER(RTMd5Final)
 # define RTMd5FromString                                RT_MANGLER(RTMd5FromString)
@@ -923,6 +927,11 @@
 # define RTR3InitAndSUPLibWithProgramPath               RT_MANGLER(RTR3InitAndSUPLibWithProgramPath)
 # define RTR3InitEx                                     RT_MANGLER(RTR3InitEx)
 # define RTR3InitWithProgramPath                        RT_MANGLER(RTR3InitWithProgramPath)
+# define rtR3MemAlloc                                   RT_MANGLER(rtR3MemAlloc)
+# define rtR3MemFree                                    RT_MANGLER(rtR3MemFree)
+# define rtR3MemRealloc                                 RT_MANGLER(rtR3MemRealloc)
+# define RTRCInit                                       RT_MANGLER(RTRCInit)
+# define RTRCTerm                                       RT_MANGLER(RTRCTerm)
 # define RTRandAdvBytes                                 RT_MANGLER(RTRandAdvBytes)
 # define RTRandAdvCreateParkMiller                      RT_MANGLER(RTRandAdvCreateParkMiller)
 # define RTRandAdvCreateSystemFaster                    RT_MANGLER(RTRandAdvCreateSystemFaster)
@@ -1101,6 +1110,9 @@
 # define RTSocketToNative                               RT_MANGLER(RTSocketToNative)
 # define RTSocketWrite                                  RT_MANGLER(RTSocketWrite)
 # define RTSocketWriteNB                                RT_MANGLER(RTSocketWriteNB)
+# define RTSortApvIsSorted                              RT_MANGLER(RTSortApvIsSorted)
+# define RTSortApvShell                                 RT_MANGLER(RTSortApvShell)
+# define RTSortIsSorted                                 RT_MANGLER(RTSortIsSorted)
 # define RTSpinlockAcquire                              RT_MANGLER(RTSpinlockAcquire)
 # define RTSpinlockAcquireNoInts                        RT_MANGLER(RTSpinlockAcquireNoInts)
 # define RTSpinlockCreate                               RT_MANGLER(RTSpinlockCreate)
@@ -1483,6 +1495,7 @@
 # define RTVfsChainOpenFile                             RT_MANGLER(RTVfsChainOpenFile)
 # define RTVfsChainOpenIoStream                         RT_MANGLER(RTVfsChainOpenIoStream)
 # define RTVfsChainSpecFree                             RT_MANGLER(RTVfsChainSpecFree)
+# define RTVfsChainSpecParse                            RT_MANGLER(RTVfsChainSpecParse)
 # define RTVfsDirRelease                                RT_MANGLER(RTVfsDirRelease)
 # define RTVfsDirRetain                                 RT_MANGLER(RTVfsDirRetain)
 # define RTVfsFileFlush                                 RT_MANGLER(RTVfsFileFlush)

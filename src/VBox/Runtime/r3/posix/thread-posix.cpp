@@ -89,7 +89,7 @@ static void rtThreadKeyDestruct(void *pvValue);
 static void rtThreadPosixPokeSignal(int iSignal);
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     /*
      * Allocate the TLS (key in posix terms) where we store the pointer to
@@ -188,7 +188,7 @@ static void rtThreadPosixPokeSignal(int iSignal)
  *
  * @param   pThread     Pointer to the thread structure.
  */
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     /*
      * Block SIGALRM - required for timer-posix.cpp.
@@ -211,7 +211,7 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     if (pThread == (PRTTHREADINT)pthread_getspecific(g_SelfKey))
         pthread_setspecific(g_SelfKey, NULL);
@@ -263,7 +263,7 @@ static void *rtThreadNativeMain(void *pvArgs)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
 {
     /*
      * Set the default stack size.

@@ -137,7 +137,7 @@ typedef RTTHREADINT *PRTTHREADINT;
  *
  * @returns iprt status code.
  */
-int rtThreadNativeInit(void);
+DECLHIDDEN(int) rtThreadNativeInit(void);
 
 /**
  * Create a native thread.
@@ -147,7 +147,7 @@ int rtThreadNativeInit(void);
  * @param   pThreadInt      The thread data structure for the thread.
  * @param   pNativeThread   Where to store the native thread identifier.
  */
-int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread);
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread);
 
 /**
  * Adopts a thread, this is called immediately after allocating the
@@ -155,7 +155,7 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
  *
  * @param   pThread     Pointer to the thread structure.
  */
-int rtThreadNativeAdopt(PRTTHREADINT pThread);
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread);
 
 /**
  * Called from rtThreadDestroy so that the TLS entry and any native data in the
@@ -163,7 +163,7 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread);
  *
  * @param   pThread         The thread structure.
  */
-void rtThreadNativeDestroy(PRTTHREADINT pThread);
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread);
 
 /**
  * Sets the priority of the thread according to the thread type
@@ -177,7 +177,7 @@ void rtThreadNativeDestroy(PRTTHREADINT pThread);
  * @param   enmType     The thread type.
  * @remark  Located in sched.
  */
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
 
 #ifdef IN_RING3
 # ifdef RT_OS_WINDOWS
@@ -187,29 +187,26 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
  * It give the Win32/64 backend a chance to terminate alien
  * threads properly.
  */
-void rtThreadNativeDetach(void);
+DECLHIDDEN(void) rtThreadNativeDetach(void);
 # endif
 #endif /* !IN_RING0 */
 
 
 /* thread.cpp */
-int          rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
-void         rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
-                              const char *pszFile, unsigned uLine, RTUINTPTR uId);
-void         rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState);
-uint32_t     rtThreadRelease(PRTTHREADINT pThread);
-void         rtThreadTerminate(PRTTHREADINT pThread, int rc);
-PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread);
-PRTTHREADINT rtThreadGet(RTTHREAD Thread);
-int          rtThreadInit(void);
-void         rtThreadTerm(void);
-void         rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
+DECLHIDDEN(int)          rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
+DECLHIDDEN(uint32_t)     rtThreadRelease(PRTTHREADINT pThread);
+DECLHIDDEN(void)         rtThreadTerminate(PRTTHREADINT pThread, int rc);
+DECLHIDDEN(PRTTHREADINT) rtThreadGetByNative(RTNATIVETHREAD NativeThread);
+DECLHIDDEN(PRTTHREADINT) rtThreadGet(RTTHREAD Thread);
+DECLHIDDEN(int)          rtThreadInit(void);
+DECLHIDDEN(void)         rtThreadTerm(void);
+DECLHIDDEN(void)         rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
 #ifdef IN_RING3
-int          rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
+DECLHIDDEN(int)          rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
 #endif /* !IN_RING0 */
 #ifdef IPRT_WITH_GENERIC_TLS
-void         rtThreadClearTlsEntry(RTTLS iTls);
-void         rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
+DECLHIDDEN(void)         rtThreadClearTlsEntry(RTTLS iTls);
+DECLHIDDEN(void)         rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
 
 #ifdef ___iprt_asm_h

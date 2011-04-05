@@ -36,7 +36,7 @@
 #include "internal/thread.h"
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     /* No TLS in Ring-0. :-/ */
     return VINF_SUCCESS;
@@ -49,7 +49,7 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /*
      * Convert the IPRT priority type to NT priority.
@@ -81,13 +81,13 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);
 }
@@ -111,7 +111,7 @@ static VOID __stdcall rtThreadNativeMain(PVOID pvArg)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     /*
      * PsCreateSysemThread create a thread an give us a handle in return.

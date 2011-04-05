@@ -103,9 +103,9 @@ typedef void (*DBusFreeFunction) (void *);
 
 /* Declarations of the functions that we need from libdbus-1 */
 #define VBOX_DBUS_GENERATE_HEADER
-
+RT_C_DECLS_BEGIN
 #include <VBox/dbus-calls.h>
-
+RT_C_DECLS_END
 #undef VBOX_DBUS_GENERATE_HEADER
 
 #endif /* ___VBox_DBus_h not defined */

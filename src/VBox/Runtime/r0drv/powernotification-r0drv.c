@@ -273,7 +273,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
 RT_EXPORT_SYMBOL(RTPowerNotificationDeregister);
 
 
-int rtR0PowerNotificationInit(void)
+DECLHIDDEN(int) rtR0PowerNotificationInit(void)
 {
     int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
     if (RT_SUCCESS(rc))
@@ -289,7 +289,7 @@ int rtR0PowerNotificationInit(void)
 }
 
 
-void rtR0PowerNotificationTerm(void)
+DECLHIDDEN(void) rtR0PowerNotificationTerm(void)
 {
     PRTPOWERNOTIFYREG   pHead;
     RTSPINLOCKTMP       Tmp       = RTSPINLOCKTMP_INITIALIZER;

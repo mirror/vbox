@@ -213,7 +213,7 @@ RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTRandAdvU64);
 
 
-DECLCALLBACK(void)  rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb)
+DECLHIDDEN(DECLCALLBACK(void))  rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb)
 {
     while (cb > 0)
     {
@@ -245,7 +245,7 @@ DECLCALLBACK(void)  rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *p
 }
 
 
-DECLCALLBACK(void)  rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *pb, size_t cb)
+DECLHIDDEN(DECLCALLBACK(void))  rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *pb, size_t cb)
 {
     while (cb > 0)
     {
@@ -289,7 +289,7 @@ DECLCALLBACK(void)  rtRandAdvSynthesizeBytesFromU64(PRTRANDINT pThis, uint8_t *p
 }
 
 
-DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
+DECLHIDDEN(DECLCALLBACK(uint32_t))  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
 {
     union
     {
@@ -323,13 +323,13 @@ DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32
 }
 
 
-DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
+DECLHIDDEN(DECLCALLBACK(uint32_t))  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
 {
     return (uint32_t)pThis->pfnGetU64(pThis, u32First, u32Last);
 }
 
 
-DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last)
+DECLHIDDEN(DECLCALLBACK(uint64_t))  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last)
 {
     union
     {
@@ -364,7 +364,7 @@ DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64
 }
 
 
-DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last)
+DECLHIDDEN(DECLCALLBACK(uint64_t))  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last)
 {
     uint64_t off = u64Last - u64First;
     if (off <= UINT32_MAX)
@@ -377,7 +377,7 @@ DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t
 
 
 /** @copydoc RTRANDINT::pfnSeed */
-DECLCALLBACK(int) rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed)
+DECLHIDDEN(DECLCALLBACK(int)) rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed)
 {
     NOREF(pThis);
     NOREF(u64Seed);
@@ -386,7 +386,7 @@ DECLCALLBACK(int) rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed)
 
 
 /** @copydoc RTRANDINT::pfnSaveState */
-DECLCALLBACK(int) rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState)
+DECLHIDDEN(DECLCALLBACK(int)) rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState)
 {
     NOREF(pThis);
     NOREF(pszState);
@@ -396,7 +396,7 @@ DECLCALLBACK(int) rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_
 
 
 /** @copydoc RTRANDINT::pfnRestoreState */
-DECLCALLBACK(int) rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState)
+DECLHIDDEN(DECLCALLBACK(int)) rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState)
 {
     NOREF(pThis);
     NOREF(pszState);
@@ -405,7 +405,7 @@ DECLCALLBACK(int) rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszSta
 
 
 /** @copydoc RTRANDINT::pfnDestroy */
-DECLCALLBACK(int) rtRandAdvDefaultDestroy(PRTRANDINT pThis)
+DECLHIDDEN(DECLCALLBACK(int)) rtRandAdvDefaultDestroy(PRTRANDINT pThis)
 {
     pThis->u32Magic = ~RTRANDINT_MAGIC;
     RTMemFree(pThis);

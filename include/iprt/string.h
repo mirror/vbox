@@ -32,11 +32,15 @@
 #include <iprt/stdarg.h>
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
+RT_C_DECLS_BEGIN
 # include <linux/string.h>
+RT_C_DECLS_END
+
 #elif defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
 RT_C_DECLS_BEGIN
 # include "xf86_ansic.h"
 RT_C_DECLS_END
+
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
 /** @todo
  * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
@@ -65,6 +69,7 @@ RT_C_DECLS_END
    * Defining a macro using bcopy here
    */
 # define memmove(dst, src, size) bcopy(src, dst, size)
+
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
    * Same case as with FreeBSD kernel:
@@ -75,6 +80,7 @@ RT_C_DECLS_END
 # include <string.h>
 # undef ffs
 # undef strpbrk
+
 #else
 # include <string.h>
 #endif

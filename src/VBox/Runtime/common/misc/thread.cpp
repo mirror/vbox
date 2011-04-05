@@ -126,7 +126,7 @@ static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_
  *
  * @returns iprt status code.
  */
-int rtThreadInit(void)
+DECLHIDDEN(int) rtThreadInit(void)
 {
 #ifdef IN_RING3
     int rc = VINF_ALREADY_INITIALIZED;
@@ -180,7 +180,7 @@ int rtThreadInit(void)
 /**
  * Terminates the thread database.
  */
-void rtThreadTerm(void)
+DECLHIDDEN(void) rtThreadTerm(void)
 {
 #ifdef IN_RING3
     /* we don't cleanup here yet */
@@ -263,6 +263,7 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFla
     return rc;
 }
 
+#ifdef IN_RING3
 
 /**
  * Adopts a non-IPRT thread.
@@ -328,6 +329,7 @@ RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void)
 }
 RT_EXPORT_SYMBOL(RTThreadSelfAutoAdopt);
 
+#endif /* IN_RING3 */
 
 /**
  * Allocates a per thread data structure and initializes the basic fields.
@@ -391,7 +393,7 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
  * @param   pThread         Pointer to thread structure allocated by rtThreadAlloc().
  * @param   NativeThread    The native thread id.
  */
-void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
+DECLHIDDEN(void) rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
 {
     Assert(pThread);
     Assert(pThread->u32Magic == RTTHREADINT_MAGIC);
@@ -497,7 +499,7 @@ DECLINLINE(bool) rtThreadIsAlive(PRTTHREADINT pThread)
  * @returns NULL if not a thread IPRT knows.
  * @param   NativeThread    The native thread id.
  */
-PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread)
+DECLHIDDEN(PRTTHREADINT) rtThreadGetByNative(RTNATIVETHREAD NativeThread)
 {
     PRTTHREADINT pThread;
     /*
@@ -519,7 +521,7 @@ PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread)
  * @returns NULL if Thread was not found.
  * @param   Thread      Thread id which structure is to be returned.
  */
-PRTTHREADINT rtThreadGet(RTTHREAD Thread)
+DECLHIDDEN(PRTTHREADINT) rtThreadGet(RTTHREAD Thread)
 {
     if (    Thread != NIL_RTTHREAD
         &&  VALID_PTR(Thread))
@@ -543,7 +545,7 @@ PRTTHREADINT rtThreadGet(RTTHREAD Thread)
  * @returns New reference count.
  * @param   pThread     The thread structure to release.
  */
-uint32_t rtThreadRelease(PRTTHREADINT pThread)
+DECLHIDDEN(uint32_t) rtThreadRelease(PRTTHREADINT pThread)
 {
     uint32_t cRefs;
 
@@ -629,7 +631,7 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
  * @param   pThread     The thread structure.
  * @param   rc          The thread result code.
  */
-void rtThreadTerminate(PRTTHREADINT pThread, int rc)
+DECLHIDDEN(void) rtThreadTerminate(PRTTHREADINT pThread, int rc)
 {
     Assert(pThread->cRefs >= 1);
 
@@ -668,7 +670,7 @@ void rtThreadTerminate(PRTTHREADINT pThread, int rc)
  * @param   NativeThread    The native thread id.
  * @param   pszThreadName   The name of the thread (purely a dummy for backtrace).
  */
-int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName)
+DECLHIDDEN(int) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName)
 {
     int rc;
     NOREF(pszThreadName);
@@ -1291,7 +1293,7 @@ static DECLCALLBACK(int) rtThreadSetPriorityOne(PAVLPVNODECORE pNode, void *pvUs
  * @returns iprt status code.
  * @param   enmPriority     The new priority.
  */
-int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
+DECLHIDDEN(int) rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
 {
     LogFlow(("rtThreadDoSetProcPriority: enmPriority=%d\n", enmPriority));
 
@@ -1473,7 +1475,7 @@ static DECLCALLBACK(int) rtThreadClearTlsEntryCallback(PAVLPVNODECORE pNode, voi
  *
  * @param   iTls        The TLS entry. (valid)
  */
-void rtThreadClearTlsEntry(RTTLS iTls)
+DECLHIDDEN(void) rtThreadClearTlsEntry(RTTLS iTls)
 {
     RT_THREAD_LOCK_TMP(Tmp);
     RT_THREAD_LOCK_RD(Tmp);

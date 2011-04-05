@@ -63,7 +63,8 @@
  * @param   fFlags          Flags (RTSTR_NTFS_*).
  * @param   chArgSize       The argument size specifier, 'l' or 'L'.
  */
-size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs, int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize)
+DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
+                                 int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize)
 {
     const char *pszFormatOrg = *ppszFormat;
     char ch = *(*ppszFormat)++;

@@ -71,7 +71,7 @@ uint32_t                    g_offrtNtPbDpcQueueDepth;
 
 
 
-int rtR0InitNative(void)
+DECLHIDDEN(int) rtR0InitNative(void)
 {
     /*
      * Init the Nt cpu set.
@@ -263,7 +263,7 @@ int rtR0InitNative(void)
 }
 
 
-void rtR0TermNative(void)
+DECLHIDDEN(void) rtR0TermNative(void)
 {
 }
 

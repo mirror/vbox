@@ -40,7 +40,7 @@
 #include "internal/thread.h"
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     /* No TLS in Ring-0. :-/ */
     return VINF_SUCCESS;
@@ -53,7 +53,7 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /*
      * Convert the priority type to scheduling policies.
@@ -130,13 +130,13 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);
 }
@@ -162,7 +162,7 @@ static void rtThreadNativeMain(void *pvArg, wait_result_t Ignored)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     RT_ASSERT_PREEMPTIBLE();
 

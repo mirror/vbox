@@ -42,7 +42,7 @@ RT_C_DECLS_BEGIN
  * @param   pszFile     Location file name.
  * @param   pszFunction Location function name.
  */
-void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
+DECLHIDDEN(void) rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
 
 /**
  * Print the 2nd (optional) part of an assert message to whatever native
@@ -53,7 +53,7 @@ void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
  * @param   pszFormat   Printf like format string.
  * @param   va          Arguments to that string.
  */
-void rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va);
+DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va);
 
 #endif
 

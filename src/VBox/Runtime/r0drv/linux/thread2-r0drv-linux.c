@@ -43,13 +43,13 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     return VINF_SUCCESS;
 }
 
 
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /* See comment near MAX_RT_PRIO in linux/sched.h for details on
        sched_priority. */
@@ -96,13 +96,13 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);
 }
@@ -126,7 +126,7 @@ static int rtThreadNativeMain(void *pvArg)
 #endif
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4)
     struct task_struct *NativeThread;

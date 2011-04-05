@@ -54,7 +54,7 @@
  * @param   pv          The memory object mapping.
  * @param   cb          The size of the memory object.
  */
-PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb)
+DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb)
 {
     PRTR0MEMOBJINTERNAL pNew;
 
@@ -89,7 +89,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
  *
  * @param   pMem    The incomplete memory object to delete.
  */
-void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem)
+DECLHIDDEN(void) rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem)
 {
     if (pMem)
     {

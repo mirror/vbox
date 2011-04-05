@@ -1,7 +1,6 @@
 /** @file
- *
- * Stubs for dynamically loading libdbus-1 and the symbols
- * which are needed by VirtualBox.
+ * Stubs for dynamically loading libdbus-1 and the symbols which are needed by
+ * VirtualBox.
  */
 
 /*
@@ -26,10 +25,10 @@
  */
 
 /** The file name of the DBus library */
-#define RT_RUNTIME_LOADER_LIB_NAME "libdbus-1.so.3"
+#define RT_RUNTIME_LOADER_LIB_NAME  "libdbus-1.so.3"
 
 /** The name of the loader function */
-#define RT_RUNTIME_LOADER_FUNCTION RTDBusLoadLib
+#define RT_RUNTIME_LOADER_FUNCTION  RTDBusLoadLib
 
 /** The following are the symbols which we need from the DBus library. */
 #define RT_RUNTIME_LOADER_INSERT_SYMBOLS \
@@ -132,14 +131,16 @@
 # include <iprt/runtime-loader.h>
 # undef RT_RUNTIME_LOADER_GENERATE_HEADER
 # undef RT_RUNTIME_LOADER_GENERATE_DECLS
-#elif defined (VBOX_DBUS_GENERATE_BODY)
+
+#elif defined(VBOX_DBUS_GENERATE_BODY)
 # define RT_RUNTIME_LOADER_GENERATE_BODY_STUBS
 # include <iprt/runtime-loader.h>
 # undef RT_RUNTIME_LOADER_GENERATE_BODY_STUBS
+
 #else
-# error This file should only be included to generate stubs for loading the \
-DBus library at runtime
+# error This file should only be included to generate stubs for loading the DBus library at runtime
 #endif
 
 #undef RT_RUNTIME_LOADER_LIB_NAME
 #undef RT_RUNTIME_LOADER_INSERT_SYMBOLS
+

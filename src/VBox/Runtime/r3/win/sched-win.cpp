@@ -256,7 +256,7 @@ static const PROCPRIORITY *g_pProcessPriority = &g_aDefaultPriority;
  * @returns iprt status code.
  * @param   enmType     The thread type to be assumed for the current thread.
  */
-int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     return VINF_SUCCESS;
@@ -272,7 +272,7 @@ int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
  * @param   enmPriority     The priority to validate and set.
  * @remark  Located in sched.
  */
-int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
+DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 {
     Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
     return VINF_SUCCESS;
@@ -285,7 +285,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
  * @returns Valid win32 handle for the specified thread.
  * @param   pThread     The thread.
  */
-inline HANDLE rtThreadNativeGetHandle(PRTTHREADINT pThread)
+DECLINLINE(HANDLE) rtThreadNativeGetHandle(PRTTHREADINT pThread)
 {
     if ((uintptr_t)pThread->Core.Key == GetCurrentThreadId())
         return GetCurrentThread();
@@ -305,7 +305,7 @@ inline HANDLE rtThreadNativeGetHandle(PRTTHREADINT pThread)
  * @param   enmType     The thread type.
  * @remark  Located in sched.
  */
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     AssertMsg(g_pProcessPriority && g_pProcessPriority->aTypes[enmType].enmType == enmType,

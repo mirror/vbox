@@ -139,7 +139,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 }
 
 
-int rtR0MpNotificationNativeInit(void)
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     int rc;
 
@@ -153,19 +153,19 @@ int rtR0MpNotificationNativeInit(void)
 }
 
 
-void rtR0MpNotificationNativeTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
     unregister_cpu_notifier(&g_NotifierBlock);
 }
 
 #else   /* Not supported / Not needed */
 
-int rtR0MpNotificationNativeInit(void)
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     return VINF_SUCCESS;
 }
 
-void rtR0MpNotificationNativeTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
 }
 

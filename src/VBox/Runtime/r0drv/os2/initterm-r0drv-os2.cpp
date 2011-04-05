@@ -54,7 +54,7 @@ PGINFOSEG   g_pGIS = NULL;
 RTFAR16     g_fpLIS = {0, 0};
 
 
-int rtR0InitNative(void)
+DECLHIDDEN(int) rtR0InitNative(void)
 {
     /*
      * Get the DOS Tables.
@@ -80,7 +80,7 @@ int rtR0InitNative(void)
 }
 
 
-void rtR0TermNative(void)
+DECLHIDDEN(void) rtR0TermNative(void)
 {
     /* nothing to do here yet. */
 }

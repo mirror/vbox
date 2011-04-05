@@ -41,7 +41,7 @@
 /**
  * OS specific allocation function.
  */
-int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
+DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
         return VERR_NOT_SUPPORTED;
@@ -65,7 +65,7 @@ int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 /**
  * OS specific free function.
  */
-void rtR0MemFree(PRTMEMHDR pHdr)
+DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
     IOFree(pHdr, pHdr->cb + sizeof(*pHdr));

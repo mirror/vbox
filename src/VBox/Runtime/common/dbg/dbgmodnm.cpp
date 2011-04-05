@@ -503,7 +503,7 @@ static DECLCALLBACK(int) rtDbgModNm_TryOpen(PRTDBGMODINT pMod)
 
 
 /** Virtual function table for the NM-like map file reader. */
-DECLHIDDEN(RTDBGMODVTDBG const) g_rtDbgModVtDbgNm =
+DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgNm =
 {
     /*.u32Magic = */            RTDBGMODVTDBG_MAGIC,
     /*.fSupports = */           RT_DBGTYPE_MAP,

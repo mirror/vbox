@@ -76,7 +76,7 @@ static size_t g_cPages;
  * API for cleaning up the heap spinlock on IPRT termination.
  * This is as RTMemExecDonate specific to AMD64 Linux/GNU.
  */
-void rtR0MemExecCleanup(void)
+DECLHIDDEN(void) rtR0MemExecCleanup(void)
 {
 # ifdef RTMEMALLOC_EXEC_HEAP_VM_AREA
     unsigned i;
@@ -203,7 +203,7 @@ RT_EXPORT_SYMBOL(RTR0MemExecInit);
 /**
  * OS specific allocation function.
  */
-int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
+DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     PRTMEMHDR pHdr;
 
@@ -267,7 +267,7 @@ int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 /**
  * OS specific free function.
  */
-void rtR0MemFree(PRTMEMHDR pHdr)
+DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
     if (pHdr->fFlags & RTMEMHDR_FLAG_KMALLOC)

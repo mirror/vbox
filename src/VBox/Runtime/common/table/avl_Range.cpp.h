@@ -35,7 +35,7 @@
  * @param     ppTree  Pointer to Pointer to the tree root node.
  * @param     Key     The Key to find matching range for.
  */
-RTDECL(PKAVLNODECORE) KAVL_FN(RangeGet)(PPKAVLNODECORE ppTree, register KAVLKEY Key)
+KAVL_DECL(PKAVLNODECORE) KAVL_FN(RangeGet)(PPKAVLNODECORE ppTree, register KAVLKEY Key)
 {
     register PKAVLNODECORE  pNode = KAVL_GET_POINTER_NULL(ppTree);
     if (pNode)

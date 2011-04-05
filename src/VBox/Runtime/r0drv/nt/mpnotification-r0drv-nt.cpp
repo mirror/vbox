@@ -124,7 +124,7 @@ static VOID __stdcall rtMpNotificationNtCallback(PVOID pvUser,
 }
 
 
-int rtR0MpNotificationNativeInit(void)
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     /*
      * Try resolve the symbols.
@@ -163,7 +163,7 @@ int rtR0MpNotificationNativeInit(void)
 }
 
 
-void rtR0MpNotificationNativeTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
     if (    g_pfnKeDeregisterProcessorChangeCallback
         &&  g_hCallback)
@@ -175,12 +175,12 @@ void rtR0MpNotificationNativeTerm(void)
 
 #else   /* Not supported */
 
-int rtR0MpNotificationNativeInit(void)
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
     return VINF_SUCCESS;
 }
 
-void rtR0MpNotificationNativeTerm(void)
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
 }
 

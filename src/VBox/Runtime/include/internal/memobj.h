@@ -1,10 +1,10 @@
-/* $Revision$ */
+/* $Id$ */
 /** @file
  * IPRT - Ring-0 Memory Objects.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -287,7 +287,7 @@ DECLINLINE(bool) rtR0MemObjIsRing3(PRTR0MEMOBJINTERNAL pMem)
  * @returns IPRT status code. On failure it is assumed that the object remains valid.
  * @param   pMem        The ring-0 memory object handle to the memory which should be freed.
  */
-int rtR0MemObjNativeFree(PRTR0MEMOBJINTERNAL pMem);
+DECLHIDDEN(int) rtR0MemObjNativeFree(PRTR0MEMOBJINTERNAL pMem);
 
 /**
  * Allocates page aligned virtual kernel memory.
@@ -299,7 +299,7 @@ int rtR0MemObjNativeFree(PRTR0MEMOBJINTERNAL pMem);
  * @param   cb              Number of bytes to allocate, page aligned.
  * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
  */
-int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
+DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
 
 /**
  * Allocates page aligned virtual kernel memory with physical backing below 4GB.
@@ -311,7 +311,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  * @param   cb              Number of bytes to allocate, page aligned.
  * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
  */
-int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
+DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
 
 /**
  * Allocates page aligned virtual kernel memory with contiguous physical backing below 4GB.
@@ -323,7 +323,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
  * @param   cb              Number of bytes to allocate, page aligned.
  * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
  */
-int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
 
 /**
  * Locks a range of user virtual memory.
@@ -336,7 +336,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process to lock pages in.
  */
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process);
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.
@@ -348,7 +348,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  */
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess);
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess);
 
 /**
  * Allocates contiguous page aligned physical memory without (necessarily) any
@@ -362,7 +362,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are PAGE_SIZE, _2M, _4M and _1G.
  */
-int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment);
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment);
 
 /**
  * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
@@ -375,7 +375,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
  * @param   PhysHighest     The highest permitable address (inclusive).
  *                          NIL_RTHCPHYS if any address is acceptable.
  */
-int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest);
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest);
 
 /**
  * Creates a page aligned, contiguous, physical memory object.
@@ -386,7 +386,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
  * @param   cb              The size of the object in bytes, page aligned.
  * @param   uCachePolicy    One of the RTMEM_CACHE_XXX modes.
  */
-int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy);
+DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy);
 
 /**
  * Reserves kernel virtual address space.
@@ -398,7 +398,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  * @param   cb              The number of bytes to reserve, page aligned.
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
  */
-int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment);
+DECLHIDDEN(int) rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment);
 
 /**
  * Reserves user virtual address space in the current process.
@@ -410,7 +410,7 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
  * @param   R0Process       The process to reserve the memory in.
  */
-int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process);
+DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process);
 
 /**
  * Maps a memory object into user virtual address space in the current process.
@@ -430,8 +430,8 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
  *                          zero the entire object is mapped. The value must be
  *                          page aligned.
  */
-int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                              unsigned fProt, size_t offSub, size_t cbSub);
+DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
+                                          unsigned fProt, size_t offSub, size_t cbSub);
 
 /**
  * Maps a memory object into user virtual address space in the current process.
@@ -444,7 +444,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  * @param   R0Process       The process to map the memory into.
  */
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
+DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
 
 /**
  * Change the page level protection of one or more pages in a memory object.
@@ -458,7 +458,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
  *                          aligned.
  * @param   fProt           Combination of RTMEM_PROT_* flags.
  */
-int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt);
+DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt);
 
 /**
  * Get the physical address of an page in the memory object.
@@ -470,10 +470,10 @@ int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSu
  * @param   pMem            The ring-0 memory object handle.
  * @param   iPage           The page number within the object (valid).
  */
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage);
+DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage);
 
-PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb);
-void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
+DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb);
+DECLHIDDEN(void) rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
 
 /** @} */
 

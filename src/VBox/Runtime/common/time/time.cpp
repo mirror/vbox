@@ -419,7 +419,7 @@ RT_EXPORT_SYMBOL(RTTimeImplode);
  * Internal worker for RTTimeNormalize and RTTimeLocalNormalize.
  * It doesn't adjust the UCT offset but leaves that for RTTimeLocalNormalize.
  */
-PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
+static PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
 {
     unsigned    uSecond;
     unsigned    uMinute;

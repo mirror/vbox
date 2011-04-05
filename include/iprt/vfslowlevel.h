@@ -1108,9 +1108,9 @@ typedef RTVFSCHAINELEMENTREG const *PCRTVFSCHAINELEMENTREG;
  * @param   ppszError           On failure, this will point at the error
  *                              location in @a pszSpec.  Optional.
  */
-RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, RTVFSCHAINACTION enmLeadingAction,
+RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSCHAINACTION enmLeadingAction,
                                             RTVFSCHAINACTION enmTrailingAction,
-                                            PRTVFSCHAINSPEC *ppSpec, const char *ppszError);
+                                            PRTVFSCHAINSPEC *ppSpec, const char **ppszError);
 
 /** @name RTVfsChainSpecParse
  * @{ */
