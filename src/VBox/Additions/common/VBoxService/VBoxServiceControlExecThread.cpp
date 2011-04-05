@@ -27,7 +27,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 
-#include "VboxServicePipeBuf.h"
+#include "VBoxServicePipeBuf.h"
 #include "VBoxServiceControlExecThread.h"
 
 extern RTLISTNODE g_GuestControlExecThreads;
