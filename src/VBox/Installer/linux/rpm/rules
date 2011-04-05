@@ -113,6 +113,7 @@ cfg_flags := $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
 bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     LOCALCFG=$(current)/rpm/LocalConfig.kmk \
 	     PATH_OUT=$(builddir) \
+	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
