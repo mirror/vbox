@@ -2247,8 +2247,8 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 				-e '/^strlen/d' \
 				-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 				\
-				-e '/^dbus/d' \
-				-e '/^RTDBusLoadLib/d' \
+				-e '/^_Z*[[:digit:]]\+dbus/d' \
+				-e '/^_Z13RTDBusLoadLibv/d' \
 				\
 				-e '/^VBoxHost_/d'\
 				-e '/^VBoxGuest_/d'\
