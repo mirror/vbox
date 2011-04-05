@@ -1308,19 +1308,33 @@ static int hwaccmR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: AMD-V revision                    = %X\n", pVM->hwaccm.s.svm.u32Rev));
             LogRel(("HWACCM: AMD-V max ASID                    = %d\n", pVM->hwaccm.s.uMaxASID));
             LogRel(("HWACCM: AMD-V features                    = %X\n", pVM->hwaccm.s.svm.u32Features));
-
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING\n"));
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT\n"));
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK\n"));
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE\n"));
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE\n"));
-            if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER\n"));
+            static const struct { uint32_t fFlag; const char *pszName; } s_aSvmFeatures[] =
+            {
+#define FLAG_NAME(a_Define) { a_Define, #a_Define }
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_TSC_RATE_MSR),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
+                FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
+#undef FLAG_NAME
+            };
+            uint32_t fSvmFeatures = pVM->hwaccm.s.svm.u32Features;
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aSvmFeatures); i++)
+                if (fSvmFeatures & s_aSvmFeatures[i].fFlag)
+                {
+                    LogRel(("HWACCM:    %s\n", s_aSvmFeatures[i].pszName));
+                    fSvmFeatures &= ~s_aSvmFeatures[i].fFlag;
+                }
+            if (fSvmFeatures)
+                for (unsigned iBit = 0; iBit < 32; iBit++)
+                    if (RT_BIT_32(iBit) & fSvmFeatures)
+                        LogRel(("HWACCM:    Reserved bit %u\n", iBit));
 
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
