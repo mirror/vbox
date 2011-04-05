@@ -2083,10 +2083,11 @@ bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 
 void VBoxProblemReporter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName)
 {
+    QFileInfo fi(strFolderName);
     message(pParent ? pParent : mainWindowShown(), Critical,
-            tr("<p>Cannot create the machine folder:</p>"
-               "<p><b>%1</b></p>"
-               "<p>Please check you have the permissions required to do so.</p>").arg(strFolderName));
+            tr("<p>Cannot create the machine folder <b>%1</b> in the parent directory <nobr><b>%2</b>.</nobr></p>"
+               "<p>Please check what the parent directory is really exists and "
+               "you have the permissions required to do so.</p>").arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
 /**
