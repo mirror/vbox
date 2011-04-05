@@ -323,6 +323,8 @@ typedef enum PCIRAWPOWERSTATE
     PCIRAW_POWER_SUSPEND,
     /* Resume. */
     PCIRAW_POWER_RESUME,
+     /* Reset. */
+    PCIRAW_POWER_RESET,
     /** The usual 32-bit type blow up. */
     PCIRAW_POWER_32BIT_HACK = 0x7fffffff
 } PCIRAWPOWERSTATE;
