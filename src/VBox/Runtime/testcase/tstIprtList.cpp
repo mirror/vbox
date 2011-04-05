@@ -217,20 +217,25 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
         RTTESTI_CHECK(testList.at(i) == paTestData[i]);
 
     /*
-     * Copy operator
+     * Contains
      */
-    L<T1, T2> testList2(testList);
+    L<T1, T2> testList2;
 
-    /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cTestItems);
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == paTestData[i]);
+    /* Check full list. */
+    RTTESTI_CHECK( testList.contains(paTestData[0]));
+    RTTESTI_CHECK( testList.contains(paTestData[cTestItems / 2]));
+    RTTESTI_CHECK( testList.contains(paTestData[cTestItems - 1]));
+    RTTESTI_CHECK(!testList.contains(T1()));
+    /* Check empty list. */
+    RTTESTI_CHECK(!testList2.contains(paTestData[0]));
+    RTTESTI_CHECK(!testList2.contains(paTestData[cTestItems / 2]));
+    RTTESTI_CHECK(!testList2.contains(paTestData[cTestItems - 1]));
+    RTTESTI_CHECK(!testList2.contains(T1()));
 
     /*
-     * "=" operator
+     * Copy operator
      */
-    L<T1, T2> testList3;
-    testList3 = testList;
+    L<T1, T2> testList3(testList);
 
     /* Check that all is correctly appended. */
     RTTESTI_CHECK_RETV(testList3.size() == cTestItems);
@@ -238,34 +243,45 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
         RTTESTI_CHECK(testList3.at(i) == paTestData[i]);
 
     /*
-     * Append list
+     * "=" operator
      */
-    testList2.append(testList3);
+    L<T1, T2> testList4;
+    testList4 = testList;
 
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 2);
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
+    RTTESTI_CHECK_RETV(testList4.size() == cTestItems);
+    for (size_t i = 0; i < testList4.size(); ++i)
+        RTTESTI_CHECK(testList4.at(i) == paTestData[i]);
+
+    /*
+     * Append list
+     */
+    testList3.append(testList4);
+
+    /* Check that all is correctly appended. */
+    RTTESTI_CHECK_RETV(testList3.size() == cTestItems * 2);
+    for (size_t i = 0; i < testList3.size(); ++i)
+        RTTESTI_CHECK(testList3.at(i) == paTestData[i % cTestItems]);
 
     /*
      * Prepend list
      */
-    testList2.prepend(testList3);
+    testList3.prepend(testList4);
 
     /* Check that all is correctly appended. */
-    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 3);
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
+    RTTESTI_CHECK_RETV(testList3.size() == cTestItems * 3);
+    for (size_t i = 0; i < testList3.size(); ++i)
+        RTTESTI_CHECK(testList3.at(i) == paTestData[i % cTestItems]);
 
     /*
      * "value" method
      */
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.value(i)       == paTestData[i % cTestItems]);
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.value(i, T1()) == paTestData[i % cTestItems]);
-    RTTESTI_CHECK(testList2.value(testList2.size() + 1) == T1());       /* Invalid index */
-    RTTESTI_CHECK(testList2.value(testList2.size() + 1, T1()) == T1()); /* Invalid index */
+    for (size_t i = 0; i < testList3.size(); ++i)
+        RTTESTI_CHECK(testList3.value(i)       == paTestData[i % cTestItems]);
+    for (size_t i = 0; i < testList3.size(); ++i)
+        RTTESTI_CHECK(testList3.value(i, T1()) == paTestData[i % cTestItems]);
+    RTTESTI_CHECK(testList3.value(testList3.size() + 1) == T1());       /* Invalid index */
+    RTTESTI_CHECK(testList3.value(testList3.size() + 1, T1()) == T1()); /* Invalid index */
 
     /*
      * operator[] (reading)
@@ -300,10 +316,10 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
      */
 
     /* Remove Range */
-    testList2.removeRange(cTestItems, cTestItems * 2);
-    RTTESTI_CHECK_RETV(testList2.size() == cTestItems * 2);
-    for (size_t i = 0; i < testList2.size(); ++i)
-        RTTESTI_CHECK(testList2.at(i) == paTestData[i % cTestItems]);
+    testList3.removeRange(cTestItems, cTestItems * 2);
+    RTTESTI_CHECK_RETV(testList3.size() == cTestItems * 2);
+    for (size_t i = 0; i < testList3.size(); ++i)
+        RTTESTI_CHECK(testList3.at(i) == paTestData[i % cTestItems]);
 
     /* Remove the first half (reverse) */
     size_t cRemoved = 1;
@@ -538,19 +554,19 @@ int main()
      */
     uint8_t au8TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au8TestInts); ++i)
-        au8TestInts[i] = (uint8_t)RTRandU32Ex(0, UINT8_MAX);
+        au8TestInts[i] = (uint8_t)RTRandU32Ex(1, UINT8_MAX);
     test1<RTCList,   uint8_t, uint8_t, uint8_t>("ST: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
     test1<RTCMTList, uint8_t, uint8_t, uint8_t>("MT: Native type", au8TestInts, RT_ELEMENTS(au8TestInts));
 
     uint16_t au16TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au16TestInts); ++i)
-        au16TestInts[i] = (uint16_t)RTRandU32Ex(0, UINT16_MAX);
+        au16TestInts[i] = (uint16_t)RTRandU32Ex(1, UINT16_MAX);
     test1<RTCList,   uint16_t, uint16_t, uint16_t>("ST: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
     test1<RTCMTList, uint16_t, uint16_t, uint16_t>("MT: Native type", au16TestInts, RT_ELEMENTS(au16TestInts));
 
     uint32_t au32TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au32TestInts); ++i)
-        au32TestInts[i] = RTRandU32();
+        au32TestInts[i] = RTRandU32Ex(1, UINT32_MAX);
     test1<RTCList,   uint32_t, uint32_t, uint32_t>("ST: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
     test1<RTCMTList, uint32_t, uint32_t, uint32_t>("MT: Native type", au32TestInts, RT_ELEMENTS(au32TestInts));
 
@@ -559,7 +575,7 @@ int main()
      */
     uint64_t au64TestInts[s_cTestCount];
     for (size_t i = 0; i < RT_ELEMENTS(au64TestInts); ++i)
-        au64TestInts[i] = RTRandU64();
+        au64TestInts[i] = RTRandU64Ex(1, UINT64_MAX);
     test1<RTCList,   uint64_t, uint64_t, uint64_t>("ST: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
     test1<RTCMTList, uint64_t, uint64_t, uint64_t>("MT: Specialized type", au64TestInts, RT_ELEMENTS(au64TestInts));
 

@@ -129,6 +129,17 @@ class RTCListHelper
 public:
     static inline void      set(T2 *p, size_t i, const T1 &v) { p[i] = v; }
     static inline T1 &      at(T2 *p, size_t i) { return p[i]; }
+    static inline size_t    find(T2 *p, const T1 &v, size_t cSize)
+    {
+        size_t i = 0;
+        while(i < cSize)
+        {
+            if (p[i] == v)
+                break;
+            ++i;
+        }
+        return i;
+    }
     static inline void      copyTo(T2 *p, T2 *const p1 , size_t iTo, size_t cSize)
     {
         if (cSize > 0)
@@ -147,6 +158,17 @@ class RTCListHelper<T1, T1*>
 public:
     static inline void      set(T1 **p, size_t i, const T1 &v) { p[i] = new T1(v); }
     static inline T1 &      at(T1 **p, size_t i) { return *p[i]; }
+    static inline size_t    find(T1 **p, const T1 &v, size_t cSize)
+    {
+        size_t i = 0;
+        while(i < cSize)
+        {
+            if (*p[i] == v)
+                break;
+            ++i;
+        }
+        return i;
+    }
     static inline void      copyTo(T1 **p, T1 **const p1 , size_t iTo, size_t cSize)
     {
         for (size_t i = 0; i < cSize; ++i)
@@ -556,6 +578,42 @@ public:
     }
 
     /**
+     * Check if @a val is contained in the array.
+     *
+     * @param   val     The value to check for.
+     * @return  true if it is found, false otherwise.
+     */
+    bool contains(const T &val) const
+    {
+        m_guard.enterRead();
+        bool res = RTCListHelper<T, ITYPE>::find(m_pArray, val, m_cSize) != m_cSize;
+        m_guard.leaveRead();
+        return res;
+    }
+
+    /**
+     * Remove the first item.
+     *
+     * @note No boundary checks are done. Make sure @a i is equal or greater zero
+     *       and smaller than RTCList::size.
+     */
+    void removeFirst()
+    {
+        removeAt(0);
+    }
+
+    /**
+     * Remove the last item.
+     *
+     * @note No boundary checks are done. Make sure @a i is equal or greater zero
+     *       and smaller than RTCList::size.
+     */
+    void removeLast()
+    {
+        removeAt(m_cSize - 1);
+    }
+
+    /**
      * Remove the item at position @a i.
      *
      * @note No boundary checks are done. Make sure @a i is equal or greater zero
@@ -607,6 +665,25 @@ public:
             realloc_grow(DefaultCapacity);
         m_cSize = 0;
         m_guard.leaveWrite();
+    }
+
+    /**
+     * Return the raw array. For native types this is a pointer to continuous
+     * memory of the items. For pointer types this is a continuous memory of
+     * pointers to the items.
+     *
+     * @warning If you change anything in the underlaying list, this memory
+     *          will very likely become invalid. So take care when using this
+     *          method and better try to avoid using it.
+     *
+     * @returns the raw memory.
+     */
+    ITYPE* raw() const
+    {
+        m_guard.enterRead();
+        ITYPE* res = m_pArray;
+        m_guard.leaveRead();
+        return res;
     }
 
     /**
@@ -698,7 +775,13 @@ const size_t RTCListBase<T, ITYPE, MT>::DefaultCapacity = 10;
  * @see RTCListBase
  */
 template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
-class RTCList : public RTCListBase<T, ITYPE, false> {};
+class RTCList : public RTCListBase<T, ITYPE, false>
+{
+    typedef RTCListBase<T, ITYPE, false> BASE;
+public:
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /**
  * Specialized class for using the native type list for unsigned 64-bit
@@ -707,7 +790,13 @@ class RTCList : public RTCListBase<T, ITYPE, false> {};
  * @see RTCListBase
  */
 template <>
-class RTCList<uint64_t>: public RTCListBase<uint64_t, uint64_t, false> {};
+class RTCList<uint64_t>: public RTCListBase<uint64_t, uint64_t, false>
+{
+    typedef RTCListBase<uint64_t, uint64_t, false> BASE;
+public:
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /**
  * Specialized class for using the native type list for signed 64-bit
@@ -716,7 +805,13 @@ class RTCList<uint64_t>: public RTCListBase<uint64_t, uint64_t, false> {};
  * @see RTCListBase
  */
 template <>
-class RTCList<int64_t>: public RTCListBase<int64_t, int64_t, false> {};
+class RTCList<int64_t>: public RTCListBase<int64_t, int64_t, false>
+{
+    typedef RTCListBase<int64_t, int64_t, false> BASE;
+public:
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+};
 
 /** @} */
 
