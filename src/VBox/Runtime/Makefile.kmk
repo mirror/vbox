@@ -2201,14 +2201,23 @@ test-doxygen::
 	@echo $(DOXYGEN_OUTPUT_PREV)
 	@echo $(IPRT_DOXYFILE_INPUT)
 
-test-mangling: \
+
+#
+# Test mangling.
+#
+if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
+ test-mangling:: $(IPRT_OUT_DIR)/mangling.run
+ OTHERS      += $(IPRT_OUT_DIR)/mangling.run
+ CLEANS      += $(IPRT_OUT_DIR)/mangling.run
+ $(IPRT_OUT_DIR)/mangling.run: \
 		$$(RuntimeR3_1_TARGET) \
 		$$(RuntimeR0_1_TARGET) \
 		$$(RuntimeR0Drv_1_TARGET) \
 		$$(RuntimeRC_1_TARGET)
-if1of ($(KBUILD_TARGET), win os2)
-	$(ECHO) skipped
-else if1of ($(KBUILD_TARGET), linux)
+ if1of ($(KBUILD_TARGET), win os2)
+	$(call MSG_L1,IPRT: skipped mangling test.)
+ else if $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
+	$(call MSG_L1,IPRT: Testing mangling and visiblity...)
 	rcExit=0; \
 	for fn in ` readelf -Ws $^ \
 			| $(SED) \
@@ -2252,7 +2261,8 @@ else if1of ($(KBUILD_TARGET), linux)
 		fi \
 	done; \
 	exit $${rcExit}
-else
+ else
+	$(call MSG_L1,IPRT: Testing mangling...)
 	rcExit=0; \
 	for fn in ` nm $^ \
 			| $(SED) -n \
@@ -2282,7 +2292,9 @@ else
 		fi \
 	done; \
 	exit $${rcExit}
+ endif
 endif
+	$(QUIET)$(APPEND) -t $@
 
 
 #
