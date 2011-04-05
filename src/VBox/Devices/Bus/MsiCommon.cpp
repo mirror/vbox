@@ -31,7 +31,7 @@ DECLINLINE(uint16_t) msiGetMessageControl(PPCIDEVICE pDev)
 
 DECLINLINE(bool) msiIs64Bit(PPCIDEVICE pDev)
 {
-    return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
+    return pciDevIsMsi64Capable(pDev);
 }
 
 DECLINLINE(uint32_t*) msiGetMaskBits(PPCIDEVICE pDev)

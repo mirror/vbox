@@ -969,6 +969,21 @@ DECLINLINE(bool) pciDevIsMsiCapable(PPCIDEVICE pDev)
     return (pDev->Int.s.fFlags & PCIDEV_FLAG_MSI_CAPABLE) != 0;
 }
 
+DECLINLINE(void) pciDevSetMsi64Capable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.fFlags |= PCIDEV_FLAG_MSI64_CAPABLE;
+}
+
+DECLINLINE(void) pciDevClearMsi64Capable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.fFlags &= ~PCIDEV_FLAG_MSI64_CAPABLE;
+}
+
+DECLINLINE(bool) pciDevIsMsi64Capable(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.fFlags & PCIDEV_FLAG_MSI64_CAPABLE) != 0;
+}
+
 DECLINLINE(void) pciDevSetMsixCapable(PPCIDEVICE pDev)
 {
     pDev->Int.s.fFlags |= PCIDEV_FLAG_MSIX_CAPABLE;
