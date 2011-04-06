@@ -26,12 +26,15 @@
 /* Other includes */
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
-#include "VBoxDefs.h"
+#include "UISettingsDefs.h"
 #include "VBoxGlobalSettings.h"
 
 /* Forward declarations */
 class QIWidgetValidator;
 class QShowEvent;
+
+/* Using declarations: */
+using namespace UISettingsDefs;
 
 /* Settings page types: */
 enum UISettingsPageType
@@ -95,11 +98,11 @@ public:
     UISettingsPageType pageType() const { return m_pageType; }
 
     /* Settings dialog type stuff: */
-    VBoxDefs::SettingsDialogType dialogType() const { return m_dialogType; }
-    virtual void setDialogType(VBoxDefs::SettingsDialogType dialogType) { m_dialogType = dialogType; }
-    bool isMachineOffline() const { return dialogType() == VBoxDefs::SettingsDialogType_Offline; }
-    bool isMachineSaved() const { return dialogType() == VBoxDefs::SettingsDialogType_Saved; }
-    bool isMachineOnline() const { return dialogType() == VBoxDefs::SettingsDialogType_Runtime; }
+    SettingsDialogType dialogType() const { return m_dialogType; }
+    virtual void setDialogType(SettingsDialogType settingsDialogType) { m_dialogType = settingsDialogType; }
+    bool isMachineOffline() const { return dialogType() == SettingsDialogType_Offline; }
+    bool isMachineSaved() const { return dialogType() == SettingsDialogType_Saved; }
+    bool isMachineOnline() const { return dialogType() == SettingsDialogType_Online; }
     bool isMachineInValidMode() const { return isMachineOffline() || isMachineSaved() || isMachineOnline(); }
 
     /* Page 'ID' stuff: */
@@ -129,7 +132,7 @@ private:
 
     /* Private variables: */
     UISettingsPageType m_pageType;
-    VBoxDefs::SettingsDialogType m_dialogType;
+    SettingsDialogType m_dialogType;
     int m_cId;
     bool m_fPolished;
     bool m_fProcessed;

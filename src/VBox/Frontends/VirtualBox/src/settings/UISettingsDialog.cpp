@@ -41,14 +41,14 @@
 #endif /* Q_WS_MAC */
 
 /* Settings Dialog Constructor: */
-UISettingsDialog::UISettingsDialog(QWidget *pParent, VBoxDefs::SettingsDialogType dialogType)
+UISettingsDialog::UISettingsDialog(QWidget *pParent, SettingsDialogType settingsDialogType)
     /* Parent class: */
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     /* Protected variables: */
     , m_pSelector(0)
     , m_pStack(0)
     /* Common variables: */
-    , m_dialogType(dialogType)
+    , m_dialogType(settingsDialogType)
     , m_fPolished(false)
     /* Loading stuff: */
     , m_fProcessed(false)

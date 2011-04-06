@@ -700,7 +700,7 @@ SFoldersNameList UIMachineSettingsSF::usedList (bool aIncludeSelected)
     return list;
 }
 
-void UIMachineSettingsSF::setDialogType(VBoxDefs::SettingsDialogType settingsDialogType)
+void UIMachineSettingsSF::setDialogType(SettingsDialogType settingsDialogType)
 {
     UISettingsPageMachine::setDialogType(settingsDialogType);
     m_type = isMachineSaved() || isMachineOnline() ? ConsoleType : MachineType;

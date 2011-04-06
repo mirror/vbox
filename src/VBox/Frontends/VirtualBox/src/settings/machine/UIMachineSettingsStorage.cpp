@@ -765,7 +765,7 @@ StorageModel::StorageModel (QObject *aParent)
     , mRootItem (new RootItem)
     , mToolTipType (DefaultToolTip)
     , m_chipsetType(KChipsetType_PIIX3)
-    , m_dialogType(VBoxDefs::SettingsDialogType_Wrong)
+    , m_dialogType(SettingsDialogType_Wrong)
 {
 }
 
@@ -935,31 +935,31 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         }
         case R_IsMoreIDEControllersPossible:
         {
-            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+            return (m_dialogType == SettingsDialogType_Offline) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
-            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+            return (m_dialogType == SettingsDialogType_Offline) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
-            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+            return (m_dialogType == SettingsDialogType_Offline) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
-            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+            return (m_dialogType == SettingsDialogType_Offline) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
-            return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+            return (m_dialogType == SettingsDialogType_Offline) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
@@ -971,7 +971,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 {
                     ControllerItem *ctr = static_cast <ControllerItem*> (item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-                    return (m_dialogType == VBoxDefs::SettingsDialogType_Offline) &&
+                    return (m_dialogType == SettingsDialogType_Offline) &&
                            ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
                                                      sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
                 }
@@ -1419,7 +1419,7 @@ void StorageModel::setChipsetType(KChipsetType type)
     m_chipsetType = type;
 }
 
-void StorageModel::setDialogType(VBoxDefs::SettingsDialogType dialogType)
+void StorageModel::setDialogType(SettingsDialogType dialogType)
 {
     m_dialogType = dialogType;
 }
@@ -1900,7 +1900,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     switch (dialogType())
     {
         /* Here come the properties which could be changed only in offline state: */
-        case VBoxDefs::SettingsDialogType_Offline:
+        case SettingsDialogType_Offline:
         {
             /* Remove currently present controllers & attachments */
             const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
@@ -1975,7 +1975,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
             break;
         }
         /* Here come the properties which could be changed at runtime too: */
-        case VBoxDefs::SettingsDialogType_Runtime:
+        case SettingsDialogType_Online:
         {
             /* Iterate all the controllers and update changed CD/DVD and floppy attachments: */
             for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
@@ -3065,7 +3065,7 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, VB
     }
 }
 
-void UIMachineSettingsStorage::setDialogType(VBoxDefs::SettingsDialogType settingsDialogType)
+void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)
 {
     UISettingsPageMachine::setDialogType(settingsDialogType);
     mStorageModel->setDialogType(dialogType());
