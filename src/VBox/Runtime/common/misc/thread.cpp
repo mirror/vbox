@@ -83,6 +83,8 @@ static RTSEMRW          g_ThreadRWSem = NIL_RTSEMRW;
 /** The spinlocks protecting the tree. */
 static RTSPINLOCK       g_ThreadSpinlock = NIL_RTSPINLOCK;
 #endif
+/** Indicates whether we've been initialized or not. */
+static bool             g_frtThreadInitialized;
 
 
 /*******************************************************************************
@@ -145,7 +147,10 @@ DECLHIDDEN(int) rtThreadInit(void)
             if (RT_SUCCESS(rc))
                 rc = rtSchedNativeCalcDefaultPriority(RTTHREADTYPE_DEFAULT);
             if (RT_SUCCESS(rc))
+            {
+                g_frtThreadInitialized = true;
                 return VINF_SUCCESS;
+            }
 
             /* failed, clear out */
             RTSemRWDestroy(g_ThreadRWSem);
@@ -164,7 +169,10 @@ DECLHIDDEN(int) rtThreadInit(void)
     {
         rc = rtThreadNativeInit();
         if (RT_SUCCESS(rc))
+        {
+            g_frtThreadInitialized = true;
             return VINF_SUCCESS;
+        }
 
         /* failed, clear out */
         RTSpinlockDestroy(g_ThreadSpinlock);
@@ -991,6 +999,47 @@ RTDECL(bool) RTThreadIsMain(RTTHREAD hThread)
     return false;
 }
 RT_EXPORT_SYMBOL(RTThreadIsMain);
+
+
+RTDECL(bool) RTThreadIsSelfAlive(void)
+{
+    if (g_frtThreadInitialized)
+    {
+        RTTHREAD hSelf = RTThreadSelf();
+        if (hSelf != NIL_RTTHREAD)
+        {
+            /*
+             * Inspect the thread state.  ASSUMES thread state order.
+             */
+            RTTHREADSTATE enmState = rtThreadGetState(hSelf);
+            if (   enmState >= RTTHREADSTATE_RUNNING
+                && enmState <= RTTHREADSTATE_END)
+                return true;
+        }
+    }
+    return false;
+}
+RT_EXPORT_SYMBOL(RTThreadIsSelfAlive);
+
+
+RTDECL(bool) RTThreadIsSelfKnown(void)
+{
+    if (g_frtThreadInitialized)
+    {
+        RTTHREAD hSelf = RTThreadSelf();
+        if (hSelf != NIL_RTTHREAD)
+            return true;
+    }
+    return false;
+}
+RT_EXPORT_SYMBOL(RTThreadIsSelfKnown);
+
+
+RTDECL(bool) RTThreadIsInitialized(void)
+{
+    return g_frtThreadInitialized;
+}
+RT_EXPORT_SYMBOL(RTThreadIsInitialized);
 
 
 /**
