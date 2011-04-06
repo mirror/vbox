@@ -33,31 +33,7 @@
 #
 # The kmk kBuild define KBUILD_TARGET_ARCH is available.
 #
-# @todo the shared folders module Makefile also includes the following bits.
-# Integrate them if necessary.
-# MOD_CFLAGS += -DEXPORT_SYMTAB -DVBGL_VBOXGUEST -DRT_WITH_VBOX
-#
-# # special hack for Fedora Core 6 2.6.18 (fc6), rhel5 2.6.18 (el5),
-# # ClarkConnect 4.3 (cc4) and ClarkConnect 5 (v5)
-# ifeq ($(KERNELRELEASE),)
-#  KFLAGS += $(foreach inc,$(KERN_INCL),\
-#              $(if $(wildcard $(inc)/linux/utsrelease.h),\
-#                $(if $(shell grep '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*v5.*"'  $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*cc4.*"' $(inc)/linux/utsrelease.h),\
-# 		-DKERNEL_FC6,),))
-# else
-#  KFLAGS += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*el5.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*v5.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*cc4.*'),\
-# 		-DKERNEL_FC6,)
-# endif
-# 
-## important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
-#	rm -rf .vboxsf* .tmp_ver* vboxsf.* Modules.symvers modules.order
-# 
+
 
 #
 # First, figure out which architecture we're targeting and the build type.
