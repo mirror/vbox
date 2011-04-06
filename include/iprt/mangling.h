@@ -368,6 +368,7 @@
 # define RTDirCreate                                    RT_MANGLER(RTDirCreate)
 # define RTDirCreateFullPath                            RT_MANGLER(RTDirCreateFullPath)
 # define RTDirCreateTemp                                RT_MANGLER(RTDirCreateTemp)
+# define RTDirCreateUniqueNumbered                      RT_MANGLER(RTDirCreateUniqueNumbered)
 # define RTDirExists                                    RT_MANGLER(RTDirExists)
 # define RTDirFlush                                     RT_MANGLER(RTDirFlush)
 # define RTDirFlushParent                               RT_MANGLER(RTDirFlushParent)
