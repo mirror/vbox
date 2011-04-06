@@ -366,19 +366,12 @@ setup_modules()
 
     test_sane_kernel_dir
 
-    if ! sh /usr/share/$PACKAGE/test/build_in_tmp \
-        --no-print-directory >> $LOG 2>&1; then
-        fail_msg
-        printf "Your system does not seem to be set up to build kernel modules.\nLook at $LOG to find out what went wrong.\nOnce you have corrected it, you can run\n\n  /etc/init.d/vboxadd setup\n\nto build them.\n\n"
-        return 1
-    else
-        if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
-            --no-print-directory >> $LOG 2>&1; then
-            printf "\nYour guest system does not seem to have sufficient OpenGL support to enable\naccelerated 3D effects (this requires Linux 2.6.27 or later in the guest\nsystem).  This Guest Additions feature will be disabled.\n\n"
-            BUILDVBOXVIDEO=""
-        fi
-    fi
     echo
+    if expr `uname -r` '<' '2.6.27' > /dev/null; then
+        echo "Not building the VirtualBox advanced graphics driver as this Linux version is"
+        echo "too old to use it."
+        BUILDVBOXVIDEO=
+    fi
     if [ -n "$BUILDVBOXGUEST" ]; then
         begin "Building the main Guest Additions module"
         if ! $BUILDVBOXGUEST \
