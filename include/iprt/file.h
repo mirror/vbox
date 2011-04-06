@@ -1194,7 +1194,7 @@ RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioCtx);
 RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx);
 
 /**
- * Associates a file with a async I/O context.
+ * Associates a file with an async I/O context.
  * Requests for this file will arrive at the completion port
  * associated with the file.
  *

@@ -366,7 +366,7 @@ RT_C_DECLS_END
 #endif
 
 /** @def AssertCompileMemberOffset
- * Asserts a offset of a structure member at compile.
+ * Asserts an offset of a structure member at compile.
  * @param   type    The type.
  * @param   member  The member.
  * @param   off     The expected offset.

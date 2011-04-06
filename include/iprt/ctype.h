@@ -101,7 +101,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsLower(int ch)
 }
 
 /**
- * Checks for a octal digit.
+ * Checks for an octal digit.
  *
  * @returns true / false.
  * @param   ch      The character to test.

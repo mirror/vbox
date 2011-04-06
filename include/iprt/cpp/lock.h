@@ -43,7 +43,7 @@ class RTCLock;
 /**
  * The mutex lock.
  *
- * This is used as a object data member if the intention is to lock
+ * This is used as an object data member if the intention is to lock
  * a single object. This can also be used statically, initialized in
  * a global variable, for class wide purposes.
  *

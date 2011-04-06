@@ -235,7 +235,7 @@ typedef struct _AVLOU32NodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLOU32         AVLOU32TREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLOU32TREE    *PAVLOU32TREE;
 
 /** Pointer to an internal tree pointer.
@@ -372,7 +372,7 @@ typedef struct _AVLOGCPhysNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLOGCPHYS         AVLOGCPHYSTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLOGCPHYSTREE    *PAVLOGCPHYSTREE;
 
 /** Pointer to an internal tree pointer.
@@ -425,7 +425,7 @@ typedef struct _AVLROGCPhysNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLROGCPHYS         AVLROGCPHYSTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLROGCPHYSTREE    *PAVLROGCPHYSTREE;
 
 /** Pointer to an internal tree pointer.
@@ -519,7 +519,7 @@ typedef struct _AVLOGCPtrNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLOGCPTR         AVLOGCPTRTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLOGCPTRTREE    *PAVLOGCPTRTREE;
 
 /** Pointer to an internal tree pointer.
@@ -565,7 +565,7 @@ typedef struct _AVLRGCPtrNodeCore
 
 /** A offset base tree with RTGCPTR keys. */
 typedef PAVLRGCPTRNODECORE AVLRGCPTRTREE;
-/** Pointer to a offset base tree with RTGCPTR keys. */
+/** Pointer to an offset base tree with RTGCPTR keys. */
 typedef AVLRGCPTRTREE    *PAVLRGCPTRTREE;
 
 /** Pointer to an internal tree pointer.
@@ -621,7 +621,7 @@ typedef struct _AVLROGCPtrNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLROGCPTR         AVLROGCPTRTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLROGCPTRTREE    *PAVLROGCPTRTREE;
 
 /** Pointer to an internal tree pointer.
@@ -678,7 +678,7 @@ typedef struct _AVLROOGCPtrNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLROOGCPTR         AVLROOGCPTRTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLROOGCPTRTREE    *PAVLROOGCPTRTREE;
 
 /** Pointer to an internal tree pointer.
@@ -729,7 +729,7 @@ typedef AVLUINTPTRNODECORE *PAVLUINTPTRNODECORE;
 
 /** A pointer based tree with RTUINTPTR keys. */
 typedef PAVLUINTPTRNODECORE AVLUINTPTRTREE;
-/** Pointer to a offset base tree with RTUINTPTR keys. */
+/** Pointer to an offset base tree with RTUINTPTR keys. */
 typedef AVLUINTPTRTREE     *PAVLUINTPTRTREE;
 
 /** Pointer to an internal tree pointer.
@@ -835,7 +835,7 @@ typedef struct _AVLOHCPhysNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLOHCPHYS         AVLOHCPHYSTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLOHCPHYSTREE    *PAVLOHCPHYSTREE;
 
 /** Pointer to an internal tree pointer.
@@ -885,7 +885,7 @@ typedef struct _AVLOIOPortNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLOIOPORTPTR      AVLOIOPORTTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLOIOPORTTREE    *PAVLOIOPORTTREE;
 
 /** Pointer to an internal tree pointer.
@@ -936,7 +936,7 @@ typedef struct _AVLROIOPortNodeCore
 
 /** A offset base tree with uint32_t keys. */
 typedef AVLROIOPORTPTR      AVLROIOPORTTREE;
-/** Pointer to a offset base tree with uint32_t keys. */
+/** Pointer to an offset base tree with uint32_t keys. */
 typedef AVLROIOPORTTREE    *PAVLROIOPORTTREE;
 
 /** Pointer to an internal tree pointer.
@@ -985,7 +985,7 @@ typedef struct _AVLHCPhysNodeCore
 
 /** A offset base tree with RTHCPHYS keys. */
 typedef AVLHCPHYSPTR      AVLHCPHYSTREE;
-/** Pointer to a offset base tree with RTHCPHYS keys. */
+/** Pointer to an offset base tree with RTHCPHYS keys. */
 typedef AVLHCPHYSTREE    *PAVLHCPHYSTREE;
 
 /** Pointer to an internal tree pointer.
@@ -1033,7 +1033,7 @@ typedef struct _AVLGCPhysNodeCore
 
 /** A offset base tree with RTGCPHYS keys. */
 typedef AVLGCPHYSPTR      AVLGCPHYSTREE;
-/** Pointer to a offset base tree with RTGCPHYS keys. */
+/** Pointer to an offset base tree with RTGCPHYS keys. */
 typedef AVLGCPHYSTREE    *PAVLGCPHYSTREE;
 
 /** Pointer to an internal tree pointer.
