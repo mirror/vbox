@@ -508,6 +508,7 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
                         else
                             rc = VERR_BUFFER_OVERFLOW;
                     }
+                    RTStrFree(pszValueUtf8);
                 }
             }
             else
