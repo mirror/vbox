@@ -155,6 +155,9 @@ typedef struct RTMEMTRACKERINT
     AVLU32TREE          TagDbRoot;
     /** List of RTMEMTRACKERTAG records. */
     RTLISTNODE          TagList;
+#ifdef RT_ARCH_X86
+    uint32_t            dummy;
+#endif
     /** The global user record (fallback). */
     RTMEMTRACKERUSER    FallbackUser;
     /** The global statistics. */
