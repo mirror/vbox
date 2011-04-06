@@ -47,9 +47,6 @@
 # define VBOXSHAREDFOLDERS_DLL "VBoxSharedFolders"
 #endif
 
-#ifdef RT_OS_L4
-#include <l4/util/util.h> /* for l4_sleep */
-#endif
 /**
  * VMMDev driver instance data.
  */
