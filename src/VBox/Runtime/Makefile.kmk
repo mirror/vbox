@@ -425,6 +425,7 @@ RuntimeR3_SOURCES       = \
 	generic/critsect-generic.cpp \
 	generic/env-generic.cpp \
 	generic/RTDirCreateTemp-generic.cpp \
+	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
