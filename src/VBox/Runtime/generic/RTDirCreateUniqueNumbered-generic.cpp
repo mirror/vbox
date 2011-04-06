@@ -36,7 +36,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, size_t cchDigits, char chSep)
+RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, signed int cchDigits, char chSep)
 {
     /*
      * Validate input.
@@ -46,7 +46,7 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
     AssertReturn(cchDigits, VERR_INVALID_PARAMETER);
     /* Check for enough space. */
     char *pszEnd = strchr(pszPath, '\0');
-    AssertReturn(cbSize - 1 - (pszEnd - pszPath) >= cchDigits + (chSep ? 1 : 0), VERR_BUFFER_OVERFLOW);
+    AssertReturn(cbSize - 1 - (pszEnd - pszPath) >= (size_t)cchDigits + (chSep ? 1 : 0), VERR_BUFFER_OVERFLOW);
 
     /* First try is to create the path without any numbers. */
     int rc = RTDirCreate(pszPath, fMode);
@@ -63,7 +63,7 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
 
     /* How many tries? */
     size_t cMaxTries = 10;
-    for (size_t i = 0; i < cchDigits - 1; ++i)
+    for (size_t i = 0; i < (size_t)cchDigits - 1; ++i)
         cMaxTries *= 10;
 
     /* Try cMaxTries - 1 counts to create a directory with the appended number. */
