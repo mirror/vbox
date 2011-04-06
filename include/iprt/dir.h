@@ -108,7 +108,7 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate);
  * @param   chSep       The separator used between the path and the number. Can
  *                      be zero. (optional)
  */
-RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, size_t cchDigits, char chSep);
+RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, signed int cchDigits, char chSep);
 
 /**
  * Removes a directory if empty.
