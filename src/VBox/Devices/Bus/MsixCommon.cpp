@@ -37,6 +37,7 @@ typedef struct {
 AssertCompileSize(MsixTableRecord, VBOX_MSIX_ENTRY_SIZE);
 #pragma pack()
 
+/** @todo: use accessors so that raw PCI devices work correctly with MSI-X. */
 DECLINLINE(uint16_t)  msixGetMessageControl(PPCIDEVICE pDev)
 {
     return PCIDevGetWord(pDev, pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL);
