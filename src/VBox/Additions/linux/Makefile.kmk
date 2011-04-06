@@ -335,32 +335,6 @@ AutoRun-sh_SOURCES = \
 
 
 #
-# Install the sources of our (sanity) test kernel module
-#
-INSTALLS += LnxAddTest-src
-LnxAddTest-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/test/
-LnxAddTest-src_MODE    = a+r,u+w
-LnxAddTest-src_SOURCES = \
-	$(VBOX_REL_LNX_ADD_INST)Makefile.test=>Makefile \
-	$(PATH_BIN)/additions/src/vboxguest/build_in_tmp \
-	$(VBOX_REL_LNX_ADD_INST)test.c
-
-
-#
-# Install the sources of our (sanity) test kernel rendering (DRM) module
-#
-INSTALLS += LnxAddDRM-src
-LnxAddDRM-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/test_drm/
-LnxAddDRM-src_MODE    = a+r,u+w
-LnxAddDRM-src_SOURCES = \
-	$(VBOX_REL_LNX_INST_SRC)Makefile.include.header \
-	$(VBOX_REL_LNX_INST_SRC)Makefile.include.footer \
-	$(VBOX_REL_LNX_ADD_INST)Makefile.test.drm=>Makefile \
-	$(PATH_BIN)/additions/src/vboxguest/build_in_tmp \
-	$(VBOX_REL_LNX_ADD_INST)test_drm.c
-
-
-#
 # We need our routines.sh and the uninstallation scripts in the staging
 # directory too
 #
