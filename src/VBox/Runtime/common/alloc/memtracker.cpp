@@ -1195,7 +1195,7 @@ static PRTMEMTRACKERINT rtMemTrackerLazyInitDefaultTracker(void)
     if (ASMAtomicXchgBool(&s_fInitialized, true))
         return g_pDefaultTracker;
 
-    PRTMEMTRACKERINT pTracker;
+    PRTMEMTRACKERINT pTracker = NULL; /* gcc sucks. */
     int rc = rtMemTrackerCreate(&pTracker);
     if (RT_FAILURE(rc))
         return NULL;
