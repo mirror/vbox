@@ -671,7 +671,7 @@ typedef struct VDINTERFACEIO
     DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, void *pStorage));
 
     /**
-     * Initiate a asynchronous read request.
+     * Initiate an asynchronous read request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
@@ -689,7 +689,7 @@ typedef struct VDINTERFACEIO
                                              void **ppTask));
 
     /**
-     * Initiate a asynchronous write request.
+     * Initiate an asynchronous write request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on conatiner creation.
@@ -707,7 +707,7 @@ typedef struct VDINTERFACEIO
                                               void **ppTask));
 
     /**
-     * Initiates a async flush request.
+     * Initiates an async flush request.
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
@@ -1771,7 +1771,7 @@ typedef struct VDINTERFACEIOINT
     DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, PVDIOSTORAGE pStorage));
 
     /**
-     * Initiate a asynchronous read request for user data.
+     * Initiate an asynchronous read request for user data.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
@@ -1785,7 +1785,7 @@ typedef struct VDINTERFACEIOINT
                                                  size_t cbRead));
 
     /**
-     * Initiate a asynchronous write request for user data.
+     * Initiate an asynchronous write request for user data.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
@@ -1854,7 +1854,7 @@ typedef struct VDINTERFACEIOINT
     DECLR3CALLBACKMEMBER(void, pfnMetaXferRelease, (void *pvUser, PVDMETAXFER pMetaXfer));
 
     /**
-     * Initiates a async flush request.
+     * Initiates an async flush request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque data passed on container creation.
@@ -2621,7 +2621,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
 
 
 /**
- * Start a asynchronous read request.
+ * Start an asynchronous read request.
  *
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.
@@ -2638,7 +2638,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 
 
 /**
- * Start a asynchronous write request.
+ * Start an asynchronous write request.
  *
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.
@@ -2655,7 +2655,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 
 
 /**
- * Start a asynchronous flush request.
+ * Start an asynchronous flush request.
  *
  * @return  VBox status code.
  * @param   pDisk           Pointer to the HDD container.

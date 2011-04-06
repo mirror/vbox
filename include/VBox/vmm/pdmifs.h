@@ -1418,7 +1418,7 @@ typedef struct PDMIMEDIASTATIC
 
 
 
-/** Pointer to a asynchronous block notify interface. */
+/** Pointer to an asynchronous block notify interface. */
 typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
 /**
  * Asynchronous block notify interface (up).
@@ -1427,7 +1427,7 @@ typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
 typedef struct PDMIBLOCKASYNCPORT
 {
     /**
-     * Notify completion of a asynchronous transfer.
+     * Notify completion of an asynchronous transfer.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -1442,7 +1442,7 @@ typedef struct PDMIBLOCKASYNCPORT
 
 
 
-/** Pointer to a asynchronous block interface. */
+/** Pointer to an asynchronous block interface. */
 typedef struct PDMIBLOCKASYNC *PPDMIBLOCKASYNC;
 /**
  * Asynchronous block interface (down).
@@ -1493,7 +1493,7 @@ typedef struct PDMIBLOCKASYNC
 #define PDMIBLOCKASYNC_IID                      "78302d0d-4978-498c-be3c-8989cb5ff5c8"
 
 
-/** Pointer to a asynchronous notification interface. */
+/** Pointer to an asynchronous notification interface. */
 typedef struct PDMIMEDIAASYNCPORT *PPDMIMEDIAASYNCPORT;
 /**
  * Asynchronous version of the media interface (up).
@@ -1516,7 +1516,7 @@ typedef struct PDMIMEDIAASYNCPORT
 #define PDMIMEDIAASYNCPORT_IID                  "22d38853-901f-4a71-9670-4d9da6e82317"
 
 
-/** Pointer to a asynchronous media interface. */
+/** Pointer to an asynchronous media interface. */
 typedef struct PDMIMEDIAASYNC *PPDMIMEDIAASYNC;
 /**
  * Asynchronous version of PDMIMEDIA (down).

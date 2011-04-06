@@ -1144,7 +1144,7 @@ typedef struct PDMDRVHLPR3
                                                PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
     /**
-     * Creates a async completion template for a driver instance.
+     * Creates an async completion template for a driver instance.
      *
      * The template is used when creating new completion tasks.
      *

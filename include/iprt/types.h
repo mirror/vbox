@@ -1472,14 +1472,14 @@ typedef RTFILE                                     *PRTFILE;
 
 /** Async I/O request handle. */
 typedef R3PTRTYPE(struct RTFILEAIOREQINTERNAL *)    RTFILEAIOREQ;
-/** Pointer to a async I/O request handle. */
+/** Pointer to an async I/O request handle. */
 typedef RTFILEAIOREQ                               *PRTFILEAIOREQ;
 /** Nil request handle. */
 #define NIL_RTFILEAIOREQ                            0
 
 /** Async I/O completion context handle. */
 typedef R3PTRTYPE(struct RTFILEAIOCTXINTERNAL *)    RTFILEAIOCTX;
-/** Pointer to a async I/O completion context handle. */
+/** Pointer to an async I/O completion context handle. */
 typedef RTFILEAIOCTX                               *PRTFILEAIOCTX;
 /** Nil context handle. */
 #define NIL_RTFILEAIOCTX                            0
@@ -1642,9 +1642,9 @@ typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
 /** NIL simple heap handle. */
 #define NIL_RTHEAPSIMPLE                            ((RTHEAPSIMPLE)0)
 
-/** Handle to a offset based heap. */
+/** Handle to an offset based heap. */
 typedef R3R0PTRTYPE(struct RTHEAPOFFSETINTERNAL *)  RTHEAPOFFSET;
-/** Pointer to a handle to a offset based heap. */
+/** Pointer to a handle to an offset based heap. */
 typedef RTHEAPOFFSET                               *PRTHEAPOFFSET;
 /** NIL offset based heap handle. */
 #define NIL_RTHEAPOFFSET                            ((RTHEAPOFFSET)0)
