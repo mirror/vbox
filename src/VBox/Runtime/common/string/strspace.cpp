@@ -32,6 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
+#include "internal/strhash.h"
 
 
 /*******************************************************************************
@@ -71,44 +72,6 @@
 #include "../table/avl_DoWithAll.cpp.h"
 #include "../table/avl_Destroy.cpp.h"
 
-
-
-/* sdbm:
-   This algorithm was created for sdbm (a public-domain reimplementation of
-   ndbm) database library. it was found to do well in scrambling bits,
-   causing better distribution of the keys and fewer splits. it also happens
-   to be a good general hashing function with good distribution. the actual
-   function is hash(i) = hash(i - 1) * 65599 + str[i]; what is included below
-   is the faster version used in gawk. [there is even a faster, duff-device
-   version] the magic constant 65599 was picked out of thin air while
-   experimenting with different constants, and turns out to be a prime.
-   this is one of the algorithms used in berkeley db (see sleepycat) and
-   elsewhere. */
-DECLINLINE(uint32_t) sdbm(const char *str, size_t *pcch)
-{
-    uint8_t *pu8 = (uint8_t *)str;
-    uint32_t hash = 0;
-    int c;
-
-    while ((c = *pu8++))
-        hash = c + (hash << 6) + (hash << 16) - hash;
-
-    *pcch = (uintptr_t)pu8 - (uintptr_t)str - 1;
-    return hash;
-}
-
-DECLINLINE(uint32_t) sdbmN(const char *str, size_t cchMax, size_t *pcch)
-{
-    uint8_t *pu8 = (uint8_t *)str;
-    uint32_t hash = 0;
-    int c;
-
-    while ((c = *pu8++) && cchMax-- > 0)
-        hash = c + (hash << 6) + (hash << 16) - hash;
-
-    *pcch = (uintptr_t)pu8 - (uintptr_t)str - 1;
-    return hash;
-}
 
 
 /**

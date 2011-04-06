@@ -250,6 +250,7 @@ RuntimeR3_SOURCES       = \
 	common/alloc/heapsimple.cpp \
 	common/alloc/heapoffset.cpp \
 	common/alloc/memcache.cpp \
+	common/alloc/memtracker.cpp \
 	common/checksum/adler32.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
@@ -2257,7 +2258,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 	          `; \
 	do \
 		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
-			echo "mangling.h: Missing '"$${fn}"'"; \
+			echo "mangling.h: Missing # define "$${fn}"               RT_MANGLER("$${fn}")"; \
 			rcExit=1;\
 		fi \
 	done; \
@@ -2288,7 +2289,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 	          `; \
 	do \
 		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
-			echo "mangling.h: Missing '"$${fn}"'"; \
+			echo "mangling.h: Missing # define "$${fn}"               RT_MANGLER("$${fn}")""; \
 			rcExit=1;\
 		fi \
 	done; \

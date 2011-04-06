@@ -375,6 +375,27 @@ RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File)
 }
 
 
+RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle)
+{
+    int fd;
+    switch (enmStdHandle)
+    {
+        case RTHANDLESTD_INPUT:  fd = 0; break;
+        case RTHANDLESTD_OUTPUT: fd = 1; break;
+        case RTHANDLESTD_ERROR:  fd = 2; break;
+            break;
+        default:
+            AssertFailedReturn(NIL_RTFILE);
+    }
+
+    struct stat st;
+    int rc = fstat(fd, &st);
+    if (rc == -1)
+        return NIL_RTFILE;
+    return (RTFILE)fd;
+}
+
+
 RTR3DECL(int)  RTFileDelete(const char *pszFilename)
 {
     char const *pszNativeFilename;

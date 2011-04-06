@@ -42,6 +42,7 @@
 
 #include "internal/lockvalidator.h"
 #include "internal/magics.h"
+#include "internal/strhash.h"
 #include "internal/thread.h"
 
 
@@ -850,29 +851,6 @@ DECL_FORCE_INLINE(void) rtLockValidatorSrcPosInit(PRTLOCKVALSRCPOS pSrcPos)
 }
 
 
-/* sdbm:
-   This algorithm was created for sdbm (a public-domain reimplementation of
-   ndbm) database library. it was found to do well in scrambling bits,
-   causing better distribution of the keys and fewer splits. it also happens
-   to be a good general hashing function with good distribution. the actual
-   function is hash(i) = hash(i - 1) * 65599 + str[i]; what is included below
-   is the faster version used in gawk. [there is even a faster, duff-device
-   version] the magic constant 65599 was picked out of thin air while
-   experimenting with different constants, and turns out to be a prime.
-   this is one of the algorithms used in berkeley db (see sleepycat) and
-   elsewhere. */
-DECL_FORCE_INLINE(uint32_t) sdbm(const char *str, uint32_t hash)
-{
-    uint8_t *pu8 = (uint8_t *)str;
-    int c;
-
-    while ((c = *pu8++))
-        hash = c + (hash << 6) + (hash << 16) - hash;
-
-    return hash;
-}
-
-
 /**
  * Hashes the specified source position.
  *
@@ -888,9 +866,9 @@ static uint32_t rtLockValidatorSrcPosHash(PCRTLOCKVALSRCPOS pSrcPos)
     {
         uHash = 0;
         if (pSrcPos->pszFile)
-            uHash = sdbm(pSrcPos->pszFile, uHash);
+            uHash = sdbmInc(pSrcPos->pszFile, uHash);
         if (pSrcPos->pszFunction)
-            uHash = sdbm(pSrcPos->pszFunction, uHash);
+            uHash = sdbmInc(pSrcPos->pszFunction, uHash);
         uHash += pSrcPos->uLine;
     }
     else

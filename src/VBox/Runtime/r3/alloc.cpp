@@ -33,6 +33,12 @@
 # define RTALLOC_USE_EFENCE 1
 #endif
 
+/*#define RTMEMALLOC_USE_TRACKER*/
+/* Don't enable the tracker when building the minimal IPRT. */
+#ifdef RT_MINI
+# undef RTMEMALLOC_USE_TRACKER
+#endif
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -71,6 +77,8 @@
 #undef RTMemDupTag
 #undef RTMemDupEx
 #undef RTMemDupExTag
+
+#undef RTALLOC_USE_EFENCE
 
 
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
@@ -177,22 +185,11 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 
 #else /* !RTALLOC_USE_EFENCE */
 
-# ifdef RTALLOC_USE_TRACKER
-    void *pv;
-    if (!pvOld)
-    {
-        if (cbNew)
-            pv = RTMemTrackerHdrAlloc(realloc(pvOld, cbNew + sizeof(RTMEMTRACKERHDR)), cbNew,
-                                      pszTag, RTMEMTRACKERMETHOD_REALLOC);
-        else
-            pv = NULL;
-    }
-    else
-    {
-        RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag, RTMEMTRACKERMETHOD_REALLOC);
-        pv = RTMemTrackerHdrRealloc(realloc(pvOld, cbNew + sizeof(RTMEMTRACKERHDR)), cbNew, pvOld,
-                                    pszTag, RTMEMTRACKERMETHOD_REALLOC);
-    }
+# ifdef RTMEMALLOC_USE_TRACKER
+    void *pvRealOld  = RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag);
+    size_t cbRealNew = cbNew || !pvRealOld ? cbNew + sizeof(RTMEMTRACKERHDR) : 0;
+    void *pvNew      = realloc(pvRealOld, cbRealNew);
+    void *pv         = RTMemTrackerHdrReallocDone(pvNew, cbNew, pvOld, pszTag);
 # else
     void *pv = realloc(pvOld, cbNew);
 # endif
@@ -212,7 +209,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 #ifdef RTALLOC_USE_EFENCE
         rtR3MemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ASMReturnAddress(), NULL, 0, NULL);
 #else
-# ifdef RTALLOC_USE_TRACKER
+# ifdef RTMEMALLOC_USE_TRACKER
         pv = RTMemTrackerHdrFree(pv, 0, NULL, RTMEMTRACKERMETHOD_FREE);
 # endif
         free(pv);
