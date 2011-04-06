@@ -117,16 +117,13 @@ public:
     bool failed() const { return m_fFailed; }
     void setFailed(bool fFailed) { m_fFailed = fFailed; }
 
+    /* Virtual function to polish page content: */
+    virtual void polishPage() {}
+
 protected:
 
     /* Settings page constructor, hidden: */
     UISettingsPage(UISettingsPageType type);
-
-    /* Show event: */
-    void showEvent(QShowEvent *pEvent);
-
-    /* Virtual function to polish page content: */
-    virtual void polishPage() {}
 
 private:
 
@@ -134,7 +131,6 @@ private:
     UISettingsPageType m_pageType;
     SettingsDialogType m_dialogType;
     int m_cId;
-    bool m_fPolished;
     bool m_fProcessed;
     bool m_fFailed;
     QWidget *m_pFirstWidget;
