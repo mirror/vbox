@@ -42,7 +42,7 @@ public:
         GLSettingsPage_MAX
     };
 
-    UISettingsDialogGlobal(QWidget *pParent, VBoxDefs::SettingsDialogType type);
+    UISettingsDialogGlobal(QWidget *pParent, SettingsDialogType settingsDialogType);
 
 protected:
 
@@ -81,7 +81,7 @@ public:
         VMSettingsPage_MAX
     };
 
-    UISettingsDialogMachine(QWidget *pParent, VBoxDefs::SettingsDialogType type,
+    UISettingsDialogMachine(QWidget *pParent, SettingsDialogType settingsDialogType,
                             const CMachine &machine, const CConsole &console,
                             const QString &strCategory, const QString &strControl);
 
@@ -109,6 +109,7 @@ private:
 
     CMachine m_machine;
     CConsole m_console;
+
     bool m_fAllowResetFirstRunFlag;
     bool m_fResetFirstRunFlag;
 };

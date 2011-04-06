@@ -103,7 +103,7 @@ private:
     SFTreeViewItem* root(UISharedFolderType type);
     SFoldersNameList usedList (bool aIncludeSelected);
 
-    void setDialogType(VBoxDefs::SettingsDialogType settingsDialogType);
+    void setDialogType(SettingsDialogType settingsDialogType);
 
     UISharedFolderType m_type;
 

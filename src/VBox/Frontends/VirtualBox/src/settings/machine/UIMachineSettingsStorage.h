@@ -502,7 +502,7 @@ public:
     KChipsetType chipsetType() const;
     void setChipsetType(KChipsetType type);
 
-    void setDialogType(VBoxDefs::SettingsDialogType dialogType);
+    void setDialogType(SettingsDialogType dialogType);
 
     QMap<KStorageBus, int> currentControllerTypes() const;
     QMap<KStorageBus, int> maximumControllerTypes() const;
@@ -522,7 +522,7 @@ private:
     ToolTipType mToolTipType;
 
     KChipsetType m_chipsetType;
-    VBoxDefs::SettingsDialogType m_dialogType;
+    SettingsDialogType m_dialogType;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
@@ -672,7 +672,7 @@ private:
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
     void addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType);
 
-    void setDialogType(VBoxDefs::SettingsDialogType settingsDialogType);
+    void setDialogType(SettingsDialogType settingsDialogType);
     void polishPage();
 
     QIWidgetValidator *mValidator;

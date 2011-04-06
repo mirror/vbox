@@ -98,15 +98,6 @@ struct VBoxDefs
         FormatSize_RoundUp
     };
 
-    /** Settings dialog types: */
-    enum SettingsDialogType
-    {
-        SettingsDialogType_Wrong,
-        SettingsDialogType_Offline,
-        SettingsDialogType_Saved,
-        SettingsDialogType_Runtime
-    };
-
     static const char* GUI_LastWindowPosition;
     static const char* GUI_LastNormalWindowPosition;
     static const char* GUI_LastScaleWindowPosition;

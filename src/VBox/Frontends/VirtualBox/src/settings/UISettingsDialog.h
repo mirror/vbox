@@ -19,19 +19,22 @@
 #ifndef __UISettingsDialog_h__
 #define __UISettingsDialog_h__
 
-/* Local includes */
+/* VBox includes: */
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UISettingsDialog.gen.h"
-#include "VBoxDefs.h"
+#include "UISettingsDefs.h"
 
-/* Forward declarations */
+/* Forward declarations: */
 class QIWidgetValidator;
 class QStackedWidget;
 class QTimer;
 class VBoxWarningPane;
 class VBoxSettingsSelector;
 class UISettingsPage;
+
+/* Using declarations: */
+using namespace UISettingsDefs;
 
 /* Base dialog class for both Global & VM settings which encapsulates most of their similar functionalities */
 class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UISettingsDialog
@@ -41,7 +44,7 @@ class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UI
 public:
 
     /* Settings Dialog Constructor/Destructor: */
-    UISettingsDialog(QWidget *pParent, VBoxDefs::SettingsDialogType dialogType);
+    UISettingsDialog(QWidget *pParent, SettingsDialogType settingsDialogType);
    ~UISettingsDialog();
 
     /* Save/Load interface: */
@@ -65,7 +68,7 @@ protected:
     virtual void retranslateUi();
 
     /* Dialog type: */
-    VBoxDefs::SettingsDialogType dialogType() { return m_dialogType; }
+    SettingsDialogType dialogType() { return m_dialogType; }
     /* Dialog title: */
     virtual QString title() const = 0;
     /* Dialog title extension: */
@@ -109,7 +112,7 @@ private:
     void assignValidator(UISettingsPage *pPage);
 
     /* Global Flags: */
-    VBoxDefs::SettingsDialogType m_dialogType;
+    SettingsDialogType m_dialogType;
     bool m_fPolished;
 
     /* Error & Warning stuff: */

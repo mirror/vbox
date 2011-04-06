@@ -23,7 +23,7 @@
 /* Settings page constructor, hidden: */
 UISettingsPage::UISettingsPage(UISettingsPageType pageType)
     : m_pageType(pageType)
-    , m_dialogType(VBoxDefs::SettingsDialogType_Wrong)
+    , m_dialogType(SettingsDialogType_Wrong)
     , m_cId(-1)
     , m_fPolished(false)
     , m_fProcessed(false)

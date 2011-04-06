@@ -963,7 +963,7 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
 
     /* Prepare VM settings dialog: */
     UISettingsDialog *pDlg = new UISettingsDialogMachine(defaultMachineWindow()->machineWindow(),
-                                                         VBoxDefs::SettingsDialogType_Runtime,
+                                                         SettingsDialogType_Online,
                                                          sharedMachine, session().GetConsole(),
                                                          strCategory, QString());
     pDlg->getFrom();
