@@ -1,7 +1,7 @@
 #
 # VirtualBox Guest Additions kernel module Makefile, common parts.
 #
-# (For 2.6.x, the main file must be called 'Makefile'!)
+# See Makefile.include.header for details of how to use this.
 #
 # Copyright (C) 2006-2011 Oracle Corporation
 #
@@ -13,49 +13,6 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
-
-#
-# These file should be included by the Makefiles for any kernel modules we
-# build as part of the Guest Additions.  The intended way of doing this is as
-# follows:
-#
-# include Makefile.include
-# MOD_NAME = <name of the module to be built, without extension>
-# MOD_OBJS = <list of object files which should be included>
-# MOD_DEFS = <any additional defines which this module needs>
-# MOD_INCL = <any additional include paths which this module needs>
-# MOD_CFLAGS = <any additional CFLAGS which this module needs>
-# MOD_CLEAN = <list of directories that the clean target should look at>
-#
-# The kmk kBuild define KBUILD_TARGET_ARCH is available.
-#
-# @todo the shared folders module Makefile also includes the following bits.
-# Integrate them if necessary.
-# MOD_CFLAGS += -DEXPORT_SYMTAB -DVBGL_VBOXGUEST -DRT_WITH_VBOX
-#
-# # special hack for Fedora Core 6 2.6.18 (fc6), rhel5 2.6.18 (el5),
-# # ClarkConnect 4.3 (cc4) and ClarkConnect 5 (v5)
-# ifeq ($(KERNELRELEASE),)
-#  KFLAGS += $(foreach inc,$(KERN_INCL),\
-#              $(if $(wildcard $(inc)/linux/utsrelease.h),\
-#                $(if $(shell grep '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*v5.*"'  $(inc)/linux/utsrelease.h; \
-# 			    grep '"2.6.18.*cc4.*"' $(inc)/linux/utsrelease.h),\
-# 		-DKERNEL_FC6,),))
-# else
-#  KFLAGS += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*el5.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*v5.*';\
-# 			echo "$(KERNELRELEASE)"|grep '2.6.18.*cc4.*'),\
-# 		-DKERNEL_FC6,)
-# endif
-# 
-## important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
-#	rm -rf .vboxsf* .tmp_ver* vboxsf.* Modules.symvers modules.order
-# 
-
-
 
 # override is required by the Debian guys
 override MODULE = $(MOD_NAME)
