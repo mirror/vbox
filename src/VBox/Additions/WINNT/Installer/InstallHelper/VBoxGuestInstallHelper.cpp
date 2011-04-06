@@ -16,6 +16,7 @@
  */
 
 #include <windows.h>
+#include <atlconv.h>
 #include <stdlib.h>
 #include <Strsafe.h>
 #include "exdll.h"
@@ -26,7 +27,7 @@
 HINSTANCE g_hInstance;
 HWND g_hwndParent;
 
-typedef DWORD (__stdcall *fnSfcFileException) (DWORD param1, PWCHAR param2, DWORD param3);
+typedef DWORD (WINAPI *fnSfcFileException) (DWORD param1, PWCHAR param2, DWORD param3);
 fnSfcFileException g_pfnSfcFileException = NULL;
 
 #define VBOXINSTALLHELPER_EXPORT extern "C" void __declspec(dllexport)
@@ -75,6 +76,35 @@ static HRESULT VBoxPopULong(ULONG *pulValue)
 
             *g_stacktop = pStack->next;
             GlobalFree((HGLOBAL)pStack);
+        }
+    }
+    return hr;
+}
+
+void Char2WCharFree(PWCHAR pwString)
+{
+    if (pwString)
+        HeapFree(GetProcessHeap(), 0, pwString);
+}
+
+HRESULT Char2WCharAlloc(const char *pszString, PWCHAR *ppwString)
+{
+    HRESULT hr;
+    int iLen = strlen(pszString) + 2;
+	WCHAR *pwString = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, iLen * sizeof(WCHAR));
+    if (!pwString)
+        hr = ERROR_NOT_ENOUGH_MEMORY;
+    else
+    {
+        if (MultiByteToWideChar(CP_ACP, 0, pszString, -1, pwString, iLen) == 0)
+        {
+            hr = HRESULT_FROM_WIN32(GetLastError());
+            HeapFree(GetProcessHeap(), 0, pwString);
+        }
+        else
+        {
+            hr = S_OK;
+            *ppwString = pwString;
         }
     }
     return hr;
@@ -219,10 +249,14 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
 
         if (SUCCEEDED(hr))
         {
-            WCHAR wszFile[MAX_PATH + 1];
-            hr = StringCchPrintfW(wszFile, sizeof(wszFile), L"%s", szFile);
+            WCHAR *pwszFile;
+            hr = Char2WCharAlloc(szFile, &pwszFile);
             if (SUCCEEDED(hr))
-                hr = HRESULT_FROM_WIN32(g_pfnSfcFileException(0, wszFile, -1));
+            {
+                if (g_pfnSfcFileException(0, pwszFile, -1) != 0)
+                    hr = HRESULT_FROM_WIN32(GetLastError());
+                Char2WCharFree(pwszFile);
+            }
         }
 
         if (hSFC)
