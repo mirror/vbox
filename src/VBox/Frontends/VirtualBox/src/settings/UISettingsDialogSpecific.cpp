@@ -299,7 +299,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent, SettingsDialogT
     /* Creating settings pages: */
     for (int iPageIndex = GLSettingsPage_General; iPageIndex < GLSettingsPage_MAX; ++iPageIndex)
     {
-        if (isAvailable(iPageIndex))
+        if (isPageAvailable(iPageIndex))
         {
             UISettingsPage *pSettingsPage = 0;
             switch (iPageIndex)
@@ -385,7 +385,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent, SettingsDialogT
     m_pSelector->selectById(0);
 }
 
-void UISettingsDialogGlobal::getFrom()
+void UISettingsDialogGlobal::loadData()
 {
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
@@ -402,7 +402,7 @@ void UISettingsDialogGlobal::getFrom()
     pGlobalSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
-void UISettingsDialogGlobal::putBackTo()
+void UISettingsDialogGlobal::saveData()
 {
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
@@ -469,12 +469,12 @@ QString UISettingsDialogGlobal::title() const
     return tr("VirtualBox - %1").arg(titleExtension());
 }
 
-bool UISettingsDialogGlobal::isAvailable(int id)
+bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
 {
     /* Show the host error message for particular group if present.
      * We don't use the generic cannotLoadGlobalConfig()
      * call here because we want this message to be suppressible: */
-    switch (id)
+    switch (iPageId)
     {
         case GLSettingsPage_USB:
         {
@@ -527,7 +527,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialo
     /* Creating settings pages: */
     for (int iPageIndex = VMSettingsPage_General; iPageIndex < VMSettingsPage_MAX; ++iPageIndex)
     {
-        if (isAvailable(iPageIndex))
+        if (isPageAvailable(iPageIndex))
         {
             UISettingsPage *pSettingsPage = 0;
             switch (iPageIndex)
@@ -680,7 +680,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialo
         m_pSelector->selectById(0);
 }
 
-void UISettingsDialogMachine::getFrom()
+void UISettingsDialogMachine::loadData()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -700,7 +700,7 @@ void UISettingsDialogMachine::getFrom()
     pMachineSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
-void UISettingsDialogMachine::putBackTo()
+void UISettingsDialogMachine::saveData()
 {
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
@@ -980,7 +980,7 @@ void UISettingsDialogMachine::sltResetFirstRunFlag()
         m_fResetFirstRunFlag = true;
 }
 
-bool UISettingsDialogMachine::isAvailable(int id)
+bool UISettingsDialogMachine::isPageAvailable(int iPageId)
 {
     if (m_machine.isNull())
         return false;
@@ -988,19 +988,19 @@ bool UISettingsDialogMachine::isAvailable(int id)
     /* Show the machine error message for particular group if present.
      * We don't use the generic cannotLoadMachineSettings()
      * call here because we want this message to be suppressible. */
-    switch (id)
+    switch (iPageId)
     {
         case VMSettingsPage_Serial:
         {
             /* Depends on ports availability: */
-            if (!isAvailable(VMSettingsPage_Ports))
+            if (!isPageAvailable(VMSettingsPage_Ports))
                 return false;
             break;
         }
         case VMSettingsPage_Parallel:
         {
             /* Depends on ports availability: */
-            if (!isAvailable(VMSettingsPage_Ports))
+            if (!isPageAvailable(VMSettingsPage_Ports))
                 return false;
             /* But for now this page is always disabled: */
             return false;
@@ -1008,7 +1008,7 @@ bool UISettingsDialogMachine::isAvailable(int id)
         case VMSettingsPage_USB:
         {
             /* Depends on ports availability: */
-            if (!isAvailable(VMSettingsPage_Ports))
+            if (!isPageAvailable(VMSettingsPage_Ports))
                 return false;
             /* Get the USB controller object: */
             CUSBController controller = m_machine.GetUSBController();

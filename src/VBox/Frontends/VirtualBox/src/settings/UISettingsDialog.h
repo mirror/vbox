@@ -48,8 +48,8 @@ public:
    ~UISettingsDialog();
 
     /* Save/Load interface: */
-    virtual void getFrom() = 0;
-    virtual void putBackTo() = 0;
+    virtual void loadData() = 0;
+    virtual void saveData() = 0;
 
 protected slots:
 

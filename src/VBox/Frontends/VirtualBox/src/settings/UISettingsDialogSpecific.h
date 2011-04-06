@@ -46,8 +46,8 @@ public:
 
 protected:
 
-    void getFrom();
-    void putBackTo();
+    void loadData();
+    void saveData();
 
     void retranslateUi();
 
@@ -55,7 +55,7 @@ protected:
 
 private:
 
-    bool isAvailable(int id);
+    bool isPageAvailable(int iPageId);
 };
 
 /* Dialog which encapsulate all the specific functionalities of the Virtual Machine Settings */
@@ -87,8 +87,8 @@ public:
 
 protected:
 
-    void getFrom();
-    void putBackTo();
+    void loadData();
+    void saveData();
 
     void retranslateUi();
 
@@ -105,7 +105,7 @@ private slots:
 
 private:
 
-    bool isAvailable(int id);
+    bool isPageAvailable(int iPageId);
 
     CMachine m_machine;
     CConsole m_console;

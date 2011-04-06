@@ -595,10 +595,10 @@ void VBoxSelectorWnd::fileSettings()
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
     UISettingsDialog *dlg = new UISettingsDialogGlobal(this, SettingsDialogType_Offline);
-    dlg->getFrom();
+    dlg->loadData();
 
     if (dlg->exec() == QDialog::Accepted)
-        dlg->putBackTo();
+        dlg->saveData();
 
     delete dlg;
 }
@@ -734,11 +734,11 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
     mDoneInaccessibleWarningOnce = true;
 
     UISettingsDialog *pDlg = new UISettingsDialogMachine(this, dialogType, machine, console, strCategory, strControl);
-    pDlg->getFrom();
+    pDlg->loadData();
 
     if (pDlg->exec() == QDialog::Accepted)
     {
-        pDlg->putBackTo();
+        pDlg->saveData();
 
         machine.SaveSettings();
         if (!machine.isOk())
