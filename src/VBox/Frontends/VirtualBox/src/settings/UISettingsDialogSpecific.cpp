@@ -234,6 +234,11 @@ protected:
     /* Settings processor: */
     void run()
     {
+        /* Mark all the pages initially as NOT processed: */
+        QList<UISettingsPage*> pageList = m_pages.values();
+        for (int iPageNumber = 0; iPageNumber < pageList.size(); ++iPageNumber)
+            pageList[iPageNumber]->setProcessed(false);
+
         /* Iterate over the all left settings pages: */
         UISettingsPageMap pages(m_pages);
         while (!pages.empty())
