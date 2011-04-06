@@ -82,11 +82,11 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
     while (i < cMaxTries)
     {
         /* Format the number with leading zero's. */
-        rc = RTStrFormatU32(pszEnd, cbLeft, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
-        if (RT_FAILURE(rc))
+        ssize_t rc2 = RTStrFormatU32(pszEnd, cbLeft, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
+        if (RT_FAILURE(rc2))
         {
             *pszPath = '\0';
-            return rc;
+            return (int)rc2;
         }
         rc = RTDirCreate(pszPath, fMode);
         if (RT_SUCCESS(rc))
