@@ -361,12 +361,12 @@ RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle)
             AssertFailedReturn(NIL_RTFILE);
     }
 
-    HANDLE hHandle = GetStdHandle(dwStdHandle);
+    HANDLE hNative = GetStdHandle(dwStdHandle);
     if (hNative == INVALID_HANDLE_VALUE)
         return NIL_RTFILE;
 
-    RTFILE hFile = (RTFILE)(uintptr_t)hHandle;
-    AssertReturn((HANDLE)(uintptr_t)hFile == hHandle, NIL_RTFILE);
+    RTFILE hFile = (RTFILE)(uintptr_t)hNative;
+    AssertReturn((HANDLE)(uintptr_t)hFile == hNative, NIL_RTFILE);
     return hFile;
 }
 
