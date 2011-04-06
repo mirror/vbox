@@ -70,6 +70,8 @@ typedef enum RTTHREADSTATE
     RTTHREADSTATE_SLEEP,
     /** Waiting on a spin mutex. */
     RTTHREADSTATE_SPIN_MUTEX,
+    /** End of the thread states. */
+    RTTHREADSTATE_END,
 
     /** The usual 32-bit size hack. */
     RTTHREADSTATE_32BIT_HACK = 0x7fffffff
@@ -162,6 +164,16 @@ typedef enum RTTHREADTYPE
 
 
 #ifndef IN_RC
+
+/**
+ * Checks if the IPRT thread component has been initialized.
+ *
+ * This is used to avoid calling into RTThread before the runtime has been
+ * initialized.
+ *
+ * @returns @c true if it's initialized, @c false if not.
+ */
+RTDECL(bool) RTThreadIsInitialized(void);
 
 /**
  * Get the thread handle of the current thread.
@@ -377,6 +389,27 @@ RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName);
  * @param   hThread     The thread handle.
  */
 RTDECL(bool) RTThreadIsMain(RTTHREAD hThread);
+
+/**
+ * Checks if the calling thread is known to IPRT.
+ *
+ * @returns @c true if it is, @c false if it isn't.
+ */
+RTDECL(bool) RTThreadIsSelfKnown(void);
+
+/**
+ * Checks if the calling thread is know to IPRT and is alive.
+ *
+ * @returns @c true if it is, @c false if it isn't.
+ */
+RTDECL(bool) RTThreadIsSelfAlive(void);
+
+/**
+ * Checks if the calling thread is known to IPRT.
+ *
+ * @returns @c true if it is, @c false if it isn't.
+ */
+RTDECL(bool) RTThreadIsOperational(void);
 
 /**
  * Signal the user event.
