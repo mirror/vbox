@@ -64,6 +64,7 @@
  *
  * There are some requirements for the types used which follow:
  * -# They need a default and a copy constructor.
+ * -# Some methods (e.g. RTCList::contains) need a equal operator.
  * -# If the type is some complex class (that is, having a constructor which
  *    allocates members on the heap) it has to be greater than sizeof(void*) to
  *    be used correctly. If this is not the case you can manually overwrite the
