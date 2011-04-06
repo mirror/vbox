@@ -4,9 +4,8 @@
  *
  * VBoxBFE is a limited frontend that sits directly on the Virtual Machine
  * Manager (VMM) and does _not_ use COM to communicate.
- * On Linux and Windows, VBoxBFE is based on SDL; on L4 it's based on the
- * L4 console. Much of the code has been copied over from the other frontends
- * in VBox/Main/ and src/Frontends/VBoxSDL/.
+ * VBoxBFE is based on SDL. Much of the code has been copied over from the
+ * other frontends in VBox/Main/ and src/Frontends/VBoxSDL/.
  */
 
 /*
@@ -38,9 +37,6 @@ using namespace com;
 #include <VBox/param.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/version.h>
-#ifdef VBOXBFE_WITH_USB
-# include <VBox/vusb.h>
-#endif
 #ifdef VBOX_WITH_HGCM
 # include <VBox/shflsvc.h>
 #endif
@@ -63,7 +59,7 @@ using namespace com;
 #include <stdlib.h> /* putenv */
 #include <errno.h>
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_L4)
+#if defined(RT_OS_LINUX)
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -78,25 +74,13 @@ using namespace com;
 #include "StatusImpl.h"
 #include "Framebuffer.h"
 #include "MachineDebuggerImpl.h"
-#ifdef VBOXBFE_WITH_USB
-# include "HostUSBImpl.h"
-#endif
 
-#if defined(USE_SDL) && ! defined(RT_OS_L4)
+#if defined(USE_SDL)
 #include "SDLConsole.h"
 #include "SDLFramebuffer.h"
 #endif
 
-#ifdef RT_OS_L4
-#include "L4Console.h"
-#include "L4Framebuffer.h"
-#include "L4IDLInterface.h"
-#endif
 
-#ifdef RT_OS_L4
-# include <l4/sys/ktrace.h>
-# include <l4/vboxserver/file.h>
-#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -129,20 +113,13 @@ Framebuffer       *gFramebuffer     = NULL;
 MachineDebugger   *gMachineDebugger = NULL;
 VMStatus          *gStatus          = NULL;
 Console           *gConsole         = NULL;
-#ifdef VBOXBFE_WITH_USB
-HostUSB           *gHostUSB         = NULL;
-#endif
 
 VMSTATE machineState = VMSTATE_CREATING;
 
 static PPDMLED     mapFDLeds[2]   = {0};
 
 /** flag whether keyboard/mouse events are grabbed */
-#ifdef RT_OS_L4
-/** see <l4/input/macros.h> for key definitions */
-int                gHostKey; /* not used */
-int                gHostKeySym = KEY_RIGHTCTRL;
-#elif defined (DEBUG_dmik)
+#if   defined (DEBUG_dmik)
 // my mini kbd doesn't have RCTRL...
 int                gHostKey    = KMOD_RSHIFT;
 int                gHostKeySym = SDLK_RSHIFT;
@@ -155,9 +132,6 @@ bool gfAllowFullscreenToggle = true;
 static bool        g_fIOAPIC = false;
 static bool        g_fACPI   = true;
 static bool        g_fAudio  = false;
-#ifdef VBOXBFE_WITH_USB
-static bool        g_fUSB    = false;
-#endif
 static char       *g_pszHdaFile   = NULL;
 static bool        g_fHdaSpf = false;
 static char       *g_pszHdbFile   = NULL;
@@ -369,17 +343,13 @@ static void show_usage()
              "  -[no]acpi          Enable or disable ACPI (default: enabled)\n"
              "  -[no]ioapic        Enable or disable the IO-APIC (default: disabled)\n"
              "  -audio             Enable audio\n"
-#ifndef RT_OS_L4
              "  -natdev<1-N> [mac] Use NAT networking on network adapter <N>.  Use hardware\n"
              "                     address <mac> if specified.\n"
-#endif
              "  -hifdev<1-N>       Use Host Interface Networking with host interface <int>\n"
              "      <int> [mac]    on network adapter <N>.  Use hardware address <mac> if\n"
              "                     specified.\n"
-#ifndef RT_OS_L4
              "  -intnet<1-N>       Attach network adapter <N> to internal network <net>.  Use\n"
              "      <net> [mac]    hardware address <mac> if specified.\n"
-#endif
 #if 0
              "  -netsniff<1-N>     Enable packet sniffer\n"
 #endif
@@ -402,9 +372,6 @@ static void show_usage()
              "  -[no]patm          Enable or disable PATM\n"
              "  -[no]csam          Enable or disable CSAM\n"
 #endif
-#ifdef RT_OS_L4
-             "  -env <var=value>   Set the given environment variable to \"value\"\n"
-#endif
              "\n");
 }
 
@@ -418,9 +385,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
     bool fSecureLabel = false;
     uint32_t secureLabelPointSize = 12;
     char *secureLabelFontFile = NULL;
-#endif
-#ifdef RT_OS_L4
-    uint32_t u32MaxVRAM;
 #endif
     int rc = VINF_SUCCESS;
 
@@ -543,10 +507,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             g_fIOAPIC = false;
         else if (strcmp(pszArg, "-audio") == 0)
             g_fAudio = true;
-#ifdef VBOXBFE_WITH_USB
-        else if (strcmp(pszArg, "-usb") == 0)
-            g_fUSB = true;
-#endif
         else if (strcmp(pszArg, "-hda") == 0)
         {
             if (++curArg >= argc)
@@ -599,18 +559,10 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             if (!g_pszCdromFile)
                 return SyntaxError("The path to the specified cdrom, '%s', could not be resolved.\n", argv[curArg]);
         }
-#ifdef RT_OS_L4
-        /* This is leaving a lot of dead code in the L4 version of course,
-           but I don't think that that is a major problem.  We may even
-           activate it sometime... */
-        else if (   strncmp(pszArg, "-hifdev", 7) == 0
-                 || strncmp(pszArg, "-nonetd", 7) == 0)
-#else
         else if (   strncmp(pszArg, "-natdev", 7) == 0
                  || strncmp(pszArg, "-hifdev", 7) == 0
                  || strncmp(pszArg, "-nonetd", 7) == 0
                  || strncmp(pszArg, "-intnet", 7) == 0)
-#endif
         {
             int i = networkArg2Index(pszArg, 7);
             if (i < 0)
@@ -762,10 +714,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
         else if (strcmp(pszArg, "-nocsam") == 0)
             g_fCSAM = false;
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
-#ifdef RT_OS_L4
-        else if (strcmp(pszArg, "-env") == 0)
-            ++curArg;
-#endif /* RT_OS_L4 */
         /* just show the help screen */
         else
         {
@@ -787,9 +735,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
     /* First console, then framebuffer!! */
     gConsole = new SDLConsole();
     gFramebuffer = new SDLFramebuffer();
-#elif defined(RT_OS_L4)
-    gConsole = new L4Console();
-    gFramebuffer = new L4Framebuffer();
 #else
 #error "todo"
 #endif
@@ -815,10 +760,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
         return -1;
     }
 
-#ifdef RT_OS_L4
-    /* Start the external IDL interface */
-    L4CtrlInit();
-#endif
 
     /* loop until the powerup processing is done */
     do
@@ -866,24 +807,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 
     gConsole->updateTitlebar();
 
-#ifdef RT_OS_L4
-    /* The L4 console provides (currently) a fixed resolution. */
-    if (g_u32VRamSize >= gFramebuffer->getHostXres()
-                       * gFramebuffer->getHostYres()
-                       * (gDisplay->getBitsPerPixel() / 8))
-        gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0, 0);
-
-    /* Limit the VRAM of the guest to the amount of memory we got actually
-     * mapped from the L4 console. */
-    u32MaxVRAM = (gFramebuffer->getHostYres() + 18) /* don't omit the status bar */
-               * gFramebuffer->getHostXres()
-               * (gFramebuffer->getHostBitsPerPixel() / 8);
-    if (g_u32VRamSize > u32MaxVRAM)
-    {
-        RTPrintf("Limiting the video memory to %u bytes\n", u32MaxVRAM);
-        g_u32VRamSize = u32MaxVRAM;
-    }
-#endif
 
     /*
      * Main event loop
@@ -986,23 +909,6 @@ leave:
  */
 int main(int argc, char **argv)
 {
-# ifdef RT_OS_L4
-# ifndef L4API_l4v2onv4
-    /* clear Fiasco kernel trace buffer */
-    fiasco_tbuf_clear();
-# endif
-    /* set the environment.  Must be done before the runtime is
-       initialised.  Yes, it really must. */
-    for (int i = 0; i < argc; i++)
-        if (strcmp(argv[i], "-env") == 0)
-        {
-            if (++i >= argc)
-                return SyntaxError("missing argument to -env (format: var=value)!\n");
-            /* add it to the environment */
-            if (putenv(argv[i]) != 0)
-                return SyntaxError("Error setting environment string %s.\n", argv[i]);
-        }
-# endif /* RT_OS_L4 */
 
     /*
      * Before we do *anything*, we initialize the runtime.
@@ -1239,17 +1145,6 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         }
     }
 #endif
-
-#ifdef VBOXBFE_WITH_USB
-    /*
-     * Capture USB devices.
-     */
-    if (g_fUSB)
-    {
-        gHostUSB = new HostUSB();
-        gHostUSB->init(gpVM);
-    }
-#endif /* VBOXBFE_WITH_USB */
 
     /*
      * Power on the VM (i.e. start executing).
@@ -1610,18 +1505,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     /* Boot menu */
     rc = CFGMR3InsertInteger(pCfg,  "ShowBootMenu",   g_iBootMenu);                 UPDATE_RC();
 
-#ifdef RT_OS_L4
-    /* XXX hard-coded */
-    rc = CFGMR3InsertInteger(pCfg,  "HeightReduction", 18);                         UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", 1);                         UPDATE_RC();
-    char szBuf[64];
-    /* Tell the guest which is the ideal video mode to use */
-    RTStrPrintf(szBuf, sizeof(szBuf), "%dx%dx%d",
-                gFramebuffer->getHostXres(),
-                gFramebuffer->getHostYres(),
-                gFramebuffer->getHostBitsPerPixel());
-    rc = CFGMR3InsertString(pCfg,   "CustomVideoMode1", szBuf);                     UPDATE_RC();
-#endif
 
     rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
     rc = CFGMR3InsertString(pLunL0, "Driver",         "MainDisplay");               UPDATE_RC();
@@ -1789,7 +1672,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                 else
 #endif
                 {
-#if defined(RT_OS_LINUX) || defined(RT_OS_L4)
+#if defined(RT_OS_LINUX)
                     /*
                      * Create/Open the TAP the device.
                      */
@@ -1928,31 +1811,10 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 # else
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "solaudio");              UPDATE_RC();
 # endif
-#elif defined(RT_OS_L4)
-        rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
 #else /* portme */
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "none");                  UPDATE_RC();
 #endif /* !RT_OS_WINDOWS */
     }
-
-#ifdef VBOXBFE_WITH_USB
-    /*
-     * The USB Controller.
-     */
-    if (g_fUSB)
-    {
-        rc = CFGMR3InsertNode(pDevices, "usb-ohci",       &pDev);                   UPDATE_RC();
-        rc = CFGMR3InsertNode(pDev,     "0",              &pInst);                  UPDATE_RC();
-        rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                   UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",        1);       /* boolean */   UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    6);                       UPDATE_RC();
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                       UPDATE_RC();
-
-        rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
-        rc = CFGMR3InsertString(pLunL0, "Driver",         "VUSBRootHub");           UPDATE_RC();
-        rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
-    }
-#endif /* VBOXBFE_WITH_USB */
 
 #undef UPDATE_RC
 #undef UPDATE_RC
