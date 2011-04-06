@@ -1916,6 +1916,8 @@ static bool pdmBlkCacheReqUpdate(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq,
     {
         if (fCallHandler)
             pdmBlkCacheReqComplete(pBlkCache, pReq);
+        else
+            RTMemFree(pReq);
         return true;
     }
 
@@ -2525,6 +2527,7 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
         pdmBlkCacheIoXferCompleteEntry(pBlkCache, hIoXfer, rcIoXfer);
     else
         pdmBlkCacheReqUpdate(pBlkCache, hIoXfer->pReq, rcIoXfer, true);
+    RTMemFree(hIoXfer);
 }
 
 /**
