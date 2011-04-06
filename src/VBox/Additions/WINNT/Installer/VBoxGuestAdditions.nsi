@@ -732,14 +732,6 @@ Function PrepareWRPFile
 
   Pop $0
 
-!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
-  !ifdef WFP_FILE_EXCEPTION
-    VBoxGuestInstallHelper::DisableWFP "$0"
-    Pop $1 ; Get return value (ignored for now)
-    DetailPrint "Setting WFP exception for '$0': $1"
-  !endif
-!endif
-
   IfFileExists "$g_strSystemDir\takeown.exe" 0 +2
     nsExec::ExecToLog '"$g_strSystemDir\takeown.exe" /F "$0"'
   AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
@@ -748,6 +740,14 @@ Function PrepareWRPFile
   AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
   Pop $1
   DetailPrint "Setting access rights for '$0': $1"
+
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+  !ifdef WFP_FILE_EXCEPTION
+    VBoxGuestInstallHelper::DisableWFP "$0"
+    Pop $1 ; Get return value (ignored for now)
+    DetailPrint "Setting WFP exception for '$0': $1"
+  !endif
+!endif
 
 FunctionEnd
 
