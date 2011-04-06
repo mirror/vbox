@@ -58,9 +58,14 @@ RT_C_DECLS_BEGIN
  * When not defined before the inclusion of iprt/mem.h or iprt/memobj.h, this
  * will default to the pointer to the current file name.  The memory API will
  * make of use of this as pointer to a volatile but read-only string.
+ * The alternative tag includes the line number for a more-detailed analysis.
  */
 #ifndef RTMEM_TAG
-# define RTMEM_TAG   (__FILE__)
+# if 0
+#  define RTMEM_TAG   (__FILE__ ":" RT_XSTR(__LINE__))
+# else
+#  define RTMEM_TAG   (__FILE__)
+# endif
 #endif
 
 
