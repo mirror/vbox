@@ -36,17 +36,21 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
+
 RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, signed int cchDigits, char chSep)
 {
     /*
      * Validate input.
      */
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertReturn(cbSize, VERR_INVALID_PARAMETER);
-    AssertReturn(cchDigits, VERR_INVALID_PARAMETER);
-    /* Check for enough space. */
-    char *pszEnd = strchr(pszPath, '\0');
+    AssertReturn(cbSize, VERR_BUFFER_OVERFLOW);
+    AssertReturn(cchDigits > 0, VERR_INVALID_PARAMETER);
+
+    /* Check that there is sufficient space. */
+    char *pszEnd = RTStrEnd(pszPath, cbSize);
+    AssertReturn(pszEnd, VERR_BUFFER_OVERFLOW);
     AssertReturn(cbSize - 1 - (pszEnd - pszPath) >= (size_t)cchDigits + (chSep ? 1 : 0), VERR_BUFFER_OVERFLOW);
+    size_t cbLeft = cbSize - (pszEnd - pszPath);
 
     /* First try is to create the path without any numbers. */
     int rc = RTDirCreate(pszPath, fMode);
@@ -57,21 +61,28 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
     /* If the separator value isn't zero, add it. */
     if (chSep != '\0')
     {
+        cbLeft--;
         *pszEnd++ = chSep;
         *pszEnd   = '\0';
     }
 
-    /* How many tries? */
-    size_t cMaxTries = 10;
-    for (size_t a = 0; a < (size_t)cchDigits - 1; ++a)
-        cMaxTries *= 10;
+    /* How many tries? Stay within somewhat sane limits. */
+    uint32_t cMaxTries;
+    if (cchDigits >= 8)
+        cMaxTries = 100 * _1M;
+    else
+    {
+        cMaxTries = 10;
+        for (int a = 0; a < cchDigits - 1; ++a)
+            cMaxTries *= 10;
+    }
 
-    /* Try cMaxTries - 1 counts to create a directory with the appended number. */
-    size_t i = 1;
+    /* Try cMaxTries - 1 times to create a directory with appended numbers. */
+    uint32_t i = 1;
     while (i < cMaxTries)
     {
         /* Format the number with leading zero's. */
-        rc = RTStrFormatNumber(pszEnd, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
+        rc = RTStrFormatU32(pszEnd, cbLeft, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
         if (RT_FAILURE(rc))
         {
             *pszPath = '\0';
