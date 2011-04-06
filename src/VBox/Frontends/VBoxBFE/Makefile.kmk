@@ -56,7 +56,6 @@ ifdef VBOX_WITH_LINUX_COMPILER_H
 VBoxBFE_DEFS += VBOX_WITH_LINUX_COMPILER_H
 endif
 VBoxBFE_DEFS.freebsd = VBOXBFE_WITH_X11
-VBoxBFE_DEFS.l4 = _GNU_SOURCE
 VBoxBFE_DEFS.linux = _GNU_SOURCE VBOXBFE_WITH_X11
 VBoxBFE_DEFS.solaris = VBOXBFE_WITH_X11
 ifdef VBOX_WITH_CROSSBOW
@@ -85,39 +84,18 @@ endif
 VBoxBFE_SOURCES.darwin = \
 	VBoxBFEMain-darwin.m
 
-VBoxBFE_SOURCES.l4 = \
-	L4Console.cpp \
-	L4Framebuffer.cpp \
-	L4IDLInterface.cpp \
-	EmulCpp.cpp
-
 # SDL
-ifneq ($(KBUILD_TARGET),l4)
 VBoxBFE_SDKS += LIBSDL
 VBoxBFE_DEFS += USE_SDL
 VBoxBFE_SOURCES += \
 	SDLConsole.cpp \
 	SDLFramebuffer.cpp
-endif
-
-# USB Support
-if1of ($(KBUILD_TARGET), l4 win)
-VBoxBFE_DEFS += VBOXBFE_WITH_USB
-VBoxBFE_SOURCES += \
-	HostUSBImpl.cpp \
-	HostUSBDeviceImpl.cpp \
-	USBProxyService.cpp
-VBoxBFE_SOURCES.l4 += \
-	USBProxyServiceLinux.cpp
-VBoxBFE_SOURCES.linux += \
-	USBProxyServiceLinux.cpp
-endif
 
 VBoxBFE_INCS = \
 	$(VBoxBFE_0_OUTDIR) \
 	$(VBOX_PATH_SDK)/include \
 	$(PATH_ROOT)/src/VBox/Frontends/VBoxBFE
-ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
+ifneq ($(filter-out win os2 darwin,$(KBUILD_TARGET)),) # X11
 VBoxBFE_INCS += \
 	$(VBOX_XCURSOR_INCS)
 endif
@@ -125,11 +103,11 @@ endif
 VBoxBFE_LIBS = \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
-ifneq ($(filter-out win os2 l4,$(KBUILD_TARGET)),)
+ifneq ($(filter-out win os2,$(KBUILD_TARGET)),)
 VBoxBFE_LIBS += \
 	$(LIB_REM)
 endif
-ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
+ifneq ($(filter-out win os2 darwin,$(KBUILD_TARGET)),) # X11
 VBoxBFE_LIBS += \
 	$(VBOX_XCURSOR_LIBS) \
 	X11
@@ -140,17 +118,10 @@ ifndef VBOX_WITHOUT_COM
 VBoxBFE_LIBS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
 endif
-VBoxBFE_LIBS.l4 = \
-	$(L4_LIBDIR)/libl4con-idl.a \
-	$(L4_LIBDIR)/libconstream-server.a \
-	$(L4_LIBDIR)/libvboxctrl-server.a \
-	$(L4_LIBDIR)/libl4sys.a
 VBoxBFE_LIBS.darwin = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 VBoxBFE_LDFLAGS.darwin = -framework Foundation -framework AppKit
 
-VBoxBFE_CXXFLAGS.l4 += -fno-rtti -nostdinc -Wno-non-virtual-dtor \
-	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR))
 ## @todo why is it all this cool stuff here only for linux? If it's important, -fshort-wchar would apply to all GCC platforms.
 VBoxBFE_DEFS.linux = \
 	NDEBUG TRIMMED
