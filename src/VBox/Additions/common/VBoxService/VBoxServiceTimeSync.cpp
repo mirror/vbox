@@ -164,7 +164,13 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
     int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("VBoxServiceTimeSyncPreInit: Failed to connect to the guest property service! Error: %Rrc\n", rc);
+        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
+        {
+            VBoxServiceVerbose(0, "VMInfo: Guest property service is not available, skipping\n");
+            rc = VINF_SUCCESS;
+        }
+        else
+            VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
     }
     else
     {
