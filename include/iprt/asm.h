@@ -2525,6 +2525,25 @@ DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile *pi64, int64_t i64)
 
 
 /**
+ * Atomically exchanges and adds to a size_t value, ordered.
+ *
+ * @returns The old value.
+ * @param   pcb         Pointer to the size_t value.
+ * @param   cb          Number to add.
+ */
+DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile *pcb, size_t cb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicAddU64((uint64_t volatile *)pcb, cb);
+#elif ARCH_BITS == 32
+    return ASMAtomicAddU32((uint32_t volatile *)pcb, cb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
  * Atomically exchanges and adds a value which size might differ between
  * platforms or compilers, ordered.
  *
@@ -2592,6 +2611,26 @@ DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile *pi64, int64_t i64)
 {
     return (int64_t)ASMAtomicAddU64((uint64_t volatile *)pi64, (uint64_t)-i64);
 }
+
+
+/**
+ * Atomically exchanges and subtracts to a size_t value, ordered.
+ *
+ * @returns The old value.
+ * @param   pcb         Pointer to the size_t value.
+ * @param   cb          Number to subtract.
+ */
+DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile *pcb, size_t cb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicSubU64((uint64_t volatile *)pcb, cb);
+#elif ARCH_BITS == 32
+    return ASMAtomicSubU32((uint32_t volatile *)pcb, cb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
 
 /**
  * Atomically exchanges and subtracts a value which size might differ between
@@ -2711,6 +2750,24 @@ DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile *pi64)
 
 
 /**
+ * Atomically increment a size_t value, ordered.
+ *
+ * @returns The new value.
+ * @param   pcb         Pointer to the value to increment.
+ */
+DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile *pcb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicIncU64((uint64_t volatile *)pcb);
+#elif ARCH_BITS == 32
+    return ASMAtomicIncU32((uint32_t volatile *)pcb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
  * Atomically decrement an unsigned 32-bit value, ordered.
  *
  * @returns The new value.
@@ -2805,6 +2862,24 @@ DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile *pu64)
 DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile *pi64)
 {
     return (int64_t)ASMAtomicDecU64((uint64_t volatile *)pi64);
+}
+
+
+/**
+ * Atomically decrement a size_t value, ordered.
+ *
+ * @returns The new value.
+ * @param   pcb         Pointer to the value to decrement.
+ */
+DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile *pcb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicDecU64((uint64_t volatile *)pcb);
+#elif ARCH_BITS == 32
+    return ASMAtomicDecU32((uint32_t volatile *)pcb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
 }
 
 
