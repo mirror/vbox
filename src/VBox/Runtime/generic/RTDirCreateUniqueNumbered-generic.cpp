@@ -83,7 +83,7 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
     {
         /* Format the number with leading zero's. */
         ssize_t rc2 = RTStrFormatU32(pszEnd, cbLeft, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
-        if (RT_FAILURE(rc2))
+        if (RT_FAILURE((int) rc2))
         {
             *pszPath = '\0';
             return (int)rc2;
