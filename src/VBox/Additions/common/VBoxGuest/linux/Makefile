@@ -101,7 +101,9 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
 MOD_OBJS +=	common/alloc/heapsimple.o
 endif
 
-MOD_DEFS = -DIN_GUEST -DIN_GUEST_R0 -DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM
+MOD_DEFS = -DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_GUEST \
+            -DIN_GUEST_R0 -DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST \
+            -DVBOX_WITH_HGCM
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  MOD_DEFS  += -DRT_ARCH_AMD64
 else
@@ -119,7 +121,8 @@ else
  MANGLING := $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h
 endif
 ifeq ($(KERN_VERSION),24)
- MOD_CFLAGS =
+ ## @todo move to MOD_DEFS when we have finished refactoring
+ MOD_CFLAGS = -DEXPORT_SYMTAB
 else
  MOD_CFLAGS = -include $(MANGLING)
 endif
