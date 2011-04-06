@@ -24,6 +24,7 @@
 
 #include "MsiCommon.h"
 
+/** @todo: use accessors so that raw PCI devices work correctly with MSI. */
 DECLINLINE(uint16_t) msiGetMessageControl(PPCIDEVICE pDev)
 {
     return PCIDevGetWord(pDev, pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL);
