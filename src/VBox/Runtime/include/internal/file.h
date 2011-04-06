@@ -43,6 +43,18 @@ RT_C_DECLS_BEGIN
  */
 int rtFileRecalcAndValidateFlags(uint32_t *pfOpen);
 
+
+/**
+ * Internal interface for getting the RTFILE handle of stdin, stdout or stderr.
+ *
+ * This interface will not be exposed and is purely for internal IPRT use.
+ *
+ * @returns Handle or NIL_RTFILE.
+ *
+ * @param   enmStdHandle    The standard handle.
+ */
+RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle);
+
 RT_C_DECLS_END
 
 #endif
