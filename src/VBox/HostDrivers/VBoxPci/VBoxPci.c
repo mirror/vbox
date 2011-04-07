@@ -607,7 +607,7 @@ static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
 }
 
 
-static DECLHIDDEN(bool) vboxPciCanUnload(PVBOXRAWPCIGLOBALS pGlobals)
+static bool vboxPciCanUnload(PVBOXRAWPCIGLOBALS pGlobals)
 {
     int rc = vboxPciGlobalsLock(pGlobals);
     bool fRc = !pGlobals->pInstanceHead
@@ -618,7 +618,7 @@ static DECLHIDDEN(bool) vboxPciCanUnload(PVBOXRAWPCIGLOBALS pGlobals)
 }
 
 
-static DECLHIDDEN(int) vboxPciInitIdc(PVBOXRAWPCIGLOBALS pGlobals)
+static int vboxPciInitIdc(PVBOXRAWPCIGLOBALS pGlobals)
 {
     int rc;
     Assert(!pGlobals->fIDCOpen);
