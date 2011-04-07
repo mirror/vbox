@@ -297,7 +297,7 @@ endif
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
 
-ifdef VBOX_WITH_JWS
+ ifdef VBOX_WITH_JWS
 INSTALLS += VBoxJWs-inst-jar
 
 #
@@ -357,7 +357,7 @@ $$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JWS_JDEST) .
 
-endif # VBOX_WITH_JWS
+ endif # VBOX_WITH_JWS
 
  ifndef VBOX_ONLY_SDK
  #
@@ -421,7 +421,6 @@ ifdef VBOX_ONLY_SDK
  VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
  VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
  VBOXWEB_WS_PHP                = $(VBOX_PATH_SDK)/bindings/webservice/php/lib/vboxServiceWrappers.php
- VBOXWEB_SAMPLES_AXIS_DIR      = $(VBOX_PATH_SDK)/bindings/webservice/java/axis/samples
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples
  VBOXWEB_JAXWSSAMPLE           = $(VBOXWEB_SAMPLES_JAXWS_DIR)/clienttest.java
  VBOXWEB_METRICSAMPLE          = $(VBOXWEB_SAMPLES_JAXWS_DIR)/metrictest.java
@@ -432,10 +431,11 @@ ifdef VBOX_ONLY_SDK
  VBOXWEB_JAVA15_JAR            = $(VBOXWEB_JAVALIB)/vboxws_java15.jar
  VBOXWEB_JAVA16_JAR            = $(VBOXWEB_JAVALIB)/vboxws_java16.jar
 
-define find_java_files
- $(shell find $(1) -name \*.java)
-endef
+ define find_java_files
+  $(shell find $(1) -name \*.java)
+ endef
 
+ ifdef VBOX_WITH_OLD_JWS
  VBOX_JAXWS_LIBDIR             = $(VBOX_PATH_WEBSERVICE)/jaxlibs
  # well, not really good
  VBOX_JAVA15                   = $(firstword $(wildcard \
@@ -443,9 +443,9 @@ endef
 	/usr/jdk/jdk1.5*/bin/java  \
 	/opt/sun-jdk-1.5*/bin/java \
         /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Commands/java))
- ifeq ($(strip $(VBOX_JAVA15)),)
-  $(error Failed to autodetect VBOX_JAVA15, please set it manually)
- endif
+  ifeq ($(strip $(VBOX_JAVA15)),)
+   $(error Failed to autodetect VBOX_JAVA15, please set it manually)
+  endif
  VBOX_JAVA16                   = java
  VBOX_JAVAC15                  = javac -target 1.5
  VBOX_JAVAC16                  = javac -target 1.6
@@ -454,25 +454,27 @@ endef
 	/usr/jdk/jdk1.6*/bin/wsimport \
 	/usr/bin/wsimport \
 	/opt/sun-jdk-1.6*/bin/wsimport))
- ifeq ($(strip $(VBOX_WSIMPORT16)),)
-  $(error Failed to autodetect VBOX_WSIMPORT16, please set it manually)
- endif
+  ifeq ($(strip $(VBOX_WSIMPORT16)),)
+   $(error Failed to autodetect VBOX_WSIMPORT16, please set it manually)
+  endif
+ endif # VBOX_WITH_OLD_JWS
 
- VBOXWEB_OTHERS               += \
-	$(VBOXWEB_GLUE_PYTHON) 	 \
-	$(VBOXWEB_WS_PYTHON)     \
-	$(VBOXWEB_WS_PERL)       \
-	$(VBOXWEB_WS_PHP)        \
-	$(VBOXWEB_PYTHONWSSAMPLE)
+ VBOXWEB_OTHERS               +=  \
+	$(VBOXWEB_GLUE_PYTHON) 	  \
+	$(VBOXWEB_WS_PYTHON)      \
+	$(VBOXWEB_WS_PERL)        \
+	$(VBOXWEB_WS_PHP)         \
+	$(VBOXWEB_PYTHONWSSAMPLE) \
+	$(PATH_ROOT)
 
-ifdef VBOX_WITH_OLD_JWS
+ ifdef VBOX_WITH_OLD_JWS
   VBOXWEB_OTHERS               += \
 	$(VBOXWEB_GLUE_JAVA_TMP)  \
 	$(VBOXWEB_JAXWSSAMPLE)    \
 	$(VBOXWEB_METRICSAMPLE)   \
         $(VBOXWEB_JAVA15_JAR)     \
 	$(VBOXWEB_JAVA16_JAR)
-endif
+ endif
 
  #
  # Install sample code.
@@ -481,13 +483,23 @@ endif
  vboxwebinst_INST = $(INST_SDK)bindings/webservice/
  vboxwebinst_MODE = a+rx,u+w
  vboxwebinst_SOURCES = \
+	samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
+	samples/php/clienttest.php=>php/samples/clienttest.php
+
+ INSTALLS += vboxwebinst_nox
+ vboxwebinst_nox_INST = $(INST_SDK)bindings/webservice/
+ vboxwebinst_nox_MODE = a+r,u+w
+ vboxwebinst_nox_SOURCES = \
+	samples/python/Makefile=>python/samples/Makefile \
+	samples/python/Makefile.glue=>python/lib/Makefile \
+	$(PATH_ROOT)/COPYING.LIB=>java/jax-ws/COPYING.LIB
+
+ ifdef VBOX_WITH_OLD_JWS
+  vboxwebinst_nox_SOURCES += \
 	samples/java/axis/clienttest.java=>java/axis/samples/clienttest.java \
 	samples/java/jax-ws/Makefile.glue=>java/jax-ws/src/Makefile \
-	samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile \
-	samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
-	samples/php/clienttest.php=>php/samples/clienttest.php \
-	samples/python/Makefile=>python/samples/Makefile \
-	samples/python/Makefile.glue=>python/lib/Makefile
+	samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile
+ endif
 
 endif # VBOX_ONLY_SDK
 
