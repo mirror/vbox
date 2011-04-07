@@ -2244,12 +2244,13 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 				-e '/^memset/d' \
 				-e '/^strchr/d' \
 				-e '/^strpbrk/d' \
+				-e '/^_Z7strpbrk/d' \
 				-e '/^strcmp/d' \
 				-e '/^strcpy/d' \
 				-e '/^strlen/d' \
 				-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 				\
-				-e '/^_Z*[[:digit:]]\+dbus/d' \
+				-e '/^_Z[[:digit:]]\+dbus/d' \
 				-e '/^_Z13RTDBusLoadLibv/d' \
 				\
 				-e '/^VBoxHost_/d'\
