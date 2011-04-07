@@ -1120,11 +1120,10 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    const char *url;
-
     NOREF(aVersion);
 
-    static const struct {
+    static const struct
+    {
         FirmwareType_T type;
         const char*    fileName;
         const char*    url;
@@ -1159,22 +1158,23 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
         }
 
         Utf8Str shortName, fullName;
-        int rc;
 
         shortName = Utf8StrFmt("Firmware%c%s",
                                RTPATH_DELIMITER,
                                firmwareDesc[i].fileName);
-        rc = calculateFullPath(shortName, fullName); AssertRCReturn(rc, rc);
+        int rc = calculateFullPath(shortName, fullName);
+        AssertRCReturn(rc, rc);
         if (RTFileExists(fullName.c_str()))
         {
             *aResult = TRUE;
-             if (aFile)
+            if (aFile)
                 Utf8Str(fullName).cloneTo(aFile);
             break;
         }
 
         char pszVBoxPath[RTPATH_MAX];
-        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, rc);
+        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX);
+        AssertRCReturn(rc, rc);
         fullName = Utf8StrFmt("%s%c%s",
                               pszVBoxPath,
                               RTPATH_DELIMITER,
@@ -1187,8 +1187,6 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
             break;
         }
 
-
-        url = firmwareDesc[i].url;
         /** @todo: account for version in the URL */
         if (aUrl != NULL)
         {
