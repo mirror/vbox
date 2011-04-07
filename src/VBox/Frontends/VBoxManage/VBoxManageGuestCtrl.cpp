@@ -529,7 +529,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     uint64_t u64StartMS = RTTimeMilliTS();
 
     /* Execute the process. */
-    int rcProc; /** @todo: Not always initialized! */
+    int rcProc = RTEXITCODE_FAILURE;
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
     rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
