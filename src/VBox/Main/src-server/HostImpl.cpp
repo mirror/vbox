@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1512,6 +1512,16 @@ STDMETHODIMP Host::FindUSBDeviceById(IN_BSTR aId,
 #endif  /* !VBOX_WITH_USB */
 }
 
+STDMETHODIMP Host::GenerateMACAddress(BSTR *aAddress)
+{
+    CheckComArgOutPointerValid(aAddress);
+    // no locking required
+    Utf8Str mac;
+    generateMACAddress(mac);
+    Bstr(mac).cloneTo(aAddress);
+    return S_OK;
+}
+
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2795,7 +2805,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
                                                     ramUsageUsed,
                                                     ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
-    pm::BaseMetric *ramVmm = new pm::HostRamVmm(aCollector->getGuestManager(), objptr, 
+    pm::BaseMetric *ramVmm = new pm::HostRamVmm(aCollector->getGuestManager(), objptr,
                                                 ramVMMUsed,
                                                 ramVMMFree,
                                                 ramVMMBallooned,
@@ -2895,6 +2905,21 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
 {
     aCollector->unregisterMetricsFor(this);
     aCollector->unregisterBaseMetricsFor(this);
+}
+
+
+/* static */
+void Host::generateMACAddress(Utf8Str &mac)
+{
+    /*
+     * Our strategy is as follows: the first three bytes are our fixed
+     * vendor ID (080027). The remaining 3 bytes will be taken from the
+     * start of a GUID. This is a fairly safe algorithm.
+     */
+    Guid guid;
+    guid.create();
+    mac = Utf8StrFmt("080027%02X%02X%02X",
+                     guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
 }
 
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */

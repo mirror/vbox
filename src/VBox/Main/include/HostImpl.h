@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,17 +56,17 @@ public:
     void uninit();
 
     // IHost properties
-    STDMETHOD(COMGETTER(DVDDrives))(ComSafeArrayOut (IMedium *, drives));
-    STDMETHOD(COMGETTER(FloppyDrives))(ComSafeArrayOut (IMedium *, drives));
-    STDMETHOD(COMGETTER(USBDevices))(ComSafeArrayOut (IHostUSBDevice *, aUSBDevices));
-    STDMETHOD(COMGETTER(USBDeviceFilters))(ComSafeArrayOut (IHostUSBDeviceFilter *, aUSBDeviceFilters));
-    STDMETHOD(COMGETTER(NetworkInterfaces))(ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
+    STDMETHOD(COMGETTER(DVDDrives))(ComSafeArrayOut(IMedium *, drives));
+    STDMETHOD(COMGETTER(FloppyDrives))(ComSafeArrayOut(IMedium *, drives));
+    STDMETHOD(COMGETTER(USBDevices))(ComSafeArrayOut(IHostUSBDevice *, aUSBDevices));
+    STDMETHOD(COMGETTER(USBDeviceFilters))(ComSafeArrayOut(IHostUSBDeviceFilter *, aUSBDeviceFilters));
+    STDMETHOD(COMGETTER(NetworkInterfaces))(ComSafeArrayOut(IHostNetworkInterface *, aNetworkInterfaces));
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorCoreCount))(ULONG *count);
     STDMETHOD(GetProcessorSpeed)(ULONG cpuId, ULONG *speed);
     STDMETHOD(GetProcessorDescription)(ULONG cpuId, BSTR *description);
-    STDMETHOD(GetProcessorFeature) (ProcessorFeature_T feature, BOOL *supported);
+    STDMETHOD(GetProcessorFeature)(ProcessorFeature_T feature, BOOL *supported);
     STDMETHOD(GetProcessorCPUIDLeaf)(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf, ULONG *aValEAX, ULONG *aValEBX, ULONG *aValECX, ULONG *aValEDX);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *size);
     STDMETHOD(COMGETTER(MemoryAvailable))(ULONG *available);
@@ -76,20 +76,21 @@ public:
     STDMETHOD(COMGETTER(Acceleration3DAvailable))(BOOL *aSupported);
 
     // IHost methods
-    STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
-                                               IProgress **aProgress);
-    STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_BSTR aId, IProgress **aProgress);
-    STDMETHOD(CreateUSBDeviceFilter) (IN_BSTR aName, IHostUSBDeviceFilter **aFilter);
-    STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
-    STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition);
+    STDMETHOD(CreateHostOnlyNetworkInterface)(IHostNetworkInterface **aHostNetworkInterface,
+                                              IProgress **aProgress);
+    STDMETHOD(RemoveHostOnlyNetworkInterface)(IN_BSTR aId, IProgress **aProgress);
+    STDMETHOD(CreateUSBDeviceFilter)(IN_BSTR aName, IHostUSBDeviceFilter **aFilter);
+    STDMETHOD(InsertUSBDeviceFilter)(ULONG aPosition, IHostUSBDeviceFilter *aFilter);
+    STDMETHOD(RemoveUSBDeviceFilter)(ULONG aPosition);
 
-    STDMETHOD(FindHostDVDDrive) (IN_BSTR aName, IMedium **aDrive);
-    STDMETHOD(FindHostFloppyDrive) (IN_BSTR aName, IMedium **aDrive);
-    STDMETHOD(FindHostNetworkInterfaceByName) (IN_BSTR aName, IHostNetworkInterface **networkInterface);
-    STDMETHOD(FindHostNetworkInterfaceById) (IN_BSTR id, IHostNetworkInterface **networkInterface);
-    STDMETHOD(FindHostNetworkInterfacesOfType) (HostNetworkInterfaceType_T type, ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
-    STDMETHOD(FindUSBDeviceByAddress) (IN_BSTR aAddress, IHostUSBDevice **aDevice);
-    STDMETHOD(FindUSBDeviceById) (IN_BSTR aId, IHostUSBDevice **aDevice);
+    STDMETHOD(FindHostDVDDrive)(IN_BSTR aName, IMedium **aDrive);
+    STDMETHOD(FindHostFloppyDrive)(IN_BSTR aName, IMedium **aDrive);
+    STDMETHOD(FindHostNetworkInterfaceByName)(IN_BSTR aName, IHostNetworkInterface **networkInterface);
+    STDMETHOD(FindHostNetworkInterfaceById)(IN_BSTR id, IHostNetworkInterface **networkInterface);
+    STDMETHOD(FindHostNetworkInterfacesOfType)(HostNetworkInterfaceType_T type, ComSafeArrayOut(IHostNetworkInterface *, aNetworkInterfaces));
+    STDMETHOD(FindUSBDeviceByAddress)(IN_BSTR aAddress, IHostUSBDevice **aDevice);
+    STDMETHOD(FindUSBDeviceById)(IN_BSTR aId, IHostUSBDevice **aDevice);
+    STDMETHOD(GenerateMACAddress)(BSTR *aAddress);
 
     // public methods only for internal purposes
 
@@ -124,6 +125,8 @@ public:
     HRESULT checkUSBProxyService();
 #endif /* !VBOX_WITH_USB */
 
+    static void generateMACAddress(Utf8Str &mac);
+
 private:
 
     HRESULT buildDVDDrivesList(MediaList &list);
@@ -142,8 +145,8 @@ private:
 #endif
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    void registerMetrics (PerformanceCollector *aCollector);
-    void unregisterMetrics (PerformanceCollector *aCollector);
+    void registerMetrics(PerformanceCollector *aCollector);
+    void unregisterMetrics(PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     struct Data;        // opaque data structure, defined in HostImpl.cpp
