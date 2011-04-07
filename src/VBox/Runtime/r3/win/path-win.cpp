@@ -30,6 +30,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PATH
 #include <Windows.h>
+#include <Shlobj.h>
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
