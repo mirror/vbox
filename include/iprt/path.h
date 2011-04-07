@@ -607,6 +607,17 @@ RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath);
 RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath);
 
 /**
+ * Gets the user documents directory.
+ *
+ * The returned path isn't guarantied to exist.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath);
+
+/**
  * Gets the directory of shared libraries.
  *
  * This is not the same as RTPathAppPrivateArch() as Linux depends all shared

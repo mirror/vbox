@@ -70,6 +70,11 @@ int main()
     if (RT_SUCCESS(rc))
         RTTestIPrintf(RTTESTLVL_INFO, "UserHome={%s}\n", szPath);
 
+    RTTestSub(hTest, "RTPathUserDocuments");
+    RTTESTI_CHECK_RC(RTPathUserDocuments(szPath, sizeof(szPath)), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTestIPrintf(RTTESTLVL_INFO, "UserDocuments={%s}\n", szPath);
+
     RTTestSub(hTest, "RTPathTemp");
     RTTESTI_CHECK_RC(RTPathTemp(szPath, sizeof(szPath)), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
