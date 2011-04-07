@@ -109,6 +109,15 @@ enum GETOPTDEF_EXEC
     GETOPTDEF_EXEC_WAITFORSTDERR
 };
 
+enum GETOPTDEF_COPYTO
+{
+    GETOPTDEF_COPYTO_DRYRUN = 1000,
+    GETOPTDEF_COPYTO_FOLLOW,
+    GETOPTDEF_COPYTO_PASSWORD,
+    GETOPTDEF_COPYTO_TARGETDIR,
+    GETOPTDEF_COPYTO_USERNAME
+};
+
 enum OUTPUTTYPE
 {
     OUTPUTTYPE_UNDEFINED = 0,
@@ -487,20 +496,9 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-#if 0 /** @todo r=bird: enable this when the argv[0] issue has been addressed. */
                 if (args.size() == 0 && Utf8Cmd.isEmpty())
                     Utf8Cmd = ValueUnion.psz;
                 args.push_back(Bstr(ValueUnion.psz).raw());
-#else
-                if (Utf8Cmd.isEmpty())
-                {
-                    Utf8Cmd = ValueUnion.psz;
-                    if (Utf8Cmd.isEmpty())
-                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The first argument cannot be empty yet, wait for 4.1.0");
-                }
-                else
-                    args.push_back(Bstr(ValueUnion.psz).raw());
-#endif
                 break;
             }
 
@@ -1005,7 +1003,6 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t fFl
 
                 if (RT_SUCCESS(rc))
                 {
-                    RTListInit(pList);
                     rc = ctrlDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
                     *pcObjects = 1;
                 }
@@ -1066,7 +1063,6 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t fFl
 
                 if (RT_SUCCESS(rc))
                 {
-                    RTListInit(pList);
                     rc = ctrlCopyDirectoryRead(pszSourceAbsRoot, NULL /* Sub directory */,
                                                pszFilter, pszDestAbs,
                                                fFlags, pcObjects, pList);
@@ -1139,23 +1135,29 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
      * that only one source is allowed - efficiently sabotaging default
      * wildcard expansion by a unix shell.  The best solution here would be
      * two different variant, one windowsy (xcopy) and one unixy (gnu cp). */
-    /** @todo r=bird: Why isn't IGuest::CopyToGuest powerful enough to do
-     *        all this recursive copying? */
+
+    /*
+     * IGuest::CopyToGuest is kept as simple as possible to let the developer choose
+     * what and how to implement the file enumeration/recursive lookup, like VBoxManage
+     * does in here.
+     */
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: '-d' incompatible with GNU cp.  */
-        { "--follow",              'F',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: This isn't a GNU cp option. This is instead spread over several options.  */
-        { "--password",            'p',         RTGETOPT_REQ_STRING  }, /**< @todo r=bird: Just drop these short options since (BSD, GNU, ++) cp uses '-p' to indicate that ownership, timestamp and other stuff should be preserved.  Other file commands probably use '-p' as well. */
-        { "--recursive",           'R',         RTGETOPT_REQ_NOTHING }, /**< @todo r=bird: Most cp implementations treats '-r' as an alias for '-R'. */
-        { "--username",            'u',         RTGETOPT_REQ_STRING  }, /**< @todo r=bird: Just drop these short options since GNU cp uses '-u' to indicate update-only (as does 4nt).  Other file commands probably uses '-u' as well. */
-        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+        { "--dryrun",              GETOPTDEF_COPYTO_DRYRUN,         RTGETOPT_REQ_NOTHING },
+        { "--follow",              GETOPTDEF_COPYTO_FOLLOW,         RTGETOPT_REQ_NOTHING },
+        { "--password",            GETOPTDEF_COPYTO_PASSWORD,       RTGETOPT_REQ_STRING  },
+        { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
+        { "--target-directory",    GETOPTDEF_COPYTO_TARGETDIR,      RTGETOPT_REQ_STRING  },
+        { "--username",            GETOPTDEF_COPYTO_USERNAME,       RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     Utf8Str Utf8Source;
     Utf8Str Utf8Dest;
@@ -1166,22 +1168,25 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fCopyRecursive = false;
     bool fDryRun = false;
 
+    RTLISTNODE listSources;
+    uint32_t cSources = 0;
+    RTListInit(&listSources);
+
     int vrc = VINF_SUCCESS;
-    uint32_t idxNonOption = 0;
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case 'd': /* Dry run */
+            case GETOPTDEF_COPYTO_DRYRUN:
                 fDryRun = true;
                 break;
 
-            case 'F': /* Follow symlinks */
+            case GETOPTDEF_COPYTO_FOLLOW:
                 fFlags |= CopyFileFlag_FollowLinks;
                 break;
 
-            case 'p': /* Password */
+            case GETOPTDEF_COPYTO_PASSWORD:
                 Utf8Password = ValueUnion.psz;
                 break;
 
@@ -1189,7 +1194,11 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                 fFlags |= CopyFileFlag_Recursive;
                 break;
 
-            case 'u': /* User name */
+            case GETOPTDEF_COPYTO_TARGETDIR:
+                Utf8Dest = ValueUnion.psz;
+                break;
+
+            case GETOPTDEF_COPYTO_USERNAME:
                 Utf8UserName = ValueUnion.psz;
                 break;
 
@@ -1199,27 +1208,28 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                /* Get the actual source + destination. */
-                switch (idxNonOption)
+                /* Last argument and no destination specified with
+                 * --target-directory yet? Then use the current argument
+                 * as destination. */
+                if (   pArg->argc == GetState.iNext
+                    && Utf8Dest.isEmpty())
                 {
-                    case 0:
-                        Utf8Source = ValueUnion.psz;
-                        break;
-
-                    case 1:
-                        Utf8Dest = ValueUnion.psz;
-                        break;
-
-                    /* @todo r=bird: VBoxManage guestcontrol execute <VMName> copyto hostfile.1 hostfile.2 hostfile.3 guestdir/
-                     * A better way to implement this would be to tell RTGetOptInit to sort the argument, so
-                     * that when VINF_GETOPT_NOT_OPTION is returned, the remainder of pArg->argv are all arguments. */
-
-                    default:
-                        return errorSyntax(USAGE_GUESTCONTROL, "Too many parameters specified, only source and destination allowed!");
+                    Utf8Dest = ValueUnion.psz;
                 }
-                idxNonOption++;
-                if (idxNonOption == UINT32_MAX)
-                    return errorSyntax(USAGE_GUESTCONTROL, "Too many files specified!");
+                else
+                {
+                    int vrc = ctrlDirectoryEntryAppend(ValueUnion.psz,      /* Source */
+                                                       NULL,                /* No destination given */
+                                                       &listSources);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        cSources++;
+                        if (cSources == UINT32_MAX)
+                            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Too many sources specified! Aborting.");
+                    }
+                    else
+                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Failed to append source: %Rrc", vrc);
+                }
                 break;
             }
 
@@ -1228,9 +1238,9 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
         }
     }
 
-    if (Utf8Source.isEmpty())
+    if (!cSources)
         return errorSyntax(USAGE_GUESTCONTROL,
-                           "No source specified!");
+                           "No source(s) specified!");
 
     if (Utf8Dest.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
@@ -1252,63 +1262,70 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
     }
 
     RTLISTNODE listToCopy;
-    uint32_t cObjects = 0;
-    vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), fFlags,
-                       &cObjects, &listToCopy);
-    if (RT_FAILURE(vrc))
+    RTListInit(&listToCopy);
+    uint32_t cTotalObjects = 0;
+
+    PDIRECTORYENTRY pNodeSource;
+    RTListForEach(&listSources, pNodeSource, DIRECTORYENTRY, Node)
     {
-        switch (vrc)
+        uint32_t cObjects = 0;
+        vrc = ctrlCopyInit(pNodeSource->pszSourcePath, Utf8Dest.c_str(), fFlags,
+                           &cObjects, &listToCopy);
+        if (RT_FAILURE(vrc))
         {
-            case VERR_NOT_FOUND:
-                RTMsgError("No files to copy found!\n");
-                break;
+            switch (vrc)
+            {
+                case VERR_NOT_FOUND:
+                    /* Not fatal, just continue to the next source entry (if available). */
+                    continue;
 
-            case VERR_FILE_NOT_FOUND:
-                RTMsgError("Source path \"%s\" not found!\n", Utf8Source.c_str());
-                break;
+                case VERR_FILE_NOT_FOUND:
+                    RTMsgError("Source path \"%s\" not found!\n", Utf8Source.c_str());
+                    break;
 
-            default:
-                RTMsgError("Failed to initialize, rc=%Rrc\n", vrc);
-                break;
+                default:
+                    RTMsgError("Failed to initialize, rc=%Rrc\n", vrc);
+                    break;
+            }
         }
+        else if (fVerbose)
+        {
+            RTPrintf("Source \"%s\" has %ld elements to copy\n",
+                     pNodeSource->pszSourcePath, cObjects);
+        }
+        cTotalObjects += cObjects;
     }
-    else
+
+    if (fVerbose && cTotalObjects)
+        RTPrintf("Total %ld elements to copy to \"%s\"\n",
+                 cTotalObjects, Utf8Dest.c_str());
+
+    if (cTotalObjects)
     {
         PDIRECTORYENTRY pNode;
-        if (RT_SUCCESS(vrc))
+        uint32_t uCurObject = 1;
+
+        RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
         {
             if (fVerbose)
-            {
-                if (fCopyRecursive)
-                    RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-                else
-                    RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-            }
-
-            uint32_t iObject = 1;
-            RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
-            {
-                if (!fDryRun)
-                {
-                    if (fVerbose)
-                        RTPrintf("Copying \"%s\" to \"%s\" (%u/%u) ...\n",
-                                 pNode->pszSourcePath, pNode->pszDestPath, iObject, cObjects);
-                    /* Finally copy the desired file (if no dry run selected). */
-                    if (!fDryRun)
-                        vrc = ctrlCopyFileToGuest(guest, fVerbose, pNode->pszSourcePath, pNode->pszDestPath,
-                                                  Utf8UserName.c_str(), Utf8Password.c_str(), fFlags);
-                }
-                if (RT_FAILURE(vrc))
-                    break;
-                iObject++;
-            }
-            if (RT_SUCCESS(vrc) && fVerbose)
-                RTPrintf("Copy operation successful!\n");
+                RTPrintf("Copying \"%s\" to \"%s\" (%u/%u) ...\n",
+                         pNode->pszSourcePath, pNode->pszDestPath, uCurObject, cTotalObjects);
+            /* Finally copy the desired file (if no dry run selected). */
+            if (!fDryRun)
+                vrc = ctrlCopyFileToGuest(guest, fVerbose, pNode->pszSourcePath, pNode->pszDestPath,
+                                          Utf8UserName.c_str(), Utf8Password.c_str(), fFlags);
+            if (RT_FAILURE(vrc))
+                break;
+            uCurObject++;
         }
-        ctrlDirectoryListDestroy(&listToCopy);
+        Assert(cTotalObjects == uCurObject - 1);
+
+        if (RT_SUCCESS(vrc) && fVerbose)
+            RTPrintf("Copy operation successful!\n");
     }
+
+    ctrlDirectoryListDestroy(&listToCopy);
+    ctrlDirectoryListDestroy(&listSources);
 
     if (RT_FAILURE(vrc))
         rc = VBOX_E_IPRT_ERROR;
@@ -1337,12 +1354,13 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t fFlags = CreateDirectoryFlag_None;
-    uint32_t fDirMode = 0; /* 0 == default mode, right? */
+    uint32_t fDirMode = 0; /* Default mode. */
     bool fVerbose = false;
 
     RTLISTNODE listDirs;
@@ -1378,8 +1396,6 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-/** @todo r=bird: Simplify by letting RTGetOptInit sort the argv, just like
- *        for cp. */
                 int vrc = ctrlDirectoryEntryAppend(NULL,              /* No source given */
                                                    ValueUnion.psz,    /* Destination */
                                                    &listDirs);
