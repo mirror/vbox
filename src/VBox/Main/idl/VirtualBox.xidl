@@ -6945,7 +6945,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="35b004f4-7806-4009-bfa8-d1308adba7e5"
+    uuid="dab4a2b8-c735-4f08-94fc-9bec84182e2f"
     wsmap="managed"
     >
     <desc>
@@ -7376,6 +7376,15 @@
       </param>
       <param name="device" type="IHostUSBDevice" dir="return">
         <desc>Found USB device object.</desc>
+      </param>
+    </method>
+
+    <method name="generateMACAddress">
+      <desc>
+        Generates a valid Ethernet MAC address, 12 hexadecimal characters.
+      </desc>
+      <param name="address" type="wstring" dir="return">
+        <desc>New Ethernet MAC address.</desc>
       </param>
     </method>
 

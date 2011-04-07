@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,7 @@
 #include "Logging.h"
 #include "MachineImpl.h"
 #include "GuestOSTypeImpl.h"
+#include "HostImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -1264,7 +1265,7 @@ HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
         rc = bwctl->getBandwidthGroupByName(data.strBandwidthGroup, group, true);
         if (FAILED(rc)) return rc;
     }
-    
+
     // leave the lock before attaching
     alock.release();
 
@@ -1572,18 +1573,10 @@ void NetworkAdapter::detach()
  */
 void NetworkAdapter::generateMACAddress()
 {
-    /*
-     * Our strategy is as follows: the first three bytes are our fixed
-     * vendor ID (080027). The remaining 3 bytes will be taken from the
-     * start of a GUID. This is a fairly safe algorithm.
-     */
-    char strMAC[13];
-    Guid guid;
-    guid.create();
-    RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
-                 guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
-    LogFlowThisFunc(("generated MAC: '%s'\n", strMAC));
-    mData->mMACAddress = strMAC;
+    Utf8Str mac;
+    Host::generateMACAddress(mac);
+    LogFlowThisFunc(("generated MAC: '%s'\n", mac.c_str()));
+    mData->mMACAddress = mac;
 }
 
 STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
