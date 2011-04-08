@@ -48,11 +48,15 @@
  * Stable functions (alphabetical order):
  */
 # define ASMAtomicCmpXchgExU64                          RT_MANGLER(ASMAtomicCmpXchgExU64)   /* not-some-systems... */
-# define ASMAtomicCmpXchgExU64                          RT_MANGLER(ASMAtomicCmpXchgExU64)   /* not-some-systems... */
+# define ASMAtomicCmpXchgExU64_EndProc                  RT_MANGLER(ASMAtomicCmpXchgExU64_EndProc
 # define ASMAtomicCmpXchgU64                            RT_MANGLER(ASMAtomicCmpXchgU64)     /* not-some-systems... */
+# define ASMAtomicCmpXchgU64_EndProc                    RT_MANGLER(ASMAtomicCmpXchgU64_EndProc
 # define ASMAtomicReadU64                               RT_MANGLER(ASMAtomicReadU64)        /* not-some-systems... */
+# define ASMAtomicReadU64_EndProc                       RT_MANGLER(ASMAtomicReadU64_EndProc
 # define ASMAtomicUoReadU64                             RT_MANGLER(ASMAtomicUoReadU64)      /* not-some-systems... */
+# define ASMAtomicUoReadU64_EndProc                     RT_MANGLER(ASMAtomicUoReadU64_EndProc
 # define ASMAtomicXchgU64                               RT_MANGLER(ASMAtomicXchgU64)        /* not-some-systems... */
+# define ASMAtomicXchgU64_EndProc                       RT_MANGLER(ASMAtomicXchgU64_EndProc
 # define RTAssertAreQuiet                               RT_MANGLER(RTAssertAreQuiet)
 # define RTAssertMayPanic                               RT_MANGLER(RTAssertMayPanic)
 # define RTAssertMsg1                                   RT_MANGLER(RTAssertMsg1)
