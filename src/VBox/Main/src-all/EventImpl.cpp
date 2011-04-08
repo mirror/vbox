@@ -1507,6 +1507,9 @@ STDMETHODIMP EventSourceAggregator::FireEvent(IEvent * aEvent,
     {
         ComPtr<IEventSource> es = *it;
         rc = es->FireEvent(aEvent, aTimeout, aProcessed);
+        /* Current behavior is that aggregator's FireEvent() always succeeds,
+           so that multiple event sources don't affect each other. */
+        NOREF(rc);
     }
 
     return S_OK;
