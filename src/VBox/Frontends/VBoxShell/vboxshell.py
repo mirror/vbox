@@ -192,7 +192,7 @@ def printErr(ctx,e):
 def reportError(ctx,progress):
     ei = progress.errorInfo
     if ei:
-        print colored("Error in %s: %s" %(ei.component, ei.text), 'red')
+        print colored("Error in module '%s': %s" %(ei.component, ei.text), 'red')
 
 def colCat(ctx,str):
     return colored(str, 'magenta')
@@ -253,10 +253,7 @@ def startVm(ctx,mach,type):
             printErr(ctx, e)
             if g_verbose:
                 traceback.print_exc()
-         # if session not opened, close doesn't make sense
         session.unlockMachine()
-    else:
-       reportError(ctx,progress)
 
 class CachedMach:
         def __init__(self, mach):
