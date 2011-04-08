@@ -283,6 +283,9 @@
 # define RTCircBufReset                                 RT_MANGLER(RTCircBufReset)
 # define RTCircBufSize                                  RT_MANGLER(RTCircBufSize)
 # define RTCircBufUsed                                  RT_MANGLER(RTCircBufUsed)
+# define RTCoreDumperDisable                            RT_MANGLER(RTCoreDumperDisable)  /* solaris */
+# define RTCoreDumperSetup                              RT_MANGLER(RTCoreDumperSetup)    /* solaris */
+# define RTCoreDumperTakeDump                           RT_MANGLER(RTCoreDumperTakeDump) /* solaris */
 # define RTCrc32                                        RT_MANGLER(RTCrc32)
 # define RTCrc32Finish                                  RT_MANGLER(RTCrc32Finish)
 # define RTCrc32Process                                 RT_MANGLER(RTCrc32Process)
