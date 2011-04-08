@@ -166,8 +166,8 @@ typedef struct VBOXHDDRAW
  * used for querying information, and nothing else. */
 #define VD_OPEN_FLAGS_INFO          RT_BIT(3)
 /** Open image for asynchronous access. Only available if VD_CAP_ASYNC_IO is
- * set. Check with VDIsAsynchonousIoSupported whether asynchronous I/O is
- * really supported for this file.  */
+ * set. VDOpen fails with VERR_NOT_SUPPORTED if this operation is not supported for
+ * this kind of image. */
 #define VD_OPEN_FLAGS_ASYNC_IO      RT_BIT(4)
 /** Allow sharing of the image for writable images. May be ignored if the
  * format backend doesn't support this type of concurrent access. */
@@ -2606,18 +2606,6 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk);
-
-
-/**
- * Query if asynchronous operations are supported for this disk.
- *
- * @return  VBox status code.
- * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to the HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pfAIOSupported  Where to store if async IO is supported.
- */
-VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, bool *pfAIOSupported);
 
 
 /**

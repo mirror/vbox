@@ -2459,12 +2459,6 @@ static int vhdSetParentFilename(void *pBackendData, const char *pszParentFilenam
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnIsAsyncIOSupported */
-static bool vhdIsAsyncIOSupported(void *pBackendData)
-{
-    return true;
-}
-
 /** @copydoc VBOXHDDBACKEND::pfnAsyncRead */
 static int vhdAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
@@ -3338,8 +3332,6 @@ VBOXHDDBACKEND g_VhdBackend =
     vhdGetParentFilename,
     /* pfnSetParentFilename */
     vhdSetParentFilename,
-    /* pfnIsAsyncIOSupported */
-    vhdIsAsyncIOSupported,
     /* pfnAsyncRead */
     vhdAsyncRead,
     /* pfnAsyncWrite */

@@ -2425,8 +2425,6 @@ VBOXHDDBACKEND g_DmgBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnIsAsyncIOSupported */
-    NULL,
     /* pfnAsyncRead */
     NULL,
     /* pfnAsyncWrite */
