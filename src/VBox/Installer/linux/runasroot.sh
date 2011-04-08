@@ -15,9 +15,36 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# Deal with differing "which" semantics on Linux and Solaris
+# Deal with differing "which" semantics
 mywhich() {
-    which "$1" | grep -v "no $1"
+    which "$1" 2>/dev/null | grep -v "no $1"
+}
+
+# Get the name and execute switch for a useful terminal emulator
+#
+# Sets $gxtpath to the emulator path or empty
+# Sets $gxttitle to the "title" switch for that emulator
+# Sets $gxtexec to the "execute" switch for that emulator
+# May clobber $gtx*
+# Calls mywhich
+getxterm() {
+    # gnome-terminal uses -e differently to other emulators
+    for gxti in "gnome-terminal --title -x" "konsole --title -e" "xterm -T -e"; do
+        set $gxti
+        gxtpath="`mywhich $1`"
+        case "$gxtpath" in ?*)
+            gxttitle=$2
+            gxtexec=$3
+            return
+            ;;
+        esac
+    done
+}
+
+# Quotes its argument by inserting '\' in front of every character save
+# for 'A-Za-z0-9/'.  Prints the result to stdout.
+quotify() {
+    echo $1 | sed -e 's/\([^a-zA-Z0-9/]\)/\\\1/g'
 }
 
 ostype=`uname -s`
@@ -54,7 +81,7 @@ esac
 case "$DISPLAY" in ?*)
     KDESUDO="`mywhich kdesudo`"
     case "$KDESUDO" in ?*)
-        eval "\"$KDESUDO\" --comment \"$DESCRIPTION\" -- $COMMAND"
+        eval "`quotify "$KDESUDO"` --comment `quotify "$DESCRIPTION"` -- $COMMAND"
         exit
         ;;
     esac
@@ -87,19 +114,12 @@ esac
 case "$DISPLAY" in ?*)
     SU="`mywhich su`"
     case "$SU" in ?*)
-        GNOME_TERMINAL="`mywhich gnome-terminal`"
-        case "$GNOME_TERMINAL" in ?*)
-            "$GNOME_TERMINAL" --title "$DESCRIPTION - su" -x su - root -c "$COMMAND"
+        getxterm
+        case "$gxtpath" in ?*)
+            "$gxtpath" "$gxttitle" "$DESCRIPTION - su" "$gxtexec" su - root -c "$COMMAND"
             exit
             ;;
         esac
-        XTERM="`mywhich xterm`"
-        case "$XTERM" in ?*)
-            "$XTERM" -T "$DESCRIPTION - su" -e su - root -c "$COMMAND"
-            exit
-            ;;
-        esac
-        ;;
     esac
 esac # $DISPLAY
 
