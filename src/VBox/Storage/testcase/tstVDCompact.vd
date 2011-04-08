@@ -1,0 +1,50 @@
+# $Id$
+#
+# Storage: Testcase for compacting disks.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+# Init I/O RNG for generating random data for writes
+iorngcreate size=10M mode=manual seed=1234567890
+
+# Create zero pattern
+iopatterncreatefromnumber name=zero size=1M pattern=0
+
+# Create disk containers, read verification is on.
+createdisk name=disk verify=yes
+
+# Create the disk and close it.
+create disk=disk mode=base name=tstCompact.vdi type=dynamic backend=VDI size=200M
+
+# Fill the disk with random data
+io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+
+# Read the data to verify it once.
+io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+
+# Fill a part with 0's
+io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=100M-150M size=50M writes=100 pattern=zero
+
+# Now compact
+compact disk=disk image=0
+
+# Read again to verify that the content hasn't changed
+io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+
+# Cleanup
+close disk=disk mode=single delete=yes
+destroydisk name=disk
+iopatterndestroy name=zero
+iorngdestroy
+

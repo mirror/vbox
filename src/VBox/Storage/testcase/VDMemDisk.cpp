@@ -249,10 +249,15 @@ int VDMemDiskSetSize(PVDMEMDISK pMemDisk, uint64_t cbSize)
         PVDMEMDISKSEG pSeg = (PVDMEMDISKSEG)RTAvlrU64Get(pMemDisk->pTreeSegments, cbSize);
         if (pSeg)
         {
+            RTAvlrU64Remove(pMemDisk->pTreeSegments, pSeg->Core.Key);
             if (pSeg->Core.Key < cbSize)
             {
                 /* Cut off the part which is not in the file anymore. */
                 pSeg->pvSeg = RTMemRealloc(pSeg->pvSeg, pSeg->Core.KeyLast - cbSize + 1);
+                pSeg->Core.KeyLast = cbSize - pSeg->Core.Key - 1;
+
+                bool fInserted = RTAvlrU64Insert(pMemDisk->pTreeSegments, &pSeg->Core);
+                AssertMsg(fInserted, ("Bug!\n"));
             }
             else
             {
