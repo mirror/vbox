@@ -170,6 +170,10 @@ enum
     MODIFYVM_FAULT_TOLERANCE_PASSWORD,
     MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
     MODIFYVM_CPU_EXECTUION_CAP,
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+    MODIFYVM_ATTACH_PCI,
+    MODIFYVM_DETACH_PCI,
+#endif
     MODIFYVM_CHIPSET
 };
 
@@ -298,6 +302,10 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+    { "--attachpci",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
+    { "--detachpci",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
+#endif
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -305,6 +313,27 @@ static void vrdeWarningDeprecatedOption(const char *pszOption)
     RTStrmPrintf(g_pStdErr, "Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n", pszOption, pszOption);
 }
 
+/** Parse PCI address in format 01:02.03 and convert it to the numeric representation. */
+static int32_t parsePci(const char* szPciAddr)
+{
+    char* pszNext = (char*)szPciAddr;
+    int rc;
+    uint8_t aVals[3] = {0, 0, 0};
+    
+    rc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
+    if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != ':')
+        return -1;
+    
+    rc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[1]);
+    if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != '.')
+        return -1;
+
+    rc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[2]);
+    if (RT_FAILURE(rc) || pszNext == NULL)
+        return -1;
+
+    return (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
+}
 
 int handleModifyVM(HandlerArg *a)
 {
@@ -2177,7 +2206,45 @@ int handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+            case MODIFYVM_ATTACH_PCI:
+            {
+                const char* pAt = strchr(ValueUnion.psz, '@');
+                int32_t iHostAddr, iGuestAddr;
 
+                iHostAddr = parsePci(ValueUnion.psz);
+                iGuestAddr = pAt != NULL ? parsePci(pAt + 1) : iHostAddr;
+                
+                if (iHostAddr == -1 || iGuestAddr == -1)
+                {
+                    errorArgument("Invalid --attachpci argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                else
+                {
+                    CHECK_ERROR(machine, AttachHostPciDevice(iHostAddr, iGuestAddr, TRUE));
+                }
+
+                break;
+            }
+            case MODIFYVM_DETACH_PCI:
+            {
+                int32_t iHostAddr;
+
+                iHostAddr = parsePci(ValueUnion.psz);
+                if (iHostAddr == -1)
+                {
+                    errorArgument("Invalid --detachpci argument '%s' (valid: 'HB:HD.HF')", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                else
+                {
+                    CHECK_ERROR(machine, DetachHostPciDevice(iHostAddr));
+                }
+
+                break;
+            }
+#endif
             default:
             {
                 errorGetOpt(USAGE_MODIFYVM, c, &ValueUnion);

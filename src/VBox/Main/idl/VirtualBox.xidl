@@ -4703,9 +4703,6 @@
         is two phase, as real attachment will happen when VM will start,
         and most information will be delivered as IHostPciDevicePlugEvent
         on IVirtualBox event source.
-        <note>
-          Not yet implemented.
-        </note>
 
         <see>IHostPciDevicePlugEvent</see>
 
@@ -4737,10 +4734,6 @@
         Also HostPciDevicePlugEvent on IVirtualBox event source
         will be delivered. As currently we don't support hot device
         unplug, IHostPciDevicePlugEvent event is delivered immediately.
-
-        <note>
-          Not yet implemented.
-        </note>
 
         <see>IHostPciDevicePlugEvent</see>
 

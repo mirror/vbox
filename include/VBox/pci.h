@@ -1017,8 +1017,14 @@ DECLINLINE(bool) pciDevIsPassthrough(PPCIDEVICE pDev)
 #endif /* PCIDEVICEINT_DECLARED */
 
 #if defined(__cplusplus) && defined(IN_RING3)
+/* For RTStrPrintf(). */
+#include <iprt/string.h>
+
 /**
- * Document me.
+ * Class representing PCI address. PCI device consist of
+ * bus, device and function numbers. Generally device PCI
+ * address could be changed during runtime, but only by 
+ * an OS PCI driver.
  *
  * @remarks C++ classes (structs included) are not generally accepted in
  *          VMM devices or drivers.  An exception may be granted for this class
@@ -1027,60 +1033,60 @@ DECLINLINE(bool) pciDevIsPassthrough(PPCIDEVICE pDev)
  */
 struct PciBusAddress
 {
-    /** @todo r=bird: Add 'm', or 'm_' to data members. This is general
-     *        practice in most of the source tree. */
-    int  iBus;
-    int  iDevice;
-    int  iFn;
+    /** @todo: think if we'll need domain, which is higher
+     *  word of the address. */
+    int  miBus;
+    int  miDevice;
+    int  miFn;
 
     PciBusAddress()
     {
         clear();
     }
 
-    PciBusAddress(int bus, int device, int fn)
+    PciBusAddress(int iBus, int iDevice, int iFn)
     {
-        init(bus, device, fn);
+        init(iBus, iDevice, iFn);
     }
 
     PciBusAddress& clear()
     {
-        iBus = iDevice = iFn = -1;
+        miBus = miDevice = miFn = -1;
         return *this;
     }
 
-    void init(int bus, int device, int fn)
+    void init(int iBus, int iDevice, int iFn)
     {
-        iBus = bus;
-        iDevice = device;
-        iFn = fn;
+        miBus    = iBus;
+        miDevice = iDevice;
+        miFn     = iFn;
     }
 
     void init(const PciBusAddress &a)
     {
-        iBus = a.iBus;
-        iDevice = a.iDevice;
-        iFn = a.iFn;
+        miBus    = a.miBus;
+        miDevice = a.miDevice;
+        miFn     = a.miFn;
     }
 
     bool operator<(const PciBusAddress &a) const
     {
-        if (iBus < a.iBus)
+        if (miBus < a.miBus)
             return true;
 
-        if (iBus > a.iBus)
+        if (miBus > a.miBus)
             return false;
 
-        if (iDevice < a.iDevice)
+        if (miDevice < a.miDevice)
             return true;
 
-        if (iDevice > a.iDevice)
+        if (miDevice > a.miDevice)
             return false;
 
-        if (iFn < a.iFn)
+        if (miFn < a.miFn)
             return true;
 
-        if (iFn > a.iFn)
+        if (miFn > a.miFn)
             return false;
 
         return false;
@@ -1088,35 +1094,51 @@ struct PciBusAddress
 
     bool operator==(const PciBusAddress &a) const
     {
-        return     (iBus == a.iBus)
-                && (iDevice == a.iDevice)
-                && (iFn == a.iFn);
+        return     (miBus    == a.miBus)
+                && (miDevice == a.miDevice)
+                && (miFn     == a.miFn);
     }
 
     bool operator!=(const PciBusAddress &a) const
     {
-        return     (iBus != a.iBus)
-                || (iDevice != a.iDevice)
-                || (iFn  != a.iFn);
+        return     (miBus    != a.miBus)
+                || (miDevice != a.miDevice)
+                || (miFn     != a.miFn);
     }
 
     bool valid() const
     {
-        return (iBus != -1) && (iDevice != -1) && (iFn != -1);
+        return (miBus    != -1) 
+            && (miDevice != -1) 
+            && (miFn     != -1);
     }
 
     int32_t asLong() const
     {
         Assert(valid());
-        return (iBus << 8) | (iDevice << 3) | iFn;
+        return (miBus << 8) | (miDevice << 3) | miFn;
     }
 
     PciBusAddress& fromLong(int32_t value)
     {
-        iBus = (value >> 8) & 0xff;
-        iDevice = (value & 0xff) >> 3;
-        iFn = (value & 7);
+        miBus = (value >> 8) & 0xff;
+        miDevice = (value & 0xff) >> 3;
+        miFn = (value & 7);
         return *this;
+    }
+
+    /** Create string representation of this PCI address. */
+    bool format(char* szBuf, int32_t cBufSize)
+    {
+        if (cBufSize < (/* bus */ 2 + /* : */ 1 + /* device */ 2 + /* . */ 1 + /* function*/ 1 + /* \0 */1))
+            return false;
+        
+        if (valid())
+            RTStrPrintf(szBuf, cBufSize, "%02x:%02x.%01x", miBus, miDevice, miFn);
+        else
+            RTStrPrintf(szBuf, cBufSize, "%s", "<bad>");
+        
+        return true;
     }
 };
 #endif /* __cplusplus */

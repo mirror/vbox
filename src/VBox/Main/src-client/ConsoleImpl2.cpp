@@ -484,10 +484,10 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         GuestPciAddress.fromLong(guest);
         Assert(GuestPciAddress.valid());
 
-        if (GuestPciAddress.iBus > 0)
+        if (GuestPciAddress.miBus > 0)
         {
             int iBridgesMissed = 0;
-            int iBase = GuestPciAddress.iBus - 1;
+            int iBase = GuestPciAddress.miBus - 1;
 
             while (!BusMgr->hasPciDevice("ich9pcibridge", iBase) && iBase > 0)
             {
@@ -546,9 +546,9 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         InsertConfigString(pCfg,       "DeviceName",  aDevName);
 
         InsertConfigInteger(pCfg,      "DetachHostDriver",  1);
-        InsertConfigInteger(pCfg,      "HostPCIBusNo",      HostPciAddress.iBus);
-        InsertConfigInteger(pCfg,      "HostPCIDeviceNo",   HostPciAddress.iDevice);
-        InsertConfigInteger(pCfg,      "HostPCIFunctionNo", HostPciAddress.iFn);
+        InsertConfigInteger(pCfg,      "HostPCIBusNo",      HostPciAddress.miBus);
+        InsertConfigInteger(pCfg,      "HostPCIDeviceNo",   HostPciAddress.miDevice);
+        InsertConfigInteger(pCfg,      "HostPCIFunctionNo", HostPciAddress.miFn);
 
         GuestPciAddress.fromLong(guest);
         Assert(GuestPciAddress.valid());
@@ -556,9 +556,9 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         if (hrc != S_OK)
             return hrc;
 
-        InsertConfigInteger(pCfg,      "GuestPCIBusNo",      GuestPciAddress.iBus);
-        InsertConfigInteger(pCfg,      "GuestPCIDeviceNo",   GuestPciAddress.iDevice);
-        InsertConfigInteger(pCfg,      "GuestPCIFunctionNo", GuestPciAddress.iFn);
+        InsertConfigInteger(pCfg,      "GuestPCIBusNo",      GuestPciAddress.miBus);
+        InsertConfigInteger(pCfg,      "GuestPCIDeviceNo",   GuestPciAddress.miDevice);
+        InsertConfigInteger(pCfg,      "GuestPCIFunctionNo", GuestPciAddress.miFn);
 
         /* the Main driver */
         PciRawDev* pMainDev = new PciRawDev(pConsole);
@@ -1879,9 +1879,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
                 InsertConfigNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);
                 InsertConfigInteger(pNetBtDevCfg, "NIC", it->mInstance);
-                InsertConfigInteger(pNetBtDevCfg, "PCIBusNo",      it->mPciAddress.iBus);
-                InsertConfigInteger(pNetBtDevCfg, "PCIDeviceNo",   it->mPciAddress.iDevice);
-                InsertConfigInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciAddress.iFn);
+                InsertConfigInteger(pNetBtDevCfg, "PCIBusNo",      it->mPciAddress.miBus);
+                InsertConfigInteger(pNetBtDevCfg, "PCIDeviceNo",   it->mPciAddress.miDevice);
+                InsertConfigInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciAddress.miFn);
             }
         }
 
@@ -2508,7 +2508,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             if (fOsXGuest && !llBootNics.empty())
             {
                 BootNic aNic = llBootNics.front();
-                uint32_t u32NicPciAddr = (aNic.mPciAddress.iDevice << 16) | aNic.mPciAddress.iFn;
+                uint32_t u32NicPciAddr = (aNic.mPciAddress.miDevice << 16) | aNic.mPciAddress.miFn;
                 InsertConfigInteger(pCfg, "NicPciAddress",    u32NicPciAddr);
             }
             if (fOsXGuest && fAudioEnabled)
@@ -2516,7 +2516,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 PciBusAddress Address;
                 if (BusMgr->findPciAddress("hda", 0, Address))
                 {
-                    uint32_t u32AudioPciAddr = (Address.iDevice << 16) | Address.iFn;
+                    uint32_t u32AudioPciAddr = (Address.miDevice << 16) | Address.miFn;
                     InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
                 }
             }

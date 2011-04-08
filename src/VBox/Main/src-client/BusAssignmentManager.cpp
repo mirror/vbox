@@ -375,14 +375,14 @@ HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddre
     {
         const DeviceAssignmentRule* rule = matchingRules[iRule];
 
-        Address.iBus = rule->iBus;
-        Address.iDevice = rule->iDevice;
-        Address.iFn = rule->iFn;
+        Address.miBus = rule->iBus;
+        Address.miDevice = rule->iDevice;
+        Address.miFn = rule->iFn;
 
         if (checkAvailable(Address))
             return S_OK;
     }
-    AssertMsg(false, ("All possible candidate positions for %s exhausted\n", pszName));
+    AssertMsgFailed(("All possible candidate positions for %s exhausted\n", pszName));
 
     return E_INVALIDARG;
 }
@@ -489,13 +489,13 @@ HRESULT BusAssignmentManager::assignPciDeviceImpl(const char* pszDevName,
     if (FAILED(rc))
         return rc;
 
-    rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.iBus);
+    rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.miBus);
     if (FAILED(rc))
         return rc;
-    rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.iDevice);
+    rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
     if (FAILED(rc))
         return rc;
-    rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.iFn);
+    rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.miFn);
     if (FAILED(rc))
         return rc;
 
