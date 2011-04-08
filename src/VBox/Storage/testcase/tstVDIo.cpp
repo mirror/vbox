@@ -86,6 +86,21 @@ typedef struct VDDISK
 } VDDISK, *PVDDISK;
 
 /**
+ * A data buffer with a pattern.
+ */
+typedef struct VDPATTERN
+{
+    /** List node. */
+    RTLISTNODE     ListNode;
+    /** Name of the pattern. */
+    char          *pszName;
+    /** Size of the pattern. */
+    size_t         cbPattern;
+    /** Pointer to the buffer containing the pattern. */
+    void          *pvPattern;
+} VDPATTERN, *PVDPATTERN;
+
+/**
  * Global VD test state.
  */
 typedef struct VDTESTGLOB
@@ -94,6 +109,8 @@ typedef struct VDTESTGLOB
     RTLISTNODE       ListDisks;
     /** Head of the active file list. */
     RTLISTNODE       ListFiles;
+    /** Head of the pattern list. */
+    RTLISTNODE       ListPatterns;
     /** Memory I/O backend. */
     PVDIOBACKENDMEM  pIoBackend;
     /** Error interface. */
@@ -166,6 +183,8 @@ typedef struct VDIOTEST
     unsigned    uWriteChance;
     /** Pointer to the I/O data generator. */
     PVDIORND    pIoRnd;
+    /** Pointer to the data pattern to use. */
+    PVDPATTERN  pPattern;
     /** Data dependent on the I/O mode (sequential or random). */
     union
     {
@@ -283,6 +302,9 @@ static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG 
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromNumber(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromFile(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerIoPatternDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCreateDisk(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
@@ -325,7 +347,8 @@ const VDSCRIPTARGDESC g_aArgIo[] =
     {"size",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
     {"blocksize",  'b', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
     {"off",        'o', VDSCRIPTARGTYPE_UNSIGNED_RANGE,  VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
-    {"writes",     'w', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY}
+    {"writes",     'w', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"pattern",    'p', VDSCRIPTARGTYPE_STRING,          0},
 };
 
 /* flush action */
@@ -369,6 +392,30 @@ const VDSCRIPTARGDESC g_aArgIoRngCreate[] =
     {"size",       'd', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
     {"mode",       'm', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
     {"seed",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, 0}
+};
+
+/* I/O pattern create action */
+const VDSCRIPTARGDESC g_aArgIoPatternCreateFromNumber[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"name",       'n', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"size",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX},
+    {"pattern",    'p', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
+/* I/O pattern create action */
+const VDSCRIPTARGDESC g_aArgIoPatternCreateFromFile[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"name",       'n', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"file",       'f', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
+/* I/O pattern destroy action */
+const VDSCRIPTARGDESC g_aArgIoPatternDestroy[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"name",       'n', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY}
 };
 
 /* Sleep */
@@ -425,23 +472,26 @@ const VDSCRIPTARGDESC g_aArgPrintMsg[] =
 
 const VDSCRIPTACTION g_aScriptActions[] =
 {
-    /* pcszAction    paArgDesc            cArgDescs                        pfnHandler */
-    {"create",       g_aArgCreate,        RT_ELEMENTS(g_aArgCreate),       vdScriptHandlerCreate},
-    {"open",         g_aArgOpen,          RT_ELEMENTS(g_aArgOpen),         vdScriptHandlerOpen},
-    {"io",           g_aArgIo,            RT_ELEMENTS(g_aArgIo),           vdScriptHandlerIo},
-    {"flush",        g_aArgFlush,         RT_ELEMENTS(g_aArgFlush),        vdScriptHandlerFlush},
-    {"close",        g_aArgClose,         RT_ELEMENTS(g_aArgClose),        vdScriptHandlerClose},
-    {"merge",        g_aArgMerge,         RT_ELEMENTS(g_aArgMerge),        vdScriptHandlerMerge},
-    {"compact",      g_aArgCompact,       RT_ELEMENTS(g_aArgCompact),      vdScriptHandlerCompact},
-    {"iorngcreate",  g_aArgIoRngCreate,   RT_ELEMENTS(g_aArgIoRngCreate),  vdScriptHandlerIoRngCreate},
-    {"iorngdestroy", NULL,                0,                               vdScriptHandlerIoRngDestroy},
-    {"sleep",        g_aArgSleep,         RT_ELEMENTS(g_aArgSleep),        vdScriptHandlerSleep},
-    {"dumpfile",     g_aArgDumpFile,      RT_ELEMENTS(g_aArgDumpFile),     vdScriptHandlerDumpFile},
-    {"createdisk",   g_aArgCreateDisk,    RT_ELEMENTS(g_aArgCreateDisk),   vdScriptHandlerCreateDisk},
-    {"destroydisk",  g_aArgDestroyDisk,   RT_ELEMENTS(g_aArgDestroyDisk),  vdScriptHandlerDestroyDisk},
-    {"comparedisks", g_aArgCompareDisks,  RT_ELEMENTS(g_aArgCompareDisks), vdScriptHandlerCompareDisks},
-    {"dumpdiskinfo", g_aArgDumpDiskInfo,  RT_ELEMENTS(g_aArgDumpDiskInfo), vdScriptHandlerDumpDiskInfo},
-    {"print",        g_aArgPrintMsg,      RT_ELEMENTS(g_aArgPrintMsg),     vdScriptHandlerPrintMsg}
+    /* pcszAction                  paArgDesc                          cArgDescs                                      pfnHandler */
+    {"create",                     g_aArgCreate,                      RT_ELEMENTS(g_aArgCreate),                     vdScriptHandlerCreate},
+    {"open",                       g_aArgOpen,                        RT_ELEMENTS(g_aArgOpen),                       vdScriptHandlerOpen},
+    {"io",                         g_aArgIo,                          RT_ELEMENTS(g_aArgIo),                         vdScriptHandlerIo},
+    {"flush",                      g_aArgFlush,                       RT_ELEMENTS(g_aArgFlush),                      vdScriptHandlerFlush},
+    {"close",                      g_aArgClose,                       RT_ELEMENTS(g_aArgClose),                      vdScriptHandlerClose},
+    {"merge",                      g_aArgMerge,                       RT_ELEMENTS(g_aArgMerge),                      vdScriptHandlerMerge},
+    {"compact",                    g_aArgCompact,                     RT_ELEMENTS(g_aArgCompact),                    vdScriptHandlerCompact},
+    {"iorngcreate",                g_aArgIoRngCreate,                 RT_ELEMENTS(g_aArgIoRngCreate),                vdScriptHandlerIoRngCreate},
+    {"iorngdestroy",               NULL,                              0,                                             vdScriptHandlerIoRngDestroy},
+    {"iopatterncreatefromnumber",  g_aArgIoPatternCreateFromNumber,   RT_ELEMENTS(g_aArgIoPatternCreateFromNumber),  vdScriptHandlerIoPatternCreateFromNumber},
+    {"iopatterncreatefromfile",    g_aArgIoPatternCreateFromFile,     RT_ELEMENTS(g_aArgIoPatternCreateFromFile),    vdScriptHandlerIoPatternCreateFromFile},
+    {"iopatterndestroy",           g_aArgIoPatternDestroy,            RT_ELEMENTS(g_aArgIoPatternDestroy),           vdScriptHandlerIoPatternDestroy},
+    {"sleep",                      g_aArgSleep,                       RT_ELEMENTS(g_aArgSleep),                      vdScriptHandlerSleep},
+    {"dumpfile",                   g_aArgDumpFile,                    RT_ELEMENTS(g_aArgDumpFile),                   vdScriptHandlerDumpFile},
+    {"createdisk",                 g_aArgCreateDisk,                  RT_ELEMENTS(g_aArgCreateDisk),                 vdScriptHandlerCreateDisk},
+    {"destroydisk",                g_aArgDestroyDisk,                 RT_ELEMENTS(g_aArgDestroyDisk),                vdScriptHandlerDestroyDisk},
+    {"comparedisks",               g_aArgCompareDisks,                RT_ELEMENTS(g_aArgCompareDisks),               vdScriptHandlerCompareDisks},
+    {"dumpdiskinfo",               g_aArgDumpDiskInfo,                RT_ELEMENTS(g_aArgDumpDiskInfo),               vdScriptHandlerDumpDiskInfo},
+    {"print",                      g_aArgPrintMsg,                    RT_ELEMENTS(g_aArgPrintMsg),                   vdScriptHandlerPrintMsg}
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -463,7 +513,7 @@ static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 
 static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
-                           unsigned uWriteChance);
+                           unsigned uWriteChance, PVDPATTERN pPattern);
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
 static void tstVDIoTestDestroy(PVDIOTEST pIoTest);
 static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq);
@@ -471,6 +521,9 @@ static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
 static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk);
+static PVDPATTERN tstVDIoGetPatternByName(PVDTESTGLOB pGlob, const char *pcszName);
+static PVDPATTERN tstVDIoPatternCreate(const char *pcszName, size_t cbPattern);
+static int tstVDIoPatternGetBuffer(PVDPATTERN pPattern, void **ppv, size_t cb);
 
 static DECLCALLBACK(int) vdScriptHandlerCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
 {
@@ -648,7 +701,9 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
     unsigned cMaxReqs = 0;
     uint8_t uWriteChance = 0;
     const char *pcszDisk = NULL;
+    const char *pcszPattern = NULL;
     PVDDISK pDisk = NULL;
+    PVDPATTERN pPattern = NULL;
 
     for (unsigned i = 0; i < cScriptArgs; i++)
     {
@@ -703,6 +758,11 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                 uWriteChance = (uint8_t)paScriptArgs[i].u.u64;
                 break;
             }
+            case 'p':
+            {
+                pcszPattern = paScriptArgs[i].u.pcszString;
+                break;
+            }
             default:
                 AssertMsgFailed(("Invalid argument given!\n"));
         }
@@ -732,11 +792,19 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
             cbIo = offEnd;
     }
 
+    if (   RT_SUCCESS(rc)
+        && pcszPattern)
+    {
+        pPattern = tstVDIoGetPatternByName(pGlob, pcszPattern);
+        if (!pPattern)
+            rc = VERR_NOT_FOUND;
+    }
+
     if (RT_SUCCESS(rc))
     {
         VDIOTEST IoTest;
 
-        rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, cbIo, cbBlkSize, offStart, offEnd, uWriteChance);
+        rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, cbIo, cbBlkSize, offStart, offEnd, uWriteChance, pPattern);
         if (RT_SUCCESS(rc))
         {
             PVDIOREQ paIoReq = NULL;
@@ -819,6 +887,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                             break;
                                         }
                                     }
+
+                                    ASMAtomicXchgBool(&paIoReq[idx].fOutstanding, false);
                                     if (RT_SUCCESS(rc))
                                         idx++;
                                 }
@@ -1244,6 +1314,160 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIP
         RTPrintf("WARNING: No I/O RNG active, faulty script. Continuing\n");
 
     return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromNumber(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbPattern = 0;
+    const char *pcszName = NULL;
+    uint64_t u64Pattern = 0;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'n':
+            {
+                pcszName  = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 's':
+            {
+                cbPattern = paScriptArgs[i].u.u64;
+                break;
+            }
+            case 'p':
+            {
+                u64Pattern = paScriptArgs[i].u.u64;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
+    if (!pPattern)
+    {
+        pPattern = tstVDIoPatternCreate(pcszName, RT_ALIGN_Z(cbPattern, sizeof(uint64_t)));
+        if (pPattern)
+        {
+            /* Fill the buffer. */
+            void *pv = pPattern->pvPattern;
+
+            while (pPattern->cbPattern > 0)
+            {
+                *((uint64_t*)pv)     = u64Pattern;
+                pPattern->cbPattern -= sizeof(uint64_t);
+                pv                   = (uint64_t *)pv + sizeof(uint64_t);
+            }
+            pPattern->cbPattern = cbPattern; /* Set to the desired size. (could be unaligned) */
+
+            RTListAppend(&pGlob->ListPatterns, &pPattern->ListNode);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_ALREADY_EXISTS;
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromFile(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszName = NULL;
+    const char *pcszFile = NULL;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'n':
+            {
+                pcszName = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'f':
+            {
+                pcszFile = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
+    if (!pPattern)
+    {
+        RTFILE hFile;
+        uint64_t cbPattern = 0;
+
+        rc = RTFileOpen(&hFile, pcszFile, RTFILE_O_DENY_NONE | RTFILE_O_OPEN | RTFILE_O_READ);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileGetSize(hFile, &cbPattern);
+            if (RT_SUCCESS(rc))
+            {
+                pPattern = tstVDIoPatternCreate(pcszName, (size_t)cbPattern);
+                if (pPattern)
+                {
+                    rc = RTFileRead(hFile, pPattern->pvPattern, (size_t)cbPattern, NULL);
+                    if (RT_SUCCESS(rc))
+                        RTListAppend(&pGlob->ListPatterns, &pPattern->ListNode);
+                    else
+                    {
+                        RTMemFree(pPattern->pvPattern);
+                        RTStrFree(pPattern->pszName);
+                        RTMemFree(pPattern);
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            RTFileClose(hFile);
+        }
+    }
+    else
+        rc = VERR_ALREADY_EXISTS;
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerIoPatternDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszName = NULL;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'n':
+            {
+                pcszName  = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
+    if (pPattern)
+    {
+        RTListNodeRemove(&pPattern->ListNode);
+        RTMemFree(pPattern->pvPattern);
+        RTStrFree(pPattern->pszName);
+        RTMemFree(pPattern);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    return rc;
 }
 
 static DECLCALLBACK(int) vdScriptHandlerSleep(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
@@ -1855,7 +2079,7 @@ static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, voi
 
 static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
                            size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
-                           unsigned uWriteChance)
+                           unsigned uWriteChance, PVDPATTERN pPattern)
 {
     int rc = VINF_SUCCESS;
 
@@ -1866,6 +2090,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
     pIoTest->offEnd        = offEnd;
     pIoTest->uWriteChance  = uWriteChance;
     pIoTest->pIoRnd        = pGlob->pIoRnd;
+    pIoTest->pPattern      = pPattern;
 
     if (fRandomAcc)
     {
@@ -1914,7 +2139,7 @@ static bool tstVDIoTestIsTrue(PVDIOTEST pIoTest, int iPercentage)
 {
     int uRnd = VDIoRndGetU32Ex(pIoTest->pIoRnd, 0, 100);
 
-    return (uRnd <= iPercentage); /* This should be enough for our purpose */
+    return (uRnd < iPercentage); /* This should be enough for our purpose */
 }
 
 static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
@@ -1931,7 +2156,10 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
 
         if (pIoReq->enmTxDir == VDIOREQTXDIR_WRITE)
         {
-            rc = VDIoRndGetBuffer(pIoTest->pIoRnd, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
+            if (pIoTest->pPattern)
+                rc = tstVDIoPatternGetBuffer(pIoTest->pPattern, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
+            else
+                rc = VDIoRndGetBuffer(pIoTest->pIoRnd, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
             AssertRC(rc);
         }
         else
@@ -2075,6 +2303,84 @@ static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk)
 
     LogFlowFunc(("return %#p\n", fFound ? pIt : NULL));
     return fFound ? pIt : NULL;
+}
+
+/**
+ * Returns the I/O pattern handle by name of NULL if not found.
+ *
+ * @returns I/O pattern handle or NULL if the pattern could not be found.
+ *
+ * @param pGlob    Global test state.
+ * @param pcszName Name of the pattern.
+ */
+static PVDPATTERN tstVDIoGetPatternByName(PVDTESTGLOB pGlob, const char *pcszName)
+{
+    PVDPATTERN pIt = NULL;
+    bool fFound = false;
+
+    LogFlowFunc(("pGlob=%#p pcszName=%s\n", pGlob, pcszName));
+
+    RTListForEach(&pGlob->ListPatterns, pIt, VDPATTERN, ListNode)
+    {
+        if (!RTStrCmp(pIt->pszName, pcszName))
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    LogFlowFunc(("return %#p\n", fFound ? pIt : NULL));
+    return fFound ? pIt : NULL;
+}
+
+/**
+ * Creates a new pattern with the given name and an
+ * allocated pattern buffer.
+ *
+ * @returns Pointer to a new pattern buffer or NULL on failure.
+ * @param   pcszName    Name of the pattern.
+ * @param   cbPattern   Size of the pattern buffer.
+ */
+static PVDPATTERN tstVDIoPatternCreate(const char *pcszName, size_t cbPattern)
+{
+    PVDPATTERN pPattern  = (PVDPATTERN)RTMemAllocZ(sizeof(VDPATTERN));
+    char      *pszName   = RTStrDup(pcszName);
+    void      *pvPattern = RTMemAllocZ(cbPattern);
+
+    if (pPattern && pszName && pvPattern)
+    {
+        pPattern->pszName   = pszName;
+        pPattern->pvPattern = pvPattern;
+        pPattern->cbPattern = cbPattern;
+    }
+    else
+    {
+        if (pPattern)
+            RTMemFree(pPattern);
+        if (pszName)
+            RTStrFree(pszName);
+        if (pvPattern)
+            RTMemFree(pvPattern);
+
+        pPattern  = NULL;
+        pszName   = NULL;
+        pvPattern = NULL;
+    }
+
+    return pPattern;
+}
+
+static int tstVDIoPatternGetBuffer(PVDPATTERN pPattern, void **ppv, size_t cb)
+{
+    AssertPtrReturn(pPattern, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppv, VERR_INVALID_POINTER);
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+
+    if (cb > pPattern->cbPattern)
+        return VERR_INVALID_PARAMETER;
+
+    *ppv = pPattern->pvPattern;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2540,6 +2846,7 @@ static void tstVDIoScriptRun(const char *pcszFilename)
     memset(&GlobTest, 0, sizeof(VDTESTGLOB));
     RTListInit(&GlobTest.ListFiles);
     RTListInit(&GlobTest.ListDisks);
+    RTListInit(&GlobTest.ListPatterns);
 
     rc = RTStrmOpen(pcszFilename, "r", &pScriptStrm);
     if (RT_SUCCESS(rc))
