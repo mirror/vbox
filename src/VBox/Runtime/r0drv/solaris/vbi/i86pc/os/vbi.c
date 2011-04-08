@@ -259,7 +259,11 @@ vbi_init(void)
 	 */
 	if (kobj_getsymvalue("kflt_init", 1) != NULL)
 	{
-		use_kflt = 1;
+		int *p_kflt_disable = (int*)kobj_getsymvalue("kflt_disable", 1);	/* amd64 only, on 32-bit kflt's are disabled. */
+		if (p_kflt_disable && *p_kflt_disable == 0)
+		{
+			use_kflt = 1;
+		}
 	}
 
 
