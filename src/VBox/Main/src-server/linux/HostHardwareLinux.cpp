@@ -1331,6 +1331,7 @@ int hotplugInotifyImpl::drainWakeupPipe(void)
     AssertRCReturn(mStatus, VERR_WRONG_ORDER);
     cbRead = read(mhWakeupPipeR, szBuf, sizeof(szBuf));
     Assert(cbRead > 0);
+    NOREF(cbRead);
     return VINF_SUCCESS;
 }
 
