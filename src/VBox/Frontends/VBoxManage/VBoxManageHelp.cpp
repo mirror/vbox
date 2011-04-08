@@ -150,6 +150,11 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--pagefusion on|off]\n"
                      "                            [--vram <vramsize in MB>]\n"
                      "                            [--acpi on|off]\n"
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                     "                            [--attachpci 03:04.0]\n"
+                     "                            [--attachpci 03:04.0@02:01.0]\n"
+                     "                            [--detachpci 03:04.0]\n"
+#endif
                      "                            [--ioapic on|off]\n"
                      "                            [--pae on|off]\n"
                      "                            [--hpet on|off]\n"

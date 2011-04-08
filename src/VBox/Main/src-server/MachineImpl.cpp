@@ -5932,8 +5932,11 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
         Assert(SUCCEEDED(rc));
         fireHostPciDevicePlugEvent(es, mid.raw(), false /* unplugged */, true /* success */, pAttach, NULL);
     }
-
-    return S_OK;
+    
+    return fRemoved ? S_OK : setError(VBOX_E_OBJECT_NOT_FOUND,
+                                      tr("No host PCI device %08x attached"),
+                                      hostAddress
+                                      );
 }
 
 STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments))
