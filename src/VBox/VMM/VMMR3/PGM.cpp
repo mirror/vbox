@@ -2275,8 +2275,9 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
         for (uint32_t iPage = 0; iPage < pDynMap->cPages; iPage++)
         {
-            paPages[iPage].pvPage  += offDelta;
-            paPages[iPage].uPte.pv += offDelta;
+            paPages[iPage].pvPage       += offDelta;
+            paPages[iPage].uPte.pLegacy += offDelta;
+            paPages[iPage].uPte.pPae    += offDelta;
         }
     }
 

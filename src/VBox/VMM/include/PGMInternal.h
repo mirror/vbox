@@ -1676,14 +1676,12 @@ typedef struct PGMRCDYNMAPENTRY
     /** The number of references. */
     int32_t volatile            cRefs;
     /** PTE pointer union. */
-    union PGMRCDYNMAPENTRY_PPTE
+    struct PGMRCDYNMAPENTRY_PPTE
     {
         /** PTE pointer, 32-bit legacy version. */
         RCPTRTYPE(PX86PTE)      pLegacy;
         /** PTE pointer, PAE version. */
         RCPTRTYPE(PX86PTEPAE)   pPae;
-        /** PTE pointer, the void version. */
-        RTRCPTR                 pv;
     } uPte;
     /** Alignment padding. */
     RTRCPTR                     RCPtrAlignment;
@@ -1711,8 +1709,6 @@ typedef struct PGMRCDYNMAP
     RCPTRTYPE(PPGMRCDYNMAPENTRY)    paPages;
     /** The cache size given as a number of pages. */
     uint32_t                        cPages;
-    /** Whether it's 32-bit legacy or PAE/AMD64 paging mode. */
-    bool                            fLegacyMode;
     /** The current load.
      * This does not include guard pages. */
     uint32_t                        cLoad;

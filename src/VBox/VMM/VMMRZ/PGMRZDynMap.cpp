@@ -205,7 +205,6 @@ typedef struct PGMR0DYNMAPENTRY
     void                       *pvPage;
     /** The number of references. */
     int32_t volatile            cRefs;
-#ifndef IN_RC
     /** PTE pointer union. */
     union PGMR0DYNMAPENTRY_PPTE
     {
@@ -216,20 +215,8 @@ typedef struct PGMR0DYNMAPENTRY
         /** PTE pointer, the void version. */
         void                   *pv;
     } uPte;
-#else
-    /** PTE pointers. */
-    struct PGMR0DYNMAPENTRY_PPTE
-    {
-        /** PTE pointer, 32-bit legacy version. */
-        PX86PTE                 pLegacy;
-        /** PTE pointer, PAE version. */
-        PX86PTEPAE              pPae;
-    } uPte;
-#endif
-# ifndef IN_RC
     /** CPUs that haven't invalidated this entry after it's last update. */
     RTCPUSET                    PendingSet;
-# endif
 } PGMR0DYNMAPENTRY;
 /** Pointer a mapping cache entry for the ring-0.
  * @sa PPGMRZDYNMAPENTRY, PPGMRCDYNMAPENTRY,  */
@@ -250,33 +237,26 @@ typedef struct PGMR0DYNMAP
 {
     /** The usual magic number / eye catcher (PGMRZDYNMAP_MAGIC). */
     uint32_t                    u32Magic;
-# ifndef IN_RC
     /** Spinlock serializing the normal operation of the cache. */
     RTSPINLOCK                  hSpinlock;
-# endif
     /** Array for tracking and managing the pages.  */
     PPGMR0DYNMAPENTRY           paPages;
     /** The cache size given as a number of pages. */
     uint32_t                    cPages;
-# ifndef IN_RC
     /** Whether it's 32-bit legacy or PAE/AMD64 paging mode. */
     bool                        fLegacyMode;
-# endif
     /** The current load.
      * This does not include guard pages. */
     uint32_t                    cLoad;
     /** The max load ever.
      * This is maintained to trigger the adding of more mapping space. */
     uint32_t                    cMaxLoad;
-# ifndef IN_RC
     /** Initialization / termination lock. */
     RTSEMFASTMUTEX              hInitLock;
-# endif
     /** The number of guard pages. */
     uint32_t                    cGuardPages;
     /** The number of users (protected by hInitLock). */
     uint32_t                    cUsers;
-# ifndef IN_RC
     /** Array containing a copy of the original page tables.
      * The entries are either X86PTE or X86PTEPAE according to fLegacyMode. */
     void                       *pvSavedPTEs;
@@ -284,7 +264,6 @@ typedef struct PGMR0DYNMAP
     PPGMR0DYNMAPSEG             pSegHead;
     /** The paging mode. */
     SUPPAGINGMODE               enmPgMode;
-# endif
 } PGMR0DYNMAP;
 
 
@@ -1609,7 +1588,10 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
     uint32_t            cLoad       = 0;
     PPGMRZDYNMAPENTRY   paPages     = pThis->paPages;
     uint32_t            iPage       = pThis->cPages;
+
+#ifndef IN_RC
     if (pThis->fLegacyMode)
+#endif
     {
 #ifdef IN_RING0
         PCX86PGUINT     paSavedPTEs = (PCX86PGUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
@@ -1649,7 +1631,9 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
 #endif
         }
     }
+#ifndef IN_RC
     else
+#endif
     {
 #ifdef IN_RING0
         PCX86PGPAEUINT  paSavedPTEs = (PCX86PGPAEUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
