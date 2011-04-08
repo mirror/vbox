@@ -2428,7 +2428,7 @@ RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
 RT_C_DECLS_END
 
 /** The maximum size argument of a memchr call. */
-#define RTSTR_MEMCHR_MAX            (~(size_t)0x10000)
+#define RTSTR_MEMCHR_MAX            (~(size_t)0 >> 1)
 
 /**
  * Find the zero terminator in a string with a limited length.
