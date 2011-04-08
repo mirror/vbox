@@ -1683,8 +1683,6 @@ typedef struct PGMRCDYNMAPENTRY
         /** PTE pointer, PAE version. */
         RCPTRTYPE(PX86PTEPAE)   pPae;
     } uPte;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment;
 } PGMRCDYNMAPENTRY;
 /** Pointer to a dynamic mapping cache entry for the raw-mode context. */
 typedef PGMRCDYNMAPENTRY *PPGMRCDYNMAPENTRY;
