@@ -166,7 +166,7 @@ DECLHIDDEN(void) vboxPciDevCleanup(PVBOXRAWPCIINS pThis)
 /**
  * @copydoc RAWPCIDEVPORT:: pfnInit
  */
-DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
+static DECLCALLBACK(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -183,7 +183,7 @@ DECLHIDDEN(int) vboxPciDevInit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 /**
  * @copydoc RAWPCIDEVPORT:: pfnDeinit
  */
-DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
+static DECLCALLBACK(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -208,7 +208,7 @@ DECLHIDDEN(int) vboxPciDevDeinit(PRAWPCIDEVPORT pPort, uint32_t fFlags)
 /**
  * @copydoc RAWPCIDEVPORT:: pfnDestroy
  */
-DECLHIDDEN(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
+static DECLCALLBACK(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -240,12 +240,12 @@ DECLHIDDEN(int) vboxPciDevDestroy(PRAWPCIDEVPORT pPort)
 /**
  * @copydoc RAWPCIDEVPORT:: pfnGetRegionInfo
  */
-DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
-                                        int32_t        iRegion,
-                                        RTHCPHYS       *pRegionStart,
-                                        uint64_t       *pu64RegionSize,
-                                        bool           *pfPresent,
-                                        uint32_t        *pfFlags)
+static DECLCALLBACK(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
+                                                 int32_t        iRegion,
+			 			 RTHCPHYS       *pRegionStart,
+				  		 uint64_t       *pu64RegionSize,
+					   	 bool           *pfPresent,
+						 uint32_t        *pfFlags)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -263,12 +263,12 @@ DECLHIDDEN(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
 /**
  * @copydoc RAWPCIDEVPORT:: pfnMapRegion
  */
-DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
-                                    int32_t        iRegion,
-                                    RTHCPHYS       RegionStart,
-                                    uint64_t       u64RegionSize,
-                                    int32_t        fFlags,
-                                    RTR0PTR        *pRegionBase)
+static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
+                                             int32_t        iRegion,
+			  		     RTHCPHYS       RegionStart,
+				   	     uint64_t       u64RegionSize,
+					     int32_t        fFlags,
+					     RTR0PTR        *pRegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -285,11 +285,11 @@ DECLHIDDEN(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
 /**
  * @copydoc RAWPCIDEVPORT:: pfnUnapRegion
  */
-DECLHIDDEN(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
-                                      int32_t        iRegion,
-                                      RTHCPHYS       RegionStart,
-                                      uint64_t       u64RegionSize,
-                                      RTR0PTR        RegionBase)
+static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
+                                               int32_t        iRegion,
+			  		       RTHCPHYS       RegionStart,
+				   	       uint64_t       u64RegionSize,
+					       RTR0PTR        RegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -306,7 +306,7 @@ DECLHIDDEN(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
 /**
  * @copydoc RAWPCIDEVPORT:: pfnPciCfgRead
  */
-DECLHIDDEN(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC      *pValue)
+static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC *pValue)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
 
@@ -324,7 +324,7 @@ DECLHIDDEN(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, uint32_t Register, PC
 /**
  * @copydoc RAWPCIDEVPORT:: pfnPciCfgWrite
  */
-DECLHIDDEN(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC *pValue)
+static DECLCALLBACK(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, PCIRAWMEMLOC *pValue)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -338,7 +338,7 @@ DECLHIDDEN(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, uint32_t Register, P
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR pfnHandler, void* pIrqContext, PCIRAWISRHANDLE *phIsr)
+static DECLCALLBACK(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR pfnHandler, void* pIrqContext, PCIRAWISRHANDLE *phIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int     rc;
@@ -370,7 +370,7 @@ DECLHIDDEN(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT pPort, PFNRAWPCIISR 
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, PCIRAWISRHANDLE hIsr)
+static DECLCALLBACK(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, PCIRAWISRHANDLE hIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
@@ -392,7 +392,7 @@ DECLHIDDEN(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT pPort, PCIRAWISRHA
     return rc;
 }
 
-DECLHIDDEN(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTATE  aState, uint64_t *pu64Param)
+static DECLCALLBACK(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT pPort, PCIRAWPOWERSTATE  aState, uint64_t *pu64Param)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int rc;
