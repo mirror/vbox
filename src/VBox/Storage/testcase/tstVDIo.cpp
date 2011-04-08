@@ -279,6 +279,7 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDTESTGLOB pGlob, PVDSCRIPTARG paS
 static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerMerge(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
@@ -340,7 +341,16 @@ const VDSCRIPTARGDESC g_aArgMerge[] =
 {
     /* pcszName    chId enmType                          fFlags */
     {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
-    {"forward",    'f', VDSCRIPTARGTYPE_BOOL,            VDSCRIPTARGDESC_FLAG_MANDATORY}
+    {"from",       'f', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"to",         't', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
+/* Compact a disk */
+const VDSCRIPTARGDESC g_aArgCompact[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"image",      'i', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
 /* close action */
@@ -422,6 +432,7 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"flush",        g_aArgFlush,         RT_ELEMENTS(g_aArgFlush),        vdScriptHandlerFlush},
     {"close",        g_aArgClose,         RT_ELEMENTS(g_aArgClose),        vdScriptHandlerClose},
     {"merge",        g_aArgMerge,         RT_ELEMENTS(g_aArgMerge),        vdScriptHandlerMerge},
+    {"compact",      g_aArgCompact,       RT_ELEMENTS(g_aArgCompact),      vdScriptHandlerCompact},
     {"iorngcreate",  g_aArgIoRngCreate,   RT_ELEMENTS(g_aArgIoRngCreate),  vdScriptHandlerIoRngCreate},
     {"iorngdestroy", NULL,                0,                               vdScriptHandlerIoRngDestroy},
     {"sleep",        g_aArgSleep,         RT_ELEMENTS(g_aArgSleep),        vdScriptHandlerSleep},
@@ -994,7 +1005,102 @@ static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG pa
 
 static DECLCALLBACK(int) vdScriptHandlerMerge(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    const char *pcszDisk = NULL;
+    PVDDISK pDisk = NULL;
+    unsigned nImageFrom = 0;
+    unsigned nImageTo = 0;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'f':
+            {
+                nImageFrom = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+            case 't':
+            {
+                nImageTo = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+        if (!pDisk)
+            rc = VERR_NOT_FOUND;
+        else
+        {
+            /** @todo: Provide progress interface to test that cancelation
+             * doesn't corrupt the data.
+             */
+            rc = VDMerge(pDisk->pVD, nImageFrom, nImageTo, NULL);
+        }
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszDisk = NULL;
+    PVDDISK pDisk = NULL;
+    unsigned nImage = 0;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'i':
+            {
+                nImage = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+        if (!pDisk)
+            rc = VERR_NOT_FOUND;
+        else
+        {
+            /** @todo: Provide progress interface to test that cancelation
+             * doesn't corrupt the data.
+             */
+            rc = VDCompact(pDisk->pVD, nImage, NULL);
+        }
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
