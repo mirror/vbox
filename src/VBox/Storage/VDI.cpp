@@ -2020,11 +2020,6 @@ static void vdiDump(void *pBackendData)
     }
 }
 
-static bool vdiIsAsyncIOSupported(void *pBackendData)
-{
-    return true;
-}
-
 static int vdiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -2732,8 +2727,6 @@ VBOXHDDBACKEND g_VDIBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnIsAsyncIOSupported */
-    vdiIsAsyncIOSupported,
     /* pfnAsyncRead */
     vdiAsyncRead,
     /* pfnAsyncWrite */

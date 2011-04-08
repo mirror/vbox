@@ -454,15 +454,6 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pBackendData, const char *pszParentFilename));
 
     /**
-     * Return whether asynchronous I/O operations are supported for this image.
-     *
-     * @returns true if asynchronous I/O is supported
-     *          false otherwise.
-     * @param   pBackendData     Opaque state data for this image.
-     */
-    DECLR3CALLBACKMEMBER(bool, pfnIsAsyncIOSupported, (void *pBackendData));
-
-    /**
      * Start an asynchronous read request.
      *
      * @returns VBox status code.

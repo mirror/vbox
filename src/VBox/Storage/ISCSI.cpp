@@ -5175,13 +5175,6 @@ static void iscsiDump(void *pBackendData)
     }
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnIsAsyncIOSupported */
-static bool iscsiIsAsyncIOSupported(void *pBackendData)
-{
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    return pImage->fCmdQueuingSupported;
-}
-
 /** @copydoc VBOXHDDBACKEND::pfnAsyncRead */
 static int iscsiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                           PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
@@ -5628,8 +5621,6 @@ VBOXHDDBACKEND g_ISCSIBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnIsAsyncIOSupported */
-    iscsiIsAsyncIOSupported,
     /* pfnAsyncRead */
     iscsiAsyncRead,
     /* pfnAsyncWrite */

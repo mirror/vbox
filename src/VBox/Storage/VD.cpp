@@ -4226,6 +4226,18 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             break;
         }
 
+        /*
+         * Fail if the the backend can't do async I/O but the
+         * flag is set.
+         */
+        if (   !(pImage->Backend->uBackendCaps & VD_CAP_ASYNC)
+            && (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO))
+        {
+            rc = vdError(pDisk, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                         N_("VD: Backend '%s' does not support async I/O"), pszBackend);
+            break;
+        }
+
         /* Set up the I/O interface. */
         pImage->VDIo.pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IO);
         if (pImage->VDIo.pInterfaceIO)
@@ -8067,56 +8079,6 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
         rc2 = vdThreadFinishRead(pDisk);
         AssertRC(rc2);
     }
-}
-
-/**
- * Query if asynchronous operations are supported for this disk.
- *
- * @returns VBox status code.
- * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to the HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pfAIOSupported  Where to store if async IO is supported.
- */
-VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, bool *pfAIOSupported)
-{
-    int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockRead = false;
-
-    LogFlowFunc(("pDisk=%#p nImage=%u pfAIOSupported=%#p\n", pDisk, nImage, pfAIOSupported));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pfAIOSupported),
-                           ("pfAIOSupported=%#p\n", pfAIOSupported),
-                           rc = VERR_INVALID_PARAMETER);
-
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
-        if (pImage->Backend->uBackendCaps & VD_CAP_ASYNC)
-            *pfAIOSupported = pImage->Backend->pfnIsAsyncIOSupported(pImage->pBackendData);
-        else
-            *pfAIOSupported = false;
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
-
-    LogFlowFunc(("returns %Rrc, fAIOSupported=%u\n", rc, *pfAIOSupported));
-    return rc;
 }
 
 
