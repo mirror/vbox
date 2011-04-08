@@ -1822,7 +1822,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
              {
                  ComPtr<IPciDeviceAttachment> Assignment = assignments[index];
                  char szHostPciAddress[32], szGuestPciAddress[32];
-                 int32_t iHostPciAddress = -1, iGuestPciAddress = -1;
+                 LONG iHostPciAddress = -1, iGuestPciAddress = -1;
                  Bstr DevName;
 
                  Assignment->COMGETTER(Name)(DevName.asOutParam());
