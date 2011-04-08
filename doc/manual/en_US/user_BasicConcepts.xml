@@ -1064,7 +1064,7 @@
                       program called VMware Serial Line Gateway, available for
                       download at
                                   <literal> <ulink
-                      url="http://www.l4ka.org/tools/vmwaregateway.php">http://www.l4ka.org/tools/vmwaregateway.php</ulink>
+                      url="http://www.l4ka.org/91.php">http://www.l4ka.org/91.php</ulink>
                       </literal>. This tool provides a fixed server mode named
                       pipe at
                       <computeroutput>\\.\pipe\vmwaredebug</computeroutput>
