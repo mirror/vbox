@@ -2827,6 +2827,249 @@ static int vhdAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     return vhdFileFlushAsync(pImage, pIoCtx, NULL, NULL);
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnCompact */
+static int vhdCompact(void *pBackendData, unsigned uPercentStart,
+                      unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
+                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation)
+{
+    PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
+    int rc = VINF_SUCCESS;
+    void *pvBuf = NULL, *pvReplace = NULL;
+    uint32_t *paBlocks = NULL;
+
+    int (*pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
+    void *pvParent = NULL;
+    PVDINTERFACE pIfParentState = VDInterfaceGet(pVDIfsOperation,
+                                                 VDINTERFACETYPE_PARENTSTATE);
+    PVDINTERFACEPARENTSTATE pCbParentState = NULL;
+    if (pIfParentState)
+    {
+        pCbParentState = VDGetInterfaceParentState(pIfParentState);
+        if (pCbParentState)
+            pfnParentRead = pCbParentState->pfnParentRead;
+        pvParent = pIfParentState->pvUser;
+    }
+
+    PFNVDPROGRESS pfnProgress = NULL;
+    void *pvUser = NULL;
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+    {
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+        if (pCbProgress)
+            pfnProgress = pCbProgress->pfnProgress;
+        pvUser = pIfProgress->pvUser;
+    }
+
+    do
+    {
+        AssertBreakStmt(pImage, rc = VERR_INVALID_PARAMETER);
+
+        AssertBreakStmt(!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                        rc = VERR_VD_IMAGE_READ_ONLY);
+
+        /* Reject fixed images as they don't have a BAT. */
+        if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
+        {
+            rc = VERR_NOT_SUPPORTED;
+            break;
+        }
+
+        if (pfnParentRead)
+        {
+            pvParent = RTMemTmpAlloc(pImage->cbDataBlock);
+            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+        }
+        pvBuf = RTMemTmpAlloc(pImage->cbDataBlock);
+        AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+
+        unsigned cBlocksAllocated = 0;
+        unsigned cBlocksToMove    = 0;
+        unsigned cBlocks          = pImage->cBlockAllocationTableEntries;
+        uint32_t offBlocksStart   = ~0U; /* Start offset of data blocks in sectors. */
+        uint32_t *paBat           = pImage->pBlockAllocationTable;
+
+        /* Count the number of allocated blocks and find the start offset for the data blocks. */
+        for (unsigned i = 0; i < cBlocks; i++)
+            if (paBat[i] != ~0U)
+            {
+                cBlocksAllocated++;
+                if (paBat[i] < offBlocksStart)
+                    offBlocksStart = paBat[i];
+            }
+
+        if (!cBlocksAllocated)
+        {
+            /* Nothing to do. */
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        paBlocks = (uint32_t *)RTMemTmpAllocZ(cBlocksAllocated * sizeof(uint32_t));
+        AssertBreakStmt(VALID_PTR(paBlocks), rc = VERR_NO_MEMORY);
+
+        /* Invalidate the back resolving array. */
+        for (unsigned i = 0; i < cBlocksAllocated; i++)
+            paBlocks[i] = ~0U;
+
+        /* Fill the back resolving table. */
+        for (unsigned i = 0; i < cBlocks; i++)
+            if (paBat[i] != ~0U)
+            {
+                unsigned idxBlock = (paBat[i] - offBlocksStart) / pImage->cSectorsPerDataBlock;
+                if (   idxBlock < cBlocksAllocated
+                    && paBlocks[idxBlock] == ~0U)
+                    paBlocks[idxBlock] = i;
+                else
+                {
+                    /* The image is in an inconsistent state. Don't go further. */
+                    rc = VERR_INVALID_STATE;
+                    break;
+                }
+            }
+
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Find redundant information and update the block pointers
+         * accordingly, creating bubbles. Keep disk up to date, as this
+         * enables cancelling. */
+        for (unsigned i = 0; i < cBlocks; i++)
+        {
+            if (paBat[i] != ~0U)
+            {
+                unsigned idxBlock = (paBat[i] - offBlocksStart) / pImage->cSectorsPerDataBlock;
+
+                /* Block present in image file, read relevant data. */
+                uint64_t u64Offset = ((uint64_t)paBat[i] + pImage->cDataBlockBitmapSectors) * VHD_SECTOR_SIZE;
+                rc = vhdFileReadSync(pImage, u64Offset, pvBuf, pImage->cbDataBlock, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)pImage->cbDataBlock * 8) == -1)
+                {
+                    paBat[i] = ~0;
+                    paBlocks[idxBlock] = ~0U;
+                    /* Adjust progress info, one block to be relocated. */
+                    cBlocksToMove++;
+                }
+                else if (pfnParentRead)
+                {
+                    rc = pfnParentRead(pvParent, i * pImage->cbDataBlock, pvParent, pImage->cbDataBlock);
+                    if (RT_FAILURE(rc))
+                        break;
+                    if (!memcmp(pvParent, pvBuf, pImage->cbDataBlock))
+                    {
+                        paBat[i] = ~0U;
+                        paBlocks[idxBlock] = ~0U;
+                        /* Adjust progress info, one block to be relocated. */
+                        cBlocksToMove++;
+                    }
+                }
+            }
+
+            if (pCbProgress && pCbProgress->pfnProgress)
+            {
+                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                              (uint64_t)i * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Fill bubbles with other data (if available). */
+            unsigned cBlocksMoved = 0;
+            unsigned uBlockUsedPos = cBlocksAllocated;
+            size_t   cbBlock = pImage->cbDataBlock + pImage->cbDataBlockBitmap; /** < Size of whole block containing the bitmap and the user data. */
+
+            /* Allocate data buffer to hold the data block and allocation bitmap in front of the actual data. */
+            RTMemTmpFree(pvBuf);
+            pvBuf = RTMemTmpAllocZ(cbBlock);
+            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+
+            for (unsigned i = 0; i < cBlocksAllocated; i++)
+            {
+                unsigned uBlock = paBlocks[i];
+                if (uBlock == ~0U)
+                {
+                    unsigned uBlockData = ~0U;
+                    while (uBlockUsedPos > i && uBlockData == ~0U)
+                    {
+                        uBlockUsedPos--;
+                        uBlockData = paBlocks[uBlockUsedPos];
+                    }
+                    /* Terminate early if there is no block which needs copying. */
+                    if (uBlockUsedPos == i)
+                        break;
+                    uint64_t u64Offset = (uint64_t)uBlockUsedPos * cbBlock
+                                       + (offBlocksStart * VHD_SECTOR_SIZE);
+                    rc = vhdFileReadSync(pImage, u64Offset, pvBuf, cbBlock, NULL);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    u64Offset = (uint64_t)i * cbBlock
+                                       + (offBlocksStart * VHD_SECTOR_SIZE);
+                    rc = vhdFileWriteSync(pImage, u64Offset, pvBuf, cbBlock, NULL);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    paBat[uBlockData] = i*pImage->cSectorsPerDataBlock + offBlocksStart;
+
+                    /* Truncate the file but leave enough room for the footer to avoid
+                     * races if other processes fill the whole harddisk. */
+                    rc = vhdFileSetSize(pImage, pImage->uCurrentEndOfFile - cbBlock + VHD_SECTOR_SIZE);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    /* Update pointers and write footer. */
+                    pImage->uCurrentEndOfFile -= cbBlock;
+
+                    /* We're kinda screwed if this failes. */
+                    rc = vhdUpdateFooter(pImage);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    paBlocks[i] = uBlockData;
+                    paBlocks[uBlockUsedPos] = ~0U;
+                    cBlocksMoved++;
+                }
+
+                if (pCbProgress && pCbProgress->pfnProgress)
+                {
+                    rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                                  (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
+
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }
+        }
+
+        /* Write the new BAT in any case. */
+        rc = vhdFlushImage(pImage);
+    } while (0);
+
+    if (paBlocks)
+        RTMemTmpFree(paBlocks);
+    if (pvParent)
+        RTMemTmpFree(pvParent);
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
+    {
+        pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                 uPercentStart + uPercentSpan);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnResize */
 static int vhdResize(void *pBackendData, uint64_t cbSize,
                      PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
@@ -3108,7 +3351,7 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnComposeName */
     genericFileComposeName,
     /* pfnCompact */
-    NULL,
+    vhdCompact,
     /* pfnResize */
     vhdResize
 };
