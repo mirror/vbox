@@ -1627,7 +1627,7 @@ static int vhdClose(void *pBackendData, bool fDelete)
 static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                    size_t cbBuf, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%p uOffset=%#llx pvBuf=%p cbBuf=%u pcbActuallyRead=%p\n", pBackendData, uOffset, pvBuf, cbBuf, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%p uOffset=%#llu pvBuf=%p cbBuf=%u pcbActuallyRead=%p\n", pBackendData, uOffset, pvBuf, cbBuf, pcbActuallyRead));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -3011,7 +3011,7 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
                     if (RT_FAILURE(rc))
                         break;
 
-                    paBat[uBlockData] = i*pImage->cSectorsPerDataBlock + offBlocksStart;
+                    paBat[uBlockData] = i*(pImage->cSectorsPerDataBlock + pImage->cDataBlockBitmapSectors) + offBlocksStart;
 
                     /* Truncate the file but leave enough room for the footer to avoid
                      * races if other processes fill the whole harddisk. */
