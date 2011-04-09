@@ -21,30 +21,57 @@ iorngcreate size=10M mode=manual seed=1234567890
 # Create zero pattern
 iopatterncreatefromnumber name=zero size=1M pattern=0
 
+print msg=Testing_VDI
 # Create disk containers, read verification is on.
 createdisk name=disk verify=yes
-
-# Create the disk and close it.
+# Create the disk.
 create disk=disk mode=base name=tstCompact.vdi type=dynamic backend=VDI size=200M
-
 # Fill the disk with random data
-io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 # Read the data to verify it once.
-io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 # Fill a part with 0's
-io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=100M-150M size=50M writes=100 pattern=zero
-
+io disk=disk async=no mode=seq blocksize=64k off=100M-150M size=50M writes=100 pattern=zero
 # Now compact
 compact disk=disk image=0
-
 # Read again to verify that the content hasn't changed
-io disk=disk async=no max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
+# Fill everything with 0
+io disk=disk async=no mode=seq blocksize=64k off=0M-200M size=200M writes=100 pattern=zero
+# Now compact
+compact disk=disk image=0
+# Read again to verify that the content hasn't changed
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 # Cleanup
 close disk=disk mode=single delete=yes
 destroydisk name=disk
+
+print msg=Testing_VHD
+# Create disk containers, read verification is on.
+createdisk name=disk verify=yes
+# Create the disk.
+create disk=disk mode=base name=tstCompact.vhd type=dynamic backend=VHD size=200M
+# Fill the disk with random data
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
+# Read the data to verify it once.
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
+# Fill a part with 0's
+io disk=disk async=no mode=seq blocksize=64k off=100M-150M size=50M writes=100 pattern=zero
+# Now compact
+compact disk=disk image=0
+# Read again to verify that the content hasn't changed
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
+# Fill everything with 0
+io disk=disk async=no mode=seq blocksize=64k off=0M-200M size=200M writes=100 pattern=zero
+# Now compact
+compact disk=disk image=0
+# Read again to verify that the content hasn't changed
+io disk=disk async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
+# Cleanup
+close disk=disk mode=single delete=yes
+destroydisk name=disk
+
+# Destroy RNG and pattern
 iopatterndestroy name=zero
 iorngdestroy
 

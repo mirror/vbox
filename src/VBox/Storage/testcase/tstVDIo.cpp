@@ -1360,7 +1360,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromNumber(PVDTESTGLOB pG
             {
                 *((uint64_t*)pv)     = u64Pattern;
                 pPattern->cbPattern -= sizeof(uint64_t);
-                pv                   = (uint64_t *)pv + sizeof(uint64_t);
+                pv                   = (uint64_t *)pv + 1;
             }
             pPattern->cbPattern = cbPattern; /* Set to the desired size. (could be unaligned) */
 
