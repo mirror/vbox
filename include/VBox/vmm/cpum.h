@@ -205,7 +205,7 @@ DECLINLINE(bool)    CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
  * @returns @c true if it is, @c false if not.
  * @param   pCtx    Current CPU context
  */
-VMMDECL(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
 {
     return !(pCtx->cr0 & X86_CR0_PE)
         || pCtx->eflags.Bits.u1VM; /** @todo verify that this cannot be set in long mode. */
