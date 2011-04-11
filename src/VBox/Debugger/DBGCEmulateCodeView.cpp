@@ -1743,7 +1743,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             "DownRO", /* 4 Expand-down, Read-Only  */
             "DownRO", /* 5 Expand-down, Read-Only - Accessed */
             "DownRW", /* 6 Expand-down, Read/Write  */
-            "DownRO", /* 7 Expand-down, Read/Write - Accessed */
+            "DownRW", /* 7 Expand-down, Read/Write - Accessed */
             "CodeEO", /* 8 Execute-Only */
             "CodeEO", /* 9 Execute-Only - Accessed */
             "CodeER", /* A Execute/Readable */
@@ -1892,7 +1892,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             "DownRO", /* 4 Expand-down, Read-Only  */
             "DownRO", /* 5 Expand-down, Read-Only - Accessed */
             "DownRW", /* 6 Expand-down, Read/Write  */
-            "DownRO", /* 7 Expand-down, Read/Write - Accessed */
+            "DownRW", /* 7 Expand-down, Read/Write - Accessed */
             "CodeEO", /* 8 Execute-Only */
             "CodeEO", /* 9 Execute-Only - Accessed */
             "CodeER", /* A Execute/Readable */
