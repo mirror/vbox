@@ -1536,7 +1536,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             val = pCtx->trHid.Attr.u;
 
             /* The TSS selector must be busy. */
-            if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
+            if ((val & 0xD) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
                 val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
             else
                 /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
