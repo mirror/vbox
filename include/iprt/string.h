@@ -2428,7 +2428,7 @@ RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
 RT_C_DECLS_END
 
 /** The maximum size argument of a memchr call. */
-#define RTSTR_MEMCHR_MAX            (~(size_t)0 >> 1)
+#define RTSTR_MEMCHR_MAX            ((~(size_t)0 >> 1) - 15)
 
 /**
  * Find the zero terminator in a string with a limited length.
@@ -2442,8 +2442,9 @@ RT_C_DECLS_END
 #if defined(__cplusplus) && !defined(DOXYGEN_RUNNING)
 DECLINLINE(char const *) RTStrEnd(char const *pszString, size_t cchMax)
 {
-    /* Avoid potential issues with memchr seen in glibc. */
-    if (cchMax > RTSTR_MEMCHR_MAX)
+    /* Avoid potential issues with memchr seen in glibc.
+     * See sysdeps/x86_64/memchr.S in glibc versions older than 2.11 */
+    while (cchMax > RTSTR_MEMCHR_MAX)
     {
         char const *pszRet = (char const *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
         if (RT_LIKELY(pszRet))
@@ -2459,8 +2460,9 @@ DECLINLINE(char *) RTStrEnd(char *pszString, size_t cchMax)
 DECLINLINE(char *) RTStrEnd(const char *pszString, size_t cchMax)
 #endif
 {
-    /* Avoid potential issues with memchr seen in glibc. */
-    if (cchMax > RTSTR_MEMCHR_MAX)
+    /* Avoid potential issues with memchr seen in glibc.
+     * See sysdeps/x86_64/memchr.S in glibc versions older than 2.11 */
+    while (cchMax > RTSTR_MEMCHR_MAX)
     {
         char *pszRet = (char *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
         if (RT_LIKELY(pszRet))
