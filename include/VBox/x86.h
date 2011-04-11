@@ -2467,6 +2467,9 @@ typedef PCX86DESC   PCX86DESCHC;
 
 /** @name System Selector Types.
  * @{ */
+/** The TSS busy bit mask. */
+#define X86_SEL_TYPE_SYS_TSS_BUSY_MASK      2
+
 /** Undefined system selector type. */
 #define X86_SEL_TYPE_SYS_UNDEFINED          0
 /** 286 TSS selector. */
