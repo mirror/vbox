@@ -869,7 +869,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             *puValue = MSR_IA32_MISC_ENABLE_FAST_STRINGS  /* by default */;
 
             if ((pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_MONITOR) != 0)
-                
+
                 *puValue |= MSR_IA32_MISC_ENABLE_MONITOR /* if mwait/monitor available */;
             /** @todo: add more cpuid-controlled features this way. */
 #endif
@@ -2054,6 +2054,19 @@ VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
 VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
 {
     return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
+}
+
+
+/**
+ * Tests if the guest is running in real or virtual 8086 mode.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
+{
+    return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
+        || pVCpu->cpum.s.Guest.eflags.Bits.u1VM; /** @todo verify that this cannot be set in long mode. */
 }
 
 
