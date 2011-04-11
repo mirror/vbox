@@ -180,6 +180,7 @@ VMMDECL(bool)       CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestPagingEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInRealMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
@@ -196,6 +197,18 @@ VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
 DECLINLINE(bool)    CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
 {
     return !(pCtx->cr0 & X86_CR0_PE);
+}
+
+/**
+ * Tests if the guest is running in real or virtual 8086 mode.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   pCtx    Current CPU context
+ */
+VMMDECL(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
+{
+    return !(pCtx->cr0 & X86_CR0_PE)
+        || pCtx->eflags.Bits.u1VM; /** @todo verify that this cannot be set in long mode. */
 }
 
 /**
