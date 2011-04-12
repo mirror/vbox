@@ -36,134 +36,6 @@
 /* This is defined wrong in my X11 header files! */
 #define VBoxShapeNotify 64
 
-/**
- * Wrapper class around the VBoxGuestX11Pointer to provide reference semantics.
- * See auto_ptr in the C++ <memory> header.
- */
-template <class T>
-struct VBoxGuestX11PointerRef
-{
-    T *mValue;
-
-    VBoxGuestX11PointerRef(T* pValue) { mValue = pValue; }
-};
-
-/** An auto pointer for pointers which have to be XFree'd. */
-template <class T>
-class VBoxGuestX11Pointer
-{
-private:
-    T *mValue;
-public:
-    VBoxGuestX11Pointer(T *pValue = 0) { mValue = pValue; }
-    ~VBoxGuestX11Pointer() { if (0 != mValue) XFree(mValue); }
-
-    /** release method to get the pointer's value and "reset" the pointer. */
-    T *release(void) { T *pTmp = mValue; mValue = 0; return pTmp; }
-
-    /** reset the pointer value to zero or to another pointer. */
-    void reset(T* pValue = 0) { if (pValue != mValue) { XFree(mValue); mValue = pValue; } }
-
-    /** Copy constructor */
-    VBoxGuestX11Pointer(VBoxGuestX11Pointer &orig) { mValue = orig.release(); }
-
-    /** Copy from equivalent class */
-    template <class T1>
-    VBoxGuestX11Pointer(VBoxGuestX11Pointer<T1> &orig) { mValue = orig.release(); }
-
-    /** Assignment operator. */
-    VBoxGuestX11Pointer& operator=(VBoxGuestX11Pointer &orig)
-    {
-        reset(orig.release());
-        return *this;
-    }
-
-    /** Assignment from equivalent class. */
-    template <class T1>
-    VBoxGuestX11Pointer& operator=(VBoxGuestX11Pointer<T1> &orig)
-    {
-        reset(orig.release);
-        return *this;
-    }
-
-    /** Assignment from a pointer. */
-    VBoxGuestX11Pointer& operator=(T *pValue)
-    {
-        if (0 != mValue)
-        {
-            XFree(mValue);
-        }
-        mValue = pValue;
-        return *this;
-    }
-
-    /** Dereference with * operator. */
-    T &operator*() { return *mValue; }
-
-    /** Dereference with -> operator. */
-    T *operator->() { return mValue; }
-
-    /** Accessing the value inside. */
-    T *get(void) { return mValue; }
-
-    /** Convert a reference structure into an X11 pointer. */
-    VBoxGuestX11Pointer(VBoxGuestX11PointerRef<T> ref) { mValue = ref.mValue; }
-
-    /** Assign from a reference structure into an X11 pointer. */
-    VBoxGuestX11Pointer& operator=(VBoxGuestX11PointerRef<T> ref)
-    {
-        if (ref.mValue != mValue)
-        {
-            XFree(mValue);
-            mValue = ref.mValue;
-        }
-        return *this;
-    }
-
-    /** Typecast an X11 pointer to a reference structure. */
-    template <class T1>
-    operator VBoxGuestX11PointerRef<T1>() { return VBoxGuestX11PointerRef<T1>(release()); }
-
-    /** Typecast an X11 pointer to an X11 pointer around a different type. */
-    template <class T1>
-    operator VBoxGuestX11Pointer<T1>() { return VBoxGuestX11Pointer<T1>(release()); }
-};
-
-/**
- * Wrapper class around an X11 display pointer which takes care of closing the display
- * when it is destroyed at the latest.
- */
-class VBoxGuestX11Display
-{
-private:
-    Display *mDisplay;
-public:
-    VBoxGuestX11Display(void) { mDisplay = NULL; }
-    bool init(char *name = NULL)
-    {
-        LogRelFlowFunc(("\n"));
-        mDisplay = XOpenDisplay(name);
-        LogRelFlowFunc(("returning\n"));
-        return (mDisplay != NULL);
-    }
-    operator Display *() { return mDisplay; }
-    Display *get(void) { return mDisplay; }
-    bool isValid(void) { return (mDisplay != NULL); }
-    int close(void)
-    {
-        LogRelFlowFunc(("\n"));
-        int rc = XCloseDisplay(mDisplay);
-        mDisplay = NULL;
-        LogRelFlowFunc(("returning\n"));
-        return rc;
-    }
-    ~VBoxGuestX11Display()
-    {
-        if (mDisplay != NULL)
-            close();
-    }
-};
-
 /** Structure containing information about a guest window's position and visible area.
     Used inside of VBoxGuestWindowList. */
 struct VBoxGuestWinInfo {
@@ -176,15 +48,21 @@ public:
     int mWidth, mHeight;
     /** Number of rectangles used to represent the visible area. */
     int mcRects;
-    /** Rectangles representing the visible area.  These must be allocated by XMalloc
-        and will be freed automatically if non-null when the class is destroyed. */
-    VBoxGuestX11Pointer<XRectangle> mapRects;
+    /** Rectangles representing the visible area.  These must be allocated
+     * by XMalloc and will be freed automatically if non-null when the class
+     * is destroyed. */
+    XRectangle *mpRects;
     /** Constructor. */
     VBoxGuestWinInfo(bool hasShape, int x, int y, int w, int h, int cRects,
-                     VBoxGuestX11Pointer<XRectangle> rects)
-            : mapRects(rects)
+                     XRectangle *pRects)
+            : mhasShape(hasShape), mX(x), mY(y), mWidth(w), mHeight(h),
+              mcRects(cRects), mpRects(pRects) {}
+
+    /** Destructor */
+    ~VBoxGuestWinInfo()
     {
-        mhasShape = hasShape, mX = x; mY = y; mWidth = w; mHeight = h; mcRects = cRects;
+        if (mpRects)
+            XFree(mpRects);
     }
 
 private:
@@ -237,11 +115,11 @@ public:
     iterator find(Window win) { return mWindows.find(win); }
 
     void addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
-                   VBoxGuestX11Pointer<XRectangle> rects)
+                   XRectangle *pRects)
     {
         LogRelFlowFunc(("\n"));
         VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
-                                                       rects);
+                                                       pRects);
         mWindows.insert(std::pair<Window, VBoxGuestWinInfo *>(hWin, pInfo));
         LogRelFlowFunc(("returning\n"));
     }
@@ -273,7 +151,7 @@ private:
     /** Pointer to the observer class. */
     VBoxGuestSeamlessObserver *mObserver;
     /** Our connection to the X11 display we are running on. */
-    VBoxGuestX11Display mDisplay;
+    Display *mDisplay;
     /** Class to keep track of visible guest windows. */
     VBoxGuestWindowList mGuestWindows;
     /** Keeps track of the total number of rectangles needed for the visible area of all
@@ -352,9 +230,8 @@ public:
     void doShapeEvent(Window hWin);
 
     VBoxGuestSeamlessX11(void)
-    {
-        mObserver = 0; mcRects = 0; mEnabled = false; mSupportsShape = false;
-    }
+        : mObserver(0), mDisplay(NULL), mcRects(0), mSupportsShape(false),
+          mEnabled(false) {}
 
     ~VBoxGuestSeamlessX11()
     {
@@ -363,6 +240,8 @@ public:
             uninit();
         }
         catch(...) {}
+        if (mDisplay)
+            XCloseDisplay(mDisplay);
     }
 };
 

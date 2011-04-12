@@ -79,7 +79,7 @@ int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
         LogRel(("VBoxClient: ERROR: attempt to initialise seamless guest object twice!\n"));
         return VERR_INTERNAL_ERROR;
     }
-    if (!mDisplay.init())
+    if (!(mDisplay = XOpenDisplay(NULL)))
     {
         LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
@@ -126,13 +126,13 @@ void VBoxGuestSeamlessX11::stop(void)
 void VBoxGuestSeamlessX11::monitorClientList(void)
 {
     LogRelFlowFunc(("called\n"));
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), SubstructureNotifyMask);
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay), SubstructureNotifyMask);
 }
 
 void VBoxGuestSeamlessX11::unmonitorClientList(void)
 {
     LogRelFlowFunc(("called\n"));
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), 0);
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay), 0);
 }
 
 /**
@@ -143,7 +143,7 @@ void VBoxGuestSeamlessX11::rebuildWindowTree(void)
 {
     LogRelFlowFunc(("called\n"));
     freeWindowTree();
-    addClients(DefaultRootWindow(mDisplay.get()));
+    addClients(DefaultRootWindow(mDisplay));
     mChanged = true;
 }
 
@@ -159,18 +159,19 @@ void VBoxGuestSeamlessX11::addClients(const Window hRoot)
     /** Unused out parameters of XQueryTree */
     Window hRealRoot, hParent;
     /** The list of children of the root supplied, raw pointer */
-    Window *phChildrenRaw;
+    Window *phChildrenRaw = NULL;
     /** The list of children of the root supplied, auto-pointer */
-    VBoxGuestX11Pointer<Window> phChildren;
+    Window *phChildren;
     /** The number of children of the root supplied */
     unsigned cChildren;
 
     LogRelFlowFunc(("\n"));
-    if (!XQueryTree(mDisplay.get(), hRoot, &hRealRoot, &hParent, &phChildrenRaw, &cChildren))
+    if (!XQueryTree(mDisplay, hRoot, &hRealRoot, &hParent, &phChildrenRaw, &cChildren))
         return;
     phChildren = phChildrenRaw;
     for (unsigned i = 0; i < cChildren; ++i)
-        addClientWindow(phChildren.get()[i]);
+        addClientWindow(phChildren[i]);
+    XFree(phChildrenRaw);
     LogRelFlowFunc(("returning\n"));
 }
 
@@ -203,7 +204,7 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     }
     if (fAddWin)
     {
-        VBoxGuestX11Pointer<XRectangle> rects;
+        XRectangle *pRects;
         int cRects = 0, iOrdering;
         bool hasShape = false;
 
@@ -212,22 +213,23 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
         if (mSupportsShape)
         {
             XShapeSelectInput(mDisplay, hWin, ShapeNotifyMask);
-            rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects, &iOrdering);
-            if (0 == rects.get())
+            pRects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects, &iOrdering);
+            if (!pRects)
                 cRects = 0;
             else
             {
                 if (   (cRects > 1)
-                    || (rects.get()[0].x != 0)
-                    || (rects.get()[0].y != 0)
-                    || (rects.get()[0].width != winAttrib.width)
-                    || (rects.get()[0].height != winAttrib.height)
+                    || (pRects[0].x != 0)
+                    || (pRects[0].y != 0)
+                    || (pRects[0].width != winAttrib.width)
+                    || (pRects[0].height != winAttrib.height)
                    )
                     hasShape = true;
             }
         }
         mGuestWindows.addWindow(hWin, hasShape, winAttrib.x, winAttrib.y,
-                                winAttrib.width, winAttrib.height, cRects, rects);
+                                winAttrib.width, winAttrib.height, cRects,
+                                pRects);
     }
     LogRelFlowFunc(("returning\n"));
 }
@@ -240,8 +242,8 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
  */
 bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
 {
-    unsigned char *windowTypeRaw;
-    VBoxGuestX11Pointer<Atom> windowType;
+    unsigned char *windowTypeRaw = NULL;
+    Atom *windowType;
     unsigned long ulCount;
     bool rc = false;
 
@@ -249,11 +251,13 @@ bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
     windowTypeRaw = XXGetProperty(mDisplay, hWin, XA_ATOM, WM_TYPE_PROP, &ulCount);
     if (windowTypeRaw != NULL)
     {
-        windowType = reinterpret_cast<Atom *>(windowTypeRaw);
+        windowType = (Atom *)(windowTypeRaw);
         if (   (ulCount != 0)
             && (*windowType == XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
             rc = true;
     }
+    if (windowTypeRaw)
+        XFree(windowTypeRaw);
     LogRelFlowFunc(("returning %s\n", rc ? "true" : "false"));
     return rc;
 }
@@ -335,15 +339,17 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
         iter->second->mHeight = winAttrib.height;
         if (iter->second->mhasShape)
         {
-            VBoxGuestX11Pointer<XRectangle> rects;
+            XRectangle *pRects;
             int cRects = 0, iOrdering;
 
-            rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding,
-                                        &cRects, &iOrdering);
-            if (rects.get() == NULL)
+            pRects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding,
+                                         &cRects, &iOrdering);
+            if (!pRects)
                 cRects = 0;
+            if (iter->second->mpRects)
+                XFree(iter->second->mpRects);
             iter->second->mcRects = cRects;
-            iter->second->mapRects = rects;
+            iter->second->mpRects = pRects;
         }
         mChanged = true;
     }
@@ -383,16 +389,18 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
     iter = mGuestWindows.find(hWin);
     if (iter != mGuestWindows.end())
     {
-        VBoxGuestX11Pointer<XRectangle> rects;
+        XRectangle *pRects;
         int cRects = 0, iOrdering;
 
-        rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects,
-                                    &iOrdering);
-        if (rects.get() == NULL)
+        pRects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects,
+                                     &iOrdering);
+        if (!pRects)
             cRects = 0;
         iter->second->mhasShape = true;
+        if (iter->second->mpRects)
+            XFree(iter->second->mpRects);
         iter->second->mcRects = cRects;
-        iter->second->mapRects = rects;
+        iter->second->mpRects = pRects;
         mChanged = true;
     }
     LogRelFlowFunc(("returning\n"));
@@ -439,15 +447,15 @@ std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
             {
                 RTRECT rect;
                 rect.xLeft   =   it->second->mX
-                                + it->second->mapRects.get()[i].x;
+                                + it->second->mpRects[i].x;
                 rect.yBottom =   it->second->mY
-                                + it->second->mapRects.get()[i].y
-                                + it->second->mapRects.get()[i].height;
+                                + it->second->mpRects[i].y
+                                + it->second->mpRects[i].height;
                 rect.xRight  =   it->second->mX
-                                + it->second->mapRects.get()[i].x
-                                + it->second->mapRects.get()[i].width;
+                                + it->second->mpRects[i].x
+                                + it->second->mpRects[i].width;
                 rect.yTop    =   it->second->mY
-                                + it->second->mapRects.get()[i].y;
+                                + it->second->mpRects[i].y;
                 apRects.get()->push_back(rect);
             }
             cRects += it->second->mcRects;
@@ -483,7 +491,7 @@ bool VBoxGuestSeamlessX11::interruptEvent(void)
     /* Message contents set to zero. */
     XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
 
-    if (0 != XSendEvent(mDisplay, DefaultRootWindow(mDisplay.get()), false, PropertyChangeMask,
+    if (0 != XSendEvent(mDisplay, DefaultRootWindow(mDisplay), false, PropertyChangeMask,
                    reinterpret_cast<XEvent *>(&clientMessage)))
     {
         XFlush(mDisplay);
