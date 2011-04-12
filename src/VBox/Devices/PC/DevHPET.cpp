@@ -740,12 +740,12 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
                 rc = VINF_SUCCESS;
                 break;
             }
-            // for 8-byte accesses we just split them, happens under lock anyway
             if ((iIndex >= 0x100) && (iIndex < 0x400))
             {
                 uint32_t iTimer = (iIndex - 0x100) / 0x20;
                 uint32_t iTimerReg = (iIndex - 0x100) % 0x20;
-
+                
+                /* for most 8-byte accesses we just split them, happens under lock anyway. */
                 rc = hpetTimerRegRead32(pThis, iTimer, iTimerReg, &value.u32[0]);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     break;
@@ -753,10 +753,27 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
             }
             else
             {
-                rc = hpetConfigRegRead32(pThis, iIndex, &value.u32[0]);
-                if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                    break;
-                rc = hpetConfigRegRead32(pThis, iIndex+4, &value.u32[1]);
+                if (iIndex == HPET_COUNTER)
+                {
+                    /* When reading HPET counter we must read it in a single read, 
+                       to avoid unexpected time jumps on 32-bit overflow. */
+                    value.u64 = 
+                            (pThis->u64HpetConfig & HPET_CFG_ENABLE) != 0 
+                            ?
+                            hpetGetTicks(pThis)
+                            :
+                            pThis->u64HpetCounter;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    /* for most 8-byte accesses we just split them, happens under lock anyway. */
+                    
+                    rc = hpetConfigRegRead32(pThis, iIndex, &value.u32[0]);
+                    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                        break;
+                    rc = hpetConfigRegRead32(pThis, iIndex+4, &value.u32[1]);
+                }
             }
             if (rc == VINF_SUCCESS)
                 *(uint64_t*)pv = value.u64;
