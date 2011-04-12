@@ -118,6 +118,18 @@ public:
         return *this;
     }
 
+    /**
+     * Implicit conversion to a RTCString list.
+     *
+     * This allows the usage of the RTCString::join method with this list type.
+     *
+     * @return  a converted const reference to this list.
+     */
+    operator const RTCMTList<RTCString, RTCString*>&()
+    {
+        return static_cast<const RTCList<RTCString, RTCString*>&>(*this);
+    }
+
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
