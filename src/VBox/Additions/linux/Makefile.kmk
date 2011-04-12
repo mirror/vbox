@@ -326,13 +326,6 @@ lnx_add_inst-license_MODE = a+r,u+w
 lnx_add_inst-license_SOURCES = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
-INSTALLS += AutoRun-sh
-AutoRun-sh_INST = bin/additions/
-AutoRun-sh_MODE = a+rx,u+w
-AutoRun-sh_SOURCES = \
-	$(VBOX_REL_LNX_INST_SRC)runasroot.sh \
-	$(VBOX_REL_LNX_ADD_INST)autorun.sh
-
 
 #
 # We need our routines.sh and the uninstallation scripts in the staging
