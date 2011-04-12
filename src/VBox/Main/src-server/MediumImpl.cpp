@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -6187,9 +6187,12 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         try
         {
             /* ensure the directory exists */
-            rc = VirtualBox::ensureFilePathExists(location);
-            if (FAILED(rc))
-                throw rc;
+            if (capabilities & VD_CAP_FILE)
+            {
+                rc = VirtualBox::ensureFilePathExists(location);
+                if (FAILED(rc))
+                    throw rc;
+            }
 
             VDGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
 
@@ -6351,9 +6354,12 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             }
 
             /* ensure the target directory exists */
-            rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc))
-                throw rc;
+            if (capabilities & VD_CAP_FILE)
+            {
+                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                if (FAILED(rc))
+                    throw rc;
+            }
 
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
@@ -6832,6 +6838,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
             Utf8Str targetFormat(pTarget->m->strFormat);
             Utf8Str targetLocation(pTarget->m->strLocationFull);
+            uint64_t capabilities = pTarget->m->formatObj->getCapabilities();
 
             Assert(   pTarget->m->state == MediumState_Creating
                    || pTarget->m->state == MediumState_LockedWrite);
@@ -6843,9 +6850,12 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc))
-                throw rc;
+            if (capabilities & VD_CAP_FILE)
+            {
+                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                if (FAILED(rc))
+                    throw rc;
+            }
 
             PVBOXHDD targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
@@ -7471,6 +7481,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
 
             Utf8Str targetFormat(task.mFormat->getId());
             Utf8Str targetLocation(task.mFilename);
+            uint64_t capabilities = task.mFormat->getCapabilities();
 
             Assert(m->state == MediumState_LockedRead);
 
@@ -7478,9 +7489,12 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc))
-                throw rc;
+            if (capabilities & VD_CAP_FILE)
+            {
+                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                if (FAILED(rc))
+                    throw rc;
+            }
 
             PVBOXHDD targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
@@ -7589,6 +7603,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
 
             Utf8Str targetFormat(m->strFormat);
             Utf8Str targetLocation(m->strLocationFull);
+            uint64_t capabilities = task.mFormat->getCapabilities();
 
             Assert(   m->state == MediumState_Creating
                    || m->state == MediumState_LockedWrite);
@@ -7599,9 +7614,12 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc))
-                throw rc;
+            if (capabilities & VD_CAP_FILE)
+            {
+                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                if (FAILED(rc))
+                    throw rc;
+            }
 
             PVBOXHDD targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
