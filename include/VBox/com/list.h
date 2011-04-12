@@ -127,7 +127,7 @@ public:
      */
     operator const RTCList<RTCString, RTCString*>&()
     {
-        return static_cast<const RTCList<RTCString, RTCString*>&>(*this);
+        return *reinterpret_cast<RTCList<RTCString, RTCString*> *>(this);
     }
 
     /* Define our own new and delete. */
