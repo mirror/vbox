@@ -547,7 +547,12 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         4.1.</para>
       </footnote> Essentially this feature allows to use physical PCI devices
       on host directly by the guest, even if host doesn't have drivers for this 
-      particular device.</para>
+      particular device. Both regular PCI and some PCI Express cards are 
+      supported. AGP and certain PCI Express cards are not supported at the 
+      moment, if they rely on GART (Graphics Address Remapping Table) unit 
+      programming for texture management, as it does rather nontrivial 
+      operations with pages remapping interfering with IOMMU. 
+      This limitation may be lifted in future releases.</para>
 
     <para>To be fully functional, PCI passthrough support in VirtualBox depends upon 
     IOMMU hardware unit, which is not yet too widely available. To be exact,
