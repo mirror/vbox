@@ -119,6 +119,9 @@ public:
     inline void leaveRead() const {}
     inline void enterWrite() {}
     inline void leaveWrite() {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -192,6 +195,8 @@ template <class T, typename ITYPE, bool MT>
 class RTCListBase
 {
     /**
+     * Traits
+     *
      * Defines the return type of most of the getter methods. If the internal
      * used type is a pointer, we return a reference. If not we return by
      * value.
@@ -220,7 +225,7 @@ public:
      * Creates a copy of another list.
      *
      * The other list will be fully copied and the capacity will be the same as
-     * the size if the other list.
+     * the size of the other list.
      *
      * @param   other          The list to copy.
      * @throws  std::bad_alloc
@@ -687,11 +692,15 @@ public:
         return res;
     }
 
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
     /**
      * The default capacity of the list. This is also used as grow factor.
      */
     static const size_t DefaultCapacity;
-private:
+
+protected:
 
     /**
      * Generic realloc, which does some kind of boundary checking.
@@ -778,10 +787,23 @@ const size_t RTCListBase<T, ITYPE, MT>::DefaultCapacity = 10;
 template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
 class RTCList : public RTCListBase<T, ITYPE, false>
 {
+    /* Traits */
     typedef RTCListBase<T, ITYPE, false> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -793,10 +815,23 @@ public:
 template <>
 class RTCList<uint64_t>: public RTCListBase<uint64_t, uint64_t, false>
 {
+    /* Traits */
     typedef RTCListBase<uint64_t, uint64_t, false> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -808,10 +843,23 @@ public:
 template <>
 class RTCList<int64_t>: public RTCListBase<int64_t, int64_t, false>
 {
+    /* Traits */
     typedef RTCListBase<int64_t, int64_t, false> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /** @} */

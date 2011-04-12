@@ -48,6 +48,9 @@ public:
     inline void enterWrite()      { int rc = RTSemRWRequestWrite(m_hRWSem, RT_INDEFINITE_WAIT); AssertRC(rc); }
     inline void leaveWrite()      { int rc = RTSemRWReleaseWrite(m_hRWSem); AssertRC(rc); }
 
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
 private:
     mutable RTSEMRW m_hRWSem;
 };
@@ -71,10 +74,23 @@ private:
 template <class T, typename ITYPE = typename RTCIf<(sizeof(T) > sizeof(void*)), T*, T>::result>
 class RTCMTList : public RTCListBase<T, ITYPE, true>
 {
+    /* Traits */
     typedef RTCListBase<T, ITYPE, true> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -86,10 +102,23 @@ public:
 template <>
 class RTCMTList<uint64_t>: public RTCListBase<uint64_t, uint64_t, true>
 {
+    /* Traits */
     typedef RTCListBase<uint64_t, uint64_t, true> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
@@ -101,10 +130,23 @@ public:
 template <>
 class RTCMTList<int64_t>: public RTCListBase<int64_t, int64_t, true>
 {
+    /* Traits */
     typedef RTCListBase<int64_t, int64_t, true> BASE;
+
 public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
     RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /** @} */
