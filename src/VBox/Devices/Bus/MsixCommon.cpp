@@ -166,24 +166,37 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     if (pMsiReg->cMsixVectors == 0)
          return VINF_SUCCESS;
 
-    uint16_t   cVectors    = pMsiReg->cMsixVectors;
+     /* We cannot init MSI-X on raw devices yet. */
+    Assert(!pciDevIsPassthrough(pDev));
+
+    uint16_t   cVectors    = pMsiReg->cMsixVectors;   
     uint8_t    iCapOffset  = pMsiReg->iMsixCapOffset;
     uint8_t    iNextOffset = pMsiReg->iMsixNextOffset;
     uint8_t    iBar        = pMsiReg->iMsixBar;
 
     if (cVectors > VBOX_MSIX_MAX_ENTRIES)
+    {
+        AssertMsgFailed(("Too many MSI-X vectors: %d\n", cVectors));
         return VERR_TOO_MUCH_DATA;
+    }
 
     if (iBar > 5)
+    {
+        AssertMsgFailed(("Using wrong BAR for MSI-X: %d\n", iBar));
         return VERR_INVALID_PARAMETER;
+    }
 
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    rc = PDMDevHlpPCIIORegionRegister (pDev->pDevIns, iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
-    if (RT_FAILURE (rc))
-        return rc;
+    /* If device is passthrough, BAR is registered using common mechanism. */
+    if (!pciDevIsPassthrough(pDev))
+    {
+        rc = PDMDevHlpPCIIORegionRegister (pDev->pDevIns, iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
+        if (RT_FAILURE (rc))
+            return rc;
+    }
 
     pDev->Int.s.u8MsixCapOffset = iCapOffset;
     pDev->Int.s.u8MsixCapSize   = VBOX_MSIX_CAP_SIZE;

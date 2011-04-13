@@ -101,7 +101,7 @@ DECLINLINE(bool) msiBitJustSet(uint32_t uOldValue,
     return (!(uOldValue & uMask) && !!(uNewValue & uMask));
 }
 
-
+#ifdef IN_RING3
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
@@ -213,11 +213,13 @@ uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
     return rv;
 }
 
-
 int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 {
     if (pMsiReg->cMsiVectors == 0)
          return VINF_SUCCESS;
+
+    /* We cannot init MSI on raw devices yet. */
+    Assert(!pciDevIsPassthrough(pDev));
 
     uint16_t   cVectors    = pMsiReg->cMsiVectors;
     uint8_t    iCapOffset  = pMsiReg->iMsiCapOffset;
@@ -259,6 +261,8 @@ int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 
     return VINF_SUCCESS;
 }
+
+#endif /* IN_RING3 */
 
 
 bool     MsiIsEnabled(PPCIDEVICE pDev)

@@ -27,8 +27,10 @@ typedef PCPDMPCIHLPR0 PCPDMPCIHLP;
 typedef PCPDMPCIHLPRC PCPDMPCIHLP;
 #endif
 
+#ifdef IN_RING3
 /* Init MSI support in the device. */
 int      MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
+#endif
 
 /* If MSI is enabled, so that MSINotify() shall be used for notifications.  */
 bool     MsiIsEnabled(PPCIDEVICE pDev);
@@ -36,13 +38,14 @@ bool     MsiIsEnabled(PPCIDEVICE pDev);
 /* Device notification (aka interrupt). */
 void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
 
+#ifdef IN_RING3
 /* PCI config space accessors for MSI registers */
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
 uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+#endif
 
-
-/* Init MSI-X support in the device. */
 #ifdef IN_RING3
+/* Init MSI-X support in the device. */
 int      MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
 #endif
 
@@ -52,6 +55,8 @@ bool     MsixIsEnabled(PPCIDEVICE pDev);
 /* Device notification (aka interrupt). */
 void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
 
+#ifdef IN_RING3
 /* PCI config space accessors for MSI-X */
 void     MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
 uint32_t MsixPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+#endif
