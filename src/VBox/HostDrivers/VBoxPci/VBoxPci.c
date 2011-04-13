@@ -485,7 +485,6 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
                 RTSpinlockDestroy(pNew->hSpinlock);
                 RTMemFree(pNew);
             }
-            return rc;
         }
     }
 
