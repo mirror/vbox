@@ -5866,6 +5866,20 @@ STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAdd
                             tr("Host PCI attachment only supported with ICH9 chipset"));
         }
 
+        // check if device with this host PCI address already attached
+        for (HWData::PciDeviceAssignmentList::iterator it =  mHWData->mPciDeviceAssignments.begin();
+             it !=  mHWData->mPciDeviceAssignments.end();
+             ++it)
+        {
+            LONG iHostAddress = -1;
+            ComPtr<PciDeviceAttachment> pAttach;
+            pAttach = *it;
+            pAttach->COMGETTER(HostAddress)(&iHostAddress);
+            if (iHostAddress == hostAddress)
+                return setError(E_INVALIDARG,
+                                tr("Device with host PCI address already attached to this VM"));
+        }
+
         ComObjPtr<PciDeviceAttachment> pda;
         char name[32];
 
