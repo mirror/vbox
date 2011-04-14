@@ -182,7 +182,9 @@ test_sane_kernel_dir()
     if [ "$system" = "redhat" ]; then
         printf "The missing package can be probably installed with\nyum install kernel-devel-$KERN_VER\n"
     elif [ "$system" = "suse" ]; then
-        printf "The missing package can be probably installed with\nzypper install kernel-$KERN_VER\n"
+        KERN_VER_SUSE=`echo "$KERN_VER" | sed 's/.*-\([^-]*\)/\1/g'`
+        KERN_VER_BASE=`echo "$KERN_VER" | sed 's/\(.*\)-[^-]*/\1/g'`
+        printf "The missing package can be probably installed with\nzypper install kernel-$KERN_VER_SUSE-devel-$KERN_VER_BASE\n"
     elif [ "$system" = "debian" ]; then
         printf "The missing package can be probably installed with\napt-get install linux-headers-$KERN_VER\n"
     fi
