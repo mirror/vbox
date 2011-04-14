@@ -359,16 +359,21 @@ setup()
             begin "Installing X.Org Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
-            # SUSE with X.Org Server 1.6 knows about vboxvideo
-            test "$system" = "suse" && setupxorgconf=""
+            # SUSE SLE* with X.Org 1.6 does not do input autodetection;
+            # openSUSE does.
+            if grep -q -E '^SLE[^ ]' /etc/SuSE-brand 2>/dev/null; then
+                automouse=""
+                newmouse="--newMouse"
+            else
+                test "$system" = "suse" && setupxorgconf=""
+            fi
             ;;
         1.5.* )
-            # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
-            # in its released version
             begin "Installing X.Org Server 1.5 modules"
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
-            # SUSE with X.Org 1.5 is a special case, and is handled specially
+            # SUSE with X.Org 1.5 is another special case, and is also
+            # handled specially
             test "$system" = "suse" &&
             { automouse=""; newmouse="--newMouse"; }
             ;;
