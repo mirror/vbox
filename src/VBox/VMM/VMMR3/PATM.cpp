@@ -54,6 +54,20 @@
 //#define PATM_REMOVE_PATCH_ON_TOO_MANY_TRAPS
 //#define PATM_DISABLE_ALL
 
+/**
+ * Refresh trampoline patch state.
+ */
+typedef struct PATMREFRESHPATCH
+{
+    /** Pointer to the VM structure. */
+    PVM        pVM;
+    /** The trampoline patch record. */
+    PPATCHINFO pPatchTrampoline;
+    /** The new patch we want to jump to. */
+    PPATCHINFO pPatchRec;
+} PATMREFRESHPATCH, *PPATMREFRESHPATCH;
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -1150,6 +1164,9 @@ void patmr3AddP2GLookupRecord(PVM pVM, PPATCHINFO pPatch, uint8_t *pPatchInstrHC
     PRECPATCHTOGUEST pPatchToGuestRec;
     PRECGUESTTOPATCH pGuestToPatchRec;
     uint32_t PatchOffset = pPatchInstrHC - pVM->patm.s.pPatchMemHC;  /* Offset in memory reserved for PATM. */
+
+    LogFlowFunc(("pVM=%#p pPatch=%#p pPatchInstrHC=%#p pInstrGC=%#x enmType=%d fDirty=%RTbool\n",
+                 pVM, pPatch, pPatchInstrHC, pInstrGC, enmType, fDirty));
 
     if (enmType == PATM_LOOKUP_PATCH2GUEST)
     {
@@ -3257,6 +3274,9 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
     RTRCPTR     pPage, pPatchTargetGC = 0;
     uint32_t    orgOffsetPatchMem = ~0;
     int         rc = VERR_PATCHING_REFUSED;
+    PPATCHINFO  pPatchToJmp = NULL; /**< Patch the trampoline jumps to. */
+    PTRAMPREC   pTrampRec = NULL; /**< Trampoline record used to find the patch. */
+    bool        fInserted = false;
 
     Log(("patmCreateTrampoline %RRv\n", pInstrGC));
     /* Save original offset (in case of failures later on). */
@@ -3275,29 +3295,47 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
         {
             if (pPatchPage->aPatch[i])
             {
-                PPATCHINFO pPatch2 = pPatchPage->aPatch[i];
+                pPatchToJmp = pPatchPage->aPatch[i];
 
-                if (    (pPatch2->flags & PATMFL_DUPLICATE_FUNCTION)
-                    &&  pPatch2->uState == PATCH_ENABLED)
+                if (    (pPatchToJmp->flags & PATMFL_DUPLICATE_FUNCTION)
+                    &&  pPatchToJmp->uState == PATCH_ENABLED)
                 {
-                    pPatchTargetGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatch2, pInstrGC);
+                    pPatchTargetGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatchToJmp, pInstrGC);
                     if (pPatchTargetGC)
                     {
                         uint32_t         offsetPatch      = pPatchTargetGC - pVM->patm.s.pPatchMemGC;
-                        PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch2->Patch2GuestAddrTree, offsetPatch, false);
+                        PRECPATCHTOGUEST pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatchToJmp->Patch2GuestAddrTree, offsetPatch, false);
                         Assert(pPatchToGuestRec);
 
                         pPatchToGuestRec->fJumpTarget = true;
-                        Assert(pPatchTargetGC != pPatch2->pPrivInstrGC);
-                        Log(("patmCreateTrampoline: generating jump to code inside patch at %RRv\n", pPatch2->pPrivInstrGC));
-                        pPatch2->flags |= PATMFL_EXTERNAL_JUMP_INSIDE;
+                        Assert(pPatchTargetGC != pPatchToJmp->pPrivInstrGC);
+                        Log(("patmCreateTrampoline: generating jump to code inside patch at %RRv (patch target %RRv)\n", pPatchToJmp->pPrivInstrGC, pPatchTargetGC));
                         break;
                     }
                 }
             }
         }
     }
-    AssertReturn(pPatchPage && pPatchTargetGC, VERR_PATCHING_REFUSED);
+    AssertReturn(pPatchPage && pPatchTargetGC && pPatchToJmp, VERR_PATCHING_REFUSED);
+
+    /*
+     * Only record the trampoline patch if this is the first patch to the target
+     * or we recorded other patches already.
+     * The goal is to refuse refreshing function duplicates if the guest
+     * modifies code after a saved state was loaded because it is not possible
+     * to save the relation between trampoline and target without changing the
+     * saved satte version.
+     */
+    if (   !(pPatchToJmp->flags & PATMFL_EXTERNAL_JUMP_INSIDE)
+        || pPatchToJmp->pTrampolinePatchesHead)
+    {
+        pPatchToJmp->flags |= PATMFL_EXTERNAL_JUMP_INSIDE;
+        pTrampRec = (PTRAMPREC)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pTrampRec));
+        if (!pTrampRec)
+            return VERR_NO_MEMORY; /* or better return VERR_PATCHING_REFUSED to let the VM continue? */
+
+        pTrampRec->pPatchTrampoline = pPatchRec;
+    }
 
     pPatch->nrPatch2GuestRecs = 0;
     pPatch->pPatchBlockOffset = pVM->patm.s.offPatchMem;
@@ -3323,9 +3361,9 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
      */
     LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
-    rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
-    AssertMsg(rc, ("RTAvloU32Insert failed for %x\n", pPatchRec->CoreOffset.Key));
-    if (!rc)
+    fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
+    AssertMsg(fInserted, ("RTAvloU32Insert failed for %x\n", pPatchRec->CoreOffset.Key));
+    if (!fInserted)
     {
         rc = VERR_PATCHING_REFUSED;
         goto failure;
@@ -3346,6 +3384,12 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
     pPatch->uState = PATCH_ENABLED;
     /* We allow this patch to be called as a function. */
     pPatch->flags |= PATMFL_CALLABLE_AS_FUNCTION;
+
+    if (pTrampRec)
+    {
+        pTrampRec->pNext = pPatchToJmp->pTrampolinePatchesHead;
+        pPatchToJmp->pTrampolinePatchesHead = pTrampRec;
+    }
     STAM_COUNTER_INC(&pVM->patm.s.StatInstalledTrampoline);
     return VINF_SUCCESS;
 
@@ -3369,6 +3413,9 @@ failure:
     // Give back the patch memory we no longer need
     Assert(orgOffsetPatchMem != (uint32_t)~0);
     pVM->patm.s.offPatchMem = orgOffsetPatchMem;
+
+    if (pTrampRec)
+        MMR3HeapFree(pTrampRec);
 
     return rc;
 }
@@ -4161,6 +4208,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     pPatchRec->patch.pPrivInstrGC = pInstrGC;
     pPatchRec->patch.flags   = flags;
     pPatchRec->patch.uOpMode = (flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    pPatchRec->patch.pTrampolinePatchesHead = NULL;
 
     pPatchRec->patch.pInstrGCLowest  = pInstrGC;
     pPatchRec->patch.pInstrGCHighest = pInstrGC;
@@ -5424,6 +5472,46 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
 }
 
 /**
+ * RTAvlU32DoWithAll() worker.
+ * Checks whether the current trampoline instruction is the jump to the target patch
+ * and updates the displacement to jump to the new target.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if the jump was found.
+ * @param   pNode    The current patch to guest record to check.
+ * @param   pvUser   The refresh state.
+ */
+static int patmR3PatchRefreshFindTrampolinePatch(PAVLU32NODECORE pNode, void *pvUser)
+{
+    PRECPATCHTOGUEST  pPatch2GuestRec = (PRECPATCHTOGUEST)pNode;
+    PPATMREFRESHPATCH pRefreshPatchState = (PPATMREFRESHPATCH)pvUser;
+    PVM               pVM = pRefreshPatchState->pVM;
+
+    uint8_t *pPatchInstr = (uint8_t *)(pVM->patm.s.pPatchMemHC + pPatch2GuestRec->Core.Key);
+
+    /*
+     * Check if the patch instruction starts with a jump.
+     * ASSUMES that there is no other patch to guest record that starts
+     * with a jump.
+     */
+    if (*pPatchInstr == 0xE9)
+    {
+        /* Jump found, update the displacement. */
+        RTRCPTR pPatchTargetGC = patmGuestGCPtrToPatchGCPtr(pVM, pRefreshPatchState->pPatchRec,
+                                                            pRefreshPatchState->pPatchTrampoline->pPrivInstrGC);
+        int32_t displ =  pPatchTargetGC - (pVM->patm.s.pPatchMemGC + pPatch2GuestRec->Core.Key + SIZEOF_NEARJUMP32);
+
+        LogFlow(("Updating trampoline patch new patch target %RRv, new displacment %d (old was %d)\n",
+                 pPatchTargetGC, displ, *(uint32_t *)&pPatchInstr[1]));
+
+        *(uint32_t *)&pPatchInstr[1] = displ;
+        return VERR_ALREADY_EXISTS; /** @todo better return code */
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Attempt to refresh the patch by recompiling its entire code block
  *
  * @returns VBox status code.
@@ -5435,6 +5523,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
     PPATCHINFO  pPatch;
     int         rc;
     RTRCPTR     pInstrGC = pPatchRec->patch.pPrivInstrGC;
+    PTRAMPREC   pTrampolinePatchesHead = NULL;
 
     Log(("patmR3RefreshPatch: attempt to refresh patch at %RRv\n", pInstrGC));
 
@@ -5442,8 +5531,22 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
     AssertReturn(pPatch->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER), VERR_PATCHING_REFUSED);
     if (pPatch->flags & PATMFL_EXTERNAL_JUMP_INSIDE)
     {
-        Log(("patmR3RefreshPatch: refused because external jumps to this patch exist\n"));
-        return VERR_PATCHING_REFUSED;
+        if (!pPatch->pTrampolinePatchesHead)
+        {
+            /*
+             * It is sometimes possible that there are trampoline patches to this patch
+             * but they are not recorded (after a saved state load for example).
+             * Refuse to refresh those patches.
+             * Can hurt performance in theory if the patched code is modified by the guest
+             * and is executed often. However most of the time states are saved after the guest
+             * code was modified and is not updated anymore afterwards so this shouldn't be a
+             * big problem.
+             */
+            Log(("patmR3RefreshPatch: refused because external jumps to this patch exist but the jumps are not recorded\n"));
+            return VERR_PATCHING_REFUSED;
+        }
+        Log(("patmR3RefreshPatch: external jumps to this patch exist, updating\n"));
+        pTrampolinePatchesHead = pPatch->pTrampolinePatchesHead;
     }
 
     /** Note: quite ugly to enable/disable/remove/insert old and new patches, but there's no easy way around it. */
@@ -5517,6 +5620,38 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
         /* Used by another patch, so don't remove it! */
         pNewPatchRec->patch.flags |= PATMFL_CODE_REFERENCED;
+
+        if (pTrampolinePatchesHead)
+        {
+            /* Update all trampoline patches to jump to the new patch. */
+            PTRAMPREC pTrampRec = NULL;
+            PATMREFRESHPATCH RefreshPatch;
+
+            RefreshPatch.pVM = pVM;
+            RefreshPatch.pPatchRec = &pNewPatchRec->patch;
+
+            pTrampRec = pTrampolinePatchesHead;
+
+            while (pTrampRec)
+            {
+                PPATCHINFO pPatchTrampoline = &pTrampRec->pPatchTrampoline->patch;
+
+                RefreshPatch.pPatchTrampoline = pPatchTrampoline;
+                /*
+                 * We have to find the right patch2guest record because there might be others
+                 * for statistics.
+                 */
+                rc = RTAvlU32DoWithAll(&pPatchTrampoline->Patch2GuestAddrTree, true,
+                                       patmR3PatchRefreshFindTrampolinePatch, &RefreshPatch);
+                Assert(rc == VERR_ALREADY_EXISTS);
+                rc = VINF_SUCCESS;
+                pTrampRec = pTrampRec->pNext;
+            }
+            pNewPatchRec->patch.pTrampolinePatchesHead = pTrampolinePatchesHead;
+            pNewPatchRec->patch.flags                 |= PATMFL_EXTERNAL_JUMP_INSIDE;
+            /* Clear the list of trampoline patches for the old patch (safety precaution). */
+            pPatchRec->patch.pTrampolinePatchesHead = NULL;
+        }
     }
 
 failure:

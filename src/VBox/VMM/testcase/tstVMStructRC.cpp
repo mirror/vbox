@@ -1171,6 +1171,7 @@ int main()
     GEN_CHECK_OFF(PATCHINFO, unused.pGuestLoc);
     GEN_CHECK_OFF(PATCHINFO, unused.opsize);
     GEN_CHECK_OFF(PATCHINFO, pTempInfo);
+    GEN_CHECK_OFF(PATCHINFO, pTrampolinePatchesHead);
     GEN_CHECK_OFF(PATCHINFO, cCodeWrites);
     GEN_CHECK_OFF(PATCHINFO, cTraps);
     GEN_CHECK_OFF(PATCHINFO, cInvalidWrites);
