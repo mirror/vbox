@@ -181,6 +181,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
     return RTUtf16ToUtf8Ex(&wszPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
 }
 
+
 RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
 {
     /*
