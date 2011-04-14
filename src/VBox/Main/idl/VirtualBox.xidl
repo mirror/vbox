@@ -4297,6 +4297,11 @@
             <li><tt>"gui"</tt>: VirtualBox Qt GUI front-end</li>
             <li><tt>"headless"</tt>: VBoxHeadless (VRDE Server) front-end</li>
             <li><tt>"sdl"</tt>: VirtualBox SDL front-end</li>
+            <li><tt>"emergencystop"</tt>: reserved value, used for aborting
+              the currently running VM or session owner. In this case the
+              @a session parameter may be @c NULL (if it is non-null it isn't
+              used in any way), and the @a progress return value will be always
+              NULL. The operation completes immediately.</li>
           </ul>
         </desc>
       </param>

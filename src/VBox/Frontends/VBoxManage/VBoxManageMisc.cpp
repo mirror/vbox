@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -310,7 +310,7 @@ int handleStartVM(HandlerArg *a)
                 }
 #endif
                 else
-                    return errorArgument("Invalid session type '%s'", ValueUnion.psz);
+                    sessionType = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -361,23 +361,26 @@ int handleStartVM(HandlerArg *a)
         ComPtr<IProgress> progress;
         CHECK_ERROR_RET(machine, LaunchVMProcess(a->session, sessionType.raw(),
                                                  env.raw(), progress.asOutParam()), rc);
-        RTPrintf("Waiting for the VM to power on...\n");
-        CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
-
-        BOOL completed;
-        CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
-        ASSERT(completed);
-
-        LONG iRc;
-        CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-        if (FAILED(iRc))
+        if (!progress.isNull())
         {
-            ProgressErrorInfo info(progress);
-            com::GluePrintErrorInfo(info);
-        }
-        else
-        {
-            RTPrintf("VM has been successfully started.\n");
+            RTPrintf("Waiting for the VM to power on...\n");
+            CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
+
+            BOOL completed;
+            CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
+            ASSERT(completed);
+
+            LONG iRc;
+            CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+            if (FAILED(iRc))
+            {
+                ProgressErrorInfo info(progress);
+                com::GluePrintErrorInfo(info);
+            }
+            else
+            {
+                RTPrintf("VM has been successfully started.\n");
+            }
         }
     }
 
