@@ -126,13 +126,13 @@ public:
             /** list of controls of all opened remote sessions */
             RemoteControlList mRemoteControls;
 
-            /** openRemoteSession() and OnSessionEnd() progress indicator */
+            /** launchVMProcess() and OnSessionEnd() progress indicator */
             ComObjPtr<ProgressProxy> mProgress;
 
             /**
-             * PID of the session object that must be passed to openSession() to
-             * finalize the openRemoteSession() request (i.e., PID of the
-             * process created by openRemoteSession())
+             * PID of the session object that must be passed to openSession()
+             * to finalize the launchVMProcess() request (i.e., PID of the
+             * process created by launchVMProcess())
              */
             RTPROCESS mPid;
 
@@ -647,9 +647,10 @@ public:
 
     void composeSavedStateFilename(Utf8Str &strStateFilePath);
 
-    HRESULT openRemoteSession(IInternalSessionControl *aControl,
-                              IN_BSTR aType, IN_BSTR aEnvironment,
-                              ProgressProxy *aProgress);
+    HRESULT launchVMProcess(IInternalSessionControl *aControl,
+                            const Utf8Str &strType,
+                            const Utf8Str &strEnvironment,
+                            ProgressProxy *aProgress);
 
     HRESULT getDirectControl(ComPtr<IInternalSessionControl> *directControl)
     {

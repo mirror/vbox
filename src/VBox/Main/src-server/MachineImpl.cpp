@@ -3043,7 +3043,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         {
             // this machine is awaiting for a spawning session to be opened:
             // then the calling process must be the one that got started by
-            // launchVMProcess()
+            // LaunchVMProcess()
 
             LogFlowThisFunc(("mSession.mPid=%d(0x%x)\n", mData->mSession.mPid, mData->mSession.mPid));
             LogFlowThisFunc(("session.pid=%d(0x%x)\n", pid, pid));
@@ -3051,7 +3051,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             if (mData->mSession.mPid != pid)
                 return setError(E_ACCESSDENIED,
                                 tr("An unexpected process (PID=0x%08X) has tried to lock the "
-                                   "machine '%s', while only the process started by launchVMProcess (PID=0x%08X) is allowed"),
+                                   "machine '%s', while only the process started by LaunchVMProcess (PID=0x%08X) is allowed"),
                                 pid, mUserData->s.strName.c_str(), mData->mSession.mPid);
         }
 
@@ -3080,8 +3080,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             /*
              *  Leave the lock before calling the client process -- it will call
              *  Machine/SessionMachine methods. Leaving the lock here is quite safe
-             *  because the state is Spawning, so that openRemotesession() and
-             *  openExistingSession() calls will fail. This method, called before we
+             *  because the state is Spawning, so that LaunchVMProcess() and
+             *  LockMachine() calls will fail. This method, called before we
              *  enter the lock again, will fail because of the wrong PID.
              *
              *  Note that mData->mSession.mRemoteControls accessed outside
@@ -3119,7 +3119,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
                 if (SUCCEEDED(rc))
                 {
                     /*
-                     *  after openRemoteSession(), the first and the only
+                     *  after LaunchVMProcess(), the first and the only
                      *  entry in remoteControls is that remote session
                      */
                     LogFlowThisFunc(("Calling AssignRemoteMachine()...\n"));
@@ -3226,26 +3226,42 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                                       IN_BSTR aEnvironment,
                                       IProgress **aProgress)
 {
-    CheckComArgNotNull(aSession);
+    Utf8Str strType(aType);
+    Utf8Str strEnvironment(aEnvironment);
+
+    /* "emergencystop" doesn't need the session, so skip the checks/interface
+     * retrieval. This code doesn't quite fit in here, but introducing a
+     * special API method would be even more effort, and would require explicit
+     * support by every API client. It's better to hide the feature a bit. */
+    if (strType != "emergencystop")
+        CheckComArgNotNull(aSession);
     CheckComArgStrNotEmptyOrNull(aType);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* check the session state */
-    SessionState_T state;
-    HRESULT rc = aSession->COMGETTER(State)(&state);
-    if (FAILED(rc)) return rc;
+    ComPtr<IInternalSessionControl> control;
+    HRESULT rc = S_OK;
 
-    if (state != SessionState_Unlocked)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The given session is busy"));
+    if (strType != "emergencystop")
+    {
+        /* check the session state */
+        SessionState_T state;
+        rc = aSession->COMGETTER(State)(&state);
+        if (FAILED(rc))
+            return rc;
 
-    /* get the IInternalSessionControl interface */
-    ComPtr<IInternalSessionControl> control = aSession;
-    ComAssertMsgRet(!!control, ("No IInternalSessionControl interface"),
-                      E_INVALIDARG);
+        if (state != SessionState_Unlocked)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("The given session is busy"));
+
+        /* get the IInternalSessionControl interface */
+        control = aSession;
+        ComAssertMsgRet(!control.isNull(),
+                        ("No IInternalSessionControl interface"),
+                        E_INVALIDARG);
+    }
 
     /* get the teleporter enable state for the progress object init. */
     BOOL fTeleporterEnabled;
@@ -3254,29 +3270,60 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
         return rc;
 
     /* create a progress object */
-    ComObjPtr<ProgressProxy> progress;
-    progress.createObject();
-    rc = progress->init(mParent,
-                        static_cast<IMachine*>(this),
-                        Bstr(tr("Spawning session")).raw(),
-                        TRUE /* aCancelable */,
-                        fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
-                        Bstr(tr("Spawning session")).raw(),
-                        2 /* uFirstOperationWeight */,
-                        fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
-    if (SUCCEEDED(rc))
+    if (strType != "emergencystop")
     {
-        rc = openRemoteSession(control, aType, aEnvironment, progress);
+        ComObjPtr<ProgressProxy> progress;
+        progress.createObject();
+        rc = progress->init(mParent,
+                            static_cast<IMachine*>(this),
+                            BstrFmt(tr("Starting VM \"%s\" (%s)"), aType).raw(),
+                            TRUE /* aCancelable */,
+                            fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
+                            Bstr(tr("Spawning session")).raw(),
+                            2 /* uFirstOperationWeight */,
+                            fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
+
         if (SUCCEEDED(rc))
         {
-            progress.queryInterfaceTo(aProgress);
+            rc = launchVMProcess(control, strType, strEnvironment, progress);
+            if (SUCCEEDED(rc))
+            {
+                progress.queryInterfaceTo(aProgress);
 
-            /* signal the client watcher thread */
-            mParent->updateClientWatcher();
+                /* signal the client watcher thread */
+                mParent->updateClientWatcher();
 
-            /* fire an event */
-            mParent->onSessionStateChange(getId(), SessionState_Spawning);
+                /* fire an event */
+                mParent->onSessionStateChange(getId(), SessionState_Spawning);
+            }
         }
+    }
+    else
+    {
+        /* no progress object - either instant success or failure */
+        *aProgress = NULL;
+
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (mData->mSession.mState != SessionState_Locked)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("The machine '%s' is not locked by a session"),
+                            mUserData->s.strName.c_str());
+
+        /* must have a VM process associated - do not kill normal API clients
+         * with an open session */
+        if (!Global::IsOnline(mData->mMachineState))
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("The machine '%s' does not have a VM process"),
+                            mUserData->s.strName.c_str());
+
+        /* forcibly terminate the VM process */
+        if (mData->mSession.mPid != NIL_RTPROCESS)
+            RTProcTerminate(mData->mSession.mPid);
+
+        /* signal the client watcher thread, as most likely the client has
+         * been terminated */
+        mParent->updateClientWatcher();
     }
 
     return rc;
@@ -5946,7 +5993,7 @@ STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
         Assert(SUCCEEDED(rc));
         fireHostPciDevicePlugEvent(es, mid.raw(), false /* unplugged */, true /* success */, pAttach, NULL);
     }
-    
+
     return fRemoved ? S_OK : setError(VBOX_E_OBJECT_NOT_FOUND,
                                       tr("No host PCI device %08x attached"),
                                       hostAddress
@@ -6168,10 +6215,10 @@ void Machine::composeSavedStateFilename(Utf8Str &strStateFilePath)
  *  @note Locks this object for writing, calls the client process
  *        (inside the lock).
  */
-HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
-                                   IN_BSTR aType,
-                                   IN_BSTR aEnvironment,
-                                   ProgressProxy *aProgress)
+HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
+                                 const Utf8Str &strType,
+                                 const Utf8Str &strEnvironment,
+                                 ProgressProxy *aProgress)
 {
     LogFlowThisFuncEnter();
 
@@ -6214,7 +6261,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
     RTENV env = RTENV_DEFAULT;
 
-    if (aEnvironment != NULL && *aEnvironment)
+    if (!strEnvironment.isEmpty())
     {
         char *newEnvStr = NULL;
 
@@ -6224,7 +6271,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
             int vrc2 = RTEnvClone(&env, RTENV_DEFAULT);
             AssertRCBreakStmt(vrc2, vrc = vrc2);
 
-            newEnvStr = RTStrDup(Utf8Str(aEnvironment).c_str());
+            newEnvStr = RTStrDup(strEnvironment.c_str());
             AssertPtrBreakStmt(newEnvStr, vrc = vrc2);
 
             /* put new variables to the environment
@@ -6262,8 +6309,6 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
         if (newEnvStr != NULL)
             RTStrFree(newEnvStr);
     }
-
-    Utf8Str strType(aType);
 
     /* Qt is default */
 #ifdef VBOX_WITH_QTGUI
@@ -10568,7 +10613,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (!mData->mSession.mType.isEmpty())
     {
         /* mType is not null when this machine's process has been started by
-         * Machine::launchVMProcess(), therefore it is our child.  We
+         * Machine::LaunchVMProcess(), therefore it is our child.  We
          * need to queue the PID to reap the process (and avoid zombies on
          * Linux). */
         Assert(mData->mSession.mPid != NIL_RTPROCESS);
@@ -10792,7 +10837,7 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
     if (mData->mSession.mState != SessionState_Locked)
         return VBOX_E_INVALID_OBJECT_STATE;
 
-    /* Finalize the openRemoteSession progress object. */
+    /* Finalize the LaunchVMProcess progress object. */
     if (mData->mSession.mProgress)
     {
         mData->mSession.mProgress->notifyComplete((HRESULT)iResult);
@@ -11095,7 +11140,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
          * #checkForDeath() is called to uninitialize this session object after
          * it releases the IPC semaphore.
          * Note! Because we're "reusing" mProgress here, this must be a proxy
-         *       object just like for openRemoteSession. */
+         *       object just like for LaunchVMProcess. */
         Assert(mData->mSession.mProgress.isNull());
         ComObjPtr<ProgressProxy> progress;
         progress.createObject();
