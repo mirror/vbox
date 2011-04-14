@@ -57,6 +57,13 @@ case "$DISPLAY" in ?*)
         ;;
     esac
 
+    KDESU="`mywhich kdesu`"
+    case "$KDESU" in ?*)
+        "$KDESU" -c "$COMMAND"
+        exit
+        ;;
+    esac
+
     GKSU="`mywhich gksu`"
     case "$GKSU" in ?*)
         # Older gksu does not grok --description nor '--' and multiple args.
