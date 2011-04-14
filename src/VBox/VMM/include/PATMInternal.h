@@ -240,6 +240,9 @@ typedef struct
     uint32_t                    uPatchRetParam1;
 } PATCHINFOTEMP, *PPATCHINFOTEMP;
 
+/** Forward declaration for a pointer to a trampoline patch record. */
+typedef struct TRAMPREC *PTRAMPREC;
+
 typedef struct _PATCHINFO
 {
     uint32_t        uState;
@@ -297,6 +300,10 @@ typedef struct _PATCHINFO
     /* Temporary information during patch creation. Don't waste hypervisor memory for this. */
     R3PTRTYPE(PPATCHINFOTEMP) pTempInfo;
 
+    /* List of trampoline patches referencing this patch.
+     * Used when refreshing the patch. (Only for function duplicates) */
+    R3PTRTYPE(PTRAMPREC)      pTrampolinePatchesHead;
+
     /* Count the number of writes to the corresponding guest code. */
     uint32_t        cCodeWrites;
 
@@ -311,7 +318,7 @@ typedef struct _PATCHINFO
 
     /* First opcode byte, that's overwritten when a patch is marked dirty. */
     uint8_t         bDirtyOpcode;
-    uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundary. */
+    uint8_t         Alignment2[HC_ARCH_BITS == 64 ? 7 : 3];      /**< Align the structure size on a 8-byte boundary. */
 } PATCHINFO, *PPATCHINFO;
 
 #define PATCHCODE_PTR_GC(pPatch)    (RTRCPTR)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
@@ -329,6 +336,17 @@ typedef struct PATMPATCHREC
 
     PATCHINFO  patch;
 } PATMPATCHREC, *PPATMPATCHREC;
+
+/**
+ * Record for a trampoline patch.
+ */
+typedef struct TRAMPREC
+{
+    /** Pointer to the next trampoline patch. */
+    struct TRAMPREC    *pNext;
+    /** Pointer to the trampoline patch record. */
+    PPATMPATCHREC       pPatchTrampoline;
+} TRAMPREC;
 
 /** Increment for allocating room for pointer array */
 #define PATMPATCHPAGE_PREALLOC_INCREMENT        16

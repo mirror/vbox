@@ -42,6 +42,99 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 
+/**
+ * Patch information - SSM version.
+ *
+ * the difference is the missing pTrampolinePatchesHead member
+ * to avoid changing the saved state version for now (will come later).
+ */
+typedef struct _PATCHINFOSSM
+{
+    uint32_t              uState;
+    uint32_t              uOldState;
+    DISCPUMODE            uOpMode;
+
+    /* GC pointer of privileged instruction */
+    RCPTRTYPE(uint8_t *)  pPrivInstrGC;
+    R3PTRTYPE(uint8_t *)  unusedHC;                             /* todo Can't remove due to structure size dependencies in saved states. */
+    uint8_t               aPrivInstr[MAX_INSTR_SIZE];
+    uint32_t              cbPrivInstr;
+    uint32_t              opcode;      //opcode for priv instr (OP_*)
+    uint32_t              cbPatchJump; //patch jump size
+
+    /* Only valid for PATMFL_JUMP_CONFLICT patches */
+    RTRCPTR               pPatchJumpDestGC;
+
+    RTGCUINTPTR32         pPatchBlockOffset;
+    uint32_t              cbPatchBlockSize;
+    uint32_t              uCurPatchOffset;
+#if HC_ARCH_BITS == 64
+    uint32_t              Alignment0;         /**< Align flags correctly. */
+#endif
+
+    uint64_t              flags;
+
+    /**
+     * Lowest and highest patched GC instruction address. To optimize searches.
+     */
+    RTRCPTR               pInstrGCLowest;
+    RTRCPTR               pInstrGCHighest;
+
+    /* Tree of fixup records for the patch. */
+    R3PTRTYPE(PAVLPVNODECORE) FixupTree;
+    uint32_t                  nrFixups;
+
+    /* Tree of jumps inside the generated patch code. */
+    uint32_t                  nrJumpRecs;
+    R3PTRTYPE(PAVLPVNODECORE) JumpTree;
+
+    /**
+     * Lookup trees for determining the corresponding guest address of an
+     * instruction in the patch block.
+     */
+    R3PTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
+    R3PTRTYPE(PAVLU32NODECORE) Guest2PatchAddrTree;
+    uint32_t                  nrPatch2GuestRecs;
+#if HC_ARCH_BITS == 64
+    uint32_t        Alignment1;
+#endif
+
+    /* Unused, but can't remove due to structure size dependencies in the saved state. */
+    PATMP2GLOOKUPREC_OBSOLETE    unused;
+
+    /* Temporary information during patch creation. Don't waste hypervisor memory for this. */
+    R3PTRTYPE(PPATCHINFOTEMP) pTempInfo;
+
+    /* Count the number of writes to the corresponding guest code. */
+    uint32_t        cCodeWrites;
+
+    /* Count the number of invalid writes to pages monitored for the patch. */
+    //some statistics to determine if we should keep this patch activated
+    uint32_t        cTraps;
+
+    uint32_t        cInvalidWrites;
+
+    // Index into the uPatchRun and uPatchTrap arrays (0..MAX_PATCHES-1)
+    uint32_t        uPatchIdx;
+
+    /* First opcode byte, that's overwritten when a patch is marked dirty. */
+    uint8_t         bDirtyOpcode;
+    uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundary. */
+} PATCHINFOSSM, *PPATCHINFOSSM;
+
+/**
+ * Lookup record for patches - SSM version.
+ */
+typedef struct PATMPATCHRECSSM
+{
+    /** The key is a GC virtual address. */
+    AVLOU32NODECORE  Core;
+    /** The key is a patch offset. */
+    AVLOU32NODECORE  CoreOffset;
+
+    PATCHINFOSSM     patch;
+} PATMPATCHRECSSM, *PPATMPATCHRECSSM;
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -183,52 +276,52 @@ static SSMFIELD const g_aPatmGCStateFields[] =
  */
 static SSMFIELD const g_aPatmPatchRecFields[] =
 {
-    SSMFIELD_ENTRY(                 PATMPATCHREC, Core.Key),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, Core.pLeft),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, Core.pRight),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, Core.uchHeight),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, Core.Key),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, Core.pLeft),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, Core.pRight),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, Core.uchHeight),
     SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 3),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, CoreOffset.Key),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, CoreOffset.pLeft),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, CoreOffset.pRight),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, CoreOffset.uchHeight),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, CoreOffset.Key),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, CoreOffset.pLeft),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, CoreOffset.pRight),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, CoreOffset.uchHeight),
     SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 3),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.uState),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.uOldState),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.uOpMode),
-    SSMFIELD_ENTRY_RCPTR(           PATMPATCHREC, patch.pPrivInstrGC),
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.unusedHC),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.aPrivInstr),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cbPrivInstr),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.opcode),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cbPatchJump),
-    SSMFIELD_ENTRY_RCPTR(           PATMPATCHREC, patch.pPatchJumpDestGC),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.pPatchBlockOffset),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cbPatchBlockSize),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.uCurPatchOffset),
-    SSMFIELD_ENTRY_PAD_HC64(        PATMPATCHREC, patch.Alignment0, sizeof(uint32_t)),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.flags),
-    SSMFIELD_ENTRY_RCPTR(           PATMPATCHREC, patch.pInstrGCLowest),
-    SSMFIELD_ENTRY_RCPTR(           PATMPATCHREC, patch.pInstrGCHighest),
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.FixupTree),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.nrFixups),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.nrJumpRecs), // should be zero?
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.JumpTree),
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.Patch2GuestAddrTree),
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.Guest2PatchAddrTree),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.nrPatch2GuestRecs),
-    SSMFIELD_ENTRY_PAD_HC64(        PATMPATCHREC, patch.Alignment1, sizeof(uint32_t)),
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.unused.pPatchLocStartHC), // saved as zero
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.unused.pPatchLocEndHC),   // ditto
-    SSMFIELD_ENTRY_IGN_RCPTR(       PATMPATCHREC, patch.unused.pGuestLoc),        // ditto
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, patch.unused.opsize),           // ditto
-    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHREC, patch.pTempInfo),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cCodeWrites),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cTraps),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.cInvalidWrites),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.uPatchIdx),
-    SSMFIELD_ENTRY(                 PATMPATCHREC, patch.bDirtyOpcode),
-    SSMFIELD_ENTRY_IGNORE(          PATMPATCHREC, patch.Alignment2),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.uState),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.uOldState),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.uOpMode),
+    SSMFIELD_ENTRY_RCPTR(           PATMPATCHRECSSM, patch.pPrivInstrGC),
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.unusedHC),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.aPrivInstr),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cbPrivInstr),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.opcode),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cbPatchJump),
+    SSMFIELD_ENTRY_RCPTR(           PATMPATCHRECSSM, patch.pPatchJumpDestGC),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.pPatchBlockOffset),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cbPatchBlockSize),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.uCurPatchOffset),
+    SSMFIELD_ENTRY_PAD_HC64(        PATMPATCHRECSSM, patch.Alignment0, sizeof(uint32_t)),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.flags),
+    SSMFIELD_ENTRY_RCPTR(           PATMPATCHRECSSM, patch.pInstrGCLowest),
+    SSMFIELD_ENTRY_RCPTR(           PATMPATCHRECSSM, patch.pInstrGCHighest),
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.FixupTree),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.nrFixups),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.nrJumpRecs), // should be zero?
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.JumpTree),
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.Patch2GuestAddrTree),
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.Guest2PatchAddrTree),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.nrPatch2GuestRecs),
+    SSMFIELD_ENTRY_PAD_HC64(        PATMPATCHRECSSM, patch.Alignment1, sizeof(uint32_t)),
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.unused.pPatchLocStartHC), // saved as zero
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.unused.pPatchLocEndHC),   // ditto
+    SSMFIELD_ENTRY_IGN_RCPTR(       PATMPATCHRECSSM, patch.unused.pGuestLoc),        // ditto
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, patch.unused.opsize),           // ditto
+    SSMFIELD_ENTRY_IGN_HCPTR(       PATMPATCHRECSSM, patch.pTempInfo),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cCodeWrites),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cTraps),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.cInvalidWrites),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.uPatchIdx),
+    SSMFIELD_ENTRY(                 PATMPATCHRECSSM, patch.bDirtyOpcode),
+    SSMFIELD_ENTRY_IGNORE(          PATMPATCHRECSSM, patch.Alignment2),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -386,6 +479,95 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
     return VINF_SUCCESS;
 }
 
+/**
+ * Converts a saved state patch record to the memory record.
+ *
+ * @returns nothing.
+ * @param   pPatch       The memory record.
+ * @param   pPatchSSM    The SSM version of the patch record.
+ */
+static void patmR3PatchConvertSSM2Mem(PPATMPATCHREC pPatch, PPATMPATCHRECSSM pPatchSSM)
+{
+    /*
+     * Only restore the patch part of the tree record; not the internal data (except the key of course)
+     */
+    pPatch->Core.Key                  = pPatchSSM->Core.Key;
+    pPatch->CoreOffset.Key            = pPatchSSM->CoreOffset.Key;
+    pPatch->patch.uState              = pPatchSSM->patch.uState;
+    pPatch->patch.uOldState           = pPatchSSM->patch.uOldState;
+    pPatch->patch.uOpMode             = pPatchSSM->patch.uOpMode;
+    pPatch->patch.pPrivInstrGC        = pPatchSSM->patch.pPrivInstrGC;
+    pPatch->patch.unusedHC            = pPatchSSM->patch.unusedHC;
+    memcpy(&pPatch->patch.aPrivInstr[0], &pPatchSSM->patch.aPrivInstr[0], MAX_INSTR_SIZE);
+    pPatch->patch.cbPrivInstr         = pPatchSSM->patch.cbPrivInstr;
+    pPatch->patch.opcode              = pPatchSSM->patch.opcode;
+    pPatch->patch.cbPatchJump         = pPatchSSM->patch.cbPatchJump;
+    pPatch->patch.pPatchJumpDestGC    = pPatchSSM->patch.pPatchJumpDestGC;
+    pPatch->patch.pPatchBlockOffset   = pPatchSSM->patch.pPatchBlockOffset;
+    pPatch->patch.cbPatchBlockSize    = pPatchSSM->patch.cbPatchBlockSize;
+    pPatch->patch.uCurPatchOffset     = pPatchSSM->patch.uCurPatchOffset;
+    pPatch->patch.flags               = pPatchSSM->patch.flags;
+    pPatch->patch.pInstrGCLowest      = pPatchSSM->patch.pInstrGCLowest;
+    pPatch->patch.pInstrGCHighest     = pPatchSSM->patch.pInstrGCHighest;
+    pPatch->patch.FixupTree           = pPatchSSM->patch.FixupTree;
+    pPatch->patch.nrFixups            = pPatchSSM->patch.nrFixups;
+    pPatch->patch.nrJumpRecs          = pPatchSSM->patch.nrJumpRecs;
+    pPatch->patch.JumpTree            = pPatchSSM->patch.JumpTree;
+    pPatch->patch.Patch2GuestAddrTree = pPatchSSM->patch.Patch2GuestAddrTree;
+    pPatch->patch.Guest2PatchAddrTree = pPatchSSM->patch.Guest2PatchAddrTree;
+    pPatch->patch.nrPatch2GuestRecs   = pPatchSSM->patch.nrPatch2GuestRecs;
+    pPatch->patch.unused              = pPatchSSM->patch.unused;
+    pPatch->patch.pTempInfo           = pPatchSSM->patch.pTempInfo;
+    pPatch->patch.cCodeWrites         = pPatchSSM->patch.cCodeWrites;
+    pPatch->patch.cTraps              = pPatchSSM->patch.cTraps;
+    pPatch->patch.cInvalidWrites      = pPatchSSM->patch.cInvalidWrites;
+    pPatch->patch.uPatchIdx           = pPatchSSM->patch.uPatchIdx;
+    pPatch->patch.bDirtyOpcode        = pPatchSSM->patch.bDirtyOpcode;
+    pPatch->patch.pTrampolinePatchesHead = NULL;
+}
+
+/**
+ * Converts a memory patch record to the saved state version.
+ *
+ * @returns nothing.
+ * @param   pPatchSSM    The saved state record.
+ * @param   pPatch       The memory version to save.
+ */
+static void patmR3PatchConvertMem2SSM(PPATMPATCHRECSSM pPatchSSM, PPATMPATCHREC pPatch)
+{
+    pPatchSSM->Core                      = pPatch->Core;
+    pPatchSSM->CoreOffset                = pPatch->CoreOffset;
+    pPatchSSM->patch.uState              = pPatch->patch.uState;
+    pPatchSSM->patch.uOldState           = pPatch->patch.uOldState;
+    pPatchSSM->patch.uOpMode             = pPatch->patch.uOpMode;
+    pPatchSSM->patch.pPrivInstrGC        = pPatch->patch.pPrivInstrGC;
+    pPatchSSM->patch.unusedHC            = pPatch->patch.unusedHC;
+    memcpy(&pPatchSSM->patch.aPrivInstr[0], &pPatch->patch.aPrivInstr[0], MAX_INSTR_SIZE);
+    pPatchSSM->patch.cbPrivInstr         = pPatch->patch.cbPrivInstr;
+    pPatchSSM->patch.opcode              = pPatch->patch.opcode;
+    pPatchSSM->patch.cbPatchJump         = pPatch->patch.cbPatchJump;
+    pPatchSSM->patch.pPatchJumpDestGC    = pPatch->patch.pPatchJumpDestGC;
+    pPatchSSM->patch.pPatchBlockOffset   = pPatch->patch.pPatchBlockOffset;
+    pPatchSSM->patch.cbPatchBlockSize    = pPatch->patch.cbPatchBlockSize;
+    pPatchSSM->patch.uCurPatchOffset     = pPatch->patch.uCurPatchOffset;
+    pPatchSSM->patch.flags               = pPatch->patch.flags;
+    pPatchSSM->patch.pInstrGCLowest      = pPatch->patch.pInstrGCLowest;
+    pPatchSSM->patch.pInstrGCHighest     = pPatch->patch.pInstrGCHighest;
+    pPatchSSM->patch.FixupTree           = pPatch->patch.FixupTree;
+    pPatchSSM->patch.nrFixups            = pPatch->patch.nrFixups;
+    pPatchSSM->patch.nrJumpRecs          = pPatch->patch.nrJumpRecs;
+    pPatchSSM->patch.JumpTree            = pPatch->patch.JumpTree;
+    pPatchSSM->patch.Patch2GuestAddrTree = pPatch->patch.Patch2GuestAddrTree;
+    pPatchSSM->patch.Guest2PatchAddrTree = pPatch->patch.Guest2PatchAddrTree;
+    pPatchSSM->patch.nrPatch2GuestRecs   = pPatch->patch.nrPatch2GuestRecs;
+    pPatchSSM->patch.unused              = pPatch->patch.unused;
+    pPatchSSM->patch.pTempInfo           = pPatch->patch.pTempInfo;
+    pPatchSSM->patch.cCodeWrites         = pPatch->patch.cCodeWrites;
+    pPatchSSM->patch.cTraps              = pPatch->patch.cTraps;
+    pPatchSSM->patch.cInvalidWrites      = pPatch->patch.cInvalidWrites;
+    pPatchSSM->patch.uPatchIdx           = pPatch->patch.uPatchIdx;
+    pPatchSSM->patch.bDirtyOpcode        = pPatch->patch.bDirtyOpcode;
+}
 
 /**
  * Callback function for RTAvloU32DoWithAll
@@ -398,13 +580,15 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
  */
 static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
 {
-    PVM           pVM    = (PVM)pVM1;
-    PPATMPATCHREC pPatch = (PPATMPATCHREC)pNode;
-    PATMPATCHREC  patch  = *pPatch;
-    PSSMHANDLE    pSSM   = pVM->patm.s.savedstate.pSSM;
-    int           rc;
+    PVM             pVM    = (PVM)pVM1;
+    PPATMPATCHREC   pPatch = (PPATMPATCHREC)pNode;
+    PATMPATCHRECSSM patch;
+    PSSMHANDLE      pSSM   = pVM->patm.s.savedstate.pSSM;
+    int             rc;
 
     Assert(!(pPatch->patch.flags & PATMFL_GLOBAL_FUNCTIONS));
+
+    patmR3PatchConvertMem2SSM(&patch, pPatch);
 
     /*
      * Reset HC pointers that need to be recalculated when loading the state
@@ -601,7 +785,8 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      */
     for (unsigned i = 0; i < patmInfo.savedstate.cPatches; i++)
     {
-        PATMPATCHREC patch, *pPatchRec;
+        PATMPATCHRECSSM patch;
+        PATMPATCHREC *pPatchRec;
 
         RT_ZERO(patch);
         rc = SSMR3GetStructEx(pSSM, &patch, sizeof(patch), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmPatchRecFields[0], NULL);
@@ -615,12 +800,9 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             AssertMsgFailed(("Out of memory!!!!\n"));
             return VERR_NO_MEMORY;
         }
-        /*
-         * Only restore the patch part of the tree record; not the internal data (except the key of course)
-         */
-        pPatchRec->patch             = patch.patch;
-        pPatchRec->Core.Key          = patch.Core.Key;
-        pPatchRec->CoreOffset.Key    = patch.CoreOffset.Key;
+
+        /* Convert SSM version to memory. */
+        patmR3PatchConvertSSM2Mem(pPatchRec, &patch);
 
         Log(("Restoring patch %RRv -> %RRv\n", pPatchRec->patch.pPrivInstrGC, patmInfo.pPatchMemGC + pPatchRec->patch.pPatchBlockOffset));
         bool ret = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
