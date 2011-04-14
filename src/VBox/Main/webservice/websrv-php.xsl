@@ -141,7 +141,7 @@
    public function <xsl:value-of select="$fname"/>($value) {
        $request = new stdClass();
        $request->_this = $this->handle;
-       if (is_int($value) || is_string($value) || is_bool($value)) {
+       if (is_null($value) || is_scalar($value)) {
             $request-><xsl:value-of select="$attrname"/> = $value;
        }
        else
@@ -342,6 +342,10 @@ class <xsl:value-of select="@name"/> extends VBox_Enum {
 class <xsl:value-of select="$ifname"/>Collection extends VBox_EnumCollection {
    protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
 }
+</xsl:template>
+
+<xsl:template name="comResultCodes">
+   const <xsl:value-of select="@name"/> = <xsl:value-of select="@value"/>;
 </xsl:template>
 
 <xsl:template match="/">
@@ -565,6 +569,19 @@ abstract class VBox_Enum {
 abstract class VBox_EnumCollection extends VBox_Collection {
 }
 
+</xsl:text>
+
+<xsl:text>
+/**
+* VirtualBox COM result codes
+*/
+class VirtualBox_COM_result_codes {
+</xsl:text>
+  <xsl:for-each select="/idl/library/result">
+       <xsl:call-template name="comResultCodes"/>
+  </xsl:for-each>
+<xsl:text>
+}
 </xsl:text>
   <xsl:for-each select="//interface[@wsmap='managed' or @wsmap='global']">
        <xsl:call-template name="interface"/>
