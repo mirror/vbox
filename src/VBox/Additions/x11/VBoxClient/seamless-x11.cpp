@@ -204,7 +204,7 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     }
     if (fAddWin)
     {
-        XRectangle *pRects;
+        XRectangle *pRects = NULL;
         int cRects = 0, iOrdering;
         bool hasShape = false;
 
