@@ -172,12 +172,14 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
                                    0,
                                    &ulReturn))
             {
-                DISPDBG((0, "DISP DrvAssertMode failed IOCTL_VIDEO_VBOX_SETVISIBLEREGION\n"));
+                DISPDBG((0, "DISP IOCTL_VIDEO_VBOX_SETVISIBLEREGION failed\n"));
+                EngFreeMem(pRTRect);
                 return 0;
             }
             else
             {
                 DISPDBG((0, "DISP IOCTL_VIDEO_VBOX_SETVISIBLEREGION successful\n"));
+                EngFreeMem(pRTRect);
                 return 1;
             }
 
