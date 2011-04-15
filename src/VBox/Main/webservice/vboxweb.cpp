@@ -920,27 +920,27 @@ int main(int argc, char *argv[])
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
 
         /* create release logger */
-        PRTLOGGER pLoggerRelease;
-        static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-        RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+        PRTLOGGER pLoggerReleaseFile;
+        static const char * const s_apszGroupsFile[] = VBOX_LOGGROUP_NAMES;
+        RTUINT fFlagsFile = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        fFlags |= RTLOGFLAGS_USECRLF;
+        fFlagsFile |= RTLOGFLAGS_USECRLF;
 #endif
-        char szError[RTPATH_MAX + 128] = "";
-        int vrc = RTLogCreateEx(&pLoggerRelease, fFlags, "all",
-                                "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
+        char szErrorFile[RTPATH_MAX + 128] = "";
+        int vrc = RTLogCreateEx(&pLoggerReleaseFile, fFlagsFile, "all",
+                                "VBOXWEBSRV_RELEASE_LOG", RT_ELEMENTS(s_apszGroupsFile), s_apszGroupsFile, RTLOGDEST_FILE,
                                 WebLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
-                                szError, sizeof(szError), szLogFile);
+                                szErrorFile, sizeof(szErrorFile), szLogFile);
         if (RT_SUCCESS(vrc))
         {
             /* register this logger as the release logger */
-            RTLogRelSetDefaultInstance(pLoggerRelease);
+            RTLogRelSetDefaultInstance(pLoggerReleaseFile);
 
             /* Explicitly flush the log in case of VBOXWEBSRV_RELEASE_LOG=buffered. */
-            RTLogFlush(pLoggerRelease);
+            RTLogFlush(pLoggerReleaseFile);
         }
         else
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szErrorFile, vrc);
     }
 #endif
 
