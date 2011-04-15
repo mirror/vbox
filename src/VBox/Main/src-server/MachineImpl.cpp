@@ -3226,16 +3226,15 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                                       IN_BSTR aEnvironment,
                                       IProgress **aProgress)
 {
+    CheckComArgStrNotEmptyOrNull(aType);
     Utf8Str strType(aType);
     Utf8Str strEnvironment(aEnvironment);
-
     /* "emergencystop" doesn't need the session, so skip the checks/interface
      * retrieval. This code doesn't quite fit in here, but introducing a
      * special API method would be even more effort, and would require explicit
      * support by every API client. It's better to hide the feature a bit. */
     if (strType != "emergencystop")
         CheckComArgNotNull(aSession);
-    CheckComArgStrNotEmptyOrNull(aType);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -3276,7 +3275,7 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
         progress.createObject();
         rc = progress->init(mParent,
                             static_cast<IMachine*>(this),
-                            BstrFmt(tr("Starting VM \"%s\" (%s)"), aType).raw(),
+                            BstrFmt(tr("Starting VM \"%s\" (%s)"), mUserData->s.strName.c_str(), strType.c_str()).raw(),
                             TRUE /* aCancelable */,
                             fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
                             Bstr(tr("Spawning session")).raw(),
