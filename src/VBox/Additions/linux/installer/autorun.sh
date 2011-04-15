@@ -49,12 +49,8 @@ if test "$ostype" = "Linux"; then
             getxterm
             case "$gxtpath" in ?*)
                 TITLE="VirtualBox Guest Additions installation"
-                TITLE_QUOTED=`quotify "$TITLE"`
-                BINARY=`quotify $i`
-                exec /bin/sh "$path/runasroot.sh" \
-                    "$TITLE" \
-                    "$gxtpath $gxttitle $TITLE_QUOTED $gxtexec $BINARY --xwin" \
-                    "Please try running $i manually."
+               BINARY="`quotify "$i"`"
+                exec "$gxtpath" "$gxttitle" "$TITLE" "$gxtexec" "$path/runasroot.sh" --has-terminal "$TITLE" "$BINARY --xwin" "Please try running "\""$i"\"" manually."
                 exit
                 ;;
             esac
