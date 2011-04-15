@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -157,6 +157,7 @@ solaris-bin_SOURCES = \
 	$(VBOX_PATH_SOL_INST_SRC)/vboxconfig.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/pkginstall.sh \
+	$(VBOX_PATH_SOL_INST_SRC)/smf-vboxballoonctrl.sh \
 	$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh,)
 
 solaris-drv-confs_INST = bin/
@@ -300,7 +301,8 @@ SOLARIS_COMMON_EXES = \
 	VBox.sh \
 	pkginstall.sh \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
-	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh,) \
+	smf-vboxballoonctrl.sh \
+	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh,)
 
 # Things packed explicitly, not from $(PATH_BIN), track these to clean-up properly
 SOLARIS_EXTRAS = \
@@ -312,6 +314,7 @@ SOLARIS_EXTRAS = \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
 	$(if $(VBOX_WITH_QTGUI),virtualbox.desktop,) \
 	virtualbox.xml \
+	virtualbox-balloonctrl.xml \
 	virtualbox-webservice.xml \
 	virtualbox-zoneaccess.xml \
 	VBoxQtconfig \
@@ -388,6 +391,7 @@ SOLARIS_STRIP_BINS += \
 
 SOLARIS_STRIP_EXES += \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless) \
+	VBoxBalloonCtrl \
 	$(if $(VBOX_WITH_WEBSERVICES),vboxwebsrv) \
 	$(if $(VBOX_WITH_WEBSERVICES),webtest)
 
@@ -616,6 +620,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                            $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_VBOXSMF_DIR)/virtualbox-zoneaccess.xml
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_VBOXSMF_DIR)/virtualbox-webservice.xml,)
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-balloonctrl.xml                                      $(SOLARIS_VBOXSMF_DIR)/virtualbox-balloonctrl.xml
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \

@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -115,6 +115,7 @@ fi
 cd "$VBOX_INSTALLED_DIR"
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxManage
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSDL
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxBalloonCtrl
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/webtest
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxZoneAccess
