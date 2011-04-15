@@ -957,12 +957,9 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     pRegion->type        = enmType;
     pRegion->map_func    = pfnCallback;
 
-    /* Set type in the config space. */
-    uint32_t u32Address = ich9pciGetRegionReg(iRegion);
-    uint32_t u32Value   =
-          (((enmType & PCI_ADDRESS_SPACE_MEM_PREFETCH) != 0) ? (1 << 3) : 0)
-        | (((enmType & PCI_ADDRESS_SPACE_IO) != 0)  ? 1 : 0);
-    PCIDevSetDWord(pPciDev, u32Address, u32Value);
+    /* Set type in the PCI config space. */
+    uint32_t u32Value   = ((uint32_t)enmType) & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH);
+    PCIDevSetDWord(pPciDev, ich9pciGetRegionReg(iRegion), u32Value);
 
     return VINF_SUCCESS;
 }
