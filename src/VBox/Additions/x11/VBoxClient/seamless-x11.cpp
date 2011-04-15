@@ -262,6 +262,14 @@ bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
     return rc;
 }
 
+DECLCALLBACK(int) VBoxGuestWinFree(VBoxGuestWinInfo *pInfo, void *pvParam)
+{
+    Display *pDisplay = (Display *)pvParam;
+
+    XShapeSelectInput(pDisplay, pInfo->Core.Key, 0);
+    delete pInfo;
+    return VINF_SUCCESS;
+}
 
 /**
  * Free all information in the tree of visible windows
@@ -270,11 +278,7 @@ void VBoxGuestSeamlessX11::freeWindowTree(void)
 {
     /* We use post-increment in the operation to prevent the iterator from being invalidated. */
     LogRelFlowFunc(("\n"));
-    for (VBoxGuestWindowList::iterator it = mGuestWindows.begin(); it != mGuestWindows.end();
-                 mGuestWindows.removeWindow(it++))
-    {
-        XShapeSelectInput(mDisplay, it->first, 0);
-    }
+    mGuestWindows.detachAll(VBoxGuestWinFree, mDisplay);
     LogRelFlowFunc(("returning\n"));
 }
 
@@ -324,20 +328,18 @@ void VBoxGuestSeamlessX11::nextEvent(void)
 void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
 {
     LogRelFlowFunc(("\n"));
-    VBoxGuestWindowList::iterator iter;
-
-    iter = mGuestWindows.find(hWin);
-    if (iter != mGuestWindows.end())
+    VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
+    if (pInfo)
     {
         XWindowAttributes winAttrib;
 
         if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
             return;
-        iter->second->mX = winAttrib.x;
-        iter->second->mY = winAttrib.y;
-        iter->second->mWidth = winAttrib.width;
-        iter->second->mHeight = winAttrib.height;
-        if (iter->second->mhasShape)
+        pInfo->mX = winAttrib.x;
+        pInfo->mY = winAttrib.y;
+        pInfo->mWidth = winAttrib.width;
+        pInfo->mHeight = winAttrib.height;
+        if (pInfo->mhasShape)
         {
             XRectangle *pRects;
             int cRects = 0, iOrdering;
@@ -346,10 +348,10 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
                                          &cRects, &iOrdering);
             if (!pRects)
                 cRects = 0;
-            if (iter->second->mpRects)
-                XFree(iter->second->mpRects);
-            iter->second->mcRects = cRects;
-            iter->second->mpRects = pRects;
+            if (pInfo->mpRects)
+                XFree(pInfo->mpRects);
+            pInfo->mcRects = cRects;
+            pInfo->mpRects = pRects;
         }
         mChanged = true;
     }
@@ -364,10 +366,8 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
 void VBoxGuestSeamlessX11::doMapEvent(Window hWin)
 {
     LogRelFlowFunc(("\n"));
-    VBoxGuestWindowList::iterator iter;
-
-    iter = mGuestWindows.find(hWin);
-    if (mGuestWindows.end() == iter)
+    VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
+    if (!pInfo)
     {
         addClientWindow(hWin);
         mChanged = true;
@@ -384,10 +384,8 @@ void VBoxGuestSeamlessX11::doMapEvent(Window hWin)
 void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
 {
     LogRelFlowFunc(("\n"));
-    VBoxGuestWindowList::iterator iter;
-
-    iter = mGuestWindows.find(hWin);
-    if (iter != mGuestWindows.end())
+    VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
+    if (pInfo)
     {
         XRectangle *pRects;
         int cRects = 0, iOrdering;
@@ -396,11 +394,11 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
                                      &iOrdering);
         if (!pRects)
             cRects = 0;
-        iter->second->mhasShape = true;
-        if (iter->second->mpRects)
-            XFree(iter->second->mpRects);
-        iter->second->mcRects = cRects;
-        iter->second->mpRects = pRects;
+        pInfo->mhasShape = true;
+        if (pInfo->mpRects)
+            XFree(pInfo->mpRects);
+        pInfo->mcRects = cRects;
+        pInfo->mpRects = pRects;
         mChanged = true;
     }
     LogRelFlowFunc(("returning\n"));
@@ -414,15 +412,43 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
 void VBoxGuestSeamlessX11::doUnmapEvent(Window hWin)
 {
     LogRelFlowFunc(("\n"));
-    VBoxGuestWindowList::iterator iter;
-
-    iter = mGuestWindows.find(hWin);
-    if (mGuestWindows.end() != iter)
-    {
-        mGuestWindows.removeWindow(iter);
-        mChanged = true;
-    }
+    VBoxGuestWinFree(mGuestWindows.removeWindow(hWin), NULL);
     LogRelFlowFunc(("returning\n"));
+}
+
+DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo,
+                                   std::vector<RTRECT> *pRects)
+{
+    if (pInfo->mhasShape)
+    {
+        for (int i = 0; i < pInfo->mcRects; ++i)
+        {
+            RTRECT rect;
+            rect.xLeft   =   pInfo->mX
+                            + pInfo->mpRects[i].x;
+            rect.yBottom =   pInfo->mY
+                            + pInfo->mpRects[i].y
+                            + pInfo->mpRects[i].height;
+            rect.xRight  =   pInfo->mX
+                            + pInfo->mpRects[i].x
+                            + pInfo->mpRects[i].width;
+            rect.yTop    =   pInfo->mY
+                            + pInfo->mpRects[i].y;
+            pRects->push_back(rect);
+        }
+    }
+    else
+    {
+        RTRECT rect;
+        rect.xLeft   =  pInfo->mX;
+        rect.yBottom =  pInfo->mY
+                      + pInfo->mHeight;
+        rect.xRight  =  pInfo->mX
+                      + pInfo->mWidth;
+        rect.yTop    =  pInfo->mY;
+        pRects->push_back(rect);
+    }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -436,44 +462,11 @@ std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
 
     if (0 != mcRects)
     {
-            apRects.get()->reserve(mcRects * 2);
+        apRects.get()->reserve(mcRects * 2);
     }
-    for (VBoxGuestWindowList::iterator it = mGuestWindows.begin();
-         it != mGuestWindows.end(); ++it)
-    {
-        if (it->second->mhasShape)
-        {
-            for (int i = 0; i < it->second->mcRects; ++i)
-            {
-                RTRECT rect;
-                rect.xLeft   =   it->second->mX
-                                + it->second->mpRects[i].x;
-                rect.yBottom =   it->second->mY
-                                + it->second->mpRects[i].y
-                                + it->second->mpRects[i].height;
-                rect.xRight  =   it->second->mX
-                                + it->second->mpRects[i].x
-                                + it->second->mpRects[i].width;
-                rect.yTop    =   it->second->mY
-                                + it->second->mpRects[i].y;
-                apRects.get()->push_back(rect);
-            }
-            cRects += it->second->mcRects;
-        }
-        else
-        {
-            RTRECT rect;
-            rect.xLeft   =  it->second->mX;
-            rect.yBottom =  it->second->mY
-                          + it->second->mHeight;
-            rect.xRight  =  it->second->mX
-                          + it->second->mWidth;
-            rect.yTop    =  it->second->mY;
-            apRects.get()->push_back(rect);
-            ++cRects;
-        }
-    }
-    mcRects = cRects;
+    mGuestWindows.doWithAll((PVBOXGUESTWINCALLBACK)getRectsCallback,
+                            apRects.get());
+    mcRects = apRects->size();
     LogRelFlowFunc(("returning\n"));
     return apRects;
 }

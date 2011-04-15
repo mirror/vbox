@@ -20,6 +20,7 @@
 # define __Additions_linux_seamless_x11_h
 
 #include <VBox/log.h>
+#include <iprt/avl.h>
 
 #include "seamless-guest.h"
 
@@ -27,7 +28,6 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/shape.h>
 
-#include <map>
 #include <vector>
 
 #define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
@@ -40,6 +40,8 @@
     Used inside of VBoxGuestWindowList. */
 struct VBoxGuestWinInfo {
 public:
+    /** Header structure for insertion into an AVL tree */
+    AVLU32NODECORE Core;
     /** Is the window currently mapped? */
     bool mhasShape;
     /** Co-ordinates in the guest screen. */
@@ -71,11 +73,22 @@ private:
     VBoxGuestWinInfo& operator=(const VBoxGuestWinInfo&);
 };
 
+/** Callback type used for "DoWithAll" calls */
+typedef DECLCALLBACK(int) VBOXGUESTWINCALLBACK(VBoxGuestWinInfo *, void *);
+/** Pointer to VBOXGUESTWINCALLBACK */
+typedef VBOXGUESTWINCALLBACK *PVBOXGUESTWINCALLBACK;
+
+DECLCALLBACK(int) inline VBoxGuestWinCleanup(VBoxGuestWinInfo *pInfo, void *)
+{
+    delete pInfo;
+    return VINF_SUCCESS;
+}
+
 /**
- * This class is just a wrapper around a map of structures containing information about
- * the windows on the guest system.  It has a function for adding a structure (see addWindow),
- * for removing it by window handle (see removeWindow) and an iterator for
- * going through the list.
+ * This class is just a wrapper around a map of structures containing
+ * information about the windows on the guest system.  It has a function for
+ * adding a structure (see addWindow) and one for removing it by window
+ * handle (see removeWindow).
  */
 class VBoxGuestWindowList
 {
@@ -85,56 +98,52 @@ private:
     VBoxGuestWindowList& operator=(const VBoxGuestWindowList&);
 
     // Private class members
-    std::map<Window, VBoxGuestWinInfo *> mWindows;
+    AVLU32TREE mWindows;
 
 public:
-    // Just proxy iterators to map::iterator
-    typedef std::map<Window, VBoxGuestWinInfo *>::const_iterator const_iterator;
-    typedef std::map<Window, VBoxGuestWinInfo *>::iterator iterator;
-
     // Constructor
-    VBoxGuestWindowList(void) {}
+    VBoxGuestWindowList(void) : mWindows(NULL) {}
     // Destructor
     ~VBoxGuestWindowList()
     {
-        /* We use post-increment in the operation to prevent the iterator from being invalidated. */
-        try
-        {
-            for (iterator it = begin(); it != end(); removeWindow(it++))
-                ;
-        }
-        catch(...) {}
+        /** @todo having this inside the container class hard codes that the
+         *        elements have to be allocated with the "new" operator, and
+         *        I don't see a need to require this. */
+        doWithAll(VBoxGuestWinCleanup, NULL);
     }
 
     // Standard operations
-    const_iterator begin() const { return mWindows.begin(); }
-    iterator begin() { return mWindows.begin(); }
-    const_iterator end() const { return mWindows.end(); }
-    iterator end() { return mWindows.end(); }
-    const_iterator find(Window win) const { return mWindows.find(win); }
-    iterator find(Window win) { return mWindows.find(win); }
+    VBoxGuestWinInfo *find(Window hWin)
+    {
+        return (VBoxGuestWinInfo *)RTAvlU32Get(&mWindows, hWin);
+    }
 
-    void addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
+    void detachAll(PVBOXGUESTWINCALLBACK pCallback, void *pvParam)
+    {
+        RTAvlU32Destroy(&mWindows, (PAVLU32CALLBACK)pCallback, pvParam);
+    }
+
+    int doWithAll(PVBOXGUESTWINCALLBACK pCallback, void *pvParam)
+    {
+        return RTAvlU32DoWithAll(&mWindows, 1, (PAVLU32CALLBACK)pCallback,
+                                 pvParam);
+    }
+
+    bool addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
                    XRectangle *pRects)
     {
         LogRelFlowFunc(("\n"));
         VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
                                                        pRects);
-        mWindows.insert(std::pair<Window, VBoxGuestWinInfo *>(hWin, pInfo));
+        pInfo->Core.Key = hWin;
         LogRelFlowFunc(("returning\n"));
+        return RTAvlU32Insert(&mWindows, &pInfo->Core);
     }
 
-    void removeWindow(iterator it)
+    VBoxGuestWinInfo *removeWindow(Window hWin)
     {
         LogRelFlowFunc(("called\n"));
-        delete it->second;
-        mWindows.erase(it);
-    }
-
-    void removeWindow(Window hWin)
-    {
-        LogRelFlowFunc(("called\n"));
-        removeWindow(find(hWin));
+        return (VBoxGuestWinInfo *)RTAvlU32Remove(&mWindows, hWin);
     }
 };
 
