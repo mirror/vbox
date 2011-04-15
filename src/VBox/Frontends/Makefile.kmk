@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,9 @@ ifdef VBOX_WITH_MAIN
  include $(PATH_SUB_CURRENT)/VBoxManage/Makefile.kmk
 endif
 ifndef VBOX_ONLY_DOCS
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/VBoxBalloonCtrl/Makefile.kmk
+ endif
  ifdef VBOX_WITH_VBOXSDL
   include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
  endif
