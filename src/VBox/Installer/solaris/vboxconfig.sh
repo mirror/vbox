@@ -685,10 +685,24 @@ cleanup_install()
         fi
     fi
 
+    # stop balloonctrl
+    servicefound=`$BIN_SVCS -a | grep "virtualbox/balloonctrl" 2>/dev/null`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s svc:/application/virtualbox/balloonctrl:default
+        # Don't delete the manifest, this is handled by the manifest class action
+        # $BIN_SVCCFG delete svc:/application/virtualbox/balloonctrl:default
+        if test "$?" -eq 0; then
+            subprint "Unloaded: Balloon control service"
+        else
+            subprint "Unloading: Balloon control service  ...ERROR(S)."
+        fi
+    fi
+
+
     # stop zoneaccess service
     servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" 2>/dev/null`
     if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
+        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess:default
         # Don't delete the manifest, this is handled by the manifest class action
         # $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
         if test "$?" -eq 0; then
