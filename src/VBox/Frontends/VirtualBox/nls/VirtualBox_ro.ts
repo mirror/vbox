@@ -773,7 +773,7 @@
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">IO ACPI</translation>
+        <translation type="unfinished">IO APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -2621,11 +2621,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Când este bifat, mașina virtuală va suporta IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
+        <translation type="obsolete">Când este bifat, mașina virtuală va suporta IO APIC (Input Output Advanced Peripheral Interrupt Controller). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">Activează IO A&amp;CPI</translation>
+        <translation type="obsolete">Activează IO A&amp;PIC</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
@@ -2977,7 +2977,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation type="obsolete">Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -2997,7 +2997,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation>Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -3217,7 +3217,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Afișează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation type="obsolete">Afișează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -3257,7 +3257,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation>Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -3720,7 +3720,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Când este bifat, mașina virtuală va suporta IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
+        <translation>Când este bifat, mașina virtuală va suporta IO APIC (Input Output Advanced Peripheral Interrupt Controller). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
@@ -6691,7 +6691,7 @@ Versiunea %1</translation>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation>IO ACPI</translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -12302,7 +12302,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation type="obsolete">Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -12349,7 +12349,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Afișează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
+        <translation type="obsolete">Afișează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO APIC&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -12656,7 +12656,7 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
 the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Când este activat, mașina virtuală va suporta
-IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați
+IO APIC (Input Output Advanced Peripheral Interrupt Controller). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!</translation>
     </message>
     <message>
@@ -13077,7 +13077,7 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
 the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Când este activat, mașina virtuală va suporta
-IO ACPI (Input Output Advanced Configuration și Power Management Interface), care ar putea afecta performanța sistemului. &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați
+IO APIC (Input Output Advanced Peripheral Interrupt Controller), care ar putea afecta performanța sistemului. &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
