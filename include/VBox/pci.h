@@ -54,8 +54,8 @@ typedef enum PCICONFIGCOMMAND
  * PCI Address space specification.
  * This is used when registering a I/O region.
  */
-/** Note: There are all sorts of dirty dependencies on the values in the
- *  pci device. Be careful when changing this.
+/**
+ * Defined by the PCI specification.
  */
 typedef enum PCIADDRESSSPACE
 {
@@ -87,7 +87,6 @@ typedef enum PCIADDRESSSPACE
  *
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  *
- * @remarks The address is *NOT* relative to pci_mem_base.
  */
 typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType);
 /** Pointer to a FNPCIIOREGIONMAP() function. */
@@ -1023,7 +1022,7 @@ DECLINLINE(bool) pciDevIsPassthrough(PPCIDEVICE pDev)
 /**
  * Class representing PCI address. PCI device consist of
  * bus, device and function numbers. Generally device PCI
- * address could be changed during runtime, but only by 
+ * address could be changed during runtime, but only by
  * an OS PCI driver.
  *
  * @remarks C++ classes (structs included) are not generally accepted in
@@ -1108,8 +1107,8 @@ struct PciBusAddress
 
     bool valid() const
     {
-        return (miBus    != -1) 
-            && (miDevice != -1) 
+        return (miBus    != -1)
+            && (miDevice != -1)
             && (miFn     != -1);
     }
 
@@ -1132,12 +1131,12 @@ struct PciBusAddress
     {
         if (cBufSize < (/* bus */ 2 + /* : */ 1 + /* device */ 2 + /* . */ 1 + /* function*/ 1 + /* \0 */1))
             return false;
-        
+
         if (valid())
             RTStrPrintf(szBuf, cBufSize, "%02x:%02x.%01x", miBus, miDevice, miFn);
         else
             RTStrPrintf(szBuf, cBufSize, "%s", "<bad>");
-        
+
         return true;
     }
 };
