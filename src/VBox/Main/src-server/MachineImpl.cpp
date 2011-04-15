@@ -3275,10 +3275,10 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
         progress.createObject();
         rc = progress->init(mParent,
                             static_cast<IMachine*>(this),
-                            BstrFmt(tr("Starting VM \"%s\" (%s)"), mUserData->s.strName.c_str(), strType.c_str()).raw(),
+                            Bstr(tr("Starting VM")).raw(),
                             TRUE /* aCancelable */,
                             fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
-                            Bstr(tr("Spawning session")).raw(),
+                            BstrFmt(tr("Creating process for virtual machine \"%s\" (%s)"), mUserData->s.strName.c_str(), strType.c_str()).raw(),
                             2 /* uFirstOperationWeight */,
                             fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
 
