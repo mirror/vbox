@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -47,12 +47,14 @@ OTHER_CLEAN   += \
 		uninstall.sh \
 		deffiles \
 		routines.sh \
+		vboxballoonctrl-service.sh \
 		vboxdrv.sh \
 		vboxweb-service.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
+		vboxballoonctrl-service.sh \
 		vboxdrv.sh \
 		vboxweb-service.sh \
 		install.sh)
@@ -117,6 +119,7 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlSvc.so,) \
 	$(if $(VBOX_WITH_MAIN), \
+		VBoxBalloonCtrl \
 		VBoxManage \
 		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
 		VBoxNetAdpCtl \
@@ -297,6 +300,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
+		$(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
@@ -311,6 +315,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh    $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py    $(VBOX_LNX_INST_STAGE_DIR)/
@@ -321,6 +326,14 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
 
 # files that needs editing before they can be included in the generic installer.
+$(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxballoonctrl-service.sh.in | $$(dir $$@)
+	$(QUIET)$(SED_EXT) \
+		-e "s|%NOLSB%|yes|g" \
+		-e "s|%DEBIAN%||g" \
+		-e "s|%PACKAGE%|virtualbox|g" \
+		--output $@ \
+		$<
+
 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
 	$(QUIET)$(SED_EXT) \
 		-e "s|%NOLSB%|yes|g" \
