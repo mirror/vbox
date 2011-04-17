@@ -1218,9 +1218,9 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                 }
                 else
                 {
-                    int vrc = ctrlDirectoryEntryAppend(ValueUnion.psz,      /* Source */
-                                                       NULL,                /* No destination given */
-                                                       &listSources);
+                    vrc = ctrlDirectoryEntryAppend(ValueUnion.psz,      /* Source */
+                                                   NULL,                /* No destination given */
+                                                   &listSources);
                     if (RT_SUCCESS(vrc))
                     {
                         cSources++;
