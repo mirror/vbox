@@ -87,9 +87,10 @@ static bool          g_fDaemonize = false;
  */
 enum GETOPTDEF_BALLOONCTRL
 {
-    GETOPTDEF_BALLOONCTRL_INC = 1000,
-    GETOPTDEF_BALLOONCTRL_DEC,
-    GETOPTDEF_BALLOONCTRL_LOWERLIMIT
+    GETOPTDEF_BALLOONCTRL_BALLOOINC = 1000,
+    GETOPTDEF_BALLOONCTRL_BALLOONDEC,
+    GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,
+    GETOPTDEF_BALLOONCTRL_BALLOONMAX
 };
 
 /**
@@ -97,23 +98,28 @@ enum GETOPTDEF_BALLOONCTRL
  */
 static const RTGETOPTDEF g_aOptions[] = {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-    { "--background",           'b',                                RTGETOPT_REQ_NOTHING },
+    { "--background",           'b',                                       RTGETOPT_REQ_NOTHING },
 #endif
     /** For displayHelp(). */
-    { "--help",                 'h',                                RTGETOPT_REQ_NOTHING },
+    { "--help",                 'h',                                       RTGETOPT_REQ_NOTHING },
     /** Sets g_ulTimeoutMS. */
-    { "--interval",             'i',                                RTGETOPT_REQ_INT32 },
+    { "--interval",             'i',                                       RTGETOPT_REQ_INT32 },
     /** Sets g_ulMemoryBalloonIncrementMB. */
-    { "--balloon-inc",          GETOPTDEF_BALLOONCTRL_INC,          RTGETOPT_REQ_INT32 },
+    { "--balloon-inc",          GETOPTDEF_BALLOONCTRL_BALLOOINC,           RTGETOPT_REQ_INT32 },
     /** Sets g_ulMemoryBalloonDecrementMB. */
-    { "--balloon-dec",          GETOPTDEF_BALLOONCTRL_DEC,          RTGETOPT_REQ_INT32 },
-    { "--balloon-lower-limit",  GETOPTDEF_BALLOONCTRL_LOWERLIMIT,   RTGETOPT_REQ_INT32 },
-    { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING }
+    { "--balloon-dec",          GETOPTDEF_BALLOONCTRL_BALLOONDEC,          RTGETOPT_REQ_INT32 },
+    { "--balloon-lower-limit",  GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,   RTGETOPT_REQ_INT32 },
+    /** Global max. balloon limit. */
+    { "--balloon-max",          GETOPTDEF_BALLOONCTRL_BALLOONMAX,          RTGETOPT_REQ_INT32 },
+    { "--verbose",              'v',                                       RTGETOPT_REQ_NOTHING }
 };
 
 unsigned long g_ulTimeoutMS = 30 * 1000; /* Default is 30 seconds timeout. */
 unsigned long g_ulMemoryBalloonIncrementMB = 256;
 unsigned long g_ulMemoryBalloonDecrementMB = 128;
+/** Global balloon limit is 0, so disabled. Can be overridden by a per-VM
+ *  "VBoxInternal/Guest/BalloonSizeMax" value. */
+unsigned long g_ulMemoryBalloonMaxMB = 0;
 unsigned long g_ulLowerMemoryLimitMB = 64;
 
 /** Global weak references (for event handlers). */
@@ -128,6 +134,7 @@ static IPerformanceCollector *g_pPerfCollector = NULL;
 typedef struct VBOXBALLOONCTRL_MACHINE
 {
     ComPtr<IMachine> machine;
+    unsigned long ulBalloonSizeMax;
 #ifndef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
@@ -140,12 +147,17 @@ mapVM g_mapVM;
 /* Prototypes. */
 #define serviceLogVerbose(a) if (g_fVerbose) { serviceLog a; }
 void serviceLog(const char *pszFormat, ...);
+
 bool machineIsRunning(MachineState_T enmState);
+mapVMIter machineGetByUUID(const Bstr &strUUID);
 int machineAdd(const ComPtr<IMachine> &rptrMachine);
 int machineUpdate(const ComPtr<IMachine> &rptrMachine, MachineState_T enmState);
-int machineRemove(const Bstr &strUUID);
+int machineUpdate(mapVMIter it, MachineState_T enmState);
+void machineRemove(mapVMIter it);
 
-int updateBallooning(mapVMIterConst it);
+unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine);
+bool balloonIsRequired(mapVMIter it);
+int balloonUpdate(mapVMIterConst it);
 
 #ifdef RT_OS_WINDOWS
 /* Required for ATL. */
@@ -192,18 +204,26 @@ class VirtualBoxEventListener
 
                     if (SUCCEEDED(hr))
                     {
-                        int rc;
-                        if (fRegistered)
+                        int rc = RTCritSectEnter(&g_MapCritSect);
+                        if (RT_SUCCESS(rc))
                         {
-                            ComPtr <IMachine> machine;
-                            hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
-                            if (FAILED(hr))
-                                break;
-                            rc = machineAdd(machine);
+                            if (fRegistered)
+                            {
+                                ComPtr <IMachine> machine;
+                                hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
+                                if (SUCCEEDED(hr))
+                                    rc = machineAdd(machine);
+                                else
+                                    rc = VERR_NOT_FOUND;
+                            }
+                            else
+                                machineRemove(machineGetByUUID(uuid));
+                            AssertRC(rc);
+
+                            int rc2 = RTCritSectLeave(&g_MapCritSect);
+                            if (RT_SUCCESS(rc))
+                                rc = rc2;
                         }
-                        else
-                            rc = machineRemove(uuid);
-                        AssertRC(rc);
                     }
                     break;
                 }
@@ -220,18 +240,29 @@ class VirtualBoxEventListener
                     if (SUCCEEDED(hr))
                         hr = pEvent->COMGETTER(MachineId)(uuid.asOutParam());
 
-                    ComPtr <IMachine> machine;
                     if (SUCCEEDED(hr))
                     {
-                        hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
-                        if (FAILED(hr))
-                            break;
-                    }
+                        int rc = RTCritSectEnter(&g_MapCritSect);
+                        if (RT_SUCCESS(rc))
+                        {
+                            mapVMIter it = machineGetByUUID(uuid);
+                            if (it == g_mapVM.end())
+                            {
+                                /* Use the machine object to figure out if we
+                                 * need to do something. */
+                                ComPtr <IMachine> machine;
+                                hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
+                                if (SUCCEEDED(hr))
+                                    rc = machineUpdate(machine, machineState);
+                            }
+                            else /* Update an existing machine. */
+                                rc = machineUpdate(it, machineState);
+                            AssertRC(rc);
 
-                    if (SUCCEEDED(hr))
-                    {
-                        int rc = machineUpdate(machine, machineState);
-                        AssertRC(rc);
+                            int rc2 = RTCritSectLeave(&g_MapCritSect);
+                            if (RT_SUCCESS(rc))
+                                rc = rc2;
+                        }
                     }
                     break;
                 }
@@ -350,118 +381,104 @@ bool machineIsRunning(MachineState_T enmState)
     return false;
 }
 
-int machineAdd(const ComPtr<IMachine> &rptrMachine)
+mapVMIter machineGetByUUID(const Bstr &strUUID)
 {
-    int rc = RTCritSectEnter(&g_MapCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        do
-        {
-            VBOXBALLOONCTRL_MACHINE m;
-            m.machine = rptrMachine;
-
-            /*
-             * Setup metrics.
-             */
-            com::SafeArray<BSTR> metricNames(1);
-            com::SafeIfaceArray<IUnknown> metricObjects(1);
-            com::SafeIfaceArray<IPerformanceMetric> metricAffected;
-
-            Bstr strMetricNames(L"Guest/RAM/Usage/*");
-            strMetricNames.cloneTo(&metricNames[0]);
-
-            m.machine.queryInterfaceTo(&metricObjects[0]);
-
-#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
-            CHECK_ERROR_BREAK(g_pPerfCollector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
-                                                             ComSafeArrayAsInParam(metricObjects),
-                                                             5 /* 5 seconds */,
-                                                             1 /* One sample is enough */,
-                                                             ComSafeArrayAsOutParam(metricAffected)));
-#else
-            CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(m.collector.asOutParam()));
-            CHECK_ERROR_BREAK(m.collector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
-                                                        ComSafeArrayAsInParam(metricObjects),
-                                                        5 /* 5 seconds */,
-                                                        1 /* One sample is enough */,
-                                                        ComSafeArrayAsOutParam(metricAffected)));
-#endif
-            /*
-             * Add machine to map.
-             */
-            Bstr strUUID;
-            CHECK_ERROR_BREAK(rptrMachine, COMGETTER(Id)(strUUID.asOutParam()));
-
-            mapVMIter it = g_mapVM.find(strUUID);
-            Assert(it == g_mapVM.end());
-
-            g_mapVM.insert(std::make_pair(strUUID, m));
-
-            serviceLogVerbose(("Added machine \"%s\"\n", Utf8Str(strUUID).c_str()));
-
-        } while (0);
-
-        rc = RTCritSectLeave(&g_MapCritSect);
-    }
-
-    return rc;
+    return g_mapVM.find(strUUID);
 }
 
-int machineRemove(const Bstr &strUUID)
+int machineAdd(const ComPtr<IMachine> &rptrMachine)
 {
-    int rc = RTCritSectEnter(&g_MapCritSect);
-    if (RT_SUCCESS(rc))
+    HRESULT rc;
+
+    do
     {
+        VBOXBALLOONCTRL_MACHINE m;
+        m.machine = rptrMachine;
+
+        /*
+         * Setup metrics.
+         */
+        com::SafeArray<BSTR> metricNames(1);
+        com::SafeIfaceArray<IUnknown> metricObjects(1);
+        com::SafeIfaceArray<IPerformanceMetric> metricAffected;
+
+        Bstr strMetricNames(L"Guest/RAM*");
+        strMetricNames.cloneTo(&metricNames[0]);
+
+        m.machine.queryInterfaceTo(&metricObjects[0]);
+
+#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+        CHECK_ERROR_BREAK(g_pPerfCollector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
+                                                         ComSafeArrayAsInParam(metricObjects),
+                                                         5 /* 5 seconds */,
+                                                         1 /* One sample is enough */,
+                                                         ComSafeArrayAsOutParam(metricAffected)));
+#else
+        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(m.collector.asOutParam()));
+        CHECK_ERROR_BREAK(m.collector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
+                                                    ComSafeArrayAsInParam(metricObjects),
+                                                    5 /* 5 seconds */,
+                                                    1 /* One sample is enough */,
+                                                    ComSafeArrayAsOutParam(metricAffected)));
+#endif
+        /*
+         * Add machine to map.
+         */
+        Bstr strUUID;
+        CHECK_ERROR_BREAK(rptrMachine, COMGETTER(Id)(strUUID.asOutParam()));
+
+        if (!metricAffected.size())
+            serviceLogVerbose(("%s: No metrics available yet!\n", Utf8Str(strUUID).c_str()));
+
         mapVMIter it = g_mapVM.find(strUUID);
-        if (it != g_mapVM.end())
-        {
-            do
-            {
-                /*
-                 * Remove machine from map.
-                 */
-                g_mapVM.erase(it);
-                serviceLogVerbose(("Removed machine \"%s\"\n", Utf8Str(strUUID).c_str()));
+        Assert(it == g_mapVM.end());
 
-            } while (0);
-        }
-        else
-        {
-            AssertMsgFailed(("Removing non-existent machine \"%s\"!\n",
-                             Utf8Str(strUUID).c_str()));
-        }
+        g_mapVM.insert(std::make_pair(strUUID, m));
 
-        rc = RTCritSectLeave(&g_MapCritSect);
+        serviceLogVerbose(("Added machine \"%s\"\n", Utf8Str(strUUID).c_str()));
+
+    } while (0);
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better error! */
+}
+
+void machineRemove(mapVMIter it)
+{
+    if (it != g_mapVM.end())
+    {
+        /* Must log before erasing the iterator because of the UUID ref! */
+        serviceLogVerbose(("Removing machine \"%s\"\n", Utf8Str(it->first).c_str()));
+
+        /*
+         * Remove machine from map.
+         */
+        g_mapVM.erase(it);
     }
-    return rc;
 }
 
 int machineUpdate(const ComPtr<IMachine> &rptrMachine, MachineState_T enmState)
 {
-    int rc = RTCritSectEnter(&g_MapCritSect);
-    if (RT_SUCCESS(rc))
+    if (   !balloonGetMaxSize(rptrMachine)
+        || !machineIsRunning(enmState))
     {
-        Bstr strUUID;
-        HRESULT hrc = rptrMachine->COMGETTER(Id)(strUUID.asOutParam());
-        if (SUCCEEDED(hrc))
-        {
-            mapVMIter it = g_mapVM.find(strUUID);
-            if (it != g_mapVM.end())
-            {
-                serviceLogVerbose(("Updating machine \"%s\" to state \"%ld\"\n",
-                                   Utf8Str(strUUID).c_str(), enmState));
-                rc = updateBallooning(it);
-            }
-        }
-
-        int rc2 = RTCritSectLeave(&g_MapCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        return VINF_SUCCESS; /* Machine is not required to be added. */
     }
-
-    return rc;
+    return machineAdd(rptrMachine);
 }
 
+int machineUpdate(mapVMIter it, MachineState_T enmState)
+{
+    Assert(it != g_mapVM.end());
+
+    if (   !balloonIsRequired(it)
+        || !machineIsRunning(enmState))
+    {
+        machineRemove(it);
+        return VINF_SUCCESS;
+    }
+
+    return balloonUpdate(it);
+}
 
 int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
 {
@@ -499,23 +516,81 @@ int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
                                                 ComSafeArrayAsOutParam(retIndices),
                                                 ComSafeArrayAsOutParam(retLengths),
                                                 ComSafeArrayAsOutParam(retData));
-    if (SUCCEEDED(hrc) && retData.size())
-        *pulData = retData[retIndices[0]];
+#if 0
+    /* Useful for metrics debugging. */
+    for (unsigned j = 0; j < retNames.size(); j++)
+    {
+        Bstr metricUnit(retUnits[j]);
+        Bstr metricName(retNames[j]);
+        RTPrintf("%-20ls ", metricName.raw());
+        const char *separator = "";
+        for (unsigned k = 0; k < retLengths[j]; k++)
+        {
+            if (retScales[j] == 1)
+                RTPrintf("%s%d %ls", separator, retData[retIndices[j] + k], metricUnit.raw());
+            else
+                RTPrintf("%s%d.%02d%ls", separator, retData[retIndices[j] + k] / retScales[j],
+                         (retData[retIndices[j] + k] * 100 / retScales[j]) % 100, metricUnit.raw());
+            separator = ", ";
+        }
+        RTPrintf("\n");
+    }
+#endif
+
+    if (SUCCEEDED(hrc))
+        *pulData = retData.size() ? retData[retIndices[0]] : 0;
 
     return SUCCEEDED(hrc) ? VINF_SUCCESS : VINF_NOT_SUPPORTED;
 }
 
-/* Does not do locking! */
-int updateBallooning(mapVMIterConst it)
+unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
 {
-    /* Is ballooning necessary? Only do if VM is running! */
-    MachineState_T machineState;
-    if (   SUCCEEDED(it->second.machine->COMGETTER(State)(&machineState))
-        && !machineIsRunning(machineState))
+    /*
+     * Try to retrieve the balloon maximum size via the following order:
+     *  - command line parameter ("--balloon-max")
+     *  - per-VM parameter ("VBoxInternal/Guest/BalloonSizeMax")
+     *  - global parameter ("VBoxInternal/Guest/BalloonSizeMax")
+     */
+    unsigned long ulBalloonMax = g_ulMemoryBalloonMaxMB; /* Use global limit as default. */
+    if (!ulBalloonMax) /* Not set by command line? */
     {
-        return VINF_SUCCESS; /* Skip ballooning. */
+        /* Try per-VM approach. */
+        Bstr strValue;
+        HRESULT rc = rptrMachine->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
+                                               strValue.asOutParam());
+        if (   SUCCEEDED(rc)
+            && !strValue.isEmpty())
+        {
+            ulBalloonMax = Utf8Str(strValue).toUInt32();
+        }
     }
+    if (!ulBalloonMax) /* Still not set by per-VM value? */
+    {
+        /* Try global approach. */
+        Bstr strValue;
+        HRESULT rc = g_pVirtualBox->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
+                                                 strValue.asOutParam());
+        if (   SUCCEEDED(rc)
+            && !strValue.isEmpty())
+        {
+            ulBalloonMax = Utf8Str(strValue).toUInt32();
+        }
+    }
+    return ulBalloonMax;
+}
 
+bool balloonIsRequired(mapVMIter it)
+{
+    /* Only do ballooning if we have a maximum balloon size set. */
+    it->second.ulBalloonSizeMax = balloonGetMaxSize(it->second.machine);
+
+    return it->second.ulBalloonSizeMax ? true : false;
+}
+
+/* Does the actual ballooning and assumes the machine is
+ * capable and ready for ballooning. */
+int balloonUpdate(mapVMIterConst it)
+{
     /*
      * Get metrics collected at this point.
      */
@@ -524,28 +599,27 @@ int updateBallooning(mapVMIterConst it)
     if (RT_SUCCESS(vrc))
         vrc = getMetric(it, L"Guest/RAM/Usage/Balloon", &lBalloonCur);
 
-    lMemFree /= 1024;
-    Assert(lMemFree > 0);
-    lBalloonCur /= 1024;
-
     if (RT_SUCCESS(vrc))
     {
-        unsigned long ulBalloonMax = 64; /* 64 MB is the default. */
-        Bstr strValue;
-        HRESULT rc = it->second.machine->GetExtraData(Bstr("VBoxInternal/Guest/BalloonSizeMax").raw(),
-                                                      strValue.asOutParam());
-        if (FAILED(rc) || strValue.isEmpty())
-            serviceLog("Warning: Unable to get balloon size for machine \"%s\", setting to 64 MB",
-                      Utf8Str(it->first).c_str());
-        else
-            ulBalloonMax = Utf8Str(strValue).toUInt32();
+        /* If guest statistics are not up and running yet, skip this iteration
+         * and try next time. */
+        if (lMemFree <= 0)
+        {
+#ifdef DEBUG
+            serviceLogVerbose(("%s: No metrics available yet!\n", Utf8Str(it->first).c_str()));
+#endif
+            return VINF_SUCCESS;
+        }
+
+        lMemFree /= 1024;
+        lBalloonCur /= 1024;
+
+        serviceLogVerbose(("%s: Balloon: %ld, Free mem: %ld, Max ballon: %ld\n",
+                           Utf8Str(it->first).c_str(),
+                           lBalloonCur, lMemFree, it->second.ulBalloonSizeMax));
 
         /* Calculate current balloon delta. */
-        long lDelta = getlBalloonDelta(lBalloonCur, lMemFree, ulBalloonMax);
-
-        serviceLogVerbose(("%s: Current balloon: %ld, Maximum ballon: %ld, Free memory: %ld\n",
-                           Utf8Str(it->first).c_str(),  lBalloonCur, ulBalloonMax, lMemFree));
-
+        long lDelta = getlBalloonDelta(lBalloonCur, lMemFree, it->second.ulBalloonSizeMax);
         if (lDelta) /* Only do ballooning if there's really smth. to change ... */
         {
             lBalloonCur = lBalloonCur + lDelta;
@@ -554,6 +628,8 @@ int updateBallooning(mapVMIterConst it)
             serviceLog("%s: %s balloon by %ld to %ld ...\n",
                        Utf8Str(it->first).c_str(),
                        lDelta > 0 ? "Inflating" : "Deflating", lDelta, lBalloonCur);
+
+            HRESULT rc;
 
             /* Open a session for the VM. */
             CHECK_ERROR(it->second.machine, LockMachine(g_pSession, LockType_Shared));
@@ -569,8 +645,8 @@ int updateBallooning(mapVMIterConst it)
                 if (SUCCEEDED(rc))
                     CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)(lBalloonCur));
                 else
-                    serviceLog("Error: Unable to set new balloon size %ld for machine \"%s\"",
-                               lBalloonCur, Utf8Str(it->first).c_str());
+                    serviceLog("Error: Unable to set new balloon size %ld for machine \"%s\", rc=%Rhrc",
+                               lBalloonCur, Utf8Str(it->first).c_str(), rc);
             } while (0);
 
             /* Unlock the machine again. */
@@ -578,13 +654,15 @@ int updateBallooning(mapVMIterConst it)
         }
     }
     else
-        serviceLog("Error: Unable to retrieve metrics for machine \"%s\"",
-                   Utf8Str(it->first).c_str());
-    return VINF_SUCCESS;
+        serviceLog("Error: Unable to retrieve metrics for machine \"%s\", rc=%Rrc",
+                   Utf8Str(it->first).c_str(), vrc);
+    return vrc;
 }
 
 void vmListDestroy()
 {
+    serviceLogVerbose(("Destroying VM list ...\n"));
+
     int rc = RTCritSectEnter(&g_MapCritSect);
     if (RT_SUCCESS(rc))
     {
@@ -606,11 +684,17 @@ void vmListDestroy()
 int vmListBuild()
 {
     vmListDestroy();
-    g_mapVM.clear();
+
+    serviceLogVerbose(("Building VM list ...\n"));
 
     int rc = RTCritSectEnter(&g_MapCritSect);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Make sure the list is empty.
+         */
+        g_mapVM.clear();
+
         /*
          * Get the list of all _running_ VMs
          */
@@ -653,9 +737,14 @@ int balloonCtrlCheck()
         mapVMIter it = g_mapVM.begin();
         while (it != g_mapVM.end())
         {
-            rc = updateBallooning(it);
-            if (RT_FAILURE(rc))
-                break;
+            MachineState_T machineState;
+            HRESULT hrc = it->second.machine->COMGETTER(State)(&machineState);
+            if (SUCCEEDED(hrc))
+            {
+                rc = machineUpdate(it, machineState);
+                if (RT_FAILURE(rc))
+                    break;
+            }
             it++;
         }
 
@@ -901,16 +990,20 @@ void displayHelp()
                 pcszDescr = "Run in background (daemon mode).";
                 break;
 #endif
-            case GETOPTDEF_BALLOONCTRL_INC:
+            case GETOPTDEF_BALLOONCTRL_BALLOOINC:
                 pcszDescr = "Sets the ballooning increment in MB (256 MB).";
                 break;
 
-            case GETOPTDEF_BALLOONCTRL_DEC:
+            case GETOPTDEF_BALLOONCTRL_BALLOONDEC:
                 pcszDescr = "Sets the ballooning decrement in MB (128 MB).";
                 break;
 
-            case GETOPTDEF_BALLOONCTRL_LOWERLIMIT:
+            case GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT:
                 pcszDescr = "Sets the ballooning lower limit in MB (64 MB).";
+                break;
+
+            case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
+                pcszDescr = "Sets the balloon maximum limit in MB (0 MB).";
                 break;
         }
 
@@ -969,16 +1062,20 @@ int main(int argc, char *argv[])
                 RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
                 return 0;
 
-            case GETOPTDEF_BALLOONCTRL_INC:
+            case GETOPTDEF_BALLOONCTRL_BALLOOINC:
                 g_ulMemoryBalloonIncrementMB = ValueUnion.u32;
                 break;
 
-            case GETOPTDEF_BALLOONCTRL_DEC:
+            case GETOPTDEF_BALLOONCTRL_BALLOONDEC:
                 g_ulMemoryBalloonDecrementMB = ValueUnion.u32;
                 break;
 
-            case GETOPTDEF_BALLOONCTRL_LOWERLIMIT:
+            case GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT:
                 g_ulLowerMemoryLimitMB = ValueUnion.u32;
+                break;
+
+            case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
+                g_ulMemoryBalloonMaxMB = ValueUnion.u32;
                 break;
 
             default:
