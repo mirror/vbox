@@ -337,10 +337,12 @@ typedef struct RAWPCIDEVPORT *PRAWPCIDEVPORT;
 /**
  * Interrupt service routine callback.
  *
+ * @returns if interrupt was processed.
+ *
  * @param   pvContext       Opaque user data passed to the handler.
  * @param   iIrq            Interrupt number.
  */
-typedef DECLCALLBACK(void) FNRAWPCIISR(void *pvContext, int32_t iIrq);
+typedef DECLCALLBACK(bool) FNRAWPCIISR(void *pvContext, int32_t iIrq);
 typedef FNRAWPCIISR *PFNRAWPCIISR;
 
 /**
@@ -580,5 +582,7 @@ typedef enum PCIRAWADDRESSSPACE
 } PCIRAWADDRESSSPACE;
 
 RT_C_DECLS_END
+
+/* #define VBOX_WITH_SHARED_PCI_INTERRUPTS */
 
 #endif
