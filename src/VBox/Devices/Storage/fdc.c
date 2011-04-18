@@ -133,6 +133,13 @@ typedef enum fdrive_flags_t {
     FDISK_DBL_SIDES  = 0x01
 } fdrive_flags_t;
 
+typedef enum fdrive_rate_t {
+    FDRIVE_RATE_500K = 0x00,  /* 500 Kbps               */
+    FDRIVE_RATE_300K = 0x01,  /* 300 Kbps               */
+    FDRIVE_RATE_250K = 0x02,  /* 250 Kbps               */
+    FDRIVE_RATE_1M   = 0x03   /* 1 Mbps                 */
+} fdrive_rate_t;
+
 /**
  * The status for one drive.
  *
@@ -163,8 +170,6 @@ typedef struct fdrive_t {
     RTUINT                          iLUN;
     /** The LED for this LUN. */
     PDMLED                          Led;
-    /** Media change flag. */
-    bool                            fMediaChanged;
 #endif
     /* Drive status */
     fdrive_type_t drive;
@@ -180,6 +185,7 @@ typedef struct fdrive_t {
     uint8_t max_track;        /* Nb of tracks           */
     uint16_t bps;             /* Bytes per sector       */
     uint8_t ro;               /* Is read-only           */
+    uint8_t media_rate;       /* Data rate of medium    */
 } fdrive_t;
 
 static void fd_init(fdrive_t *drv)
@@ -190,7 +196,6 @@ static void fd_init(fdrive_t *drv)
     /* Disk */
     drv->last_sect = 0;
     drv->max_track = 0;
-    drv->fMediaChanged = true;
 }
 
 static int fd_sector_calc(uint8_t head, uint8_t track, uint8_t sect,
@@ -269,54 +274,55 @@ typedef struct fd_format_t {
     uint8_t last_sect;
     uint8_t max_track;
     uint8_t max_head;
+    fdrive_rate_t rate;
     const char *str;
 } fd_format_t;
 
-static const fd_format_t fd_formats[] = {
+static fd_format_t fd_formats[] = {
     /* First entry is default format */
     /* 1.44 MB 3"1/2 floppy disks */
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 18, 80, 1, "1.44 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 20, 80, 1,  "1.6 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 80, 1, "1.68 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 82, 1, "1.72 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 83, 1, "1.74 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 22, 80, 1, "1.76 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 23, 80, 1, "1.84 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_144, 24, 80, 1, "1.92 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 18, 80, 1, FDRIVE_RATE_500K, "1.44 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 20, 80, 1, FDRIVE_RATE_500K,  "1.6 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 80, 1, FDRIVE_RATE_500K, "1.68 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 82, 1, FDRIVE_RATE_500K, "1.72 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 21, 83, 1, FDRIVE_RATE_500K, "1.74 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 22, 80, 1, FDRIVE_RATE_500K, "1.76 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 23, 80, 1, FDRIVE_RATE_500K, "1.84 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 24, 80, 1, FDRIVE_RATE_500K, "1.92 MB 3\"1/2", },
     /* 2.88 MB 3"1/2 floppy disks */
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, 36, 80, 1, "2.88 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, 39, 80, 1, "3.12 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, 40, 80, 1,  "3.2 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, 44, 80, 1, "3.52 MB 3\"1/2", },
-    { FDRIVE_DRV_288, FDRIVE_DISK_288, 48, 80, 1, "3.84 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 36, 80, 1, FDRIVE_RATE_1M,   "2.88 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 39, 80, 1, FDRIVE_RATE_1M,   "3.12 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 40, 80, 1, FDRIVE_RATE_1M,    "3.2 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 44, 80, 1, FDRIVE_RATE_1M,   "3.52 MB 3\"1/2", },
+    { FDRIVE_DRV_288, FDRIVE_DISK_288, 48, 80, 1, FDRIVE_RATE_1M,   "3.84 MB 3\"1/2", },
     /* 720 kB 3"1/2 floppy disks */
-    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 1,  "720 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 80, 1,  "800 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 82, 1,  "820 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 83, 1,  "830 kB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, 13, 80, 1, "1.04 MB 3\"1/2", },
-    { FDRIVE_DRV_144, FDRIVE_DISK_720, 14, 80, 1, "1.12 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 1, FDRIVE_RATE_250K,  "720 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 80, 1, FDRIVE_RATE_250K,  "800 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 82, 1, FDRIVE_RATE_250K,  "820 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 10, 83, 1, FDRIVE_RATE_250K,  "830 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 13, 80, 1, FDRIVE_RATE_250K, "1.04 MB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720, 14, 80, 1, FDRIVE_RATE_250K, "1.12 MB 3\"1/2", },
     /* 1.2 MB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 15, 80, 1,  "1.2 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 80, 1, "1.44 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 82, 1, "1.48 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 83, 1, "1.49 MB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 20, 80, 1,  "1.6 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 15, 80, 1, FDRIVE_RATE_500K,  "1.2 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 80, 1, FDRIVE_RATE_500K, "1.44 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 82, 1, FDRIVE_RATE_500K, "1.48 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 18, 83, 1, FDRIVE_RATE_500K, "1.49 MB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 20, 80, 1, FDRIVE_RATE_500K,  "1.6 MB 5\"1/4", },
     /* 720 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 80, 1,  "720 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 11, 80, 1,  "880 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 80, 1, FDRIVE_RATE_250K,  "720 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 11, 80, 1, FDRIVE_RATE_250K,  "880 kB 5\"1/4", },
     /* 360 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 1,  "360 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 0,  "180 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 41, 1,  "410 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 42, 1,  "420 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 1, FDRIVE_RATE_300K,  "360 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 0, FDRIVE_RATE_300K,  "180 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 41, 1, FDRIVE_RATE_300K,  "410 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 42, 1, FDRIVE_RATE_300K,  "420 kB 5\"1/4", },
     /* 320 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 1,  "320 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0,  "160 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 1, FDRIVE_RATE_250K,  "320 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0, FDRIVE_RATE_250K,  "160 kB 5\"1/4", },
     /* 360 kB must match 5"1/4 better than 3"1/2... */
-    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0,  "360 kB 3\"1/2", },
+    { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
     /* end */
-    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, NULL, },
+    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, 0, NULL, },
 };
 
 /* Revalidate a disk drive after a disk change */
@@ -380,8 +386,13 @@ static void fd_revalidate(fdrive_t *drv)
             max_track = parse->max_track;
             last_sect = parse->last_sect;
             drv->drive = parse->drive;
+#ifdef VBOX
+            drv->media_rate = parse->rate;
+#endif
             FLOPPY_DPRINTF("%s floppy disk (%d h %d t %d s) %s\n", parse->str,
                            nb_heads, max_track, last_sect, ro ? "ro" : "rw");
+            LogRel(("%s floppy disk (%d h %d t %d s) %s\n", parse->str,
+                    nb_heads, max_track, last_sect, ro ? "ro" : "rw"));
         }
         if (nb_heads == 1) {
             drv->flags &= ~FDISK_DBL_SIDES;
@@ -396,6 +407,7 @@ static void fd_revalidate(fdrive_t *drv)
         drv->last_sect = 0;
         drv->max_track = 0;
         drv->flags &= ~FDISK_DBL_SIDES;
+        drv->dsk_chg = true;    /* Disk change line active. */
     }
 }
 
@@ -415,6 +427,7 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
                                                        uint32_t dma_len);
 #endif /* VBOX */
 static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0);
+static fdrive_t *get_cur_drv(fdctrl_t *fdctrl);
 
 static void fdctrl_result_timer(void *opaque);
 static uint32_t fdctrl_read_statusA(fdctrl_t *fdctrl);
@@ -428,6 +441,7 @@ static void fdctrl_write_rate(fdctrl_t *fdctrl, uint32_t value);
 static uint32_t fdctrl_read_data(fdctrl_t *fdctrl);
 static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value);
 static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl);
+static void fdctrl_write_ccr(fdctrl_t *fdctrl, uint32_t value);
 
 enum {
     FD_DIR_WRITE   = 0,
@@ -451,7 +465,8 @@ enum {
     FD_REG_MSR = 0x04,
     FD_REG_DSR = 0x04,
     FD_REG_FIFO = 0x05,
-    FD_REG_DIR = 0x07
+    FD_REG_DIR = 0x07,
+    FD_REG_CCR = 0x07
 };
 
 enum {
@@ -504,6 +519,8 @@ enum {
 };
 
 enum {
+    FD_SR1_MA       = 0x01, /* Missing address mark */
+    FD_SR1_NW       = 0x02, /* Not writable */
     FD_SR1_EC       = 0x80  /* End of cylinder */
 };
 
@@ -702,6 +719,9 @@ static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
     case FD_REG_FIFO:
         fdctrl_write_data(fdctrl, value);
         break;
+    case FD_REG_CCR:
+        fdctrl_write_ccr(fdctrl, value);
+        break;
     default:
         break;
     }
@@ -718,7 +738,7 @@ static DECLCALLBACK(void) fdMountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     fdrive_t *drv = PDMIMOUNTNOTIFY_2_FDRIVE (pInterface);
     LogFlow(("fdMountNotify:\n"));
-    drv->fMediaChanged = true;
+    fd_revalidate(drv);
 }
 
 /**
@@ -730,7 +750,7 @@ static DECLCALLBACK(void) fdUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     fdrive_t *drv = PDMIMOUNTNOTIFY_2_FDRIVE (pInterface);
     LogFlow(("fdUnmountNotify:\n"));
-    drv->fMediaChanged = true;
+    fd_revalidate(drv);
 }
 #endif
 
@@ -758,6 +778,15 @@ static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0)
 #endif
         fdctrl->sra |= FD_SRA_INTPEND;
     }
+    if (status0 & FD_SR0_SEEK) {
+        fdrive_t    *cur_drv;
+
+        /* A seek clears the disk change line (if a disk is inserted). */
+        cur_drv = get_cur_drv(fdctrl);
+        if (cur_drv->max_track)
+            cur_drv->dsk_chg = false;
+    }
+
     fdctrl->reset_sensei = 0;
     fdctrl->status0 = status0;
     FLOPPY_DPRINTF("Set interrupt status to 0x%02x\n", fdctrl->status0);
@@ -968,24 +997,37 @@ static void fdctrl_write_rate(fdctrl_t *fdctrl, uint32_t value)
     fdctrl->dsr = value;
 }
 
+/* Configuration control register : 0x07 (write) */
+static void fdctrl_write_ccr(fdctrl_t *fdctrl, uint32_t value)
+{
+    /* Reset mode */
+    if (!(fdctrl->dor & FD_DOR_nRESET)) {
+        FLOPPY_DPRINTF("Floppy controller in RESET state !\n");
+        return;
+    }
+    FLOPPY_DPRINTF("configuration control register set to 0x%02x\n", value);
+
+    /* Only the rate selection bits used in AT mode, and we
+     * store those in the DSR.
+     */
+    fdctrl->dsr = (fdctrl->dsr & ~FD_DSR_DRATEMASK) | (value & FD_DSR_DRATEMASK);
+}
+
 static int fdctrl_media_changed(fdrive_t *drv)
 {
+#ifdef VBOX
+    return drv->dsk_chg;
+#else
     int ret;
 
-#ifdef VBOX
-    if (!drv->pDrvBlock)
-        return 0;
-    ret = drv->fMediaChanged;
-    drv->fMediaChanged = false;
-#else
     if (!drv->bs)
         return 0;
     ret = bdrv_media_changed(drv->bs);
-#endif
     if (ret) {
         fd_revalidate(drv);
     }
     return ret;
+#endif
 }
 
 /* Digital input register : 0x07 (read-only) */
@@ -993,6 +1035,9 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
 {
     uint32_t retval = 0;
 
+#ifdef VBOX
+    if (fdctrl_media_changed(get_cur_drv(fdctrl)))
+#else
     if (fdctrl_media_changed(drv0(fdctrl))
      || fdctrl_media_changed(drv1(fdctrl))
 #if MAX_FD == 4
@@ -1000,6 +1045,7 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
      || fdctrl_media_changed(drv3(fdctrl))
 #endif
         )
+#endif
         retval |= FD_DIR_DSKCHG;
     if (retval != 0)
         FLOPPY_DPRINTF("Floppy digital input register: 0x%02x\n", retval);
@@ -1141,7 +1187,20 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     default:
         break;
     }
-
+    /* Check the data rate. If the programmed data rate does not match
+     * the currently inserted medium, the operation has to fail.
+     */
+#ifdef VBOX
+    if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
+        FLOPPY_DPRINTF("data rate mismatch (fdc=%d, media=%d)\n",
+                       fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+        fdctrl->fifo[3] = kt;
+        fdctrl->fifo[4] = kh;
+        fdctrl->fifo[5] = ks;
+        return;
+    }
+#endif
     /* Set the FIFO state */
     fdctrl->data_dir = direction;
     fdctrl->data_pos = 0;
@@ -1358,7 +1417,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                 /* Handle readonly medium early, no need to do DMA, touch the
                  * LED or attempt any writes. A real floppy doesn't attempt
                  * to write to readonly media either. */
-                fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, cur_drv->ro << 1,
+                fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, FD_SR1_NW,
                                      0x00);
                 goto transfer_error;
             }
@@ -1783,13 +1842,22 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     fdctrl_reset_fifo(fdctrl);
-    if (cur_drv->max_track && fdctrl->fifo[2] > cur_drv->max_track) {
+#ifdef VBOX
+    /* The seek command just sends step pulses to the drive and doesn't care if
+     * there's a medium inserted or if it's banging the head against the drive.
+     */
+    cur_drv->track = fdctrl->fifo[2];
+    /* Raise Interrupt */
+    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
+#else
+    if (fdctrl->fifo[2] > cur_drv->max_track) {
         fdctrl_raise_irq(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK);
     } else {
         cur_drv->track = fdctrl->fifo[2];
         /* Raise Interrupt */
         fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
     }
+#endif
 }
 
 static void fdctrl_handle_perpendicular_mode(fdctrl_t *fdctrl, int direction)
@@ -1995,7 +2063,17 @@ static void fdctrl_result_timer(void *opaque)
     if (cur_drv->last_sect != 0) {
         cur_drv->sect = (cur_drv->sect % cur_drv->last_sect) + 1;
     }
-    fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
+    /* READ_ID can't automatically succeed! */
+#ifdef VBOX
+    if (//!cur_drv->fMediaPresent || 
+        ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate)) {
+        FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",
+                       fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+    }
+    else
+#endif
+        fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
 }
 
 #ifdef VBOX
