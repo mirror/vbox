@@ -7346,6 +7346,50 @@ floppy_media_known(drive)
 }
 
   bx_bool
+floppy_read_id(drive)
+  Bit16u drive;
+{
+  Bit8u  val8;
+  Bit8u  return_status[7];
+
+  floppy_prepare_controller(drive);
+
+  // send Read ID command (2 bytes) to controller
+  outb(0x03f5, 0x4a);  // 4a: Read ID (MFM)
+  outb(0x03f5, drive); // 0=drive0, 1=drive1, head always 0
+
+  // turn on interrupts
+ASM_START
+  sti
+ASM_END
+
+  // wait on 40:3e bit 7 to become 1
+  do {
+    val8 = (read_byte(0x0040, 0x003e) & 0x80);
+  } while ( val8 == 0 );
+
+  val8 = 0; // separate asm from while() loop
+  // turn off interrupts
+ASM_START
+  cli
+ASM_END
+
+  // read 7 return status bytes from controller
+  return_status[0] = inb(0x3f5);
+  return_status[1] = inb(0x3f5);
+  return_status[2] = inb(0x3f5);
+  return_status[3] = inb(0x3f5);
+  return_status[4] = inb(0x3f5);
+  return_status[5] = inb(0x3f5);
+  return_status[6] = inb(0x3f5);
+
+  if ( (return_status[0] & 0xc0) != 0 )
+    return(0);
+  else
+    return(1);
+}
+
+  bx_bool
 floppy_media_sense(drive)
   Bit16u drive;
 {
@@ -7357,8 +7401,9 @@ floppy_media_sense(drive)
     return(0);
     }
 
-  // for now cheat and get drive type from CMOS,
-  // assume media is same as drive type
+  // Try the diskette data rates in the following order:
+  // 1 Mbps -> 500 Kbps -> 300 Kbps -> 250 Kbps
+  // The 1 Mbps rate is only tried for 2.88M drives.
 
   // ** config_data **
   // Bitfields for diskette media control:
@@ -7450,6 +7495,26 @@ floppy_media_sense(drive)
     media_state = 0x00; // 0000 0000
     retval = 0;
     }
+
+  write_byte(0x0040, 0x008B, config_data);
+  while (!floppy_read_id(drive)) {
+    if ((config_data & 0xC0) == 0x80) {
+        // If even 250 Kbps failed, we can't do much
+        break;
+    }
+    switch (config_data & 0xC0) {
+    case 0xC0:  // 1 Mbps
+        config_data = config_data & 0x3F | 0x00;
+        break;
+    case 0x00:  // 500 Kbps
+        config_data = config_data & 0x3F | 0x40;
+        break;
+    case 0x40:  // 300 Kbps
+        config_data = config_data & 0x3F | 0x80;
+        break;
+    }
+    write_byte(0x0040, 0x008B, config_data);
+  }
 
   if (drive == 0)
     media_state_offset = 0x90;
@@ -7563,6 +7628,10 @@ BX_DEBUG_INT13_FL("floppy f00\n");
         SET_CF();
         return;
       }
+
+      // force re-calibration etc.
+      write_byte(0x0040, 0x003e, 0);
+
       SET_AH(0);
       set_diskette_ret_status(0);
       CLEAR_CF(); // successful
