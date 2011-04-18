@@ -40,11 +40,6 @@ struct HandlerArg
 {
     int argc;
     char **argv;
-
-#ifndef VBOX_ONLY_DOCS
-    ComPtr<IVirtualBox> virtualBox;
-    ComPtr<ISession> session;
-#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////
