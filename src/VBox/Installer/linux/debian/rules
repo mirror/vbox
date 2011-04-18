@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -177,7 +177,8 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f debian/changelog debian/preinst debian/postinst debian/prerm
-	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxweb-service.init
+	rm -f debian/$(package).init debian/vboxdrv.init
+	rm -f debian/vboxballoonctrl-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
@@ -248,7 +249,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxCreateUSBNode.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(NOQT),,VirtualBox) VBoxHeadless \
-	    VBoxExtPackHelperApp \
+	    VBoxExtPackHelperApp VBoxBalloonCtrl \
 	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
@@ -294,6 +295,8 @@ endif
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    usr/bin/VBox                        usr/bin/vboxheadless \
+	    usr/bin/VBox                        usr/bin/VBoxBalloonCtrl \
+	    usr/bin/VBox                        usr/bin/vboxballoonctrl \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
@@ -305,6 +308,12 @@ endif
 	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv --noscripts
+	sed \
+	    -e 's|%NOLSB%||g' \
+	    -e 's|%DEBIAN%|yes|g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    $(vboxroot)/src/VBox/Installer/linux/vboxballoonctrl-service.sh.in > debian/vboxballoonctrl-service.init
+	dh_installinit --name=vboxballoonctrl-service --noscripts
 	sed \
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \

@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -104,7 +104,7 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp vboxwebsrv webtest; do
+for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp VBoxBalloonCtrl vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
@@ -137,8 +137,10 @@ install -D -m 755 vboxdrv.init $RPM_BUILD_ROOT%{_initrddir}/vboxdrv
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 ln -sf ../etc/init.d/vboxdrv $RPM_BUILD_ROOT/sbin/rcvboxdrv
 %endif
+install -D -m 755 vboxballoonctrl-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxballoonctrl-service
 install -D -m 755 vboxweb-service.init $RPM_BUILD_ROOT%{_initrddir}/vboxweb-service
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
+ln -sf ../etc/init.d/vboxballoonctrl-service $RPM_BUILD_ROOT/sbin/rcvboxballoonctrl-service
 ln -sf ../etc/init.d/vboxweb-service $RPM_BUILD_ROOT/sbin/rcvboxweb-service
 %endif
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
@@ -150,6 +152,8 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxsdl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxheadless
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBalloonCtrl
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxballoonctrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
@@ -164,12 +168,16 @@ mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
 if [ -n "$VBOXSVC_PID" ]; then
   # executed before the new package is installed!
+  if [ -f /etc/init.d/vboxballoonctrl-service ]; then
+    # try graceful termination; terminate the balloon control service first
+    /etc/init.d/vboxballoonctrl-service stop 2>/dev/null || true
+  fi
   if [ -f /etc/init.d/vboxweb-service ]; then
     # try graceful termination; terminate the webservice first
     /etc/init.d/vboxweb-service stop 2>/dev/null || true
-    # ask the daemon to terminate immediately
-    kill -USR1 $VBOXSVC_PID
   fi
+  # ask the daemon to terminate immediately
+  kill -USR1 $VBOXSVC_PID
   sleep 1
   if pidof VBoxSVC > /dev/null 2>&1; then
     echo "A copy of VirtualBox is currently running.  Please close it and try again."
@@ -274,6 +282,7 @@ if [ -x /usr/bin/chcon ]; then
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxExtPackHelperApp > /dev/null 2>&1
+  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxBalloonCtrl > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/vboxwebsrv > /dev/null 2>&1
 fi
 %endif
@@ -287,14 +296,16 @@ if [ "$INSTALL_NO_GROUP" != "1" ]; then
 fi
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 /sbin/chkconfig --add vboxdrv
+/sbin/chkconfig --add vboxballoonctrl-service
 /sbin/chkconfig --add vboxweb-service
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%{fillup_and_insserv -f -y -Y vboxdrv vboxweb-service}
+%{fillup_and_insserv -f -y -Y vboxdrv vboxballoonctrl-service vboxweb-service}
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 /sbin/ldconfig
 %_post_service vboxdrv
+%_post_service vboxballoonctrl-service
 %_post_service vboxweb-service
 %update_menus
 %endif
@@ -338,6 +349,7 @@ else
   fi
   /etc/init.d/vboxdrv start > /dev/null
 fi
+/etc/init.d/vboxballoonctrl-service start > /dev/null
 /etc/init.d/vboxweb-service start > /dev/null
 
 
@@ -346,13 +358,17 @@ fi
 # $1==1: install the first time
 # $1>=2: upgrade
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
+%stop_on_removal vboxballoonctrl-service
 %stop_on_removal vboxweb-service
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
+%_preun_service vboxballoonctrl-service
 %_preun_service vboxweb-service
 %endif
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 if [ "$1" = 0 ]; then
+  /sbin/service vboxballoonctrl-service stop > /dev/null
+  /sbin/chkconfig --del vboxballoonctrl-service
   /sbin/service vboxweb-service stop > /dev/null
   /sbin/chkconfig --del vboxweb-service
 fi
@@ -399,11 +415,12 @@ fi
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 if [ "$1" -ge 1 ]; then
   /sbin/service vboxdrv restart > /dev/null 2>&1
+  /sbin/service vboxballoonctrl-service restart > /dev/null 2>&1
   /sbin/service vboxweb-service restart > /dev/null 2>&1
 fi
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%restart_on_update vboxdrv vboxweb-service
+%restart_on_update vboxdrv vboxballoonctrl-service vboxweb-service
 %insserv_cleanup
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
@@ -427,10 +444,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc UserManual*.pdf
 %doc VirtualBox*.chm
 %{_initrddir}/vboxdrv
+%{_initrddir}/vboxballoonctrl-service
 %{_initrddir}/vboxweb-service
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
 %{?rpm_suse: /sbin/rcvboxdrv}
+%{?rpm_suse: /sbin/rcvboxballoonctrl-service}
 %{?rpm_suse: /sbin/rcvboxweb-service}
 /lib/modules
 /etc/vbox

@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -177,6 +177,11 @@ binary: rpm/build-stamp
 	   -e 's|%PACKAGE%|virtualbox|g' \
 	   -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	   vboxdrv.sh.in > $(archdir)/vboxdrv.init
+	sed \
+	   -e 's|%NOLSB%|yes|g' \
+	   -e 's|%DEBIAN%||g' \
+	   -e 's|%PACKAGE%|virtualbox|g' \
+	   vboxballoonctrl-service.sh.in > $(archdir)/vboxballoonctrl-service.init
 	sed \
 	   -e 's|%NOLSB%|yes|g' \
 	   -e 's|%DEBIAN%||g' \
