@@ -470,11 +470,11 @@
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Perkrauti</translation>
+        <translation>&amp;Paleisti iš naujo</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Perkrauti virtualią mašiną</translation>
+        <translation>Iš naujo paleisti virtualią mašiną</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
@@ -3097,7 +3097,7 @@
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>šiai virtualiai mašinai priskyrėte daugiau kaip vieną virtualų procesorių. Ši funkcija neveiktų, jei neįgalinsite IO-APIC. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
+        <translation>šiai virtualiai mašinai priskyrėte daugiau kaip vieną virtualų procesorių. Ši funkcija neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -3105,7 +3105,7 @@
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-APIC. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
+        <translation>šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -3695,7 +3695,7 @@
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation>Paleidžiamas standusis diskas</translation>
+        <translation>Standusis diskas, iš kurio paleidžiama</translation>
     </message>
 </context>
 <context>
@@ -7496,7 +7496,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Naujai virtualiai mašinai nepriskyrėte jokio standžiojo disko. Mašina negalės įsikrauti, jei nepriskirsite standžiojo disko su svečio operacine sistema arba kitos įkraunamos laikmenos, kuri būtų naudojama mašinos nuostatų lange arba pirmojo paleidimo vediklyje.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Naujai virtualiai mašinai nepriskyrėte jokio standžiojo disko. Jei nepriskirsite standžiojo disko su svečio operacine sistema arba kitos įkraunamos laikmenos, kuri būtų naudojama mašinos nuostatų lange arba pirmojo paleidimo vediklyje, mašinos nebus galima paleisti.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -7599,7 +7599,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite perkrauti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tikrai norite iš naujo paleisti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -8278,7 +8278,7 @@ IPv6.</translation>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation>Atstatyti</translation>
+        <translation>Paleisti iš naujo</translation>
     </message>
     <message>
         <source>Continue</source>
@@ -10230,7 +10230,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">šiai virtualiai mašinai priskyrėte daugiau kaip vieną virtualų procesorių. Ši funkcija neveiktų, jei neįgalinsite IO-APIC. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
+        <translation type="obsolete">šiai virtualiai mašinai priskyrėte daugiau kaip vieną virtualų procesorių. Ši funkcija neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
