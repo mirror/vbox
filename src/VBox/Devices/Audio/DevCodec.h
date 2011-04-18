@@ -47,6 +47,9 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_VERB_CMD4(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_4BIT_CMD, 4))
 #define CODEC_VERB_CMD8(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_8BIT_CMD, 8))
 #define CODEC_VERB_CMD16(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_16BIT_CMD, 16))
+#define CODEC_VERB_PAYLOAD4(cmd) ((cmd) & CODEC_VERB_4BIT_DATA)
+#define CODEC_VERB_PAYLOAD8(cmd) ((cmd) & CODEC_VERB_8BIT_DATA)
+#define CODEC_VERB_PAYLOAD16(cmd) ((cmd) & CODEC_VERB_16BIT_DATA)
 
 #define CODEC_VERB_GET_AMP_DIRECTION  RT_BIT(15)
 #define CODEC_VERB_GET_AMP_SIDE       RT_BIT(13)
@@ -73,22 +76,28 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 /* HDA spec 7.3.3.1 defines layout of configuration registers/verbs (0xF00) */
 /* VendorID (7.3.4.1) */
 #define CODEC_MAKE_F00_00(vendorID, deviceID) (((vendorID) << 16) | (deviceID))
+#define CODEC_F00_00_VENDORID(f00_00) (((f00_00) >> 16) & 0xFFFF)
+#define CODEC_F00_00_DEVICEID(f00_00) ((f00_00) & 0xFFFF)
 /* RevisionID (7.3.4.2)*/
 #define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
 /* Subordinate node count (7.3.4.3)*/
 #define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|((totalNodeNumber) & 0xFF))
+#define CODEC_F00_04_TO_START_NODE_NUMBER(f00_04) (((f00_04) >> 16) & 0xFF)
+#define CODEC_F00_04_TO_NODE_COUNT(f00_04) ((f00_04) & 0xFF)
 /*
  * Function Group Type  (7.3.4.4)
  * 0 & [0x3-0x7f] are reserved types
  * [0x80 - 0xff] are vendor defined function groups
  */
-#define CODEC_MAKE_F00_05(UnSol, NodeType) ((UnSol)|(NodeType))
+#define CODEC_MAKE_F00_05(UnSol, NodeType) (((UnSol) << 8)|(NodeType))
 #define CODEC_F00_05_UNSOL  RT_BIT(8)
 #define CODEC_F00_05_AFG    (0x1)
 #define CODEC_F00_05_MFG    (0x2)
+#define CODEC_F00_05_IS_UNSOL(f00_05) RT_BOOL((f00_05) & RT_BIT(8))
+#define CODEC_F00_05_GROUP(f00_05) ((f00_05) & 0xff)
 /*  Audio Function Group capabilities (7.3.4.5) */
-#define CODEC_MAKE_F00_08(BeepGen, InputDelay, OutputDelay) ((BeepGen)| (((InputDelay) & 0xF) << 8) | ((OutputDelay) & 0xF))
-#define CODEC_F00_08_BEEP_GEN RT_BIT(16)
+#define CODEC_MAKE_F00_08(BeepGen, InputDelay, OutputDelay) ((((BeepGen) & 0x1) << 16)| (((InputDelay) & 0xF) << 8) | ((OutputDelay) & 0xF))
+#define CODEC_F00_08_BEEP_GEN(f00_08) ((f00_08) & RT_BIT(16)
 
 /* Widget Capabilities (7.3.4.6) */
 #define CODEC_MAKE_F00_09(type, delay, chanel_count) \
@@ -119,6 +128,22 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F00_09_CAP_OUT_AMP_PRESENT    RT_BIT(2)
 #define CODEC_F00_09_CAP_IN_AMP_PRESENT     RT_BIT(1)
 #define CODEC_F00_09_CAP_LSB                RT_BIT(0)
+
+#define CODEC_F00_09_TYPE(f00_09) (((f00_09) >> 20) & 0xF)
+
+#define CODEC_F00_09_IS_CAP_CP(f00_09)              RT_BOOL((f00_09) & RT_BIT(12))
+#define CODEC_F00_09_IS_CAP_L_R_SWAP(f00_09)        RT_BOOL((f00_09) & RT_BIT(11))
+#define CODEC_F00_09_IS_CAP_POWER_CTRL(f00_09)      RT_BOOL((f00_09) & RT_BIT(10))
+#define CODEC_F00_09_IS_CAP_DIGITAL(f00_09)         RT_BOOL((f00_09) & RT_BIT(9))
+#define CODEC_F00_09_IS_CAP_CONNECTION_LIST(f00_09) RT_BOOL((f00_09) & RT_BIT(8))
+#define CODEC_F00_09_IS_CAP_UNSOL(f00_09)           RT_BOOL((f00_09) & RT_BIT(7))
+#define CODEC_F00_09_IS_CAP_PROC_WIDGET(f00_09)     RT_BOOL((f00_09) & RT_BIT(6))
+#define CODEC_F00_09_IS_CAP_STRIPE(f00_09)          RT_BOOL((f00_09) & RT_BIT(5))
+#define CODEC_F00_09_IS_CAP_FMT_OVERRIDE(f00_09)    RT_BOOL((f00_09) & RT_BIT(4))
+#define CODEC_F00_09_IS_CAP_AMP_OVERRIDE(f00_09)    RT_BOOL((f00_09) & RT_BIT(3))
+#define CODEC_F00_09_IS_CAP_OUT_AMP_PRESENT(f00_09) RT_BOOL((f00_09) & RT_BIT(2))
+#define CODEC_F00_09_IS_CAP_IN_AMP_PRESENT(f00_09)  RT_BOOL((f00_09) & RT_BIT(1))
+#define CODEC_F00_09_IS_CAP_LSB(f00_09)             RT_BOOL((f00_09) & RT_BIT(0))
 
 /* Supported PCM size, rates (7.3.4.7) */
 #define CODEC_F00_0A_32_BIT             RT_BIT(19)
@@ -163,17 +188,34 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F00_0C_CAP_TRIGGER_REQUIRED       RT_BIT(1)
 #define CODEC_F00_0C_CAP_IMPENDANCE_SENSE       RT_BIT(0)
 
-/* Amplifier capabilities (7.3.4.10) */
+#define CODEC_F00_0C_IS_CAP_HBR(f00_0c)                    ((f00_0c) & RT_BIT(27))
+#define CODEC_F00_0C_IS_CAP_DP(f00_0c)                     ((f00_0c) & RT_BIT(24))
+#define CODEC_F00_0C_IS_CAP_EAPD(f00_0c)                   ((f00_0c) & RT_BIT(16))
+#define CODEC_F00_0C_IS_CAP_HDMI(f00_0c)                   ((f00_0c) & RT_BIT(7))
+#define CODEC_F00_0C_IS_CAP_BALANCED_IO(f00_0c)            ((f00_0c) & RT_BIT(6))
+#define CODEC_F00_0C_IS_CAP_INPUT(f00_0c)                  ((f00_0c) & RT_BIT(5))
+#define CODEC_F00_0C_IS_CAP_OUTPUT(f00_0c)                 ((f00_0c) & RT_BIT(4))
+#define CODEC_F00_0C_IS_CAP_HP(f00_0c)                     ((f00_0c) & RT_BIT(3))
+#define CODEC_F00_0C_IS_CAP_PRESENSE_DETECT(f00_0c)        ((f00_0c) & RT_BIT(2))
+#define CODEC_F00_0C_IS_CAP_TRIGGER_REQUIRED(f00_0c)       ((f00_0c) & RT_BIT(1))
+#define CODEC_F00_0C_IS_CAP_IMPENDANCE_SENSE(f00_0c)       ((f00_0c) & RT_BIT(0))
+
+/* Input Amplifier capabilities (7.3.4.10) */
 #define CODEC_MAKE_F00_0D(mute_cap, step_size, num_steps, offset) \
         (  (((mute_cap) & 0x1) << 31)                             \
          | (((step_size) & 0xFF) << 16)                           \
          | (((num_steps) & 0xFF) << 8)                            \
          | ((offset) & 0xFF))
 
+/* Output Amplifier capabilities (7.3.4.10) */
+#define CODEC_MAKE_F00_12 CODEC_MAKE_F00_0D
+
 /* Connection list lenght (7.3.4.11) */
 #define CODEC_MAKE_F00_0E(long_form, length)    \
     (  (((long_form) & 0x1) << 7)               \
      | ((length) & 0x7F))
+#define CODEC_F00_0E_IS_LONG(f00_0e) RT_BOOL((f00_0e) & RT_BIT(7))
+#define CODEC_F00_0E_COUNT(f00_0e) ((f00_0e) & 0x7F)
 /* Supported Power States (7.3.4.12) */
 #define CODEC_F00_0F_EPSS       RT_BIT(31)
 #define CODEC_F00_0F_CLKSTOP    RT_BIT(30)
@@ -184,6 +226,11 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F00_0F_D1         RT_BIT(1)
 #define CODEC_F00_0F_D0         RT_BIT(0)
 
+/* Processing capabilities 7.3.4.13 */
+#define CODEC_MAKE_F00_10(num, benign) ((((num) & 0xFF) << 8) | ((benign) & 0x1))
+#define CODEC_F00_10_NUM(f00_10) (((f00_10) & (0xFF << 8)) >> 8)
+#define CODEC_F00_10_BENING(f00_10) ((f00_10) & 0x1)
+
 /* CP/IO Count (7.3.4.14) */
 #define CODEC_MAKE_F00_11(wake, unsol, numgpi, numgpo, numgpio) \
     (  (((wake) & 0x1) << 31)                                   \
@@ -192,6 +239,10 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
      | (((numgpo) & 0xFF) << 8)                                 \
      | ((numgpio) & 0xFF))
 
+/* Processing States (7.3.3.4) */
+#define CODEC_F03_OFF    (0)
+#define CODEC_F03_ON     RT_BIT(0)
+#define CODEC_F03_BENING RT_BIT(1)
 /* Power States (7.3.3.10) */
 #define CODEC_MAKE_F05(reset, stopok, error, act, set)          \
     (   (((reset) & 0x1) << 10)                                 \
@@ -211,6 +262,9 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F05_ACT(value)        (((value) & 0x7) >> 4)
 #define CODEC_F05_SET(value)        (((value) & 0x7))
 
+#define CODEC_F05_GE(p0, p1) ((p0) <= (p1))
+#define CODEC_F05_LE(p0, p1) ((p0) >= (p1))
+
 /* Pin Widged Control (7.3.3.13) */
 #define CODEC_F07_VREF_HIZ      (0)
 #define CODEC_F07_VREF_50       (0x1)
@@ -220,6 +274,9 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F07_IN_ENABLE     RT_BIT(5)
 #define CODEC_F07_OUT_ENABLE    RT_BIT(6)
 #define CODEC_F07_OUT_H_ENABLE  RT_BIT(7)
+
+/* Unsolicited enabled (7.3.3.14) */
+#define CODEC_MAKE_F08(enable, tag) ((((enable) & 1) << 7) | ((tag) & 0x3F))
 
 /* Converter formats (7.3.3.8) and (3.7.1) */
 #define CODEC_MAKE_A(fNonPCM, f44_1BaseRate, mult, div, bits, chan) \
@@ -259,6 +316,10 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 (   (((fPresent) & 0x1) << 31)                      \
   | (((fELDValid) & 0x1) << 30))
 
+#define CODEC_MAKE_F0C(lrswap, eapd, btl) ((((lrswap) & 1) << 2) | (((eapd) & 1) << 1) | ((btl) & 1))
+#define CODEC_FOC_IS_LRSWAP(f0c)    RT_BOOL((f0c) & RT_BIT(2))
+#define CODEC_FOC_IS_EAPD(f0c)      RT_BOOL((f0c) & RT_BIT(1))
+#define CODEC_FOC_IS_BTL(f0c)       RT_BOOL((f0c) & RT_BIT(0))
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
 #define CODEC_F1C_PORT_MASK    (0x3)
@@ -288,7 +349,7 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 #define CODEC_F1C_LOCATION_BOTTOM              (0x6)
 #define CODEC_F1C_LOCATION_SPECIAL_0           (0x7)
 #define CODEC_F1C_LOCATION_SPECIAL_1           (0x8)
-#define CODEC_F1C_LOCATION_SPECIAL_3           (0x9)
+#define CODEC_F1C_LOCATION_SPECIAL_2           (0x9)
 
 /* Configuration's devices */
 #define CODEC_F1C_DEVICE_MASK                  (0xF)
@@ -350,10 +411,10 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 /* Configuration's misc */
 #define CODEC_F1C_MISC_MASK                  (0xF)
 #define CODEC_F1C_MISC_SHIFT                 (8)
-#define CODEC_F1C_MISC_JACK_DETECT           RT_BIT(0)
-#define CODEC_F1C_MISC_RESERVED_0            RT_BIT(1)
-#define CODEC_F1C_MISC_RESERVED_1            RT_BIT(2)
-#define CODEC_F1C_MISC_RESERVED_2            RT_BIT(3)
+#define CODEC_F1C_MISC_JACK_DETECT           (0)
+#define CODEC_F1C_MISC_RESERVED_0            (1)
+#define CODEC_F1C_MISC_RESERVED_1            (2)
+#define CODEC_F1C_MISC_RESERVED_2            (3)
 
 /* Configuration's association */
 #define CODEC_F1C_ASSOCIATION_MASK                  (0xF)
@@ -381,6 +442,7 @@ typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
      | ((sequence)))
 
 
+#ifndef VBOX_WITH_HDA_CODEC_EMU
 typedef struct CODECVERB
 {
     uint32_t verb;
@@ -388,11 +450,14 @@ typedef struct CODECVERB
     uint32_t mask;
     PFNCODECVERBPROCESSOR pfn;
 } CODECVERB;
+#endif
 
-#ifndef VBOX_HDA_CODEC_EMU
+#ifndef VBOX_WITH_HDA_CODEC_EMU
 # define TYPE union
 #else
 # define TYPE struct
+typedef struct CODECEMU CODECEMU;
+typedef CODECEMU *PCODECEMU;
 #endif
 TYPE CODECNODE;
 typedef TYPE CODECNODE CODECNODE;
@@ -407,11 +472,6 @@ typedef enum
     LAST_INDEX
 } ENMSOUNDSOURCE;
 
-typedef enum
-{
-    STAC9220_CODEC,
-    ALC885_CODEC
-} ENMCODEC;
 
 typedef struct CODECState
 {
@@ -420,17 +480,21 @@ typedef struct CODECState
     uint16_t                u16DeviceId;
     uint8_t                 u8BSKU;
     uint8_t                 u8AssemblyId;
+#ifndef VBOX_WITH_HDA_CODEC_EMU
     CODECVERB               *pVerbs;
     int                     cVerbs;
+#else
+    PCODECEMU               pCodecBackend;
+#endif
     PCODECNODE               pNodes;
     QEMUSoundCard           card;
     /** PCM in */
     SWVoiceIn               *SwVoiceIn;
     /** PCM out */
     SWVoiceOut              *SwVoiceOut;
-    ENMCODEC                enmCodec;
     void                    *pHDAState;
     bool                    fInReset;
+#ifndef VBOX_WITH_HDA_CODEC_EMU
     const uint8_t           cTotalNodes;
     const uint8_t           *au8Ports;
     const uint8_t           *au8Dacs;
@@ -447,18 +511,31 @@ typedef struct CODECState
     const uint8_t           *au8Reserveds;
     const uint8_t           u8AdcVolsLineIn;
     const uint8_t           u8DacLineOut;
+#endif
     DECLR3CALLBACKMEMBER(int, pfnProcess, (struct CODECState *));
+    DECLR3CALLBACKMEMBER(void, pfnTransfer, (struct CODECState *pState, ENMSOUNDSOURCE, int avail));
+    /* These callbacks are set by Codec implementation */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (struct CODECState *pState, uint32_t verb, PPFNCODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (struct CODECState *pState));
-    DECLR3CALLBACKMEMBER(void, pfnTransfer, (struct CODECState *pState, ENMSOUNDSOURCE, int avail));
     DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (struct CODECState *pState, uint8_t, PCODECNODE));
+    /* These callbacks are set by codec implementation to answer debugger requests */
+    DECLR3CALLBACKMEMBER(void, pfnCodecDbgListNodes, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(void, pfnCodecDbgSelector, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
+} CODECState, *PCODECState;
 
-} CODECState;
-
-int codecConstruct(PPDMDEVINS pDevIns, CODECState *pCodecState, ENMCODEC enmCodec);
+int codecConstruct(PPDMDEVINS pDevIns, CODECState *pCodecState, PCFGMNODE pCfgHandle);
 int codecDestruct(CODECState *pCodecState);
 int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 int codecOpenVoice(CODECState *pCodecState, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings);
 
+# ifdef VBOX_WITH_HDA_CODEC_EMU
+/* */
+struct CODECEMU
+{
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuConstruct, (PCODECState pState));
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuDestruct, (PCODECState pState));
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuReset, (PCODECState pState, bool fInit));
+};
+# endif
 #endif

@@ -278,7 +278,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            pNode->node.au32F00_param[8] = CODEC_MAKE_F00_08(CODEC_F00_08_BEEP_GEN, 0xd, 0xd);
+            pNode->node.au32F00_param[8] = CODEC_MAKE_F00_08(1, 0xd, 0xd);
             pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
                                              | CODEC_F00_0C_CAP_BALANCED_IO
                                              | CODEC_F00_0C_CAP_INPUT
@@ -1332,8 +1332,7 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].pcbeep.u32F07_param;
     else if (   codecIsReservedNode(pState, CODEC_NID(cmd))
-             && CODEC_NID(cmd) == 0x1b
-             && pState->enmCodec == STAC9220_CODEC)
+             && CODEC_NID(cmd) == 0x1b)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     Assert((pu32Reg));
     if (pu32Reg)
@@ -2164,33 +2163,21 @@ int codecOpenVoice(CODECState *pState, ENMSOUNDSOURCE enmSoundSource, audsetting
     return rc;
 }
 
-int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, ENMCODEC enmCodec)
+int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, PCFGMNODE pCfgHandle)
 {
     audsettings_t as;
     int rc;
     pState->pVerbs = (CODECVERB *)&CODECVERBS;
     pState->cVerbs = sizeof(CODECVERBS)/sizeof(CODECVERB);
     pState->pfnLookup = codecLookup;
-    pState->enmCodec = enmCodec;
-    switch (enmCodec)
-    {
-        case STAC9220_CODEC:
-            rc = stac9220Construct(pState);
-            AssertRC(rc);
-            break;
-        case ALC885_CODEC:
-            rc = alc885Construct(pState);
-            AssertRC(rc);
-            break;
-        default:
-            AssertMsgFailed(("Unsupported Codec"));
-    }
+    rc = stac9220Construct(pState);
+    AssertRC(rc);
     /* common root node initializers */
     pState->pNodes[0].node.au32F00_param[0] = CODEC_MAKE_F00_00(pState->u16VendorId, pState->u16DeviceId);
     pState->pNodes[0].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
     /* common AFG node initializers */
     pState->pNodes[1].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x2, pState->cTotalNodes - 2);
-    pState->pNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(CODEC_F00_05_UNSOL, CODEC_F00_05_AFG);
+    pState->pNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pState->pNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pState->u16VendorId, pState->u8BSKU, pState->u8AssemblyId);
 
     //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
