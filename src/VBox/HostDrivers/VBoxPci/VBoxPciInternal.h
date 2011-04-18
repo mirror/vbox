@@ -79,6 +79,7 @@ typedef struct VBOXRAWPCIINS
 
 #ifdef RT_OS_LINUX
     struct pci_dev  *  pPciDev;
+    char               szPrevDriver[64];
 #endif
     bool               fMsiUsed;
     bool               fMsixUsed;
