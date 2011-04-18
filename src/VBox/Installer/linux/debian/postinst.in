@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -128,7 +128,7 @@ fi # $1 = "configure"
 #DEBHELPER#
 
 if [ "$1" = "configure" ]; then
-  # Start vboxdrv/vboxweb-service manually as we use our own error handling in postrm
+  # Start vboxdrv/vboxballoonctrl/vboxweb-service manually as we use our own error handling in postrm
   if [ -x "/etc/init.d/vboxdrv" ]; then
     update-rc.d vboxdrv defaults >/dev/null
 
@@ -177,6 +177,14 @@ EOF
       else
         /etc/init.d/vboxdrv start || exit $?
       fi
+    fi
+  fi
+  if [ -x "/etc/init.d/vboxballoonctrl-service" ]; then
+    update-rc.d vboxballoonctrl-service defaults >/dev/null
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxballoonctrl-service start || exit $?
+    else
+        /etc/init.d/vboxballoonctrl-service start || exit $?
     fi
   fi
   if [ -x "/etc/init.d/vboxweb-service" ]; then
