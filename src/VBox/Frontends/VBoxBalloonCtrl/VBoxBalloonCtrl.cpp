@@ -127,13 +127,17 @@ unsigned long g_ulMemoryBalloonDecrementMB = 128;
 unsigned long g_ulMemoryBalloonMaxMB = 0;
 unsigned long g_ulLowerMemoryLimitMB = 64;
 
-/** Global weak references (for event handlers). */
-static IVirtualBox *g_pVirtualBox = NULL;
-static ISession *g_pSession = NULL;
+/** Global objects. */
+static ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
+static ComPtr<IVirtualBox> g_pVirtualBox = NULL;
+static ComPtr<ISession> g_pSession = NULL;
+static ComPtr<IEventSource> g_pEventSource = NULL;
+static ComPtr<IEventSource> g_pEventSourceClient = NULL;
+static ComPtr<IEventListener> g_pVBoxEventListener = NULL;
+# ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+static ComPtr<IPerformanceCollector> g_pPerfCollector = NULL;
+# endif
 static EventQueue *g_pEventQ = NULL;
-#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
-static IPerformanceCollector *g_pPerfCollector = NULL;
-#endif
 
 /** A machine's internal entry. */
 typedef struct VBOXBALLOONCTRL_MACHINE
@@ -163,6 +167,12 @@ void machineRemove(mapVMIter it);
 unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine);
 bool balloonIsRequired(mapVMIter it);
 int balloonUpdate(mapVMIterConst it);
+
+HRESULT balloonCtrlSetup();
+void balloonCtrlShutdown();
+
+HRESULT createGlobalObjects();
+void deleteGlobalObjects();
 
 #ifdef RT_OS_WINDOWS
 /* Required for ATL. */
@@ -267,6 +277,36 @@ class VirtualBoxEventListener
                             int rc2 = RTCritSectLeave(&g_MapCritSect);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
+                        }
+                    }
+                    break;
+                }
+
+                case VBoxEventType_OnVBoxSVCAvailabilityChanged:
+                {
+                    ComPtr<IVBoxSVCAvailabilityChangedEvent> pVSACEv = aEvent;
+                    Assert(pVSACEv);
+                    BOOL fAvailable = FALSE;
+                    pVSACEv->COMGETTER(Available)(&fAvailable);
+                    if (!fAvailable)
+                    {
+                        serviceLog("VBoxSVC became unavailable\n");
+                        {
+                            balloonCtrlShutdown();
+                            deleteGlobalObjects();
+                        }
+                    }
+                    else
+                    {
+                        serviceLog("VBoxSVC became available\n");
+                        HRESULT hrc = createGlobalObjects();
+                        if (FAILED(hrc))
+                            serviceLog("Unable to re-create local COM objects (rc=%Rhrc)!\n", hrc);
+                        else
+                        {
+                            hrc = balloonCtrlSetup();
+                            if (FAILED(hrc))
+                                serviceLog("Unable to re-set up ballooning (rc=%Rhrc)!\n", hrc);
                         }
                     }
                     break;
@@ -432,9 +472,6 @@ int machineAdd(const ComPtr<IMachine> &rptrMachine)
         Bstr strUUID;
         CHECK_ERROR_BREAK(rptrMachine, COMGETTER(Id)(strUUID.asOutParam()));
 
-        if (!metricAffected.size())
-            serviceLogVerbose(("%s: No metrics available yet!\n", Utf8Str(strUUID).c_str()));
-
         mapVMIter it = g_mapVM.find(strUUID);
         Assert(it == g_mapVM.end());
 
@@ -548,6 +585,12 @@ int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
     return SUCCEEDED(hrc) ? VINF_SUCCESS : VINF_NOT_SUPPORTED;
 }
 
+/**
+ * Determines the maximum balloon size to set for the specified machine.
+ *
+ * @return  unsigned long           Balloon size (in MB) to set, 0 if no ballooning required.
+ * @param   rptrMachine             Pointer to specified machine.
+ */
 unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
 {
     /*
@@ -584,6 +627,12 @@ unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
     return ulBalloonMax;
 }
 
+/**
+ * Determines whether ballooning is required to the spcified VM.
+ *
+ * @return  bool        True if ballooning is required, false if not.
+ * @param   it          Iterator pointing to the VM to be processed.
+ */
 bool balloonIsRequired(mapVMIter it)
 {
     /* Only do ballooning if we have a maximum balloon size set. */
@@ -592,8 +641,13 @@ bool balloonIsRequired(mapVMIter it)
     return it->second.ulBalloonSizeMax ? true : false;
 }
 
-/* Does the actual ballooning and assumes the machine is
- * capable and ready for ballooning. */
+/**
+ * Does the actual ballooning and assumes the machine is
+ * capable and ready for ballooning.
+ *
+ * @return  IPRT status code.
+ * @param   it          Iterator pointing to the VM to be processed.
+ */
 int balloonUpdate(mapVMIterConst it)
 {
     /*
@@ -681,6 +735,8 @@ void vmListDestroy()
             it++;
         }
 
+        g_mapVM.clear();
+
         rc = RTCritSectLeave(&g_MapCritSect);
     }
     AssertRC(rc);
@@ -688,8 +744,6 @@ void vmListDestroy()
 
 int vmListBuild()
 {
-    vmListDestroy();
-
     serviceLogVerbose(("Building VM list ...\n"));
 
     int rc = RTCritSectEnter(&g_MapCritSect);
@@ -715,9 +769,18 @@ int vmListBuild()
                 if (machines[i])
                 {
                     MachineState_T machineState;
-                    hrc = machines[i]->COMGETTER(State)(&machineState);
-                    if (   SUCCEEDED(hrc)
-                        && machineIsRunning(machineState))
+                    CHECK_ERROR_BREAK(machines[i], COMGETTER(State)(&machineState));
+
+                    if (g_fVerbose)
+                    {
+                        Bstr strUUID;
+                        CHECK_ERROR_BREAK(machines[i], COMGETTER(Id)(strUUID.asOutParam()));
+
+                        serviceLogVerbose(("Processing machine \"%s\" (state: %ld)\n",
+                                           Utf8Str(strUUID).c_str(), machineState));
+                    }
+
+                    if (machineIsRunning(machineState))
                     {
                         rc = machineAdd(machines[i]);
                         if (RT_FAILURE(rc))
@@ -725,6 +788,9 @@ int vmListBuild()
                     }
                 }
             }
+
+            if (!machines.size())
+                serviceLogVerbose(("No machines to add found at the moment!\n"));
         }
 
         int rc2 = RTCritSectLeave(&g_MapCritSect);
@@ -761,6 +827,47 @@ int balloonCtrlCheck()
     return rc;
 }
 
+HRESULT balloonCtrlSetup()
+{
+    HRESULT rc = S_OK;
+
+    serviceLog("Setting up ballooning ...\n");
+
+    do
+    {
+        /*
+         * Setup metrics.
+         */
+#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(g_pPerfCollector.asOutParam()));
+#endif
+
+        /*
+         * Build up initial VM list.
+         */
+        int vrc = vmListBuild();
+        if (RT_FAILURE(vrc))
+        {
+            rc = VBOX_E_IPRT_ERROR;
+            break;
+        }
+
+    } while (0);
+
+    return rc;
+}
+
+void balloonCtrlShutdown()
+{
+    serviceLog("Shutting down ballooning ...\n");
+
+    vmListDestroy();
+
+#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+    g_pPerfCollector.setNull();
+#endif
+}
+
 RTEXITCODE balloonCtrlMain(HandlerArg *a)
 {
     HRESULT rc = S_OK;
@@ -768,42 +875,12 @@ RTEXITCODE balloonCtrlMain(HandlerArg *a)
     do
     {
         /* Initialize global weak references. */
-        g_pVirtualBox = a->virtualBox;
-        g_pSession = a->session;
         g_pEventQ = com::EventQueue::getMainEventQueue();
 
         RTCritSectInit(&g_MapCritSect);
 
         int vrc = RTSemEventMultiCreate(&g_BalloonControlEvent);
         AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-
-        /*
-         * Setup the global event listener.
-         */
-        ComPtr<IEventSource> es;
-        CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-
-        ComObjPtr<VirtualBoxEventListenerImpl> vboxListenerImpl;
-        vboxListenerImpl.createObject();
-        vboxListenerImpl->init(new VirtualBoxEventListener());
-
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnMachineRegistered);
-        eventTypes.push_back(VBoxEventType_OnMachineStateChanged);
-
-        ComPtr<IEventListener> vboxListener;
-        vboxListener = vboxListenerImpl;
-
-        CHECK_ERROR_BREAK(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true /* Active listener */));
-
-        /*
-         * Setup metrics.
-         */
-#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
-        ComPtr<IPerformanceCollector> perfCol;
-        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(perfCol.asOutParam()));
-        g_pPerfCollector = perfCol;
-#endif
 
         /*
          * Install signal handlers.
@@ -814,10 +891,32 @@ RTEXITCODE balloonCtrlMain(HandlerArg *a)
     #endif
 
         /*
-         * Build up initial VM list.
+         * Setup the global event listeners:
+         * - g_pEventSource for machine events
+         * - g_pEventSourceClient for VBoxClient events (like VBoxSVC handling)
          */
-        vrc = vmListBuild();
-        if (FAILED(vrc)) break;
+        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(EventSource)(g_pEventSource.asOutParam()));
+        CHECK_ERROR_BREAK(g_pVirtualBoxClient, COMGETTER(EventSource)(g_pEventSourceClient.asOutParam()));
+
+        ComObjPtr<VirtualBoxEventListenerImpl> vboxListenerImpl;
+        vboxListenerImpl.createObject();
+        vboxListenerImpl->init(new VirtualBoxEventListener());
+
+        com::SafeArray <VBoxEventType_T> eventTypes;
+        eventTypes.push_back(VBoxEventType_OnMachineRegistered);
+        eventTypes.push_back(VBoxEventType_OnMachineStateChanged);
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged); /* Processed by g_pEventSourceClient. */
+
+        g_pVBoxEventListener = vboxListenerImpl;
+        CHECK_ERROR_BREAK(g_pEventSource, RegisterListener(g_pVBoxEventListener, ComSafeArrayAsInParam(eventTypes), true /* Active listener */));
+        CHECK_ERROR_BREAK(g_pEventSourceClient, RegisterListener(g_pVBoxEventListener, ComSafeArrayAsInParam(eventTypes), true /* Active listener */));
+
+        /*
+         * Set up ballooning stuff.
+         */
+        rc = balloonCtrlSetup();
+        if (FAILED(rc))
+            break;
 
         for (;;)
         {
@@ -857,18 +956,18 @@ RTEXITCODE balloonCtrlMain(HandlerArg *a)
     #endif
 
         /* VirtualBox callback unregistration. */
-        if (vboxListener)
+        if (g_pVBoxEventListener)
         {
-            if (!es.isNull())
-                CHECK_ERROR_BREAK(es, UnregisterListener(vboxListener));
-            vboxListener.setNull();
+            HRESULT rc;
+            if (!g_pEventSource.isNull())
+                CHECK_ERROR(g_pEventSource, UnregisterListener(g_pVBoxEventListener));
+            g_pVBoxEventListener.setNull();
         }
 
-        vmListDestroy();
+        g_pEventSource.setNull();
+        g_pEventSourceClient.setNull();
 
-#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
-        perfCol.setNull();
-#endif
+        balloonCtrlShutdown();
 
         RTCritSectDelete(&g_MapCritSect);
         RTSemEventMultiDestroy(g_BalloonControlEvent);
@@ -1039,6 +1138,38 @@ void displayHelp()
                             "Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM maximum ballooning size.\n");
 }
 
+void deleteGlobalObjects()
+{
+    serviceLogVerbose(("Deleting local objects ...\n"));
+
+    g_pSession.setNull();
+    g_pVirtualBox.setNull();
+}
+
+/**
+ * Creates all global COM objects.
+ *
+ * @return  HRESULT
+ */
+HRESULT createGlobalObjects()
+{
+    serviceLogVerbose(("Creating local objects ...\n"));
+
+    HRESULT hrc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
+    if (FAILED(hrc))
+    {
+        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", hrc);
+    }
+    else
+    {
+        hrc = g_pSession.createInprocObject(CLSID_Session);
+        if (FAILED(hrc))
+            RTMsgError("Failed to create a session object (rc=%Rhrc)!", hrc);
+    }
+
+    return hrc;
+}
+
 int main(int argc, char *argv[])
 {
     /*
@@ -1203,46 +1334,33 @@ int main(int argc, char *argv[])
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
 
-    RTEXITCODE rcExit = RTEXITCODE_FAILURE;
-    do
+    hrc = g_pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+    if (FAILED(hrc))
     {
-        ComPtr<IVirtualBox> virtualBox;
-        ComPtr<ISession> session;
-
-        hrc = virtualBox.createLocalObject(CLSID_VirtualBox);
-        if (FAILED(hrc))
-            RTMsgError("Failed to create the VirtualBox object!");
+        RTMsgError("failed to create the VirtualBoxClient object!");
+        com::ErrorInfo info;
+        if (!info.isFullAvailable() && !info.isBasicAvailable())
+        {
+            com::GluePrintRCMessage(hrc);
+            RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
+        }
         else
-        {
-            hrc = session.createInprocObject(CLSID_Session);
-            if (FAILED(hrc))
-                RTMsgError("Failed to create a session object!");
-        }
-        if (FAILED(hrc))
-        {
-            com::ErrorInfo info;
-            if (!info.isFullAvailable() && !info.isBasicAvailable())
-            {
-                com::GluePrintRCMessage(hrc);
-                RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
-            }
-            else
-                com::GluePrintErrorInfo(info);
-            break;
-        }
+            com::GluePrintErrorInfo(info);
+        return RTEXITCODE_FAILURE;
+    }
 
-        HandlerArg handlerArg = { 0, NULL, virtualBox, session };
-        handlerArg.argc = argc;
-        handlerArg.argv = argv;
+    hrc = createGlobalObjects();
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
-        rcExit = balloonCtrlMain(&handlerArg);
+    HandlerArg handlerArg = { argc, argv };
+    RTEXITCODE rcExit = balloonCtrlMain(&handlerArg);
 
-        EventQueue::getMainEventQueue()->processEventQueue(0);
+    EventQueue::getMainEventQueue()->processEventQueue(0);
 
-        session.setNull();
-        virtualBox.setNull();
+    deleteGlobalObjects();
 
-    } while (0);
+    g_pVirtualBoxClient.setNull();
 
     com::Shutdown();
 
