@@ -1048,6 +1048,12 @@ struct PciBusAddress
         init(iBus, iDevice, iFn);
     }
 
+    PciBusAddress(int32_t iAddr)
+    {
+        clear();
+        fromLong(iAddr);
+    }
+
     PciBusAddress& clear()
     {
         miBus = miDevice = miFn = -1;
@@ -1139,6 +1145,8 @@ struct PciBusAddress
 
         return true;
     }
+
+    static const size_t cMaxAddrSize = 10;
 };
 #endif /* __cplusplus */
 
