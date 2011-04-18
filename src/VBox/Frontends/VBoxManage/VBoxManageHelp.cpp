@@ -398,6 +398,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            vrdevideochannelquality <percent>\n");
         RTStrmPrintf(pStrm,
                      "                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
+                     "                            screenshotpng <file> [display] |\n"
                      "                            setcredentials <username> <password> <domain>\n"
                      "                                           [--allowlocallogon <yes|no>] |\n"
                      "                            teleport --host <name> --port <port>\n"
