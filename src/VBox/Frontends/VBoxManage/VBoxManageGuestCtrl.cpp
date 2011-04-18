@@ -577,7 +577,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         /* Wait for process to exit ... */
         BOOL fCompleted    = FALSE;
         BOOL fCanceled     = FALSE;
-        int  cMilliesSleep = 0;
         while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
         {
             SafeArray<BYTE> aOutputData;
