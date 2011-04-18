@@ -88,6 +88,7 @@ WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
 WITH_VDE=0
+WITH_VNC=0
 WITH_DOCS=1
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
@@ -123,6 +124,8 @@ MAKESELF="makeself"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
+INCVNCSERVER=""
+LIBVNCSERVER="-lvncserver"
 CXX_FLAGS=""
 if [ "$OS" = "freebsd" ]; then
   INCCURL="-I/usr/local/include"
@@ -951,6 +954,47 @@ EOF
     if test_execute; then
       cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l "$LIBPNG"`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
+    fi
+  fi
+}
+
+#
+# Check for libvncserver, needed for VNC in OSE
+#
+check_vncserver()
+{
+  test_header libvncserver
+  cat > $ODIR.tmp_src.cc <<EOF
+#include <cstdio>
+#include <rfb/rfbconfig.h>
+
+extern "C" int main()
+{
+  const char* v=LIBVNCSERVER_VERSION;
+  unsigned int major = 0, minor = 0, micro = 0;
+
+  for (; *v !='.' && *v != '\0'; v++) major = major*10 + *v-'0';
+  if (*v == '.') v++;
+  for (; *v !='.' && *v != '\0'; v++) minor = minor*10 + *v-'0';
+  if (*v == '.') v++;
+  for (; *v !='.' && *v != '\0'; v++) micro = micro*10 + *v-'0';
+
+  printf("found version %s", LIBVNCSERVER_PACKAGE_VERSION);
+  if (major*10000 + minor*100 + micro >= 907)
+  {
+    printf(", OK.\n");
+    return 0;
+  }
+  else
+  {
+    printf(", expected version 0.9.7 or higher\n");
+    return 1;
+  }
+}
+EOF
+  if test_compile "$LIBVNCSERVER $INCVNCSERVER" libvncserver libvncserver; then
+    if test_execute; then
+      cnf_append "VBOX_WITH_VNC" "1"
     fi
   fi
 }
@@ -2115,6 +2159,7 @@ EOF
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
+[ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
@@ -2279,6 +2324,9 @@ for option in $*; do
       ;;
     --enable-webservice)
       [ $WITH_GSOAP -eq 0 ] && WITH_GSOAP=1
+      ;;
+    --enable-vnc)
+      WITH_VNC=1
       ;;
     --disable-hardening)
       WITH_HARDENING=0
@@ -2551,6 +2599,15 @@ fi
 if [ $WITH_DOCS -eq 0 ]; then
   cnf_append "VBOX_WITH_DOCS" ""
   cnf_append "VBOX_WITH_DOCS_PACKING" ""
+fi
+
+# VNC server support
+if [ $OSE -ge 1 ]; then
+  if [ $WITH_VNC = 1 ]; then
+    check_vncserver
+  else
+    cnf_append "VBOX_WITH_VNC" ""
+  fi
 fi
 
 # success!
