@@ -768,17 +768,24 @@ int vmListBuild()
             {
                 if (machines[i])
                 {
+                    Bstr strUUID;
+                    CHECK_ERROR_BREAK(machines[i], COMGETTER(Id)(strUUID.asOutParam()));
+
+                    BOOL fAccessible;
+                    CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible)(&fAccessible));
+                    if (!fAccessible)
+                    {
+                        serviceLogVerbose(("Machine \"%s\" is inaccessible, skipping\n",
+                                           Utf8Str(strUUID).c_str()));
+                        break;
+                    }
+
                     MachineState_T machineState;
                     CHECK_ERROR_BREAK(machines[i], COMGETTER(State)(&machineState));
 
                     if (g_fVerbose)
-                    {
-                        Bstr strUUID;
-                        CHECK_ERROR_BREAK(machines[i], COMGETTER(Id)(strUUID.asOutParam()));
-
                         serviceLogVerbose(("Processing machine \"%s\" (state: %ld)\n",
                                            Utf8Str(strUUID).c_str(), machineState));
-                    }
 
                     if (machineIsRunning(machineState))
                     {
@@ -938,7 +945,7 @@ RTEXITCODE balloonCtrlMain(HandlerArg *a)
 
             if (g_fCanceled)
             {
-                serviceLog("Signal catched, exiting ...\n");
+                serviceLog("Signal caught, exiting ...\n");
                 break;
             }
 
