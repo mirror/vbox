@@ -137,185 +137,6 @@
     </message>
 </context>
 <context>
-    <name>QIHotKeyEdit</name>
-    <message>
-        <source>Left </source>
-        <translation>Лівий</translation>
-    </message>
-    <message>
-        <source>Right </source>
-        <translation>Правий</translation>
-    </message>
-    <message>
-        <source>Left Shift</source>
-        <translation>Лівий Shift</translation>
-    </message>
-    <message>
-        <source>Right Shift</source>
-        <translation>Правий Shift</translation>
-    </message>
-    <message>
-        <source>Left Ctrl</source>
-        <translation>Лівий Ctrl</translation>
-    </message>
-    <message>
-        <source>Right Ctrl</source>
-        <translation>Правий Ctrl</translation>
-    </message>
-    <message>
-        <source>Left Alt</source>
-        <translation>Лівий Alt</translation>
-    </message>
-    <message>
-        <source>Right Alt</source>
-        <translation>Правий Alt</translation>
-    </message>
-    <message>
-        <source>Left WinKey</source>
-        <translation>Лівий WinKey</translation>
-    </message>
-    <message>
-        <source>Right WinKey</source>
-        <translation>Правий WinKey</translation>
-    </message>
-    <message>
-        <source>Menu key</source>
-        <translation>Клавіша Menu</translation>
-    </message>
-    <message>
-        <source>Alt Gr</source>
-        <translation>Alt Gr</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
-    </message>
-    <message>
-        <source>&lt;key_%1&gt;</source>
-        <translation>&lt;клавіша_%1&gt;</translation>
-    </message>
-    <message>
-        <source>Pause</source>
-        <translation>Pause</translation>
-    </message>
-    <message>
-        <source>Print Screen</source>
-        <translation>Print Screen</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation>F1</translation>
-    </message>
-    <message>
-        <source>F2</source>
-        <translation>F2</translation>
-    </message>
-    <message>
-        <source>F3</source>
-        <translation>F3</translation>
-    </message>
-    <message>
-        <source>F4</source>
-        <translation>F4</translation>
-    </message>
-    <message>
-        <source>F5</source>
-        <translation>F5</translation>
-    </message>
-    <message>
-        <source>F6</source>
-        <translation>F6</translation>
-    </message>
-    <message>
-        <source>F7</source>
-        <translation>F7</translation>
-    </message>
-    <message>
-        <source>F8</source>
-        <translation>F8</translation>
-    </message>
-    <message>
-        <source>F9</source>
-        <translation>F9</translation>
-    </message>
-    <message>
-        <source>F10</source>
-        <translation>F10</translation>
-    </message>
-    <message>
-        <source>F11</source>
-        <translation>F1</translation>
-    </message>
-    <message>
-        <source>F12</source>
-        <translation>F12</translation>
-    </message>
-    <message>
-        <source>F13</source>
-        <translation>F13</translation>
-    </message>
-    <message>
-        <source>F14</source>
-        <translation>F14</translation>
-    </message>
-    <message>
-        <source>F15</source>
-        <translation>F15</translation>
-    </message>
-    <message>
-        <source>F16</source>
-        <translation>F16</translation>
-    </message>
-    <message>
-        <source>F17</source>
-        <translation>F17</translation>
-    </message>
-    <message>
-        <source>F18</source>
-        <translation>F18</translation>
-    </message>
-    <message>
-        <source>F19</source>
-        <translation>F18</translation>
-    </message>
-    <message>
-        <source>F20</source>
-        <translation>F20</translation>
-    </message>
-    <message>
-        <source>F21</source>
-        <translation>F21</translation>
-    </message>
-    <message>
-        <source>F22</source>
-        <translation>F22</translation>
-    </message>
-    <message>
-        <source>F23</source>
-        <translation>F23</translation>
-    </message>
-    <message>
-        <source>F24</source>
-        <translation>F24</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>Num Lock</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>Forward</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Back</translation>
-    </message>
-</context>
-<context>
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
@@ -507,7 +328,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Ви&amp;мкнути ACPI</translation>
+        <translation type="obsolete">Ви&amp;мкнути ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -1636,6 +1457,10 @@ p, li { white-space: pre-wrap; }
         <source>Extension package files (%1)</source>
         <translation>Файл пакунка розширення (%1)</translation>
     </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished">Розширення</translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsGeneral</name>
@@ -1704,11 +1529,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>Скинути головну клавішу</translation>
+        <translation type="obsolete">Скинути головну клавішу</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>Скидає комбінацію клавіш для перемикання між машиною і системою.</translation>
+        <translation type="obsolete">Скидає комбінацію клавіш для перемикання між машиною і системою.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -1717,6 +1542,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>&amp;Автозахоплення клавіатури</translation>
+    </message>
+    <message>
+        <source>Reset host combination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key combination used as the host combination in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1920,7 +1753,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>New Host-Only Interface</source>
-        <translation>Новий лише головний інтерфейс</translation>
+        <translation type="obsolete">Новий лише головний інтерфейс</translation>
+    </message>
+    <message>
+        <source>Networking</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2074,6 +1911,189 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Help</source>
         <translation>&amp;Довідка</translation>
+    </message>
+</context>
+<context>
+    <name>UIHotKeyEditor</name>
+    <message>
+        <source>Left </source>
+        <translation>Лівий</translation>
+    </message>
+    <message>
+        <source>Right </source>
+        <translation>Правий</translation>
+    </message>
+    <message>
+        <source>Left Shift</source>
+        <translation>Лівий Shift</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation>Правий Shift</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation>Лівий Ctrl</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation>Правий Ctrl</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation>Лівий Alt</translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation>Правий Alt</translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation>Лівий WinKey</translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation>Правий WinKey</translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation>Клавіша Menu</translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation>Alt Gr</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>Caps Lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>Scroll Lock</translation>
+    </message>
+    <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation>&lt;клавіша_%1&gt;</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="obsolete">Pause</translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="obsolete">Print Screen</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="obsolete">F2</translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="obsolete">F3</translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="obsolete">F4</translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="obsolete">F5</translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="obsolete">F6</translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="obsolete">F7</translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="obsolete">F8</translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="obsolete">F9</translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="obsolete">F10</translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="obsolete">F12</translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="obsolete">F13</translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="obsolete">F14</translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="obsolete">F15</translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="obsolete">F16</translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="obsolete">F17</translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="obsolete">F18</translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="obsolete">F18</translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="obsolete">F20</translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="obsolete">F21</translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="obsolete">F22</translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="obsolete">F23</translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="obsolete">F24</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="obsolete">Num Lock</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="obsolete">Forward</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="obsolete">Back</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2310,7 +2330,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -2326,19 +2346,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>Більше образів CD/DVD…</translation>
+        <translation type="obsolete">Більше образів CD/DVD…</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Демонтувати пристрій CD/DVD</translation>
+        <translation type="obsolete">Демонтувати пристрій CD/DVD</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>Більше образів дискет…</translation>
+        <translation type="obsolete">Більше образів дискет…</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Демонтувати пристрій дискет</translation>
+        <translation type="obsolete">Демонтувати пристрій дискет</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -3938,6 +3958,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7150,12 +7174,22 @@ p, li { white-space: pre-wrap; }
         <comment>size suffix MBytes=1024KBytes</comment>
         <translation>МБ</translation>
     </message>
+    <message>
+        <source>Readonly</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multi-attach</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; — недопустимий код головної клавіши.</translation>
+        <translation type="obsolete">&apos;%1 (0x%2)&apos; — недопустимий код головної клавіши.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
@@ -7164,6 +7198,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Не вдається вилучити код &apos;%1&apos;.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7956,11 +7994,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вікно віртуальної машини зараз перемкнеться в &lt;b&gt;повноекранний&lt;/b&gt; режим. Ви можете повернутись назад до віконного режиму в будь-який момент натиснувши &lt;b&gt;%1&lt;/b&gt;. Майте на увазі, &lt;i&gt;Головна&lt;/i&gt; клавіша зараз — &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Майте на увазі, у повноекранному режимі панель головного меню не показується. Ви можете виправити це натиснувши &lt;b&gt;Головну клавішу+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вікно віртуальної машини зараз перемкнеться в &lt;b&gt;повноекранний&lt;/b&gt; режим. Ви можете повернутись назад до віконного режиму в будь-який момент натиснувши &lt;b&gt;%1&lt;/b&gt;. Майте на увазі, &lt;i&gt;Головна&lt;/i&gt; клавіша зараз — &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Майте на увазі, у повноекранному режимі панель головного меню не показується. Ви можете виправити це натиснувши &lt;b&gt;Головну клавішу+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вікно віртуальної машини зараз перемкнеться в &lt;b&gt;ціловикроєний&lt;/b&gt; режим. Ви можете повернутись назад до віконного режиму в будь-який момент натиснувши &lt;b&gt;%1&lt;/b&gt;. Майте на увазі, &lt;i&gt;Головна&lt;/i&gt; клавіша зараз — &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Майте на увазі, у ціловикроєному режимі панель головного меню не показується. Ви можете виправити це натиснувши &lt;b&gt;Головну клавішу+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вікно віртуальної машини зараз перемкнеться в &lt;b&gt;ціловикроєний&lt;/b&gt; режим. Ви можете повернутись назад до віконного режиму в будь-який момент натиснувши &lt;b&gt;%1&lt;/b&gt;. Майте на увазі, &lt;i&gt;Головна&lt;/i&gt; клавіша зараз — &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Майте на увазі, у ціловикроєному режимі панель головного меню не показується. Ви можете виправити це натиснувши &lt;b&gt;Головну клавішу+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -8037,7 +8075,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Майте на увазі, блок пам&apos;яті цього носія не будуть вилучені, таким чином буде можливо знову додати його до списку пізніше.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Майте на увазі, блок пам&apos;яті цього носія не будуть вилучені, таким чином буде можливо знову додати його до списку пізніше.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -8555,7 +8593,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Гостьові доповнення VirtualBox не з&apos;явились доступними на віртуальній машині, і без них неможливо використовувати спільні теки. Щоб використовувати їх усередині віртуальної машини, будь ласка, встановіть гостьові доповнення, якщо вони все ще не встановлені, або перевстановіть, якщо вони працюють некоректно, вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Машина&lt;/b&gt;. Якщо вони встановлені, але машина поки що неповністю запущена, то потрібно зачекати поки вона запуститься до кінця.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Гостьові доповнення VirtualBox не з&apos;явились доступними на віртуальній машині, і без них неможливо використовувати спільні теки. Щоб використовувати їх усередині віртуальної машини, будь ласка, встановіть гостьові доповнення, якщо вони все ще не встановлені, або перевстановіть, якщо вони працюють некоректно, вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Машина&lt;/b&gt;. Якщо вони встановлені, але машина поки що неповністю запущена, то потрібно зачекати поки вона запуститься до кінця.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
@@ -8579,7 +8617,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation>Ви збираєтесь вилучити пакунок розширення &lt;b&gt;%1&lt;/b&gt;. Упевнені, що бажаєте це зробити?</translation>
+        <translation type="obsolete">Ви збираєтесь вилучити пакунок розширення &lt;b&gt;%1&lt;/b&gt;. Упевнені, що бажаєте це зробити?</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -8595,7 +8633,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation>Вибачте, трапилась деяка випадкова помилка.</translation>
+        <translation type="obsolete">Вибачте, трапилась деяка випадкова помилка.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -8608,6 +8646,91 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Не вдалось під&apos;єднати носій дискет (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation type="unfinished">Перемкнути</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8743,7 +8866,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -8860,7 +8983,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>В&amp;ідновити</translation>
+        <translation type="obsolete">В&amp;ідновити</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -8939,6 +9062,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Manager</source>
+        <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Керування</translation>
     </message>
     <message>

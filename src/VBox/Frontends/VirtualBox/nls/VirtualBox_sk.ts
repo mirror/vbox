@@ -174,185 +174,6 @@
     </message>
 </context>
 <context>
-    <name>QIHotKeyEdit</name>
-    <message>
-        <source>Left </source>
-        <translation>vľavo</translation>
-    </message>
-    <message>
-        <source>Right </source>
-        <translation>vpravo</translation>
-    </message>
-    <message>
-        <source>Left Shift</source>
-        <translation>ľavý shift</translation>
-    </message>
-    <message>
-        <source>Right Shift</source>
-        <translation>pravý shift</translation>
-    </message>
-    <message>
-        <source>Left Ctrl</source>
-        <translation>ľavý ctrl</translation>
-    </message>
-    <message>
-        <source>Right Ctrl</source>
-        <translation>pravý ctrl</translation>
-    </message>
-    <message>
-        <source>Left Alt</source>
-        <translation>ľavý alt</translation>
-    </message>
-    <message>
-        <source>Right Alt</source>
-        <translation>pravý alt</translation>
-    </message>
-    <message>
-        <source>Left WinKey</source>
-        <translation>ľavý kláves Win</translation>
-    </message>
-    <message>
-        <source>Right WinKey</source>
-        <translation>pravý kláves Win</translation>
-    </message>
-    <message>
-        <source>Menu key</source>
-        <translation>kláves ponuky</translation>
-    </message>
-    <message>
-        <source>Alt Gr</source>
-        <translation>alt gr</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>caps lock</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>scroll lock</translation>
-    </message>
-    <message>
-        <source>&lt;key_%1&gt;</source>
-        <translation>&lt;kláves_%1&gt;</translation>
-    </message>
-    <message>
-        <source>Pause</source>
-        <translation>Pozastaviť</translation>
-    </message>
-    <message>
-        <source>Print Screen</source>
-        <translation>Urobiť snímku obrazovky</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation>F1</translation>
-    </message>
-    <message>
-        <source>F2</source>
-        <translation>F2</translation>
-    </message>
-    <message>
-        <source>F3</source>
-        <translation>F3</translation>
-    </message>
-    <message>
-        <source>F4</source>
-        <translation>F4</translation>
-    </message>
-    <message>
-        <source>F5</source>
-        <translation>F5</translation>
-    </message>
-    <message>
-        <source>F6</source>
-        <translation>F6</translation>
-    </message>
-    <message>
-        <source>F7</source>
-        <translation>F7</translation>
-    </message>
-    <message>
-        <source>F8</source>
-        <translation>F8</translation>
-    </message>
-    <message>
-        <source>F9</source>
-        <translation>F9</translation>
-    </message>
-    <message>
-        <source>F10</source>
-        <translation>F10</translation>
-    </message>
-    <message>
-        <source>F11</source>
-        <translation>F11</translation>
-    </message>
-    <message>
-        <source>F12</source>
-        <translation>F12</translation>
-    </message>
-    <message>
-        <source>F13</source>
-        <translation>F13</translation>
-    </message>
-    <message>
-        <source>F14</source>
-        <translation>F14</translation>
-    </message>
-    <message>
-        <source>F15</source>
-        <translation>F15</translation>
-    </message>
-    <message>
-        <source>F16</source>
-        <translation>F16</translation>
-    </message>
-    <message>
-        <source>F17</source>
-        <translation>F17</translation>
-    </message>
-    <message>
-        <source>F18</source>
-        <translation>F18</translation>
-    </message>
-    <message>
-        <source>F19</source>
-        <translation>F19</translation>
-    </message>
-    <message>
-        <source>F20</source>
-        <translation>F20</translation>
-    </message>
-    <message>
-        <source>F21</source>
-        <translation>F21</translation>
-    </message>
-    <message>
-        <source>F22</source>
-        <translation>F22</translation>
-    </message>
-    <message>
-        <source>F23</source>
-        <translation>F23</translation>
-    </message>
-    <message>
-        <source>F24</source>
-        <translation>F24</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>Num Lock</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>Dopredu</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Späť</translation>
-    </message>
-</context>
-<context>
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
@@ -555,7 +376,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>&amp;Vypnutie ACPI</translation>
+        <translation type="obsolete">&amp;Vypnutie ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -1614,6 +1435,10 @@
         <source>Extension package files (%1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsGeneral</name>
@@ -1685,20 +1510,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset Host Key</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation type="unfinished">&amp;Automaticky zachytávať klávesnicu</translation>
+    </message>
+    <message>
+        <source>Reset host combination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key combination used as the host combination in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1901,7 +1726,7 @@
         <translation>Názov</translation>
     </message>
     <message>
-        <source>New Host-Only Interface</source>
+        <source>Networking</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2056,6 +1881,189 @@
     <message>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Pomocník</translation>
+    </message>
+</context>
+<context>
+    <name>UIHotKeyEditor</name>
+    <message>
+        <source>Left </source>
+        <translation>vľavo</translation>
+    </message>
+    <message>
+        <source>Right </source>
+        <translation>vpravo</translation>
+    </message>
+    <message>
+        <source>Left Shift</source>
+        <translation>ľavý shift</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation>pravý shift</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation>ľavý ctrl</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation>pravý ctrl</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation>ľavý alt</translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation>pravý alt</translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation>ľavý kláves Win</translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation>pravý kláves Win</translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation>kláves ponuky</translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation>alt gr</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>caps lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>scroll lock</translation>
+    </message>
+    <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation>&lt;kláves_%1&gt;</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="obsolete">Pozastaviť</translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="obsolete">Urobiť snímku obrazovky</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="obsolete">F2</translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="obsolete">F3</translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="obsolete">F4</translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="obsolete">F5</translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="obsolete">F6</translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="obsolete">F7</translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="obsolete">F8</translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="obsolete">F9</translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="obsolete">F10</translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="obsolete">F11</translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="obsolete">F12</translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="obsolete">F13</translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="obsolete">F14</translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="obsolete">F15</translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="obsolete">F16</translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="obsolete">F17</translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="obsolete">F18</translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="obsolete">F19</translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="obsolete">F20</translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="obsolete">F21</translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="obsolete">F22</translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="obsolete">F23</translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="obsolete">F24</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="obsolete">Num Lock</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="obsolete">Dopredu</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="obsolete">Späť</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="unfinished">Žiadne</translation>
     </message>
 </context>
 <context>
@@ -2260,7 +2268,7 @@
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -3653,6 +3661,10 @@
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation type="unfinished">&lt;nobr&gt;Stav: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7502,7 +7514,7 @@ verzia %1</translation>
     <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>„%1 (0x%2)“ je neplatný kľúč hostiteľa.</translation>
+        <translation type="obsolete">„%1 (0x%2)“ je neplatný kľúč hostiteľa.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
@@ -7511,6 +7523,10 @@ verzia %1</translation>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Nie je možné zmazať kľúč „%1“.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9321,10 +9337,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9407,6 +9419,18 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9531,7 +9555,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>innotek VirtualBox</source>
@@ -9760,7 +9784,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>P&amp;okračovať</translation>
+        <translation type="obsolete">P&amp;okračovať</translation>
     </message>
     <message>
         <source>Resume</source>
@@ -9847,6 +9871,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>Manager</source>
+        <comment>Note: main window title which is pretended by the product name.</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
