@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,6 +35,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/file.h>
 #include <VBox/log.h>
 
 #include "VBoxManage.h"
@@ -1023,6 +1024,48 @@ int handleControlVM(HandlerArg *a)
                 else
                     RTMsgError("Teleportation failed. No error message available!");
             }
+        }
+        else if (!strcmp(a->argv[1], "screenshotpng"))
+        {
+            if (a->argc <= 2 || a->argc > 4)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+            int vrc;
+            uint32_t displayIdx = 0;
+            if (a->argc == 4)
+            {
+                vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &displayIdx);
+                if (vrc != VINF_SUCCESS)
+                {
+                    errorArgument("Error parsing display number '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
+            }
+            ComPtr<IDisplay> pDisplay;
+            CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
+            ULONG width, height, bpp;
+            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(displayIdx, &width, &height, &bpp));
+            com::SafeArray<BYTE> saScreenshot;
+            CHECK_ERROR_BREAK(pDisplay, TakeScreenShotPNGToArray(displayIdx, width, height, ComSafeArrayAsOutParam(saScreenshot)));
+            RTFILE pngFile = NIL_RTFILE;
+            vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to create file '%s'. rc=%Rrc", a->argv[2], vrc);
+                rc = E_FAIL;
+                break;
+            }
+            vrc = RTFileWrite(pngFile, saScreenshot.raw(), saScreenshot.size(), NULL);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to write screenshot to file '%s'. rc=%Rrc", a->argv[2], vrc);
+                rc = E_FAIL;
+            }
+            RTFileClose(pngFile);
         }
         else
         {
