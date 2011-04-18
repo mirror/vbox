@@ -11580,9 +11580,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         32-bpp buffer allocated by the caller and pointed to by @a address.
         A pixel consists of 4 bytes in order: B, G, R, 0.
 
-        <note>This API can be used only by the COM/XPCOM C++ API as it
-            requires pointer support. Use <link to="#takeScreenShotToArray" />
-            with other language bindings.
+        <note>This API can be used only locally by a VM process through the
+            COM/XPCOM C++ API as it requires pointer support. It is not
+            available for scripting langages, Java or any webservice clients.
+            Unless you are writing a new VM frontend use
+            <link to="#takeScreenShotToArray" />.
         </note>
 
         <result name="E_NOTIMPL">
