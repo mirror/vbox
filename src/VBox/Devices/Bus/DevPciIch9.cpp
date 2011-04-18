@@ -298,12 +298,6 @@ static int ich9pciDataWriteAddr(PICH9PCIGLOBALS pGlobals, PciAddress* pAddr,
 {
     int rc = VINF_SUCCESS;
 
-    if (pAddr->iRegister > 0xff)
-    {
-        LogRel(("PCI: attempt to write extended register: %x (%d) <- val\n", pAddr->iRegister, cb, val));
-        goto out;
-    }
-
     if (pAddr->iBus != 0)
     {
         if (pGlobals->aPciBus.cBridges)
@@ -402,14 +396,6 @@ static int ich9pciDataReadAddr(PICH9PCIGLOBALS pGlobals, PciAddress* pPciAddr, i
                                uint32_t *pu32, int rcReschedule)
 {
     int rc = VINF_SUCCESS;
-
-    if (pPciAddr->iRegister > 0xff)
-    {
-        LogRel(("PCI: attempt to read extended register: %x\n", pPciAddr->iRegister));
-        ich9pciNoMem(pu32, cb);
-        goto out;
-    }
-
 
     if (pPciAddr->iBus != 0)
     {
@@ -948,6 +934,9 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     Log(("ich9pciIORegionRegister: %s region %d size %d type %x\n",
          pPciDev->name, iRegion, cbRegion, enmType));
 
+    /* Make sure that we haven't marked this region as continuation of 64-bit region. */
+    Assert(pPciDev->Int.s.aIORegions[iRegion].type != 0xff);
+
     /*
      * Register the I/O region.
      */
@@ -956,6 +945,15 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     pRegion->size        = cbRegion;
     pRegion->type        = enmType;
     pRegion->map_func    = pfnCallback;
+
+    if ((enmType & PCI_ADDRESS_SPACE_BAR64) != 0)
+    {
+        AssertMsgReturn(iRegion  < 4,
+                        ("Region %d cannot be 64-bit\n", iRegion),
+                        VERR_INVALID_PARAMETER);
+        /* Mark next region as continuation of this one. */
+        pPciDev->Int.s.aIORegions[iRegion+1].type = 0xff;
+    }
 
     /* Set type in the PCI config space. */
     uint32_t u32Value   = ((uint32_t)enmType) & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH);
@@ -1910,11 +1908,20 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, uint8_t u8Val)
 {
     PCIIORegion * pRegion = &aDev->Int.s.aIORegions[iRegion];
-
-    int iRegionSize = pRegion->size;
+    int64_t iRegionSize = pRegion->size;
 
     Log3(("ich9pciWriteBarByte: region=%d off=%d val=%x size=%d\n",
          iRegion, iOffset, u8Val, iRegionSize));
+
+    if (iOffset > 3)
+        Assert((aDev->Int.s.aIORegions[iRegion].type & PCI_ADDRESS_SPACE_BAR64) != 0);
+
+    /* Check if we're writing to upper part of 64-bit BAR. */
+    if (aDev->Int.s.aIORegions[iRegion].type == 0xff)
+    {
+        ich9pciWriteBarByte(aDev, iRegion-1, iOffset+4, u8Val);
+        return;
+    }
 
     /* Region doesn't exist */
     if (iRegionSize == 0)
@@ -1923,7 +1930,7 @@ DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, 
     uint32_t uAddr = ich9pciGetRegionReg(iRegion) + iOffset;
     /* Region size must be power of two */
     Assert((iRegionSize & (iRegionSize - 1)) == 0);
-    uint8_t uMask = (((uint32_t)iRegionSize - 1) >> (iOffset*8) ) & 0xff;
+    uint8_t uMask = ((iRegionSize - 1) >> (iOffset*8) ) & 0xff;
 
     if (iOffset == 0)
     {
