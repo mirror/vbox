@@ -965,7 +965,6 @@ RTEXITCODE balloonCtrlMain(HandlerArg *a)
         /* VirtualBox callback unregistration. */
         if (g_pVBoxEventListener)
         {
-            HRESULT rc;
             if (!g_pEventSource.isNull())
                 CHECK_ERROR(g_pEventSource, UnregisterListener(g_pVBoxEventListener));
             g_pVBoxEventListener.setNull();
