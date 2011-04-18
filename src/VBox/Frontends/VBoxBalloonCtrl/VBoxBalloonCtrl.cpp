@@ -777,7 +777,7 @@ int vmListBuild()
                     {
                         serviceLogVerbose(("Machine \"%s\" is inaccessible, skipping\n",
                                            Utf8Str(strUUID).c_str()));
-                        break;
+                        continue;
                     }
 
                     MachineState_T machineState;
