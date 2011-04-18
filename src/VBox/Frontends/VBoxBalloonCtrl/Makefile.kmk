@@ -1,0 +1,29 @@
+# $Id$
+## @file
+# VBoxBalloonCtrl - Memory balloon control.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += VBoxBalloonCtrl
+ VBoxBalloonCtrl_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxBalloonCtrl_DEFS      += \
+	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ VBoxBalloonCtrl_DEFS.win   = _WIN32_WINNT=0x0500
+ VBoxBalloonCtrl_SOURCES    = \
+	VBoxBalloonCtrl.cpp
+
+include $(KBUILD_PATH)/subfooter.kmk
