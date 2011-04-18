@@ -72,7 +72,7 @@ static RTCRITSECT g_MapCritSect;
 static volatile bool g_fCanceled = false;
 
 static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 10 files. */
-static uint32_t      g_uHistoryFileTime = RT_SEC_1WEEK; /* Max 1 week per file. */
+static uint32_t      g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
 static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 
 static bool          g_fVerbose = false;
@@ -111,7 +111,12 @@ static const RTGETOPTDEF g_aOptions[] = {
     { "--balloon-lower-limit",  GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,   RTGETOPT_REQ_INT32 },
     /** Global max. balloon limit. */
     { "--balloon-max",          GETOPTDEF_BALLOONCTRL_BALLOONMAX,          RTGETOPT_REQ_INT32 },
-    { "--verbose",              'v',                                       RTGETOPT_REQ_NOTHING }
+    { "--verbose",              'v',                                       RTGETOPT_REQ_NOTHING },
+    { "--pidfile",              'P',                                       RTGETOPT_REQ_STRING },
+    { "--logfile",              'F',                                       RTGETOPT_REQ_STRING },
+    { "--logrotate",            'R',                                       RTGETOPT_REQ_UINT32 },
+    { "--logsize",              'S',                                       RTGETOPT_REQ_UINT64 },
+    { "--loginterval",          'I',                                       RTGETOPT_REQ_UINT32 }
 };
 
 unsigned long g_ulTimeoutMS = 30 * 1000; /* Default is 30 seconds timeout. */
@@ -1005,6 +1010,26 @@ void displayHelp()
             case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
                 pcszDescr = "Sets the balloon maximum limit in MB (0 MB).";
                 break;
+
+            case 'P':
+                pcszDescr = "Name of the PID file which is created when the daemon was started.";
+                break;
+
+            case 'F':
+                pcszDescr = "Name of file to write log to (no file).";
+                break;
+
+            case 'R':
+                pcszDescr = "Number of log files (0 disables log rotation).";
+                break;
+
+            case 'S':
+                pcszDescr = "Maximum size of a log file to trigger rotation (bytes).";
+                break;
+
+            case 'I':
+                pcszDescr = "Maximum time interval to trigger log rotation (seconds).";
+                break;
         }
 
         RTStrmPrintf(g_pStdErr, "%-23s%s\n", str.c_str(), pcszDescr);
@@ -1076,6 +1101,26 @@ int main(int argc, char *argv[])
 
             case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
                 g_ulMemoryBalloonMaxMB = ValueUnion.u32;
+                break;
+
+            case 'P':
+                pszPidFile = ValueUnion.psz;
+                break;
+
+            case 'F':
+                pszLogFile = ValueUnion.psz;
+                break;
+
+            case 'R':
+                g_cHistory = ValueUnion.u32;
+                break;
+
+            case 'S':
+                g_uHistoryFileSize = ValueUnion.u64;
+                break;
+
+            case 'I':
+                g_uHistoryFileTime = ValueUnion.u32;
                 break;
 
             default:
