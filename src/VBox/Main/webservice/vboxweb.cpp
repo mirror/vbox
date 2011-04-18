@@ -111,7 +111,7 @@ unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker th
 unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
 uint32_t                g_cHistory = 10;                // enable log rotation, 10 files
-uint32_t                g_uHistoryFileTime = RT_SEC_1WEEK; // max 1 week per file
+uint32_t                g_uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
 uint64_t                g_uHistoryFileSize = 100 * _1M; // max 100MB per file
 bool                    g_fVerbose = false;             // be verbose
 
@@ -249,7 +249,7 @@ void DisplayHelp()
                 break;
 
             case 'S':
-                pcszDescr = "Maximum size of a log file to trigger rotationi (bytes).";
+                pcszDescr = "Maximum size of a log file to trigger rotation (bytes).";
                 break;
 
             case 'I':
@@ -827,10 +827,8 @@ int main(int argc, char *argv[])
                 break;
 
             case 'F':
-            {
                 pszLogFile = ValueUnion.psz;
                 break;
-            }
 
             case 'R':
                 g_cHistory = ValueUnion.u32;
