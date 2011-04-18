@@ -415,10 +415,13 @@ bool machineIsRunning(MachineState_T enmState)
     switch (enmState)
     {
         case MachineState_Running:
+#if 0
+        /* Not required for ballooning. */
         case MachineState_Teleporting:
         case MachineState_LiveSnapshotting:
         case MachineState_Paused:
         case MachineState_TeleportingPausedVM:
+#endif
             return true;
         default:
             break;
