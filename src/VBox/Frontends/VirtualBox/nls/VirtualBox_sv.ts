@@ -152,185 +152,6 @@
     </message>
 </context>
 <context>
-    <name>QIHotKeyEdit</name>
-    <message>
-        <source>Left </source>
-        <translation>Vänster</translation>
-    </message>
-    <message>
-        <source>Right </source>
-        <translation>Höger</translation>
-    </message>
-    <message>
-        <source>Left Shift</source>
-        <translation>Vänster skift</translation>
-    </message>
-    <message>
-        <source>Right Shift</source>
-        <translation>Höger skift</translation>
-    </message>
-    <message>
-        <source>Left Ctrl</source>
-        <translation>Vänster Ctrl</translation>
-    </message>
-    <message>
-        <source>Right Ctrl</source>
-        <translation>Höger Ctrl</translation>
-    </message>
-    <message>
-        <source>Left Alt</source>
-        <translation>Vänster Alt</translation>
-    </message>
-    <message>
-        <source>Right Alt</source>
-        <translation>Höger Alt</translation>
-    </message>
-    <message>
-        <source>Left WinKey</source>
-        <translation>Vänster Win-tangent</translation>
-    </message>
-    <message>
-        <source>Right WinKey</source>
-        <translation>Höger Win-tangent</translation>
-    </message>
-    <message>
-        <source>Menu key</source>
-        <translation>Menytangent</translation>
-    </message>
-    <message>
-        <source>Alt Gr</source>
-        <translation>AltGr</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>CapsLock</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>ScrollLock</translation>
-    </message>
-    <message>
-        <source>&lt;key_%1&gt;</source>
-        <translation>&lt;tangent_%1&gt;</translation>
-    </message>
-    <message>
-        <source>Pause</source>
-        <translation>Paus</translation>
-    </message>
-    <message>
-        <source>Print Screen</source>
-        <translation>Print Screen</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation>F1</translation>
-    </message>
-    <message>
-        <source>F2</source>
-        <translation>F2</translation>
-    </message>
-    <message>
-        <source>F3</source>
-        <translation>F3</translation>
-    </message>
-    <message>
-        <source>F4</source>
-        <translation>F4</translation>
-    </message>
-    <message>
-        <source>F5</source>
-        <translation>F5</translation>
-    </message>
-    <message>
-        <source>F6</source>
-        <translation>F6</translation>
-    </message>
-    <message>
-        <source>F7</source>
-        <translation>F7</translation>
-    </message>
-    <message>
-        <source>F8</source>
-        <translation>F8</translation>
-    </message>
-    <message>
-        <source>F9</source>
-        <translation>F9</translation>
-    </message>
-    <message>
-        <source>F10</source>
-        <translation>F10</translation>
-    </message>
-    <message>
-        <source>F11</source>
-        <translation>F11</translation>
-    </message>
-    <message>
-        <source>F12</source>
-        <translation>F12</translation>
-    </message>
-    <message>
-        <source>F13</source>
-        <translation>F13</translation>
-    </message>
-    <message>
-        <source>F14</source>
-        <translation>F14</translation>
-    </message>
-    <message>
-        <source>F15</source>
-        <translation>F15</translation>
-    </message>
-    <message>
-        <source>F16</source>
-        <translation>F16</translation>
-    </message>
-    <message>
-        <source>F17</source>
-        <translation>F17</translation>
-    </message>
-    <message>
-        <source>F18</source>
-        <translation>F18</translation>
-    </message>
-    <message>
-        <source>F19</source>
-        <translation>F19</translation>
-    </message>
-    <message>
-        <source>F20</source>
-        <translation>F20</translation>
-    </message>
-    <message>
-        <source>F21</source>
-        <translation>F21</translation>
-    </message>
-    <message>
-        <source>F22</source>
-        <translation>F22</translation>
-    </message>
-    <message>
-        <source>F23</source>
-        <translation>F23</translation>
-    </message>
-    <message>
-        <source>F24</source>
-        <translation>F24</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>Num Lock</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>Framåt</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Bakåt</translation>
-    </message>
-</context>
-<context>
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
@@ -530,7 +351,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>ACPI S&amp;täng av</translation>
+        <translation type="obsolete">ACPI S&amp;täng av</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -1700,6 +1521,10 @@ p, li { white-space: pre-wrap; }
         <source>Extension package files (%1)</source>
         <translation>Tilläggspaketfiler (%1)</translation>
     </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished">Tillägg</translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsGeneral</name>
@@ -1772,11 +1597,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>Nollställ värdtangent</translation>
+        <translation type="obsolete">Nollställ värdtangent</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>Nollställer tangenten som används för värdtangent i fönstret för virtuella maskiner.</translation>
+        <translation type="obsolete">Nollställer tangenten som används för värdtangent i fönstret för virtuella maskiner.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -1785,6 +1610,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>Fånga tangentbord &amp;automatiskt</translation>
+    </message>
+    <message>
+        <source>Reset host combination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key combination used as the host combination in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1988,7 +1821,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>New Host-Only Interface</source>
-        <translation>Nytt endast-värd-gränssnitt</translation>
+        <translation type="obsolete">Nytt endast-värd-gränssnitt</translation>
+    </message>
+    <message>
+        <source>Networking</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2142,6 +1979,189 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Help</source>
         <translation>&amp;Hjälp</translation>
+    </message>
+</context>
+<context>
+    <name>UIHotKeyEditor</name>
+    <message>
+        <source>Left </source>
+        <translation>Vänster</translation>
+    </message>
+    <message>
+        <source>Right </source>
+        <translation>Höger</translation>
+    </message>
+    <message>
+        <source>Left Shift</source>
+        <translation>Vänster skift</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation>Höger skift</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation>Vänster Ctrl</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation>Höger Ctrl</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation>Vänster Alt</translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation>Höger Alt</translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation>Vänster Win-tangent</translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation>Höger Win-tangent</translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation>Menytangent</translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation>AltGr</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>CapsLock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>ScrollLock</translation>
+    </message>
+    <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation>&lt;tangent_%1&gt;</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="obsolete">Paus</translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="obsolete">Print Screen</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="obsolete">F1</translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="obsolete">F2</translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="obsolete">F3</translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="obsolete">F4</translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="obsolete">F5</translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="obsolete">F6</translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="obsolete">F7</translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="obsolete">F8</translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="obsolete">F9</translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="obsolete">F10</translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="obsolete">F11</translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="obsolete">F12</translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="obsolete">F13</translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="obsolete">F14</translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="obsolete">F15</translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="obsolete">F16</translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="obsolete">F17</translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="obsolete">F18</translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="obsolete">F19</translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="obsolete">F20</translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="obsolete">F21</translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="obsolete">F22</translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="obsolete">F23</translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="obsolete">F24</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="obsolete">Num Lock</translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="obsolete">Framåt</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="obsolete">Bakåt</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2378,7 +2398,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -4157,6 +4177,10 @@ serial ports</comment>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Tillstånd: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7709,7 +7733,7 @@ Version %1</translation>
     <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; är en ogiltig värdtangentkod.</translation>
+        <translation type="obsolete">&apos;%1 (0x%2)&apos; är en ogiltig värdtangentkod.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
@@ -7718,6 +7742,10 @@ Version %1</translation>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Kan inte ta bort tangenten \&quot;%1\&quot;.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9257,7 +9285,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation>Beklagar, ett allmänt fel inträffade.</translation>
+        <translation type="obsolete">Beklagar, ett allmänt fel inträffade.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9343,6 +9371,18 @@ Version %1</translation>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
         <translation>Tilläggspaketet &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; har nu installerats.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9486,7 +9526,7 @@ Version %1</translation>
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -9607,7 +9647,7 @@ Version %1</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Å&amp;teruppta</translation>
+        <translation type="obsolete">Å&amp;teruppta</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -9682,6 +9722,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Manager</source>
+        <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Hanterare</translation>
     </message>
     <message>
