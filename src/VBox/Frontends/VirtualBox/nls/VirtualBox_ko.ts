@@ -1427,7 +1427,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">확장</translation>
+        <translation>확장</translation>
     </message>
 </context>
 <context>
@@ -1513,11 +1513,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 키 조합 초기화</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 창에 사용하는 호스트 키 조합을 초기화합니다.</translation>
     </message>
 </context>
 <context>
@@ -1725,7 +1725,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워킹</translation>
     </message>
 </context>
 <context>
@@ -2061,7 +2061,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
 </context>
 <context>
@@ -3961,7 +3961,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;%1&lt;/b&gt;을(를) 설치해야 합니다. VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.</translation>
     </message>
 </context>
 <context>
@@ -7147,7 +7147,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos;은(는) 올바르지 않은 호스트 키 조합입니다.</translation>
     </message>
 </context>
 <context>
@@ -8627,15 +8627,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>충돌을 방지하기 위하여 64비트 윈도에서는 가상 머신에 속해 있는 모든 파일을 삭제할 수 없습니다. 곧 수정하겠습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;부모 폴더 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 안에 머신 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;부모 폴더가 존재하는지 여부 및 머신 폴더를 만들 권한이 있는지 여부를 확인하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 설치해야 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
