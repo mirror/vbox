@@ -706,27 +706,20 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
 
 #ifdef VBOXSERVICE_TOOLBOX
 /**
- * Constructs the argv command line of a VBoxService program
- * by first appending the full path of VBoxService along  with the given
- * tool name (e.g. "vbox_cat") + the tool's actual command line parameters.
+ * Constructs the argv command line by resolving environment variables
+ * and relative paths.
  *
  * @return IPRT status code.
- * @param  pszFileName      File name (full path) of this process.
- * @param  papszArgs        Original argv command line from the host.
+ * @param  pszArgv0         First argument (argv0), either original or modified version.
+ * @param  papszArgs        Original argv command line from the host, starting at argv[1].
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
+static int VBoxServiceControlExecPrepareArgv(const char *pszArgv0,
                                              const char * const *papszArgs, char ***ppapszArgv)
 {
-    AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszArgv0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
-
-/** @todo r=bird: Obvious misdesign: argv[0] does NOT have to be the same as
- *        the full path to the executable file name!!   I thought we went thru
- *        all that when you did the VBoxService toolbox stuff, i.e. how busybox
- *        works? */
 
 /** @todo RTGetOptArgvToString converts to MSC quoted string, while
  *        RTGetOptArgvFromString takes bourne shell according to the docs...
@@ -736,7 +729,7 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
     int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
     if (   RT_SUCCESS(rc)
-        && pszArgs) /**< @todo pszArg will never be NULL on a successfull return. Perhaps *pszArgs was meant? */
+        && *pszArgs)
     {
         /*
          * Construct the new command line by appending the actual
@@ -747,7 +740,7 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
         if (RT_SUCCESS(rc))
         {
             char *pszNewArgs;
-            if (RTStrAPrintf(&pszNewArgs, "%s %s", pszFileName, szArgsExp))
+            if (RTStrAPrintf(&pszNewArgs, "%s %s", pszArgv0, szArgsExp))
             {
 #ifdef DEBUG
                 VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecPrepareArgv: %s\n",
@@ -765,7 +758,7 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
     {
         int iNumArgsIgnored;
         rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
-                                    pszFileName, NULL /* Use standard separators. */);
+                                    pszArgv0, NULL /* Use standard separators. */);
     }
     return rc;
 }
@@ -828,7 +821,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd, papszArgs, &papszArgsExp);
+            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd /* argv0 */, &papszArgs[1], &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
@@ -848,7 +841,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
-        rc = VBoxServiceControlExecPrepareArgv(szExecExp, papszArgs, &papszArgsExp);
+        rc = VBoxServiceControlExecPrepareArgv(szExecExp /* argv0 */, &papszArgs[1], &papszArgsExp);
         if (RT_SUCCESS(rc))
         {
             uint32_t uProcFlags = 0;
@@ -869,7 +862,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
             char *pszCmdLine;
- 	    rc = RTGetOptArgvToString(&pszCmdLine, papszArgsExp, 0 /* Default */);
+            rc = RTGetOptArgvToString(&pszCmdLine, papszArgsExp, 0 /* Default */);
             AssertRC(rc);
             VBoxServiceVerbose(3, "ControlExec: Executing: %s %s\n",
                                szExecExp, pszCmdLine);
