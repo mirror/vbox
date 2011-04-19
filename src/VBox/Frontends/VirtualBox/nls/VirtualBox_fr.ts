@@ -1157,7 +1157,7 @@
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Extensions</translation>
+        <translation>Extensions</translation>
     </message>
 </context>
 <context>
@@ -1235,11 +1235,11 @@
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialiser les touches hôte</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Réinitialise la combinaison de touches utilisée comme touches hôte dans la machine virtuelle.</translation>
     </message>
 </context>
 <context>
@@ -1447,7 +1447,7 @@
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Réseau</translation>
     </message>
 </context>
 <context>
@@ -1784,7 +1784,7 @@
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">Aucun</translation>
+        <translation>Aucune</translation>
     </message>
 </context>
 <context>
@@ -3228,7 +3228,7 @@
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 est active pour cette machine virtuelle, mais ceci nécessite que l&apos;extension &lt;b&gt;%1&lt;/b&gt; soit installée. Veuillez installer l&apos;extension à partir du site de téléchargement VirtualBox. Vous pourrez alors réactiver USB 2.0. En attendant, la fonctionnalité sera désactivée si vous n&apos;annulez pas les changements actuels.</translation>
     </message>
 </context>
 <context>
@@ -5455,7 +5455,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; est une combinaison de touches hôte invalide.</translation>
     </message>
 </context>
 <context>
@@ -6811,15 +6811,15 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>La suppression de tous les fichiers d&apos;une machine virtuelle n&apos;est pas actuellement possible sur les systèmes Windows 64bits. Ceci sera rectifié dans la version suivante.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossible de créer le dossier machine &lt;b&gt;%1&lt;/b&gt; dans le dossier parent &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Veuillez vérifier que le parent existe réellement et que vous avez l&apos;autorisation d&apos;y créer des dossiers.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 est active pour cette machine virtuelle, mais ceci nécessite que l&apos;extension &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; soit installée.&lt;/p&gt;&lt;p&gt;Veuillez installer l&apos;extension à partir du site de téléchargement VirtualBox. Vous pourrez alors réactiver USB 2.0. En attendant, la fonctionnalité sera désactivée si vous n&apos;annulez pas les changements actuels.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
