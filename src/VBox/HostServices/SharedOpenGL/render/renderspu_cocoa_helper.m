@@ -1457,7 +1457,7 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     int b = [win retainCount];
 //    for (; b > 1; --b)
 //        [win performSelector:@selector(release)]
-    [win performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
+    [win performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:YES];
 //        [win release];
 
     /* There seems to be a bug in the performSelector method which is called in
@@ -1466,7 +1466,7 @@ void cocoaViewDestroy(NativeNSViewRef pView)
      * decremented. */
     int a = [pView retainCount];
 //    for (; a > 1; --a)
-    [pView performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
+    [pView performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:YES];
 //        [pView release];
 
     [pPool release];
