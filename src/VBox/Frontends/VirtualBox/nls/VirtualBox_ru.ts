@@ -1471,7 +1471,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Плагины</translation>
+        <translation>Плагины</translation>
     </message>
 </context>
 <context>
@@ -1557,11 +1557,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить хост-комбинацию</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбрасывает назначенную хост-комбинацию в значение &apos;не установлено&apos;.</translation>
     </message>
 </context>
 <context>
@@ -1769,7 +1769,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Сеть</translation>
     </message>
 </context>
 <context>
@@ -2085,7 +2085,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Не установлено</translation>
     </message>
 </context>
 <context>
@@ -4076,7 +4076,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>в настоящий момент, поддержка USB 2.0 активна для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;%1&lt;/b&gt;. Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.</translation>
     </message>
 </context>
 <context>
@@ -7363,7 +7363,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; - неверная хост-комбинация.</translation>
     </message>
 </context>
 <context>
@@ -8880,15 +8880,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаление файлов, принадлежащих виртуальной машине, в данный запрещено для ОС Windows/x64 (во избежание сбоя самой ОС). Данная проблема будет исправлена в будущем релизе.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось создать директорию машины &lt;b&gt;%1&lt;/b&gt; в родительском каталоге &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста, проверьте факт существования родительского каталога и наличие у Вас доступа для создания в нём папок и файлов.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;В настоящий момент, поддержка USB 2.0 включена для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
