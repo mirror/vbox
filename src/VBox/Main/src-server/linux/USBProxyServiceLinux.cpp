@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@ USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost)
       mWakeupPipeW(NIL_RTFILE), mUsingUsbfsDevices(true /* see init */),
       mUdevPolls(0), mpWaiter(NULL)
 {
-    LogFlowThisFunc(("aHost=%p:{%s}\n", aHost));
+    LogFlowThisFunc(("aHost=%p\n", aHost));
 }
 
 
