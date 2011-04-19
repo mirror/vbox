@@ -39,6 +39,11 @@
       </listitem>
 
       <listitem>
+        <para>VBoxBalloonCtrl: new service for automatic dynamic adjustment
+          of the balloon size for running VMs</para>
+      </listitem>
+
+      <listitem>
         <para>Settings: machine names and snapshot names are not allowed to
           be a valid UUID</para>
       </listitem>
