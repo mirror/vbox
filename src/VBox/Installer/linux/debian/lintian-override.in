@@ -29,6 +29,7 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VirtualBox.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
 %VERPKG%: binary-without-manpage usr/bin/VBox
+%VERPKG%: binary-without-manpage usr/bin/VBoxBalloonCtrl
 %VERPKG%: binary-without-manpage usr/bin/VBoxHeadless
 %VERPKG%: binary-without-manpage usr/bin/VBoxManage
 %VERPKG%: binary-without-manpage usr/bin/VBoxSDL
@@ -36,6 +37,7 @@
 %VERPKG%: binary-without-manpage usr/bin/VBoxVRDP
 %VERPKG%: binary-without-manpage usr/bin/VirtualBox
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
+%VERPKG%: binary-without-manpage usr/bin/vboxballoonctrl
 %VERPKG%: binary-without-manpage usr/bin/vboxheadless
 %VERPKG%: binary-without-manpage usr/bin/vboxmanage
 %VERPKG%: binary-without-manpage usr/bin/vboxsdl
