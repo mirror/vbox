@@ -288,12 +288,9 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
                     pPipeBuf = &pData->stdErr;
                     break;
 
-                case 0: /* StdIn */
-                    pPipeBuf = &pData->stdOut;
-                    break;
-
+                case 0: /* StdOut */
                 default:
-                    AssertMsgFailed(("Invalid pipe buffer ID %u specified!\n", uHandleId));
+                    pPipeBuf = &pData->stdOut;
                     break;
             }
             AssertPtr(pPipeBuf);
