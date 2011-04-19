@@ -394,6 +394,8 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTUuidFromStr,
     (PFNRT)RTStrDupTag,
     (PFNRT)RTStrFree,
+    (PFNRT)RTStrCopy,
+    (PFNRT)RTStrNCmp,
     /* VBoxNetAdp */
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
