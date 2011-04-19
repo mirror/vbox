@@ -681,14 +681,6 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
             /* We just want to execute VBoxService (no toolbox). */
             pszExecResolved = RTStrDup(szVBoxService);
         }
-#ifdef VBOXSERVICE_TOOLBOX
-        else if (RTStrStr(pszFileName, "vbox_") == pszFileName)
-        {
-            /* We want to use the internal toolbox (all internal
-             * tools are starting with "vbox_" (e.g. "vbox_cat"). */
-            pszExecResolved = RTStrDup(szVBoxService);
-        }
-#endif
         else /* Nothing to resolve, copy original. */
             pszExecResolved = RTStrDup(pszFileName);
         AssertPtr(pszExecResolved);
@@ -834,14 +826,27 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     }
 #endif /* RT_OS_WINDOWS */
 
-    /*
-     * Do the environment variables expansion on executable and arguments.
-     */
-    rc = VBoxServiceControlExecResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
+#ifdef VBOXSERVICE_TOOLBOX
+    if (RTStrStr(pszExec, "vbox_") == pszExec)
+    {
+        /* We want to use the internal toolbox (all internal
+         * tools are starting with "vbox_" (e.g. "vbox_cat"). */
+        rc = VBoxServiceControlExecResolveExecutable(VBOXSERVICE_NAME, szExecExp, sizeof(szExecExp));
+    }
+    else
+    {
+#endif
+        /*
+         * Do the environment variables expansion on executable and arguments.
+         */
+        rc = VBoxServiceControlExecResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
+#ifdef VBOXSERVICE_TOOLBOX
+    }
+#endif
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
-        rc = VBoxServiceControlExecPrepareArgv(szExecExp /* argv0 */, &papszArgs[1], &papszArgsExp);
+        rc = VBoxServiceControlExecPrepareArgv(papszArgs[0], &papszArgs[1], &papszArgsExp);
         if (RT_SUCCESS(rc))
         {
             uint32_t uProcFlags = 0;
