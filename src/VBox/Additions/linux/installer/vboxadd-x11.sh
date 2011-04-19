@@ -488,7 +488,7 @@ setup()
                 # This is normally silent.  I have purposely not redirected
                 # error output as I want to know if something goes wrong,
                 # particularly if the command syntax ever changes.
-                udevadm trigger --action=change --subsystem-match=misc --subsystem-match=input
+                udevadm trigger --action=change --subsystem-match=misc
             fi
             test -d /usr/share/X11/xorg.conf.d &&
                 install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/share/X11/xorg.conf.d
