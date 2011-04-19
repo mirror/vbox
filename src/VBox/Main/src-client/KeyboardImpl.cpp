@@ -240,14 +240,16 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
  */
 STDMETHODIMP Keyboard::PutCAD()
 {
-    static com::SafeArray<LONG> cadSequence(6);
+    static com::SafeArray<LONG> cadSequence(8);
 
     cadSequence[0] = 0x1d; // Ctrl down
     cadSequence[1] = 0x38; // Alt down
-    cadSequence[2] = 0x53; // Del down
-    cadSequence[3] = 0xd3; // Del up
-    cadSequence[4] = 0xb8; // Alt up
-    cadSequence[5] = 0x9d; // Ctrl up
+    cadSequence[2] = 0xe0; // Del down 1
+    cadSequence[3] = 0x53; // Del down 2
+    cadSequence[4] = 0xe0; // Del up 1
+    cadSequence[5] = 0xd3; // Del up 2
+    cadSequence[6] = 0xb8; // Alt up
+    cadSequence[7] = 0x9d; // Ctrl up
 
     return PutScancodes(ComSafeArrayAsInParam(cadSequence), NULL);
 }
