@@ -5885,7 +5885,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
 
         checksum=0;
         for (i=0; i<15; i++) checksum+=read_byte(ebda_seg, (&EbdaData->ata.dpte) + i);
-        checksum = ~checksum;
+        checksum = -checksum;
         write_byte(ebda_seg, &EbdaData->ata.dpte.checksum, checksum);
         }
 
@@ -5933,7 +5933,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
 
         checksum=0;
         for (i=30; i<64; i++) checksum+=read_byte(DS, SI + i);
-        checksum = ~checksum;
+        checksum = -checksum;
         write_byte(DS, SI+(Bit16u)&Int13DPT->checksum, checksum);
         }
 
@@ -6233,7 +6233,7 @@ int13_cdrom_rme_end:
 
         checksum=0;
         for (i=0; i<15; i++) checksum+=read_byte(ebda_seg, (&EbdaData->ata.dpte) + i);
-        checksum = ~checksum;
+        checksum = -checksum;
         write_byte(ebda_seg, &EbdaData->ata.dpte.checksum, checksum);
         }
 
@@ -6281,7 +6281,7 @@ int13_cdrom_rme_end:
 
         checksum=0;
         for (i=30; i<64; i++) checksum+=read_byte(DS, SI + i);
-        checksum = ~checksum;
+        checksum = -checksum;
         write_byte(DS, SI+(Bit16u)&Int13DPT->checksum, checksum);
         }
 
