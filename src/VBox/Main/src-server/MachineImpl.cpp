@@ -3377,7 +3377,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                    DeviceType_T aType,
                                    IMedium *aMedium)
 {
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aType=%d aId=\"%ls\"\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aType=%d aMedium=%p\n",
                      aControllerName, aControllerPort, aDevice, aType, aMedium));
 
     CheckComArgStrNotEmptyOrNull(aControllerName);
