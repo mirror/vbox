@@ -5819,6 +5819,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Eb,Ib"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Eb,Ib"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -5882,6 +5883,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,Ib"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,Ib"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -6247,6 +6249,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Eb,1"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Eb,1"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -6303,6 +6306,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,1"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,1"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -6431,6 +6435,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Eb,CL"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Eb,CL"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc, grr. */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
