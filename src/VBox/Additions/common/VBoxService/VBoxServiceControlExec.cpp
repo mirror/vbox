@@ -759,8 +759,6 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszArgv0,
                                     pszNewArgs ? pszNewArgs : "", NULL /* Use standard separators. */);
     }
 
-VBoxServiceVerbose(3, "args: %s\n", pszNewArgs);
-
     if (pszNewArgs)
         RTStrFree(pszNewArgs);
     return rc;
@@ -878,12 +876,9 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
             VBoxServiceVerbose(3, "Command: %s\n", szExecExp);
-            for (size_t i = 0; papszArgs[i]; i++)
-                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgs[i]);
+            for (size_t i = 0; papszArgsExp[i]; i++)
+                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
 #endif
-
-    VBoxServiceVerbose(3, "%p %p %p\n", papszArgs, papszArgs[0], papszArgs[1]);
-
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,
