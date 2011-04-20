@@ -109,7 +109,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
 
     if (!ppReq || cbSize < sizeof (VMMDevRequestHeader))
     {
-        dprintf(("VbglGRAlloc: Invalid parameter: ppReq = %p, cbSize = %d\n", ppReq, cbSize));
+        dprintf(("VbglGRAlloc: Invalid parameter: ppReq = %p, cbSize = %u\n", ppReq, cbSize));
         return VERR_INVALID_PARAMETER;
     }
 
