@@ -29,6 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include <iprt/stream.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
@@ -316,6 +317,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uin
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+    RTPrintf("vbglR3DoIOCtl: data = 0x%p, %u, msg = %u\n", pvData, cbData, sizeof(Msg));
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
