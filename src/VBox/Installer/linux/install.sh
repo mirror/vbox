@@ -393,6 +393,8 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBalloonCtrl
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
     ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
+    # Unity and Nautilus seem to look here for their icons
+    ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
     ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
     ln -sf $INSTALLATION_DIR/virtualbox.xml /usr/share/mime/packages/virtualbox.xml
     ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp

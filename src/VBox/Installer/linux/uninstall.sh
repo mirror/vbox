@@ -98,6 +98,7 @@ rm -f \
   /usr/bin/VBoxTunctl \
   /usr/bin/virtualbox \
   /usr/share/pixmaps/VBox.png \
+  /usr/share/pixmaps/virtualbox.png \
   /usr/share/applications/virtualbox.desktop \
   /usr/share/mime/packages/virtualbox.xml \
   /usr/bin/rdesktop-vrdp \
