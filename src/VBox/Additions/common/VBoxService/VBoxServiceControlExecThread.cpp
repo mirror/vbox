@@ -303,7 +303,7 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
 
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbRead;
+                uint32_t cbRead = cbSize;
                 rc = VBoxServicePipeBufRead(pPipeBuf, pBuf, cbSize, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
@@ -314,7 +314,10 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
         }
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
-        RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+
+        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     return rc;
 }
@@ -373,8 +376,9 @@ void VBoxServiceControlExecThreadsShutdown(void)
             pNode = pNext;
         }
 
-        rc = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
-        AssertRC(rc);
+        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     RTCritSectDelete(&g_GuestControlExecThreadsCritSect);
 }
