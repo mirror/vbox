@@ -1940,7 +1940,7 @@ static VBOXSTRICTRC iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_
         case IEMMODE_32BIT:
         {
             RTGCPTR32 GCPtrFirst32 = (RTGCPTR32)*pGCPtrMem;
-            RTGCPTR32 GCPtrLast32  = GCPtrFirst32 + cbMem - 1;
+            RTGCPTR32 GCPtrLast32  = GCPtrFirst32 + (uint32_t)cbMem - 1;
 
             Assert(pSel->Attr.n.u1Present);
             Assert(pSel->Attr.n.u1DescType);
