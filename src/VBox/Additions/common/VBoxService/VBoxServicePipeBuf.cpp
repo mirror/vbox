@@ -118,6 +118,42 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 }
 
 
+int VBoxServicePipeBufPeek(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                           uint8_t *pbBuffer, uint32_t cbBuffer,
+                           uint32_t cbOffset,
+                           uint32_t *pcbRead, uint32_t *pcbLeft)
+{
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pbBuffer, VERR_INVALID_POINTER);
+    AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&pBuf->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pBuf->cbSize >= pBuf->cbOffset);
+        if (cbOffset > pBuf->cbSize)
+            cbOffset = pBuf->cbSize;
+        uint32_t cbToRead = pBuf->cbSize - cbOffset;
+        if (cbToRead > cbBuffer)
+            cbToRead = cbBuffer;
+        if (cbToRead)
+        {
+            memcpy(pbBuffer, pBuf->pbData + cbOffset, cbToRead);
+            pbBuffer[cbBuffer - 1] = '\0';
+        }
+        if (pcbRead)
+            *pcbRead = cbToRead;
+        if (pcbLeft)
+            *pcbLeft = pBuf->cbSize - (cbOffset + cbToRead);
+
+        int rc2 = RTCritSectLeave(&pBuf->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
 /**
  * Writes data into a specififed pipe buffer.
  *
@@ -221,12 +257,13 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 
                 RTSemEventSignal(pBuf->hEventSem);
             }
-            int rc2 = RTCritSectLeave(&pBuf->CritSect);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
         }
         else
             rc = VERR_BAD_PIPE;
+
+        int rc2 = RTCritSectLeave(&pBuf->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     return rc;
 }
@@ -376,15 +413,11 @@ int VBoxServicePipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled)
 
 int VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVAL cMillies)
 {
-    int rc = RTCritSectEnter(&pBuf->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTSemEventWait(pBuf->hEventSem, cMillies);
-        int rc2 = RTCritSectLeave(&pBuf->CritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-    return rc;
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+
+    /* Don't enter the critical section here; someone else could signal the event semaphore
+     * and this will deadlock then ... */
+    return RTSemEventWait(pBuf->hEventSem, cMillies);
 }
 
 

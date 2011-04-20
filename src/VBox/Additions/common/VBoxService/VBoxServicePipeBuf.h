@@ -23,6 +23,10 @@
 int  VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe);
 int  VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                             uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+int VBoxServicePipeBufPeek(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                           uint8_t *pbBuffer, uint32_t cbBuffer,
+                           uint32_t cbOffset,
+                           uint32_t *pcbRead, uint32_t *pcbLeft);
 int  VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                   uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
 int  VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe,
