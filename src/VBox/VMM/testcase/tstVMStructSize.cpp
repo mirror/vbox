@@ -48,6 +48,7 @@
 #include "VMInternal.h"
 #include "CSAMInternal.h"
 #include "EMInternal.h"
+#include "IEMInternal.h"
 #include "REMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
@@ -210,6 +211,7 @@ int main()
     CHECK_PADDING_VM(64, patm);
     CHECK_PADDING_VM(64, csam);
     CHECK_PADDING_VM(64, em);
+    /*CHECK_PADDING_VM(64, iem);*/
     CHECK_PADDING_VM(64, tm);
     CHECK_PADDING_VM(64, dbgf);
     CHECK_PADDING_VM(64, ssm);
@@ -221,6 +223,7 @@ int main()
     CHECK_PADDING_VMCPU(64, cpum);
     CHECK_PADDING_VMCPU(64, hwaccm);
     CHECK_PADDING_VMCPU(64, em);
+    CHECK_PADDING_VMCPU(64, iem);
     CHECK_PADDING_VMCPU(64, trpm);
     CHECK_PADDING_VMCPU(64, tm);
     CHECK_PADDING_VMCPU(64, vmm);

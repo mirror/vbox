@@ -357,6 +357,10 @@ int cpu_exec(CPUState *env1)
                         }
                         /* Clear CPU_INTERRUPT_SINGLE_INSTR and leave CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT set. */
                         ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_SINGLE_INSTR);
+#ifdef IEM_VERIFICATION_MODE
+                        env->exception_index = ret = EXCP_SINGLE_INSTR;
+                        cpu_loop_exit();
+#endif
                     }
 
                     RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
