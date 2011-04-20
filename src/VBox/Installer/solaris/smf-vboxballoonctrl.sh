@@ -60,7 +60,7 @@ case $VW_OPT in
         [ -z "$VW_LOWERLIMIT" ] && VW_LOWERLIMIT=64
         [ -z "$VW_ROTATE" ] && VW_ROTATE=10
         [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
-        [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=604800
+        [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=86400
         exec su - "$VW_USER" -c "/opt/VirtualBox/VBoxBalloonCtrl --background --interval \"$VW_INTERVAL\" --balloon-inc \"$VW_INCREMENT\" --balloon-dec \"$VW_DECREMENT\" --balloon-lower-limit \"$VW_LOWERLIMIT\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
         VW_EXIT=$?

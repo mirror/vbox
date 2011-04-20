@@ -63,7 +63,7 @@ case $VW_OPT in
         [ -z "$VW_KEEPALIVE" ] && VW_KEEPALIVE=100
         [ -z "$VW_ROTATE" ] && VW_ROTATE=10
         [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
-        [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=604800
+        [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=86400
         exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --keepalive \"$VW_KEEPALIVE\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
         VW_EXIT=$?
