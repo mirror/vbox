@@ -6488,6 +6488,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,CL"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,CL"); break;
         case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
