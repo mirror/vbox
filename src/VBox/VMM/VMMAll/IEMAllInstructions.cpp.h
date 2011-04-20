@@ -7712,7 +7712,6 @@ FNIEMOP_DEF(iemOp_std)
 FNIEMOP_DEF(iemOp_Grp4)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
-    PCIEMOPUNARYSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
         case 0:
