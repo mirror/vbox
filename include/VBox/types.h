@@ -263,32 +263,39 @@ public:
     }
 
     /** Getter that VBOXSTRICTRC_VAL can use. */
-    int32_t getValue() const                    { return m_rc; }
+    int32_t getValue() const                        { return m_rc; }
 
     /** @name Comparison operators
      * @{ */
-    bool operator==(int32_t rc) const           { return m_rc == rc; }
-    bool operator!=(int32_t rc) const           { return m_rc != rc; }
-    bool operator<=(int32_t rc) const           { return m_rc <= rc; }
-    bool operator>=(int32_t rc) const           { return m_rc >= rc; }
-    bool operator<(int32_t rc) const            { return m_rc < rc; }
-    bool operator>(int32_t rc) const            { return m_rc > rc; }
+    bool operator==(int32_t rc) const               { return m_rc == rc; }
+    bool operator!=(int32_t rc) const               { return m_rc != rc; }
+    bool operator<=(int32_t rc) const               { return m_rc <= rc; }
+    bool operator>=(int32_t rc) const               { return m_rc >= rc; }
+    bool operator<(int32_t rc) const                { return m_rc <  rc; }
+    bool operator>(int32_t rc) const                { return m_rc >  rc; }
+
+    bool operator==(const VBOXSTRICTRC &rRc) const  { return m_rc == rRc.m_rc; }
+    bool operator!=(const VBOXSTRICTRC &rRc) const  { return m_rc != rRc.m_rc; }
+    bool operator<=(const VBOXSTRICTRC &rRc) const  { return m_rc <= rRc.m_rc; }
+    bool operator>=(const VBOXSTRICTRC &rRc) const  { return m_rc >= rRc.m_rc; }
+    bool operator<(const VBOXSTRICTRC &rRc) const   { return m_rc <  rRc.m_rc; }
+    bool operator>(const VBOXSTRICTRC &rRc) const   { return m_rc >  rRc.m_rc; }
     /** @} */
 
     /** Special automatic cast for RT_SUCCESS_NP. */
-    operator RTErrStrictType2() const           { return RTErrStrictType2(m_rc); }
+    operator RTErrStrictType2() const               { return RTErrStrictType2(m_rc); }
 
 private:
     /** @name Constructors that will prevent some of the bad types.
      * @{ */
-    VBOXSTRICTRC(uint8_t  rc) : m_rc(-999)      { NOREF(rc); }
-    VBOXSTRICTRC(uint16_t rc) : m_rc(-999)      { NOREF(rc); }
-    VBOXSTRICTRC(uint32_t rc) : m_rc(-999)      { NOREF(rc); }
-    VBOXSTRICTRC(uint64_t rc) : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(uint8_t  rc) : m_rc(-999)          { NOREF(rc); }
+    VBOXSTRICTRC(uint16_t rc) : m_rc(-999)          { NOREF(rc); }
+    VBOXSTRICTRC(uint32_t rc) : m_rc(-999)          { NOREF(rc); }
+    VBOXSTRICTRC(uint64_t rc) : m_rc(-999)          { NOREF(rc); }
 
-    VBOXSTRICTRC(int8_t rc)   : m_rc(-999)      { NOREF(rc); }
-    VBOXSTRICTRC(int16_t rc)  : m_rc(-999)      { NOREF(rc); }
-    VBOXSTRICTRC(int64_t rc)  : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(int8_t rc)   : m_rc(-999)          { NOREF(rc); }
+    VBOXSTRICTRC(int16_t rc)  : m_rc(-999)          { NOREF(rc); }
+    VBOXSTRICTRC(int64_t rc)  : m_rc(-999)          { NOREF(rc); }
     /** @} */
 };
 #else
