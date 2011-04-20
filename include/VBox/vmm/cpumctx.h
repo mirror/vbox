@@ -202,12 +202,14 @@ typedef struct CPUMCTX
      * @{ */
     union
     {
+        uint8_t         dil;
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
     };
     union
     {
+        uint8_t         sil;
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
@@ -220,24 +222,28 @@ typedef struct CPUMCTX
     };
     union
     {
+        uint8_t         al;
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
     };
     union
     {
+        uint8_t         bl;
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
     };
     union
     {
+        uint8_t         dl;
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
     };
     union
     {
+        uint8_t         cl;
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
