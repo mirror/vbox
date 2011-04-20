@@ -210,6 +210,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor
 	cd $(archdir)/icons; for i in *; do \
 	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
+	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
+	    mv $$i/virtualbox.png $(prefix)/usr/share/icons/hicolor/$$i/apps || true; \
 	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
 	    rmdir $$i; \
 	done

@@ -411,9 +411,14 @@ if [ "$ACTION" = "install" ]; then
         cd $i
         if [ -d /usr/share/icons/hicolor/$i ]; then
             for j in *; do
-                if [ -d /usr/share/icons/hicolor/$i/mimetypes ]; then
-                    ln -s $INSTALLATION_DIR/icons/$i/$j /usr/share/icons/hicolor/$i/mimetypes/$j
-                    echo /usr/share/icons/hicolor/$i/mimetypes/$j >> $CONFIG_DIR/$CONFIG_FILES
+                if [ "$j" = "virtualbox.png" ]; then
+                    dst=apps
+                else
+                    dst=mimetypes
+                fi
+                if [ -d /usr/share/icons/hicolor/$i/$dst ]; then
+                    ln -s $INSTALLATION_DIR/icons/$i/$j /usr/share/icons/hicolor/$i/$dst/$j
+                    echo /usr/share/icons/hicolor/$i/$dst/$j >> $CONFIG_DIR/$CONFIG_FILES
                 fi
             done
         fi
