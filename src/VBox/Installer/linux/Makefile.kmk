@@ -96,7 +96,7 @@ endif
 INSTALLS += linux-icons
 linux-icons_INST = bin/icons
 linux-icons_MODE = a+r,u+w
-linux-icons_SOURCES = $(VBOX_MIME_ICONS)
+linux-icons_SOURCES = $(VBOX_MIME_ICONS) $(VBOX_DESKTOP_ICONS)
 
 
 #
@@ -280,6 +280,11 @@ VBOX_MIME_ICONS = \
 	    $(foreach f,ova ovf vbox vbox-extpack, \
 	        $(foreach s,16 20 24 32 48 64 72 96 128 256,\
 		    virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
+
+VBOX_DESKTOP_ICONS = \
+	$(addprefix $(PATH_ROOT)/src/VBox/Resources/$(if $(VBOX_OSE),OSE,NonOSE)/,\
+	    $(foreach s,16 20 32 40 48 64 128,\
+		virtualbox-$(s)px.png=>$(s)x$(s)/virtualbox.png))
 
 #
 # All the bin files that goes into the archives.
