@@ -716,7 +716,6 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
 }
 
 
-#ifdef VBOXSERVICE_TOOLBOX
 /**
  * Constructs the argv command line by resolving environment variables
  * and relative paths.
@@ -730,51 +729,42 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
 static int VBoxServiceControlExecPrepareArgv(const char *pszArgv0,
                                              const char * const *papszArgs, char ***ppapszArgv)
 {
-    AssertPtrReturn(pszArgv0, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
-
 /** @todo RTGetOptArgvToString converts to MSC quoted string, while
  *        RTGetOptArgvFromString takes bourne shell according to the docs...
  * Actually, converting to and from here is a very roundabout way of prepending
  * an entry (pszFilename) to an array (*ppapszArgv). */
-    char *pszArgs;
-    int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
-                                  RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
+    int rc = VINF_SUCCESS;
+    char *pszNewArgs = NULL;
+    if (pszArgv0)
+        rc = RTStrAAppend(&pszNewArgs, pszArgv0);
     if (   RT_SUCCESS(rc)
-        && *pszArgs)
+        && papszArgs)
+
     {
-        /*
-         * Construct the new command line by appending the actual
-         * tool name to new process' command line.
-         */
-        char szArgsExp[RTPATH_MAX];
-        rc = VBoxServiceControlExecMakeFullPath(pszArgs, szArgsExp, sizeof(szArgsExp));
+        char *pszArgs;
+        rc = RTGetOptArgvToString(&pszArgs, papszArgs,
+                                  RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
         if (RT_SUCCESS(rc))
         {
-            char *pszNewArgs;
-            if (RTStrAPrintf(&pszNewArgs, "%s %s", pszArgv0, szArgsExp))
-            {
-#ifdef DEBUG
-                VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecPrepareArgv: %s\n",
-                                   pszNewArgs);
-#endif
-                int iNumArgsIgnored;
-                rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
-                                            pszNewArgs, NULL /* Use standard separators. */);
-                RTStrFree(pszNewArgs);
-            }
+            rc = RTStrAAppend(&pszNewArgs, " ");
+            if (RT_SUCCESS(rc))
+                rc = RTStrAAppend(&pszNewArgs, pszArgs);
         }
-        RTStrFree(pszArgs);
     }
-    else /* No arguments given, just use the resolved file name as argv[0]. */
+
+    if (RT_SUCCESS(rc))
     {
         int iNumArgsIgnored;
         rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
-                                    pszArgv0, NULL /* Use standard separators. */);
+                                    pszNewArgs ? pszNewArgs : "", NULL /* Use standard separators. */);
     }
+
+VBoxServiceVerbose(3, "args: %s\n", pszNewArgs);
+
+    if (pszNewArgs)
+        RTStrFree(pszNewArgs);
     return rc;
 }
-#endif
 
 
 /**
@@ -833,7 +823,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd /* argv0 */, &papszArgs[1], &papszArgsExp);
+            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd /* argv0 */, papszArgs, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
@@ -866,7 +856,8 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
-        rc = VBoxServiceControlExecPrepareArgv(papszArgs[0], &papszArgs[1], &papszArgsExp);
+        rc = VBoxServiceControlExecPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
+                                               papszArgs /* Append the rest of the argument vector (if any). */, &papszArgsExp);
         if (RT_SUCCESS(rc))
         {
             uint32_t uProcFlags = 0;
@@ -887,9 +878,12 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
             VBoxServiceVerbose(3, "Command: %s\n", szExecExp);
-            for (size_t i = 0; papszArgsExp[i]; i++)
-                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
+            for (size_t i = 0; papszArgs[i]; i++)
+                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgs[i]);
 #endif
+
+    VBoxServiceVerbose(3, "%p %p %p\n", papszArgs, papszArgs[0], papszArgs[1]);
+
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,

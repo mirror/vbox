@@ -255,7 +255,6 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                             RTPathChangeToUnixSlashes(szOutput, true /* Force conversion. */);
                         }
 
-                        args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
                         args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
                     }
                     else
@@ -568,7 +567,6 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 com::SafeArray<IN_BSTR> args;
                 com::SafeArray<IN_BSTR> env;
 
-                args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw());     /* The actual (internal) tool to use (as argv[0]). */
                 args.push_back(Bstr("--output").raw());               /* We want to write a file ... */
                 args.push_back(Bstr(strInstallerPath.c_str()).raw()); /* ... with this path. */
 
@@ -2404,7 +2402,6 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         /*
          * Prepare tool command line.
          */
-        args.push_back(Bstr(VBOXSERVICE_TOOL_MKDIR).raw()); /* The actual (internal) tool to use (as argv[0]). */
         if (aFlags & CreateDirectoryFlag_Parents)
             args.push_back(Bstr("--parents").raw());        /* We also want to create the parent directories. */
         if (aMode > 0)
