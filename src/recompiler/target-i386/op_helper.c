@@ -5803,7 +5803,7 @@ int emulate_single_instr(CPUX86State *env1)
      *  eip remains the same for repeated instructions; no idea why qemu doesn't do a jump inside the generated code
      * perhaps not a very safe hack
      */
-    while(old_eip == env->eip)
+    while (old_eip == env->eip)
     {
         tc_ptr = tb->tc_ptr;
 
@@ -5813,13 +5813,15 @@ int emulate_single_instr(CPUX86State *env1)
 #else
         tcg_qemu_tb_exec(tc_ptr);
 #endif
+
         /*
          * Exit once we detect an external interrupt and interrupts are enabled
          */
-        if( (env->interrupt_request & (CPU_INTERRUPT_EXTERNAL_EXIT|CPU_INTERRUPT_EXTERNAL_TIMER)) ||
-            ( (env->eflags & IF_MASK) &&
-             !(env->hflags & HF_INHIBIT_IRQ_MASK) &&
-              (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD) ) )
+        if (   (env->interrupt_request & (CPU_INTERRUPT_EXTERNAL_EXIT|CPU_INTERRUPT_EXTERNAL_TIMER))
+            || (   (env->eflags & IF_MASK)
+                && !(env->hflags & HF_INHIBIT_IRQ_MASK)
+                && (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD) )
+           )
         {
             break;
         }
