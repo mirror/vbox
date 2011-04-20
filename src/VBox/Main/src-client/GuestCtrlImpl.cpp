@@ -2471,7 +2471,7 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
                     if (SUCCEEDED(rc) && uRetExitCode != 0)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Error while creating directory"));
+                                      tr("Error %u while creating directory"), uRetExitCode);
                     }
                 }
             }
