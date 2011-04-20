@@ -636,7 +636,7 @@ EOF
     # Remove other files
     rm /etc/hal/fdi/policy/90-vboxguest.fdi 2>/dev/null
     rm /etc/udev/rules.d/70-xorg-vboxmouse.rules 2>/dev/null
-    udevadm trigger --action=change --subsystem-match=misc --subsystem-match=input 2>/dev/null
+    udevadm trigger --action=change --subsystem-match=misc 2>/dev/null
     rm /usr/lib/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
     rm /usr/share/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
