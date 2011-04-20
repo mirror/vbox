@@ -63,7 +63,8 @@ int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificat
             if (RT_FAILURE(rc))
             {
                 RTCritSectDelete(&pBuf->CritSect);
-                RTSemEventDestroy(pBuf->hEventSem);
+                if (pBuf->hEventSem != NIL_RTSEMEVENT)
+                    RTSemEventDestroy(pBuf->hEventSem);
             }
         }
     }
@@ -88,6 +89,7 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
     AssertPtrReturn(pbBuffer, VERR_INVALID_POINTER);
     AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbToRead, VERR_INVALID_POINTER);
+    AssertReturn(*pcbToRead > 0, VERR_INVALID_PARAMETER); /* Nothing to read makes no sense ... */
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
@@ -104,15 +106,21 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             memcpy(pbBuffer, pBuf->pbData + pBuf->cbOffset, *pcbToRead);
             pBuf->cbOffset += *pcbToRead;
 
-            rc = RTSemEventSignal(pBuf->hEventSem);
-            AssertRC(rc);
+            if (pBuf->hEventSem != NIL_RTSEMEVENT)
+            {
+                rc = RTSemEventSignal(pBuf->hEventSem);
+                AssertRC(rc);
+            }
         }
         else
         {
             pbBuffer = NULL;
             *pcbToRead = 0;
         }
-        rc = RTCritSectLeave(&pBuf->CritSect);
+
+        int rc2 = RTCritSectLeave(&pBuf->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     return rc;
 }
@@ -255,7 +263,11 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                 if (pcbWritten)
                     *pcbWritten = cbData;
 
-                RTSemEventSignal(pBuf->hEventSem);
+                if (pBuf->hEventSem != NIL_RTSEMEVENT)
+                {
+                    rc = RTSemEventSignal(pBuf->hEventSem);
+                    AssertRC(rc);
+                }
             }
         }
         else
@@ -274,6 +286,7 @@ int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe
 {
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbLeft, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
