@@ -43,7 +43,9 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstCompiler \
   	tstVMMR0CallHost-1 \
   	tstVMMR0CallHost-2 \
-	tstX86-1
+  ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 freebsd.amd64 linux.amd64 win.amd64 ) ## TODO: Fix the code.
+   PROGRAMS  +=  tstX86-1
+  endif
   ifneq ($(KBUILD_TARGET),l4)
    PROGRAMS += tstAnimate
   endif
