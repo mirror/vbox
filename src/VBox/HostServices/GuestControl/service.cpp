@@ -359,6 +359,11 @@ int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, u
                                        paParms[i].u.pointer.addr,
                                        pBuf->pParms[i].u.pointer.size);
                         }
+                        else
+                        {
+                            /* Size is 0 -- make sure we don't have any pointer. */
+                            pBuf->pParms[i].u.pointer.addr = NULL;
+                        }
                         break;
 
                     default:
@@ -412,7 +417,7 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
     int rc = VINF_SUCCESS;
     if (cParms != pBuf->uParmCount)
     {
-        LogFlowFunc(("Parameter count does not match (%u (buffer), %u (guest))\n",
+        LogFlowFunc(("Parameter count does not match: %u (host) vs. %u (guest)\n",
                      pBuf->uParmCount, cParms));
         rc = VERR_INVALID_PARAMETER;
     }
@@ -435,9 +440,14 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
                 case VBOX_HGCM_SVC_PARM_PTR:
                     if (paParms[i].u.pointer.size >= pBuf->pParms[i].u.pointer.size)
                     {
-                        memcpy(paParms[i].u.pointer.addr,
-                               pBuf->pParms[i].u.pointer.addr,
-                               pBuf->pParms[i].u.pointer.size);
+                        /* Only copy buffer if there actually is something to copy. */
+                        if (pBuf->pParms[i].u.pointer.size)
+                        {
+                            AssertPtr(pBuf->pParms[i].u.pointer.addr);
+                            memcpy(paParms[i].u.pointer.addr,
+                                   pBuf->pParms[i].u.pointer.addr,
+                                   pBuf->pParms[i].u.pointer.size);
+                        }
                     }
                     else
                         rc = VERR_BUFFER_OVERFLOW;
@@ -638,6 +648,16 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
               * don't send this message again and drop it after 3 unsuccessful attempts.
               * The host then should take care of next actions (maybe retry it with a smaller buffer). */
              if (++curCmd.mTries >= 3)
+             {
+                 paramBufferFree(&curCmd.mParmBuf);
+                 mHostCmds.pop_front();
+             }
+         }
+         else
+         {
+            /* Client did not understand the message or something else weird happened. Try again one
+             * more time and drop it if it didn't get handled then. */
+             if (++curCmd.mTries > 1)
              {
                  paramBufferFree(&curCmd.mParmBuf);
                  mHostCmds.pop_front();
