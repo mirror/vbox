@@ -91,7 +91,7 @@ typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOP)(PIEMCPU pIemCpu)
 
 #elif defined(_MSC_VER) && defined(RT_ARCH_X86)
 typedef VBOXSTRICTRC (__fastcall * PFNIEMOP)(PIEMCPU pIemCpu);
-# define FNIEMOP_PROTO(a_Name) \
+# define FNIEMOP_DEF(a_Name) \
     static /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PIEMCPU pIemCpu) RT_NO_THROW
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
     static /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0) RT_NO_THROW
