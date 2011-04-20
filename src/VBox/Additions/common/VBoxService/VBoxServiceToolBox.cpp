@@ -194,7 +194,7 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
             {
                 if (rc == VERR_BROKEN_PIPE)
                     rc = VINF_SUCCESS;
-                else
+                else if (RT_FAILURE(rc))
                     RTMsgError("cat: Error while reading input, rc=%Rrc\n", rc);
                 break;
             }
