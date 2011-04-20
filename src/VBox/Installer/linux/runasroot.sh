@@ -56,26 +56,36 @@ case "$ostype" in SunOS)
     ;;
 esac
 
-case "$DISPLAY" in ?*)
-    KDESUDO="`mywhich kdesudo`"
-    case "$KDESUDO" in ?*)
-        eval "`quotify "$KDESUDO"` --comment `quotify "$DESCRIPTION"` -- $COMMAND"
-        exit
-        ;;
-    esac
+case "$HAS_TERMINAL" in "")
+    case "$DISPLAY" in ?*)
+        KDESUDO="`mywhich kdesudo`"
+        case "$KDESUDO" in ?*)
+            eval "`quotify "$KDESUDO"` --comment `quotify "$DESCRIPTION"` -- $COMMAND"
+            exit
+            ;;
+        esac
 
-    GKSU="`mywhich gksu`"
-    case "$GKSU" in ?*)
-        # Older gksu does not grok --description nor '--' and multiple args.
-        # @todo which versions do?
-        # "$GKSU" --description "$DESCRIPTION" -- "$@"
-        # Note that $GKSU_SWITCHES is NOT quoted in the following
-        "$GKSU" $GKSU_SWITCHES "$COMMAND"
-        exit
+        KDESU="`mywhich kdesu`"
+        case "$KDESU" in ?*)
+            "$KDESU" -c "$COMMAND"
+            exit
+            ;;
+        esac
+
+        GKSU="`mywhich gksu`"
+        case "$GKSU" in ?*)
+            # Older gksu does not grok --description nor '--' and multiple args.
+            # @todo which versions do?
+            # "$GKSU" --description "$DESCRIPTION" -- "$@"
+            # Note that $GKSU_SWITCHES is NOT quoted in the following
+            "$GKSU" $GKSU_SWITCHES "$COMMAND"
+            exit
+            ;;
+        esac
         ;;
-    esac
+    esac # $DISPLAY
     ;;
-esac # $DISPLAY
+esac # ! $HAS_TERMINAL
 
 # pkexec may work for ssh console sessions as well if the right agents
 # are installed.  However it is very generic and does not allow for any
@@ -92,6 +102,17 @@ esac
 #esac
 
 case "$HAS_TERMINAL" in ?*)
+        USE_SUDO=
+        grep Ubuntu /etc/lsb-release && USE_SUDO=true
+        # On Ubuntu we need sudo instead of su.  Assume this works, and is only
+        # needed for Ubuntu until proven wrong.
+        case $USE_SUDO in true)
+            SUDO_COMMAND="`quotify "$SUDO"` -- $COMMAND"
+            eval "$SUDO_COMMAND"
+            exit
+            ;;
+        esac
+
     SU="`mywhich su`"
     case "$SU" in ?*)
         "$SU" - root -c "$COMMAND"
