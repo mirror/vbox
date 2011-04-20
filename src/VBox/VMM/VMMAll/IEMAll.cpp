@@ -4861,6 +4861,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
          */
         case 2:
             pCtx->cr2 = NewCrX;
+            rcStrict  = VINF_SUCCESS;
             break;
 
         /*
