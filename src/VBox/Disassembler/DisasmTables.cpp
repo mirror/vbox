@@ -453,10 +453,10 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("sysenter",           0,              0,          0,          OP_SYSENTER,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW),
     OP("sysexit",            0,              0,          0,          OP_SYSEXIT, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
     INVALID_OPCODE,
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** 0x37 - GETSEC */
     OP("3 byte escape A4",   IDX_ParseThreeByteEsc4,0,              0,        OP_3B_ESC4,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** 0x3A - 3-byte escape table A-5 */
     INVALID_OPCODE,
     /* SSE2 */
     OP("movnti %Gv,%Ev",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVNTI,  OP_PARM_Gv,         OP_PARM_Ev,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -513,8 +513,8 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("punpckhwd %Pq,%Qd",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PUNPCKHWD, OP_PARM_Pq,       OP_PARM_Qd,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("punpckhdq %Pq,%Qd",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PUNPCKHDQ, OP_PARM_Pq,       OP_PARM_Qd,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("packssdw %Pq,%Qd",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PACKSSDW,OP_PARM_Pq,         OP_PARM_Qd,     OP_PARM_NONE,   OPTYPE_HARMLESS),
-    INVALID_OPCODE,
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0x6c punpcklqdq Vdq,Wdq */
+    INVALID_OPCODE, /** @todo 0x0f 0x6d punpckhqdq Vdq,Wdq */
     OP("movd %Pd,%Ed",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVD,    OP_PARM_Pd,         OP_PARM_Ed,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("movq %Pq,%Qq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVQ,    OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
 
@@ -527,12 +527,12 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("pcmpeqw %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,                 OP_PCMPEQW, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pcmpeqd %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,                 OP_PCMPEQD, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("emms",               0,                  0,              0,                 OP_EMMS,    OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("MMX UD 0x78",        0,                  0,              0,                 OP_MMX_UD78,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("MMX UD 0x79",        0,                  0,              0,                 OP_MMX_UD79,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("MMX UD 0x78",        0,                  0,              0,                 OP_MMX_UD78,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS), /** @todo 0x0f 0x78 VMREAD */
+    OP("MMX UD 0x79",        0,                  0,              0,                 OP_MMX_UD79,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS), /** @todo 0x0f 0x79 VMWRITE */
     OP("MMX UD 0x7A",        0,                  0,              0,                 OP_MMX_UD7A,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("MMX UD 0x7B",        0,                  0,              0,                 OP_MMX_UD7B,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("MMX UD 0x7C",        0,                  0,              0,                 OP_MMX_UD7C,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("MMX UD 0x7D",        0,                  0,              0,                 OP_MMX_UD7D,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("MMX UD 0x7C",        0,                  0,              0,                 OP_MMX_UD7C,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS), /** @todo 0x0f 0x7c haddpd/haddps */
+    OP("MMX UD 0x7D",        0,                  0,              0,                 OP_MMX_UD7D,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS), /** @todo 0x0f 0x7d hsubpd/hsubps */
     OP("movd %Ed,%Pd",       IDX_ParseModRM,     IDX_UseModRM,   0,                 OP_MOVD,    OP_PARM_Ed,         OP_PARM_Pd,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("movq %Qq,%Pq",       IDX_ParseModRM,     IDX_UseModRM,   0,                 OP_MOVQ,    OP_PARM_Qq,         OP_PARM_Pq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
 
@@ -599,7 +599,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("lgs %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_LGS,     OP_PARM_Gv,         OP_PARM_Mp,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("movzx %Gv,%Eb",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVZX,   OP_PARM_Gv,         OP_PARM_Eb,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("movzx %Gv,%Ew",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVZX,   OP_PARM_Gv,         OP_PARM_Ew,     OP_PARM_NONE,   OPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0xb8 popcnt Gv,Ev / jmpe */
     OP("Grp10 Invalid Op",   IDX_ParseGrp10,     0,              0,          OP_GRP10_INV,OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("Grp8",               IDX_ParseGrp8,      0,              0,          OP_GRP8,    OP_PARM_Ev,         OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("btc %Ev,%Gv",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BTC,     OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -628,13 +628,13 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("bswap EDI",          IDX_ParseFixedReg,  0,          0,          OP_BSWAP,   OP_PARM_REG_EDI,    OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_REXB_EXTENDS_OPREG),
 
     /* d */
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0xd0 addsubpd/addsubps */
     OP("psrlw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSRLW,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psrld %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSRLD,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psrlq %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSRLQ,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("paddq %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PADDQ,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pmullw %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULLW,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0xd7 pmovmskb/pmovmskb */
     OP("pmovskb %Gd,%Pq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMOVSKB, OP_PARM_Gd,         OP_PARM_Pq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psubusb %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSB, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psubusw %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSW, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -652,7 +652,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("pavgw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PAVGW,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pmulhuw %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULHUW, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pmulhw %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULHW,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0xe6 cvtpd2dq// */
     OP("movntq %Wq,%Vq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVNTQ,  OP_PARM_Wq,         OP_PARM_Vq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psubsb %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBSB,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psubsw %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBSW,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -664,7 +664,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("pxor %Pq,%Qq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PXOR,    OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* f */
-    INVALID_OPCODE,
+    INVALID_OPCODE, /** @todo 0x0f 0xf0 lddqu */
     OP("psllw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSLLW,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pslld %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSLLD,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("psllq %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSSQ,    OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
