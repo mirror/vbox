@@ -1142,7 +1142,7 @@
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>&amp;Extension Packages:</source>
-        <translation>&amp;Papildinių paketai</translation>
+        <translation>&amp;Papildinių paketai:</translation>
     </message>
     <message>
         <source>Lists all installed packages.</source>
@@ -1178,7 +1178,7 @@
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Papildiniai</translation>
+        <translation>Papildiniai</translation>
     </message>
 </context>
 <context>
@@ -1224,11 +1224,11 @@
     <name>UIGlobalSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>Pagrindinis &amp;klavišas:</translation>
+        <translation>Pagr. kompiuterio &amp;klavišas:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Rodo klavišą, naudojamą kaip pagrindinį klavišą VM lange. Aktyvuokite įvedimo laukelį ir nuspauskite būsimą pagrindinį klavišą. Atminkite, kad negalima priskirti raidžių, skaičių, žymeklio perkėlimo, redagavimo klavišų.</translation>
+        <translation>Rodo klavišą, naudojamą kaip pagrindinio kompiuterio klavišą VM lange. Aktyvuokite įvedimo laukelį ir nuspauskite būsimą pagrindinį klavišą. Atminkite, kad negalima priskirti raidžių, skaičių, žymeklio perkėlimo, redagavimo klavišų.</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
@@ -1248,11 +1248,11 @@
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Atstatyti pagr. kompiuterio kombinaciją</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atstatyti klavišų kombinaciją, kuri naudojama kaip pagrindinio kompiuterio kombinacija VM lange.</translation>
     </message>
 </context>
 <context>
@@ -1446,7 +1446,7 @@
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinklas</translation>
     </message>
 </context>
 <context>
@@ -1782,7 +1782,7 @@
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra</translation>
     </message>
 </context>
 <context>
@@ -2233,7 +2233,7 @@
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgalinote 3D spartinimą operacinei sistemai, kuri naudoja WDDM vaizdo tvarkyklę. Didžiausią našumą pasieksite, jei vaizdo laisvosios prieigos atminčiai paskirsite bent &lt;b&gt;%1&lt;/b&gt;. </translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -3009,7 +3009,7 @@
     </message>
     <message>
         <source>&amp;Chipset:</source>
-        <translation>&amp;Lustų rinkinys</translation>
+        <translation>&amp;Lustų rinkinys:</translation>
     </message>
     <message>
         <source>Defines chipset type used in this VM.</source>
@@ -3263,7 +3263,7 @@
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;%1&lt;/b&gt;. Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl galėsite įgalite USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.</translation>
     </message>
 </context>
 <context>
@@ -6920,7 +6920,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>„%1“ yra netinkama pagr. kompiuterio kombinacijos kodo seka.</translation>
     </message>
 </context>
 <context>
@@ -8318,8 +8318,6 @@ IPv6.</translation>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -8506,15 +8504,15 @@ IPv6.</translation>
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visų virtuliai mašinai rinkmenų pašalinimas uždraustas Windows/x64 sistemoje tam, kad būtų išvengta strigio. Tai bus ištaisyta sekančiame leidime.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Viršaplankyje &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nepavyksta sukurti mašinos aplanko &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Patikrinkite, ar viršaplankis iš tiesų yra ir ar turite leidimą kurti mašinos aplanką.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;nobr&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl galėsite įgalite USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -8813,7 +8811,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Darbalaukyje sukuriama šaukinio rinkmeną  į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+        <translation>Darbalaukyje sukuriama šaukinio rinkmeną į VirtualBox mašinos apibrėžties rinkmeną.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
