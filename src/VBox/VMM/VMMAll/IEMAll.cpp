@@ -4491,7 +4491,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                 return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
             }
 #else /* this is what makes more sense. */
-            if ((uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl)
+            if ((unsigned)(uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl)
             {
                 Log(("load sreg%u, %#x - RPL (%d) is greater than DPL (%d) -> #GP\n",
                      iSegReg, uSel, (uSel & X86_SEL_RPL), Desc.Legacy.Gen.u2Dpl));
