@@ -1021,6 +1021,38 @@
  * @param   str     Argument to expand and stringy. */
 #define RT_XSTR(str)            RT_STR(str)
 
+/** @def RT_CONCAT
+ * Concatenate the expanded arguments without any extra spaces in between.
+ *
+ * @param   a       The first part.
+ * @param   b       The second part.
+ */
+#define RT_CONCAT(a,b)              RT_CONCAT_HLP(a,b)
+/** RT_CONCAT helper, don't use.  */
+#define RT_CONCAT_HLP(a,b)          a##b
+
+/** @def RT_CONCAT
+ * Concatenate the expanded arguments without any extra spaces in between.
+ *
+ * @param   a       The 1st part.
+ * @param   b       The 2nd part.
+ * @param   c       The 3rd part.
+ */
+#define RT_CONCAT3(a,b,c)           RT_CONCAT3_HLP(a,b,c)
+/** RT_CONCAT3 helper, don't use.  */
+#define RT_CONCAT3_HLP(a,b,c)       a##b##c
+
+/** @def RT_CONCAT
+ * Concatenate the expanded arguments without any extra spaces in between.
+ *
+ * @param   a       The 1st part.
+ * @param   b       The 2nd part.
+ * @param   c       The 3rd part.
+ */
+#define RT_CONCAT4(a,b,c,d)         RT_CONCAT4_HLP(a,b,c,d)
+/** RT_CONCAT4 helper, don't use.  */
+#define RT_CONCAT4_HLP(a,b,c,d)     a##b##c##d
+
 
 /** @def RT_BIT
  * Convert a bit number into an integer bitmask (unsigned).
