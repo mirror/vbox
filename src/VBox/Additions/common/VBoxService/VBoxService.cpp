@@ -587,14 +587,8 @@ int main(int argc, char **argv)
      * VBoxService and shouldn't be subject to /dev/vboxguest, pid-files and
      * global mutex restrictions.
      */
-# if 0 /** @todo r=bird: pending argv[0] bugfixing.  */
     if (VBoxServiceToolboxMain(argc, argv, &rcExit))
         return rcExit;
-# else
-    if (argc > 1)
-        if (VBoxServiceToolboxMain(argc - 1, &argv[1], &rcExit))
-            return rcExit;
-# endif
 #endif
 
     /*

@@ -572,6 +572,26 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                              pData->uPID, uStatus, uFlags,
                                              NULL /* pvData */, 0 /* cbData */);
         VBoxServiceVerbose(3, "ControlExec: Process loop ended with rc=%Rrc\n", rc);
+
+        /*
+         * Dump stdout for debugging purposes.
+         * Only do that on *very* high verbosity (5+).
+         */
+        if (g_cVerbosity >= 5)
+        {
+            uint8_t szBuf[_64K];
+            uint32_t cbOffset = 0;
+            uint32_t cbRead, cbLeft;
+            while (RT_SUCCESS(   VBoxServicePipeBufPeek(&pData->stdOut, szBuf, sizeof(szBuf),
+                                                        cbOffset, &cbRead, &cbLeft))
+                              && cbRead)
+            {
+                VBoxServiceVerbose(5, "[%u]: %s\n", pData->uPID, szBuf);
+                cbOffset += cbRead;
+                if (!cbLeft)
+                    break;
+            }
+        }
     }
     else
         VBoxServiceError("ControlExec: Process loop failed with rc=%Rrc\n", rc);
@@ -866,12 +886,9 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
             if (*pszAsUser)
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
-            char *pszCmdLine;
-            rc = RTGetOptArgvToString(&pszCmdLine, papszArgsExp, 0 /* Default */);
-            AssertRC(rc);
-            VBoxServiceVerbose(3, "ControlExec: Executing: %s %s\n",
-                               szExecExp, pszCmdLine);
-            RTStrFree(pszCmdLine);
+            VBoxServiceVerbose(3, "Command: %s\n", szExecExp);
+            for (size_t i = 0; papszArgsExp[i]; i++)
+                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
 #endif
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
