@@ -30,7 +30,7 @@ mywhich() {
 # Calls mywhich
 getxterm() {
     # gnome-terminal uses -e differently to other emulators
-    for gxti in "gnome-terminal --title -x" "konsole --title -e" "xterm -T -e"; do
+    for gxti in "konsole --title -e" "gnome-terminal --title -x" "xterm -T -e"; do
         set $gxti
         gxtpath="`mywhich $1`"
         case "$gxtpath" in ?*)
