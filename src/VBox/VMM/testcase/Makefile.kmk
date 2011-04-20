@@ -42,7 +42,8 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstVMREQ \
   	tstCompiler \
   	tstVMMR0CallHost-1 \
-  	tstVMMR0CallHost-2
+  	tstVMMR0CallHost-2 \
+	tstX86-1
   ifneq ($(KBUILD_TARGET),l4)
    PROGRAMS += tstAnimate
   endif
@@ -231,6 +232,10 @@ tstAnimate_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstCompiler_TEMPLATE    = VBOXR3TSTEXE
 tstCompiler_SOURCES     = tstCompiler.cpp
 tstCompiler_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstX86-1_TEMPLATE       = VBOXR3TSTEXE
+tstX86-1_SOURCES        = tstX86-1.cpp tstX86-1A.asm
+tstX86-1_LIBS           = $(LIB_RUNTIME)
 
 ifdef VBOX_WITH_RAW_MODE
 

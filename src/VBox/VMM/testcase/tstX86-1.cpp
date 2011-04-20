@@ -1,0 +1,147 @@
+/* $Id$ */
+/** @file
+ * X86 instruction set exploration/testcase #1.
+ */
+
+/*
+ * Copyright (C) 2011 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <iprt/test.h>
+#include <iprt/param.h>
+
+#ifdef RT_OS_WINDOWS
+# include <Windows.h>
+#else
+# ifdef RT_OS_DARWIN
+#  define _XOPEN_SOURCE
+# endif
+# include <signal.h>
+# include <ucontext.h>
+# define USE_SIGNAL
+#endif
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct TRAPINFO
+{
+    uintptr_t   uTrapPC;
+    uintptr_t   uResumePC;
+    uint8_t     u8Trap;
+    uint8_t     cbInstr;
+    uint8_t     auAlignment[sizeof(uintptr_t) * 2 - 2];
+} TRAPINFO;
+typedef TRAPINFO const *PCTRAPINFO;
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+RT_C_DECLS_BEGIN
+uint8_t *g_pbEfPage = NULL;
+extern TRAPINFO g_aTrapInfo[];
+RT_C_DECLS_END
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+DECLASM(int32_t) x861_Test1(void);
+
+
+
+static PCTRAPINFO findTrapInfo(uintptr_t uTrapPC)
+{
+    for (unsigned i = 0; g_aTrapInfo[i].uTrapPC; i++)
+        if (g_aTrapInfo[i].uTrapPC == uTrapPC)
+            return &g_aTrapInfo[i];
+
+    return NULL;
+}
+
+#ifdef USE_SIGNAL
+static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
+{
+    ucontext_t *pCtx = (ucontext_t *)pvSigCtx;
+# if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;
+# elif defined(RT_ARCH_AMD64)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
+# elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
+# elif defined(RT_ARCH_X86)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
+# else
+    uintptr_t  *puPC = NULL;
+# endif
+
+    PCTRAPINFO  pTrapInfo = findTrapInfo(*puPC);
+    if (pTrapInfo)
+    {
+        /** @todo verify the kind of trap */
+        *puPC = pTrapInfo->uResumePC;
+        return;
+    }
+
+    /* die */
+    signal(iSig, SIG_IGN);
+}
+#else
+
+#endif
+
+int main()
+{
+    /*
+     * Set up the test environment.
+     */
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstX86-1", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    g_pbEfPage = (uint8_t *)RTTestGuardedAllocTail(hTest, PAGE_SIZE);
+    RTTESTI_CHECK(g_pbEfPage != NULL);
+
+#ifdef USE_SIGNAL
+    static int const s_aiSigs[] = { SIGBUS, SIGSEGV, SIGFPE };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aiSigs); i++)
+    {
+        struct sigaction SigAct;
+        RTTESTI_CHECK_BREAK(sigaction(s_aiSigs[i], NULL, &SigAct) == 0);
+        SigAct.sa_sigaction = sigHandler;
+        SigAct.sa_flags    |= SA_SIGINFO;
+        RTTESTI_CHECK(sigaction(s_aiSigs[i], &SigAct, NULL) == 0);
+    }
+#else
+    /** @todo implement me. */
+#endif
+
+
+    if (!RTTestErrorCount(hTest))
+    {
+
+        /*
+         * Do the testing.
+         */
+        RTTestSub(hTest, "part 1");
+        int32_t rc = x861_Test1();
+        if (rc != 0)
+            RTTestFailed(hTest, "x861_Test1 -> %d", rc);
+    }
+
+    return RTTestSummaryAndDestroy(hTest);
+}
+

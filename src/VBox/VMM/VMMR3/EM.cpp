@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,6 +53,9 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/hwaccm.h>
 #include <VBox/vmm/patm.h>
+#ifdef IEM_VERIFICATION_MODE
+# include <VBox/vmm/iem.h>
+#endif
 #include "EMInternal.h"
 #include "internal/em.h"
 #include <VBox/vmm/vm.h>
@@ -1056,6 +1059,10 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  */
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+#ifdef IEM_VERIFICATION_MODE
+    return EMSTATE_REM;
+#else
+
     /*
      * When forcing raw-mode execution, things are simple.
      */
@@ -1101,12 +1108,12 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         return EMSTATE_REM;
     }
 
-#ifndef VBOX_RAW_V86
+# ifndef VBOX_RAW_V86
     if (EFlags.u32 & X86_EFL_VM) {
         Log2(("raw mode refused: VM_MASK\n"));
         return EMSTATE_REM;
     }
-#endif
+# endif
 
     /** @todo check up the X86_CR0_AM flag in respect to raw mode!!! We're probably not emulating it right! */
     uint32_t u32CR0 = pCtx->cr0;
@@ -1178,14 +1185,14 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return EMSTATE_RAW;
         }
 
-#if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
+# if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
         if (!(EFlags.u32 & X86_EFL_IF))
         {
             ////Log2(("R0: IF=0 VIF=%d %08X\n", eip, pVMeflags));
             //Log2(("RR0: Interrupts turned off; fall back to emulation\n"));
             return EMSTATE_REM;
         }
-#endif
+# endif
 
         /** @todo still necessary??? */
         if (EFlags.Bits.u2IOPL != 0)
@@ -1197,6 +1204,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     Assert(PGMPhysIsA20Enabled(pVCpu));
     return EMSTATE_RAW;
+#endif /* !IEM_VERIFICATION_MODE */
+
 }
 
 
@@ -1985,6 +1994,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
+#ifdef IEM_VERIFICATION_MODE /* remove later */
+                    AssertFailed();
+#endif
                     rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
                     break;
 
@@ -1992,6 +2004,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
+#ifdef IEM_VERIFICATION_MODE /* remove later */
+                    AssertFailed();
+#endif
                     rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
                     break;
 
@@ -1999,7 +2014,11 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
+#ifdef IEM_VERIFICATION_MODE
+                    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); fFFDone = false;
+#else
                     rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
+#endif
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
 

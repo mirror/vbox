@@ -46,6 +46,11 @@ ifdef VBOX_WITH_PCI_PASSTHROUGH
 endif
 # VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
 
+# Special IEM debug mode which compares the result with REM.
+ifdef IEM_VERIFICATION_MODE
+ VMM_COMMON_DEFS += IEM_VERIFICATION_MODE
+endif
+
 
 #
 # VMMR3.dll
@@ -99,6 +104,7 @@ VMMR3_SOURCES   = \
 	VMMR3/EMRaw.cpp \
 	VMMR3/EMHwaccm.cpp \
 	VMMR3/FTM.cpp \
+	VMMR3/IEMR3.cpp \
 	VMMR3/IOM.cpp \
 	VMMR3/GMM.cpp \
 	VMMR3/MM.cpp \
@@ -165,6 +171,9 @@ VMMR3_SOURCES   = \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
 	VMMAll/FTMAll.cpp \
+	VMMAll/IEMAll.cpp \
+	VMMAll/IEMAllAImpl.asm \
+	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/TMAll.cpp \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
@@ -568,4 +577,9 @@ PGMRCBth.obj 	PGMRCGst.obj 	PGMRCShw.obj: 	PGMRC.o
 PGMPhysRWTmpl.o PGMPhysRWTmpl.obj: 		PGMPhys.o
 
 PGMInline.o 	PGMInline.obj: 			PGMDbg.o
+
+# Alias the IEM templates to the object in which they are instantiated.
+IEMInternal.o \
+IEMAllInstructions.cpp.o  IEMAllInstructions.cpp.obj \
+IEMAllCImplStrInstr.cpp.o IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 

@@ -76,6 +76,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "STAMInternal.h"
 #include "CSAMInternal.h"
 #include "EMInternal.h"
+#include "IEMInternal.h"
 #include "REMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/param.h>
@@ -149,6 +150,24 @@ int main()
     GEN_CHECK_OFF(EMCPU, pStatsR0);
     GEN_CHECK_OFF(EMCPU, pStatsRC);
     GEN_CHECK_OFF(EMCPU, pCliStatTree);
+
+    GEN_CHECK_SIZE(IEMCPU);
+    GEN_CHECK_OFF(IEMCPU, pCtxR0);
+    GEN_CHECK_OFF(IEMCPU, pCtxR3);
+    GEN_CHECK_OFF(IEMCPU, pCtxRC);
+    GEN_CHECK_OFF(IEMCPU, offVM);
+    GEN_CHECK_OFF(IEMCPU, offVMCpu);
+    GEN_CHECK_OFF(IEMCPU, enmCpuMode);
+    GEN_CHECK_OFF(IEMCPU, fPrefixes);
+    GEN_CHECK_OFF(IEMCPU, abOpcode);
+    GEN_CHECK_OFF(IEMCPU, cActiveMappings);
+    GEN_CHECK_OFF(IEMCPU, iNextMapping);
+    GEN_CHECK_OFF(IEMCPU, aMemMappings);
+    GEN_CHECK_OFF(IEMCPU, aMemMappings[1]);
+    GEN_CHECK_OFF(IEMCPU, aBounceBuffers);
+    GEN_CHECK_OFF(IEMCPU, aBounceBuffers[1]);
+    GEN_CHECK_OFF(IEMCPU, aMemBbMappings);
+    GEN_CHECK_OFF(IEMCPU, aMemBbMappings[1]);
 
     GEN_CHECK_SIZE(IOM);
     GEN_CHECK_OFF(IOM, pTreesRC);

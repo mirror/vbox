@@ -243,7 +243,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
      */
 #ifndef RT_OS_L4
 
-# if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank)
+# if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(IEM_VERIFICATION_MODE)
     int cWait = 10;
 # else
     int cWait = HWACCMIsEnabled(pVM)
