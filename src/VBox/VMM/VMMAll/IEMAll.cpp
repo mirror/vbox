@@ -1939,7 +1939,7 @@ static VBOXSTRICTRC iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_
         case IEMMODE_16BIT:
         case IEMMODE_32BIT:
         {
-            RTGCPTR32 GCPtrFirst32 = *pGCPtrMem;
+            RTGCPTR32 GCPtrFirst32 = (RTGCPTR32)*pGCPtrMem;
             RTGCPTR32 GCPtrLast32  = GCPtrFirst32 + cbMem - 1;
 
             Assert(pSel->Attr.n.u1Present);
@@ -2224,7 +2224,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
      */
     uint8_t        *pbBuf        = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
     uint32_t const  cbFirstPage  = PAGE_SIZE - (GCPhysFirst & PAGE_OFFSET_MASK);
-    uint32_t const  cbSecondPage = cbMem - cbFirstPage;
+    uint32_t const  cbSecondPage = (uint32_t)(cbMem - cbFirstPage);
 
     if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC))
     {
@@ -3108,8 +3108,9 @@ static VBOXSTRICTRC iemMemStackPopU64Ex(PIEMCPU pIemCpu, uint64_t *pu64Value, PR
  */
 static VBOXSTRICTRC iemMemStackPushBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, void **ppvMem, uint64_t *puNewRsp)
 {
+    Assert(cbMem < UINT8_MAX);
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, cbMem, puNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, (uint8_t)cbMem, puNewRsp);
     return iemMemMap(pIemCpu, ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_W);
 }
 
@@ -3150,8 +3151,9 @@ static VBOXSTRICTRC iemMemStackPushCommitSpecial(PIEMCPU pIemCpu, void *pvMem, u
  */
 static VBOXSTRICTRC iemMemStackPopBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp)
 {
+    Assert(cbMem < UINT8_MAX);
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, cbMem, puNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, (uint8_t)cbMem, puNewRsp);
     return iemMemMap(pIemCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_R);
 }
 
@@ -3197,7 +3199,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
     if (uSel & X86_SEL_LDT)
     {
         if (   !pCtx->ldtrHid.Attr.n.u1Present
-            || (uSel | 0x7) > pCtx->ldtrHid.u32Limit )
+            || (uSel | 0x7U) > pCtx->ldtrHid.u32Limit )
         {
             Log(("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
                  uSel, pCtx->ldtrHid.u32Limit, pCtx->ldtr));
@@ -3210,7 +3212,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
     }
     else
     {
-        if ((uSel | 0x7) > pCtx->gdtr.cbGdt)
+        if ((uSel | 0x7U) > pCtx->gdtr.cbGdt)
         {
             Log(("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pCtx->gdtr.cbGdt));
             /** @todo is this the right exception? */
