@@ -131,8 +131,8 @@ VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
 
 /** @name Guest Register Setters.
  * @{ */
-VMMDECL(int)        CPUMSetGuestGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit);
-VMMDECL(int)        CPUMSetGuestIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit);
+VMMDECL(int)        CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit);
+VMMDECL(int)        CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit);
 VMMDECL(int)        CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr);
 VMMDECL(int)        CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr);
 VMMDECL(int)        CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0);
