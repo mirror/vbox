@@ -2187,6 +2187,10 @@ typedef union X86DESC
     uint16_t        au16[4];
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
+    /** 64 bit unsigned integer view. */
+    uint64_t        au64[1];
+    /** Unsigned integer view. */
+    uint64_t        u;
 } X86DESC;
 AssertCompileSize(X86DESC, 8);
 #pragma pack()
@@ -2866,6 +2870,66 @@ typedef struct X86XDTR64
     uint64_t    uAddr;
 } X86XDTR64, *PX86XDTR64;
 #pragma pack()
+
+
+/** @name ModR/M
+ * @{ */
+#define X86_MODRM_RM_MASK       UINT8_C(0x07)
+#define X86_MODRM_REG_MASK      UINT8_C(0x38)
+#define X86_MODRM_REG_SMASK     UINT8_C(0x07)
+#define X86_MODRM_REG_SHIFT     3
+#define X86_MODRM_MOD_MASK      UINT8_C(0xc0)
+#define X86_MODRM_MOD_SMASK     UINT8_C(0x03)
+#define X86_MODRM_MOD_SHIFT     6
+AssertCompile((X86_MODRM_RM_MASK | X86_MODRM_REG_MASK | X86_MODRM_MOD_MASK) == 0xff);
+AssertCompile((X86_MODRM_REG_MASK >> X86_MODRM_REG_SHIFT) == X86_MODRM_REG_SMASK);
+AssertCompile((X86_MODRM_MOD_MASK >> X86_MODRM_MOD_SHIFT) == X86_MODRM_MOD_SMASK);
+/** @} */
+
+/** @name SIB
+ * @{ */
+#define X86_SIB_BASE_MASK     UINT8_C(0x07)
+#define X86_SIB_INDEX_MASK    UINT8_C(0x38)
+#define X86_SIB_INDEX_SMASK   UINT8_C(0x07)
+#define X86_SIB_INDEX_SHIFT   3
+#define X86_SIB_SCALE_MASK    UINT8_C(0xc0)
+#define X86_SIB_SCALE_SMASK   UINT8_C(0x03)
+#define X86_SIB_SCALE_SHIFT   6
+AssertCompile((X86_SIB_BASE_MASK | X86_SIB_INDEX_MASK | X86_SIB_SCALE_MASK) == 0xff);
+AssertCompile((X86_SIB_INDEX_MASK >> X86_SIB_INDEX_SHIFT) == X86_SIB_INDEX_SMASK);
+AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK);
+/** @} */
+
+/** @name General register indexes
+ * @{ */
+#define X86_GREG_xAX            0
+#define X86_GREG_xCX            1
+#define X86_GREG_xDX            2
+#define X86_GREG_xBX            3
+#define X86_GREG_xSP            4
+#define X86_GREG_xBP            5
+#define X86_GREG_xSI            6
+#define X86_GREG_xDI            7
+#define X86_GREG_x8             8
+#define X86_GREG_x9             9
+#define X86_GREG_x10            10
+#define X86_GREG_x11            11
+#define X86_GREG_x12            12
+#define X86_GREG_x13            13
+#define X86_GREG_x14            14
+#define X86_GREG_x15            15
+/** @} */
+
+/** @name X86_SREG_XXX - Segment register indexes.
+ * @{ */
+#define X86_SREG_ES             0
+#define X86_SREG_CS             1
+#define X86_SREG_SS             2
+#define X86_SREG_DS             3
+#define X86_SREG_FS             4
+#define X86_SREG_GS             5
+/** @} */
+
 
 /** @} */
 
