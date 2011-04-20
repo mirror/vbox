@@ -42,7 +42,7 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstVMREQ \
   	tstCompiler \
   	tstVMMR0CallHost-1 \
-  	tstVMMR0CallHost-2 \
+  	tstVMMR0CallHost-2
   ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 freebsd.amd64 linux.amd64 win.amd64 ) ## TODO: Fix the code.
    PROGRAMS  +=  tstX86-1
   endif
