@@ -44,6 +44,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+//#define RT_STRICT
 #define LOG_GROUP   LOG_GROUP_EM /** @todo add log group */
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/pgm.h>
@@ -189,7 +190,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 *******************************************************************************/
 /** Temporary hack to disable the double execution.  Will be removed in favor
  * of a dedicated execution mode in EM. */
-#define IEM_VERIFICATION_MODE_NO_REM
+//#define IEM_VERIFICATION_MODE_NO_REM
 
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
@@ -6469,7 +6470,7 @@ static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
             RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
             RTAssertMsg2Add("REM: %.*Rhxs\n"
                             "IEM: %.*Rhxs\n",
-                            pEvtRec->u.RamWrite.cb, abBuf
+                            pEvtRec->u.RamWrite.cb, abBuf,
                             pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
             iemVerifyAssertAddRecordDump(pEvtRec);
             RTAssertPanic();
