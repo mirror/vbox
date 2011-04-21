@@ -246,11 +246,23 @@ static void smlsSetShapeRectangles(Window window, int cRects,
     g_pSmlsShapeRectangles = pRects;
 }
 
+static int g_SmlsEventType = 0;
+static Window g_SmlsEventWindow = 0;
+
 /* This should not be needed in the bits of the code we test. */
 extern "C" int XNextEvent(Display *display, XEvent *event_return);
 int XNextEvent(Display *display, XEvent *event_return)
 {
-    AssertFailedReturn(0);
+    event_return->xany.type = g_SmlsEventType;
+    event_return->xany.window = g_SmlsEventWindow;
+    event_return->xmap.window = g_SmlsEventWindow;
+    return True;
+}
+
+static void smlsSetNextEvent(int type, Window window)
+{
+    g_SmlsEventType = type;
+    g_SmlsEventWindow = window;
 }
 
 /* This should not be needed in the bits of the code we test. */
@@ -269,6 +281,20 @@ int XFlush(Display *display)
     AssertFailedReturn(0);
 }
 
+/** Dummy observer class */
+class testObserver: public VBoxGuestSeamlessObserver
+{
+    bool mfNotified;
+public:
+    testObserver() : mfNotified(false) {}
+    virtual void notify(void)
+    {
+        mfNotified = true;
+    }
+    virtual ~testObserver() {}
+    bool isNotified(void) { return mfNotified; }
+};
+
 /*****************************
 * The actual tests to be run *
 *****************************/
@@ -286,9 +312,6 @@ static const char *g_pszTestName = NULL;
  * report them in, @todo sort this).  We expect that the set of visible
  * windows will be the same whether we start the code before the event and
  * handle it or start the code after the event.
- *
- * If it is ever needed I could write a small tool to record a fixture on
- * a live guest, but I will put that off as long as I can.
  */
 struct SMLSFIXTURE
 {
@@ -529,9 +552,10 @@ static void smlsPrintDiffRects(RTRECT *pExp, RTRECT *pGot)
 static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
 {
     VBoxGuestSeamlessX11 subject;
+    testObserver observer;
     unsigned cErrs = 0;
 
-    subject.init(NULL);
+    subject.init(&observer);
     smlsSetWindowAttributes(pFixture->paAttribsBefore,
                             pFixture->pahWindowsBefore,
                             pFixture->cWindowsBefore,
@@ -547,22 +571,27 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
     smlsSetShapeRectangles(pFixture->hShapeWindowAfter,
                            pFixture->cShapeRectsAfter,
                            pFixture->paShapeRectsAfter);
-    switch(pFixture->x11EventType)
+    smlsSetNextEvent(pFixture->x11EventType, pFixture->hEventWindow);
+    if (observer.isNotified())  /* Initial window tree rebuild */
     {
-        case ConfigureNotify:
-            subject.doConfigureEvent(pFixture->hEventWindow);
-            break;
-        case MapNotify:
-            subject.doMapEvent(pFixture->hEventWindow);
-            break;
-        case UnmapNotify:
-            subject.doUnmapEvent(pFixture->hEventWindow);
-            break;
-        case VBoxShapeNotify:
-            subject.doShapeEvent(pFixture->hEventWindow);
-            break;
-        default:
-            break;
+        RTPrintf("%s: fixture: %s.  Notification was set before the first event!!!\n",
+                 g_pszTestName, pszDesc);
+        ++cErrs;
+    }
+    subject.nextEvent();
+    if (!observer.isNotified())
+    {
+        RTPrintf("%s: fixture: %s.  No notification was sent for the initial window tree rebuild.\n",
+                 g_pszTestName, pszDesc);
+        ++cErrs;
+    }
+    smlsSetNextEvent(0, 0);
+    subject.nextEvent();
+    if (!observer.isNotified())
+    {
+        RTPrintf("%s: fixture: %s.  No notification was sent after the event.\n",
+                 g_pszTestName, pszDesc);
+        ++cErrs;
     }
     std::auto_ptr<std::vector<RTRECT> > rects = subject.getRects();
     if (rects->size() != pFixture->cReportedRects)
