@@ -189,7 +189,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 *******************************************************************************/
 /** Temporary hack to disable the double execution.  Will be removed in favor
  * of a dedicated execution mode in EM. */
-//#define IEM_VERIFICATION_MODE_NO_REM
+#define IEM_VERIFICATION_MODE_NO_REM
 
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
@@ -3603,6 +3603,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
     }
     else
     {
+        GCPtrBottom--;
         uint16_t *pa16Mem = NULL;
         rcStrict = iemMemMap(pIemCpu, (void **)&pa16Mem, 16, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W);
         if (rcStrict == VINF_SUCCESS)
@@ -3674,6 +3675,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
     }
     else
     {
+        GCPtrBottom--;
         uint32_t *pa32Mem;
         rcStrict = iemMemMap(pIemCpu, (void **)&pa32Mem, 32, X86_SREG_SS, GCPtrBottom, IEM_ACCESS_STACK_W);
         if (rcStrict == VINF_SUCCESS)
@@ -4167,7 +4169,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOp
         Assert(enmOpSize == IEMMODE_16BIT || enmOpSize == IEMMODE_32BIT);
 
         /* Check stack first - may #SS(0). */
-        rcStrict = iemMemStackPushBeginSpecial(pIemCpu, 4 + (enmOpSize == IEMMODE_32BIT) * 2,
+        rcStrict = iemMemStackPushBeginSpecial(pIemCpu, enmOpSize == IEMMODE_32BIT ? 6 : 4,
                                                &pvRet, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
@@ -4179,12 +4181,12 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOp
         /* Everything is fine, push the return address. */
         if (enmOpSize == IEMMODE_16BIT)
         {
-            ((uint16_t *)pvRet)[0] = pCtx->ip;
+            ((uint16_t *)pvRet)[0] = pCtx->ip + cbInstr;
             ((uint16_t *)pvRet)[1] = pCtx->cs;
         }
         else
         {
-            ((uint32_t *)pvRet)[0] = pCtx->eip;
+            ((uint32_t *)pvRet)[0] = pCtx->eip + cbInstr;
             ((uint16_t *)pvRet)[3] = pCtx->cs;
         }
         rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pvRet, uNewRsp);
@@ -4372,7 +4374,7 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
 
         pu16Frame[2] = (uint16_t)pCtx->eflags.u;
         pu16Frame[1] = (uint16_t)pCtx->cs;
-        pu16Frame[0] = (uint16_t)pCtx->ip;
+        pu16Frame[0] = pCtx->ip + cbInstr;
         rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pu16Frame, uNewRsp);
         if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
             return rcStrict;
@@ -6187,6 +6189,8 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     } while (pEvtRec);
 }
 
+
+# ifndef IEM_VERIFICATION_MODE_NO_REM
 /**
  * Allocate an event record.
  * @returns Poitner to a record.
@@ -6209,6 +6213,7 @@ static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu)
     pEvtRec->pNext    = NULL;
     return pEvtRec;
 }
+# endif
 
 
 /**
@@ -6314,6 +6319,7 @@ VMM_INT_DECL(void)   IEMNotifyIOPortWriteString(PVM pVM, RTIOPORT Port, RTGCPTR 
     AssertFailed();
 }
 
+# ifndef IEM_VERIFICATION_MODE_NO_REM
 
 /**
  * Fakes and records an I/O port read.
@@ -6440,6 +6446,41 @@ static void iemVerifyAssertRecord(PIEMVERIFYEVTREC pEvtRec, const char *pszMsg)
 
 
 /**
+ * Verifies a write record.
+ *
+ * @param   pIemCpu         The IEM per CPU data.
+ * @param   pEvtRec         The write record.
+ */
+static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
+{
+    uint8_t abBuf[sizeof(pEvtRec->u.RamWrite.ab)]; RT_ZERO(abBuf);
+    int rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), abBuf, pEvtRec->u.RamWrite.GCPhys, pEvtRec->u.RamWrite.cb);
+    if (   RT_FAILURE(rc)
+        || memcmp(abBuf, pEvtRec->u.RamWrite.ab, pEvtRec->u.RamWrite.cb) )
+    {
+        /* fend off ins */
+        if (   !pIemCpu->cIOReads
+            || pEvtRec->u.RamWrite.ab[0] != 0xcc
+            || (   pEvtRec->u.RamWrite.cb != 1
+                && pEvtRec->u.RamWrite.cb != 2
+                && pEvtRec->u.RamWrite.cb != 4) )
+        {
+            RTAssertMsg1(NULL, __LINE__, __FILE__, __PRETTY_FUNCTION__);
+            RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
+            RTAssertMsg2Add("REM: %.*Rhxs\n"
+                            "IEM: %.*Rhxs\n",
+                            pEvtRec->u.RamWrite.cb, abBuf
+                            pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
+            iemVerifyAssertAddRecordDump(pEvtRec);
+            RTAssertPanic();
+        }
+    }
+
+}
+
+# endif /* !IEM_VERIFICATION_MODE_NO_REM */
+
+/**
  * Performs the post-execution verfication checks.
  */
 static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
@@ -6458,19 +6499,6 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
      */
     int rc = REMR3EmulateInstruction(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu));
     AssertRC(rc);
-#if 0
-    if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
-    {
-        while (    pOrgCtx->rip == pDebugCtx->rip - pIemCpu->offOpcode
-               &&  pOrgCtx->rcx != pDebugCtx->rcx
-               &&  pOrgCtx->rsi != pDebugCtx->rsi
-               &&  pOrgCtx->rdi != pDebugCtx->rdi)
-        {
-            rc = REMR3EmulateInstruction(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu));
-            AssertRC(rc);
-        }
-    }
-#endif
 
     /*
      * Compare the register states.
@@ -6641,12 +6669,16 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         PIEMVERIFYEVTREC pOtherRec = pIemCpu->pOtherEvtRecHead;
         while (pIemRec && pOtherRec)
         {
-            /* Since we might miss RAM writes and reads, ignore extra ones
-               made by IEM.  */
+            /* Since we might miss RAM writes and reads, ignore reads and check
+               that any written memory is the same extra ones.  */
             while (   IEMVERIFYEVENT_IS_RAM(pIemRec->enmEvent)
                    && !IEMVERIFYEVENT_IS_RAM(pOtherRec->enmEvent)
                    && pIemRec->pNext)
+            {
+                if (pIemRec->enmEvent == IEMVERIFYEVENT_RAM_WRITE)
+                    iemVerifyWriteRecord(pIemCpu, pIemRec);
                 pIemRec = pIemRec->pNext;
+            }
 
             /* Do the compare. */
             if (pIemRec->enmEvent != pOtherRec->enmEvent)
@@ -6692,7 +6724,11 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 
         /* Ignore extra writes and reads. */
         while (pIemRec && IEMVERIFYEVENT_IS_RAM(pIemRec->enmEvent))
+        {
+            if (pIemRec->enmEvent == IEMVERIFYEVENT_RAM_WRITE)
+                iemVerifyWriteRecord(pIemCpu, pIemRec);
             pIemRec = pIemRec->pNext;
+        }
         if (pIemRec != NULL)
             iemVerifyAssertRecord(pIemRec, "Extra IEM record!");
         else if (pOtherRec != NULL)
