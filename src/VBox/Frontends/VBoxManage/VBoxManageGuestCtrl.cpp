@@ -501,7 +501,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
                 if (args.size() == 0 && Utf8Cmd.isEmpty())
                     Utf8Cmd = ValueUnion.psz;
-                args.push_back(Bstr(ValueUnion.psz).raw());
+                else
+                    args.push_back(Bstr(ValueUnion.psz).raw());
                 break;
             }
 
