@@ -28,6 +28,9 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/trpm.h>
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+# include <VBox/vmm/iem.h>
+#endif
 #include "IOMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
@@ -1373,6 +1376,9 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
     AssertRC(rc);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyMMIORead(pVM, GCPhys, cbValue);
+#endif
 
     /*
      * Lookup the current context range node and statistics.
@@ -1499,6 +1505,9 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
     AssertRC(rc);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyMMIOWrite(pVM, GCPhys, u32Value, cbValue);
+#endif
 
     /*
      * Lookup the current context range node.

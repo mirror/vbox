@@ -52,6 +52,7 @@
 #include <VBox/vmm/dbgf.h>
 #ifdef IEM_VERIFICATION_MODE
 # include <VBox/vmm/rem.h>
+# include <VBox/vmm/mm.h>
 #endif
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -186,6 +187,10 @@ typedef IEMSELDESC *PIEMSELDESC;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** Temporary hack to disable the double execution.  Will be removed in favor
+ * of a dedicated execution mode in EM. */
+//#define IEM_VERIFICATION_MODE_NO_REM
+
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
 #define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_INTERNAL_ERROR_4)
@@ -499,6 +504,11 @@ static VBOXSTRICTRC     iemRaiseSelectorBounds(PIEMCPU pIemCpu, uint32_t iSegReg
 static VBOXSTRICTRC     iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
 static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
 static VBOXSTRICTRC     iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
+static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu);
+static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
+static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
+#endif
 
 
 /**
@@ -2077,7 +2087,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
  */
 static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, void **ppvMem)
 {
-#ifdef IEM_VERIFICATION_MODE
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
     /* Force the alternative path so we can ignore writes. */
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
         return VERR_PGM_PHYS_TLB_CATCH_ALL;
@@ -2161,7 +2171,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
      * Do the writing.
      */
     int rc;
-#ifndef IEM_VERIFICATION_MODE /* No memory changes in verification mode. */
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM) /* No memory changes in verification mode. */
     if (!pIemCpu->aMemBbMappings[iMemMap].fUnassigned)
     {
         uint16_t const  cbFirst  = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
@@ -2195,6 +2205,37 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
     else
 #endif
         rc = VINF_SUCCESS;
+
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
+    /*
+     * Record the write(s).
+     */
+    PIEMVERIFYEVTREC pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (pEvtRec)
+    {
+        pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_WRITE;
+        pEvtRec->u.RamWrite.GCPhys  = pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst;
+        pEvtRec->u.RamWrite.cb      = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
+        memcpy(pEvtRec->u.RamWrite.ab, &pIemCpu->aBounceBuffers[iMemMap].ab[0], pIemCpu->aMemBbMappings[iMemMap].cbFirst);
+        pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+        *pIemCpu->ppIemEvtRecNext = pEvtRec;
+    }
+    if (pIemCpu->aMemBbMappings[iMemMap].cbSecond)
+    {
+        pEvtRec = iemVerifyAllocRecord(pIemCpu);
+        if (pEvtRec)
+        {
+            pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_WRITE;
+            pEvtRec->u.RamWrite.GCPhys  = pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond;
+            pEvtRec->u.RamWrite.cb      = pIemCpu->aMemBbMappings[iMemMap].cbSecond;
+            memcpy(pEvtRec->u.RamWrite.ab,
+                   &pIemCpu->aBounceBuffers[iMemMap].ab[pIemCpu->aMemBbMappings[iMemMap].cbFirst],
+                   pIemCpu->aMemBbMappings[iMemMap].cbSecond);
+            pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+            *pIemCpu->ppIemEvtRecNext = pEvtRec;
+        }
+    }
+#endif
 
     /*
      * Free the mapping entry.
@@ -2254,6 +2295,30 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
             if (rc != VINF_SUCCESS)
                 return rc;
         }
+
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
+        /*
+         * Record the reads.
+         */
+        PIEMVERIFYEVTREC pEvtRec = iemVerifyAllocRecord(pIemCpu);
+        if (pEvtRec)
+        {
+            pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
+            pEvtRec->u.RamRead.GCPhys  = GCPhysFirst;
+            pEvtRec->u.RamRead.cb      = cbFirstPage;
+            pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+            *pIemCpu->ppIemEvtRecNext = pEvtRec;
+        }
+        pEvtRec = iemVerifyAllocRecord(pIemCpu);
+        if (pEvtRec)
+        {
+            pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
+            pEvtRec->u.RamRead.GCPhys  = GCPhysSecond;
+            pEvtRec->u.RamRead.cb      = cbSecondPage;
+            pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+            *pIemCpu->ppIemEvtRecNext = pEvtRec;
+        }
+#endif
     }
 #ifdef VBOX_STRICT
     else
@@ -2317,6 +2382,21 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             if (rc != VINF_SUCCESS)
                 return rc;
         }
+
+#if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
+        /*
+         * Record the read.
+         */
+        PIEMVERIFYEVTREC pEvtRec = iemVerifyAllocRecord(pIemCpu);
+        if (pEvtRec)
+        {
+            pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
+            pEvtRec->u.RamRead.GCPhys  = GCPhysFirst;
+            pEvtRec->u.RamRead.cb      = cbMem;
+            pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+            *pIemCpu->ppIemEvtRecNext = pEvtRec;
+        }
+#endif
     }
 #ifdef VBOX_STRICT
     else
@@ -2361,7 +2441,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
  * @param   ppvMem              Where to return the pointer to the mapped
  *                              memory.
  * @param   cbMem               The number of bytes to map.  This is usually 1,
- *                              2, 4, 6, 8, 12 or 16.  When used by string
+ *                              2, 4, 6, 8, 12, 16 or 32.  When used by string
  *                              operations it can be up to a page.
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
@@ -2379,7 +2459,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 16);
+    Assert(cbMem <= 32);
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;
@@ -3795,6 +3875,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
     /*
      * Commit the flags.
      */
+    Assert(fEflNew & RT_BIT_32(1));
     pCtx->eflags.u = fEflNew;
     iemRegAddToRip(pIemCpu, cbInstr);
 
@@ -4356,7 +4437,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
                        | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT
                        | X86_EFL_RF /*| X86_EFL_VM*/ | X86_EFL_AC /*|X86_EFL_VIF*/ /*|X86_EFL_VIP*/
                        | X86_EFL_ID;
-            uNewFlags |= pCtx->eflags.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP);
+            uNewFlags |= pCtx->eflags.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
         }
         else
         {
@@ -4368,7 +4449,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
             uNewFlags  = uFrame.pu16[2];
             uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                        | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT;
-            uNewFlags |= pCtx->eflags.u & UINT16_C(0xffff0000);
+            uNewFlags |= pCtx->eflags.u & (UINT16_C(0xffff0000) | X86_EFL_1);
             /** @todo The intel pseudo code does not indicate what happens to
              *        reserved flags. We just ignore them. */
         }
@@ -4412,6 +4493,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
         pCtx->cs            = uNewCs;
         pCtx->csHid.u64Base = (uint32_t)uNewCs << 4;
         /** @todo do we load attribs and limit as well? */
+        Assert(uNewFlags & X86_EFL_1);
         pCtx->eflags.u      = uNewFlags;
 
         return VINF_SUCCESS;
@@ -4491,7 +4573,9 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         }
 
         *pSel = uSel;   /* Not RPL, remember :-) */
-        if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
+            && iSegReg != X86_SREG_FS
+            && iSegReg != X86_SREG_GS)
         {
             /** @todo figure out what this actually does, it works. Needs
              *        testcase! */
@@ -4633,6 +4717,46 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
 
 
 /**
+ * Implements lgs, lfs, les, lds & lss.
+ */
+IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
+                uint16_t, uSel,
+                uint64_t, offSeg,
+                uint8_t,  iSegReg,
+                uint8_t,  iGReg,
+                IEMMODE,  enmEffOpSize)
+{
+    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    VBOXSTRICTRC    rcStrict;
+
+    /*
+     * Use iemCImpl_LoadSReg to do the tricky segment register loading.
+     */
+    /** @todo verify and test that mov, pop and lXs works the segment
+     *        register loading in the exact same way. */
+    rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        switch (enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                *(uint16_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            case IEMMODE_32BIT:
+                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            case IEMMODE_64BIT:
+                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Implements 'pop SReg'.
  *
  * @param   iSegReg         The segment register number (valid).
@@ -4709,7 +4833,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
         rcStrict = CPUMSetGuestGDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
 #else
         PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -4744,7 +4868,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
         rcStrict = CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
 #else
         PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -4780,7 +4904,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 3: crX = pCtx->cr3; break;
         case 4: crX = pCtx->cr4; break;
         case 8:
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
 #else
             crX = 0xff;
@@ -4887,7 +5011,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             /*
              * Change CR0.
              */
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             rc = CPUMSetGuestCR0(pVCpu, NewCrX);
             AssertRCSuccessReturn(rc, RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_3);
 #else
@@ -4907,7 +5031,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
                 else
                     NewEFER &= ~MSR_K6_EFER_LME;
 
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
                 CPUMSetGuestEFER(pVCpu, NewEFER);
 #else
                 pCtx->msrEFER = NewEFER;
@@ -4915,7 +5039,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
                 Assert(pCtx->msrEFER == NewEFER);
             }
 
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             /*
              * Inform PGM.
              */
@@ -4977,14 +5101,14 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
              *        invalid bits. */
 
             /* Make the change. */
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             rc = CPUMSetGuestCR3(pVCpu, NewCrX);
             AssertRCSuccessReturn(rc, rc);
 #else
             pCtx->cr3 = NewCrX;
 #endif
 
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             /* Inform PGM. */
             if (pCtx->cr0 & X86_CR0_PG)
             {
@@ -5036,7 +5160,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             /*
              * Change it.
              */
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             rc = CPUMSetGuestCR4(pVCpu, NewCrX);
             AssertRCSuccessReturn(rc, rc);
 #else
@@ -5047,7 +5171,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             /*
              * Notify SELM and PGM.
              */
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             /* SELM - VME may change things wrt to the TSS shadowing. */
             if ((NewCrX ^ OldCrX) & X86_CR4_VME)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
@@ -5072,7 +5196,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
          * CR8 maps to the APIC TPR.
          */
         case 8:
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
 #else
             rcStrict = VINF_SUCCESS;
@@ -5113,12 +5237,10 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
      * Perform the I/O.
      */
     uint32_t u32Value;
-#ifndef IEM_VERIFICATION_MODE
+#if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
     rcStrict = IOMIOPortRead(IEMCPU_TO_VM(pIemCpu), u16Port, &u32Value, cbReg);
 #else
-    u32Value = 0xffffffff;
-    rcStrict = VINF_SUCCESS;
-    pIemCpu->cIOReads++;
+    rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, cbReg);
 #endif
     if (IOM_SUCCESS(rcStrict))
     {
@@ -5180,12 +5302,11 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         case 4: u32Value = pCtx->eax; break;
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
-#ifndef IEM_VERIFICATION_MODE
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
     VBOXSTRICTRC rc = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
-#else
-    VBOXSTRICTRC rc = VINF_SUCCESS;
-    pIemCpu->cIOWrites++;
-#endif
+# else
+    VBOXSTRICTRC rc = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
+# endif
     if (IOM_SUCCESS(rc))
     {
         iemRegAddToRip(pIemCpu, cbInstr);
@@ -5368,7 +5489,8 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
-#define IEM_MC_COMMIT_EFLAGS(a_EFlags)                  (pIemCpu)->CTX_SUFF(pCtx)->eflags.u = (a_EFlags)
+#define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
+   do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u = (a_EFlags); Assert((pIemCpu)->CTX_SUFF(pCtx)->eflags.u & X86_EFL_1); } while (0)
 
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (a_CVariableOrConst)
 
@@ -5564,6 +5686,19 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
 #define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2)     return (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2)
 
 /**
+ * Defers the rest of the instruction emulation to a C implementation routine
+ * and returns, taking two arguments in addition to the standard ones.
+ *
+ * @param   a_pfnCImpl      The pointer to the C routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
+ * @param   a3              The fourth extra argument.
+ * @param   a4              The fifth extra argument.
+ */
+#define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4) return (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2, a3, a4)
+
+/**
  * Defers the entire instruction emulation to a C implementation routine and
  * returns, only taking the standard parameters.
  *
@@ -5628,6 +5763,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
         if (   pIemCpu->CTX_SUFF(pCtx)->rcx != 0 \
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
+#define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)
 
@@ -5997,14 +6133,17 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
  */
 static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 {
+    PCPUMCTX pOrgCtx = pIemCpu->CTX_SUFF(pCtx);
+
+# ifndef IEM_VERIFICATION_MODE_NO_REM
     /*
      * Switch state.
      */
     static CPUMCTX  s_DebugCtx; /* Ugly! */
 
-    PCPUMCTX pOrgCtx = pIemCpu->CTX_SUFF(pCtx);
     s_DebugCtx = *pOrgCtx;
     pIemCpu->CTX_SUFF(pCtx) = &s_DebugCtx;
+# endif
 
     /*
      * See if there is an interrupt pending in TRPM and inject it if we can.
@@ -6026,27 +6165,322 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     pIemCpu->cIOWrites   = 0;
     pIemCpu->fMulDivHack = false;
     pIemCpu->fShlHack    = false;
+
+    /*
+     * Free all verification records.
+     */
+    PIEMVERIFYEVTREC pEvtRec = pIemCpu->pIemEvtRecHead;
+    pIemCpu->pIemEvtRecHead = NULL;
+    pIemCpu->ppIemEvtRecNext = &pIemCpu->pIemEvtRecHead;
+    do
+    {
+        while (pEvtRec)
+        {
+            PIEMVERIFYEVTREC pNext = pEvtRec->pNext;
+            pEvtRec->pNext = pIemCpu->pFreeEvtRec;
+            pIemCpu->pFreeEvtRec = pEvtRec;
+            pEvtRec = pNext;
+        }
+        pEvtRec = pIemCpu->pOtherEvtRecHead;
+        pIemCpu->pOtherEvtRecHead = NULL;
+        pIemCpu->ppOtherEvtRecNext = &pIemCpu->pOtherEvtRecHead;
+    } while (pEvtRec);
 }
+
+/**
+ * Allocate an event record.
+ * @returns Poitner to a record.
+ */
+static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu)
+{
+    PIEMVERIFYEVTREC pEvtRec = pIemCpu->pFreeEvtRec;
+    if (pEvtRec)
+        pIemCpu->pFreeEvtRec = pEvtRec->pNext;
+    else
+    {
+        if (!pIemCpu->ppIemEvtRecNext)
+            return NULL; /* Too early (fake PCIBIOS), ignore notification. */
+
+        pEvtRec = (PIEMVERIFYEVTREC)MMR3HeapAlloc(IEMCPU_TO_VM(pIemCpu), MM_TAG_EM /* lazy bird*/, sizeof(*pEvtRec));
+        if (!pEvtRec)
+            return NULL;
+    }
+    pEvtRec->enmEvent = IEMVERIFYEVENT_INVALID;
+    pEvtRec->pNext    = NULL;
+    return pEvtRec;
+}
+
+
+/**
+ * IOMMMIORead notification.
+ */
+VMM_INT_DECL(void)   IEMNotifyMMIORead(PVM pVM, RTGCPHYS GCPhys, size_t cbValue)
+{
+# ifndef IEM_VERIFICATION_MODE_NO_REM
+    PVMCPU              pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        return;
+    PIEMCPU             pIemCpu = &pVCpu->iem.s;
+    PIEMVERIFYEVTREC    pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (!pEvtRec)
+        return;
+    pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
+    pEvtRec->u.RamRead.GCPhys  = GCPhys;
+    pEvtRec->u.RamRead.cb      = cbValue;
+    pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
+    *pIemCpu->ppOtherEvtRecNext = pEvtRec;
+# endif
+}
+
+
+/**
+ * IOMMMIOWrite notification.
+ */
+VMM_INT_DECL(void)   IEMNotifyMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
+{
+# ifndef IEM_VERIFICATION_MODE_NO_REM
+    PVMCPU              pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        return;
+    PIEMCPU             pIemCpu = &pVCpu->iem.s;
+    PIEMVERIFYEVTREC    pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (!pEvtRec)
+        return;
+    pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_WRITE;
+    pEvtRec->u.RamWrite.GCPhys   = GCPhys;
+    pEvtRec->u.RamWrite.cb       = cbValue;
+    pEvtRec->u.RamWrite.ab[0]    = RT_BYTE1(u32Value);
+    pEvtRec->u.RamWrite.ab[1]    = RT_BYTE2(u32Value);
+    pEvtRec->u.RamWrite.ab[2]    = RT_BYTE3(u32Value);
+    pEvtRec->u.RamWrite.ab[3]    = RT_BYTE4(u32Value);
+    pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
+    *pIemCpu->ppOtherEvtRecNext = pEvtRec;
+# endif
+}
+
+
+/**
+ * IOMIOPortRead notification.
+ */
+VMM_INT_DECL(void)   IEMNotifyIOPortRead(PVM pVM, RTIOPORT Port, size_t cbValue)
+{
+# ifndef IEM_VERIFICATION_MODE_NO_REM
+    PVMCPU              pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        return;
+    PIEMCPU             pIemCpu = &pVCpu->iem.s;
+    PIEMVERIFYEVTREC    pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (!pEvtRec)
+        return;
+    pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_READ;
+    pEvtRec->u.IOPortRead.Port    = Port;
+    pEvtRec->u.IOPortRead.cbValue = cbValue;
+    pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
+    *pIemCpu->ppOtherEvtRecNext = pEvtRec;
+# endif
+}
+
+/**
+ * IOMIOPortWrite notification.
+ */
+VMM_INT_DECL(void)   IEMNotifyIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
+{
+# ifndef IEM_VERIFICATION_MODE_NO_REM
+    PVMCPU              pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        return;
+    PIEMCPU             pIemCpu = &pVCpu->iem.s;
+    PIEMVERIFYEVTREC    pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (!pEvtRec)
+        return;
+    pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_WRITE;
+    pEvtRec->u.IOPortWrite.Port     = Port;
+    pEvtRec->u.IOPortWrite.cbValue  = cbValue;
+    pEvtRec->u.IOPortWrite.u32Value = u32Value;
+    pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
+    *pIemCpu->ppOtherEvtRecNext = pEvtRec;
+# endif
+}
+
+
+VMM_INT_DECL(void)   IEMNotifyIOPortReadString(PVM pVM, RTIOPORT Port, RTGCPTR GCPtrDst, RTGCUINTREG cTransfers, size_t cbValue)
+{
+    AssertFailed();
+}
+
+
+VMM_INT_DECL(void)   IEMNotifyIOPortWriteString(PVM pVM, RTIOPORT Port, RTGCPTR GCPtrSrc, RTGCUINTREG cTransfers, size_t cbValue)
+{
+    AssertFailed();
+}
+
+
+/**
+ * Fakes and records an I/O port read.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   Port                The I/O port.
+ * @param   pu32Value           Where to store the fake value.
+ * @param   cbValue             The size of the access.
+ */
+static VBOXSTRICTRC iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
+{
+    PIEMVERIFYEVTREC pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (pEvtRec)
+    {
+        pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_READ;
+        pEvtRec->u.IOPortRead.Port    = Port;
+        pEvtRec->u.IOPortRead.cbValue = cbValue;
+        pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+        *pIemCpu->ppIemEvtRecNext = pEvtRec;
+    }
+    pIemCpu->cIOReads++;
+    *pu32Value = 0xffffffff;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fakes and records an I/O port write.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   Port                The I/O port.
+ * @param   u32Value            The value being written.
+ * @param   cbValue             The size of the access.
+ */
+static VBOXSTRICTRC iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
+{
+    PIEMVERIFYEVTREC pEvtRec = iemVerifyAllocRecord(pIemCpu);
+    if (pEvtRec)
+    {
+        pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_WRITE;
+        pEvtRec->u.IOPortWrite.Port     = Port;
+        pEvtRec->u.IOPortWrite.cbValue  = cbValue;
+        pEvtRec->u.IOPortWrite.u32Value = u32Value;
+        pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
+        *pIemCpu->ppIemEvtRecNext = pEvtRec;
+    }
+    pIemCpu->cIOWrites++;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Used by iemVerifyAssertRecord and iemVerifyAssertRecords to add a record
+ * dump to the assertion info.
+ *
+ * @param   pEvtRec         The record to dump.
+ */
+static void iemVerifyAssertAddRecordDump(PIEMVERIFYEVTREC pEvtRec)
+{
+    switch (pEvtRec->enmEvent)
+    {
+        case IEMVERIFYEVENT_IOPORT_READ:
+            RTAssertMsg2Add("I/O PORT READ from %#6x, %d bytes\n",
+                            pEvtRec->u.IOPortWrite.Port,
+                            pEvtRec->u.IOPortWrite.cbValue);
+            break;
+        case IEMVERIFYEVENT_IOPORT_WRITE:
+            RTAssertMsg2Add("I/O PORT WRITE  to %#6x, %d bytes, value %#x\n",
+                            pEvtRec->u.IOPortWrite.Port,
+                            pEvtRec->u.IOPortWrite.cbValue,
+                            pEvtRec->u.IOPortWrite.u32Value);
+            break;
+        case IEMVERIFYEVENT_RAM_READ:
+            RTAssertMsg2Add("RAM READ  at %RGp, %#4zx bytes\n",
+                            pEvtRec->u.RamRead.GCPhys,
+                            pEvtRec->u.RamRead.cb);
+            break;
+        case IEMVERIFYEVENT_RAM_WRITE:
+            RTAssertMsg2Add("RAM WRITE at %RGp, %#4zx bytes: %.*RHxs\n",
+                            pEvtRec->u.RamWrite.GCPhys,
+                            pEvtRec->u.RamWrite.cb,
+                            (int)pEvtRec->u.RamWrite.cb,
+                            pEvtRec->u.RamWrite.ab);
+            break;
+        default:
+            AssertMsgFailed(("Invalid event type %d\n", pEvtRec->enmEvent));
+            break;
+    }
+}
+
+
+/**
+ * Raises an assertion on the specified record, showing the given message with
+ * a record dump attached.
+ *
+ * @param   pEvtRec1        The first record.
+ * @param   pEvtRec2        The second record.
+ * @param   pszMsg          The message explaining why we're asserting.
+ */
+static void iemVerifyAssertRecords(PIEMVERIFYEVTREC pEvtRec1, PIEMVERIFYEVTREC pEvtRec2, const char *pszMsg)
+{
+    RTAssertMsg1(pszMsg, __LINE__, __FILE__, __PRETTY_FUNCTION__);
+    iemVerifyAssertAddRecordDump(pEvtRec1);
+    iemVerifyAssertAddRecordDump(pEvtRec2);
+    RTAssertPanic();
+}
+
+
+/**
+ * Raises an assertion on the specified record, showing the given message with
+ * a record dump attached.
+ *
+ * @param   pEvtRec1        The first record.
+ * @param   pszMsg          The message explaining why we're asserting.
+ */
+static void iemVerifyAssertRecord(PIEMVERIFYEVTREC pEvtRec, const char *pszMsg)
+{
+    RTAssertMsg1(pszMsg, __LINE__, __FILE__, __PRETTY_FUNCTION__);
+    iemVerifyAssertAddRecordDump(pEvtRec);
+    RTAssertPanic();
+}
+
 
 /**
  * Performs the post-execution verfication checks.
  */
 static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 {
+# if defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_NO_REM)
+    /*
+     * Switch back the state.
+     */
     PCPUMCTX    pOrgCtx   = CPUMQueryGuestCtxPtr(IEMCPU_TO_VMCPU(pIemCpu));
     PCPUMCTX    pDebugCtx = pIemCpu->CTX_SUFF(pCtx);
     Assert(pOrgCtx != pDebugCtx);
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
 
+    /*
+     * Execute the instruction in REM.
+     */
     int rc = REMR3EmulateInstruction(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu));
     AssertRC(rc);
+#if 0
+    if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+    {
+        while (    pOrgCtx->rip == pDebugCtx->rip - pIemCpu->offOpcode
+               &&  pOrgCtx->rcx != pDebugCtx->rcx
+               &&  pOrgCtx->rsi != pDebugCtx->rsi
+               &&  pOrgCtx->rdi != pDebugCtx->rdi)
+        {
+            rc = REMR3EmulateInstruction(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu));
+            AssertRC(rc);
+        }
+    }
+#endif
 
+    /*
+     * Compare the register states.
+     */
+    unsigned cDiffs = 0;
     if (memcmp(pOrgCtx, pDebugCtx, sizeof(*pDebugCtx)))
     {
         Log(("REM and IEM ends up with different registers!\n"));
-        unsigned cDiffs = 0;
 
-# define CHECK_FIELD(a_Field) \
+#  define CHECK_FIELD(a_Field) \
         do \
         { \
             if (pOrgCtx->a_Field != pDebugCtx->a_Field) \
@@ -6063,7 +6497,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             } \
         } while (0)
 
-# define CHECK_BIT_FIELD(a_Field) \
+#  define CHECK_BIT_FIELD(a_Field) \
         do \
         { \
             if (pOrgCtx->a_Field != pDebugCtx->a_Field) \
@@ -6086,14 +6520,14 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         CHECK_FIELD(rip);
         uint32_t fFlagsMask = UINT32_MAX;
         if (pIemCpu->fMulDivHack)
-            fFlagsMask &= ~(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
+            fFlagsMask &= ~(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
         if (pIemCpu->fShlHack)
             fFlagsMask &= ~(X86_EFL_OF);
         if ((pOrgCtx->rflags.u & fFlagsMask) != (pDebugCtx->rflags.u & fFlagsMask))
         {
             RTAssertMsg2Weak("  rflags differs - iem=%08llx rem=%08llx\n", pDebugCtx->rflags.u, pOrgCtx->rflags.u);
             CHECK_BIT_FIELD(rflags.Bits.u1CF);
-            /*CHECK_BIT_FIELD(rflags.Bits.u1Reserved0); */ /** @todo why does REM set this? */
+            CHECK_BIT_FIELD(rflags.Bits.u1Reserved0);
             CHECK_BIT_FIELD(rflags.Bits.u1PF);
             CHECK_BIT_FIELD(rflags.Bits.u1Reserved1);
             CHECK_BIT_FIELD(rflags.Bits.u1AF);
@@ -6189,9 +6623,83 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 
         if (cDiffs != 0)
             AssertFailed();
-# undef CHECK_FIELD
+#  undef CHECK_FIELD
+#  undef CHECK_BIT_FIELD
+    }
+
+    /*
+     * If the register state compared fine, check the verification event
+     * records.
+     */
+    if (cDiffs == 0)
+    {
+        /*
+         * Compare verficiation event records.
+         *  - I/O port accesses should be a 1:1 match.
+         */
+        PIEMVERIFYEVTREC pIemRec   = pIemCpu->pIemEvtRecHead;
+        PIEMVERIFYEVTREC pOtherRec = pIemCpu->pOtherEvtRecHead;
+        while (pIemRec && pOtherRec)
+        {
+            /* Since we might miss RAM writes and reads, ignore extra ones
+               made by IEM.  */
+            while (   IEMVERIFYEVENT_IS_RAM(pIemRec->enmEvent)
+                   && !IEMVERIFYEVENT_IS_RAM(pOtherRec->enmEvent)
+                   && pIemRec->pNext)
+                pIemRec = pIemRec->pNext;
+
+            /* Do the compare. */
+            if (pIemRec->enmEvent != pOtherRec->enmEvent)
+            {
+                iemVerifyAssertRecords(pIemRec, pOtherRec, "Type mismatches");
+                break;
+            }
+            bool fEquals;
+            switch (pIemRec->enmEvent)
+            {
+                case IEMVERIFYEVENT_IOPORT_READ:
+                    fEquals = pIemRec->u.IOPortRead.Port        == pOtherRec->u.IOPortRead.Port
+                           && pIemRec->u.IOPortRead.cbValue     == pOtherRec->u.IOPortRead.cbValue;
+                    break;
+                case IEMVERIFYEVENT_IOPORT_WRITE:
+                    fEquals = pIemRec->u.IOPortWrite.Port       == pOtherRec->u.IOPortWrite.Port
+                           && pIemRec->u.IOPortWrite.cbValue    == pOtherRec->u.IOPortWrite.cbValue
+                           && pIemRec->u.IOPortWrite.u32Value   == pOtherRec->u.IOPortWrite.u32Value;
+                    break;
+                case IEMVERIFYEVENT_RAM_READ:
+                    fEquals = pIemRec->u.RamRead.GCPhys         == pOtherRec->u.RamRead.GCPhys
+                           && pIemRec->u.RamRead.cb             == pOtherRec->u.RamRead.cb;
+                    break;
+                case IEMVERIFYEVENT_RAM_WRITE:
+                    fEquals = pIemRec->u.RamWrite.GCPhys        == pOtherRec->u.RamWrite.GCPhys
+                           && pIemRec->u.RamWrite.cb            == pOtherRec->u.RamWrite.cb
+                           && !memcmp(pIemRec->u.RamWrite.ab, pOtherRec->u.RamWrite.ab, pIemRec->u.RamWrite.cb);
+                    break;
+                default:
+                    fEquals = false;
+                    break;
+            }
+            if (!fEquals)
+            {
+                iemVerifyAssertRecords(pIemRec, pOtherRec, "Mismatch");
+                break;
+            }
+
+            /* advance */
+            pIemRec   = pIemRec->pNext;
+            pOtherRec = pOtherRec->pNext;
+        }
+
+        /* Ignore extra writes and reads. */
+        while (pIemRec && IEMVERIFYEVENT_IS_RAM(pIemRec->enmEvent))
+            pIemRec = pIemRec->pNext;
+        if (pIemRec != NULL)
+            iemVerifyAssertRecord(pIemRec, "Extra IEM record!");
+        else if (pOtherRec != NULL)
+            iemVerifyAssertRecord(pIemRec, "Extra Other record!");
     }
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
+# endif
 }
 
 #endif /* IEM_VERIFICATION_MODE && IN_RING3 */
@@ -6260,6 +6768,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
             if (rcStrict == VINF_SUCCESS)
                 pIemCpu->cInstructions++;
         }
+        EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
     }
 
     /*
