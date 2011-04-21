@@ -1087,6 +1087,13 @@ static VBOXSTRICTRC iemRaiseGeneralProtectionFault0(PIEMCPU pIemCpu)
 }
 
 
+static VBOXSTRICTRC iemRaiseNotCanonical(PIEMCPU pIemCpu)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 static VBOXSTRICTRC iemRaiseSelectorBounds(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess)
 {
     AssertFailed(/** @todo implement this */);
@@ -3851,12 +3858,15 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 {
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
     uint64_t OldPC = pCtx->rip + cbInstr;
+    uint64_t NewPC = OldPC + offDisp;
+    if (!IEM_IS_CANONICAL(NewPC))
+        return iemRaiseNotCanonical(pIemCpu);
 
     VBOXSTRICTRC rcStrict = iemMemStackPushU64(pIemCpu, OldPC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    pCtx->rip = OldPC + offDisp;
+    pCtx->rip = NewPC;
     return VINF_SUCCESS;
 }
 
@@ -3973,7 +3983,7 @@ IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
             u64Base = 0;
         else
         {
-            if (offSeg > offSeg)
+            if (offSeg > cbLimit)
             {
                 Log(("jmpf %04x:%08x -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
                 return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
@@ -4157,7 +4167,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
         /* Check the limit of the new EIP. */
         /** @todo Intel pseudo code only does the limit check for 16-bit
-         *        operands, AMD does make any distinction. What is right? */
+         *        operands, AMD does not make any distinction. What is right? */
         if (uNewEip > pCtx->csHid.u32Limit)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
 
@@ -4176,6 +4186,73 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Implements retn.
+ *
+ * We're doing this in C because of the \#GP that might be raised if the popped
+ * program counter is out of bounds.
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ * @param   cbPop           The amount of arguments to pop from the stack
+ *                          (bytes).
+ */
+IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
+{
+    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /* Fetch the RSP from the stack. */
+    VBOXSTRICTRC    rcStrict;
+    RTUINT64U       NewRip;
+    RTUINT64U       NewRsp;
+    NewRsp.u = pCtx->rsp;
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            NewRip.u = 0;
+            rcStrict = iemMemStackPopU16Ex(pIemCpu, &NewRip.Words.w0, &NewRsp);
+            break;
+        case IEMMODE_32BIT:
+            NewRip.u = 0;
+            rcStrict = iemMemStackPopU32Ex(pIemCpu, &NewRip.DWords.dw0, &NewRsp);
+            break;
+        case IEMMODE_64BIT:
+            rcStrict = iemMemStackPopU64Ex(pIemCpu, &NewRip.u, &NewRsp);
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Check the new RSP before loading it. */
+    /** @todo Should test this as the intel+amd pseudo code doesn't mention half
+     *        of it.  The canonical test is performed here and for call. */
+    if (enmEffOpSize != IEMMODE_64BIT)
+    {
+        if (NewRip.DWords.dw0 > pCtx->csHid.u32Limit)
+        {
+            Log(("retn newrip=%llx - out of bounds (%x) -> #GP\n", NewRip.u, pCtx->csHid.u32Limit));
+            return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
+        }
+    }
+    else
+    {
+        if (!IEM_IS_CANONICAL(NewRip.u))
+        {
+            Log(("retn newrip=%llx - not canonical -> #GP\n", NewRip.u));
+            return iemRaiseNotCanonical(pIemCpu);
+        }
+    }
+
+    /* Commit it. */
+    pCtx->rip = NewRip.u;
+    pCtx->rsp = NewRsp.u;
+    if (cbPop)
+        iemRegAddToRsp(pCtx, cbPop);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -4220,10 +4297,11 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
             return rcStrict;
 
         /* load the vector address into cs:ip. */
-        pCtx->cs            = Idte.sel;
-        pCtx->csHid.u64Base = (uint32_t)Idte.sel << 4;
+        pCtx->cs               = Idte.sel;
+        pCtx->csHid.u64Base    = (uint32_t)Idte.sel << 4;
         /** @todo do we load attribs and limit as well? Should we check against limit like far jump? */
-        pCtx->rip           = Idte.off;
+        pCtx->rip              = Idte.off;
+        pCtx->eflags.Bits.u1IF = 0;
         return VINF_SUCCESS;
     }
 
@@ -5295,12 +5373,18 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (a_CVariableOrConst)
 
 #define IEM_MC_FETCH_GREG_U8(a_u8Dst, a_iGReg)          (a_u8Dst)  = iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_ZX_U16(a_u16Dst, a_iGReg)  (a_u16Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_ZX_U32(a_u32Dst, a_iGReg)  (a_u32Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_ZX_U64(a_u64Dst, a_iGReg)  (a_u64Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U16(a_u16Dst, a_iGReg)        (a_u16Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U16_ZX_U32(a_u32Dst, a_iGReg) (a_u32Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U16_ZX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U32(a_u32Dst, a_iGReg)        (a_u32Dst) = iemGRegFetchU32(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U32_ZX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U64(a_u64Dst, a_iGReg)        (a_u64Dst) = iemGRegFetchU64(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_SREG_U16(a_u16Dst, a_iSReg)        (a_u16Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
-#define IEM_MC_FETCH_SREG_U32_ZX(a_u32Dst, a_iSReg)     (a_u32Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
-#define IEM_MC_FETCH_SREG_U64_ZX(a_u64Dst, a_iSReg)     (a_u64Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
+#define IEM_MC_FETCH_SREG_ZX_U32(a_u32Dst, a_iSReg)     (a_u32Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
+#define IEM_MC_FETCH_SREG_ZX_U64(a_u64Dst, a_iSReg)     (a_u64Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pIemCpu, (a_iGReg)) = (a_u8Value)
@@ -5351,6 +5435,43 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataS32SxU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem)))
+
+#define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u16Dst) = u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U8_ZX_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u32Dst) = u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U8_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U16_ZX_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint16_t u16Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &u16Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u32Dst) = u16Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U16_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint16_t u16Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &u16Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = u16Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U32_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint32_t u32Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &u32Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = u32Tmp; \
+    } while (0)
 
 #define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU8(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u8Value)))
@@ -5876,16 +5997,35 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
  */
 static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 {
+    /*
+     * Switch state.
+     */
     static CPUMCTX  s_DebugCtx; /* Ugly! */
 
     PCPUMCTX pOrgCtx = pIemCpu->CTX_SUFF(pCtx);
     s_DebugCtx = *pOrgCtx;
     pIemCpu->CTX_SUFF(pCtx) = &s_DebugCtx;
+
+    /*
+     * See if there is an interrupt pending in TRPM and inject it if we can.
+     */
+    PVMCPU pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    if (   pOrgCtx->eflags.Bits.u1IF
+        && TRPMHasTrap(pVCpu)
+        //&& TRPMIsSoftwareInterrupt(pVCpu)
+        && EMGetInhibitInterruptsPC(pVCpu) != pOrgCtx->rip)
+    {
+        Log(("Injecting trap %#x\n", TRPMGetTrapNo(pVCpu)));
+        iemCImpl_int(pIemCpu, 0, TRPMGetTrapNo(pVCpu), false);
+    }
+
+    /*
+     * Reset the counters.
+     */
     pIemCpu->cIOReads    = 0;
     pIemCpu->cIOWrites   = 0;
     pIemCpu->fMulDivHack = false;
     pIemCpu->fShlHack    = false;
-
 }
 
 /**
@@ -5941,7 +6081,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
                 cDiffs++;
             }
             else
-                RTAssertMsg2Weak("  the FPU state differs - happends the first time...\n");
+                RTAssertMsg2Weak("  the FPU state differs - happens the first time...\n");
         }
         CHECK_FIELD(rip);
         uint32_t fFlagsMask = UINT32_MAX;
@@ -6066,6 +6206,10 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 {
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
+
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    iemExecVerificationModeSetup(pIemCpu);
+#endif
 #ifdef DEBUG
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     char     szInstr[256];
@@ -6086,9 +6230,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
           (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, pCtx->eflags.u,
           szInstr));
 #endif
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
-    iemExecVerificationModeSetup(pIemCpu);
-#endif
 
     /*
      * Do the decoding and emulation.
@@ -6101,6 +6242,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
     if (rcStrict == VINF_SUCCESS)
         pIemCpu->cInstructions++;
+//#ifdef DEBUG
+//    AssertMsg(pIemCpu->offOpcode == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", pIemCpu->offOpcode, cbInstr));
+//#endif
 
     /* Execute the next instruction as well if a cli, pop ss or
        mov ss, Gr has just completed successfully. */
@@ -6121,9 +6265,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     /*
      * Assert some sanity.
      */
-#ifdef DEBUG
-    AssertMsg(pIemCpu->offOpcode == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", pIemCpu->offOpcode, cbInstr));
-#endif
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     iemExecVerificationModeCheck(pIemCpu);
 #endif
