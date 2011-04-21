@@ -240,7 +240,7 @@ static void usbProxyFreeBSDSetupReq(struct usb_device_request *pSetupData,
 static int usbProxyFreeBSDEndpointOpen(PUSBPROXYDEV pProxyDev, int Endpoint, bool fIsoc, int index)
 {
     PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
-    PUSBENDPOINTFBSD pEndpointFBSD;
+    PUSBENDPOINTFBSD pEndpointFBSD = NULL; /* shut up gcc */
     struct usb_fs_endpoint *pXferEndpoint;
     struct usb_fs_open UsbFsOpen;
     int rc;
