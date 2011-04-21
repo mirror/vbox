@@ -69,20 +69,6 @@ endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
 endif
-#
-# Link against libstdc++.a. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
-# (It would've been preferred to avoid features depending on libstdc++, of course...)
-#
-# Actually, this is darn annoying and will *NOT* be tolerated for any new code!
-#
-VBoxClient_LIBPATH  += $(VBoxClient_0_OUTDIR)
-VBoxClient_ORDERDEPS = $(VBoxClient_0_OUTDIR)/libstdc++.a
-VBoxClient_CLEAN     = $(VBoxClient_0_OUTDIR)/libstdc++.a
-$$(VBoxClient_0_OUTDIR)/libstdc++.a:
-	$(call MSG_L1,Forcing static libstdc++)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@ \
-	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@
 
 ifdef VBOX_X11_SEAMLESS_GUEST
  if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
