@@ -1995,7 +1995,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_RAW:
 #ifndef IEM_VERIFICATION_MODE /* remove later */
-                    AssertFailed();
                     rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
                     break;
 #endif
@@ -2005,7 +2004,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_HWACC:
 #ifndef IEM_VERIFICATION_MODE /* remove later */
-                    AssertFailed();
                     rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
                     break;
 #endif
