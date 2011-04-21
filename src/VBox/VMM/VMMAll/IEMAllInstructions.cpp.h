@@ -8136,7 +8136,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
                 IEM_MC_FETCH_MEM_U32(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
                 IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc + 4);
-                IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_16BIT);
+                IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_32BIT);
                 IEM_MC_END();
             }
             else
@@ -8149,7 +8149,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
                 IEM_MC_FETCH_MEM_S32_SX_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
                 IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc + 4);
-                IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_16BIT);
+                IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_32BIT);
                 IEM_MC_END();
             }
             return VINF_SUCCESS;
@@ -8163,7 +8163,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
             IEM_MC_FETCH_MEM_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc + 8);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_16BIT);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, IEMMODE_64BIT);
             IEM_MC_END();
             return VINF_SUCCESS;
 
