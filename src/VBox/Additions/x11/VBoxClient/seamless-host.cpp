@@ -133,15 +133,15 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 /**
  * Update the set of visible rectangles in the host.
  */
-void VBoxGuestSeamlessHost::updateRects(std::auto_ptr<std::vector<RTRECT> > pRects)
+void VBoxGuestSeamlessHost::updateRects(RTRECT *pRects, size_t cRects)
 {
     LogRelFlowFunc(("\n"));
-    if (0 == pRects.get())  /* Assertion */
+    if (!pRects)  /* Assertion */
     {
         LogRelThisFunc(("ERROR: called with null pointer!\n"));
         return;
     }
-    VbglR3SeamlessSendRects(pRects.get()->size(), pRects.get()->empty() ? NULL : &pRects.get()->front());
+    VbglR3SeamlessSendRects(cRects, pRects);
     LogRelFlowFunc(("returning\n"));
 }
 

@@ -28,8 +28,6 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/shape.h>
 
-#include <vector>
-
 #define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
 #define WM_TYPE_DESKTOP_PROP "_NET_WM_WINDOW_TYPE_DESKTOP"
 
@@ -163,9 +161,9 @@ private:
     Display *mDisplay;
     /** Class to keep track of visible guest windows. */
     VBoxGuestWindowList mGuestWindows;
-    /** Keeps track of the total number of rectangles needed for the visible area of all
-        guest windows on the last call to getRects.  Used for pre-allocating space in
-        the vector of rectangles passed to the host. */
+    /** The current set of seamless rectangles. */
+    RTRECT *mpRects;
+    /** The current number of seamless rectangles. */
     int mcRects;
     /** Do we support the X shaped window extension? */
     bool mSupportsShape;
@@ -193,6 +191,7 @@ private:
     void addClientWindow(Window hWin);
     void freeWindowTree(void);
     void updateHostSeamlessInfo(void);
+    int updateRects(void);
 
 public:
     /**
@@ -224,7 +223,9 @@ public:
     /** Stop reporting seamless events. */
     void stop(void);
     /** Get the current list of visible rectangles. */
-    std::auto_ptr<std::vector<RTRECT> > getRects(void);
+    RTRECT *getRects(void);
+    /** Get the number of visible rectangles in the current list */
+    size_t getRectCount(void);
 
     /** Process next event in the guest event queue - called by the event thread. */
     void nextEvent(void);
@@ -239,8 +240,8 @@ public:
     void doShapeEvent(Window hWin);
 
     VBoxGuestSeamlessX11(void)
-        : mObserver(0), mDisplay(NULL), mcRects(0), mSupportsShape(false),
-          mEnabled(false), mChanged(false) {}
+        : mObserver(0), mDisplay(NULL), mpRects(NULL), mcRects(0),
+          mSupportsShape(false), mEnabled(false), mChanged(false) {}
 
     ~VBoxGuestSeamlessX11()
     {

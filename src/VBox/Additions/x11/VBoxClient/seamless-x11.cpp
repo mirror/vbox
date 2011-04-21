@@ -29,6 +29,8 @@
 
 #include <limits.h>
 
+#include "vector.h"
+
 #ifdef TESTCASE
 #undef DefaultRootWindow
 #define DefaultRootWindow XDefaultRootWindow
@@ -296,7 +298,10 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     /* Start by sending information about the current window setup to the host.  We do this
        here because we want to send all such information from a single thread. */
     if (mChanged)
+    {
+        updateRects();
         mObserver->notify();
+    }
     mChanged = false;
     XNextEvent(mDisplay, &event);
     switch (event.type)
@@ -417,59 +422,88 @@ void VBoxGuestSeamlessX11::doUnmapEvent(Window hWin)
     LogRelFlowFunc(("returning\n"));
 }
 
+/**
+ * Gets the list of visible rectangles
+ */
+RTRECT *VBoxGuestSeamlessX11::getRects(void)
+{
+    return mpRects;
+}
+
+/**
+ * Gets the number of rectangles in the visible rectangle list
+ */
+size_t VBoxGuestSeamlessX11::getRectCount(void)
+{
+    return mcRects;
+}
+
+RTVEC_DECL(RectList, RTRECT)
+
 DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo,
-                                   std::vector<RTRECT> *pRects)
+                                   struct RectList *pRects)
 {
     if (pInfo->mhasShape)
     {
         for (int i = 0; i < pInfo->mcRects; ++i)
         {
-            RTRECT rect;
-            rect.xLeft   =   pInfo->mX
-                            + pInfo->mpRects[i].x;
-            rect.yBottom =   pInfo->mY
-                            + pInfo->mpRects[i].y
-                            + pInfo->mpRects[i].height;
-            rect.xRight  =   pInfo->mX
-                            + pInfo->mpRects[i].x
-                            + pInfo->mpRects[i].width;
-            rect.yTop    =   pInfo->mY
-                            + pInfo->mpRects[i].y;
-            pRects->push_back(rect);
+            RTRECT *pRect;
+            
+            pRect = RectListPushBack(pRects);
+            if (!pRect)
+                return VERR_NO_MEMORY;
+            pRect->xLeft   =   pInfo->mX
+                             + pInfo->mpRects[i].x;
+            pRect->yBottom =   pInfo->mY
+                             + pInfo->mpRects[i].y
+                             + pInfo->mpRects[i].height;
+            pRect->xRight  =   pInfo->mX
+                             + pInfo->mpRects[i].x
+                             + pInfo->mpRects[i].width;
+            pRect->yTop    =   pInfo->mY
+                             + pInfo->mpRects[i].y;
         }
     }
     else
     {
-        RTRECT rect;
-        rect.xLeft   =  pInfo->mX;
-        rect.yBottom =  pInfo->mY
-                      + pInfo->mHeight;
-        rect.xRight  =  pInfo->mX
-                      + pInfo->mWidth;
-        rect.yTop    =  pInfo->mY;
-        pRects->push_back(rect);
+        RTRECT *pRect;
+
+        pRect = RectListPushBack(pRects);
+        if (!pRect)
+            return VERR_NO_MEMORY;
+        pRect->xLeft   =  pInfo->mX;
+        pRect->yBottom =  pInfo->mY
+                        + pInfo->mHeight;
+        pRect->xRight  =  pInfo->mX
+                        + pInfo->mWidth;
+        pRect->yTop    =  pInfo->mY;
     }
     return VINF_SUCCESS;
 }
 
 /**
- * Sends an updated list of visible rectangles to the host
+ * Updates the list of seamless rectangles
  */
-std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
+int VBoxGuestSeamlessX11::updateRects(void)
 {
     LogRelFlowFunc(("\n"));
     unsigned cRects = 0;
-    std::auto_ptr<std::vector<RTRECT> > apRects(new std::vector<RTRECT>);
+    struct RectList rects = RTVEC_INITIALIZER;
 
     if (0 != mcRects)
     {
-        apRects.get()->reserve(mcRects * 2);
+        int rc = RectListReserve(&rects, mcRects * 2);
+        if (RT_FAILURE(rc))
+            return rc;
     }
     mGuestWindows.doWithAll((PVBOXGUESTWINCALLBACK)getRectsCallback,
-                            apRects.get());
-    mcRects = apRects->size();
+                            &rects);
+    if (mpRects)
+        RTMemFree(mpRects);
+    mcRects = RectListSize(&rects);
+    mpRects = RectListDetach(&rects);
     LogRelFlowFunc(("returning\n"));
-    return apRects;
+    return VINF_SUCCESS;
 }
 
 /**
