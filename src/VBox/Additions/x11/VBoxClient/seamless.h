@@ -123,7 +123,7 @@ public:
 
     virtual void notify(void)
     {
-        mHost->updateRects(mGuest->getRects());
+        mHost->updateRects(mGuest->getRects(), mGuest->getRectCount());
     }
 };
 

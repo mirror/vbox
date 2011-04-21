@@ -18,9 +18,6 @@
 #ifndef __Additions_client_seamless_host_h
 # define __Additions_client_seamless_host_h
 
-#include <memory>                   /* for auto_ptr */
-#include <vector>                   /* for vector */
-
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>      /* for the R3 guest library functions  */
 
@@ -150,7 +147,7 @@ public:
     /**
      * Update the set of visible rectangles in the host.
      */
-    void updateRects(std::auto_ptr<std::vector<RTRECT> > pRects);
+    void updateRects(RTRECT *pRects, size_t cRects);
 
     VBoxGuestSeamlessHost(void) : mThreadFunction(this),
                                   mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
