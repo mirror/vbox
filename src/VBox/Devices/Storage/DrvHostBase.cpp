@@ -980,7 +980,6 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
             if (RT_SUCCESS(rc))
             {
                 /* Get needed device parameters. */
-                union ccb DeviceCCB;
 
                 /*
                  * The device path, target id and lun id. Those are
