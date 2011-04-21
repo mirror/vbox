@@ -177,6 +177,7 @@ SOLARIS_ADD_DRIVERS_CONF = \
 	vboxguest.conf
 
 SOLARIS_ADD_XORG_DRIVERS = \
+	vboxmouse_drv_13.so \
 	vboxmouse_drv_14.so \
 	vboxmouse_drv_15.so \
 	vboxmouse_drv_16.so \

@@ -30,10 +30,10 @@ uncompress_file()
         echo "missing argument to uncompress_file()"
         return 1
     fi
-    
+
     # Remove compressed path from the pkg
     /usr/sbin/removef $PKGINST "$1/$2.Z" 1>/dev/null
-    
+
     # Add uncompressed path to the pkg
     /usr/sbin/installf -c none $PKGINST "$1/$2" f
 
