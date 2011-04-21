@@ -240,7 +240,7 @@ public:
 
     VBoxGuestSeamlessX11(void)
         : mObserver(0), mDisplay(NULL), mcRects(0), mSupportsShape(false),
-          mEnabled(false) {}
+          mEnabled(false), mChanged(false) {}
 
     ~VBoxGuestSeamlessX11()
     {
