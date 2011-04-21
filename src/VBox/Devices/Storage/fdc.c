@@ -2065,7 +2065,7 @@ static void fdctrl_result_timer(void *opaque)
     }
     /* READ_ID can't automatically succeed! */
 #ifdef VBOX
-    if (//!cur_drv->fMediaPresent || 
+    if (/* !cur_drv->fMediaPresent || */
         ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate)) {
         FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
