@@ -1406,6 +1406,10 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     uint32_t u32CR0;
 
+#ifdef IEM_VERIFICATION_MODE
+    return false;
+#endif
+
     /* Update counter. */
     env->pVM->rem.s.cCanExecuteRaw++;
 
@@ -4170,6 +4174,7 @@ REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM, PVMCPU pVCpu)
  */
 REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM, PVMCPU pVCpu)
 {
+#ifndef IEM_VERIFICATION_MODE
     LogFlow(("REMR3NotifyInterruptSet: fInRem=%d interrupts %s\n", pVM->rem.s.fInREM,
              (pVM->rem.s.Env.eflags & IF_MASK) && !(pVM->rem.s.Env.hflags & HF_INHIBIT_IRQ_MASK) ? "enabled" : "disabled"));
     if (pVM->rem.s.fInREM)
@@ -4177,6 +4182,7 @@ REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM, PVMCPU pVCpu)
         ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
                        CPU_INTERRUPT_EXTERNAL_HARD);
     }
+#endif
 }
 
 
@@ -4207,6 +4213,7 @@ REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu)
  */
 REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
 {
+#ifndef IEM_VERIFICATION_MODE
 #ifndef DEBUG_bird
     LogFlow(("REMR3NotifyTimerPending: fInRem=%d\n", pVM->rem.s.fInREM));
 #endif
@@ -4223,6 +4230,7 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
     }
     else
         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: !fInREM; cpu state=%d\n", VMCPU_GET_STATE(pVCpuDst)));
+#endif
 }
 
 
@@ -4234,12 +4242,14 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
  */
 REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM)
 {
+#ifndef IEM_VERIFICATION_MODE
     LogFlow(("REMR3NotifyDmaPending: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
         ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
                        CPU_INTERRUPT_EXTERNAL_DMA);
     }
+#endif
 }
 
 
@@ -4251,12 +4261,14 @@ REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM)
  */
 REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM)
 {
+#ifndef IEM_VERIFICATION_MODE
     LogFlow(("REMR3NotifyQueuePending: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
         ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
                        CPU_INTERRUPT_EXTERNAL_EXIT);
     }
+#endif
 }
 
 
@@ -4268,12 +4280,14 @@ REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM)
  */
 REMR3DECL(void) REMR3NotifyFF(PVM pVM)
 {
+#ifndef IEM_VERIFICATION_MODE
     LogFlow(("REMR3NotifyFF: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
         ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
                        CPU_INTERRUPT_EXTERNAL_EXIT);
     }
+#endif
 }
 
 

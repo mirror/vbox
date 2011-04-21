@@ -296,6 +296,120 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
 }
 
 
+/**
+ * Implements 'REP LODS'.
+ */
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Setup.
+     */
+    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    if (uCounterReg == 0)
+        return VINF_SUCCESS;
+
+    PCCPUMSELREGHID pSrcHid = iemSRegGetHid(pIemCpu, iEffSeg);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrcHid, iEffSeg);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    OP_TYPE         uValueReg   = pCtx->OP_rAX;
+    ADDR_TYPE       uAddrReg    = pCtx->ADDR_rSI;
+
+    /*
+     * The loop.
+     */
+    do
+    {
+        /*
+         * Do segmentation and virtual page stuff.
+         */
+#if ADDR_SIZE != 64
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pSrcHid->u64Base + uAddrReg;
+#else
+        uint64_t    uVirtAddr = uAddrReg;
+#endif
+        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        if (cLeftPage > uCounterReg)
+            cLeftPage = uCounterReg;
+        if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
+            && cbIncr > 0    /** @todo Implement reverse direction string ops. */
+#if ADDR_SIZE != 64
+            && uAddrReg < pSrcHid->u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrcHid->u32Limit
+#endif
+           )
+        {
+            RTGCPHYS GCPhysMem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            /*
+             * If we can map the page without trouble, we can get away with
+             * just reading the last value on the page.
+             */
+            OP_TYPE const *puMem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                /* Only get the last byte, the rest doesn't matter in direct access mode. */
+                uValueReg = puMem[cLeftPage - 1];
+
+                /* Update the regs. */
+                uCounterReg -= cLeftPage;
+                uAddrReg    += cLeftPage * cbIncr;
+
+                /* If unaligned, we drop thru and do the page crossing access
+                   below. Otherwise, do the next page. */
+                if (!(uVirtAddr & (OP_SIZE - 1)))
+                    continue;
+                if (uCounterReg == 0)
+                    break;
+                cLeftPage = 0;
+            }
+        }
+
+        /*
+         * Fallback - slow processing till the end of the current page.
+         * In the cross page boundrary case we will end up here with cLeftPage
+         * as 0, we execute one loop then.
+         */
+        do
+        {
+            OP_TYPE uTmpValue;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, iEffSeg, uAddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            uValueReg = uTmpValue;
+            uAddrReg += cbIncr;
+            uCounterReg--;
+            cLeftPage--;
+        } while ((int32_t)cLeftPage > 0);
+        if (rcStrict != VINF_SUCCESS)
+            break;
+    } while (uCounterReg != 0);
+
+    /*
+     * Update the registers.
+     */
+    pCtx->ADDR_rCX = uCounterReg;
+    pCtx->ADDR_rDI = uAddrReg;
+#if OP_SIZE == 32
+    pCtx->rax     = uValueReg;
+#else
+    pCtx->OP_rAX  = uValueReg;
+#endif
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+
+    return rcStrict;
+}
+
+
 #if OP_SIZE != 64
 
 /**
@@ -322,7 +436,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
         return rcStrict;
 
     uint32_t        u32Value;
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
     rcStrict = IOMIOPortRead(pVM, pCtx->dx, &u32Value, OP_SIZE / 8);
+# else
+    iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
+# endif
     if (IOM_SUCCESS(rcStrict))
     {
         VBOXSTRICTRC rcStrict2 = iemMemCommitAndUnmap(pIemCpu, puMem, IEM_ACCESS_DATA_W);
@@ -343,6 +461,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
     }
     return rcStrict;
 }
+
 
 /**
  * Implements 'REP INS'.
@@ -416,7 +535,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value;
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
                     rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+# else
+                    rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
+# endif
                     if (!IOM_SUCCESS(rcStrict))
                         break;
                     *puMem++     = (OP_TYPE)u32Value;
@@ -460,7 +583,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 break;
 
             uint32_t u32Value;
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+# else
+            rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
+# endif
             if (!IOM_SUCCESS(rcStrict))
                 break;
 
@@ -495,7 +622,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 /**
  * Implements 'OUTS' (no rep)
  */
-IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE))
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
     PVM             pVM  = IEMCPU_TO_VM(pIemCpu);
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -511,16 +638,20 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE))
         return rcStrict;
 
     OP_TYPE uValue;
-    rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, X86_SREG_ES, pCtx->ADDR_rDI);
+    rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
     if (rcStrict == VINF_SUCCESS)
     {
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
         rcStrict = IOMIOPortWrite(pVM, pCtx->dx, uValue, OP_SIZE / 8);
+# else
+        rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, pCtx->dx, uValue, OP_SIZE / 8);
+# endif
         if (IOM_SUCCESS(rcStrict))
         {
             if (!pCtx->eflags.Bits.u1DF)
-                pCtx->ADDR_rDI += OP_SIZE / 8;
+                pCtx->ADDR_rSI += OP_SIZE / 8;
             else
-                pCtx->ADDR_rDI -= OP_SIZE / 8;
+                pCtx->ADDR_rSI -= OP_SIZE / 8;
             iemRegAddToRip(pIemCpu, cbInstr);
             /** @todo massage IOM status codes. */
         }
@@ -528,10 +659,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE))
     return rcStrict;
 }
 
+
 /**
  * Implements 'REP OUTS'.
  */
-IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
     PVM         pVM  = IEMCPU_TO_VM(pIemCpu);
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -548,12 +680,13 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
     if (uCounterReg == 0)
         return VINF_SUCCESS;
 
-    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    PCCPUMSELREGHID pHid = iemSRegGetHid(pIemCpu, iEffSeg);
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pHid, iEffSeg);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
     int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
-    ADDR_TYPE       uAddrReg    = pCtx->ADDR_rDI;
+    ADDR_TYPE       uAddrReg    = pCtx->ADDR_rSI;
 
     /*
      * The loop.
@@ -564,7 +697,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
 #if ADDR_SIZE != 64
-        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pHid->u64Base + uAddrReg;
 #else
         uint64_t    uVirtAddr = uAddrReg;
 #endif
@@ -574,8 +707,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
 #if ADDR_SIZE != 64
-            && uAddrReg < pCtx->esHid.u32Limit
-            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+            && uAddrReg < pHid->u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pHid->u32Limit
 #endif
            )
         {
@@ -600,7 +733,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value = *puMem++;
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
                     rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
+# else
+                    rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
+# endif
                     if (!IOM_SUCCESS(rcStrict))
                         break;
                     uAddrReg    += cbIncr;
@@ -638,11 +775,15 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
         do
         {
             OP_TYPE uValue;
-            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, X86_SREG_ES, uAddrReg);
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
                 break;
 
+# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
             rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
+# else
+            rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
+# endif
             if (!IOM_SUCCESS(rcStrict))
                 break;
 
@@ -663,7 +804,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE))
      * Update the registers.
      */
     pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
+    pCtx->ADDR_rSI = uAddrReg;
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRip(pIemCpu, cbInstr);
 

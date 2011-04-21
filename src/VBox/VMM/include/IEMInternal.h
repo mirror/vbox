@@ -60,6 +60,71 @@ typedef enum IEMMODEX
 AssertCompileSize(IEMMODEX, 4);
 
 
+#ifdef IEM_VERIFICATION_MODE
+
+/**
+ * Verification event type.
+ */
+typedef enum IEMVERIFYEVENT
+{
+    IEMVERIFYEVENT_INVALID = 0,
+    IEMVERIFYEVENT_IOPORT_READ,
+    IEMVERIFYEVENT_IOPORT_WRITE,
+    IEMVERIFYEVENT_RAM_WRITE,
+    IEMVERIFYEVENT_RAM_READ
+} IEMVERIFYEVENT;
+
+/** Checks if the event type is a RAM read or write. */
+# define IEMVERIFYEVENT_IS_RAM(a_enmType)    ((a_enmType) == IEMVERIFYEVENT_RAM_WRITE || (a_enmType) == IEMVERIFYEVENT_RAM_READ)
+
+/**
+ * Verification event record.
+ */
+typedef struct IEMVERIFYEVTREC
+{
+    /** Pointer to the next record in the list. */
+    struct IEMVERIFYEVTREC *pNext;
+    /** The event type. */
+    IEMVERIFYEVENT          enmEvent;
+    /** The event data. */
+    union
+    {
+        /** IEMVERIFYEVENT_IOPORT_READ */
+        struct
+        {
+            RTIOPORT    Port;
+            uint32_t    cbValue;
+        } IOPortRead;
+
+        /** IEMVERIFYEVENT_IOPORT_WRITE */
+        struct
+        {
+            RTIOPORT    Port;
+            uint32_t    cbValue;
+            uint32_t    u32Value;
+        } IOPortWrite;
+
+        /** IEMVERIFYEVENT_RAM_READ */
+        struct
+        {
+            RTGCPHYS    GCPhys;
+            uint32_t    cb;
+        } RamRead;
+
+        /** IEMVERIFYEVENT_RAM_WRITE */
+        struct
+        {
+            RTGCPHYS    GCPhys;
+            uint32_t    cb;
+            uint8_t     ab[32];
+        } RamWrite;
+    } u;
+} IEMVERIFYEVTREC;
+/** Pointer to an IEM event verification records. */
+typedef IEMVERIFYEVTREC *PIEMVERIFYEVTREC;
+
+#endif /* IEM_VERIFICATION_MODE */
+
 
 /**
  * The per-CPU IEM state.
@@ -187,9 +252,21 @@ typedef struct IEMCPU
      * This runs in parallel to aMemMappings and aMemBbMappings. */
     struct
     {
-        uint8_t             ab[/*PAGE_SIZE*/16];
+        uint8_t             ab[64];
     } aBounceBuffers[3];
 
+#ifdef IEM_VERIFICATION_MODE
+    /** The event verification records for what IEM did (LIFO). */
+    R3PTRTYPE(PIEMVERIFYEVTREC)     pIemEvtRecHead;
+    /** Insertion point for pIemEvtRecHead. */
+    R3PTRTYPE(PIEMVERIFYEVTREC *)   ppIemEvtRecNext;
+    /** The event verification records for what the other party did (FIFO). */
+    R3PTRTYPE(PIEMVERIFYEVTREC)     pOtherEvtRecHead;
+    /** Insertion point for pOtherEvtRecHead. */
+    R3PTRTYPE(PIEMVERIFYEVTREC *)   ppOtherEvtRecNext;
+    /** List of free event records. */
+    R3PTRTYPE(PIEMVERIFYEVTREC)     pFreeEvtRec;
+#endif
 } IEMCPU;
 /** Pointer to the per-CPU IEM state. */
 typedef IEMCPU *PIEMCPU;
@@ -629,7 +706,112 @@ FNIEMAIMPLMULDIVU64 iemAImpl_div_u64, iemAImpl_idiv_u64;
  * @param   a1                  The name of the 2nd argument.
  * @param   a2                  The name of the 3rd argument.
  */
-# define IEM_CIMPL_CALL_3(a_fn, a0, a1, a2) a_fn(pIemCpu, cbInstr, (a0), (a1))
+# define IEM_CIMPL_CALL_3(a_fn, a0, a1, a2) a_fn(pIemCpu, cbInstr, (a0), (a1), (a2))
+
+
+/**
+ * For typedef'ing or declaring a C instruction implementation function taking
+ * four extra arguments.
+ *
+ * @param   a_Name              The name of the type.
+ * @param   a_Type0             The type of the 1st argument
+ * @param   a_Arg0              The name of the 1st argument.
+ * @param   a_Type1             The type of the 2nd argument.
+ * @param   a_Arg1              The name of the 2nd argument.
+ * @param   a_Type2             The type of the 3rd argument.
+ * @param   a_Arg2              The name of the 3rd argument.
+ * @param   a_Type3             The type of the 4th argument.
+ * @param   a_Arg3              The name of the 4th argument.
+ */
+# define IEM_CIMPL_DECL_TYPE_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3) \
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, a_Type3 a_Arg3))
+/**
+ * For defining a C instruction implementation function taking four extra
+ * arguments.
+ *
+ * @param   a_Name              The name of the function.
+ * @param   a_Type0             The type of the 1st argument
+ * @param   a_Arg0              The name of the 1st argument.
+ * @param   a_Type1             The type of the 2nd argument.
+ * @param   a_Arg1              The name of the 2nd argument.
+ * @param   a_Type2             The type of the 3rd argument.
+ * @param   a_Arg2              The name of the 3rd argument.
+ * @param   a_Type3             The type of the 4th argument.
+ * @param   a_Arg3              The name of the 4th argument.
+ */
+# define IEM_CIMPL_DEF_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, aArg3) \
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, a_Type3 a_Arg3))
+/**
+ * For calling a C instruction implementation function taking four extra
+ * arguments.
+ *
+ * This special call macro adds default arguments to the call and allow us to
+ * change these later.
+ *
+ * @param   a_fn                The name of the function.
+ * @param   a0                  The name of the 1st argument.
+ * @param   a1                  The name of the 2nd argument.
+ * @param   a2                  The name of the 3rd argument.
+ * @param   a3                  The name of the 4th argument.
+ */
+# define IEM_CIMPL_CALL_4(a_fn, a0, a1, a2, a3) a_fn(pIemCpu, cbInstr, (a0), (a1), (a2), (a3))
+
+
+/**
+ * For typedef'ing or declaring a C instruction implementation function taking
+ * five extra arguments.
+ *
+ * @param   a_Name              The name of the type.
+ * @param   a_Type0             The type of the 1st argument
+ * @param   a_Arg0              The name of the 1st argument.
+ * @param   a_Type1             The type of the 2nd argument.
+ * @param   a_Arg1              The name of the 2nd argument.
+ * @param   a_Type2             The type of the 3rd argument.
+ * @param   a_Arg2              The name of the 3rd argument.
+ * @param   a_Type3             The type of the 4th argument.
+ * @param   a_Arg3              The name of the 4th argument.
+ * @param   a_Type4             The type of the 5th argument.
+ * @param   a_Arg4              The name of the 5th argument.
+ */
+# define IEM_CIMPL_DECL_TYPE_5(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3, a_Type4, a_Arg4) \
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, \
+                                               a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, \
+                                               a_Type3 a_Arg3, a_Type4 a_Arg4))
+/**
+ * For defining a C instruction implementation function taking five extra
+ * arguments.
+ *
+ * @param   a_Name              The name of the function.
+ * @param   a_Type0             The type of the 1st argument
+ * @param   a_Arg0              The name of the 1st argument.
+ * @param   a_Type1             The type of the 2nd argument.
+ * @param   a_Arg1              The name of the 2nd argument.
+ * @param   a_Type2             The type of the 3rd argument.
+ * @param   a_Arg2              The name of the 3rd argument.
+ * @param   a_Type3             The type of the 4th argument.
+ * @param   a_Arg3              The name of the 4th argument.
+ * @param   a_Type4             The type of the 5th argument.
+ * @param   a_Arg4              The name of the 5th argument.
+ */
+# define IEM_CIMPL_DEF_5(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3, a_Type4, a_Arg4) \
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, \
+                                             a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, \
+                                             a_Type3 a_Arg3, a_Type4 a_Arg4))
+/**
+ * For calling a C instruction implementation function taking five extra
+ * arguments.
+ *
+ * This special call macro adds default arguments to the call and allow us to
+ * change these later.
+ *
+ * @param   a_fn                The name of the function.
+ * @param   a0                  The name of the 1st argument.
+ * @param   a1                  The name of the 2nd argument.
+ * @param   a2                  The name of the 3rd argument.
+ * @param   a3                  The name of the 4th argument.
+ * @param   a4                  The name of the 5th argument.
+ */
+# define IEM_CIMPL_CALL_5(a_fn, a0, a1, a2, a3, a4) a_fn(pIemCpu, cbInstr, (a0), (a1), (a2), (a3), (a4))
 
 /** @}  */
 

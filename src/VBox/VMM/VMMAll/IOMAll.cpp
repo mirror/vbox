@@ -21,6 +21,9 @@
 #define LOG_GROUP LOG_GROUP_IOM
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+# include <VBox/vmm/iem.h>
+#endif
 #include <VBox/param.h>
 #include "IOMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -264,6 +267,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
         return VINF_IOM_HC_IOPORT_READ;
 #endif
     AssertRC(rc2);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyIOPortRead(pVM, Port, cbValue);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -454,6 +460,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
         return VINF_IOM_HC_IOPORT_READ;
 #endif
     AssertRC(rc2);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyIOPortReadString(pVM, Port, *pGCPtrDst, *pcTransfers, cb);
+#endif
 
 #ifdef LOG_ENABLED
     const RTGCUINTREG cTransfers = *pcTransfers;
@@ -622,6 +631,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
         return VINF_IOM_HC_IOPORT_WRITE;
 #endif
     AssertRC(rc2);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyIOPortWrite(pVM, Port, u32Value, cbValue);
+#endif
 
 /** @todo bird: When I get time, I'll remove the RC/R0 trees and link the RC/R0
  *        entries to the ring-3 node. */
@@ -788,6 +800,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
         return VINF_IOM_HC_IOPORT_WRITE;
 #endif
     AssertRC(rc2);
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+    IEMNotifyIOPortWriteString(pVM, Port, *pGCPtrSrc, *pcTransfers, cb);
+#endif
 
 #ifdef LOG_ENABLED
     const RTGCUINTREG cTransfers = *pcTransfers;
