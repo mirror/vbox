@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -28,6 +28,14 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
   # check for active VMs
   VBOXSVC_PID=`pidof VBoxSVC 2> /dev/null || true`
   if [ -n "$VBOXSVC_PID" ]; then
+    if [ -f /etc/init.d/vboxballoonctrl-service ]; then
+      # try graceful termination; terminate the ballon control service first
+      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxballoonctrl-service stop || true
+      else
+        /etc/init.d/vboxballoonctrl-service stop || true
+      fi
+    fi
     if [ -f /etc/init.d/vboxweb-service ]; then
       # try graceful termination; terminate the webservice first
       if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
@@ -35,8 +43,8 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
       else
         /etc/init.d/vboxweb-service stop || true
       fi
-      kill -USR1 $VBOXSVC_PID
     fi
+    kill -USR1 $VBOXSVC_PID
     sleep 1
     if pidof VBoxSVC > /dev/null 2>&1; then
       db_fset virtualbox/old-running seen false || true

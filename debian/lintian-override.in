@@ -14,7 +14,7 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxGuestControlSvc.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetDHCP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VRDPAuth.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxC.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxHeadless.so
@@ -28,6 +28,21 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedCrOpenGL.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VirtualBox.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
+%VERPKG%: binary-without-manpage usr/bin/VBox
+%VERPKG%: binary-without-manpage usr/bin/VBoxBalloonCtrl
+%VERPKG%: binary-without-manpage usr/bin/VBoxHeadless
+%VERPKG%: binary-without-manpage usr/bin/VBoxManage
+%VERPKG%: binary-without-manpage usr/bin/VBoxSDL
+%VERPKG%: binary-without-manpage usr/bin/VBoxTunctl
+%VERPKG%: binary-without-manpage usr/bin/VBoxVRDP
+%VERPKG%: binary-without-manpage usr/bin/VirtualBox
+%VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
+%VERPKG%: binary-without-manpage usr/bin/vboxballoonctrl
+%VERPKG%: binary-without-manpage usr/bin/vboxheadless
+%VERPKG%: binary-without-manpage usr/bin/vboxmanage
+%VERPKG%: binary-without-manpage usr/bin/vboxsdl
+%VERPKG%: binary-without-manpage usr/bin/vboxwebsrv
+%VERPKG%: binary-without-manpage usr/bin/virtualbox
 %VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDDGC.gc
 %VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDD2GC.gc
 %VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDDR0.r0
@@ -48,7 +63,7 @@
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxGuestPropSvc.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxGuestControlSvc.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVRDP.so
-%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VRDPAuth.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/bin/rdesktop-vrdp /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD2.so /usr/lib/virtualbox
@@ -80,7 +95,7 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVRDP.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOMIPCD /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VRDPAuth.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxAuth.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxExtPackHelperApp /usr/lib/virtualbox
@@ -88,6 +103,7 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxSVCM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxXPCOMIPCC.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/kchmviewer /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxBalloonCtrl /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/vboxwebsrv /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/webtest /usr/lib/virtualbox
 %VERPKG%: postrm-contains-additional-updaterc.d-calls /etc/init.d/vboxnet

@@ -37,6 +37,12 @@ if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "failed-upgrade" ]; then
   # check for active VMs
   VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null`
   if [ -n "$VBOXSVC_PID" ]; then
+    # try graceful termination; terminate the balloon control servic first
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+      invoke-rc.d vboxballoonctrl-service stop || true
+    else
+      /etc/init.d/vboxballoonctrl-service stop || true
+    fi
     # try graceful termination; terminate the webservice first
     if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
       invoke-rc.d vboxweb-service stop || true
