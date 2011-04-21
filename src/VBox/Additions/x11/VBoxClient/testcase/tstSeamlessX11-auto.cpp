@@ -14,7 +14,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <iostream>
 #include <stdlib.h> /* exit() */
 
 #include <X11/Xatom.h>
@@ -593,42 +592,43 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
                  g_pszTestName, pszDesc);
         ++cErrs;
     }
-    std::auto_ptr<std::vector<RTRECT> > rects = subject.getRects();
-    if (rects->size() != pFixture->cReportedRects)
+    RTRECT *pRects = subject.getRects();
+    size_t cRects = subject.getRectCount();
+    if (cRects != pFixture->cReportedRects)
     {
         RTPrintf("%s: fixture: %s.  Wrong number of rectangles reported after processing event (expected %u, got %u).\n",
                  g_pszTestName, pszDesc, pFixture->cReportedRects,
-                 (*rects).size());
+                 cRects);
         ++cErrs;
     }
     else
-        for (unsigned i = 0; i < rects->size(); ++i)
-            if (!smlsCompRect(&(*rects)[i], &pFixture->paReportedRects[i]))
+        for (unsigned i = 0; i < cRects; ++i)
+            if (!smlsCompRect(&pRects[i], &pFixture->paReportedRects[i]))
             {
                 RTPrintf("%s: fixture: %s.  Rectangle %u wrong after processing event.\n",
                          g_pszTestName, pszDesc, i);
                 smlsPrintDiffRects(&pFixture->paReportedRects[i],
-                                   &(*rects)[i]);
+                                   &pRects[i]);
                 ++cErrs;
                 break;
             }
     subject.stop();
     subject.start();
-    if (rects->size() != pFixture->cReportedRects)
+    if (cRects != pFixture->cReportedRects)
     {
         RTPrintf("%s: fixture: %s.  Wrong number of rectangles reported without processing event (expected %u, got %u).\n",
                  g_pszTestName, pszDesc, pFixture->cReportedRects,
-                 (*rects).size());
+                 cRects);
         ++cErrs;
     }
     else
-        for (unsigned i = 0; i < rects->size(); ++i)
-            if (!smlsCompRect(&(*rects)[i], &pFixture->paReportedRects[i]))
+        for (unsigned i = 0; i < cRects; ++i)
+            if (!smlsCompRect(&pRects[i], &pFixture->paReportedRects[i]))
             {
                 RTPrintf("%s: fixture: %s.  Rectangle %u wrong without processing event.\n",
                          g_pszTestName, pszDesc, i);
                 smlsPrintDiffRects(&pFixture->paReportedRects[i],
-                                   &(*rects)[i]);
+                                   &pRects[i]);
                 ++cErrs;
                 break;
             }
