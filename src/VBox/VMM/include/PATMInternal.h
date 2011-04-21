@@ -76,7 +76,7 @@
 
 #define MAX_INSTR_SIZE                     16
 
-//Patch states
+/* Patch states */
 #define PATCH_REFUSED                     1
 #define PATCH_DISABLED                    2
 #define PATCH_ENABLED                     4
@@ -139,12 +139,12 @@
 typedef struct
 {
     /** The key is a HC virtual address. */
-    AVLPVNODECORE   Core;
+    AVLPVNODECORE               Core;
 
-    uint32_t        uType;
-    R3PTRTYPE(uint8_t *) pRelocPos;
-    RTRCPTR       pSource;
-    RTRCPTR       pDest;
+    uint32_t                    uType;
+    R3PTRTYPE(uint8_t *)        pRelocPos;
+    RTRCPTR                     pSource;
+    RTRCPTR                     pDest;
 } RELOCREC, *PRELOCREC;
 
 /* forward decl */
@@ -153,30 +153,30 @@ struct _PATCHINFO;
 /* Cache record for guest to host pointer conversions. */
 typedef struct
 {
-    R3PTRTYPE(uint8_t *) pPageLocStartHC;
-    RCPTRTYPE(uint8_t *) pGuestLoc;
-    R3PTRTYPE(void *)    pPatch;
-    PGMPAGEMAPLOCK       Lock;
+    R3PTRTYPE(uint8_t *)        pPageLocStartHC;
+    RCPTRTYPE(uint8_t *)        pGuestLoc;
+    R3PTRTYPE(void *)           pPatch;
+    PGMPAGEMAPLOCK              Lock;
 } PATMP2GLOOKUPREC, *PPATMP2GLOOKUPREC;
 
 /* Obsolete; do not use. */
 typedef struct
 {
-    R3PTRTYPE(uint8_t *) pPatchLocStartHC;
-    R3PTRTYPE(uint8_t *) pPatchLocEndHC;
-    RCPTRTYPE(uint8_t *) pGuestLoc;
-    uint32_t             opsize;
+    R3PTRTYPE(uint8_t *)        pPatchLocStartHC;
+    R3PTRTYPE(uint8_t *)        pPatchLocEndHC;
+    RCPTRTYPE(uint8_t *)        pGuestLoc;
+    uint32_t                    opsize;
 } PATMP2GLOOKUPREC_OBSOLETE;
 
 typedef struct
 {
     /** The key is a pointer to a JUMPREC structure. */
-    AVLPVNODECORE   Core;
+    AVLPVNODECORE               Core;
 
-    R3PTRTYPE(uint8_t *) pJumpHC;
-    RCPTRTYPE(uint8_t *) pTargetGC;
-    uint32_t            offDispl;
-    uint32_t            opcode;
+    R3PTRTYPE(uint8_t *)        pJumpHC;
+    RCPTRTYPE(uint8_t *)        pTargetGC;
+    uint32_t                    offDispl;
+    uint32_t                    opcode;
 } JUMPREC, *PJUMPREC;
 
 /**
@@ -184,23 +184,30 @@ typedef struct
  */
 typedef enum
 {
-    PATM_LOOKUP_PATCH2GUEST,    /* patch to guest */
-    PATM_LOOKUP_BOTHDIR         /* guest to patch + patch to guest */
+    /** patch to guest */
+    PATM_LOOKUP_PATCH2GUEST,
+    /** guest to patch + patch to guest */
+    PATM_LOOKUP_BOTHDIR
 } PATM_LOOKUP_TYPE;
 
 /**
- * Patch to guest address lookup record
+ * Patch to guest address lookup record.
  */
 typedef struct RECPATCHTOGUEST
 {
     /** The key is an offset inside the patch memory block. */
-    AVLU32NODECORE   Core;
-
-    RTRCPTR          pOrgInstrGC;
-    PATM_LOOKUP_TYPE enmType;
-    bool             fDirty;
-    bool             fJumpTarget;
-    uint8_t          u8DirtyOpcode;  /* original opcode before writing 0xCC there to mark it dirty */
+    AVLU32NODECORE              Core;
+    /** GC address of the guest instruction this record is for. */
+    RTRCPTR                     pOrgInstrGC;
+    /** Patch to guest lookup type. */
+    PATM_LOOKUP_TYPE            enmType;
+    /** Flag whether the original instruction was changed by the guest. */
+    bool                        fDirty;
+    /** Flag whether this guest instruction is a jump target from
+     * a trampoline patch. */
+    bool                        fJumpTarget;
+    /** Original opcode before writing 0xCC there to mark it dirty. */
+    uint8_t                     u8DirtyOpcode;
 } RECPATCHTOGUEST, *PRECPATCHTOGUEST;
 
 /**
@@ -209,10 +216,9 @@ typedef struct RECPATCHTOGUEST
 typedef struct RECGUESTTOPATCH
 {
     /** The key is a GC virtual address. */
-    AVLU32NODECORE      Core;
-
+    AVLU32NODECORE              Core;
     /** Patch offset (relative to PATM::pPatchMemGC / PATM::pPatchMemHC). */
-    uint32_t            PatchOffset;
+    uint32_t                    PatchOffset;
 } RECGUESTTOPATCH, *PRECGUESTTOPATCH;
 
 /**
@@ -233,92 +239,93 @@ typedef struct
     int32_t                     nrCalls;
 
     /** Last original guest instruction pointer; used for disassembly log. */
-    RTRCPTR                   pLastDisasmInstrGC;
+    RTRCPTR                     pLastDisasmInstrGC;
 
     /** Keeping track of multiple ret instructions. */
-    RTRCPTR                 pPatchRetInstrGC;
+    RTRCPTR                     pPatchRetInstrGC;
     uint32_t                    uPatchRetParam1;
 } PATCHINFOTEMP, *PPATCHINFOTEMP;
 
 /** Forward declaration for a pointer to a trampoline patch record. */
 typedef struct TRAMPREC *PTRAMPREC;
 
+/**
+ * Patch information.
+ */
 typedef struct _PATCHINFO
 {
-    uint32_t        uState;
-    uint32_t        uOldState;
-    DISCPUMODE      uOpMode;
-
-    /* GC pointer of privileged instruction */
-    RCPTRTYPE(uint8_t *)  pPrivInstrGC;
-    R3PTRTYPE(uint8_t *)  unusedHC;                             /* todo Can't remove due to structure size dependencies in saved states. */
-    uint8_t               aPrivInstr[MAX_INSTR_SIZE];
-    uint32_t              cbPrivInstr;
-    uint32_t              opcode;      //opcode for priv instr (OP_*)
-    uint32_t              cbPatchJump; //patch jump size
-
+    /** Current patch state (enabled, disabled, etc.). */
+    uint32_t                    uState;
+    /** Previous patch state. Used when enabling a disabled patch. */
+    uint32_t                    uOldState;
+    /** CPU mode (16bit or 32bit). */
+    DISCPUMODE                  uOpMode;
+    /** GC pointer of privileged instruction */
+    RCPTRTYPE(uint8_t *)        pPrivInstrGC;
+    /** @todo: Can't remove due to structure size dependencies in saved states. */
+    R3PTRTYPE(uint8_t *)        unusedHC;
+    /** Original privileged guest instructions overwritten by the jump patch. */
+    uint8_t                     aPrivInstr[MAX_INSTR_SIZE];
+    /** Number of valid bytes in the instruction buffer. */
+    uint32_t                    cbPrivInstr;
+    /** Opcode for priv instr (OP_*). */
+    uint32_t                    opcode;
+    /** Size of the patch jump in the guest code. */
+    uint32_t                    cbPatchJump;
     /* Only valid for PATMFL_JUMP_CONFLICT patches */
-    RTRCPTR               pPatchJumpDestGC;
-
-    RTGCUINTPTR32         pPatchBlockOffset;
-    uint32_t              cbPatchBlockSize;
-    uint32_t              uCurPatchOffset;
+    RTRCPTR                     pPatchJumpDestGC;
+    /** Offset of the patch code from the beginning of the patch memory area. */
+    RTGCUINTPTR32               pPatchBlockOffset;
+    /** Size of the patch code in bytes. */
+    uint32_t                    cbPatchBlockSize;
+    /** Current offset of the patch starting from pPatchBlockOffset.
+     * Used during patch creation. */
+    uint32_t                    uCurPatchOffset;
 #if HC_ARCH_BITS == 64
-    uint32_t              Alignment0;         /**< Align flags correctly. */
+    uint32_t                    Alignment0;         /**< Align flags correctly. */
 #endif
-
-    uint64_t              flags;
-
+    /** PATM flags (see PATMFL_*). */
+    uint64_t                    flags;
     /**
      * Lowest and highest patched GC instruction address. To optimize searches.
      */
-    RTRCPTR               pInstrGCLowest;
-    RTRCPTR               pInstrGCHighest;
-
+    RTRCPTR                     pInstrGCLowest;
+    RTRCPTR                     pInstrGCHighest;
     /* Tree of fixup records for the patch. */
-    R3PTRTYPE(PAVLPVNODECORE) FixupTree;
-    uint32_t                  nrFixups;
-
+    R3PTRTYPE(PAVLPVNODECORE)   FixupTree;
+    uint32_t                    nrFixups;
     /* Tree of jumps inside the generated patch code. */
-    uint32_t                  nrJumpRecs;
-    R3PTRTYPE(PAVLPVNODECORE) JumpTree;
-
+    uint32_t                    nrJumpRecs;
+    R3PTRTYPE(PAVLPVNODECORE)   JumpTree;
     /**
      * Lookup trees for determining the corresponding guest address of an
      * instruction in the patch block.
      */
-    R3PTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
-    R3PTRTYPE(PAVLU32NODECORE) Guest2PatchAddrTree;
-    uint32_t                  nrPatch2GuestRecs;
+    R3PTRTYPE(PAVLU32NODECORE)  Patch2GuestAddrTree;
+    R3PTRTYPE(PAVLU32NODECORE)  Guest2PatchAddrTree;
+    uint32_t                    nrPatch2GuestRecs;
 #if HC_ARCH_BITS == 64
-    uint32_t        Alignment1;
+    uint32_t                    Alignment1;
 #endif
-
-    /* Unused, but can't remove due to structure size dependencies in the saved state. */
-    PATMP2GLOOKUPREC_OBSOLETE    unused;
-
-    /* Temporary information during patch creation. Don't waste hypervisor memory for this. */
-    R3PTRTYPE(PPATCHINFOTEMP) pTempInfo;
-
-    /* List of trampoline patches referencing this patch.
+    /** Unused, but can't remove due to structure size dependencies in the saved state. */
+    PATMP2GLOOKUPREC_OBSOLETE   unused;
+    /** Temporary information during patch creation. Don't waste hypervisor memory for this. */
+    R3PTRTYPE(PPATCHINFOTEMP)   pTempInfo;
+    /** List of trampoline patches referencing this patch.
      * Used when refreshing the patch. (Only for function duplicates) */
-    R3PTRTYPE(PTRAMPREC)      pTrampolinePatchesHead;
-
-    /* Count the number of writes to the corresponding guest code. */
-    uint32_t        cCodeWrites;
-
-    /* Count the number of invalid writes to pages monitored for the patch. */
-    //some statistics to determine if we should keep this patch activated
-    uint32_t        cTraps;
-
-    uint32_t        cInvalidWrites;
-
-    // Index into the uPatchRun and uPatchTrap arrays (0..MAX_PATCHES-1)
-    uint32_t        uPatchIdx;
-
-    /* First opcode byte, that's overwritten when a patch is marked dirty. */
-    uint8_t         bDirtyOpcode;
-    uint8_t         Alignment2[HC_ARCH_BITS == 64 ? 7 : 3];      /**< Align the structure size on a 8-byte boundary. */
+    R3PTRTYPE(PTRAMPREC)        pTrampolinePatchesHead;
+    /** Count the number of writes to the corresponding guest code. */
+    uint32_t                    cCodeWrites;
+    /** Some statistics to determine if we should keep this patch activated. */
+    uint32_t                    cTraps;
+    /** Count the number of invalid writes to pages monitored for the patch. */
+    uint32_t                    cInvalidWrites;
+    /** Index into the uPatchRun and uPatchTrap arrays (0..MAX_PATCHES-1) */
+    uint32_t                    uPatchIdx;
+    /** First opcode byte, that's overwritten when a patch is marked dirty. */
+    uint8_t                     bDirtyOpcode;
+    /** Align the structure size on a 8-byte boundary. */
+    uint8_t                     Alignment2[HC_ARCH_BITS == 64 ? 7 : 3];
 } PATCHINFO, *PPATCHINFO;
 
 #define PATCHCODE_PTR_GC(pPatch)    (RTRCPTR)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
@@ -330,11 +337,11 @@ typedef struct _PATCHINFO
 typedef struct PATMPATCHREC
 {
     /** The key is a GC virtual address. */
-    AVLOU32NODECORE  Core;
+    AVLOU32NODECORE             Core;
     /** The key is a patch offset. */
-    AVLOU32NODECORE  CoreOffset;
-
-    PATCHINFO  patch;
+    AVLOU32NODECORE             CoreOffset;
+    /** The patch information. */
+    PATCHINFO                   patch;
 } PATMPATCHREC, *PPATMPATCHREC;
 
 /**
@@ -343,9 +350,9 @@ typedef struct PATMPATCHREC
 typedef struct TRAMPREC
 {
     /** Pointer to the next trampoline patch. */
-    struct TRAMPREC    *pNext;
+    struct TRAMPREC            *pNext;
     /** Pointer to the trampoline patch record. */
-    PPATMPATCHREC       pPatchTrampoline;
+    PPATMPATCHREC               pPatchTrampoline;
 } TRAMPREC;
 
 /** Increment for allocating room for pointer array */
@@ -357,39 +364,42 @@ typedef struct TRAMPREC
 typedef struct PATMPATCHPAGE
 {
     /** The key is a GC virtual address. */
-    AVLOU32NODECORE  Core;
+    AVLOU32NODECORE             Core;
     /** Region to monitor. */
-    RTRCPTR          pLowestAddrGC;
-    RTRCPTR          pHighestAddrGC;
+    RTRCPTR                     pLowestAddrGC;
+    RTRCPTR                     pHighestAddrGC;
     /** Number of patches for this page. */
-    uint32_t           cCount;
+    uint32_t                    cCount;
     /** Maximum nr of pointers in the array. */
-    uint32_t           cMaxPatches;
+    uint32_t                    cMaxPatches;
     /** Array of patch pointers for this page. */
-    R3PTRTYPE(PPATCHINFO *) aPatch;
+    R3PTRTYPE(PPATCHINFO *)     aPatch;
 } PATMPATCHPAGE, *PPATMPATCHPAGE;
 
 #define PATM_PATCHREC_FROM_COREOFFSET(a)  (PPATMPATCHREC)((uintptr_t)a - RT_OFFSETOF(PATMPATCHREC, CoreOffset))
 #define PATM_PATCHREC_FROM_PATCHINFO(a)   (PPATMPATCHREC)((uintptr_t)a - RT_OFFSETOF(PATMPATCHREC, patch))
 
+/**
+ * AVL trees used by PATM.
+ */
 typedef struct PATMTREES
 {
     /**
      * AVL tree with all patches (active or disabled) sorted by guest instruction address
      */
-    AVLOU32TREE           PatchTree;
+    AVLOU32TREE                 PatchTree;
 
     /**
      * AVL tree with all patches sorted by patch address (offset actually)
      */
-    AVLOU32TREE           PatchTreeByPatchAddr;
+    AVLOU32TREE                 PatchTreeByPatchAddr;
 
     /**
      * AVL tree with all pages which were (partly) patched
      */
-    AVLOU32TREE           PatchTreeByPage;
+    AVLOU32TREE                 PatchTreeByPage;
 
-    uint32_t                align[1];
+    uint32_t                    align[1];
 } PATMTREES, *PPATMTREES;
 
 /**
@@ -400,148 +410,139 @@ typedef struct PATM
 {
     /** Offset to the VM structure.
      * See PATM2VM(). */
-    RTINT                   offVM;
-
-    RCPTRTYPE(uint8_t *)    pPatchMemGC;
-    R3PTRTYPE(uint8_t *)    pPatchMemHC;
-    uint32_t                cbPatchMem;
-    uint32_t                offPatchMem;
-    bool                    fOutOfMemory;
-
-    int32_t                 deltaReloc;
-
-    /* GC PATM state pointers */
-    R3PTRTYPE(PPATMGCSTATE) pGCStateHC;
-    RCPTRTYPE(PPATMGCSTATE) pGCStateGC;
-
+    RTINT                       offVM;
+    /** Pointer to the patch memory area (GC) */
+    RCPTRTYPE(uint8_t *)        pPatchMemGC;
+    /** Pointer to the patch memory area (HC) */
+    R3PTRTYPE(uint8_t *)        pPatchMemHC;
+    /** Size of the patch memory area in bytes. */
+    uint32_t                    cbPatchMem;
+    /** Relative offset to the next free byte starting from the start of the region. */
+    uint32_t                    offPatchMem;
+    /** Flag whether PATM ran out of patch memory. */
+    bool                        fOutOfMemory;
+    /** Delta to the new relocated HMA area.
+     * Used only during PATMR3Relocate(). */
+    int32_t                     deltaReloc;
+    /* GC PATM state pointer - HC pointer. */
+    R3PTRTYPE(PPATMGCSTATE)     pGCStateHC;
+    /* GC PATM state pointer - GC pointer. */
+    RCPTRTYPE(PPATMGCSTATE)     pGCStateGC;
     /** PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
-    RCPTRTYPE(RTRCPTR *)    pGCStackGC;
-    R3PTRTYPE(RTRCPTR *)    pGCStackHC;
-
+    RCPTRTYPE(RTRCPTR *)        pGCStackGC;
+    /** HC pointer of the PATM stack page. */
+    R3PTRTYPE(RTRCPTR *)        pGCStackHC;
     /** GC pointer to CPUMCTX structure. */
-    RCPTRTYPE(PCPUMCTX)     pCPUMCtxGC;
-
-    /* GC statistics pointers */
-    RCPTRTYPE(PSTAMRATIOU32) pStatsGC;
-    R3PTRTYPE(PSTAMRATIOU32) pStatsHC;
-
+    RCPTRTYPE(PCPUMCTX)         pCPUMCtxGC;
+    /** GC statistics pointer. */
+    RCPTRTYPE(PSTAMRATIOU32)    pStatsGC;
+    /** HC statistics pointer. */
+    R3PTRTYPE(PSTAMRATIOU32)    pStatsHC;
     /* Current free index value (uPatchRun/uPatchTrap arrays). */
-    uint32_t                uCurrentPatchIdx;
-
+    uint32_t                    uCurrentPatchIdx;
     /* Temporary counter for patch installation call depth. (in order not to go on forever) */
-    uint32_t                ulCallDepth;
-
+    uint32_t                    ulCallDepth;
     /** Number of page lookup records. */
-    uint32_t                cPageRecords;
-
-    /**
-     * Lowest and highest patched GC instruction addresses. To optimize searches.
-     */
-    RTRCPTR                 pPatchedInstrGCLowest;
-    RTRCPTR                 pPatchedInstrGCHighest;
-
+    uint32_t                    cPageRecords;
+    /** Lowest and highest patched GC instruction addresses. To optimize searches. */
+    RTRCPTR                     pPatchedInstrGCLowest;
+    RTRCPTR                     pPatchedInstrGCHighest;
     /** Pointer to the patch tree for instructions replaced by 'int 3'. */
-    RCPTRTYPE(PPATMTREES)   PatchLookupTreeGC;
-    R3PTRTYPE(PPATMTREES)   PatchLookupTreeHC;
-
+    RCPTRTYPE(PPATMTREES)       PatchLookupTreeGC;
+    R3PTRTYPE(PPATMTREES)       PatchLookupTreeHC;
     /** Global PATM lookup and call function (used by call patches). */
-    RTRCPTR                 pfnHelperCallGC;
+    RTRCPTR                     pfnHelperCallGC;
     /** Global PATM return function (used by ret patches). */
-    RTRCPTR                 pfnHelperRetGC;
+    RTRCPTR                     pfnHelperRetGC;
     /** Global PATM jump function (used by indirect jmp patches). */
-    RTRCPTR                 pfnHelperJumpGC;
+    RTRCPTR                     pfnHelperJumpGC;
     /** Global PATM return function (used by iret patches). */
-    RTRCPTR                 pfnHelperIretGC;
-
+    RTRCPTR                     pfnHelperIretGC;
     /** Fake patch record for global functions. */
-    R3PTRTYPE(PPATMPATCHREC) pGlobalPatchRec;
-
+    R3PTRTYPE(PPATMPATCHREC)    pGlobalPatchRec;
     /** Pointer to original sysenter handler */
-    RTRCPTR                 pfnSysEnterGC;
+    RTRCPTR                     pfnSysEnterGC;
     /** Pointer to sysenter handler trampoline */
-    RTRCPTR                 pfnSysEnterPatchGC;
+    RTRCPTR                     pfnSysEnterPatchGC;
     /** Sysenter patch index (for stats only) */
-    uint32_t                uSysEnterPatchIdx;
-
-    // GC address of fault in monitored page (set by PATMGCMonitorPage, used by PATMR3HandleMonitoredPage)
-    RTRCPTR                 pvFaultMonitor;
-
-    /* Temporary information for pending MMIO patch. Set in GC or R0 context. */
+    uint32_t                    uSysEnterPatchIdx;
+    /** GC address of fault in monitored page (set by PATMGCMonitorPage, used by PATMR3HandleMonitoredPage)- */
+    RTRCPTR                     pvFaultMonitor;
+    /** Temporary information for pending MMIO patch. Set in GC or R0 context. */
     struct
     {
-        RTGCPHYS            GCPhys;
-        RTRCPTR             pCachedData;
-        RTRCPTR             Alignment0; /**< Align the structure size on a 8-byte boundary. */
+        RTGCPHYS                GCPhys;
+        RTRCPTR                 pCachedData;
+        RTRCPTR                 Alignment0; /**< Align the structure size on a 8-byte boundary. */
     } mmio;
-
-    /* Temporary storage during load/save state */
+    /** Temporary storage during load/save state */
     struct
     {
-        R3PTRTYPE(PSSMHANDLE) pSSM;
-        uint32_t            cPatches;
+        R3PTRTYPE(PSSMHANDLE)   pSSM;
+        uint32_t                cPatches;
 #if HC_ARCH_BITS == 64
-        uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundary. */
+        uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundary. */
 #endif
     } savedstate;
 
-    STAMCOUNTER             StatNrOpcodeRead;
-    STAMCOUNTER             StatDisabled;
-    STAMCOUNTER             StatUnusable;
-    STAMCOUNTER             StatEnabled;
-    STAMCOUNTER             StatInstalled;
-    STAMCOUNTER             StatInstalledFunctionPatches;
-    STAMCOUNTER             StatInstalledTrampoline;
-    STAMCOUNTER             StatInstalledJump;
-    STAMCOUNTER             StatInt3Callable;
-    STAMCOUNTER             StatInt3BlockRun;
-    STAMCOUNTER             StatOverwritten;
-    STAMCOUNTER             StatFixedConflicts;
-    STAMCOUNTER             StatFlushed;
-    STAMCOUNTER             StatPageBoundaryCrossed;
-    STAMCOUNTER             StatMonitored;
-    STAMPROFILEADV          StatHandleTrap;
-    STAMCOUNTER             StatSwitchBack;
-    STAMCOUNTER             StatSwitchBackFail;
-    STAMCOUNTER             StatPATMMemoryUsed;
-    STAMCOUNTER             StatDuplicateREQSuccess;
-    STAMCOUNTER             StatDuplicateREQFailed;
-    STAMCOUNTER             StatDuplicateUseExisting;
-    STAMCOUNTER             StatFunctionFound;
-    STAMCOUNTER             StatFunctionNotFound;
-    STAMPROFILEADV          StatPatchWrite;
-    STAMPROFILEADV          StatPatchWriteDetect;
-    STAMCOUNTER             StatDirty;
-    STAMCOUNTER             StatPushTrap;
-    STAMCOUNTER             StatPatchWriteInterpreted;
-    STAMCOUNTER             StatPatchWriteInterpretedFailed;
+    STAMCOUNTER                 StatNrOpcodeRead;
+    STAMCOUNTER                 StatDisabled;
+    STAMCOUNTER                 StatUnusable;
+    STAMCOUNTER                 StatEnabled;
+    STAMCOUNTER                 StatInstalled;
+    STAMCOUNTER                 StatInstalledFunctionPatches;
+    STAMCOUNTER                 StatInstalledTrampoline;
+    STAMCOUNTER                 StatInstalledJump;
+    STAMCOUNTER                 StatInt3Callable;
+    STAMCOUNTER                 StatInt3BlockRun;
+    STAMCOUNTER                 StatOverwritten;
+    STAMCOUNTER                 StatFixedConflicts;
+    STAMCOUNTER                 StatFlushed;
+    STAMCOUNTER                 StatPageBoundaryCrossed;
+    STAMCOUNTER                 StatMonitored;
+    STAMPROFILEADV              StatHandleTrap;
+    STAMCOUNTER                 StatSwitchBack;
+    STAMCOUNTER                 StatSwitchBackFail;
+    STAMCOUNTER                 StatPATMMemoryUsed;
+    STAMCOUNTER                 StatDuplicateREQSuccess;
+    STAMCOUNTER                 StatDuplicateREQFailed;
+    STAMCOUNTER                 StatDuplicateUseExisting;
+    STAMCOUNTER                 StatFunctionFound;
+    STAMCOUNTER                 StatFunctionNotFound;
+    STAMPROFILEADV              StatPatchWrite;
+    STAMPROFILEADV              StatPatchWriteDetect;
+    STAMCOUNTER                 StatDirty;
+    STAMCOUNTER                 StatPushTrap;
+    STAMCOUNTER                 StatPatchWriteInterpreted;
+    STAMCOUNTER                 StatPatchWriteInterpretedFailed;
 
-    STAMCOUNTER             StatSysEnter;
-    STAMCOUNTER             StatSysExit;
-    STAMCOUNTER             StatEmulIret;
-    STAMCOUNTER             StatEmulIretFailed;
+    STAMCOUNTER                 StatSysEnter;
+    STAMCOUNTER                 StatSysExit;
+    STAMCOUNTER                 StatEmulIret;
+    STAMCOUNTER                 StatEmulIretFailed;
 
-    STAMCOUNTER             StatInstrDirty;
-    STAMCOUNTER             StatInstrDirtyGood;
-    STAMCOUNTER             StatInstrDirtyBad;
+    STAMCOUNTER                 StatInstrDirty;
+    STAMCOUNTER                 StatInstrDirtyGood;
+    STAMCOUNTER                 StatInstrDirtyBad;
 
-    STAMCOUNTER             StatPatchPageInserted;
-    STAMCOUNTER             StatPatchPageRemoved;
+    STAMCOUNTER                 StatPatchPageInserted;
+    STAMCOUNTER                 StatPatchPageRemoved;
 
-    STAMCOUNTER             StatPatchRefreshSuccess;
-    STAMCOUNTER             StatPatchRefreshFailed;
+    STAMCOUNTER                 StatPatchRefreshSuccess;
+    STAMCOUNTER                 StatPatchRefreshFailed;
 
-    STAMCOUNTER             StatGenRet;
-    STAMCOUNTER             StatGenRetReused;
-    STAMCOUNTER             StatGenJump;
-    STAMCOUNTER             StatGenCall;
-    STAMCOUNTER             StatGenPopf;
+    STAMCOUNTER                 StatGenRet;
+    STAMCOUNTER                 StatGenRetReused;
+    STAMCOUNTER                 StatGenJump;
+    STAMCOUNTER                 StatGenCall;
+    STAMCOUNTER                 StatGenPopf;
 
-    STAMCOUNTER             StatCheckPendingIRQ;
+    STAMCOUNTER                 StatCheckPendingIRQ;
 
-    STAMCOUNTER             StatFunctionLookupReplace;
-    STAMCOUNTER             StatFunctionLookupInsert;
-    uint32_t                StatU32FunctionMaxSlotsUsed;
-    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundary. */
+    STAMCOUNTER                 StatFunctionLookupReplace;
+    STAMCOUNTER                 StatFunctionLookupInsert;
+    uint32_t                    StatU32FunctionMaxSlotsUsed;
+    uint32_t                    Alignment0; /**< Align the structure size on a 8-byte boundary. */
 } PATM, *PPATM;
 
 
@@ -697,11 +698,11 @@ int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdat
  */
 typedef struct
 {
-    PVM           pVM;
-    PPATCHINFO    pPatchInfo;
+    PVM                  pVM;
+    PPATCHINFO           pPatchInfo;
     R3PTRTYPE(uint8_t *) pInstrHC;
-    RTRCPTR       pInstrGC;
-    uint32_t      fReadFlags;
+    RTRCPTR              pInstrGC;
+    uint32_t             fReadFlags;
 } PATMDISASM, *PPATMDISASM;
 
 inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR InstrGC,
