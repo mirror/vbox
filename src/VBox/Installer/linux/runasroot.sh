@@ -103,7 +103,7 @@ esac
 
 case "$HAS_TERMINAL" in ?*)
         USE_SUDO=
-        grep Ubuntu /etc/lsb-release && USE_SUDO=true
+        grep -q Ubuntu /etc/lsb-release 2>/dev/null && USE_SUDO=true
         # On Ubuntu we need sudo instead of su.  Assume this works, and is only
         # needed for Ubuntu until proven wrong.
         case $USE_SUDO in true)
