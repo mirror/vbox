@@ -43,6 +43,11 @@
  *  instead of managing larger blocks) to have this global for the whole VM.
  */
 
+/** Enable for delay injection from the debugger. */
+#if 0
+# define PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+#endif
+
 RT_C_DECLS_BEGIN
 
 /**
@@ -364,6 +369,14 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     volatile int                           rcReqRead;
     /** Status code to inject for the next complete write. */
     volatile int                           rcReqWrite;
+#endif
+#ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+    /** Request delay. */
+    volatile uint32_t                      msDelay;
+    /** The current task which gets delayed. */
+    PPDMASYNCCOMPLETIONTASKFILE            pReqDelayed;
+    /** Timestamp when the delay expires. */
+    uint64_t                               tsDelayEnd;
 #endif
     /** Flag whether a blocking event is pending and needs
      * processing by the I/O manager. */

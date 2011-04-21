@@ -74,6 +74,7 @@
 *******************************************************************************/
 #ifdef VBOX_WITH_DEBUGGER
 static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs);
+static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs);
 #endif
 
 /*******************************************************************************
@@ -88,11 +89,24 @@ static const DBGCVARDESC g_aInjectErrorArgs[] =
     {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "errcode",      "VBox status code." },
 };
 
+# ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+static const DBGCVARDESC g_aInjectDelayArgs[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "direction",    "write/read." },
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "filename",     "Filename." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "delay",        "Delay in milliseconds." },
+};
+# endif
+
 /** Command descriptors. */
 static const DBGCCMD g_aCmds[] =
 {
     /* pszCmd,       cArgsMin, cArgsMax, paArgDesc,                cArgDescs, fFlags, pfnHandler              pszSyntax, ....pszDescription */
-    { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],           3,      0, pdmacEpFileErrorInject, "",        "Inject error into I/O subsystem." },
+    { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],           3,      0, pdmacEpFileErrorInject, "",        "Inject error into I/O subsystem." }
+# ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+    ,{ "injectdelay",        3, 3,        &g_aInjectDelayArgs[0],           3,      0, pdmacEpFileDelayInject, "",        "Inject a delay of a request." }
+# endif
 };
 #endif
 
@@ -350,7 +364,34 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 
         if (!(uOld - pTask->DataSeg.cbSeg)
             && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
+        {
+#ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+            PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pTaskFile->Core.pEndpoint;
+
+            /* Check if we should delay completion of the request. */
+            if (   ASMAtomicReadU32(&pEpFile->msDelay) > 0
+                && ASMAtomicCmpXchgPtr(&pEpFile->pReqDelayed, pTaskFile, NULL))
+            {
+                /* Arm the delay. */
+                pEpFile->tsDelayEnd = RTTimeProgramMilliTS() + pEpFile->msDelay;
+                LogRel(("AIOMgr: Delaying request %#p for %u ms\n", pTaskFile, pEpFile->msDelay));
+                return;
+            }
+#endif
             pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
+
+#if PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+            /* Check for an expired delay. */
+            if (   pEpFile->pReqDelayed != NULL
+                && RTTimeProgramMilliTS() >= pEpFile->tsDelayEnd)
+            {
+                pTaskFile = ASMAtomicXchgPtrT(&pEpFile->pReqDelayed, NULL, PPDMASYNCCOMPLETIONTASKFILE);
+                ASMAtomicXchgU32(&pEpFile->msDelay, 0);
+                LogRel(("AIOMgr: Delayed request %#p completed\n", pTaskFile));
+                pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
+            }
+#endif
+        }
     }
 }
 
@@ -731,6 +772,7 @@ static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
             break;
         pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
     }
+
     if (pEpFile)
     {
         /*
@@ -751,6 +793,72 @@ static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "No file with name '%s' found", pArgs[1].u.pszString);
     return VINF_SUCCESS;
 }
+
+# ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+/**
+ * Delay inject callback.
+ */
+static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs)
+{
+    /*
+     * Validate input.
+     */
+    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 3);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, pArgs[0].enmType == DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pArgs[1].enmType == DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 2, pArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
+
+    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
+    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
+
+    /* Syntax is "read|write <filename> <status code>" */
+    bool fWrite;
+    if (!RTStrCmp(pArgs[0].u.pszString, "read"))
+        fWrite = false;
+    else if (!RTStrCmp(pArgs[0].u.pszString, "write"))
+        fWrite = true;
+    else
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "invalid transfer direction '%s'", pArgs[0].u.pszString);
+
+    uint32_t msDelay = (uint32_t)pArgs[2].u.u64Number;
+    if ((uint64_t)msDelay != pArgs[2].u.u64Number)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "The delay '%lld' is out of range", pArgs[0].u.u64Number);
+
+
+    /*
+     * Search for the matching endpoint.
+     */
+    RTCritSectEnter(&pEpClassFile->Core.CritSect);
+
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
+    while (pEpFile)
+    {
+        if (!RTStrCmp(pArgs[1].u.pszString, RTPathFilename(pEpFile->Core.pszUri)))
+            break;
+        pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
+    }
+
+    if (pEpFile)
+    {
+        bool fXchg = ASMAtomicCmpXchgU32(&pEpFile->msDelay, msDelay, 0);
+
+        if (fXchg)
+            DBGCCmdHlpPrintf(pCmdHlp, "Injected delay of %u ms into '%s' for %s\n",
+                             msDelay, pArgs[1].u.pszString, pArgs[0].u.pszString);
+        else
+            DBGCCmdHlpPrintf(pCmdHlp, "Another delay for '%s' is still active, ignoring\n",
+                             pArgs[1].u.pszString);
+    }
+
+    RTCritSectLeave(&pEpClassFile->Core.CritSect);
+
+    if (!pEpFile)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No file with name '%s' found", pArgs[1].u.pszString);
+    return VINF_SUCCESS;
+}
+# endif /* PDM_ASYNC_COMPLETION_FILE_WITH_DELAY */
+
 #endif /* VBOX_WITH_DEBUGGER */
 
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
