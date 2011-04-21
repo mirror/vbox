@@ -150,6 +150,8 @@ typedef const X86RFLAGS *PCX86RFLAGS;
  */
 /** Bit 0 - CF - Carry flag - Status flag. */
 #define X86_EFL_CF          RT_BIT(0)
+/** Bit 1 - Reserved, reads as 1. */
+#define X86_EFL_1           RT_BIT(1)
 /** Bit 2 - PF - Parity flag - Status flag. */
 #define X86_EFL_PF          RT_BIT(2)
 /** Bit 4 - AF - Auxiliary carry flag - Status flag. */
