@@ -16,7 +16,6 @@
  */
 
 #include <VBox/log.h>
-#include <iostream>   /* For std::exception */
 
 #include "thread.h"
 
@@ -97,20 +96,7 @@ int VBoxGuestThread::threadFunction(RTTHREAD self, void *pvUser)
     LogRelFlowFunc(("\n"));
     PSELF pSelf = reinterpret_cast<PSELF>(pvUser);
     pSelf->mRunning = true;
-    try
-    {
-        rc = pSelf->mFunction->threadFunction(pSelf);
-    }
-    catch (const std::exception &e)
-    {
-        LogRelFunc(("Caught exception in thread: %s\n", e.what()));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    catch (...)
-    {
-        LogRelFunc(("Caught unknown exception in thread.\n"));
-        rc = VERR_UNRESOLVED_ERROR;
-    }
+    rc = pSelf->mFunction->threadFunction(pSelf);
     pSelf->mRunning = false;
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
