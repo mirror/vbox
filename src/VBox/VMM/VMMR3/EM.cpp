@@ -1994,21 +1994,21 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-#ifdef IEM_VERIFICATION_MODE /* remove later */
+#ifndef IEM_VERIFICATION_MODE /* remove later */
                     AssertFailed();
-#endif
                     rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
                     break;
+#endif
 
                 /*
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
-#ifdef IEM_VERIFICATION_MODE /* remove later */
+#ifndef IEM_VERIFICATION_MODE /* remove later */
                     AssertFailed();
-#endif
                     rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
                     break;
+#endif
 
                 /*
                  * Execute recompiled.
