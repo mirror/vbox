@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -67,13 +67,13 @@ if [ "$1" = "configure" ]; then
         usb_group=root
     fi
     usb_createnode="/usr/share/virtualbox/VBoxCreateUSBNode.sh"
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=${usb_createnode} \$major \$minor \$attr{bDeviceClass}\"" ${usb_group} \
+    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=\"${usb_createnode} \$major \$minor \$attr{bDeviceClass} ${usb_group}\"" \
         >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=${usb_createnode} \$major \$minor \$attr{bDeviceClass}\"" ${usb_group} \
+    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"${usb_createnode} \$major \$minor \$attr{bDeviceClass} ${usb_group}\"" \
         >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=${usb_createnode} --remove \$major \$minor\"" \
+    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=\"${usb_createnode} --remove \$major \$minor\"" \
         >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=${usb_createnode} --remove \$major \$minor\"" \
+    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"${usb_createnode} --remove \$major \$minor\"" \
         >> /etc/udev/rules.d/10-vboxdrv.rules
   fi
   # Remove old udev description file
@@ -115,9 +115,6 @@ if [ "$1" = "configure" ]; then
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
   fi
-  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxExtPackHelperApp > /dev/null 2>&1; then
-    chmod 4511 /usr/lib/virtualbox/VBoxExtPackHelperApp
-  fi
 
   # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
   if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
@@ -131,7 +128,7 @@ fi # $1 = "configure"
 #DEBHELPER#
 
 if [ "$1" = "configure" ]; then
-  # Start vboxdrv/vboxweb-service manually as we use our own error handling in postrm
+  # Start vboxdrv/vboxballoonctrl/vboxweb-service manually as we use our own error handling in postrm
   if [ -x "/etc/init.d/vboxdrv" ]; then
     update-rc.d vboxdrv defaults >/dev/null
 
@@ -180,6 +177,14 @@ EOF
       else
         /etc/init.d/vboxdrv start || exit $?
       fi
+    fi
+  fi
+  if [ -x "/etc/init.d/vboxballoonctrl-service" ]; then
+    update-rc.d vboxballoonctrl-service defaults >/dev/null
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxballoonctrl-service start || exit $?
+    else
+        /etc/init.d/vboxballoonctrl-service start || exit $?
     fi
   fi
   if [ -x "/etc/init.d/vboxweb-service" ]; then

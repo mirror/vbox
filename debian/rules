@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -63,10 +63,9 @@ endif
 debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),unknown)
 
 # shipping Linux kernel modules with bleeding-edge releases doesn't make sense
-instmod := $(if $(filter _Ubuntu_lucid _Debian_sid,$(debrel)),,1)
+instmod := $(if $(filter _Ubuntu_lucid _Ubuntu_maverick _Ubuntu_natty _Debian_sid,$(debrel)),,1)
 
-# Locations of custom built Qt libraries (see below)
-qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch)
+# Location of custom built Qt libraries (see below)
 qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
@@ -150,7 +149,8 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f debian/preinst debian/postinst debian/prerm
-	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxweb-service.init
+	rm -f debian/$(package).init debian/vboxdrv.init
+	rm -f debian/vboxballoonctrl-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
@@ -180,8 +180,12 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor
 	cd $(archdir)/icons; for i in *; do \
+	    if [ -f $$i/virtualbox.png ]; then \
+	      install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
+	      mv $$i/virtualbox.png $(prefix)/usr/share/icons/hicolor/$$i/apps; \
+	    fi; \
 	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
-	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
+	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes || true; \
 	    rmdir $$i; \
 	done
 	rmdir $(archdir)/icons
@@ -215,12 +219,12 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	rm -rf $(archdir)/sdk/installer
 	mv $(archdir)/vboxshell.py $(prefix)/usr/lib/$(package)
 	mv $(archdir)/sdk $(prefix)/usr/lib/$(package)
-	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
+	install -D -g 0 -o 0 -m 644 $(vboxroot)/src/VBox/Installer/linux/debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxCreateUSBNode.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(NOQT),,VirtualBox) VBoxHeadless \
-	    VBoxExtPackHelperApp \
+	    VBoxExtPackHelperApp VBoxBalloonCtrl \
 	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
@@ -238,9 +242,9 @@ ifeq ($(ose),)
 	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
 	dh_installdocs \
 	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
-	    $(addprefix $(archdir)/, $(if $(HEADLESS),,License-*.html) LICENSE)
+	    $(addprefix $(archdir)/, LICENSE)
 	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm \
-	    LICENSE $(if $(HEADLESS),,License-*.html))
+	    LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp $(prefix)/usr/bin)
@@ -266,6 +270,8 @@ endif
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    usr/bin/VBox                        usr/bin/vboxheadless \
+	    usr/bin/VBox                        usr/bin/VBoxBalloonCtrl \
+	    usr/bin/VBox                        usr/bin/vboxballoonctrl \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
@@ -274,8 +280,15 @@ endif
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
+	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv --noscripts
+	sed \
+	    -e 's|%NOLSB%||g' \
+	    -e 's|%DEBIAN%|yes|g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    $(vboxroot)/src/VBox/Installer/linux/vboxballoonctrl-service.sh.in > debian/vboxballoonctrl-service.init
+	dh_installinit --name=vboxballoonctrl-service --noscripts
 	sed \
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \

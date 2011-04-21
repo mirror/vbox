@@ -85,11 +85,11 @@ case "$APP" in
   VBoxVRDP|VBoxHeadless|vboxheadless)
     exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
     ;;
-  vboxwebsrv)
-    exec "/usr/lib/virtualbox/vboxwebsrv" "$@"
-    ;;
   VBoxBalloonCtrl|vboxballoonctrl)
     exec "/usr/lib/virtualbox/VBoxBalloonCtrl" "$@"
+    ;;
+  vboxwebsrv)
+    exec "/usr/lib/virtualbox/vboxwebsrv" "$@"
     ;;
   *)
     echo "Unknown application - $APP"
