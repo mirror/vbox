@@ -95,6 +95,7 @@ cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
+cp icons/128x128/virtualbox.png $RPM_BUILD_ROOT/usr/share/pixmaps/virtualbox.png
 cd icons
   for i in *; do
     if [ -f $i/virtualbox.png ]; then

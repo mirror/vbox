@@ -207,6 +207,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	   $(prefix)/usr/share/applications/virtualbox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor
+	cp $(archdir)/icons/128x128/virtualbox.png \
+	   $(prefix)/usr/share/pixmaps/virtualbox.png
 	cd $(archdir)/icons; for i in *; do \
 	    if [ -f $$i/virtualbox.png ]; then \
 	      install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
