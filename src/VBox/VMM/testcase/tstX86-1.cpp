@@ -78,10 +78,14 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
     ucontext_t *pCtx = (ucontext_t *)pvSigCtx;
 # if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;
+# elif defined(RT_ARCH_AMD64) && defined(RT_OS_FREEBSD)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.mc_rip;
 # elif defined(RT_ARCH_AMD64)
     uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
 # elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
+# elif defined(RT_ARCH_X86) && defined(RT_OS_FREEBSD)
+    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.mc_eip;
 # elif defined(RT_ARCH_X86)
     uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
 # else
