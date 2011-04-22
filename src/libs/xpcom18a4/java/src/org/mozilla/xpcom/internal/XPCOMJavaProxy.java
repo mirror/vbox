@@ -255,4 +255,3 @@ public class XPCOMJavaProxy implements InvocationHandler {
           String aMethodName, Object[] aParams);
 
 }
-
