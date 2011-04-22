@@ -1564,6 +1564,14 @@ RT_C_DECLS_END
 #define VERR_VFS_CHAIN_UNEXPECTED_ACTION_TYPE       (-22111)
 /** @} */
 
+/** @name RTDvm status codes
+ * @{ */
+/** The volume map doesn't contain any valid volume. */
+#define VERR_DVM_MAP_EMPTY                          (-22200)
+/** There is no volume behind the current one. */
+#define VERR_DVM_MAP_NO_VOLUME                      (-22201)
+/** @} */
+
 /* SED-END */
 
 /** @} */

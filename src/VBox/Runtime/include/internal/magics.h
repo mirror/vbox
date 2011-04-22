@@ -42,6 +42,14 @@
 #define RTDIR_MAGIC                     UINT32_C(0x19291112)
 /** The value of RTDIR::u32Magic after RTDirClose().  */
 #define RTDIR_MAGIC_DEAD                UINT32_C(0x19950829)
+/** The value of RTDVMINTERNAL::u32Magic. (Dan Brown) */
+#define RTDVM_MAGIC                     UINT32_C(0x19640622)
+/** The value of RTDVMINTERNAL::u32Magic after close. */
+#define RTDVM_MAGIC_DEAD                (~RTDVM_MAGIC)
+/** The value of RTDVMVOLUMEINTERNAL::u32Magic. (Daniel Defoe) */
+#define RTDVMVOLUME_MAGIC               UINT32_C(0x16591961)
+/** The value of RTDVMVOLUMEINTERNAL::u32Magic after close. */
+#define RTDVMVOLUME_MAGIC_DEAD          UINT32_C(0x17310424)
 /** The value of RTFILEAIOCTXINT::u32Magic. (Howard Phillips Lovecraft) */
 #define RTFILEAIOCTX_MAGIC              UINT32_C(0x18900820)
 /** The value of RTFILEAIOCTXINT::u32Magic after RTFileAioCtxDestroy(). */
