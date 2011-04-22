@@ -2413,20 +2413,25 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         }
 
         /* get error code and cr2 if needed. */
-        switch (u8TrapNo)
+        if (enmType == TRPM_TRAP)
         {
-            case 0x0e:
-                pVM->rem.s.Env.cr[2] = TRPMGetFaultAddress(pVCpu);
-                /* fallthru */
-            case 0x0a: case 0x0b: case 0x0c: case 0x0d:
-                pVM->rem.s.Env.error_code = TRPMGetErrorCode(pVCpu);
-                break;
+            switch (u8TrapNo)
+            {
+                case 0x0e:
+                    pVM->rem.s.Env.cr[2] = TRPMGetFaultAddress(pVCpu);
+                    /* fallthru */
+                case 0x0a: case 0x0b: case 0x0c: case 0x0d:
+                    pVM->rem.s.Env.error_code = TRPMGetErrorCode(pVCpu);
+                    break;
 
-            case 0x11: case 0x08:
-            default:
-                pVM->rem.s.Env.error_code = 0;
-                break;
+                case 0x11: case 0x08:
+                default:
+                    pVM->rem.s.Env.error_code = 0;
+                    break;
+            }
         }
+        else
+            pVM->rem.s.Env.error_code = 0;
 
         /*
          * We can now reset the active trap since the recompiler is gonna have a go at it.
