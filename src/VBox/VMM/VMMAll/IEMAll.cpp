@@ -44,8 +44,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define RT_STRICT
-#define LOG_ENABLED
+//#define RT_STRICT
+//#define LOG_ENABLED
 #define LOG_GROUP   LOG_GROUP_EM /** @todo add log group */
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/pgm.h>
@@ -347,6 +347,15 @@ static const IEMOPBINSIZES g_iemAImpl_test =
     iemAImpl_test_u64, NULL
 };
 
+/** Function table for the IMUL instruction. */
+static const IEMOPBINSIZES g_iemAImpl_imul_two =
+{
+    NULL,  NULL,
+    iemAImpl_imul_two_u16, NULL,
+    iemAImpl_imul_two_u32, NULL,
+    iemAImpl_imul_two_u64, NULL
+};
+
 /** Group 1 /r lookup table. */
 static const PCIEMOPBINSIZES g_apIemImplGrp1[8] =
 {
@@ -553,6 +562,9 @@ DECLINLINE(void) iemInitDecode(PIEMCPU pIemCpu)
  */
 static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
 {
+#ifdef IEM_VERIFICATION_MODE
+    uint8_t const cbOldOpcodes = pIemCpu->cbOpcode;
+#endif
     iemInitDecode(pIemCpu);
 
     /*
@@ -595,6 +607,23 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
 
+#ifdef IEM_VERIFICATION_MODE
+    /*
+     * Optimistic optimization: Use unconsumed opcode bytes from the previous
+     *                          instruction.
+     */
+    /** @todo optimize this differently by not using PGMPhysRead. */
+    RTGCPHYS const offPrevOpcodes = GCPhys - pIemCpu->GCPhysOpcodes;
+    pIemCpu->GCPhysOpcodes = GCPhys;
+    if (offPrevOpcodes < cbOldOpcodes)
+    {
+        uint8_t cbNew = cbOldOpcodes - (uint8_t)offPrevOpcodes;
+        memmove(&pIemCpu->abOpcode[0], &pIemCpu->abOpcode[offPrevOpcodes], cbNew);
+        pIemCpu->cbOpcode = cbNew;
+        return VINF_SUCCESS;
+    }
+#endif
+
     /*
      * Read the bytes at this address.
      */
@@ -603,6 +632,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pIemCpu->abOpcode))
         cbToTryRead = sizeof(pIemCpu->abOpcode);
+    /** @todo patch manager */
     if (!pIemCpu->fByPassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, pIemCpu->abOpcode, cbToTryRead);
     else
@@ -5999,6 +6029,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                             case 5: u32EffAddr = pCtx->ebp; break;
                             case 6: u32EffAddr = pCtx->esi; break;
                             case 7: u32EffAddr = pCtx->edi; break;
+                            IEM_NOT_REACHED_DEFAULT_CASE_RET();
                         }
                         u32EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
@@ -6025,12 +6056,14 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                                 break;
                             case 6: u32EffAddr += pCtx->esi; break;
                             case 7: u32EffAddr += pCtx->edi; break;
+                            IEM_NOT_REACHED_DEFAULT_CASE_RET();
                         }
                         break;
                     }
                     case 5: u32EffAddr = pCtx->ebp; SET_SS_DEF(); break;
                     case 6: u32EffAddr = pCtx->esi; break;
                     case 7: u32EffAddr = pCtx->edi; break;
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
 
                 /* Get and add the displacement. */
@@ -6253,8 +6286,9 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     pIemCpu->cIOReads    = 0;
     pIemCpu->cIOWrites   = 0;
     pIemCpu->fMulDivHack = false;
-    pIemCpu->fShlHack    = false;
+    pIemCpu->fShiftOfHack= false;
 
+# ifndef IEM_VERIFICATION_MODE_NO_REM
     /*
      * Free all verification records.
      */
@@ -6274,6 +6308,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
         pIemCpu->pOtherEvtRecHead = NULL;
         pIemCpu->ppOtherEvtRecNext = &pIemCpu->pOtherEvtRecHead;
     } while (pEvtRec);
+# endif
 }
 
 
@@ -6636,7 +6671,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         uint32_t fFlagsMask = UINT32_MAX;
         if (pIemCpu->fMulDivHack)
             fFlagsMask &= ~(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-        if (pIemCpu->fShlHack)
+        if (pIemCpu->fShiftOfHack)
             fFlagsMask &= ~(X86_EFL_OF);
         if ((pOrgCtx->rflags.u & fFlagsMask) != (pDebugCtx->rflags.u & fFlagsMask))
         {
@@ -6843,23 +6878,26 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 #endif
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    char     szInstr[256];
-    uint32_t cbInstr = 0;
-    DBGFR3DisasInstrEx(pVCpu->pVMR3, pVCpu->idCpu, 0, 0,
-                       DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                       szInstr, sizeof(szInstr), &cbInstr);
+    if (0)//LogIs2Enabled())
+    {
+        char     szInstr[256];
+        uint32_t cbInstr = 0;
+        DBGFR3DisasInstrEx(pVCpu->pVMR3, pVCpu->idCpu, 0, 0,
+                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szInstr, sizeof(szInstr), &cbInstr);
 
-    Log2(("**** "
-          " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
-          " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
-          " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
-          " %s\n"
-          ,
-          pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-          pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL,
-          (RTSEL)pCtx->cs, (RTSEL)pCtx->ss, (RTSEL)pCtx->ds, (RTSEL)pCtx->es,
-          (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, pCtx->eflags.u,
-          szInstr));
+        Log2(("**** "
+              " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+              " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
+              " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
+              " %s\n"
+              ,
+              pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
+              pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL,
+              (RTSEL)pCtx->cs, (RTSEL)pCtx->ss, (RTSEL)pCtx->ds, (RTSEL)pCtx->es,
+              (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, pCtx->eflags.u,
+              szInstr));
+    }
 #endif
 
     /*

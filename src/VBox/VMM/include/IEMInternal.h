@@ -166,11 +166,13 @@ typedef struct IEMCPU
     uint32_t                cIOWrites;
     /** Hack for ignoring differences in undefined EFLAGS after MUL and DIV. */
     bool                    fMulDivHack;
-    /** Hack for ignoring differences in OF after SHL.  At least two intel CPUs
-     * this code is running on will not set it correctly (i.e. like AMD and QEMU
-     * does). */
-    bool                    fShlHack;
+    /** Hack for ignoring differences in OF after shifts greater than 1 bit.
+     * At least two intel CPUs this code is running on will set it different
+     * than what AMD and REM does. */
+    bool                    fShiftOfHack;
     bool                    afAlignment1[6];
+    /** The physical address corresponding to abOpcodes[0]. */
+    RTGCPHYS                GCPhysOpcodes;
 #endif
     /** @}  */
 
@@ -198,9 +200,9 @@ typedef struct IEMCPU
     /** The effective segment register (X86_SREG_XXX). */
     uint8_t                 iEffSeg;
 
-    /** The current offset into abOpcode. */
+    /** The current offset into abOpcodes. */
     uint8_t                 offOpcode;
-    /** The size of what has currently been fetched into abOpcode. */
+    /** The size of what has currently been fetched into abOpcodes. */
     uint8_t                 cbOpcode;
     /** The opcode bytes. */
     uint8_t                 abOpcode[15];
@@ -452,7 +454,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *pu64Mem, uint64_t *pu64Reg)
 
 /** @name Signed multiplication operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU8  iemAImpl_imul_two_u8;
 FNIEMAIMPLBINU16 iemAImpl_imul_two_u16;
 FNIEMAIMPLBINU32 iemAImpl_imul_two_u32;
 FNIEMAIMPLBINU64 iemAImpl_imul_two_u64;
