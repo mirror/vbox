@@ -44,7 +44,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-//#define RT_STRICT
+#define RT_STRICT
+#define LOG_ENABLED
 #define LOG_GROUP   LOG_GROUP_EM /** @todo add log group */
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/pgm.h>
@@ -190,7 +191,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 *******************************************************************************/
 /** Temporary hack to disable the double execution.  Will be removed in favor
  * of a dedicated execution mode in EM. */
-//#define IEM_VERIFICATION_MODE_NO_REM
+#define IEM_VERIFICATION_MODE_NO_REM
 
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
@@ -5409,6 +5410,18 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
 }
 
 
+/**
+ * Implements 'HLT'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_hlt)
+{
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_EM_HALT;
+}
+
+
 /*
  * Instantiate the various string operation combinations.
  */
@@ -6755,7 +6768,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     iemExecVerificationModeSetup(pIemCpu);
 #endif
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     char     szInstr[256];
     uint32_t cbInstr = 0;

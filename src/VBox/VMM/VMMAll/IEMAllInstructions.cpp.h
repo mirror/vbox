@@ -7384,7 +7384,13 @@ FNIEMOP_DEF(iemOp_repe)
 
 
 /** Opcode 0xf4. */
-FNIEMOP_STUB(iemOp_hlt);
+FNIEMOP_DEF(iemOp_hlt)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_hlt);
+}
+
+
 /** Opcode 0xf5. */
 FNIEMOP_STUB(iemOp_cmc);
 
