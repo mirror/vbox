@@ -54,6 +54,7 @@ PROGRAMS += \
 	tstDir \
 	tstDir-2 \
 	tstDir-3 \
+	tstRTDvm \
 	tstEnv \
 	tstErrUnique \
 	tstFile \
@@ -211,6 +212,8 @@ tstDir_SOURCES = tstDir.cpp
 tstDir-2_SOURCES = tstDir-2.cpp
 
 tstDir-3_SOURCES = tstDir-3.cpp
+
+tstRTDvm_SOURCES = tstRTDvm.cpp
 
 tstEnv_SOURCES = tstEnv.cpp
 
