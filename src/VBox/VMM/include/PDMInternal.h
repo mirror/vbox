@@ -49,7 +49,7 @@ RT_C_DECLS_BEGIN
 
 /** @def PDMCRITSECT_STRICT
  * Enables/disables PDM critsect strictness like deadlock detection. */
-#if (defined(RT_LOCK_STRICT) && defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
+#if (defined(RT_LOCK_STRICT) && defined(IN_RING3) && !defined(IEM_VERIFICATION_MODE)) || defined(DOXYGEN_RUNNING)
 # define PDMCRITSECT_STRICT
 #endif
 
@@ -1084,7 +1084,7 @@ extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
 extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
 extern const PDMRTCHLP      g_pdmR3DevRtcHlp;
 extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;
-extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp; 
+extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 #endif
 
 
