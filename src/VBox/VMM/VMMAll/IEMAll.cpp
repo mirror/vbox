@@ -3892,70 +3892,139 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
 
 
 /**
- * Implements a 16-bit relative call.
+ * Implements an indirect call.
  *
+ * @param   uNewPC          The new program counter (RIP) value (loaded from the
+ *                          operand).
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
+{
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t uOldPC = pCtx->ip + cbInstr;
+    if (uNewPC > pCtx->csHid.u32Limit)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pIemCpu, uOldPC);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    pCtx->rip = uNewPC;
+    return VINF_SUCCESS;
+
+}
+
+
+/**
+ * Implements a 16-bit relative call.
  *
  * @param   offDisp      The displacment offset.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
 {
-    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t OldPC = pCtx->ip + cbInstr;
-    uint16_t NewPC = OldPC + offDisp;
-    if (NewPC > pCtx->csHid.u32Limit)
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t uOldPC = pCtx->ip + cbInstr;
+    uint16_t uNewPC = uOldPC + offDisp;
+    if (uNewPC > pCtx->csHid.u32Limit)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
-    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pIemCpu, OldPC);
+    VBOXSTRICTRC rcStrict = iemMemStackPushU16(pIemCpu, uOldPC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    pCtx->rip = NewPC;
+    pCtx->rip = uNewPC;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements a 32-bit indirect call.
+ *
+ * @param   uNewPC          The new program counter (RIP) value (loaded from the
+ *                          operand).
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
+{
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint32_t uOldPC = pCtx->eip + cbInstr;
+    if (uNewPC > pCtx->csHid.u32Limit)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pIemCpu, uOldPC);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    pCtx->rip = uNewPC;
+    return VINF_SUCCESS;
+
 }
 
 
 /**
  * Implements a 32-bit relative call.
  *
- *
  * @param   offDisp      The displacment offset.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
 {
-    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    uint32_t OldPC = pCtx->eip + cbInstr;
-    uint32_t NewPC = OldPC + offDisp;
-    if (NewPC > pCtx->csHid.u32Limit)
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint32_t uOldPC = pCtx->eip + cbInstr;
+    uint32_t uNewPC = uOldPC + offDisp;
+    if (uNewPC > pCtx->csHid.u32Limit)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
-    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pIemCpu, OldPC);
+    VBOXSTRICTRC rcStrict = iemMemStackPushU32(pIemCpu, uOldPC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    pCtx->rip = NewPC;
+    pCtx->rip = uNewPC;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements a 64-bit indirect call.
+ *
+ * @param   uNewPC          The new program counter (RIP) value (loaded from the
+ *                          operand).
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
+{
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint64_t uOldPC = pCtx->rip + cbInstr;
+    if (!IEM_IS_CANONICAL(uNewPC))
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pIemCpu, uOldPC);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    pCtx->rip = uNewPC;
+    return VINF_SUCCESS;
+
 }
 
 
 /**
  * Implements a 64-bit relative call.
  *
- *
  * @param   offDisp      The displacment offset.
  */
 IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 {
-    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    uint64_t OldPC = pCtx->rip + cbInstr;
-    uint64_t NewPC = OldPC + offDisp;
-    if (!IEM_IS_CANONICAL(NewPC))
+    PCPUMCTX pCtx   = pIemCpu->CTX_SUFF(pCtx);
+    uint64_t uOldPC = pCtx->rip + cbInstr;
+    uint64_t uNewPC = uOldPC + offDisp;
+    if (!IEM_IS_CANONICAL(uNewPC))
         return iemRaiseNotCanonical(pIemCpu);
 
-    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pIemCpu, OldPC);
+    VBOXSTRICTRC rcStrict = iemMemStackPushU64(pIemCpu, uOldPC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    pCtx->rip = NewPC;
+    pCtx->rip = uNewPC;
     return VINF_SUCCESS;
 }
 
@@ -4525,7 +4594,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     uint16_t       *pSel = iemSRegRef(pIemCpu, iSegReg);
     PCPUMSELREGHID  pHid = iemSRegGetHid(pIemCpu, iSegReg);
 
-    Assert(iSegReg < X86_SREG_GS && iSegReg != X86_SREG_CS);
+    Assert(iSegReg <= X86_SREG_GS && iSegReg != X86_SREG_CS);
 
     /*
      * Real mode and V8086 mode are easy.
