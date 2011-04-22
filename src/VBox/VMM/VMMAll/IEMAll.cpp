@@ -2625,6 +2625,10 @@ static VBOXSTRICTRC iemMemFetchDataS32SxU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, 
         *pu64Dst = *pi32Src;
         rc = iemMemCommitAndUnmap(pIemCpu, (void *)pi32Src, IEM_ACCESS_DATA_R);
     }
+#ifdef __GNUC__ /* warning: GCC may be a royal pain */
+    else
+        *pu64Dst = 0;
+#endif
     return rc;
 }
 
