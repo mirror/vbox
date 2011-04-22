@@ -2445,12 +2445,10 @@ public class VirtualBoxManager
     private Mozilla             mozilla;
     private IVirtualBox         vbox;
     private nsIComponentManager componentManager;
-    private nsIServiceManager   servMgr;
 
-    private VirtualBoxManager(Mozilla mozilla, nsIServiceManager servMgr)
+    private VirtualBoxManager(Mozilla mozilla)
     {
         this.mozilla = mozilla;
-        this.servMgr = servMgr;
         this.componentManager = mozilla.getComponentManager();
         this.vbox = new IVirtualBox((org.mozilla.interfaces.IVirtualBox) this.componentManager
                     .createInstanceByContractID("@virtualbox.org/VirtualBox;1",
@@ -2502,29 +2500,36 @@ public class VirtualBoxManager
     }
 
     private static boolean hasInstance = false;
+    private static boolean isMozillaInited = false;
 
     public static synchronized VirtualBoxManager createInstance(String home)
     {
         if (hasInstance)
             throw new VBoxException(null, "only one instance at the time allowed");
-
-        if (home == null)
+        if (home == null || "".equals(home))
             home = System.getProperty("vbox.home");
 
+        if (home == null)
+            throw new RuntimeException("vbox.home Java property must be defined to use XPCOM bridge");
+
         File grePath = new File(home);
+
         Mozilla mozilla = Mozilla.getInstance();
-        mozilla.initialize(grePath);
-        nsIServiceManager servMgr = null;
-        try {
-            servMgr = mozilla.initXPCOM(grePath, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        if (!isMozillaInited)
+        {
+           mozilla.initialize(grePath);
+           try {
+             mozilla.initXPCOM(grePath, null);
+             isMozillaInited = true;
+           } catch (Exception e) {
+             e.printStackTrace();
+             return null;
+           }
         }
 
         hasInstance = true;
 
-        return new VirtualBoxManager(mozilla, servMgr);
+        return new VirtualBoxManager(mozilla);
     }
 
     public IEventListener createListener(Object sink)
@@ -2534,8 +2539,9 @@ public class VirtualBoxManager
     public void cleanup()
     {
         deinitPerThread();
-        // cleanup
-        mozilla.shutdownXPCOM(servMgr);
+        // cleanup, we don't do that, as XPCOM bridge doesn't cleanly
+        // shuts down, so we prefer to avoid native shutdown
+        // mozilla.shutdownXPCOM(null);
         mozilla = null;
         hasInstance = false;
     }
