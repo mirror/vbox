@@ -1084,6 +1084,7 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
  */
 static int cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *ppChild)
 {
+    *ppChild = NULL;
     if (!pNode)
         return VERR_CFGM_NO_PARENT;
     PCFGMNODE pChild = NULL;
@@ -1143,6 +1144,7 @@ static int cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *pp
  */
 static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppLeaf)
 {
+    *ppLeaf = NULL;
     if (!pNode)
         return VERR_CFGM_NO_PARENT;
 
