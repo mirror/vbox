@@ -45,7 +45,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
     pdmLock(pVM);
 
     /*
-     * The local APIC has a higer priority than the PIC.
+     * The local APIC has a higher priority than the PIC.
      */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC))
     {
