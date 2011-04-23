@@ -1507,8 +1507,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
-            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
-            if (CPUMGetGuestEIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
+            Log(("VMCPU_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
+            if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
             {
                 /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
                  *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
