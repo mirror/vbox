@@ -6278,6 +6278,9 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     {
         Log(("Injecting trap %#x\n", TRPMGetTrapNo(pVCpu)));
         iemCImpl_int(pIemCpu, 0, TRPMGetTrapNo(pVCpu), false);
+# ifdef IEM_VERIFICATION_MODE_NO_REM
+        TRPMResetTrap(pVCpu);
+# endif
     }
 
     /*
