@@ -265,7 +265,7 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
 
 # ifdef IN_RING3
         /* print to stderr, helps user and gdb debugging. */
-        char szMsg[1024];
+        char szMsg[sizeof(g_szRTAssertMsg2)];
         va_copy(vaCopy, va);
         RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, vaCopy);
         va_end(vaCopy);
