@@ -2215,9 +2215,9 @@ dbgfR3RegPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
     }
     if (cbToCopy > 0)
     {
-        memcpy(&pArgs->pszBuf[pArgs->offBuf], pachChars, cbChars);
-        pArgs->offBuf     += cbChars;
-        pArgs->cchLeftBuf -= cbChars;
+        memcpy(&pArgs->pszBuf[pArgs->offBuf], pachChars, cbToCopy);
+        pArgs->offBuf     += cbToCopy;
+        pArgs->cchLeftBuf -= cbToCopy;
         pArgs->pszBuf[pArgs->offBuf] = '\0';
     }
     return cbToCopy;
