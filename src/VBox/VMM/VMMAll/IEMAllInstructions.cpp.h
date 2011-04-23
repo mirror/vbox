@@ -7257,8 +7257,55 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 FNIEMOP_STUB(iemOp_aam_Ib);
 /** Opcode 0xd5. */
 FNIEMOP_STUB(iemOp_aad_Ib);
+
+
 /** Opcode 0xd7. */
-FNIEMOP_STUB(iemOp_xlat);
+FNIEMOP_DEF(iemOp_xlat)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    switch (pIemCpu->enmEffAddrMode)
+    {
+        case IEMMODE_16BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_LOCAL(uint8_t,  u8Tmp);
+            IEM_MC_LOCAL(uint16_t, u16Addr);
+            IEM_MC_FETCH_GREG_U8_ZX_U16(u16Addr, X86_GREG_xAX);
+            IEM_MC_ADD_GREG_U16_TO_LOCAL(u16Addr, X86_GREG_xBX);
+            IEM_MC_FETCH_MEM_U8(u8Tmp, pIemCpu->iEffSeg, u16Addr);
+            IEM_MC_STORE_GREG_U8(X86_GREG_xAX, u8Tmp);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_32BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_LOCAL(uint8_t,  u8Tmp);
+            IEM_MC_LOCAL(uint32_t, u32Addr);
+            IEM_MC_FETCH_GREG_U8_ZX_U32(u32Addr, X86_GREG_xAX);
+            IEM_MC_ADD_GREG_U32_TO_LOCAL(u32Addr, X86_GREG_xBX);
+            IEM_MC_FETCH_MEM_U8(u8Tmp, pIemCpu->iEffSeg, u32Addr);
+            IEM_MC_STORE_GREG_U8(X86_GREG_xAX, u8Tmp);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_64BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_LOCAL(uint8_t,  u8Tmp);
+            IEM_MC_LOCAL(uint64_t, u64Addr);
+            IEM_MC_FETCH_GREG_U8_ZX_U64(u64Addr, X86_GREG_xAX);
+            IEM_MC_ADD_GREG_U64_TO_LOCAL(u64Addr, X86_GREG_xBX);
+            IEM_MC_FETCH_MEM_U8(u8Tmp, pIemCpu->iEffSeg, u64Addr);
+            IEM_MC_STORE_GREG_U8(X86_GREG_xAX, u8Tmp);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+         IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+}
+
+
 /** Opcode 0xd8. */
 FNIEMOP_STUB(iemOp_EscF0);
 /** Opcode 0xd9. */

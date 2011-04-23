@@ -1274,13 +1274,60 @@ static void iemRecalEffOpSize64Default(PIEMCPU pIemCpu)
  * Common opcode decoders.
  *
  */
+#include <iprt/mem.h>
+
+/**
+ * Used to add extra details about a stub case.
+ * @param   pIemCpu     The IEM per CPU state.
+ */
+static void iemOpStubMsg2(PIEMCPU pIemCpu)
+{
+    PVM     pVM   = IEMCPU_TO_VM(pIemCpu);
+    PVMCPU  pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    char szRegs[4096];
+    DBGFR3RegPrintf(pVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+                    "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
+                    "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
+                    "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
+                    "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
+                    "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
+                    "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
+                    "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
+                    "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
+                    "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
+                    "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
+                    "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
+                    "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
+                    "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
+                    "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
+                    "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
+                    "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
+                    "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
+                    "        efer=%016VR{efer}\n"
+                    "         pat=%016VR{pat}\n"
+                    "     sf_mask=%016VR{sf_mask}\n"
+                    "krnl_gs_base=%016VR{krnl_gs_base}\n"
+                    "       lstar=%016VR{lstar}\n"
+                    "        star=%016VR{star} cstar=%016VR{cstar}\n"
+                    "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                    );
+
+    char szInstr[256];
+    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0,
+                       DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                       szInstr, sizeof(szInstr), NULL);
+
+    RTAssertMsg2Weak("%s%s\n", szRegs, szInstr);
+}
+
 
 /** Stubs an opcode. */
 #define FNIEMOP_STUB(a_Name) \
     FNIEMOP_DEF(a_Name) \
     { \
-        IEMOP_MNEMONIC(#a_Name); \
-        AssertMsgFailed(("After %d instructions\n", pIemCpu->cInstructions)); \
+        RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
+        iemOpStubMsg2(pIemCpu); \
+        RTAssertPanic(); \
         return VERR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
@@ -5660,6 +5707,12 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) -= (a_u64Value)
+
+#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   (a_u8Value)  += iemGRegFetchU8( pIemCpu, (a_iGReg))
+#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  (a_u16Value) += iemGRegFetchU16(pIemCpu, (a_iGReg))
+#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  (a_u32Value) += iemGRegFetchU32(pIemCpu, (a_iGReg))
+#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  (a_u64Value) += iemGRegFetchU64(pIemCpu, (a_iGReg))
+
 
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u |= (a_fBit); } while (0)
 #define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u &= ~(a_fBit); } while (0)
