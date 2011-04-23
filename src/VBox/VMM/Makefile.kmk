@@ -560,6 +560,16 @@ VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VMMR3/PGMPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
+#
+# Always optimize the interpreter.
+#
+if1of ($(KBUILD_TARGET), win)
+#VMMAll/IEMAll.cpp_CXXFLAGS = TODO
+else
+VMMAll/IEMAll.cpp_CXXFLAGS = -O2 #-fomit-frame-pointer - latter causes trouble on mac.
+endif
+
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
 
