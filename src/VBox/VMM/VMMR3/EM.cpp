@@ -2013,7 +2013,13 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_REM:
 #ifdef IEM_VERIFICATION_MODE
+# if 1
                     rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); fFFDone = false;
+# else
+                    rc = VBOXSTRICTRC_TODO(REMR3EmulateInstruction(pVM, pVCpu)); fFFDone = false;
+                    if (rc == VINF_EM_RESCHEDULE)
+                        rc = VINF_SUCCESS;
+# endif
 #else
                     rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
 #endif
