@@ -1646,37 +1646,643 @@ FNIEMOP_DEF(iemOp_jnle_Jv)
 
 
 /** Opcode 0x0f 0x90. */
-FNIEMOP_STUB(iemOp_seto_Jv);
+FNIEMOP_DEF(iemOp_seto_Eb)
+{
+    IEMOP_MNEMONIC("seto Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x91. */
-FNIEMOP_STUB(iemOp_setno_Jv);
+FNIEMOP_DEF(iemOp_setno_Eb)
+{
+    IEMOP_MNEMONIC("setno Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x92. */
-FNIEMOP_STUB(iemOp_setc_Jv);
+FNIEMOP_DEF(iemOp_setc_Eb)
+{
+    IEMOP_MNEMONIC("setc Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x93. */
-FNIEMOP_STUB(iemOp_setnc_Jv);
+FNIEMOP_DEF(iemOp_setnc_Eb)
+{
+    IEMOP_MNEMONIC("setnc Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x94. */
-FNIEMOP_STUB(iemOp_sete_Jv);
+FNIEMOP_DEF(iemOp_sete_Eb)
+{
+    IEMOP_MNEMONIC("sete Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x95. */
-FNIEMOP_STUB(iemOp_setne_Jv);
+FNIEMOP_DEF(iemOp_setne_Eb)
+{
+    IEMOP_MNEMONIC("setne Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x96. */
-FNIEMOP_STUB(iemOp_setbe_Jv);
+FNIEMOP_DEF(iemOp_setbe_Eb)
+{
+    IEMOP_MNEMONIC("setbe Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x97. */
-FNIEMOP_STUB(iemOp_setnbe_Jv);
+FNIEMOP_DEF(iemOp_setnbe_Eb)
+{
+    IEMOP_MNEMONIC("setnbe Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x98. */
-FNIEMOP_STUB(iemOp_sets_Jv);
+FNIEMOP_DEF(iemOp_sets_Eb)
+{
+    IEMOP_MNEMONIC("sets Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x99. */
-FNIEMOP_STUB(iemOp_setns_Jv);
+FNIEMOP_DEF(iemOp_setns_Eb)
+{
+    IEMOP_MNEMONIC("setns Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9a. */
-FNIEMOP_STUB(iemOp_setp_Jv);
+FNIEMOP_DEF(iemOp_setp_Eb)
+{
+    IEMOP_MNEMONIC("setnp Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9b. */
-FNIEMOP_STUB(iemOp_setnp_Jv);
+FNIEMOP_DEF(iemOp_setnp_Eb)
+{
+    IEMOP_MNEMONIC("setnp Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9c. */
-FNIEMOP_STUB(iemOp_setl_Jv);
+FNIEMOP_DEF(iemOp_setl_Eb)
+{
+    IEMOP_MNEMONIC("setl Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9d. */
-FNIEMOP_STUB(iemOp_setnl_Jv);
+FNIEMOP_DEF(iemOp_setnl_Eb)
+{
+    IEMOP_MNEMONIC("setnl Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9e. */
-FNIEMOP_STUB(iemOp_setle_Jv);
+FNIEMOP_DEF(iemOp_setle_Eb)
+{
+    IEMOP_MNEMONIC("setle Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x9f. */
-FNIEMOP_STUB(iemOp_setnle_Jv);
+FNIEMOP_DEF(iemOp_setnle_Eb)
+{
+    IEMOP_MNEMONIC("setnle Eb");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo too early? */
+
+    /** @todo Encoding test: Check if the 'reg' field is ignored or decoded in
+     *        any way. AMD says it's "unused", whatever that means.  We're
+     *        ignoring for now. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* register target */
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /* memory target */
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 0);
+        } IEM_MC_ELSE() {
+            IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, 1);
+        } IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -2269,10 +2875,10 @@ const PFNIEMOP g_apfnTwoByteMap[256] =
     /* 0x84 */  iemOp_je_Jv,            iemOp_jne_Jv,           iemOp_jbe_Jv,           iemOp_jnbe_Jv,
     /* 0x88 */  iemOp_js_Jv,            iemOp_jns_Jv,           iemOp_jp_Jv,            iemOp_jnp_Jv,
     /* 0x8c */  iemOp_jl_Jv,            iemOp_jnl_Jv,           iemOp_jle_Jv,           iemOp_jnle_Jv,
-    /* 0x90 */  iemOp_seto_Jv,          iemOp_setno_Jv,         iemOp_setc_Jv,          iemOp_setnc_Jv,
-    /* 0x94 */  iemOp_sete_Jv,          iemOp_setne_Jv,         iemOp_setbe_Jv,         iemOp_setnbe_Jv,
-    /* 0x98 */  iemOp_sets_Jv,          iemOp_setns_Jv,         iemOp_setp_Jv,          iemOp_setnp_Jv,
-    /* 0x9c */  iemOp_setl_Jv,          iemOp_setnl_Jv,         iemOp_setle_Jv,         iemOp_setnle_Jv,
+    /* 0x90 */  iemOp_seto_Eb,          iemOp_setno_Eb,         iemOp_setc_Eb,          iemOp_setnc_Eb,
+    /* 0x94 */  iemOp_sete_Eb,          iemOp_setne_Eb,         iemOp_setbe_Eb,         iemOp_setnbe_Eb,
+    /* 0x98 */  iemOp_sets_Eb,          iemOp_setns_Eb,         iemOp_setp_Eb,          iemOp_setnp_Eb,
+    /* 0x9c */  iemOp_setl_Eb,          iemOp_setnl_Eb,         iemOp_setle_Eb,         iemOp_setnle_Eb,
     /* 0xa0 */  iemOp_push_fs,          iemOp_pop_fs,           iemOp_cpuid,            iemOp_bt_Ev_Gv,
     /* 0xa4 */  iemOp_shld_Ev_Gv_Ib,    iemOp_shld_Ev_Gv_CL,    iemOp_Invalid,          iemOp_Invalid,
     /* 0xa8 */  iemOp_push_gs,          iemOp_pop_gs,           iemOp_rsm,              iemOp_bts_Ev_Gv,
@@ -5803,8 +6409,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP(); \
-        IEM_MC_END(); \
-
+        IEM_MC_END();
 
 /** Opcode 0xa4. */
 FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
@@ -5812,7 +6417,7 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -5847,7 +6452,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -5926,11 +6531,200 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 
 #undef IEM_MOVS_CASE
 
-/** Opcode 0xa6. */
-FNIEMOP_STUB(iemOp_cmpsb_Xb_Yb);
-/** Opcode 0xa7. */
-FNIEMOP_STUB(iemOp_cmpswd_Xv_Yv);
+/** Macro used by iemOp_cmpsb_Xb_Yb and iemOp_cmpswd_Xv_Yv */
+#define IEM_CMPS_CASE(ValBits, AddrBits) \
+        IEM_MC_BEGIN(3, 3); \
+        IEM_MC_ARG(uint##ValBits##_t *, puValue1, 0); \
+        IEM_MC_ARG(uint##ValBits##_t,   uValue2,  1); \
+        IEM_MC_ARG(uint32_t *,          pEFlags,  2); \
+        IEM_MC_LOCAL(uint##ValBits##_t, uValue1); \
+        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
+        \
+        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xSI); \
+        IEM_MC_FETCH_MEM_U##ValBits(uValue1, pIemCpu->iEffSeg, uAddr); \
+        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xDI); \
+        IEM_MC_FETCH_MEM_U##ValBits(uValue2, X86_SREG_ES, uAddr); \
+        IEM_MC_REF_LOCAL(puValue1, uValue1); \
+        IEM_MC_REF_EFLAGS(pEFlags); \
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_cmp_u##ValBits, puValue1, uValue2, pEFlags); \
+        \
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \
+            IEM_MC_SUB_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
+            IEM_MC_SUB_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
+        } IEM_MC_ELSE() { \
+            IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
+            IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
+        } IEM_MC_ENDIF(); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END(); \
 
+/** Opcode 0xa6. */
+FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    /*
+     * Use the C implementation if a repeat prefix is encountered.
+     */
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPZ)
+    {
+        IEMOP_MNEMONIC("repe cmps Xb,Yb");
+        switch (pIemCpu->enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op8_addr16, pIemCpu->iEffSeg);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op8_addr32, pIemCpu->iEffSeg);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op8_addr64, pIemCpu->iEffSeg);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPNZ)
+    {
+        IEMOP_MNEMONIC("repe cmps Xb,Yb");
+        switch (pIemCpu->enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op8_addr16, pIemCpu->iEffSeg);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op8_addr32, pIemCpu->iEffSeg);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op8_addr64, pIemCpu->iEffSeg);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    IEMOP_MNEMONIC("cmps Xb,Yb");
+
+    /*
+     * Sharing case implementation with cmps[wdq] below.
+     */
+    switch (pIemCpu->enmEffAddrMode)
+    {
+        case IEMMODE_16BIT: IEM_CMPS_CASE(8, 16); break;
+        case IEMMODE_32BIT: IEM_CMPS_CASE(8, 32); break;
+        case IEMMODE_64BIT: IEM_CMPS_CASE(8, 64); break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return VINF_SUCCESS;
+
+}
+
+
+/** Opcode 0xa7. */
+FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    /*
+     * Use the C implementation if a repeat prefix is encountered.
+     */
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPZ)
+    {
+        IEMOP_MNEMONIC("repe cmps Xv,Yv");
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op16_addr16, pIemCpu->iEffSeg);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op16_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op16_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
+            case IEMMODE_32BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op32_addr16, pIemCpu->iEffSeg);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op32_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op32_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            case IEMMODE_64BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op64_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repe_cmps_op64_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPNZ)
+    {
+        IEMOP_MNEMONIC("repne cmps Xv,Yv");
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op16_addr16, pIemCpu->iEffSeg);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op16_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op16_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
+            case IEMMODE_32BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op32_addr16, pIemCpu->iEffSeg);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op32_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op32_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            case IEMMODE_64BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op64_addr32, pIemCpu->iEffSeg);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_repne_cmps_op64_addr64, pIemCpu->iEffSeg);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+
+    IEMOP_MNEMONIC("cmps Xv,Yv");
+
+    /*
+     * Annoying double switch here.
+     * Using ugly macro for implementing the cases, sharing it with cmpsb.
+     */
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: IEM_CMPS_CASE(16, 16); break;
+                case IEMMODE_32BIT: IEM_CMPS_CASE(16, 32); break;
+                case IEMMODE_64BIT: IEM_CMPS_CASE(16, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+
+        case IEMMODE_32BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: IEM_CMPS_CASE(32, 16); break;
+                case IEMMODE_32BIT: IEM_CMPS_CASE(32, 32); break;
+                case IEMMODE_64BIT: IEM_CMPS_CASE(32, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+
+        case IEMMODE_64BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_32BIT: IEM_CMPS_CASE(64, 32); break;
+                case IEMMODE_64BIT: IEM_CMPS_CASE(64, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return VINF_SUCCESS;
+
+}
+
+#undef IEM_CMPS_CASE
 
 /** Opcode 0xa8. */
 FNIEMOP_DEF(iemOp_test_AL_Ib)
@@ -5970,7 +6764,7 @@ FNIEMOP_DEF(iemOp_stosb_Yb_AL)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -6005,7 +6799,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -6106,7 +6900,7 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -6141,7 +6935,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     /*
-     * Use the C implementation if a repeate prefix is encountered.
+     * Use the C implementation if a repeat prefix is encountered.
      */
     if (pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
@@ -6220,10 +7014,191 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 
 #undef IEM_LODS_CASE
 
+/** Macro used by iemOp_scasb_AL_Xb and iemOp_scaswd_eAX_Xv */
+#define IEM_SCAS_CASE(ValBits, AddrBits) \
+        IEM_MC_BEGIN(1, 2); \
+        IEM_MC_ARG(uint##ValBits##_t *, puRax,   0); \
+        IEM_MC_ARG(uint##ValBits##_t,   uValue,  1); \
+        IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
+        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
+        \
+        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xDI); \
+        IEM_MC_FETCH_MEM_U##ValBits(uValue, X86_SREG_ES, uAddr); \
+        IEM_MC_REF_GREG_U##ValBits(puRax, X86_GREG_xAX); \
+        IEM_MC_REF_EFLAGS(pEFlags); \
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_cmp_u##ValBits, puRax, uValue, pEFlags); \
+        \
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \
+            IEM_MC_SUB_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
+        } IEM_MC_ELSE() { \
+            IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
+        } IEM_MC_ENDIF(); \
+        IEM_MC_ADVANCE_RIP(); \
+        IEM_MC_END();
+
 /** Opcode 0xae. */
-FNIEMOP_STUB(iemOp_scasb_AL_Xb);
+FNIEMOP_DEF(iemOp_scasb_AL_Xb)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    /*
+     * Use the C implementation if a repeat prefix is encountered.
+     */
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPZ)
+    {
+        IEMOP_MNEMONIC("repe scasb al,Xb");
+        switch (pIemCpu->enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_al_m16);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_al_m32);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_al_m64);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPNZ)
+    {
+        IEMOP_MNEMONIC("repne scasb al,Xb");
+        switch (pIemCpu->enmEffAddrMode)
+        {
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_al_m16);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_al_m32);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repne_scas_al_m64);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    IEMOP_MNEMONIC("scasb al,Xb");
+
+    /*
+     * Sharing case implementation with stos[wdq] below.
+     */
+    switch (pIemCpu->enmEffAddrMode)
+    {
+        case IEMMODE_16BIT: IEM_SCAS_CASE(8, 16); break;
+        case IEMMODE_32BIT: IEM_SCAS_CASE(8, 32); break;
+        case IEMMODE_64BIT: IEM_SCAS_CASE(8, 64); break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0xaf. */
-FNIEMOP_STUB(iemOp_scaswd_eAX_Xv);
+FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    /*
+     * Use the C implementation if a repeat prefix is encountered.
+     */
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPZ)
+    {
+        IEMOP_MNEMONIC("repe scas rAX,Xv");
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
+            case IEMMODE_32BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            case IEMMODE_64BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3); /** @todo It's this wrong, we can do 16-bit addressing in 64-bit mode, but not 32-bit. right? */
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    if (pIemCpu->fPrefixes & IEM_OP_PRF_REPNZ)
+    {
+        IEMOP_MNEMONIC("repne scas rAX,Xv");
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_ax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
+            case IEMMODE_32BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m16);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_eax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            case IEMMODE_64BIT:
+                switch (pIemCpu->enmEffAddrMode)
+                {
+                    case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m32);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_repe_scas_rax_m64);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    IEMOP_MNEMONIC("scas rAX,Xv");
+
+    /*
+     * Annoying double switch here.
+     * Using ugly macro for implementing the cases, sharing it with scasb.
+     */
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: IEM_SCAS_CASE(16, 16); break;
+                case IEMMODE_32BIT: IEM_SCAS_CASE(16, 32); break;
+                case IEMMODE_64BIT: IEM_SCAS_CASE(16, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+
+        case IEMMODE_32BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: IEM_SCAS_CASE(32, 16); break;
+                case IEMMODE_32BIT: IEM_SCAS_CASE(32, 32); break;
+                case IEMMODE_64BIT: IEM_SCAS_CASE(32, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+
+        case IEMMODE_64BIT:
+            switch (pIemCpu->enmEffAddrMode)
+            {
+                case IEMMODE_16BIT: AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* cannot be encoded */ break;
+                case IEMMODE_32BIT: IEM_SCAS_CASE(64, 32); break;
+                case IEMMODE_64BIT: IEM_SCAS_CASE(64, 64); break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            }
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return VINF_SUCCESS;
+}
+
+#undef IEM_SCAS_CASE
 
 /**
  * Common 'mov r8, imm8' helper.
@@ -8677,12 +9652,12 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
  * Opcode 0xff /5.
  * @param   bRm             The RM byte.
  */
-FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
-{
-    /* decode and use a C worker.  */
-    AssertFailed(); // FNIEMOP_STUB
-    return VERR_NOT_IMPLEMENTED;
-}
+FNIEMOP_STUB_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm);
+//{
+//    /* decode and use a C worker.  */
+//    AssertFailed(); // FNIEMOP_STUB
+//    return VERR_NOT_IMPLEMENTED;
+//}
 
 
 /**
