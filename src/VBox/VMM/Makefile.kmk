@@ -591,5 +591,6 @@ PGMInline.o 	PGMInline.obj: 			PGMDbg.o
 # Alias the IEM templates to the object in which they are instantiated.
 IEMInternal.o \
 IEMAllInstructions.cpp.o  IEMAllInstructions.cpp.obj \
+IEMAllCImpl.cpp.o         IEMAllCImpl.cpp.obj \
 IEMAllCImplStrInstr.cpp.o IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 
