@@ -5992,7 +5992,7 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
         IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0);
         IEM_MC_ARG(uint16_t,      u16Value,          1);
         IEM_MC_FETCH_GREG_U16(u16Value, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
-        IEM_MC_CALL_CIMPL_2(iemCImpl_LoadSReg, iSRegArg, u16Value);
+        IEM_MC_CALL_CIMPL_2(iemCImpl_load_SReg, iSRegArg, u16Value);
         IEM_MC_END();
     }
     else
@@ -6007,7 +6007,7 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
         IEM_MC_FETCH_MEM_U16(u16Value, pIemCpu->iEffSeg, GCPtrEffDst);
-        IEM_MC_CALL_CIMPL_2(iemCImpl_LoadSReg, iSRegArg, u16Value);
+        IEM_MC_CALL_CIMPL_2(iemCImpl_load_SReg, iSRegArg, u16Value);
         IEM_MC_END();
     }
     return VINF_SUCCESS;
@@ -6016,6 +6016,7 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
 
 /** Opcode 0x8f. */
 FNIEMOP_STUB(iemOp_pop_Ev);
+/** @todo DO ME NEXT, PLEEEASE. */
 
 
 /**

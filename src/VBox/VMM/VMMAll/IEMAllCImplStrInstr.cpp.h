@@ -65,7 +65,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pIemCpu, iEffSeg);
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
@@ -217,7 +220,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pIemCpu, iEffSeg);
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
@@ -369,7 +375,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
@@ -494,7 +503,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
@@ -621,7 +633,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     PCCPUMSELREGHID pSrcHid = iemSRegGetHid(pIemCpu, iEffSeg);
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrcHid, iEffSeg);
@@ -733,8 +748,6 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     pCtx->ADDR_rSI = uSrcAddrReg;
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRip(pIemCpu, cbInstr);
-    else
-        AssertFailed();
 
     return rcStrict;
 }
@@ -752,7 +765,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
@@ -865,7 +881,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
      */
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     PCCPUMSELREGHID pSrcHid = iemSRegGetHid(pIemCpu, iEffSeg);
     VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrcHid, iEffSeg);
@@ -1037,7 +1056,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
     if (rcStrict != VINF_SUCCESS)
@@ -1231,7 +1253,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
+    {
+        iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
+    }
 
     PCCPUMSELREGHID pHid = iemSRegGetHid(pIemCpu, iEffSeg);
     rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pHid, iEffSeg);

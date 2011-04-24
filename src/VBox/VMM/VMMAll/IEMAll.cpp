@@ -4676,7 +4676,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 
 
 /**
- * Implements 'mov SReg, r/m'.
+ * Common worker for 'pop SReg', 'mov SReg, GReg' and 'lXs GReg, reg/mem'.
  *
  * @param   iSegReg     The segment register number (valid).
  * @param   uSel        The new selector value.
@@ -4709,8 +4709,6 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                                 : X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 
         iemRegAddToRip(pIemCpu, cbInstr);
-        if (iSegReg == X86_SREG_SS)
-            EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
         return VINF_SUCCESS;
     }
 
@@ -4738,7 +4736,6 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                as is. */
             *pSel = uSel;
             iemRegAddToRip(pIemCpu, cbInstr);
-            EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
             return VINF_SUCCESS;
         }
 
@@ -4880,48 +4877,27 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
      *        mode.  */
 
     iemRegAddToRip(pIemCpu, cbInstr);
-    if (iSegReg == X86_SREG_SS)
-        EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Implements lgs, lfs, les, lds & lss.
+ * Implements 'mov SReg, r/m'.
+ *
+ * @param   iSegReg     The segment register number (valid).
+ * @param   uSel        The new selector value.
  */
-IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
-                uint16_t, uSel,
-                uint64_t, offSeg,
-                uint8_t,  iSegReg,
-                uint8_t,  iGReg,
-                IEMMODE,  enmEffOpSize)
+IEM_CIMPL_DEF_2(iemCImpl_load_SReg, uint8_t, iSegReg, uint16_t, uSel)
 {
-    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
-    VBOXSTRICTRC    rcStrict;
-
-    /*
-     * Use iemCImpl_LoadSReg to do the tricky segment register loading.
-     */
-    /** @todo verify and test that mov, pop and lXs works the segment
-     *        register loading in the exact same way. */
-    rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
     if (rcStrict == VINF_SUCCESS)
     {
-        switch (enmEffOpSize)
+        if (iSegReg == X86_SREG_SS)
         {
-            case IEMMODE_16BIT:
-                *(uint16_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
-                break;
-            case IEMMODE_32BIT:
-                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
-                break;
-            case IEMMODE_64BIT:
-                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
-                break;
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+            EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
         }
     }
-
     return rcStrict;
 }
 
@@ -4977,7 +4953,51 @@ IEM_CIMPL_DEF_2(iemOpCImpl_pop_Sreg, uint8_t, iSegReg, IEMMODE, enmEffOpSize)
      * Commit the stack on success.
      */
     if (rcStrict == VINF_SUCCESS)
+    {
         pCtx->rsp = TmpRsp.u;
+        if (iSegReg == X86_SREG_SS)
+            EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Implements lgs, lfs, les, lds & lss.
+ */
+IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
+                uint16_t, uSel,
+                uint64_t, offSeg,
+                uint8_t,  iSegReg,
+                uint8_t,  iGReg,
+                IEMMODE,  enmEffOpSize)
+{
+    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    VBOXSTRICTRC    rcStrict;
+
+    /*
+     * Use iemCImpl_LoadSReg to do the tricky segment register loading.
+     */
+    /** @todo verify and test that mov, pop and lXs works the segment
+     *        register loading in the exact same way. */
+    rcStrict = IEM_CIMPL_CALL_2(iemCImpl_LoadSReg, iSegReg, uSel);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        switch (enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                *(uint16_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            case IEMMODE_32BIT:
+                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            case IEMMODE_64BIT:
+                *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = offSeg;
+                break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+
     return rcStrict;
 }
 
