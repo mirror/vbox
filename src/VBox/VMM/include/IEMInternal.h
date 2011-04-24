@@ -170,7 +170,10 @@ typedef struct IEMCPU
      * At least two intel CPUs this code is running on will set it different
      * than what AMD and REM does. */
     bool                    fShiftOfHack;
-    bool                    afAlignment1[6];
+    /** Set if no comparison to REM is currently performed.
+     * This is used to skip past really slow bits.  */
+    bool                    fNoRem;
+    bool                    afAlignment1[5];
     /** The physical address corresponding to abOpcodes[0]. */
     RTGCPHYS                GCPhysOpcodes;
 #endif
@@ -337,7 +340,17 @@ typedef IEMCPU *PIEMCPU;
 #define IEM_OP_PRF_REX_X                RT_BIT_32(27)
 /** @} */
 
-
+/**
+ * Tests if verification mode is enabled.
+ *
+ * This expands to @c false when IEM_VERIFICATION_MODE is not defined and
+ * should therefore cause the compiler to eliminate the verification branch
+ * of an if statement.  */
+#ifdef IEM_VERIFICATION_MODE
+# define IEM_VERIFICATION_ENABLED(a_pIemCpu)    ((a_pIemCpu)->fNoRem)
+#else
+# define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (false)
+#endif
 
 
 /** @def IEM_DECL_IMPL_TYPE

@@ -53,6 +53,561 @@
 #define ADDR_TYPE                   RT_CONCAT3(uint,ADDR_SIZE,_t)
 
 
+/**
+ * Implements 'REPE CMPS'.
+ */
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Setup.
+     */
+    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    if (uCounterReg == 0)
+        return VINF_SUCCESS;
+
+    PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pIemCpu, iEffSeg);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    ADDR_TYPE       uSrc1AddrReg = pCtx->ADDR_rSI;
+    ADDR_TYPE       uSrc2AddrReg = pCtx->ADDR_rDI;
+    uint32_t        uEFlags     = pCtx->eflags.u;
+
+    /*
+     * The loop.
+     */
+    do
+    {
+        /*
+         * Do segmentation and virtual page stuff.
+         */
+#if ADDR_SIZE != 64
+        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base   + uSrc1AddrReg;
+        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->esHid.u64Base + uSrc2AddrReg;
+#else
+        uint64_t    uVirtSrc1Addr = uSrc1AddrReg;
+        uint64_t    uVirtSrc2Addr = uSrc2AddrReg;
+#endif
+        uint32_t    cLeftSrc1Page = (PAGE_SIZE - (uVirtSrc1Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        if (cLeftSrc1Page > uCounterReg)
+            cLeftSrc1Page = uCounterReg;
+        uint32_t    cLeftSrc2Page = (PAGE_SIZE - (uVirtSrc2Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
+
+        if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
+            && cbIncr > 0    /** @todo Implement reverse direction string ops. */
+#if ADDR_SIZE != 64
+            && uSrc1AddrReg < pSrc1Hid->u32Limit
+            && uSrc1AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrc1Hid->u32Limit
+            && uSrc2AddrReg < pCtx->esHid.u32Limit
+            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+#endif
+           )
+        {
+            RTGCPHYS GCPhysSrc1Mem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            RTGCPHYS GCPhysSrc2Mem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            /*
+             * If we can map the page without trouble, do a block processing
+             * until the end of the current page.
+             */
+            OP_TYPE const *puSrc2Mem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                OP_TYPE const *puSrc1Mem;
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    if (!memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
+                    {
+                        /* All matches, only compare the last itme to get the right eflags. */
+                        RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
+                        uSrc1AddrReg += cLeftPage * cbIncr;
+                        uSrc2AddrReg += cLeftPage * cbIncr;
+                        uCounterReg -= cLeftPage;
+                    }
+                    else
+                    {
+                        /* Some mismatch, compare each item (and keep volatile
+                           memory in mind). */
+                        do
+                        {
+                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)puSrc1Mem, *puSrc2Mem, &uEFlags);
+                            uSrc1AddrReg += cbIncr;
+                            uSrc2AddrReg += cbIncr;
+                            uCounterReg--;
+                            puSrc1Mem++;
+                            puSrc2Mem++;
+                            cLeftPage--;
+                        } while (   (int32_t)cLeftPage > 0
+                                 && (uEFlags & X86_EFL_ZF));
+                    }
+                    continue;
+                }
+            }
+        }
+
+        /*
+         * Fallback - slow processing till the end of the current page.
+         * In the cross page boundrary case we will end up here with cLeftPage
+         * as 0, we execute one loop then.
+         */
+        do
+        {
+            OP_TYPE uValue1;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue1, iEffSeg, uSrc1AddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            OP_TYPE uValue2;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
+
+            uSrc1AddrReg += cbIncr;
+            uSrc2AddrReg += cbIncr;
+            uCounterReg--;
+            cLeftPage--;
+        } while (   (int32_t)cLeftPage > 0
+                 && (uEFlags & X86_EFL_ZF));
+        if (rcStrict != VINF_SUCCESS)
+            break;
+    } while (   uCounterReg != 0
+             && (uEFlags & X86_EFL_ZF));
+
+    /*
+     * Update the registers.
+     */
+    pCtx->ADDR_rCX = uCounterReg;
+    pCtx->ADDR_rSI = uSrc1AddrReg;
+    pCtx->ADDR_rDI = uSrc2AddrReg;
+    pCtx->eflags.u = uEFlags;
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+
+    return rcStrict;
+}
+
+
+/**
+ * Implements 'REPNE CMPS'.
+ */
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Setup.
+     */
+    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    if (uCounterReg == 0)
+        return VINF_SUCCESS;
+
+    PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pIemCpu, iEffSeg);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    int8_t const    cbIncr       = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    ADDR_TYPE       uSrc1AddrReg = pCtx->ADDR_rSI;
+    ADDR_TYPE       uSrc2AddrReg = pCtx->ADDR_rDI;
+    uint32_t        uEFlags      = pCtx->eflags.u;
+
+    /*
+     * The loop.
+     */
+    do
+    {
+        /*
+         * Do segmentation and virtual page stuff.
+         */
+#if ADDR_SIZE != 64
+        ADDR2_TYPE  uVirtSrc1Addr = (uint32_t)pSrc1Hid->u64Base   + uSrc1AddrReg;
+        ADDR2_TYPE  uVirtSrc2Addr = (uint32_t)pCtx->esHid.u64Base + uSrc2AddrReg;
+#else
+        uint64_t    uVirtSrc1Addr = uSrc1AddrReg;
+        uint64_t    uVirtSrc2Addr = uSrc2AddrReg;
+#endif
+        uint32_t    cLeftSrc1Page = (PAGE_SIZE - (uVirtSrc1Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        if (cLeftSrc1Page > uCounterReg)
+            cLeftSrc1Page = uCounterReg;
+        uint32_t    cLeftSrc2Page = (PAGE_SIZE - (uVirtSrc2Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
+
+        if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
+            && cbIncr > 0    /** @todo Implement reverse direction string ops. */
+#if ADDR_SIZE != 64
+            && uSrc1AddrReg < pSrc1Hid->u32Limit
+            && uSrc1AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pSrc1Hid->u32Limit
+            && uSrc2AddrReg < pCtx->esHid.u32Limit
+            && uSrc2AddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+#endif
+           )
+        {
+            RTGCPHYS GCPhysSrc1Mem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            RTGCPHYS GCPhysSrc2Mem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            /*
+             * If we can map the page without trouble, do a block processing
+             * until the end of the current page.
+             */
+            OP_TYPE const *puSrc2Mem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, (void **)&puSrc2Mem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                OP_TYPE const *puSrc1Mem;
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, (void **)&puSrc1Mem);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    if (memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
+                    {
+                        /* All matches, only compare the last itme to get the right eflags. */
+                        RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
+                        uSrc1AddrReg += cLeftPage * cbIncr;
+                        uSrc2AddrReg += cLeftPage * cbIncr;
+                        uCounterReg -= cLeftPage;
+                    }
+                    else
+                    {
+                        /* Some mismatch, compare each item (and keep volatile
+                           memory in mind). */
+                        do
+                        {
+                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)puSrc1Mem, *puSrc2Mem, &uEFlags);
+                            uSrc1AddrReg += cbIncr;
+                            uSrc2AddrReg += cbIncr;
+                            uCounterReg--;
+                            puSrc1Mem++;
+                            puSrc2Mem++;
+                            cLeftPage--;
+                        } while (   (int32_t)cLeftPage > 0
+                                 && !(uEFlags & X86_EFL_ZF));
+                    }
+                    continue;
+                }
+            }
+        }
+
+        /*
+         * Fallback - slow processing till the end of the current page.
+         * In the cross page boundrary case we will end up here with cLeftPage
+         * as 0, we execute one loop then.
+         */
+        do
+        {
+            OP_TYPE uValue1;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue1, iEffSeg, uSrc1AddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            OP_TYPE uValue2;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
+
+            uSrc1AddrReg += cbIncr;
+            uSrc2AddrReg += cbIncr;
+            uCounterReg--;
+            cLeftPage--;
+        } while (   (int32_t)cLeftPage > 0
+                 && !(uEFlags & X86_EFL_ZF));
+        if (rcStrict != VINF_SUCCESS)
+            break;
+    } while (   uCounterReg != 0
+             && !(uEFlags & X86_EFL_ZF));
+
+    /*
+     * Update the registers.
+     */
+    pCtx->ADDR_rCX = uCounterReg;
+    pCtx->ADDR_rSI = uSrc1AddrReg;
+    pCtx->ADDR_rDI = uSrc2AddrReg;
+    pCtx->eflags.u = uEFlags;
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+
+    return rcStrict;
+}
+
+
+/**
+ * Implements 'REPE SCAS'.
+ */
+IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Setup.
+     */
+    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    if (uCounterReg == 0)
+        return VINF_SUCCESS;
+
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    OP_TYPE const   uValueReg   = pCtx->OP_rAX;
+    ADDR_TYPE       uAddrReg    = pCtx->ADDR_rDI;
+    uint32_t        uEFlags     = pCtx->eflags.u;
+
+    /*
+     * The loop.
+     */
+    do
+    {
+        /*
+         * Do segmentation and virtual page stuff.
+         */
+#if ADDR_SIZE != 64
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+#else
+        uint64_t    uVirtAddr = uAddrReg;
+#endif
+        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        if (cLeftPage > uCounterReg)
+            cLeftPage = uCounterReg;
+        if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
+            && cbIncr > 0    /** @todo Implement reverse direction string ops. */
+#if ADDR_SIZE != 64
+            && uAddrReg < pCtx->esHid.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+#endif
+           )
+        {
+            RTGCPHYS GCPhysMem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            /*
+             * If we can map the page without trouble, do a block processing
+             * until the end of the current page.
+             */
+            OP_TYPE const *puMem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                /* Search till we find a mismatching item. */
+                OP_TYPE  uTmpValue;
+                bool     fQuit;
+                uint32_t i = 0;
+                do
+                {
+                    uTmpValue = puMem[i++];
+                    fQuit = uTmpValue != uValueReg;
+                } while (i < cLeftPage && !fQuit);
+
+                /* Update the regs. */
+                RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+                uCounterReg -= i;
+                uAddrReg    += i * cbIncr;
+                Assert(!(uEFlags & X86_EFL_ZF) == (i < cLeftPage));
+                if (fQuit)
+                    break;
+
+
+                /* If unaligned, we drop thru and do the page crossing access
+                   below. Otherwise, do the next page. */
+                if (!(uVirtAddr & (OP_SIZE - 1)))
+                    continue;
+                if (uCounterReg == 0)
+                    break;
+                cLeftPage = 0;
+            }
+        }
+
+        /*
+         * Fallback - slow processing till the end of the current page.
+         * In the cross page boundrary case we will end up here with cLeftPage
+         * as 0, we execute one loop then.
+         */
+        do
+        {
+            OP_TYPE uTmpValue;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+
+            uAddrReg += cbIncr;
+            uCounterReg--;
+            cLeftPage--;
+        } while (   (int32_t)cLeftPage > 0
+                 && (uEFlags & X86_EFL_ZF));
+        if (rcStrict != VINF_SUCCESS)
+            break;
+    } while (   uCounterReg != 0
+             && (uEFlags & X86_EFL_ZF));
+
+    /*
+     * Update the registers.
+     */
+    pCtx->ADDR_rCX = uCounterReg;
+    pCtx->ADDR_rDI = uAddrReg;
+    pCtx->eflags.u = uEFlags;
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+
+    return rcStrict;
+}
+
+
+/**
+ * Implements 'REPNE SCAS'.
+ */
+IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Setup.
+     */
+    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    if (uCounterReg == 0)
+        return VINF_SUCCESS;
+
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->esHid, X86_SREG_ES);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    OP_TYPE const   uValueReg   = pCtx->OP_rAX;
+    ADDR_TYPE       uAddrReg    = pCtx->ADDR_rDI;
+    uint32_t        uEFlags     = pCtx->eflags.u;
+
+    /*
+     * The loop.
+     */
+    do
+    {
+        /*
+         * Do segmentation and virtual page stuff.
+         */
+#if ADDR_SIZE != 64
+        ADDR2_TYPE  uVirtAddr = (uint32_t)pCtx->esHid.u64Base + uAddrReg;
+#else
+        uint64_t    uVirtAddr = uAddrReg;
+#endif
+        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        if (cLeftPage > uCounterReg)
+            cLeftPage = uCounterReg;
+        if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
+            && cbIncr > 0    /** @todo Implement reverse direction string ops. */
+#if ADDR_SIZE != 64
+            && uAddrReg < pCtx->esHid.u32Limit
+            && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->esHid.u32Limit
+#endif
+           )
+        {
+            RTGCPHYS GCPhysMem;
+            rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+
+            /*
+             * If we can map the page without trouble, do a block processing
+             * until the end of the current page.
+             */
+            OP_TYPE const *puMem;
+            rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                /* Search till we find a mismatching item. */
+                OP_TYPE  uTmpValue;
+                bool     fQuit;
+                uint32_t i = 0;
+                do
+                {
+                    uTmpValue = puMem[i++];
+                    fQuit = uTmpValue == uValueReg;
+                } while (i < cLeftPage && !fQuit);
+
+                /* Update the regs. */
+                RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+                uCounterReg -= i;
+                uAddrReg    += i * cbIncr;
+                Assert(!(uEFlags & X86_EFL_ZF) != (i < cLeftPage));
+                if (fQuit)
+                    break;
+
+
+                /* If unaligned, we drop thru and do the page crossing access
+                   below. Otherwise, do the next page. */
+                if (!(uVirtAddr & (OP_SIZE - 1)))
+                    continue;
+                if (uCounterReg == 0)
+                    break;
+                cLeftPage = 0;
+            }
+        }
+
+        /*
+         * Fallback - slow processing till the end of the current page.
+         * In the cross page boundrary case we will end up here with cLeftPage
+         * as 0, we execute one loop then.
+         */
+        do
+        {
+            OP_TYPE uTmpValue;
+            rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
+
+            uAddrReg += cbIncr;
+            uCounterReg--;
+            cLeftPage--;
+        } while (   (int32_t)cLeftPage > 0
+                 && !(uEFlags & X86_EFL_ZF));
+        if (rcStrict != VINF_SUCCESS)
+            break;
+    } while (   uCounterReg != 0
+             && !(uEFlags & X86_EFL_ZF));
+
+    /*
+     * Update the registers.
+     */
+    pCtx->ADDR_rCX = uCounterReg;
+    pCtx->ADDR_rDI = uAddrReg;
+    pCtx->eflags.u = uEFlags;
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRip(pIemCpu, cbInstr);
+
+    return rcStrict;
+}
+
+
+
 
 /**
  * Implements 'REP MOVS'.
@@ -131,7 +686,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             if (rcStrict == VINF_SUCCESS)
             {
                 OP_TYPE const *puSrcMem;
-                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_W, (void **)&puSrcMem);
+                rcStrict = iemMemPageMap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, (void **)&puSrcMem);
                 if (rcStrict == VINF_SUCCESS)
                 {
                     /* Perform the operation. */
@@ -178,6 +733,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     pCtx->ADDR_rSI = uSrcAddrReg;
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRip(pIemCpu, cbInstr);
+    else
+        AssertFailed();
 
     return rcStrict;
 }
@@ -436,11 +993,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
         return rcStrict;
 
     uint32_t        u32Value;
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-    rcStrict = IOMIOPortRead(pVM, pCtx->dx, &u32Value, OP_SIZE / 8);
-# else
-    iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
-# endif
+    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+        rcStrict = IOMIOPortRead(pVM, pCtx->dx, &u32Value, OP_SIZE / 8);
+    else
+        rcStrict = iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
     if (IOM_SUCCESS(rcStrict))
     {
         VBOXSTRICTRC rcStrict2 = iemMemCommitAndUnmap(pIemCpu, puMem, IEM_ACCESS_DATA_W);
@@ -535,11 +1091,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value;
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-                    rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
-# else
-                    rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
-# endif
+                    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                        rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+                    else
+                        rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
                     if (!IOM_SUCCESS(rcStrict))
                         break;
                     *puMem++     = (OP_TYPE)u32Value;
@@ -583,11 +1138,10 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 break;
 
             uint32_t u32Value;
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-            rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
-# else
-            rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
-# endif
+            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+            else
+                rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
                 break;
 
@@ -641,11 +1195,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
     if (rcStrict == VINF_SUCCESS)
     {
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-        rcStrict = IOMIOPortWrite(pVM, pCtx->dx, uValue, OP_SIZE / 8);
-# else
-        rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, pCtx->dx, uValue, OP_SIZE / 8);
-# endif
+        if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            rcStrict = IOMIOPortWrite(pVM, pCtx->dx, uValue, OP_SIZE / 8);
+        else
+            rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, pCtx->dx, uValue, OP_SIZE / 8);
         if (IOM_SUCCESS(rcStrict))
         {
             if (!pCtx->eflags.Bits.u1DF)
@@ -733,11 +1286,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value = *puMem++;
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-                    rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
-# else
-                    rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
-# endif
+                    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                        rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
+                    else
+                        rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
                     if (!IOM_SUCCESS(rcStrict))
                         break;
                     uAddrReg    += cbIncr;
@@ -779,11 +1331,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             if (rcStrict != VINF_SUCCESS)
                 break;
 
-# if !defined(IEM_VERIFICATION_MODE) || defined(IEM_VERIFICATION_MODE_NO_REM)
-            rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
-# else
-            rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
-# endif
+            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
+            else
+                rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
                 break;
 
