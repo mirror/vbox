@@ -515,9 +515,9 @@ static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSe
 static VBOXSTRICTRC     iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
 #ifdef IEM_VERIFICATION_MODE
 static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu);
+#endif
 static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
 static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
-#endif
 
 
 /**
@@ -6938,7 +6938,20 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
 }
 
-#endif /* IEM_VERIFICATION_MODE && IN_RING3 */
+#else  /* !IEM_VERIFICATION_MODE || !IN_RING3 */
+
+/* stubs */
+static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
+{
+    return VERR_INTERNAL_ERROR;
+}
+
+static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
+{
+    return VERR_INTERNAL_ERROR;
+}
+
+#endif /* !IEM_VERIFICATION_MODE || !IN_RING3 */
 
 
 /**
