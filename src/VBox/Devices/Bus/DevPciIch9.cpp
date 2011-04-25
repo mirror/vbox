@@ -1868,7 +1868,9 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 {
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        AssertMsgReturn(false, ("Read from extended registers fallen back to generic code\n"), 0);
+        LogRel(("Read from extended register %d fallen back to generic code\n",
+                u32Address));
+        return 0;
     }
 
     AssertMsgReturn(u32Address + len <= 256, ("Read after the end of PCI config space\n"),
@@ -1959,7 +1961,9 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        AssertMsgReturnVoid(false, ("Write to extended registers fallen back to generic code\n"));
+        LogRel(("Write to extended register %d fallen back to generic code\n",
+                u32Address));
+        return;
     }
 
     AssertMsgReturnVoid(u32Address + len <= 256, ("Write after end of PCI config space\n"));
