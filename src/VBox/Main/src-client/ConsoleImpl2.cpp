@@ -1071,6 +1071,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pDevices, "hpet", &pDev);
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
+            InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "ICH9", (chipsetType == ChipsetType_ICH9) ? 1 : 0);  /* boolean */
         }
 
         /*
