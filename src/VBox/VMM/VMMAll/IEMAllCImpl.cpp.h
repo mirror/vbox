@@ -807,6 +807,9 @@ IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
         pCtx->cs  = uSel & (X86_SEL_MASK | X86_SEL_LDT);
         pCtx->cs |= pIemCpu->uCpl; /** @todo is this right for conforming segs? or in general? */
         pCtx->csHid.Attr.u   = (Desc.Legacy.u >> (16+16+8)) & UINT32_C(0xf0ff);
+#ifdef IEM_VERIFICATION_MODE
+        pCtx->csHid.Attr.u &= ~(uint32_t)X86_SEL_TYPE_ACCESSED; /** @todo check what VT-x and AMD-V does here. */
+#endif
         pCtx->csHid.u32Limit = cbLimit;
         pCtx->csHid.u64Base  = u64Base;
         /** @todo check if the hidden bits are loaded correctly for 64-bit
