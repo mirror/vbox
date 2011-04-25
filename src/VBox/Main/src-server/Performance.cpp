@@ -109,7 +109,7 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 #ifndef VBOX_COLLECTOR_TEST_CASE
 
 CollectorGuest::CollectorGuest(Machine *machine, RTPROCESS process) :
-    mEnabled(false), mValid(false), mMachine(machine), mProcess(process),
+    mUnregistered(false), mEnabled(false), mValid(false), mMachine(machine), mProcess(process),
     mCpuUser(0), mCpuKernel(0), mCpuIdle(0),
     mMemTotal(0), mMemFree(0), mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0),
     mAllocVMM(0), mFreeVMM(0), mBalloonedVMM(0), mSharedVMM(0)
@@ -201,6 +201,10 @@ int CollectorGuest::updateStats()
 
 void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
+    /*
+     * Since we are running without a lock the value of mVMMStatsProvider
+     * can change at any moment. In the worst case we won't collect any data.
+     */
     CollectorGuestList::iterator it;
 
     LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p ramvmm=%s\n",
@@ -210,6 +214,8 @@ void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick 
         LogAleksey(("{%p} " LOG_FN_FMT ": it=%p pid=%d gueststats=%s...\n",
                     this, __PRETTY_FUNCTION__, *it, (*it)->getProcess(),
                     hints.isGuestStatsCollected((*it)->getProcess())?"y":"n"));
+        if ((*it)->isUnregistered())
+            continue;
         if (  (hints.isHostRamVmmCollected() && *it == mVMMStatsProvider)
             || hints.isGuestStatsCollected((*it)->getProcess()))
         {
@@ -251,40 +257,53 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
 {
     LogAleksey(("{%p} " LOG_FN_FMT ": About to unregister guest=%p provider=%p\n",
                 this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
-    mGuests.remove(pGuest);
-    LogAleksey(("{%p} " LOG_FN_FMT ": Number of guests after remove is %d\n",
-                this, __PRETTY_FUNCTION__, mGuests.size()));
+    //mGuests.remove(pGuest); => destroyUnregistered()
+    pGuest->unregister();
     if (pGuest == mVMMStatsProvider)
     {
         /* This was our VMM stats provider, it is time to re-elect */
-        if (mGuests.empty())
-        {
-            /* Nobody can provide VMM stats */
-            mVMMStatsProvider = NULL;
-        }
-        else
-        {
-            /* First let's look for a guest already collecting stats */
-            CollectorGuestList::iterator it;
+        CollectorGuestList::iterator it;
+        /* Assume that nobody can provide VMM stats */
+        mVMMStatsProvider = NULL;
 
-            for (it = mGuests.begin(); it != mGuests.end(); it++)
-                if ((*it)->isEnabled())
-                {
-                    /* Found one, elect it */
-                    mVMMStatsProvider = *it;
-                    LogAleksey(("{%p} " LOG_FN_FMT ": LEAVE new provider=%p\n",
-                                this, __PRETTY_FUNCTION__, mVMMStatsProvider));
-                    return;
-                }
+        for (it = mGuests.begin(); it != mGuests.end(); it++)
+        {
+            /* Skip unregistered as they are about to be destroyed */
+            if ((*it)->isUnregistered())
+                continue;
 
-            /* Nobody collects stats, take the first one */
-            mVMMStatsProvider = mGuests.front();
+            if ((*it)->isEnabled())
+            {
+                /* Found the guest already collecting stats, elect it */
+                mVMMStatsProvider = *it;
+                break;
+            }
+            else if (!mVMMStatsProvider)
+            {
+                /* If nobody collects stats, take the first registered */
+                mVMMStatsProvider = *it;
+            }
         }
     }
     LogAleksey(("{%p} " LOG_FN_FMT ": LEAVE new provider=%p\n",
                 this, __PRETTY_FUNCTION__, mVMMStatsProvider));
 }
 
+void CollectorGuestManager::destroyUnregistered()
+{
+    CollectorGuestList::iterator it;
+
+    for (it = mGuests.begin(); it != mGuests.end();)
+        if ((*it)->isUnregistered())
+        {
+            delete *it;
+            it = mGuests.erase(it);
+            LogAleksey(("{%p} " LOG_FN_FMT ": Number of guests after erasing unregistered is %d\n",
+                        this, __PRETTY_FUNCTION__, mGuests.size()));
+        }
+        else
+            ++it;
+}
 
 #endif /* !VBOX_COLLECTOR_TEST_CASE */
 

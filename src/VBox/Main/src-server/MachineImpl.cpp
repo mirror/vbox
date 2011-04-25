@@ -10561,13 +10561,22 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (mCollectorGuest)
     {
         mParent->performanceCollector()->unregisterGuest(mCollectorGuest);
-        delete mCollectorGuest;
+        // delete mCollectorGuest; => CollectorGuestManager::destroyUnregistered()
         mCollectorGuest = NULL;
     }
+#if 0
     // Trigger async cleanup tasks, avoid doing things here which are not
     // vital to be done immediately and maybe need more locks. This calls
     // Machine::unregisterMetrics().
     mParent->onMachineUninit(mPeer);
+#else
+    /*
+     * It is safe to call Machine::unregisterMetrics() here because
+     * PerformanceCollector::samplerCallback no longer accesses guest methods
+     * holding the lock.
+     */
+    unregisterMetrics(mParent->performanceCollector(), mPeer);
+#endif
 
     if (aReason == Uninit::Abnormal)
     {
