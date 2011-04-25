@@ -3456,7 +3456,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, (void **)&pu32, 4, UINT8_MAX, GCPtr, IEM_ACCESS_DATA_RW);
     if (rcStrict == VINF_SUCCESS)
     {
-        ASMAtomicBitSet(pu32, 0); /* X86_SEL_TYPE_ACCESSED is 1 */
+        ASMAtomicBitSet(pu32, 8); /* X86_SEL_TYPE_ACCESSED is 1, but is preceeded by u8BaseHigh1. */
 
         rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pu32, IEM_ACCESS_DATA_RW);
     }

@@ -706,6 +706,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
 {
+    /** @todo JUST DO ME AS WELL WHILE AT IT. */
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -713,6 +714,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /6. */
 FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
 {
+    /** @todo DO ME NEXT */
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -3975,6 +3977,10 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
         pIemCpu->enmEffOpSize = !(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? IEMMODE_64BIT : IEMMODE_16BIT;
     }
 
+/** @todo How does this code handle iReg==X86_GREG_xSP. How does a real CPU
+ *        handle it, for that matter (Intel pseudo code hints that the popped
+ *        value is incremented by the stack item size.)  Test it, both encodings
+ *        and all three register sizes. */
     switch (pIemCpu->enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6015,8 +6021,102 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
 
 
 /** Opcode 0x8f. */
-FNIEMOP_STUB(iemOp_pop_Ev);
-/** @todo DO ME NEXT, PLEEEASE. */
+FNIEMOP_DEF(iemOp_pop_Ev)
+{
+    /* This bugger is rather annoying as it requires rSP to be updated before
+       doing the effective address calculations.  Will eventually require a
+       split between the R/M+SIB decoding and the effective address
+       calculation - which is something that is required for any attempt at
+       reusing this code for a recompiler.  It may also be good to have if we
+       need to delay #UD exception caused by invalid lock prefixes.
+
+       For now, we'll do a mostly safe interpreter-only implementation here. */
+    /** @todo What's the deal with the 'reg' field and pop Ev?  Ignorning it for
+     *        now until tests show it's checked.. */
+    IEMOP_MNEMONIC("pop Ev");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo should probably not be raised until we've fetched all the opcode bytes? */
+
+    /* Register access is relatively easy and can share code. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        return FNIEMOP_CALL_1(iemOpCommonPopGReg, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+
+    /*
+     * Memory target.
+     *
+     * Intel says that RSP is incremented before it's used in any effective
+     * address calcuations.  This means some serious extra annoyance here since
+     * we decode and caclulate the effective address in one step and like to
+     * delay committing registers till everything is done.
+     *
+     * So, we'll decode and calculate the effective address twice.  This will
+     * require some recoding if turned into a recompiler.
+     */
+    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE(); /* The common code does this differently. */
+
+    /* Calc effective address with modified ESP. */
+    uint8_t const   offOpcodeSaved = pIemCpu->offOpcode;
+    RTGCPTR         GCPtrEff;
+    VBOXSTRICTRC    rcStrict;
+    rcStrict = iemOpHlpCalcRmEffAddr(pIemCpu, bRm, &GCPtrEff);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    pIemCpu->offOpcode = offOpcodeSaved;
+
+    PCPUMCTX        pCtx     = pIemCpu->CTX_SUFF(pCtx);
+    uint64_t const  RspSaved = pCtx->rsp;
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT: iemRegAddToRsp(pCtx, 2); break;
+        case IEMMODE_32BIT: iemRegAddToRsp(pCtx, 4); break;
+        case IEMMODE_64BIT: iemRegAddToRsp(pCtx, 8); break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    rcStrict = iemOpHlpCalcRmEffAddr(pIemCpu, bRm, &GCPtrEff);
+    Assert(rcStrict == VINF_SUCCESS);
+    pCtx->rsp = RspSaved;
+
+    /* Perform the operation - this should be CImpl. */
+    RTUINT64U TmpRsp;
+    TmpRsp.u = pCtx->rsp;
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+        {
+            uint16_t u16Value;
+            rcStrict = iemMemStackPopU16Ex(pIemCpu, &u16Value, &TmpRsp);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = iemMemStoreDataU16(pIemCpu, pIemCpu->iEffSeg, GCPtrEff, u16Value);
+            break;
+        }
+
+        case IEMMODE_32BIT:
+        {
+            uint32_t u32Value;
+            rcStrict = iemMemStackPopU32Ex(pIemCpu, &u32Value, &TmpRsp);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = iemMemStoreDataU32(pIemCpu, pIemCpu->iEffSeg, GCPtrEff, u32Value);
+            break;
+        }
+
+        case IEMMODE_64BIT:
+        {
+            uint64_t u64Value;
+            rcStrict = iemMemStackPopU64Ex(pIemCpu, &u64Value, &TmpRsp);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = iemMemStoreDataU16(pIemCpu, pIemCpu->iEffSeg, GCPtrEff, u64Value);
+            break;
+        }
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    if (rcStrict == VINF_SUCCESS)
+    {
+        pCtx->rsp = TmpRsp.u;
+        iemRegUpdateRip(pIemCpu);
+    }
+    return rcStrict;
+}
 
 
 /**
