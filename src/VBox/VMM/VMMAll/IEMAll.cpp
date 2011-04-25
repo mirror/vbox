@@ -613,7 +613,8 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
     /** @todo optimize this differently by not using PGMPhysRead. */
     RTGCPHYS const offPrevOpcodes = GCPhys - pIemCpu->GCPhysOpcodes;
     pIemCpu->GCPhysOpcodes = GCPhys;
-    if (offPrevOpcodes < cbOldOpcodes)
+    if (   offPrevOpcodes < cbOldOpcodes
+        && PAGE_SIZE - (GCPhys & PAGE_OFFSET_MASK) > sizeof(pIemCpu->abOpcode))
     {
         uint8_t cbNew = cbOldOpcodes - (uint8_t)offPrevOpcodes;
         memmove(&pIemCpu->abOpcode[0], &pIemCpu->abOpcode[offPrevOpcodes], cbNew);
@@ -659,6 +660,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
      * First translate CS:rIP to a physical address.
      */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint8_t     cbLeft = pIemCpu->cbOpcode - pIemCpu->offOpcode; Assert(cbLeft < cbMin);
     uint32_t    cbToTryRead;
     RTGCPTR     GCPtrNext;
     if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
@@ -668,7 +670,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         if (!IEM_IS_CANONICAL(GCPtrNext))
             return iemRaiseGeneralProtectionFault0(pIemCpu);
         cbToTryRead = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
-        Assert(cbToTryRead >= cbMin); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
+        Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
     }
     else
     {
@@ -678,7 +680,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         if (GCPtrNext32 > pCtx->csHid.u32Limit)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         cbToTryRead = pCtx->csHid.u32Limit - GCPtrNext32 + 1;
-        if (cbToTryRead < cbMin)
+        if (cbToTryRead < cbMin - cbLeft)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         GCPtrNext = pCtx->csHid.u64Base + GCPtrNext32;
     }
@@ -693,6 +695,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     if ((fFlags & X86_PTE_PAE_NX) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
         return iemRaisePageFault(pIemCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     GCPhys |= GCPtrNext & PAGE_OFFSET_MASK;
+    //Log(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pIemCpu->cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
@@ -705,6 +708,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode)
         cbToTryRead = sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode;
+    Assert(cbToTryRead >= cbMin - cbLeft);
     if (!pIemCpu->fByPassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead);
     else
@@ -712,6 +716,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     if (rc != VINF_SUCCESS)
         return rc;
     pIemCpu->cbOpcode += cbToTryRead;
+    //Log(("%.*Rhxs\n", pIemCpu->cbOpcode, pIemCpu->abOpcode));
 
     return VINF_SUCCESS;
 }
@@ -4172,6 +4177,21 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     PCPUMCTX pOrgCtx = pIemCpu->CTX_SUFF(pCtx);
     pIemCpu->fNoRem = !LogIsEnabled(); /* logging triggers the no-rem/rem verification stuff */
 
+#if 0
+    // Auto enable; DSL.
+    if (    pIemCpu->fNoRem
+        &&  pOrgCtx->cs  == 0x10
+        &&  (   pOrgCtx->rip == 0x00100fc7
+             || pOrgCtx->rip == 0x00100ffc
+             || pOrgCtx->rip == 0x00100ffe
+            )
+       )
+    {
+        RTLogFlags(NULL, "enabled");
+        pIemCpu->fNoRem = false;
+    }
+#endif
+
     /*
      * Switch state.
      */
@@ -4502,15 +4522,21 @@ static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
                 && pEvtRec->u.RamWrite.cb != 2
                 && pEvtRec->u.RamWrite.cb != 4) )
         {
-            RTAssertMsg1(NULL, __LINE__, __FILE__, __PRETTY_FUNCTION__);
-            RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
-            RTAssertMsg2Add("REM: %.*Rhxs\n"
-                            "IEM: %.*Rhxs\n",
-                            pEvtRec->u.RamWrite.cb, abBuf,
-                            pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
-            iemVerifyAssertAddRecordDump(pEvtRec);
-            iemOpStubMsg2(pIemCpu);
-            RTAssertPanic();
+            /* fend off ROMs */
+            if (   pEvtRec->u.RamWrite.GCPhys - UINT32_C(0x000c0000) > UINT32_C(0x8000)
+                && pEvtRec->u.RamWrite.GCPhys - UINT32_C(0x000e0000) > UINT32_C(0x20000)
+                && pEvtRec->u.RamWrite.GCPhys - UINT32_C(0xfffc0000) > UINT32_C(0x40000) )
+            {
+                RTAssertMsg1(NULL, __LINE__, __FILE__, __PRETTY_FUNCTION__);
+                RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
+                RTAssertMsg2Add("REM: %.*Rhxs\n"
+                                "IEM: %.*Rhxs\n",
+                                pEvtRec->u.RamWrite.cb, abBuf,
+                                pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
+                iemVerifyAssertAddRecordDump(pEvtRec);
+                iemOpStubMsg2(pIemCpu);
+                RTAssertPanic();
+            }
         }
     }
 
@@ -4573,6 +4599,20 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             } \
         } while (0)
 
+#  define CHECK_SEL(a_Sel) \
+        do \
+        { \
+            CHECK_FIELD(a_Sel); \
+            if (   pOrgCtx->a_Sel##Hid.Attr.u != pDebugCtx->a_Sel##Hid.Attr.u \
+                && (pOrgCtx->a_Sel##Hid.Attr.u | X86_SEL_TYPE_ACCESSED) != pDebugCtx->a_Sel##Hid.Attr.u) \
+            { \
+                RTAssertMsg2Weak("  %8sHid.Attr differs - iem=%02x - rem=%02x\n", #a_Sel, pDebugCtx->a_Sel##Hid.Attr.u, pOrgCtx->a_Sel##Hid.Attr.u); \
+                cDiffs++; \
+            } \
+            CHECK_FIELD(a_Sel##Hid.u64Base); \
+            CHECK_FIELD(a_Sel##Hid.u32Limit); \
+        } while (0)
+
         if (memcmp(&pOrgCtx->fpu, &pDebugCtx->fpu, sizeof(pDebugCtx->fpu)))
         {
             if (pIemCpu->cInstructions != 1)
@@ -4588,7 +4628,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         if (pIemCpu->fMulDivHack)
             fFlagsMask &= ~(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
         if (pIemCpu->fShiftOfHack)
-            fFlagsMask &= ~(X86_EFL_OF);
+            fFlagsMask &= ~(X86_EFL_OF | X86_EFL_AF);
         if ((pOrgCtx->rflags.u & fFlagsMask) != (pDebugCtx->rflags.u & fFlagsMask))
         {
             RTAssertMsg2Weak("  rflags differs - iem=%08llx rem=%08llx\n", pDebugCtx->rflags.u, pOrgCtx->rflags.u);
@@ -4630,30 +4670,12 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         CHECK_FIELD(r11);
         CHECK_FIELD(r12);
         CHECK_FIELD(r13);
-        CHECK_FIELD(cs);
-        CHECK_FIELD(csHid.u64Base);
-        CHECK_FIELD(csHid.u32Limit);
-        CHECK_FIELD(csHid.Attr.u);
-        CHECK_FIELD(ss);
-        CHECK_FIELD(ssHid.u64Base);
-        CHECK_FIELD(ssHid.u32Limit);
-        CHECK_FIELD(ssHid.Attr.u);
-        CHECK_FIELD(ds);
-        CHECK_FIELD(dsHid.u64Base);
-        CHECK_FIELD(dsHid.u32Limit);
-        CHECK_FIELD(dsHid.Attr.u);
-        CHECK_FIELD(es);
-        CHECK_FIELD(esHid.u64Base);
-        CHECK_FIELD(esHid.u32Limit);
-        CHECK_FIELD(esHid.Attr.u);
-        CHECK_FIELD(fs);
-        CHECK_FIELD(fsHid.u64Base);
-        CHECK_FIELD(fsHid.u32Limit);
-        CHECK_FIELD(fsHid.Attr.u);
-        CHECK_FIELD(gs);
-        CHECK_FIELD(gsHid.u64Base);
-        CHECK_FIELD(gsHid.u32Limit);
-        CHECK_FIELD(gsHid.Attr.u);
+        CHECK_SEL(cs);
+        CHECK_SEL(ss);
+        CHECK_SEL(ds);
+        CHECK_SEL(es);
+        CHECK_SEL(fs);
+        CHECK_SEL(gs);
         CHECK_FIELD(cr0);
         CHECK_FIELD(cr2);
         CHECK_FIELD(cr3);
