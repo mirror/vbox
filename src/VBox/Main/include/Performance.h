@@ -144,9 +144,11 @@ namespace pm
         CollectorGuest(Machine *machine, RTPROCESS process);
         ~CollectorGuest();
 
+        bool isUnregistered()   { return mUnregistered; };
         bool isEnabled()        { return mEnabled; };
         bool isValid()          { return mValid; };
         void invalidateStats()  { mValid = false; };
+        void unregister()       { mUnregistered = true; };
         int updateStats();
         int enable();
         int disable();
@@ -167,6 +169,7 @@ namespace pm
         ULONG getSharedVMM()    { return mSharedVMM; };
 
     private:
+        bool                 mUnregistered;
         bool                 mEnabled;
         bool                 mValid;
         Machine             *mMachine;
@@ -193,10 +196,12 @@ namespace pm
     {
     public:
         CollectorGuestManager() : mVMMStatsProvider(NULL) {};
+        ~CollectorGuestManager() { Assert(mGuests.size() == 0); };
         void registerGuest(CollectorGuest* pGuest);
         void unregisterGuest(CollectorGuest* pGuest);
         CollectorGuest *getVMMStatsProvider() { return mVMMStatsProvider; };
         void preCollect(CollectorHints& hints, uint64_t iTick);
+        void destroyUnregistered();
     private:
         CollectorGuestList mGuests;
         CollectorGuest    *mVMMStatsProvider;
@@ -233,7 +238,8 @@ namespace pm
     {
     public:
         BaseMetric(CollectorHAL *hal, const char *name, ComPtr<IUnknown> object)
-            : mPeriod(0), mLength(0), mHAL(hal), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
+            : mPeriod(0), mLength(0), mHAL(hal), mName(name), mObject(object),
+              mLastSampleTaken(0), mEnabled(false), mUnregistered(false) {};
         virtual ~BaseMetric() {};
 
         virtual void init(ULONG period, ULONG length) = 0;
@@ -248,7 +254,9 @@ namespace pm
 
         void enable()  { mEnabled = true; };
         void disable() { mEnabled = false; };
+        void unregister() { mUnregistered = true; };
 
+        bool isUnregistered() { return mUnregistered; };
         bool isEnabled() { return mEnabled; };
         ULONG getPeriod() { return mPeriod; };
         ULONG getLength() { return mLength; };
@@ -264,6 +272,7 @@ namespace pm
         ComPtr<IUnknown> mObject;
         uint64_t         mLastSampleTaken;
         bool             mEnabled;
+        bool             mUnregistered;
     };
 
     class BaseGuestMetric : public BaseMetric

@@ -17,6 +17,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*
+ * Rules of engagement:
+ * 1) All performance objects must be destroyed by PerformanceCollector only!
+ * 2) All public methods of PerformanceCollector must be protected with
+ *    read or write lock.
+ * 3) samplerCallback only uses the write lock during the third phase
+ *    which pulls data into SubMetric objects. This is where object destruction
+ *    and all list modifications are done. The pre-collection phases are
+ *    run without any locks which is only possible because:
+ * 4) Public methods of PerformanceCollector as well as pre-collection methods
+      cannot modify lists or destroy objects, and:
+ * 5) Pre-collection methods cannot modify metric data.
+ */
+
 #include "PerformanceImpl.h"
 
 #include "AutoCaller.h"
@@ -198,6 +212,24 @@ void PerformanceCollector::uninit()
     }
 
     mMagic = 0;
+
+    /* Destroy unregistered metrics */
+    BaseMetricList::iterator it;
+    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
+	if ((*it)->isUnregistered())
+	{
+	    delete *it;
+	    it = m.baseMetrics.erase(it);
+	}
+	else
+	    ++it;
+    Assert(m.baseMetrics.size() == 0);
+    /*
+     * Now when we have destroyed all base metrics that could
+     * try to pull data from unregistered CollectorGuest objects
+     * it is safe to destroy them as well.
+     */
+    m.gm->destroyUnregistered();
 
     /* Destroy resource usage sampler */
     int vrc = RTTimerLRDestroy (m.sampler);
@@ -533,17 +565,16 @@ void PerformanceCollector::unregisterBaseMetricsFor(const ComPtr<IUnknown> &aObj
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    int n = 0;
     BaseMetricList::iterator it;
-    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
+    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
         if ((*it)->associatedWith(aObject))
         {
-            delete *it;
-            it = m.baseMetrics.erase(it);
+            (*it)->unregister();
+            ++n;
         }
-        else
-            ++it;
-    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, marked %d metrics\n",
+                this, __PRETTY_FUNCTION__, (void *)aObject, n));
     //LogFlowThisFuncLeave();
 }
 
@@ -639,7 +670,7 @@ void PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUse
 void PerformanceCollector::samplerCallback(uint64_t iTick)
 {
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    /* No locking until stage 3!*/
 
     pm::CollectorHints hints;
     uint64_t timestamp = RTTimeMilliTS();
@@ -663,6 +694,32 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
     m.hal->preCollect(hints, iTick);
     /* Collect the data in bulk from all hinted guests */
     m.gm->preCollect(hints, iTick);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    /*
+     * Before we can collect data we need to go through both lists
+     * again to see if any base metrics are marked as unregistered.
+     * Those should be destroyed now.
+     */
+    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
+    toBeCollected.remove_if(std::mem_fun(&pm::BaseMetric::isUnregistered));
+    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
+    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
+        if ((*it)->isUnregistered())
+        {
+            delete *it;
+            it = m.baseMetrics.erase(it);
+        }
+        else
+            ++it;
+    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    /*
+     * Now when we have destroyed all base metrics that could
+     * try to pull data from unregistered CollectorGuest objects
+     * it is safe to destroy them as well.
+     */
+    m.gm->destroyUnregistered();
 
     /* Finally, collect the data */
     std::for_each (toBeCollected.begin(), toBeCollected.end(),
