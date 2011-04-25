@@ -706,16 +706,82 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
 {
-    /** @todo JUST DO ME AS WELL WHILE AT IT. */
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint16_t, u16Tmp);
+                IEM_MC_FETCH_CR0_U16(u16Tmp);
+                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16Tmp);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint32_t, u32Tmp);
+                IEM_MC_FETCH_CR0_U32(u32Tmp);
+                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32Tmp);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 1);
+                IEM_MC_LOCAL(uint64_t, u64Tmp);
+                IEM_MC_FETCH_CR0_U64(u64Tmp);
+                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Tmp);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        /* Ignore operand size here, memory refs are always 16-bit. */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint16_t, u16Tmp);
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_FETCH_CR0_U16(u16Tmp);
+        IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tmp);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
 }
 
 
 /** Opcode 0x0f 0x01 /6. */
 FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
 {
-    /** @todo DO ME NEXT */
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    /* The operand size is effectively ignored, all is 16-bit and only the
+       lower 3-bits are used. */
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEM_MC_BEGIN(1, 0);
+        IEM_MC_ARG(uint16_t, u16Tmp, 0);
+        IEM_MC_FETCH_GREG_U16(u16Tmp, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_CALL_CIMPL_1(iemCImpl_lmsw, u16Tmp);
+        IEM_MC_END();
+    }
+    else
+    {
+        IEM_MC_BEGIN(1, 1);
+        IEM_MC_ARG(uint16_t, u16Tmp, 0);
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_FETCH_MEM_U16(u16Tmp, pIemCpu->iEffSeg, GCPtrEffDst);
+        IEM_MC_CALL_CIMPL_1(iemCImpl_lmsw, u16Tmp);
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
 }
 
 

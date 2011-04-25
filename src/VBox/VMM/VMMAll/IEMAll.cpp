@@ -3531,6 +3531,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_SREG_U16(a_u16Dst, a_iSReg)        (a_u16Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_SREG_ZX_U32(a_u32Dst, a_iSReg)     (a_u32Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_SREG_ZX_U64(a_u64Dst, a_iSReg)     (a_u64Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
+#define IEM_MC_FETCH_CR0_U16(a_u16Dst)                  (a_u16Dst) = (uint16_t)(pIemCpu)->CTX_SUFF(pCtx)->cr0
+#define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)(pIemCpu)->CTX_SUFF(pCtx)->cr0
+#define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pIemCpu, (a_iGReg)) = (a_u8Value)
@@ -3930,7 +3933,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                         uint8_t bSib; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bSib);
 
                         /* Get the index and scale it. */
-                        switch ((bSib & X86_SIB_INDEX_SHIFT) >> X86_SIB_INDEX_SMASK)
+                        switch ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
                         {
                             case 0: u32EffAddr = pCtx->eax; break;
                             case 1: u32EffAddr = pCtx->ecx; break;

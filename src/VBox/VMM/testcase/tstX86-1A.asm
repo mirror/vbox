@@ -159,6 +159,7 @@ BEGINPROC x861_Test1
         ;
         ; Odd push behavior
         ;
+%if 0 ; Seems to be so on AMD only
 %ifdef RT_ARCH_X86
         ; upper word of a 'push cs' is cleared.
         mov     eax, __LINE__
@@ -216,6 +217,7 @@ BEGINPROC x861_Test1
         and     ebx, 0000ffffh
         cmp     xCX, xBX
         jne     .failed
+%endif
 
 %ifdef RT_ARCH_AMD64
         ; REX.B works with 'push r64'.
@@ -437,6 +439,18 @@ BEGINPROC x861_Test1
         mov     xDI, xSP
         xor     xCX, xCX
         ShouldTrap X86_XCPT_GP, rep insb
+
+        ;
+        ; SMSW can get to the whole of CR0.
+        ;
+        mov     eax, __LINE__
+        xor     xBX, xBX
+        smsw    xBX
+        test    ebx, X86_CR0_PG
+        jz      .failed
+        test    ebx, X86_CR0_PE
+        jz      .failed
+
 
 
 
