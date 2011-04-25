@@ -1991,7 +1991,22 @@ IEM_CIMPL_DEF_1(iemCImpl_lmsw, uint16_t, u16NewMsw)
      */
     uint64_t uNewCr0 = pCtx->cr0     & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
     uNewCr0 |= u16NewMsw & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
-    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, 0, uNewCr0);
+    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0);
+}
+
+
+/**
+ * Implements 'CLTS'.
+ */
+IEM_CIMPL_DEF_0(iemOpCImpl_clts)
+{
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint64_t uNewCr0 = pCtx->cr0;
+    uNewCr0 &= ~X86_CR0_TS;
+    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0);
 }
 
 
@@ -2193,6 +2208,24 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_EM_HALT;
+}
+
+
+/**
+ * Implements 'CPUID'.
+ */
+IEM_CIMPL_DEF_0(iemOpCImpl_cpuid)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), pCtx->eax, &pCtx->eax, &pCtx->ebx, &pCtx->ecx, &pCtx->edx);
+    pCtx->rax &= UINT32_C(0xffffffff);
+    pCtx->rbx &= UINT32_C(0xffffffff);
+    pCtx->rcx &= UINT32_C(0xffffffff);
+    pCtx->rdx &= UINT32_C(0xffffffff);
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
