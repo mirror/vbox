@@ -799,7 +799,9 @@ IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
             rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uSel);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
+#ifdef IEM_VERIFICATION_MODE /** @todo check what VT-x and AMD-V does. */
             Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+#endif
         }
 
         /* commit */
@@ -807,9 +809,6 @@ IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
         pCtx->cs  = uSel & (X86_SEL_MASK | X86_SEL_LDT);
         pCtx->cs |= pIemCpu->uCpl; /** @todo is this right for conforming segs? or in general? */
         pCtx->csHid.Attr.u   = (Desc.Legacy.u >> (16+16+8)) & UINT32_C(0xf0ff);
-#ifdef IEM_VERIFICATION_MODE
-        pCtx->csHid.Attr.u &= ~(uint32_t)X86_SEL_TYPE_ACCESSED; /** @todo check what VT-x and AMD-V does here. */
-#endif
         pCtx->csHid.u32Limit = cbLimit;
         pCtx->csHid.u64Base  = u64Base;
         /** @todo check if the hidden bits are loaded correctly for 64-bit
@@ -1667,30 +1666,17 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 
 
 /**
- * Implements mov CRx,GReg.
+ * Used to implemented 'mov CRx,GReg' and 'lmsw r/m16'.
  *
- * @param   iCrReg          The CRx register to read (valid).
- * @param   iGReg           The general register to store the CRx value in.
+ * @param   iCrReg          The CRx register to write (valid).
+ * @param   uNewCrX         The new value.
  */
-IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
+IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
 {
     PCPUMCTX        pCtx  = pIemCpu->CTX_SUFF(pCtx);
     PVMCPU          pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     VBOXSTRICTRC    rcStrict;
     int             rc;
-
-    if (pIemCpu->uCpl != 0)
-        return iemRaiseGeneralProtectionFault0(pIemCpu);
-    Assert(!pCtx->eflags.Bits.u1VM);
-
-    /*
-     * Read the new value from the source register.
-     */
-    uint64_t NewCrX;
-    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
-        NewCrX = iemGRegFetchU64(pIemCpu, iGReg);
-    else
-        NewCrX = iemGRegFetchU32(pIemCpu, iGReg);
 
     /*
      * Try store it.
@@ -1703,37 +1689,37 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             /*
              * Perform checks.
              */
-            uint64_t const OldCrX = pCtx->cr0;
-            NewCrX |= X86_CR0_ET; /* hardcoded */
+            uint64_t const uOldCrX = pCtx->cr0;
+            uNewCrX |= X86_CR0_ET; /* hardcoded */
 
             /* Check for reserved bits. */
             uint32_t const fValid = X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
                                   | X86_CR0_ET | X86_CR0_NE | X86_CR0_WP | X86_CR0_AM
                                   | X86_CR0_NW | X86_CR0_CD | X86_CR0_PG;
-            if (NewCrX & ~(uint64_t)fValid)
+            if (uNewCrX & ~(uint64_t)fValid)
             {
-                Log(("Trying to set reserved CR0 bits: NewCR0=%#llx InvalidBits=%#llx\n", NewCrX, NewCrX & ~(uint64_t)fValid));
+                Log(("Trying to set reserved CR0 bits: NewCR0=%#llx InvalidBits=%#llx\n", uNewCrX, uNewCrX & ~(uint64_t)fValid));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
 
             /* Check for invalid combinations. */
-            if (    (NewCrX & X86_CR0_PG)
-                && !(NewCrX & X86_CR0_PE) )
+            if (    (uNewCrX & X86_CR0_PG)
+                && !(uNewCrX & X86_CR0_PE) )
             {
                 Log(("Trying to set CR0.PG without CR0.PE\n"));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
 
-            if (   !(NewCrX & X86_CR0_CD)
-                && (NewCrX & X86_CR0_NW) )
+            if (   !(uNewCrX & X86_CR0_CD)
+                && (uNewCrX & X86_CR0_NW) )
             {
                 Log(("Trying to clear CR0.CD while leaving CR0.NW set\n"));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
 
             /* Long mode consistency checks. */
-            if (    (NewCrX & X86_CR0_PG)
-                && !(OldCrX & X86_CR0_PG)
+            if (    (uNewCrX & X86_CR0_PG)
+                && !(uOldCrX & X86_CR0_PG)
                 &&  (pCtx->msrEFER & MSR_K6_EFER_LME) )
             {
                 if (!(pCtx->cr4 & X86_CR4_PAE))
@@ -1755,21 +1741,21 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
              */
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
             {
-                rc = CPUMSetGuestCR0(pVCpu, NewCrX);
+                rc = CPUMSetGuestCR0(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_3);
             }
             else
-                pCtx->cr0 = NewCrX;
-            Assert(pCtx->cr0 == NewCrX);
+                pCtx->cr0 = uNewCrX;
+            Assert(pCtx->cr0 == uNewCrX);
 
             /*
              * Change EFER.LMA if entering or leaving long mode.
              */
-            if (   (NewCrX & X86_CR0_PG) != (OldCrX & X86_CR0_PG)
+            if (   (uNewCrX & X86_CR0_PG) != (uOldCrX & X86_CR0_PG)
                 && (pCtx->msrEFER & MSR_K6_EFER_LME) )
             {
                 uint64_t NewEFER = pCtx->msrEFER;
-                if (NewCrX & X86_CR0_PG)
+                if (uNewCrX & X86_CR0_PG)
                     NewEFER |= MSR_K6_EFER_LME;
                 else
                     NewEFER &= ~MSR_K6_EFER_LME;
@@ -1786,8 +1772,8 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
              */
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
             {
-                if (    (NewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                    !=  (OldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
+                if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+                    !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
                 {
                     rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
                     AssertRCReturn(rc, rc);
@@ -1805,7 +1791,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
          * CR2 can be changed without any restrictions.
          */
         case 2:
-            pCtx->cr2 = NewCrX;
+            pCtx->cr2 = uNewCrX;
             rcStrict  = VINF_SUCCESS;
             break;
 
@@ -1819,9 +1805,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
         case 3:
         {
             /* check / mask the value. */
-            if (NewCrX & UINT64_C(0xfff0000000000000))
+            if (uNewCrX & UINT64_C(0xfff0000000000000))
             {
-                Log(("Trying to load CR3 with invalid high bits set: %#llx\n", NewCrX));
+                Log(("Trying to load CR3 with invalid high bits set: %#llx\n", uNewCrX));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
 
@@ -1833,11 +1819,11 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
                 fValid = UINT64_C(0xfffffff4);
             else
                 fValid = UINT64_C(0xfffff014);
-            if (NewCrX & ~fValid)
+            if (uNewCrX & ~fValid)
             {
                 Log(("Automatically clearing reserved bits in CR3 load: NewCR3=%#llx ClearedBits=%#llx\n",
-                     NewCrX, NewCrX & ~fValid));
-                NewCrX &= fValid;
+                     uNewCrX, uNewCrX & ~fValid));
+                uNewCrX &= fValid;
             }
 
             /** @todo If we're in PAE mode we should check the PDPTRs for
@@ -1846,11 +1832,11 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             /* Make the change. */
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
             {
-                rc = CPUMSetGuestCR3(pVCpu, NewCrX);
+                rc = CPUMSetGuestCR3(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
             }
             else
-                pCtx->cr3 = NewCrX;
+                pCtx->cr3 = uNewCrX;
 
             /* Inform PGM. */
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
@@ -1873,7 +1859,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
          */
         case 4:
         {
-            uint64_t const OldCrX = pCtx->cr0;
+            uint64_t const uOldCrX = pCtx->cr0;
 
             /* reserved bits */
             uint32_t fValid = X86_CR4_VME | X86_CR4_PVI
@@ -1886,15 +1872,15 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             //    fValid |= X86_CR4_VMXE;
             //if (xxx)
             //    fValid |= X86_CR4_OSXSAVE;
-            if (NewCrX & ~(uint64_t)fValid)
+            if (uNewCrX & ~(uint64_t)fValid)
             {
-                Log(("Trying to set reserved CR4 bits: NewCR4=%#llx InvalidBits=%#llx\n", NewCrX, NewCrX & ~(uint64_t)fValid));
+                Log(("Trying to set reserved CR4 bits: NewCR4=%#llx InvalidBits=%#llx\n", uNewCrX, uNewCrX & ~(uint64_t)fValid));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
 
             /* long mode checks. */
-            if (   (OldCrX & X86_CR4_PAE)
-                && !(NewCrX & X86_CR4_PAE)
+            if (   (uOldCrX & X86_CR4_PAE)
+                && !(uNewCrX & X86_CR4_PAE)
                 && (pCtx->msrEFER & MSR_K6_EFER_LMA) )
             {
                 Log(("Trying to set clear CR4.PAE while long mode is active\n"));
@@ -1907,12 +1893,12 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
              */
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
             {
-                rc = CPUMSetGuestCR4(pVCpu, NewCrX);
+                rc = CPUMSetGuestCR4(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
             }
             else
-                pCtx->cr4 = NewCrX;
-            Assert(pCtx->cr4 == NewCrX);
+                pCtx->cr4 = uNewCrX;
+            Assert(pCtx->cr4 == uNewCrX);
 
             /*
              * Notify SELM and PGM.
@@ -1920,12 +1906,12 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
             if (IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 /* SELM - VME may change things wrt to the TSS shadowing. */
-                if ((NewCrX ^ OldCrX) & X86_CR4_VME)
+                if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
                 /* PGM - flushing and mode. */
-                if (    (NewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                    !=  (OldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
+                if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+                    !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
                 {
                     rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
                     AssertRCReturn(rc, rc);
@@ -1959,6 +1945,53 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRip(pIemCpu, cbInstr);
     return rcStrict;
+
+}
+
+
+/**
+ * Implements mov CRx,GReg.
+ *
+ * @param   iCrReg          The CRx register to write (valid).
+ * @param   iGReg           The general register to store the CRx value in.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
+{
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    Assert(!pIemCpu->CTX_SUFF(pCtx)->eflags.Bits.u1VM);
+
+    /*
+     * Read the new value from the source register and call common worker.
+     */
+    uint64_t uNewCrX;
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        uNewCrX = iemGRegFetchU64(pIemCpu, iGReg);
+    else
+        uNewCrX = iemGRegFetchU32(pIemCpu, iGReg);
+    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, iCrReg, uNewCrX);
+}
+
+
+/**
+ * Implements 'LMSW r/m16'
+ *
+ * @param   u16NewMsw       The new value.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_lmsw, uint16_t, u16NewMsw)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    Assert(!pCtx->eflags.Bits.u1VM);
+
+    /*
+     * Compose the new CR0 value and call common worker.
+     */
+    uint64_t uNewCr0 = pCtx->cr0     & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    uNewCr0 |= u16NewMsw & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, 0, uNewCr0);
 }
 
 
