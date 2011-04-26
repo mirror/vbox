@@ -1574,7 +1574,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             rcStrict = CPUMSetGuestGDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
         else
         {
@@ -1610,7 +1610,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             rcStrict = CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
         else
         {
@@ -1622,6 +1622,69 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
             iemRegAddToRip(pIemCpu, cbInstr);
     }
     return rcStrict;
+}
+
+
+/**
+ * Implements lldt.
+ *
+ * @param   uNewLdt     The new LDT selector value.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Check precoditions.
+     */
+    if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+    {
+        Log(("lldt: %04x - real or v8086 mode -> #GP(0)\n", uNewLdt));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+    if (pIemCpu->uCpl != 0)
+    {
+        Log(("lldt: %04x - CPL is %d -> #GP(0)\n", uNewLdt, pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    if (uNewLdt & X86_SEL_LDT)
+    {
+        Log(("lldt: %04x - LDT selector -> #GP(0)\n", uNewLdt));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Now, loading a NULL selector is easy.
+     */
+    if ((uNewLdt & X86_SEL_MASK) == 0)
+    {
+        /** @todo check if the actual value is loaded or if it's always 0. */
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            CPUMSetGuestLDTR(IEMCPU_TO_VMCPU(pIemCpu), 0);
+        else
+            pCtx->ldtr = 0;
+        pCtx->ldtrHid.Attr.u   = 0;
+        pCtx->ldtrHid.u64Base  = 0;
+        pCtx->ldtrHid.u32Limit = 0;
+
+        iemRegAddToRip(pIemCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /** @todo the difficult LLDT bits. */
+
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+/**
+ * Implements lldt.
+ *
+ * @param   uNewLdt     The new LDT selector value.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
+{
+    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
@@ -1647,7 +1710,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 3: crX = pCtx->cr3; break;
         case 4: crX = pCtx->cr4; break;
         case 8:
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
             else
                 crX = 0xff;
@@ -1740,7 +1803,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Change CR0.
              */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 rc = CPUMSetGuestCR0(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_3);
@@ -1761,7 +1824,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 else
                     NewEFER &= ~MSR_K6_EFER_LME;
 
-                if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                     CPUMSetGuestEFER(pVCpu, NewEFER);
                 else
                     pCtx->msrEFER = NewEFER;
@@ -1771,7 +1834,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Inform PGM.
              */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
                     !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
@@ -1831,7 +1894,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
              *        invalid bits. */
 
             /* Make the change. */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 rc = CPUMSetGuestCR3(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
@@ -1840,7 +1903,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 pCtx->cr3 = uNewCrX;
 
             /* Inform PGM. */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 if (pCtx->cr0 & X86_CR0_PG)
                 {
@@ -1892,7 +1955,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Change it.
              */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 rc = CPUMSetGuestCR4(pVCpu, uNewCrX);
                 AssertRCSuccessReturn(rc, rc);
@@ -1904,7 +1967,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /*
              * Notify SELM and PGM.
              */
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             {
                 /* SELM - VME may change things wrt to the TSS shadowing. */
                 if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
@@ -1930,7 +1993,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          * CR8 maps to the APIC TPR.
          */
         case 8:
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
             else
                 rcStrict = VINF_SUCCESS;
@@ -2032,7 +2095,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
      * Perform the I/O.
      */
     uint32_t u32Value;
-    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rcStrict = IOMIOPortRead(IEMCPU_TO_VM(pIemCpu), u16Port, &u32Value, cbReg);
     else
         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, cbReg);
@@ -2097,7 +2160,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
     VBOXSTRICTRC rc;
-    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rc = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
     else
         rc = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
@@ -2269,6 +2332,52 @@ IEM_CIMPL_DEF_0(iemOpCImpl_cpuid)
 #define OP_SIZE     64
 #define ADDR_SIZE   64
 #include "IEMAllCImplStrInstr.cpp.h"
+
+
+/**
+ * Implements 'FINIT' and 'FNINIT'.
+ *
+ * @param   fCheckXcpts     Whether to check for umasked pending exceptions or
+ *                          not.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (pCtx->cr0 & (X86_CR0_EM | X86_CR0_TS))
+        return iemRaiseDeviceNotAvailable(pIemCpu);
+    /** @todo trigger pending exceptions:
+        if (fCheckXcpts && TODO )
+        return iemRaiseMathFault(pIemCpu);
+     */
+
+    if (iemFRegIsFxSaveFormat(pIemCpu))
+    {
+        pCtx->fpu.FCW   = 0x37f;
+        pCtx->fpu.FSW   = 0;
+        pCtx->fpu.FTW   = 0xff;
+        pCtx->fpu.FPUDP = 0;
+        pCtx->fpu.DS    = 0; //??
+        pCtx->fpu.FPUIP = 0;
+        pCtx->fpu.CS    = 0; //??
+        pCtx->fpu.FOP   = 0;
+    }
+    else
+    {
+        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->fpu;
+        pFpu->FCW       = 0x37f;
+        pFpu->FSW       = 0;
+        pFpu->FTW       = 0xffff;
+        pFpu->FPUOO     = 0; //??
+        pFpu->FPUOS     = 0; //??
+        pFpu->FPUIP     = 0;
+        pFpu->CS        = 0; //??
+        pFpu->FOP       = 0;
+    }
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
 
 
 /** @} */

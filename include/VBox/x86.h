@@ -1921,35 +1921,36 @@ typedef X86FPUMMX *PX86FPUMMX;
 typedef const X86FPUMMX *PCX86FPUMMX;
 
 /**
- * FPU state (aka FSAVE/FRSTOR Memory Region).
+ * 32-bit FPU state (aka FSAVE/FRSTOR Memory Region).
+ * @todo verify this...
  */
 #pragma pack(1)
 typedef struct X86FPUSTATE
 {
-    /** Control word. */
+    /** 0x00 - Control word. */
     uint16_t    FCW;
-    /** Alignment word */
+    /** 0x02 - Alignment word */
     uint16_t    Dummy1;
-    /** Status word. */
+    /** 0x04 - Status word. */
     uint16_t    FSW;
-    /** Alignment word */
+    /** 0x06 - Alignment word */
     uint16_t    Dummy2;
-    /** Tag word */
+    /** 0x08 - Tag word */
     uint16_t    FTW;
-    /** Alignment word */
+    /** 0x0a - Alignment word */
     uint16_t    Dummy3;
 
-    /** Instruction pointer. */
+    /** 0x0c - Instruction pointer. */
     uint32_t    FPUIP;
-    /** Code selector. */
+    /** 0x10 - Code selector. */
     uint16_t    CS;
-    /** Opcode. */
+    /** 0x12 - Opcode. */
     uint16_t    FOP;
-    /** FOO. */
+    /** 0x14 - FOO. */
     uint32_t    FPUOO;
-    /** FOS. */
+    /** 0x18 - FOS. */
     uint32_t    FPUOS;
-    /* - offset 32 - */
+    /** 0x1c */
     union
     {
         /** MMX view. */
@@ -1982,28 +1983,30 @@ typedef const X86FPUSTATE  *PCX86FPUSTATE;
 #pragma pack(1)
 typedef struct X86FXSTATE
 {
-    /** Control word. */
+    /** 0x00 - Control word. */
     uint16_t    FCW;
-    /** Status word. */
+    /** 0x02 - Status word. */
     uint16_t    FSW;
-    /** Tag word. (The upper byte is always zero.) */
+    /** 0x04 - Tag word. (The upper byte is always zero.) */
     uint16_t    FTW;
-    /** Opcode. */
+    /** 0x06 - Opcode. */
     uint16_t    FOP;
-    /** Instruction pointer. */
+    /** 0x08 - Instruction pointer. */
     uint32_t    FPUIP;
-    /** Code selector. */
+    /** 0x0c - Code selector. */
     uint16_t    CS;
     uint16_t    Rsvrd1;
-    /* - offset 16 - */
-    /** Data pointer. */
+    /** 0x10 - Data pointer. */
     uint32_t    FPUDP;
-    /** Data segment */
+    /** 0x14 - Data segment */
     uint16_t    DS;
+    /** 0x16 */
     uint16_t    Rsrvd2;
+    /** 0x18 */
     uint32_t    MXCSR;
+    /** 0x1c */
     uint32_t    MXCSR_MASK;
-    /* - offset 32 - */
+    /** 0x20 */
     union
     {
         /** MMX view. */
@@ -2047,6 +2050,44 @@ typedef struct X86FXSTATE
 typedef X86FXSTATE *PX86FXSTATE;
 /** Pointer to a const FPU Extended state. */
 typedef const X86FXSTATE *PCX86FXSTATE;
+
+/** @name FPU status word flags.
+ * @{ */
+/** Exception Flag: Invalid operation.  */
+#define X86_FSW_IE          RT_BIT(0)
+/** Exception Flag: Denormalized operand.  */
+#define X86_FSW_DE          RT_BIT(1)
+/** Exception Flag: Zero divide.  */
+#define X86_FSW_ZE          RT_BIT(2)
+/** Exception Flag: Overflow.  */
+#define X86_FSW_OE          RT_BIT(3)
+/** Exception Flag: Underflow.  */
+#define X86_FSW_UE          RT_BIT(4)
+/** Exception Flag: Precision.  */
+#define X86_FSW_PE          RT_BIT(5)
+/** Stack fault. */
+#define X86_FSW_SF          RT_BIT(6)
+/** Error summary status. */
+#define X86_FSW_ES          RT_BIT(7)
+/** Condition code 0. */
+#define X86_FSW_C0          RT_BIT(8)
+/** Condition code 1. */
+#define X86_FSW_C1          RT_BIT(9)
+/** Condition code 2. */
+#define X86_FSW_C2          RT_BIT(10)
+/** Top of the stack mask. */
+#define X86_FSW_TOP_MASK    UINT16_C(0x3800)
+/** TOP shift value. */
+#define X86_FSW_TOP_SHIFT   11
+/** Mask for getting TOP value after shifting it right. */
+#define X86_FSW_TOP_SMASK   UINT16_C(0x0007)
+/** Get the TOP value. */
+#define X86_FSW_TOP_GET(a_uFsw) (((a_uFsw) >> X86_FSW_TOP_SHIFT) & X86_FSW_TOP_SMASK)
+/** Condition code 3. */
+#define X86_FSW_C3          RT_BIT(14)
+/** FPU busy. */
+#define X86_FSW_B           RT_BIT(15)
+/** @} */
 
 
 /** @name Selector Descriptor

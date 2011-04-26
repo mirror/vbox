@@ -347,7 +347,7 @@ typedef IEMCPU *PIEMCPU;
  * should therefore cause the compiler to eliminate the verification branch
  * of an if statement.  */
 #ifdef IEM_VERIFICATION_MODE
-# define IEM_VERIFICATION_ENABLED(a_pIemCpu)    ((a_pIemCpu)->fNoRem)
+# define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (!(a_pIemCpu)->fNoRem)
 #else
 # define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (false)
 #endif

@@ -1118,6 +1118,20 @@ static VBOXSTRICTRC iemRaiseDivideError(PIEMCPU pIemCpu)
 }
 
 
+static VBOXSTRICTRC iemRaiseUndefinedOpcode(PIEMCPU pIemCpu)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+static VBOXSTRICTRC iemRaiseDeviceNotAvailable(PIEMCPU pIemCpu)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 static VBOXSTRICTRC iemRaiseGeneralProtectionFault(PIEMCPU pIemCpu, uint16_t uErr)
 {
     AssertFailed(/** @todo implement this */);
@@ -1172,6 +1186,14 @@ static VBOXSTRICTRC iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint3
     AssertFailed(/** @todo implement this */);
     return VERR_NOT_IMPLEMENTED;
 }
+
+
+static VBOXSTRICTRC iemRaiseMathFault(PIEMCPU pIemCpu)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
+
 
 
 /**
@@ -1528,6 +1550,43 @@ static uint64_t iemGRegFetchU64(PIEMCPU pIemCpu, uint8_t iReg)
     return *(uint64_t *)iemGRegRef(pIemCpu, iReg);
 }
 
+
+/**
+ * Is the FPU state in FXSAVE format or not.
+ *
+ * @returns true if it is, false if it's in FNSAVE.
+ * @param   pVCpu               The virtual CPU handle.
+ */
+DECLINLINE(bool) iemFRegIsFxSaveFormat(PIEMCPU pIemCpu)
+{
+#ifdef RT_ARCH_AMD64
+    return true;
+#else
+/// @todo    return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
+    return true;
+#endif
+}
+
+
+/**
+ * Gets the FPU status word.
+ *
+ * @returns FPU status word
+ * @param   pIemCpu             The per CPU data.
+ */
+static uint16_t iemFRegFetchFsw(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t u16Fsw;
+    if (iemFRegIsFxSaveFormat(pIemCpu))
+        u16Fsw = pCtx->fpu.FSW;
+    else
+    {
+        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->fpu;
+        u16Fsw = pFpu->FSW;
+    }
+    return u16Fsw;
+}
 
 /**
  * Adds a 8-bit signed jump offset to RIP/EIP/IP.
@@ -2264,7 +2323,8 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
      * Do the writing.
      */
     int rc;
-    if (!pIemCpu->aMemBbMappings[iMemMap].fUnassigned && IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (   !pIemCpu->aMemBbMappings[iMemMap].fUnassigned
+        && !IEM_VERIFICATION_ENABLED(pIemCpu))
     {
         uint16_t const  cbFirst  = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
         uint16_t const  cbSecond = pIemCpu->aMemBbMappings[iMemMap].cbSecond;
@@ -3509,6 +3569,22 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_SET_RIP_U64(a_u64NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pIemCpu), (a_u64NewIP)))
 
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pIemCpu)
+#define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
+    do { \
+        if ((pIemCpu)->CTX_SUFF(pCtx)->cr0 & (X86_CR0_EM | X86_CR0_TS)) \
+            return iemRaiseDeviceNotAvailable(pIemCpu); \
+    } while (0)
+#define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
+    do { \
+        if (iemFRegFetchFsw(pIemCpu) & X86_FSW_ES) \
+            return iemRaiseMathFault(pIemCpu); \
+    } while (0)
+#define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
+    do { \
+        if (pIemCpu->uCpl != 0) \
+            return iemRaiseGeneralProtectionFault0(pIemCpu); \
+    } while (0)
+
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
 #define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value)
@@ -3527,11 +3603,17 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_GREG_U8_ZX_U16(a_u16Dst, a_iGReg)  (a_u16Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U8_ZX_U32(a_u32Dst, a_iGReg)  (a_u32Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U8_ZX_U64(a_u64Dst, a_iGReg)  (a_u64Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_SX_U16(a_u16Dst, a_iGReg)  (a_u16Dst) = (int8_t)iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_SX_U32(a_u32Dst, a_iGReg)  (a_u32Dst) = (int8_t)iemGRegFetchU8(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U8_SX_U64(a_u64Dst, a_iGReg)  (a_u64Dst) = (int8_t)iemGRegFetchU8(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U16(a_u16Dst, a_iGReg)        (a_u16Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U16_ZX_U32(a_u32Dst, a_iGReg) (a_u32Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U16_ZX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = iemGRegFetchU16(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U16_SX_U32(a_u32Dst, a_iGReg) (a_u32Dst) = (int16_t)iemGRegFetchU16(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U16_SX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = (int16_t)iemGRegFetchU16(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U32(a_u32Dst, a_iGReg)        (a_u32Dst) = iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U32_ZX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = iemGRegFetchU32(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U32_SX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = (int32_t)iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U64(a_u64Dst, a_iGReg)        (a_u64Dst) = iemGRegFetchU64(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_SREG_U16(a_u16Dst, a_iSReg)        (a_u16Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_SREG_ZX_U32(a_u32Dst, a_iSReg)     (a_u32Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
@@ -3540,6 +3622,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)(pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
+#define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = iemFRegFetchFsw(pIemCpu)
 
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pIemCpu, (a_iGReg)) = (a_u8Value)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (a_u16Value)
@@ -3632,6 +3715,43 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         uint32_t u32Tmp; \
         IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &u32Tmp, (a_iSeg), (a_GCPtrMem))); \
         (a_u64Dst) = u32Tmp; \
+    } while (0)
+
+#define IEM_MC_FETCH_MEM_U8_SX_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u16Dst) = (int8_t)u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U8_SX_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u32Dst) = (int8_t)u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U8_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint8_t u8Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &u8Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = (int8_t)u8Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U16_SX_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint16_t u16Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &u16Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u32Dst) = (int16_t)u16Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U16_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint16_t u16Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &u16Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = (int16_t)u16Tmp; \
+    } while (0)
+#define IEM_MC_FETCH_MEM_U32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    do { \
+        uint32_t u32Tmp; \
+        IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &u32Tmp, (a_iSeg), (a_GCPtrMem))); \
+        (a_u64Dst) = (int32_t)u32Tmp; \
     } while (0)
 
 #define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value) \
@@ -4218,7 +4338,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     /*
      * Switch state.
      */
-    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (IEM_VERIFICATION_ENABLED(pIemCpu))
     {
         static CPUMCTX  s_DebugCtx; /* Ugly! */
 
@@ -4237,7 +4357,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     {
         Log(("Injecting trap %#x\n", TRPMGetTrapNo(pVCpu)));
         iemCImpl_int(pIemCpu, 0, TRPMGetTrapNo(pVCpu), false);
-        if (IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
 
@@ -4249,7 +4369,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     pIemCpu->fMulDivHack = false;
     pIemCpu->fShiftOfHack= false;
 
-    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (IEM_VERIFICATION_ENABLED(pIemCpu))
     {
         /*
          * Free all verification records.
@@ -4280,7 +4400,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
  */
 static PIEMVERIFYEVTREC iemVerifyAllocRecord(PIEMCPU pIemCpu)
 {
-    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         return NULL;
 
     PIEMVERIFYEVTREC pEvtRec = pIemCpu->pFreeEvtRec;
@@ -4570,7 +4690,7 @@ static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
  */
 static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 {
-    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         return;
 
     /*
