@@ -673,10 +673,11 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 /**
  * Implements far jumps.
  *
- * @param   uSel        The selector.
- * @param   offSeg      The segment offset.
+ * @param   uSel            The selector.
+ * @param   offSeg          The segment offset.
+ * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
+IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
@@ -691,7 +692,7 @@ IEM_CIMPL_DEF_2(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg)
         if (offSeg > pCtx->csHid.u32Limit)
             return iemRaiseGeneralProtectionFault0(pIemCpu);
 
-        if (pIemCpu->enmEffOpSize == IEMMODE_16BIT) /** @todo WRONG, must pass this. */
+        if (enmEffOpSize == IEMMODE_16BIT) /** @todo WRONG, must pass this. */
             pCtx->rip       = offSeg;
         else
             pCtx->rip       = offSeg & UINT16_MAX;
