@@ -212,6 +212,16 @@ if test ! -z "$xorgbin"; then
         vboxmouse64_dest_base=$vboxmouse32_dest_base/$solaris64dir
         vboxvideo64_dest_base=$vboxvideo32_dest_base/$solaris64dir
 
+        # snv_163 drops 32-bit support completely, and uses 32-bit locations for the 64-bit stuff. Ugly.
+        # We try to detect this by looking at bitness of "mouse_drv.so", and adjust our destination paths accordingly.
+        bitsize=`file $vboxmouse32_dest_base/mouse_drv.so | grep "32-bit"`
+        skip32="no"
+        if test -z "$bitsize"; then
+            skip32="yes"
+            vboxmouse64_dest_base=$vboxmouse32_dest_base
+            vboxvideo64_dest_base=$vboxvideo32_dest_base
+        fi
+
         # Make sure destination path exists
         if test ! -d $vboxmouse32_dest_base || test ! -d $vboxvideo32_dest_base || test ! -d $vboxmouse64_dest_base || test ! -d $vboxvideo64_dest_base; then
             echo "*** Missing destination paths for mouse or video modules. Aborting."
@@ -221,7 +231,7 @@ if test ! -z "$xorgbin"; then
             retval=2
         else
             # 32-bit x11 drivers
-            if test -f "$vboxadditions32_path/$vboxmouse_src"; then
+            if test "$skip32" = "no" && test -f "$vboxadditions32_path/$vboxmouse_src"; then
                 vboxmouse_dest="$vboxmouse32_dest_base/vboxmouse_drv.so"
                 vboxvideo_dest="$vboxvideo32_dest_base/vboxvideo_drv.so"
                 /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
