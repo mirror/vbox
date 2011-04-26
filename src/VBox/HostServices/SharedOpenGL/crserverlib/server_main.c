@@ -1259,3 +1259,22 @@ DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
 
     return VINF_SUCCESS;
 }
+
+DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks)
+{
+    /* No need for a synchronization as this is single threaded. */
+    if (pCallbacks)
+    {
+        cr_server.outputRedirect = *pCallbacks;
+        cr_server.bUseOutputRedirect = true;
+    }
+    else
+    {
+        cr_server.bUseOutputRedirect = false;
+    }
+
+    // @todo dynamically intercept already existing output:
+    // crHashtableWalk(cr_server.muralTable, crVBoxServerOutputRedirectCB, NULL);
+
+    return VINF_SUCCESS;
+}
