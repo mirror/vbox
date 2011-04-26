@@ -41,6 +41,7 @@
 #define SHCRGL_HOST_FN_CRHGSMI_CMD (10)
 #define SHCRGL_HOST_FN_CRHGSMI_CTL (11)
 #endif
+#define SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT (20)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)
@@ -64,7 +65,42 @@
 #define SHCRGL_CPARMS_SET_PID (1)
 #define SHCRGL_CPARMS_WRITE_BUFFER        (4)
 #define SHCRGL_CPARMS_WRITE_READ_BUFFERED (3)
+#define SHCRGL_CPARMS_SET_OUTPUT_REDIRECT (1)
 
+
+/* @todo Move to H3DOR.h begin */
+
+/* Names of supported output redirect formats. */
+#define H3DOR_FMT_RGBA_TOPDOWN "H3DOR_FMT_RGBA_TOPDOWN"
+
+/* Comma separated list of output formats supported by the output redirect target. */
+#define H3DOR_PROP_FORMATS 0
+
+#pragma pack(1)
+typedef struct {
+    /* The caller's context of the redirection. */
+    const void *pvContext;
+    /* Inform caller that a new window will be redirected. */
+    DECLR3CALLBACKMEMBER(void, H3DORBegin,           (const void *pvContext, void **ppvInstance,
+                                                      const char *pszFormat));
+    /* The window dimension has been changed. */
+    DECLR3CALLBACKMEMBER(void, H3DORGeometry,        (void *pvInstance,
+                                                      int32_t x, int32_t y, uint32_t w, uint32_t h));
+    /* Update the window visible region. */
+    DECLR3CALLBACKMEMBER(void, H3DORVisibleRegion,   (void *pvInstance,
+                                                      uint32_t cRects, RTRECT *paRects));
+    /* A rendered 3D frame is ready. Format of pvData is "pszFormat" parameter of H3DORBegin. */
+    DECLR3CALLBACKMEMBER(void, H3DORFrame,           (void *pvInstance,
+                                                      void *pvData, uint32_t cbData));
+    /* The window is closed. */
+    DECLR3CALLBACKMEMBER(void, H3DOREnd,             (void *pvInstance));
+    /* Obtain caller's parameters: the list of supported formats, etc. */
+    DECLR3CALLBACKMEMBER(int,  H3DORContextProperty, (const void *pvContext, uint32_t index,
+                                                      void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut));
+} H3DOUTPUTREDIRECT;
+#pragma pack()
+
+/* @todo Move to H3DOR.h end */
 
 #ifdef VBOX_WITH_CRHGSMI
 #pragma pack(1)

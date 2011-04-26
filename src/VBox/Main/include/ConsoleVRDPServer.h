@@ -23,6 +23,8 @@
 
 #include <VBox/VBoxAuth.h>
 
+#include <VBox/RemoteDesktop/VRDEImage.h>
+
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
 #include "SchemaDefs.h"
@@ -150,9 +152,9 @@ private:
 
     static PFNVRDECREATESERVER mpfnVRDECreateServer;
 
-    static VRDEENTRYPOINTS_3 mEntryPoints;
-    static VRDEENTRYPOINTS_3 *mpEntryPoints;
-    static VRDECALLBACKS_3 mCallbacks;
+    static VRDEENTRYPOINTS_4 mEntryPoints;
+    static VRDEENTRYPOINTS_4 *mpEntryPoints;
+    static VRDECALLBACKS_4 mCallbacks;
 
     static DECLCALLBACK(int)  VRDPCallbackQueryProperty     (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static DECLCALLBACK(int)  VRDPCallbackClientLogon       (void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
@@ -223,6 +225,35 @@ private:
     PAUTHENTRY3 mpfnAuthEntry3;
 
     uint32_t volatile mu32AudioInputClientId;
+
+    static DECLCALLBACK(void) H3DORBegin(const void *pvContext, void **ppvInstance,
+                                         const char *pszFormat);
+    static DECLCALLBACK(void) H3DORGeometry(void *pvInstance,
+                                            int32_t x, int32_t y, uint32_t w, uint32_t h);
+    static DECLCALLBACK(void) H3DORVisibleRegion(void *pvInstance,
+                                                 uint32_t cRects, RTRECT *paRects);
+    static DECLCALLBACK(void) H3DORFrame(void *pvInstance,
+                                         void *pvData, uint32_t cbData);
+    static DECLCALLBACK(void) H3DOREnd(void *pvInstance);
+    static DECLCALLBACK(int)  H3DORContextProperty(const void *pvContext, uint32_t index,
+                                                   void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
+
+    void remote3DRedirect(void);
+
+    /*
+     * VRDE server optional interfaces.
+     */
+
+    /* Image update interface. */
+    bool m_fInterfaceImage;
+    VRDEIMAGECALLBACKS m_interfaceCallbacksImage;
+    VRDEIMAGEINTERFACE m_interfaceImage;
+    static DECLCALLBACK(int) VRDEImageCbNotify (void *pvContext,
+                                                void *pvUser,
+                                                HVRDEIMAGE hVideo,
+                                                uint32_t u32Id,
+                                                void *pvData,
+                                                uint32_t cbData);
 };
 
 

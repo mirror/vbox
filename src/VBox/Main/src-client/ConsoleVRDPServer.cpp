@@ -24,6 +24,7 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
+#include "VMMDev.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
@@ -39,6 +40,7 @@
 #include <VBox/err.h>
 #include <VBox/RemoteDesktop/VRDEOrders.h>
 #include <VBox/com/listeners.h>
+#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
 class VRDPConsoleListener
 {
@@ -519,12 +521,12 @@ RTLDRMOD ConsoleVRDPServer::mVRDPLibrary = NIL_RTLDRMOD;
 
 PFNVRDECREATESERVER ConsoleVRDPServer::mpfnVRDECreateServer = NULL;
 
-VRDEENTRYPOINTS_3 ConsoleVRDPServer::mEntryPoints; /* A copy of the server entry points. */
-VRDEENTRYPOINTS_3 *ConsoleVRDPServer::mpEntryPoints = NULL;
+VRDEENTRYPOINTS_4 ConsoleVRDPServer::mEntryPoints; /* A copy of the server entry points. */
+VRDEENTRYPOINTS_4 *ConsoleVRDPServer::mpEntryPoints = NULL;
 
-VRDECALLBACKS_3 ConsoleVRDPServer::mCallbacks =
+VRDECALLBACKS_4 ConsoleVRDPServer::mCallbacks =
 {
-    { VRDE_INTERFACE_VERSION_3, sizeof(VRDECALLBACKS_3) },
+    { VRDE_INTERFACE_VERSION_4, sizeof(VRDECALLBACKS_4) },
     ConsoleVRDPServer::VRDPCallbackQueryProperty,
     ConsoleVRDPServer::VRDPCallbackClientLogon,
     ConsoleVRDPServer::VRDPCallbackClientConnect,
@@ -1314,6 +1316,13 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     mAuthLibrary = 0;
 
     mu32AudioInputClientId = 0;
+
+    /*
+     * Optional interfaces.
+     */
+    m_fInterfaceImage = false;
+    memset(&m_interfaceImage, 0, sizeof (m_interfaceImage));
+    memset(&m_interfaceCallbacksImage, 0, sizeof (m_interfaceCallbacksImage));
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1394,23 +1403,23 @@ int ConsoleVRDPServer::Launch(void)
         vrc = loadVRDPLibrary(strVrdeLibrary.c_str());
         if (RT_SUCCESS(vrc))
         {
-            VRDEENTRYPOINTS_3 *pEntryPoints3;
-            vrc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&pEntryPoints3, &mhServer);
+            VRDEENTRYPOINTS_4 *pEntryPoints4;
+            vrc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&pEntryPoints4, &mhServer);
 
             if (RT_SUCCESS(vrc))
             {
-                mServerInterfaceVersion = 3;
-                mEntryPoints = *pEntryPoints3;
+                mServerInterfaceVersion = 4;
+                mEntryPoints = *pEntryPoints4;
                 mpEntryPoints = &mEntryPoints;
             }
             else if (vrc == VERR_VERSION_MISMATCH)
             {
-                /* An older version of VRDE is installed, try version 1. */
-                VRDEENTRYPOINTS_1 *pEntryPoints1;
+                /* An older version of VRDE is installed, try version 3. */
+                VRDEENTRYPOINTS_3 *pEntryPoints3;
 
-                static VRDECALLBACKS_1 sCallbacks =
+                static VRDECALLBACKS_3 sCallbacks3 =
                 {
-                    { VRDE_INTERFACE_VERSION_1, sizeof(VRDECALLBACKS_1) },
+                    { VRDE_INTERFACE_VERSION_3, sizeof(VRDECALLBACKS_3) },
                     ConsoleVRDPServer::VRDPCallbackQueryProperty,
                     ConsoleVRDPServer::VRDPCallbackClientLogon,
                     ConsoleVRDPServer::VRDPCallbackClientConnect,
@@ -1422,37 +1431,111 @@ int ConsoleVRDPServer::Launch(void)
                     ConsoleVRDPServer::VRDPCallbackFramebufferLock,
                     ConsoleVRDPServer::VRDPCallbackFramebufferUnlock,
                     ConsoleVRDPServer::VRDPCallbackInput,
-                    ConsoleVRDPServer::VRDPCallbackVideoModeHint
+                    ConsoleVRDPServer::VRDPCallbackVideoModeHint,
+                    ConsoleVRDPServer::VRDECallbackAudioIn
                 };
 
-                vrc = mpfnVRDECreateServer(&sCallbacks.header, this, (VRDEINTERFACEHDR **)&pEntryPoints1, &mhServer);
+                vrc = mpfnVRDECreateServer(&sCallbacks3.header, this, (VRDEINTERFACEHDR **)&pEntryPoints3, &mhServer);
                 if (RT_SUCCESS(vrc))
                 {
-                    LogRel(("VRDE: loaded an older version of the server.\n"));
-
                     mServerInterfaceVersion = 3;
-                    mEntryPoints.header = pEntryPoints1->header;
-                    mEntryPoints.VRDEDestroy = pEntryPoints1->VRDEDestroy;
-                    mEntryPoints.VRDEEnableConnections = pEntryPoints1->VRDEEnableConnections;
-                    mEntryPoints.VRDEDisconnect = pEntryPoints1->VRDEDisconnect;
-                    mEntryPoints.VRDEResize = pEntryPoints1->VRDEResize;
-                    mEntryPoints.VRDEUpdate = pEntryPoints1->VRDEUpdate;
-                    mEntryPoints.VRDEColorPointer = pEntryPoints1->VRDEColorPointer;
-                    mEntryPoints.VRDEHidePointer = pEntryPoints1->VRDEHidePointer;
-                    mEntryPoints.VRDEAudioSamples = pEntryPoints1->VRDEAudioSamples;
-                    mEntryPoints.VRDEAudioVolume = pEntryPoints1->VRDEAudioVolume;
-                    mEntryPoints.VRDEUSBRequest = pEntryPoints1->VRDEUSBRequest;
-                    mEntryPoints.VRDEClipboard = pEntryPoints1->VRDEClipboard;
-                    mEntryPoints.VRDEQueryInfo = pEntryPoints1->VRDEQueryInfo;
-                    mEntryPoints.VRDERedirect = NULL;
-                    mEntryPoints.VRDEAudioInOpen = NULL;
-                    mEntryPoints.VRDEAudioInClose = NULL;
+                    mEntryPoints.header = pEntryPoints3->header;
+                    mEntryPoints.VRDEDestroy = pEntryPoints3->VRDEDestroy;
+                    mEntryPoints.VRDEEnableConnections = pEntryPoints3->VRDEEnableConnections;
+                    mEntryPoints.VRDEDisconnect = pEntryPoints3->VRDEDisconnect;
+                    mEntryPoints.VRDEResize = pEntryPoints3->VRDEResize;
+                    mEntryPoints.VRDEUpdate = pEntryPoints3->VRDEUpdate;
+                    mEntryPoints.VRDEColorPointer = pEntryPoints3->VRDEColorPointer;
+                    mEntryPoints.VRDEHidePointer = pEntryPoints3->VRDEHidePointer;
+                    mEntryPoints.VRDEAudioSamples = pEntryPoints3->VRDEAudioSamples;
+                    mEntryPoints.VRDEAudioVolume = pEntryPoints3->VRDEAudioVolume;
+                    mEntryPoints.VRDEUSBRequest = pEntryPoints3->VRDEUSBRequest;
+                    mEntryPoints.VRDEClipboard = pEntryPoints3->VRDEClipboard;
+                    mEntryPoints.VRDEQueryInfo = pEntryPoints3->VRDEQueryInfo;
+                    mEntryPoints.VRDERedirect = pEntryPoints3->VRDERedirect;
+                    mEntryPoints.VRDEAudioInOpen = pEntryPoints3->VRDEAudioInOpen;
+                    mEntryPoints.VRDEAudioInClose = pEntryPoints3->VRDEAudioInClose;
+                    mEntryPoints.VRDEGetInterface = NULL;
                     mpEntryPoints = &mEntryPoints;
+                }
+                else if (vrc == VERR_VERSION_MISMATCH)
+                {
+                    /* An older version of VRDE is installed, try version 1. */
+                    VRDEENTRYPOINTS_1 *pEntryPoints1;
+
+                    static VRDECALLBACKS_1 sCallbacks1 =
+                    {
+                        { VRDE_INTERFACE_VERSION_1, sizeof(VRDECALLBACKS_1) },
+                        ConsoleVRDPServer::VRDPCallbackQueryProperty,
+                        ConsoleVRDPServer::VRDPCallbackClientLogon,
+                        ConsoleVRDPServer::VRDPCallbackClientConnect,
+                        ConsoleVRDPServer::VRDPCallbackClientDisconnect,
+                        ConsoleVRDPServer::VRDPCallbackIntercept,
+                        ConsoleVRDPServer::VRDPCallbackUSB,
+                        ConsoleVRDPServer::VRDPCallbackClipboard,
+                        ConsoleVRDPServer::VRDPCallbackFramebufferQuery,
+                        ConsoleVRDPServer::VRDPCallbackFramebufferLock,
+                        ConsoleVRDPServer::VRDPCallbackFramebufferUnlock,
+                        ConsoleVRDPServer::VRDPCallbackInput,
+                        ConsoleVRDPServer::VRDPCallbackVideoModeHint
+                    };
+
+                    vrc = mpfnVRDECreateServer(&sCallbacks1.header, this, (VRDEINTERFACEHDR **)&pEntryPoints1, &mhServer);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        mServerInterfaceVersion = 1;
+                        mEntryPoints.header = pEntryPoints1->header;
+                        mEntryPoints.VRDEDestroy = pEntryPoints1->VRDEDestroy;
+                        mEntryPoints.VRDEEnableConnections = pEntryPoints1->VRDEEnableConnections;
+                        mEntryPoints.VRDEDisconnect = pEntryPoints1->VRDEDisconnect;
+                        mEntryPoints.VRDEResize = pEntryPoints1->VRDEResize;
+                        mEntryPoints.VRDEUpdate = pEntryPoints1->VRDEUpdate;
+                        mEntryPoints.VRDEColorPointer = pEntryPoints1->VRDEColorPointer;
+                        mEntryPoints.VRDEHidePointer = pEntryPoints1->VRDEHidePointer;
+                        mEntryPoints.VRDEAudioSamples = pEntryPoints1->VRDEAudioSamples;
+                        mEntryPoints.VRDEAudioVolume = pEntryPoints1->VRDEAudioVolume;
+                        mEntryPoints.VRDEUSBRequest = pEntryPoints1->VRDEUSBRequest;
+                        mEntryPoints.VRDEClipboard = pEntryPoints1->VRDEClipboard;
+                        mEntryPoints.VRDEQueryInfo = pEntryPoints1->VRDEQueryInfo;
+                        mEntryPoints.VRDERedirect = NULL;
+                        mEntryPoints.VRDEAudioInOpen = NULL;
+                        mEntryPoints.VRDEAudioInClose = NULL;
+                        mEntryPoints.VRDEGetInterface = NULL;
+                        mpEntryPoints = &mEntryPoints;
+                    }
                 }
             }
 
             if (RT_SUCCESS(vrc))
             {
+                LogRel(("VRDE: loaded version %d of the server.\n", mServerInterfaceVersion));
+
+                if (mServerInterfaceVersion >= 4)
+                {
+                    /* The server supports optional interfaces. */
+                    Assert(mpEntryPoints->VRDEGetInterface != NULL);
+
+                    /* Image interface. */
+                    m_interfaceImage.header.u64Version = 1;
+                    m_interfaceImage.header.u64Size = sizeof(m_interfaceImage);
+
+                    m_interfaceCallbacksImage.header.u64Version = 1;
+                    m_interfaceCallbacksImage.header.u64Size = sizeof(m_interfaceCallbacksImage);
+                    m_interfaceCallbacksImage.VRDEImageCbNotify = VRDEImageCbNotify;
+
+                    vrc = mpEntryPoints->VRDEGetInterface(mhServer,
+                                                          VRDE_IMAGE_INTERFACE_NAME,
+                                                          &m_interfaceImage.header,
+                                                          &m_interfaceCallbacksImage.header,
+                                                          this);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        m_fInterfaceImage = true;
+                    }
+
+                    /* Since these interfaces are optional, it is always a success here. */
+                    vrc = VINF_SUCCESS;
+                }
 #ifdef VBOX_WITH_USB
                 remoteUSBThreadStart();
 #endif
@@ -1470,11 +1553,348 @@ int ConsoleVRDPServer::Launch(void)
     return vrc;
 }
 
+typedef struct H3DORInstance
+{
+    ConsoleVRDPServer *pThis;
+    HVRDEIMAGE hImageBitmap;
+    int32_t x;
+    int32_t y;
+    uint32_t w;
+    uint32_t h;
+    bool fCreated;
+} H3DORInstance;
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORBegin(const void *pvContext, void **ppvInstance,
+                                                              const char *pszFormat)
+{
+    LogFlowFunc(("ctx %p\n", pvContext));
+
+    H3DORInstance *p = (H3DORInstance *)RTMemAlloc(sizeof (H3DORInstance));
+
+    if (p)
+    {
+        p->pThis = (ConsoleVRDPServer *)pvContext;
+        p->hImageBitmap = NULL;
+        p->x = 0;
+        p->y = 0;
+        p->w = 0;
+        p->h = 0;
+        p->fCreated = false;
+
+        /* Host 3D service passes the actual format of data in this redirect instance.
+         * That is what will be in the H3DORFrame's parameters pvData and cbData.
+         */
+        if (RTStrICmp(pszFormat, H3DOR_FMT_RGBA_TOPDOWN) == 0)
+        {
+            /* Accept it. */
+        }
+        else
+        {
+            RTMemFree(p);
+            p = NULL;
+        }
+    }
+
+    /* Caller check this for NULL. */
+    *ppvInstance = p;
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORGeometry(void *pvInstance,
+                                                                 int32_t x, int32_t y, uint32_t w, uint32_t h)
+{
+    LogFlowFunc(("ins %p %d,%d %dx%d\n", pvInstance, x, y, w, h));
+
+    H3DORInstance *p = (H3DORInstance *)pvInstance;
+    Assert(p);
+    Assert(p->pThis);
+
+    /* @todo find out what to do if size changes to 0x0 from non zero */
+    if (w == 0 || h == 0)
+    {
+        /* Do nothing. */
+        return;
+    }
+
+    RTRECT rect;
+    rect.xLeft = x;
+    rect.yTop = y;
+    rect.xRight = x + w;
+    rect.yBottom = y + h;
+
+    if (p->hImageBitmap)
+    {
+        /* An image handle has been already created,
+         * check if it has the same size as the reported geometry.
+         */
+        if (   p->x == x
+            && p->y == y
+            && p->w == w
+            && p->h == h)
+        {
+            LogFlowFunc(("geometry not changed\n"));
+            /* Do nothing. Continue using the existing handle. */
+        }
+        else
+        {
+            int rc = p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
+            if (RT_SUCCESS(rc))
+            {
+                p->x = x;
+                p->y = y;
+                p->w = w;
+                p->h = h;
+            }
+            else
+            {
+                /* The handle must be recreated. Delete existing handle here. */
+                p->pThis->m_interfaceImage.VRDEImageHandleClose(p->hImageBitmap);
+                p->hImageBitmap = NULL;
+            }
+        }
+    }
+
+    if (!p->hImageBitmap)
+    {
+        /* Create a new bitmap handle. */
+        uint32_t u32ScreenId = 0; /* @todo clip to corresponding screens.
+                                   * Clipping can be done here or in VRDP server.
+                                   * If VRDP does clipping, then uScreenId parameter
+                                   * is not necessary and coords must be global.
+                                   * (have to check which coords are used in opengl service).
+                                   * Since all VRDE API uses a ScreenId,
+                                   * the clipping must be done here in ConsoleVRDPServer
+                                   */
+        uint32_t fu32CompletionFlags = 0;
+        int rc = p->pThis->m_interfaceImage.VRDEImageHandleCreate(p->pThis->mhServer,
+                                                                  &p->hImageBitmap,
+                                                                  p,
+                                                                  u32ScreenId,
+                                                                  VRDE_IMAGE_F_CREATE_CONTENT_3D
+                                                                  | VRDE_IMAGE_F_CREATE_WINDOW,
+                                                                  &rect,
+                                                                  VRDE_IMAGE_FMT_ID_BITMAP_BGRA8,
+                                                                  NULL,
+                                                                  0,
+                                                                  &fu32CompletionFlags);
+        if (RT_SUCCESS(rc))
+        {
+            p->x = x;
+            p->y = y;
+            p->w = w;
+            p->h = h;
+
+            if ((fu32CompletionFlags & VRDE_IMAGE_F_COMPLETE_ASYNC) == 0)
+            {
+                p->fCreated = true;
+            }
+        }
+        else
+        {
+            p->hImageBitmap = NULL;
+            p->w = 0;
+            p->h = 0;
+        }
+    }
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORVisibleRegion(void *pvInstance,
+                                                                      uint32_t cRects, RTRECT *paRects)
+{
+    LogFlowFunc(("ins %p %d\n", pvInstance, cRects));
+
+    H3DORInstance *p = (H3DORInstance *)pvInstance;
+    Assert(p);
+    Assert(p->pThis);
+
+    if (cRects == 0)
+    {
+        /* Complete image is visible. */
+        RTRECT rect;
+        rect.xLeft = p->x;
+        rect.yTop = p->y;
+        rect.xRight = p->x + p->w;
+        rect.yBottom = p->y + p->h;
+        p->pThis->m_interfaceImage.VRDEImageRegionSet (p->hImageBitmap,
+                                                       1,
+                                                       &rect);
+    }
+    else
+    {
+        p->pThis->m_interfaceImage.VRDEImageRegionSet (p->hImageBitmap,
+                                                       cRects,
+                                                       paRects);
+    }
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORFrame(void *pvInstance,
+                                                              void *pvData, uint32_t cbData)
+{
+    LogFlowFunc(("ins %p %p %d\n", pvInstance, pvData, cbData));
+
+    H3DORInstance *p = (H3DORInstance *)pvInstance;
+    Assert(p);
+    Assert(p->pThis);
+
+    /* Currently only a topdown BGR0 bitmap format is supported. */
+    VRDEIMAGEBITMAP image;
+
+    image.cWidth = p->w;
+    image.cHeight = p->h;
+    image.pvData = pvData;
+    image.cbData = cbData;
+    image.pvScanLine0 = (uint8_t *)pvData + (p->h - 1) * p->w * 4;
+    image.iScanDelta = -4 * p->w;
+
+    p->pThis->m_interfaceImage.VRDEImageUpdate (p->hImageBitmap,
+                                                p->x,
+                                                p->y,
+                                                p->w,
+                                                p->h,
+                                                &image,
+                                                sizeof(VRDEIMAGEBITMAP));
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DOREnd(void *pvInstance)
+{
+    LogFlowFunc(("ins %p\n", pvInstance));
+
+    H3DORInstance *p = (H3DORInstance *)pvInstance;
+    Assert(p);
+    Assert(p->pThis);
+
+    p->pThis->m_interfaceImage.VRDEImageHandleClose(p->hImageBitmap);
+
+    RTMemFree(p);
+}
+
+/* static */ DECLCALLBACK(int) ConsoleVRDPServer::H3DORContextProperty(const void *pvContext, uint32_t index,
+                                                                       void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
+{
+    int rc = VINF_SUCCESS;
+
+    if (index == H3DOR_PROP_FORMATS)
+    {
+        /* Return a comma separated list of supported formats. */
+        static char *pszSupportedFormats = H3DOR_FMT_RGBA_TOPDOWN;
+        uint32_t cbOut = (uint32_t)strlen(pszSupportedFormats) + 1;
+        if (cbOut <= cbBuffer)
+        {
+            memcpy(pvBuffer, pszSupportedFormats, cbOut);
+        }
+        else
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+        }
+        *pcbOut = cbOut;
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
+void ConsoleVRDPServer::remote3DRedirect(void)
+{
+    if (!m_fInterfaceImage)
+    {
+        /* No redirect without corresponding interface. */
+        return;
+    }
+
+    /* Check if 3D redirection has been enabled. */
+    com::Bstr bstr;
+    HRESULT hrc = mConsole->getVRDEServer()->GetVRDEProperty(Bstr("H3DRedirect/Enabled").raw(), bstr.asOutParam());
+
+    if (hrc != S_OK)
+    {
+        bstr = "";
+    }
+
+    com::Utf8Str value = bstr;
+
+    bool fEnabled =    RTStrICmp(value.c_str(), "true") == 0
+                    || RTStrICmp(value.c_str(), "1") == 0;
+
+    if (!fEnabled)
+    {
+        return;
+    }
+
+    /* Tell the host 3D service to redirect output using the ConsoleVRDPServer callbacks. */
+    H3DOUTPUTREDIRECT outputRedirect =
+    {
+        this,
+        H3DORBegin,
+        H3DORGeometry,
+        H3DORVisibleRegion,
+        H3DORFrame,
+        H3DOREnd,
+        H3DORContextProperty
+    };
+
+    VBOXHGCMSVCPARM parm;
+
+    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+    parm.u.pointer.addr = &outputRedirect;
+    parm.u.pointer.size = sizeof(outputRedirect);
+
+    VMMDev *pVMMDev = mConsole->getVMMDev();
+
+    if (!pVMMDev)
+    {
+        AssertMsgFailed(("remote3DRedirect no vmmdev\n"));
+        return;
+    }
+
+    int rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL",
+                                   SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT,
+                                   SHCRGL_CPARMS_SET_OUTPUT_REDIRECT,
+                                   &parm);
+
+    if (!RT_SUCCESS(rc))
+    {
+        AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
+        return;
+    }
+
+    LogRel(("VRDE: Enabled 3D redirect.\n"));
+
+    return;
+}
+
+/* static */ DECLCALLBACK(int) ConsoleVRDPServer::VRDEImageCbNotify (void *pvContext,
+                                                                     void *pvUser,
+                                                                     HVRDEIMAGE hVideo,
+                                                                     uint32_t u32Id,
+                                                                     void *pvData,
+                                                                     uint32_t cbData)
+{
+    LogFlowFunc(("pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
+                 pvContext, pvUser, hVideo, u32Id, pvData, cbData));
+
+    ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvContext);
+    H3DORInstance *p = (H3DORInstance *)pvUser;
+    Assert(p);
+    Assert(p->pThis);
+    Assert(p->pThis == pServer);
+
+    // @todo Process u32Id
+
+    p->fCreated = true;
+
+    return VINF_SUCCESS;
+}
+
 void ConsoleVRDPServer::EnableConnections(void)
 {
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEEnableConnections(mhServer, true);
+
+        /* Redirect 3D output if it is enabled. */
+        remote3DRedirect();
     }
 }
 

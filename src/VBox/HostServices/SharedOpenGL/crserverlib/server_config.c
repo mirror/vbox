@@ -57,6 +57,7 @@ setDefaults(void)
     cr_server.screenCount = 0;
     cr_server.bForceOffscreenRendering = GL_FALSE;
     cr_server.bUsePBOForReadback = GL_FALSE;
+    cr_server.bUseOutputRedirect = GL_FALSE;
 }
 
 void crServerSetVBoxConfiguration()

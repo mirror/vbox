@@ -163,6 +163,7 @@ static DECLCALLBACK(int) svcPresentFBOWorkerThreadProc(RTTHREAD ThreadSelf, void
             break;
         }
 
+        // @todo use critsect only to fetch the list and update the g_SvcPresentFBO's pQueueHead and pQueueTail.
         rc = RTCritSectEnter(&g_SvcPresentFBO.hQueueLock);
         AssertRCReturn(rc, rc);
 
@@ -1241,7 +1242,6 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
                     g_pConsole = pConsole;
 
-                    /*rc = crVBoxServerSetOffscreenRendering(GL_TRUE);*/
                     rc = VINF_SUCCESS;
                 }
             }
@@ -1348,6 +1348,56 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 }
 
                 rc = VINF_SUCCESS;
+            }
+            break;
+        }
+        case SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT:
+        {
+            /*
+             * OutputRedirect.
+             * Note: the service calls OutputRedirect callbacks directly
+             *       and they must not block. If asynchronous processing is needed,
+             *       the callback provider must organize this.
+             */
+            Log(("svcCall: SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_SET_OUTPUT_REDIRECT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else if (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                H3DOUTPUTREDIRECT *pOutputRedirect = (H3DOUTPUTREDIRECT *)paParms[0].u.pointer.addr;
+                uint32_t cbData = paParms[0].u.pointer.size;
+
+                /* Verify parameters values. */
+                if (cbData != sizeof (H3DOUTPUTREDIRECT))
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else /* Execute the function. */
+                {
+                    rc = crVBoxServerSetOffscreenRendering(GL_TRUE);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        CROutputRedirect or;
+                        or.pvContext = pOutputRedirect->pvContext;
+                        or.CRORBegin = pOutputRedirect->H3DORBegin;
+                        or.CRORGeometry = pOutputRedirect->H3DORGeometry;
+                        or.CRORVisibleRegion = pOutputRedirect->H3DORVisibleRegion;
+                        or.CRORFrame = pOutputRedirect->H3DORFrame;
+                        or.CROREnd = pOutputRedirect->H3DOREnd;
+                        or.CRORContextProperty = pOutputRedirect->H3DORContextProperty;
+                        rc = crVBoxServerOutputRedirectSet(&or);
+                    }
+                }
             }
             break;
         }

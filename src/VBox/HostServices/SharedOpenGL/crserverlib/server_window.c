@@ -87,6 +87,8 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         mural->pVisibleRects = NULL;
         mural->bReceivedRects = GL_FALSE;
 
+        mural->pvOutputRedirectInstance = NULL;
+
         /* generate ID for this new window/mural (special-case for file conns) */
         if (cr_server.curClient && cr_server.curClient->conn->type == CR_FILE)
             windowID = spuWindow;
@@ -98,6 +100,8 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         pCreateInfo->pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
         pCreateInfo->visualBits = visBits;
         crHashtableAdd(cr_server.pWindowCreateInfoTable, windowID, pCreateInfo);
+
+        crServerSetupOutputRedirect(mural);
     }
 
     crDebug("CRServer: client %p created new window %d (SPU window %d)",
@@ -145,6 +149,12 @@ crServerDispatchWindowDestroy( GLint window )
     if (!mural) {
          crWarning("CRServer: invalid window %d passed to WindowDestroy()", window);
          return;
+    }
+
+    if (mural->pvOutputRedirectInstance)
+    {
+        cr_server.outputRedirect.CROREnd(mural->pvOutputRedirectInstance);
+        mural->pvOutputRedirectInstance = NULL;
     }
 
     if (cr_server.currentWindow == window)
@@ -294,6 +304,13 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
     }
 
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+
+    if (mural->pvOutputRedirectInstance)
+    {
+        /* @todo the code assumes that RTRECT == four GLInts. */
+        cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
+                                                   cRects, (RTRECT *)pRects);
+    }
 }
 
 

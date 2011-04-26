@@ -45,6 +45,56 @@ static GLboolean crServerMuralCoverScreen(CRMuralInfo *mural, int sId)
            && mural->gY+(int)mural->height > cr_server.screen[sId].y+(int)cr_server.screen[sId].h;
 }
 
+/* Called when a new CRMuralInfo is created
+ * or when OutputRedirect status is changed.
+ */
+void crServerSetupOutputRedirect(CRMuralInfo *mural)
+{
+    /* Unset the previous redirect. */
+    if (mural->pvOutputRedirectInstance)
+    {
+        cr_server.outputRedirect.CROREnd(mural->pvOutputRedirectInstance);
+        mural->pvOutputRedirectInstance = NULL;
+    }
+
+    /* Setup a new redirect. */
+    if (cr_server.bUseOutputRedirect)
+    {
+        /* Query supported formats. */
+        uint32_t cbFormats = 4096;
+        char *pachFormats = (char *)crAlloc(cbFormats);
+
+        if (pachFormats)
+        {
+            int rc = cr_server.outputRedirect.CRORContextProperty(cr_server.outputRedirect.pvContext,
+                                                                  0 /* H3DOR_PROP_FORMATS */, // @todo from a header
+                                                                  pachFormats, cbFormats, &cbFormats);
+            if (RT_SUCCESS(rc))
+            {
+                if (strstr(pachFormats, "H3DOR_FMT_RGBA_TOPDOWN"))
+                {
+                    cr_server.outputRedirect.CRORBegin(cr_server.outputRedirect.pvContext,
+                                                       &mural->pvOutputRedirectInstance,
+                                                       "H3DOR_FMT_RGBA_TOPDOWN"); // @todo from a header
+                }
+            }
+
+            crFree(pachFormats);
+        }
+
+        /* If this is not NULL then there was a supported format. */
+        if (mural->pvOutputRedirectInstance)
+        {
+            cr_server.outputRedirect.CRORGeometry(mural->pvOutputRedirectInstance,
+                                                  mural->hX, mural->hY,
+                                                  mural->width, mural->height);
+            // @todo the code assumes that RTRECT == four of GLInts
+            cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
+                                                       mural->cVisibleRects, (RTRECT *)mural->pVisibleRects);
+        }
+    }
+}
+
 void crServerCheckMuralGeometry(CRMuralInfo *mural)
 {
     int tlS, brS, trS, blS;
@@ -135,6 +185,13 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         {
             cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX, mural->hY);
         }
+    }
+
+    if (mural->pvOutputRedirectInstance)
+    {
+        cr_server.outputRedirect.CRORGeometry(mural->pvOutputRedirectInstance,
+                                              mural->hX, mural->hY,
+                                              mural->width, mural->height);
     }
 }
 
@@ -452,6 +509,14 @@ void crServerPresentFBO(CRMuralInfo *mural)
                 }
             }
         }
+    }
+
+    if (mural->pvOutputRedirectInstance)
+    {
+        /* @todo find out why presentfbo is not called but crorframe is called. */
+        cr_server.outputRedirect.CRORFrame(mural->pvOutputRedirectInstance,
+                                           pixels,
+                                           4 * mural->fboWidth * mural->fboHeight);
     }
 
     if (bUsePBO)
