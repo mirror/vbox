@@ -8471,7 +8471,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
         case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC("shl Ev,CL"); break;
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,CL"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,CL"); break;
-        case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
 #ifdef IEM_VERIFICATION_MODE
@@ -8653,9 +8653,51 @@ FNIEMOP_STUB(iemOp_EscF0);
 FNIEMOP_STUB(iemOp_EscF1);
 /** Opcode 0xda. */
 FNIEMOP_STUB(iemOp_EscF2);
+
+
+/** Opcode 0xdb /0. */
+FNIEMOP_STUB_1(iemOp_fild, uint8_t, bRm);
+/** Opcode 0xdb /1. */
+FNIEMOP_STUB_1(iemOp_fisttp, uint8_t, bRm);
+/** Opcode 0xdb /2. */
+FNIEMOP_STUB_1(iemOp_fist, uint8_t, bRm);
+/** Opcode 0xdb /3. */
+FNIEMOP_STUB_1(iemOp_fistp, uint8_t, bRm);
+/** Opcode 0xdb /5. */
+FNIEMOP_STUB_1(iemOp_fld, uint8_t, bRm);
+/** Opcode 0xdb /7. */
+FNIEMOP_STUB_1(iemOp_fstp, uint8_t, bRm);
+
 /** Opcode 0xdb. */
-FNIEMOP_STUB(iemOp_EscF3);
-/** @todo Do FINIT next. */
+FNIEMOP_DEF(iemOp_EscF3)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+#if 0
+        switch (bRm & 0xf0)
+        {
+            case 0x
+        }
+#endif
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    }
+    else
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fild, bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fisttp, bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fist, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fistp, bRm);
+            case 4: return IEMOP_RAISE_INVALID_OPCODE();
+            case 5: return FNIEMOP_CALL_1(iemOp_fld, bRm);
+            case 6: return IEMOP_RAISE_INVALID_OPCODE();
+            case 7: return FNIEMOP_CALL_1(iemOp_fstp, bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+}
 
 /** Opcode 0xdc. */
 FNIEMOP_STUB(iemOp_EscF4);
