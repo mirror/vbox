@@ -41,6 +41,9 @@
 #define VBE_DISPI_IOPORT_INDEX          0x01CE
 #define VBE_DISPI_IOPORT_DATA           0x01CF
 
+#define VBE_DISPI_IOPORT_DAC_WRITE_INDEX  0x03C8
+#define VBE_DISPI_IOPORT_DAC_DATA         0x03C9
+
 #define VBE_DISPI_INDEX_ID              0x0
 #define VBE_DISPI_INDEX_XRES            0x1
 #define VBE_DISPI_INDEX_YRES            0x2

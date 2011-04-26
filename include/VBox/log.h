@@ -159,6 +159,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_CHAR,
     /** Disk integrity driver group. */
     LOG_GROUP_DRV_DISK_INTEGRITY,
+    /** Video Display driver group. */
+    LOG_GROUP_DRV_DISPLAY,
     /** Floppy media driver group. */
     LOG_GROUP_DRV_FLOPPY,
     /** Host Base block driver group. */
@@ -179,6 +181,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_KBD_QUEUE,
     /** lwIP IP stack driver group. */
     LOG_GROUP_DRV_LWIP,
+    /** Video Miniport driver group. */
+    LOG_GROUP_DRV_MINIPORT,
     /** Mouse Queue driver group. */
     LOG_GROUP_DRV_MOUSE_QUEUE,
     /** Named Pipe stream driver group. */
@@ -420,6 +424,7 @@ typedef enum LOGGROUP
     "DRV_BLOCK",    \
     "DRV_CHAR",     \
     "DRV_DISK_INTEGRITY", \
+    "DRV_DISPLAY",  \
     "DRV_FLOPPY",   \
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \
@@ -430,6 +435,7 @@ typedef enum LOGGROUP
     "DRV_ISO",      \
     "DRV_KBD_QUEUE", \
     "DRV_LWIP",     \
+    "DRV_MINIPORT", \
     "DRV_MOUSE_QUEUE", \
     "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
