@@ -18,6 +18,7 @@
 
 #include <iprt/types.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 
 #include <VBox/vmm/ssm.h>
 

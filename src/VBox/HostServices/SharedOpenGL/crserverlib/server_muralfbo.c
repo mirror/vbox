@@ -71,7 +71,7 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural)
                                                                   pachFormats, cbFormats, &cbFormats);
             if (RT_SUCCESS(rc))
             {
-                if (strstr(pachFormats, "H3DOR_FMT_RGBA_TOPDOWN"))
+                if (RTStrStr(pachFormats, "H3DOR_FMT_RGBA_TOPDOWN"))
                 {
                     cr_server.outputRedirect.CRORBegin(cr_server.outputRedirect.pvContext,
                                                        &mural->pvOutputRedirectInstance,
