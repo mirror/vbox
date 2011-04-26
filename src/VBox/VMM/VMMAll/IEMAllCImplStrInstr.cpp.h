@@ -1012,7 +1012,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
         return rcStrict;
 
     uint32_t        u32Value;
-    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rcStrict = IOMIOPortRead(pVM, pCtx->dx, &u32Value, OP_SIZE / 8);
     else
         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
@@ -1113,7 +1113,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value;
-                    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                         rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
@@ -1160,7 +1160,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 break;
 
             uint32_t u32Value;
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
             else
                 rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
@@ -1217,7 +1217,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (IEM_VERIFICATION_ENABLED(pIemCpu))
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             rcStrict = IOMIOPortWrite(pVM, pCtx->dx, uValue, OP_SIZE / 8);
         else
             rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, pCtx->dx, uValue, OP_SIZE / 8);
@@ -1311,7 +1311,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 while (cLeftPage-- > 0)
                 {
                     uint32_t u32Value = *puMem++;
-                    if (IEM_VERIFICATION_ENABLED(pIemCpu))
+                    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                         rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
@@ -1356,7 +1356,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             if (rcStrict != VINF_SUCCESS)
                 break;
 
-            if (IEM_VERIFICATION_ENABLED(pIemCpu))
+            if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
             else
                 rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
