@@ -33,8 +33,8 @@
 #ifdef VBOX_WITH_WDDM
 #include <d3d9types.h>
 #include <D3dumddi.h>
-#include "../../WINNT/Graphics/Miniport/wddm/VBoxVideoIf.h"
-#include "../../WINNT/Graphics/Display/wddm/vboxdispmp.h"
+#include "../../WINNT/Graphics/Video/common/wddm/VBoxMPIf.h"
+#include "../../WINNT/Graphics/Video/disp/wddm/VBoxDispMp.h"
 #endif
 
 /**
