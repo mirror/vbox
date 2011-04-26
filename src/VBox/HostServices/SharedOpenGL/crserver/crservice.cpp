@@ -1387,15 +1387,15 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
                     if (RT_SUCCESS(rc))
                     {
-                        CROutputRedirect or;
-                        or.pvContext = pOutputRedirect->pvContext;
-                        or.CRORBegin = pOutputRedirect->H3DORBegin;
-                        or.CRORGeometry = pOutputRedirect->H3DORGeometry;
-                        or.CRORVisibleRegion = pOutputRedirect->H3DORVisibleRegion;
-                        or.CRORFrame = pOutputRedirect->H3DORFrame;
-                        or.CROREnd = pOutputRedirect->H3DOREnd;
-                        or.CRORContextProperty = pOutputRedirect->H3DORContextProperty;
-                        rc = crVBoxServerOutputRedirectSet(&or);
+                        CROutputRedirect outputRedirect;
+                        outputRedirect.pvContext = pOutputRedirect->pvContext;
+                        outputRedirect.CRORBegin = pOutputRedirect->H3DORBegin;
+                        outputRedirect.CRORGeometry = pOutputRedirect->H3DORGeometry;
+                        outputRedirect.CRORVisibleRegion = pOutputRedirect->H3DORVisibleRegion;
+                        outputRedirect.CRORFrame = pOutputRedirect->H3DORFrame;
+                        outputRedirect.CROREnd = pOutputRedirect->H3DOREnd;
+                        outputRedirect.CRORContextProperty = pOutputRedirect->H3DORContextProperty;
+                        rc = crVBoxServerOutputRedirectSet(&outputRedirect);
                     }
                 }
             }
