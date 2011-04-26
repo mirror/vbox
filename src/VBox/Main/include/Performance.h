@@ -43,6 +43,7 @@ namespace pm
     {
     public:
         CircularBuffer() : mData(0), mLength(0), mEnd(0), mWrapped(false) {};
+        ~CircularBuffer() { if (mData) RTMemFree(mData); };
         void init(ULONG length);
         ULONG length();
         ULONG getSequenceNumber() { return mSequenceNumber; }

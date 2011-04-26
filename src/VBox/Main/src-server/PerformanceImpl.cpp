@@ -508,6 +508,7 @@ STDMETHODIMP PerformanceCollector::QueryMetricsData(ComSafeArrayIn (IN_BSTR, met
         LogFlow (("PerformanceCollector::QueryMetricsData() querying metric %s "
                   "returned %d values.\n", (*it)->getName(), length));
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
+        RTMemFree(values);
         Bstr tmp((*it)->getName());
         tmp.detachTo(&retNames[i]);
         (*it)->getObject().queryInterfaceTo(&retObjects[i]);
