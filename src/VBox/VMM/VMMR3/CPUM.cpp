@@ -999,7 +999,8 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
      */
     if (!fHWVirtExEnabled)
     {
-        Assert(pVM->cpum.s.aGuestCpuIdStd[4].eax == 0);
+        Assert(   pVM->cpum.s.aGuestCpuIdStd[4].eax == 0
+               || pVM->cpum.s.aGuestCpuIdStd[0].eax < 0x4);
         pVM->cpum.s.aGuestCpuIdStd[4].eax = 0;
     }
 }
