@@ -540,21 +540,21 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
   <sect1 id="pcipassthrough">
     <title>PCI passthrough</title>
 
-    <para>When running on Linux hosts, with recent enough kernel (at least version 
-      <computeroutput>2.6.31</computeroutput>) experimental host PCI devices 
+    <para>When running on Linux hosts, with recent enough kernel (at least version
+      <computeroutput>2.6.31</computeroutput>) experimental host PCI devices
       passthrough is available.<footnote>
         <para>Experimental support for PCI passthrough was introduced with VirtualBox
         4.1.</para>
       </footnote> Essentially this feature allows to use physical PCI devices
-      on host directly by the guest, even if host doesn't have drivers for this 
-      particular device. Both regular PCI and some PCI Express cards are 
-      supported. AGP and certain PCI Express cards are not supported at the 
-      moment, if they rely on GART (Graphics Address Remapping Table) unit 
-      programming for texture management, as it does rather nontrivial 
-      operations with pages remapping interfering with IOMMU. 
+      on host directly by the guest, even if host doesn't have drivers for this
+      particular device. Both regular PCI and some PCI Express cards are
+      supported. AGP and certain PCI Express cards are not supported at the
+      moment, if they rely on GART (Graphics Address Remapping Table) unit
+      programming for texture management, as it does rather nontrivial
+      operations with pages remapping interfering with IOMMU.
       This limitation may be lifted in future releases.</para>
 
-    <para>To be fully functional, PCI passthrough support in VirtualBox depends upon 
+    <para>To be fully functional, PCI passthrough support in VirtualBox depends upon
     IOMMU hardware unit, which is not yet too widely available. To be exact,
     if device uses bus mastering (i.e. performs DMA to the OS memory on its own), then
     IOMMU hardware is needed (otherwise such DMA transactions may override wrong physical memory address,
@@ -562,12 +562,12 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
     IOMMU functions as translation unit, mapping physical memory access requests from the device,
     using knowledge of guest physical address to host physical addresses translation rules.</para>
 
-    <para>Intel's solution for IOMMU is marketed as "Intel Virtualization Technology for 
-      Directed I/O" (VT-d), and AMD's one is called AMD-Vi. So please check if your 
+    <para>Intel's solution for IOMMU is marketed as "Intel Virtualization Technology for
+      Directed I/O" (VT-d), and AMD's one is called AMD-Vi. So please check if your
       motherboard datasheet has appropriate technology.
       Even if your hardware doesn't have IOMMU, certain PCI cards may work
-      (such as serial PCI adapters), but guest will show warning on boot, and 
-      VM execution will terminate, if guest driver will attempt to enable card 
+      (such as serial PCI adapters), but guest will show warning on boot, and
+      VM execution will terminate, if guest driver will attempt to enable card
       bus mastering.</para>
 
     <para>
@@ -584,16 +584,16 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
             IOMMU is enabled in the BIOS.
         </listitem>
         <listitem>
-            Your Linux kernel compiled with IOMMU support (including DMA remapping, see 
+            Your Linux kernel compiled with IOMMU support (including DMA remapping, see
             <computeroutput>CONFIG_DMAR</computeroutput> kernel compilation option).
         </listitem>
         <listitem>
-            Your Linux kernel recognizes and uses IOMMU unit (<computeroutput>intel-iommu=on</computeroutput> 
-            boot option could be needed). Search for DMAR in kernel boot log. 
+            Your Linux kernel recognizes and uses IOMMU unit (<computeroutput>intel-iommu=on</computeroutput>
+            boot option could be needed). Search for DMAR in kernel boot log.
         </listitem>
-      </orderedlist>      
+      </orderedlist>
     </para>
-  
+
     <para>Once you made sure that host kernel supports IOMMU, next step is to select
       PCI card, and attach it to the guest. To figure out list of available PCI devices,
       use  <computeroutput>lspci</computeroutput> command. Output will look like this
@@ -605,22 +605,22 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         03:00.1 IDE interface: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
         06:00.0 VGA compatible controller: nVidia Corporation G86 [GeForce 8500 GT] (rev a1)
       </screen>
-      First column here is a PCI address (in format <computeroutput>bus:device.function</computeroutput>). 
-      This address could be used to identify device for further operations. 
-      For example, to attach PCI network controller on system listed above, 
+      First column here is a PCI address (in format <computeroutput>bus:device.function</computeroutput>).
+      This address could be used to identify device for further operations.
+      For example, to attach PCI network controller on system listed above,
       to second PCI bus in the guest, as device 5, function 0, use the following command:
       <screen>VBoxManage modifyvm "VM name" --attachpci 02:00.0@01:05.0</screen>
-      To detach same device, use 
+      To detach same device, use
       <screen>VBoxManage modifyvm "VM name" --detachpci 02:00.0</screen>
-      Please note, that both host and guest could freely assign different PCI address to 
-      card attached during runtime, so those addresses only apply to address of card at 
+      Please note, that both host and guest could freely assign different PCI address to
+      card attached during runtime, so those addresses only apply to address of card at
       the moment of attachment (host), and during BIOS PCI init (guest).
     </para>
-    
+
     <para>If virtual machine has PCI device attached, certain limitations apply.
       <orderedlist>
          <listitem>
-          Only PCI cards with non-shared interrupts (such as using MSI on host) can be 
+          Only PCI cards with non-shared interrupts (such as using MSI on host) can be
           supported at the moment.
         </listitem>
         <listitem>
@@ -633,10 +633,10 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         <listitem>
           No lazy physical memory allocation, host preallocates whole RAM on startup
           (as we cannot catch physical hardware access to physical memory).
-        </listitem>        
-      </orderedlist>      
+        </listitem>
+      </orderedlist>
     </para>
-       
+
   </sect1>
 
 
@@ -1527,5 +1527,32 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
         </listitem>
       </itemizedlist></para>
+  </sect1>
+
+  <sect1 id="vboxballoonctrl">
+    <title>Memory Ballooning Service</title>
+
+    <para>Starting at VirtualBox 4.0.8 a new host executable called <computeroutput>VBoxBalloonCtrl</computeroutput> is
+    available to automatically take care of a VM's configured memory balloon (see <xref linkend="guestadd-balloon" />
+    for an introduction to memory ballooning). This especially is useful for server environments where VMs may dynamically
+    require more or less memory during runtime.</para>
+
+    <para>VBoxBalloonCtrl periodically checks a VM's current memory balloon and its free guest RAM and automatically adjusts
+    the current memory balloon by inflating or deflating it accordingly. This handling only applies to running VMs having recent
+    Guest Additions installed.</para>
+
+    <para>To set up VBoxBalloonCtrl and adjust the maximum ballooning size a VM can reach the following parameters will be checked in the following
+    order:
+      <itemizedlist>
+        <listitem>specified via VBoxBalloonCtrl command line parameter <computeroutput>--balloon-max</computeroutput></listitem>
+        <listitem>per-VM parameter using <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
+        <listitem>global parameter for all VMs using <screen>VBoxManage setextradata global VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
+      </itemizedlist>
+      <note>
+        <para>If no maximum ballooning size is specified by at least one of the parameters above, no ballooning will be performed at all.</para>
+      </note>
+    </para>
+
+    <para>For more options and parameters check the built-in command line help accessible with <computeroutput>--help</computeroutput>.</para>
   </sect1>
 </chapter>
