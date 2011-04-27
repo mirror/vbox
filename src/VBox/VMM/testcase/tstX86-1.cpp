@@ -21,6 +21,9 @@
 *******************************************************************************/
 #include <iprt/test.h>
 #include <iprt/param.h>
+#include <iprt/mem.h>
+#include <iprt/err.h>
+#include <iprt/assert.h>
 
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
@@ -52,6 +55,7 @@ typedef TRAPINFO const *PCTRAPINFO;
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 uint8_t *g_pbEfPage = NULL;
+uint8_t *g_pbEfExecPage = NULL;
 extern TRAPINFO g_aTrapInfo[];
 RT_C_DECLS_END
 
@@ -63,10 +67,17 @@ DECLASM(int32_t) x861_Test1(void);
 
 
 
-static PCTRAPINFO findTrapInfo(uintptr_t uTrapPC)
+static PCTRAPINFO findTrapInfo(uintptr_t uTrapPC, uintptr_t uTrapSP)
 {
+    /* Search by trap program counter. */
     for (unsigned i = 0; g_aTrapInfo[i].uTrapPC; i++)
         if (g_aTrapInfo[i].uTrapPC == uTrapPC)
+            return &g_aTrapInfo[i];
+
+    /* Search by return address. */
+    uintptr_t uReturn = *(uintptr_t *)uTrapSP;
+    for (unsigned i = 0; g_aTrapInfo[i].uTrapPC; i++)
+        if (g_aTrapInfo[i].uTrapPC + g_aTrapInfo[i].cbInstr == uReturn)
             return &g_aTrapInfo[i];
 
     return NULL;
@@ -76,23 +87,51 @@ static PCTRAPINFO findTrapInfo(uintptr_t uTrapPC)
 static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 {
     ucontext_t *pCtx = (ucontext_t *)pvSigCtx;
-# if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;
-# elif defined(RT_ARCH_AMD64) && defined(RT_OS_FREEBSD)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.mc_rip;
-# elif defined(RT_ARCH_AMD64)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
-# elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
-# elif defined(RT_ARCH_X86) && defined(RT_OS_FREEBSD)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.mc_eip;
-# elif defined(RT_ARCH_X86)
-    uintptr_t  *puPC = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
-# else
-    uintptr_t  *puPC = NULL;
-# endif
 
-    PCTRAPINFO  pTrapInfo = findTrapInfo(*puPC);
+# if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;
+    uintptr_t   uSP     = pCtx->uc_mcontext->__ss.__rsp;
+    uintptr_t   uTrapNo = ~(uintptr_t)0;
+    uintptr_t   uErr    = ~(uintptr_t)0;
+
+# elif defined(RT_ARCH_AMD64) && defined(RT_OS_FREEBSD)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_rip;
+    uintptr_t   uSP     = pCtx->uc_mcontext.mc_rsp;
+    uintptr_t   uTrapNo = ~(uintptr_t)0;
+    uintptr_t   uErr    = ~(uintptr_t)0;
+
+# elif defined(RT_ARCH_AMD64)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
+    uintptr_t   uSP     = pCtx->uc_mcontext.gregs[REG_RSP];
+    uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
+    uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
+
+# elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
+    uintptr_t   uSP     = pCtx->uc_mcontext->__ss.__esp;
+    uintptr_t   uTrapNo = ~(uintptr_t)0;
+    uintptr_t   uErr    = ~(uintptr_t)0;
+
+# elif defined(RT_ARCH_X86) && defined(RT_OS_FREEBSD)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_eip;
+    uintptr_t   uSP     = pCtx->uc_mcontext.mc_esp;
+    uintptr_t   uTrapNo = ~(uintptr_t)0;
+    uintptr_t   uErr    = ~(uintptr_t)0;
+
+# elif defined(RT_ARCH_X86)
+    uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
+    uintptr_t   uSP     = pCtx->uc_mcontext.gregs[REG_ESP];
+    uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
+    uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
+
+# else
+    uintptr_t  *puPC    = NULL;
+    uintptr_t   uTrapNo = ~(uintptr_t)0;
+    uintptr_t   uErr    = ~(uintptr_t)0;
+# endif
+    RTAssertMsg2("tstX86-1: Trap #%#04x err=%#06x at %p\n", uTrapNo, uErr, *puPC);
+
+    PCTRAPINFO  pTrapInfo = findTrapInfo(*puPC, uSP);
     if (pTrapInfo)
     {
         /** @todo verify the kind of trap */
@@ -116,11 +155,18 @@ int main()
     RTEXITCODE rcExit = RTTestInitAndCreate("tstX86-1", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
+    RTTestBanner(hTest);
+
     g_pbEfPage = (uint8_t *)RTTestGuardedAllocTail(hTest, PAGE_SIZE);
     RTTESTI_CHECK(g_pbEfPage != NULL);
 
+    g_pbEfExecPage = (uint8_t *)RTMemExecAlloc(PAGE_SIZE*2);
+    RTTESTI_CHECK(g_pbEfExecPage != NULL);
+    RTTESTI_CHECK(!((uintptr_t)g_pbEfExecPage & PAGE_OFFSET_MASK));
+    RTTESTI_CHECK_RC(RTMemProtect(g_pbEfExecPage + PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE), VINF_SUCCESS);
+
 #ifdef USE_SIGNAL
-    static int const s_aiSigs[] = { SIGBUS, SIGSEGV, SIGFPE };
+    static int const s_aiSigs[] = { SIGBUS, SIGSEGV, SIGFPE, SIGILL };
     for (unsigned i = 0; i < RT_ELEMENTS(s_aiSigs); i++)
     {
         struct sigaction SigAct;
