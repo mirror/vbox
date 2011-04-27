@@ -1759,7 +1759,7 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         "FPUDP=%04x DS=%04x Rsvrd2=%04x MXCSR=%08x MXCSR_MASK=%08x\n"
         ,
         pCtx->fpu.FCW, pCtx->fpu.FSW, pCtx->fpu.FTW,
-        pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsvrd1,
+        pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsrvd1,
         pCtx->fpu.FPUDP, pCtx->fpu.DS, pCtx->fpu.Rsrvd2,
         pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK));
 

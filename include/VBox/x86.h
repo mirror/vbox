@@ -1995,7 +1995,7 @@ typedef struct X86FXSTATE
     uint32_t    FPUIP;
     /** 0x0c - Code selector. */
     uint16_t    CS;
-    uint16_t    Rsvrd1;
+    uint16_t    Rsrvd1;
     /** 0x10 - Data pointer. */
     uint32_t    FPUDP;
     /** 0x14 - Data segment */
