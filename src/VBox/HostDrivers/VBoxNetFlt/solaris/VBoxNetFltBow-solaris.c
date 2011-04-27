@@ -1172,6 +1172,25 @@ LOCAL inline int vboxNetFltSolarisGetLinkId(const char *pszMacName, datalink_id_
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltPortOsSetActive pThis=%p fActive=%d\n", pThis, fActive));
+
+    /*
+     * Reactivate/quiesce the interface.
+     */
+    PVBOXNETFLTVNIC pVNIC = list_head(&pThis->u.s.hVNICs);
+    if (fActive)
+    {
+        for (; pVNIC != NULL; pVNIC = list_next(&pThis->u.s.hVNICs, pVNIC))
+            if (pVNIC->hClient)
+                mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
+    }
+    else
+    {
+        for (; pVNIC != NULL; pVNIC = list_next(&pThis->u.s.hVNICs, pVNIC))
+            if (pVNIC->hClient)
+                mac_rx_clear(pVNIC->hClient);
+    }
+
+
 #if 0
     if (fActive)
     {
@@ -1435,6 +1454,8 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
         {
             /*
              * Set the RX receive function.
+             * This shouldn't be necessary as vboxNetFltPortOsSetActive() will be invoked after this, but in the future,
+             * if the guest NIC changes MAC address this may not be followed by a vboxNetFltPortOsSetActive() call, so set it here anyway.
              */
             mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
             LogFlow((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress successfully added unicast address %.6Rhxs\n", pMac));
