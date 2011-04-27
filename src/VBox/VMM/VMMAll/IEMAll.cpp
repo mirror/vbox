@@ -171,6 +171,20 @@ typedef IEMOPMULDIVSIZES const *PCIEMOPMULDIVSIZES;
 
 
 /**
+ * Function table for a double precision shift operator providing implementation
+ * based on operand size.
+ */
+typedef struct IEMOPSHIFTDBLSIZES
+{
+    PFNIEMAIMPLSHIFTDBLU16 pfnNormalU16;
+    PFNIEMAIMPLSHIFTDBLU32 pfnNormalU32;
+    PFNIEMAIMPLSHIFTDBLU64 pfnNormalU64;
+} IEMOPSHIFTDBLSIZES;
+/** Pointer to a double precision shift function table. */
+typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
+
+
+/**
  * Selector descriptor table entry as fetched by iemMemFetchSelDesc.
  */
 typedef union IEMSELDESC
@@ -502,6 +516,22 @@ static const IEMOPMULDIVSIZES g_iemAImpl_idiv =
     iemAImpl_idiv_u16,
     iemAImpl_idiv_u32,
     iemAImpl_idiv_u64
+};
+
+/** Function table for the SHLD instruction */
+static const IEMOPSHIFTDBLSIZES g_iemAImpl_shld =
+{
+    iemAImpl_shld_u16,
+    iemAImpl_shld_u32,
+    iemAImpl_shld_u64,
+};
+
+/** Function table for the SHRD instruction */
+static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
+{
+    iemAImpl_shrd_u16,
+    iemAImpl_shrd_u32,
+    iemAImpl_shrd_u64,
 };
 
 
@@ -3510,23 +3540,45 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
     /*
-     * Get the selector table base and check bounds.
+     * Get the selector table base and calculate the entry address.
      */
     RTGCPTR GCPtr = uSel & X86_SEL_LDT
                   ? pCtx->ldtrHid.u64Base
                   : pCtx->gdtr.pGdt;
     GCPtr += uSel & X86_SEL_MASK;
-    GCPtr += 2 + 2;
-    uint32_t volatile *pu32; /** @todo Does the CPU do a 32-bit or 8-bit access here? */
-    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, (void **)&pu32, 4, UINT8_MAX, GCPtr, IEM_ACCESS_DATA_RW);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        ASMAtomicBitSet(pu32, 8); /* X86_SEL_TYPE_ACCESSED is 1, but is preceeded by u8BaseHigh1. */
 
-        rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pu32, IEM_ACCESS_DATA_RW);
+    /*
+     * ASMAtomicBitSet will assert if the address is misaligned, so do some
+     * ugly stuff to avoid this.  This will make sure it's an atomic access
+     * as well more or less remove any question about 8-bit or 32-bit accesss.
+     */
+    VBOXSTRICTRC        rcStrict;
+    uint32_t volatile  *pu32;
+    if ((GCPtr & 3) == 0)
+    {
+        /* The normal case, map the 32-bit bits around the accessed bit (40). */
+        GCPtr += 2 + 2;
+        rcStrict = iemMemMap(pIemCpu, (void **)&pu32, 4, UINT8_MAX, GCPtr, IEM_ACCESS_DATA_RW);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        ASMAtomicBitSet(pu32, 8); /* X86_SEL_TYPE_ACCESSED is 1, but it is preceeded by u8BaseHigh1. */
+    }
+    else
+    {
+        /* The misaligned GDT/LDT case, map the whole thing. */
+        rcStrict = iemMemMap(pIemCpu, (void **)&pu32, 8, UINT8_MAX, GCPtr, IEM_ACCESS_DATA_RW);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        switch (GCPtr & 3)
+        {
+            case 0: ASMAtomicBitSet(pu32,                         40     ); break;
+            case 1: ASMAtomicBitSet((uint8_t volatile *)pu32 + 3, 40 - 24); break;
+            case 2: ASMAtomicBitSet((uint8_t volatile *)pu32 + 2, 40 - 16); break;
+            case 3: ASMAtomicBitSet((uint8_t volatile *)pu32 + 1, 40 -  8); break;
+        }
     }
 
-    return rcStrict;
+    return iemMemCommitAndUnmap(pIemCpu, (void *)pu32, IEM_ACCESS_DATA_RW);
 }
 
 /** @} */
@@ -3803,6 +3855,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)           (a_pfn)((a0), (a1))
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)       (a_pfn)((a0), (a1), (a2))
+#define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3)   (a_pfn)((a0), (a1), (a2), (a3))
 #define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)  (a_rc) = (a_pfn)((a0), (a1), (a2), (a3))
 
 /**

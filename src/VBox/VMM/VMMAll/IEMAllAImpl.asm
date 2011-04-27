@@ -629,7 +629,84 @@ IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_E
 
 
 ;;
-; Macro for implemeting a multiplication operations.
+; Macro for implementing a doulbe precision shift operation.
+;
+; This will generate code for the 16, 32 and 64 bit accesses, except on
+; 32-bit system where the 64-bit accesses requires hand coding.
+;
+; The functions takes the destination operand (r/m) in A0, the source (reg) in
+; A1, the shift count in A2 and a pointer to the eflags variable/register in A3.
+;
+; @param        1       The instruction mnemonic.
+; @param        2       The modified flags.
+; @param        3       The undefined flags.
+;
+; Makes ASSUMPTIONS about A0, A1, A2 and A3 assignments.
+;
+%macro IEMIMPL_SHIFT_DBL_OP 3
+BEGINPROC iemAImpl_ %+ %1 %+ _u16
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+ %ifdef ASM_CALL64_GCC
+        xchg    A3, A2
+        %1      [A0], A1_16, cl
+        xchg    A3, A2
+ %else
+        xchg    A0, A2
+        %1      [A2], A1_16, cl
+ %endif
+        IEM_SAVE_FLAGS       A3, %2, %3
+        EPILOGUE_4_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u16
+
+BEGINPROC iemAImpl_ %+ %1 %+ _u32
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+ %ifdef ASM_CALL64_GCC
+        xchg    A3, A2
+        %1      [A0], A1_32, cl
+        xchg    A3, A2
+ %else
+        xchg    A0, A2
+        %1      [A2], A1_32, cl
+ %endif
+        IEM_SAVE_FLAGS       A3, %2, %3
+        EPILOGUE_4_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        PROLOGUE_4_ARGS
+        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+ %ifdef ASM_CALL64_GCC
+        xchg    A3, A2
+        %1      [A0], A1, cl
+        xchg    A3, A2
+ %else
+        xchg    A0, A2
+        %1      [A2], A1, cl
+ %endif
+        IEM_SAVE_FLAGS       A3, %2, %3
+        EPILOGUE_4_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %else ; stub it for now - later, replace with hand coded stuff.
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        int3
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+  %endif ; !RT_ARCH_AMD64
+
+%endmacro
+
+IEMIMPL_SHIFT_DBL_OP shld, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
+IEMIMPL_SHIFT_DBL_OP shrd, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
+
+
+;;
+; Macro for implementing a multiplication operations.
 ;
 ; This will generate code for the 8, 16, 32 and 64 bit accesses, except on
 ; 32-bit system where the 64-bit accesses requires hand coding.
@@ -734,7 +811,7 @@ IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_E
 
 
 ;;
-; Macro for implemeting a division operations.
+; Macro for implementing a division operations.
 ;
 ; This will generate code for the 8, 16, 32 and 64 bit accesses, except on
 ; 32-bit system where the 64-bit accesses requires hand coding.
