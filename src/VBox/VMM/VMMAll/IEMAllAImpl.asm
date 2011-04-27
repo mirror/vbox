@@ -203,12 +203,7 @@
         pop     T1
         mov     T0_32, [%1]             ; flags
         and     T0_32, ~(%2 | %3)       ; clear the modified & undefined flags.
-  %ifndef IEM_VERIFICATION_MODE
         and     T1_32, (%2 | %3)        ; select the modified and undefined flags.
-  %else
-        and     T1_32, (%2)             ; select the modified flags, leave the
-                                        ; undefined cleared. This matches REM better.
-  %endif
         or      T0_32, T1_32            ; combine the flags.
         mov     [%1], T0_32             ; save the flags.
  %endif
@@ -227,9 +222,8 @@
 ;
 ; @param        1       The instruction mnemonic.
 ; @param        2       Non-zero if there should be a locked version.
-; @param        3       If non-zero, load the affected flags prior to
-;                       execution (for dealing with undefined flags).
-; @param        4       The affected flags.
+; @param        3       The modified flags.
+; @param        4       The undefined flags.
 ;
 %macro IEMIMPL_BIN_OP 4
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
@@ -327,11 +321,158 @@ IEMIMPL_BIN_OP add,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86
 IEMIMPL_BIN_OP adc,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
 IEMIMPL_BIN_OP sub,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
 IEMIMPL_BIN_OP sbb,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
-IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
-IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
+IEMIMPL_BIN_OP or,   1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF,
+IEMIMPL_BIN_OP xor,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF,
+IEMIMPL_BIN_OP and,  1, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF,
 IEMIMPL_BIN_OP cmp,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF
+IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), X86_EFL_AF,
+
+
+;;
+; Macro for implementing a bit operator.
+;
+; This will generate code for the 16, 32 and 64 bit accesses with locked
+; variants, except on 32-bit system where the 64-bit accesses requires hand
+; coding.
+;
+; All the functions takes a pointer to the destination memory operand in A0,
+; the source register operand in A1 and a pointer to eflags in A2.
+;
+; @param        1       The instruction mnemonic.
+; @param        2       Non-zero if there should be a locked version.
+; @param        3       The modified flags.
+; @param        4       The undefined flags.
+;
+%macro IEMIMPL_BIT_OP 4
+BEGINPROC iemAImpl_ %+ %1 %+ _u16
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        %1      word [A0], A1_16
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u16
+
+BEGINPROC iemAImpl_ %+ %1 %+ _u32
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        %1      dword [A0], A1_32
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        %1      qword [A0], A1
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %else ; stub it for now - later, replace with hand coded stuff.
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        int3
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+  %endif ; !RT_ARCH_AMD64
+
+ %if %2 != 0 ; locked versions requested?
+
+BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        lock %1 word [A0], A1_16
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
+
+BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        lock %1 dword [A0], A1_32
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
+
+  %ifdef RT_ARCH_AMD64
+BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
+        lock %1 qword [A0], A1
+        IEM_SAVE_FLAGS                 A2, %3, %4
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
+  %else ; stub it for now - later, replace with hand coded stuff.
+BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+        int3
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
+  %endif ; !RT_ARCH_AMD64
+ %endif ; locked
+%endmacro
+IEMIMPL_BIT_OP bt,  0, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_BIT_OP btc, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_BIT_OP bts, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_BIT_OP btr, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+
+;;
+; Macro for implementing a bit search operator.
+;
+; This will generate code for the 16, 32 and 64 bit accesses, except on 32-bit
+; system where the 64-bit accesses requires hand coding.
+;
+; All the functions takes a pointer to the destination memory operand in A0,
+; the source register operand in A1 and a pointer to eflags in A2.
+;
+; @param        1       The instruction mnemonic.
+; @param        2       The modified flags.
+; @param        3       The undefined flags.
+;
+%macro IEMIMPL_BIT_OP 3
+BEGINPROC iemAImpl_ %+ %1 %+ _u16
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        %1      T0_16, A1_16
+        mov     [A0], T0_16
+        IEM_SAVE_FLAGS                 A2, %2, %3
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u16
+
+BEGINPROC iemAImpl_ %+ %1 %+ _u32
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        %1      T0_32, A1_32
+        mov     [A0], T0_32
+        IEM_SAVE_FLAGS                 A2, %2, %3
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u32
+
+ %ifdef RT_ARCH_AMD64
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
+        %1      T0, A1
+        mov     [A0], T0
+        IEM_SAVE_FLAGS                 A2, %2, %3
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %else ; stub it for now - later, replace with hand coded stuff.
+BEGINPROC iemAImpl_ %+ %1 %+ _u64
+        int3
+        ret
+ENDPROC iemAImpl_ %+ %1 %+ _u64
+ %endif ; !RT_ARCH_AMD64
+%endmacro
+IEMIMPL_BIT_OP bsf, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
+IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
 
 
 ;
@@ -617,15 +758,9 @@ IEMIMPL_SHIFT_OP rol, (X86_EFL_OF | X86_EFL_CF), 0
 IEMIMPL_SHIFT_OP ror, (X86_EFL_OF | X86_EFL_CF), 0
 IEMIMPL_SHIFT_OP rcl, (X86_EFL_OF | X86_EFL_CF), 0
 IEMIMPL_SHIFT_OP rcr, (X86_EFL_OF | X86_EFL_CF), 0
-%ifndef IEM_VERIFICATION_MODE
 IEMIMPL_SHIFT_OP shl, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
 IEMIMPL_SHIFT_OP shr, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
 IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF), (X86_EFL_AF)
-%else
-IEMIMPL_SHIFT_OP shl, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF | X86_EFL_AF), 0
-IEMIMPL_SHIFT_OP shr, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF | X86_EFL_AF), 0
-IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF | X86_EFL_AF), 0
-%endif
 
 
 ;;

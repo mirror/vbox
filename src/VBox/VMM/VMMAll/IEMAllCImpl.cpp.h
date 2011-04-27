@@ -1059,6 +1059,62 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
 
 /**
+ * Implements leave.
+ *
+ * We're doing this in C because messing with the stack registers is annoying
+ * since they depends on SS attributes.
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /* Calculate the intermediate RSP from RBP and the stack attributes. */
+    RTUINT64U       NewRsp;
+    if (pCtx->ssHid.Attr.n.u1Long)
+    {
+        /** @todo Check that LEAVE actually preserve the high EBP bits. */
+        NewRsp.u = pCtx->rsp;
+        NewRsp.Words.w0 = pCtx->bp;
+    }
+    else if (pCtx->ssHid.Attr.n.u1DefBig)
+        NewRsp.u = pCtx->ebp;
+    else
+        NewRsp.u = pCtx->rbp;
+
+    /* Pop RBP according to the operand size. */
+    VBOXSTRICTRC    rcStrict;
+    RTUINT64U       NewRbp;
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            NewRbp.u = pCtx->rbp;
+            rcStrict = iemMemStackPopU16Ex(pIemCpu, &NewRbp.Words.w0, &NewRsp);
+            break;
+        case IEMMODE_32BIT:
+            NewRbp.u = 0;
+            rcStrict = iemMemStackPopU32Ex(pIemCpu, &NewRbp.DWords.dw0, &NewRsp);
+            break;
+        case IEMMODE_64BIT:
+            rcStrict = iemMemStackPopU64Ex(pIemCpu, &NewRbp.u, &NewRsp);
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+
+    /* Commit it. */
+    pCtx->rbp = NewRbp.u;
+    pCtx->rsp = NewRsp.u;
+    iemRegAddToRip(pIemCpu, cbInstr);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Implements int3 and int XX.
  *
  * @param   u8Int       The interrupt vector number.

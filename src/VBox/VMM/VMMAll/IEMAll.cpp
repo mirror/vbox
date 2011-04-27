@@ -359,6 +359,60 @@ static const IEMOPBINSIZES g_iemAImpl_test =
     iemAImpl_test_u64, NULL
 };
 
+/** Function table for the BT instruction. */
+static const IEMOPBINSIZES g_iemAImpl_bt =
+{
+    NULL,  NULL,
+    iemAImpl_bt_u16, NULL,
+    iemAImpl_bt_u32, NULL,
+    iemAImpl_bt_u64, NULL
+};
+
+/** Function table for the BTC instruction. */
+static const IEMOPBINSIZES g_iemAImpl_btc =
+{
+    NULL,  NULL,
+    iemAImpl_btc_u16, iemAImpl_btc_u16_locked,
+    iemAImpl_btc_u32, iemAImpl_btc_u32_locked,
+    iemAImpl_btc_u64, iemAImpl_btc_u64_locked
+};
+
+/** Function table for the BTR instruction. */
+static const IEMOPBINSIZES g_iemAImpl_btr =
+{
+    NULL,  NULL,
+    iemAImpl_btr_u16, iemAImpl_btr_u16_locked,
+    iemAImpl_btr_u32, iemAImpl_btr_u32_locked,
+    iemAImpl_btr_u64, iemAImpl_btr_u64_locked
+};
+
+/** Function table for the BTS instruction. */
+static const IEMOPBINSIZES g_iemAImpl_bts =
+{
+    NULL,  NULL,
+    iemAImpl_bts_u16, iemAImpl_bts_u16_locked,
+    iemAImpl_bts_u32, iemAImpl_bts_u32_locked,
+    iemAImpl_bts_u64, iemAImpl_bts_u64_locked
+};
+
+/** Function table for the BSF instruction. */
+static const IEMOPBINSIZES g_iemAImpl_bsf =
+{
+    NULL,  NULL,
+    iemAImpl_bsf_u16, NULL,
+    iemAImpl_bsf_u32, NULL,
+    iemAImpl_bsf_u64, NULL
+};
+
+/** Function table for the BSR instruction. */
+static const IEMOPBINSIZES g_iemAImpl_bsr =
+{
+    NULL,  NULL,
+    iemAImpl_bsr_u16, NULL,
+    iemAImpl_bsr_u32, NULL,
+    iemAImpl_bsr_u64, NULL
+};
+
 /** Function table for the IMUL instruction. */
 static const IEMOPBINSIZES g_iemAImpl_imul_two =
 {
@@ -3714,6 +3768,25 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  (a_u16Value) += iemGRegFetchU16(pIemCpu, (a_iGReg))
 #define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  (a_u32Value) += iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  (a_u64Value) += iemGRegFetchU64(pIemCpu, (a_iGReg))
+#define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) do { (a_EffAddr) += (a_i16); } while (0)
+#define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) do { (a_EffAddr) += (a_i32); } while (0)
+#define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) do { (a_EffAddr) += (a_i64); } while (0)
+
+#define IEM_MC_AND_LOCAL_U16(a_u16Local, a_u16Mask)     do { (a_u16Local) &= (a_u16Mask); } while (0)
+#define IEM_MC_AND_LOCAL_U32(a_u32Local, a_u32Mask)     do { (a_u32Local) &= (a_u32Mask); } while (0)
+#define IEM_MC_AND_LOCAL_U64(a_u64Local, a_u64Mask)     do { (a_u64Local) &= (a_u64Mask); } while (0)
+
+#define IEM_MC_AND_ARG_U16(a_u16Arg, a_u16Mask)         do { (a_u16Arg) &= (a_u16Mask); } while (0)
+#define IEM_MC_AND_ARG_U32(a_u32Arg, a_u32Mask)         do { (a_u32Arg) &= (a_u32Mask); } while (0)
+#define IEM_MC_AND_ARG_U64(a_u64Arg, a_u64Mask)         do { (a_u64Arg) &= (a_u64Mask); } while (0)
+
+#define IEM_MC_SAR_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) >>= (a_cShift);  } while (0)
+#define IEM_MC_SAR_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) >>= (a_cShift);  } while (0)
+#define IEM_MC_SAR_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) >>= (a_cShift);  } while (0)
+
+#define IEM_MC_SHL_LOCAL_S16(a_i16Local, a_cShift)      do { (a_i16Local) <<= (a_cShift);  } while (0)
+#define IEM_MC_SHL_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) <<= (a_cShift);  } while (0)
+#define IEM_MC_SHL_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) <<= (a_cShift);  } while (0)
 
 
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u |= (a_fBit); } while (0)
@@ -4009,9 +4082,11 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  */
 #ifdef DEBUG
 # define IEMOP_MNEMONIC(a_szMnemonic) \
-    Log2(("decode - %04x:%08RGv %s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, a_szMnemonic))
+    Log2(("decode - %04x:%08RGv %s%s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic))
 # define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) \
-    Log2(("decode - %04x:%08RGv %s %s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, a_szMnemonic, a_szOps))
+    Log2(("decode - %04x:%08RGv %s%s %s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, a_szOps))
 #else
 # define IEMOP_MNEMONIC(a_szMnemonic) do { } while (0)
 # define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) do { } while (0)
@@ -4419,8 +4494,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
      */
     pIemCpu->cIOReads    = 0;
     pIemCpu->cIOWrites   = 0;
-    pIemCpu->fMulDivHack = false;
-    pIemCpu->fShiftOfHack= false;
+    pIemCpu->fUndefinedEFlags = 0;
 
     if (IEM_VERIFICATION_ENABLED(pIemCpu))
     {
@@ -4623,6 +4697,56 @@ static VBOXSTRICTRC iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uin
 
 
 /**
+ * Used to add extra details about a stub case.
+ * @param   pIemCpu     The IEM per CPU state.
+ */
+static void iemVerifyAssertMsg2(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    PVM      pVM   = IEMCPU_TO_VM(pIemCpu);
+    PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    char szRegs[4096];
+    DBGFR3RegPrintf(pVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+                    "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
+                    "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
+                    "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
+                    "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
+                    "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
+                    "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
+                    "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
+                    "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
+                    "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
+                    "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
+                    "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
+                    "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
+                    "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
+                    "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
+                    "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
+                    "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
+                    "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
+                    "        efer=%016VR{efer}\n"
+                    "         pat=%016VR{pat}\n"
+                    "     sf_mask=%016VR{sf_mask}\n"
+                    "krnl_gs_base=%016VR{krnl_gs_base}\n"
+                    "       lstar=%016VR{lstar}\n"
+                    "        star=%016VR{star} cstar=%016VR{cstar}\n"
+                    "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                    );
+
+    char szInstr1[256];
+    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip - pIemCpu->offOpcode,
+                       DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                       szInstr1, sizeof(szInstr1), NULL);
+    char szInstr2[256];
+    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0,
+                       DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                       szInstr2, sizeof(szInstr2), NULL);
+
+    RTAssertMsg2Weak("%s%s\n%s\n", szRegs, szInstr1, szInstr2);
+}
+
+
+/**
  * Used by iemVerifyAssertRecord and iemVerifyAssertRecords to add a record
  * dump to the assertion info.
  *
@@ -4676,7 +4800,7 @@ static void iemVerifyAssertRecords(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec1, P
     RTAssertMsg1(pszMsg, __LINE__, __FILE__, __PRETTY_FUNCTION__);
     iemVerifyAssertAddRecordDump(pEvtRec1);
     iemVerifyAssertAddRecordDump(pEvtRec2);
-    iemOpStubMsg2(pIemCpu);
+    iemVerifyAssertMsg2(pIemCpu);
     RTAssertPanic();
 }
 
@@ -4693,7 +4817,7 @@ static void iemVerifyAssertRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec, con
 {
     RTAssertMsg1(pszMsg, __LINE__, __FILE__, __PRETTY_FUNCTION__);
     iemVerifyAssertAddRecordDump(pEvtRec);
-    iemOpStubMsg2(pIemCpu);
+    iemVerifyAssertMsg2(pIemCpu);
     RTAssertPanic();
 }
 
@@ -4730,7 +4854,7 @@ static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
                                 pEvtRec->u.RamWrite.cb, abBuf,
                                 pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
                 iemVerifyAssertAddRecordDump(pEvtRec);
-                iemOpStubMsg2(pIemCpu);
+                iemVerifyAssertMsg2(pIemCpu);
                 RTAssertPanic();
             }
         }
@@ -4815,16 +4939,50 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             {
                 RTAssertMsg2Weak("  the FPU state differs\n");
                 cDiffs++;
+                CHECK_FIELD(fpu.FCW);
+                CHECK_FIELD(fpu.FSW);
+                CHECK_FIELD(fpu.FTW);
+                CHECK_FIELD(fpu.FOP);
+                CHECK_FIELD(fpu.FPUIP);
+                CHECK_FIELD(fpu.CS);
+                CHECK_FIELD(fpu.Rsrvd1);
+                CHECK_FIELD(fpu.FPUDP);
+                CHECK_FIELD(fpu.DS);
+                CHECK_FIELD(fpu.Rsrvd2);
+                CHECK_FIELD(fpu.MXCSR);
+                CHECK_FIELD(fpu.MXCSR_MASK);
+                CHECK_FIELD(fpu.aRegs[0].au64[0]); CHECK_FIELD(fpu.aRegs[0].au64[1]);
+                CHECK_FIELD(fpu.aRegs[1].au64[0]); CHECK_FIELD(fpu.aRegs[1].au64[1]);
+                CHECK_FIELD(fpu.aRegs[2].au64[0]); CHECK_FIELD(fpu.aRegs[2].au64[1]);
+                CHECK_FIELD(fpu.aRegs[3].au64[0]); CHECK_FIELD(fpu.aRegs[3].au64[1]);
+                CHECK_FIELD(fpu.aRegs[4].au64[0]); CHECK_FIELD(fpu.aRegs[4].au64[1]);
+                CHECK_FIELD(fpu.aRegs[5].au64[0]); CHECK_FIELD(fpu.aRegs[5].au64[1]);
+                CHECK_FIELD(fpu.aRegs[6].au64[0]); CHECK_FIELD(fpu.aRegs[6].au64[1]);
+                CHECK_FIELD(fpu.aRegs[7].au64[0]); CHECK_FIELD(fpu.aRegs[7].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 0].au64[0]);  CHECK_FIELD(fpu.aXMM[ 0].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 1].au64[0]);  CHECK_FIELD(fpu.aXMM[ 1].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 2].au64[0]);  CHECK_FIELD(fpu.aXMM[ 2].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 3].au64[0]);  CHECK_FIELD(fpu.aXMM[ 3].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 4].au64[0]);  CHECK_FIELD(fpu.aXMM[ 4].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 5].au64[0]);  CHECK_FIELD(fpu.aXMM[ 5].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 6].au64[0]);  CHECK_FIELD(fpu.aXMM[ 6].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 7].au64[0]);  CHECK_FIELD(fpu.aXMM[ 7].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 8].au64[0]);  CHECK_FIELD(fpu.aXMM[ 8].au64[1]);
+                CHECK_FIELD(fpu.aXMM[ 9].au64[0]);  CHECK_FIELD(fpu.aXMM[ 9].au64[1]);
+                CHECK_FIELD(fpu.aXMM[10].au64[0]);  CHECK_FIELD(fpu.aXMM[10].au64[1]);
+                CHECK_FIELD(fpu.aXMM[11].au64[0]);  CHECK_FIELD(fpu.aXMM[11].au64[1]);
+                CHECK_FIELD(fpu.aXMM[12].au64[0]);  CHECK_FIELD(fpu.aXMM[12].au64[1]);
+                CHECK_FIELD(fpu.aXMM[13].au64[0]);  CHECK_FIELD(fpu.aXMM[13].au64[1]);
+                CHECK_FIELD(fpu.aXMM[14].au64[0]);  CHECK_FIELD(fpu.aXMM[14].au64[1]);
+                CHECK_FIELD(fpu.aXMM[15].au64[0]);  CHECK_FIELD(fpu.aXMM[15].au64[1]);
+                for (unsigned i = 0; i < RT_ELEMENTS(pOrgCtx->fpu.au32RsrvdRest); i++)
+                    CHECK_FIELD(fpu.au32RsrvdRest[i]);
             }
             else
                 RTAssertMsg2Weak("  the FPU state differs - happens the first time...\n");
         }
         CHECK_FIELD(rip);
-        uint32_t fFlagsMask = UINT32_MAX;
-        if (pIemCpu->fMulDivHack)
-            fFlagsMask &= ~(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-        if (pIemCpu->fShiftOfHack)
-            fFlagsMask &= ~(X86_EFL_OF | X86_EFL_AF);
+        uint32_t fFlagsMask = UINT32_MAX & ~pIemCpu->fUndefinedEFlags;
         if ((pOrgCtx->rflags.u & fFlagsMask) != (pDebugCtx->rflags.u & fFlagsMask))
         {
             RTAssertMsg2Weak("  rflags differs - iem=%08llx rem=%08llx\n", pDebugCtx->rflags.u, pOrgCtx->rflags.u);
@@ -4908,7 +5066,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         if (cDiffs != 0)
         {
             RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__);
-            iemOpStubMsg2(pIemCpu);
+            iemVerifyAssertMsg2(pIemCpu);
             RTAssertPanic();
         }
 #  undef CHECK_FIELD
@@ -4995,6 +5153,12 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             iemVerifyAssertRecord(pIemCpu, pIemRec, "Extra Other record!");
     }
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
+
+    /*
+     * HACK ALERT! You don't normally want to verify a whole boot sequence.
+     */
+    if (pIemCpu->cInstructions == 1)
+        RTLogFlags(NULL, "disabled");
 }
 
 #else  /* !IEM_VERIFICATION_MODE || !IN_RING3 */

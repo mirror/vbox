@@ -164,16 +164,13 @@ typedef struct IEMCPU
     uint32_t                cIOReads;
     /** The Number of I/O port writes that has been performed. */
     uint32_t                cIOWrites;
-    /** Hack for ignoring differences in undefined EFLAGS after MUL and DIV. */
-    bool                    fMulDivHack;
-    /** Hack for ignoring differences in OF after shifts greater than 1 bit.
-     * At least two intel CPUs this code is running on will set it different
-     * than what AMD and REM does. */
-    bool                    fShiftOfHack;
     /** Set if no comparison to REM is currently performed.
      * This is used to skip past really slow bits.  */
     bool                    fNoRem;
-    bool                    afAlignment1[5];
+    bool                    afAlignment1[3];
+    /** Mask of undefined eflags.
+     * The verifier will any difference in these flags. */
+    uint32_t                fUndefinedEFlags;
     /** The physical address corresponding to abOpcodes[0]. */
     RTGCPHYS                GCPhysOpcodes;
 #endif
@@ -352,6 +349,19 @@ typedef IEMCPU *PIEMCPU;
 # define IEM_VERIFICATION_ENABLED(a_pIemCpu)    (false)
 #endif
 
+/**
+ * Indicates to the verifier that the given flag set is undefined.
+ *
+ * Can be invoked again to add more flags.
+ *
+ * This is a NOOP if the verifier isn't compiled in.
+ */
+#ifdef IEM_VERIFICATION_MODE
+# define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { pIemCpu->fUndefinedEFlags |= (a_fEfl); } while (0)
+#else
+# define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { } while (0)
+#endif
+
 
 /** @def IEM_DECL_IMPL_TYPE
  * For typedef'ing an instruction implementation function.
@@ -457,6 +467,22 @@ FNIEMAIMPLBINU32 iemAImpl_test_u32;
 FNIEMAIMPLBINU64 iemAImpl_test_u64;
 /** @}  */
 
+/** @name Bit operations operations (thrown in with the binary ops).
+ * @{ */
+FNIEMAIMPLBINU16 iemAImpl_bt_u16,  iemAImpl_bt_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_bt_u32,  iemAImpl_bt_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_bt_u64,  iemAImpl_bt_u64_locked;
+FNIEMAIMPLBINU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;
+FNIEMAIMPLBINU16 iemAImpl_btr_u16, iemAImpl_btr_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_btr_u32, iemAImpl_btr_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_btr_u64, iemAImpl_btr_u64_locked;
+FNIEMAIMPLBINU16 iemAImpl_bts_u16, iemAImpl_bts_u16_locked;
+FNIEMAIMPLBINU32 iemAImpl_bts_u32, iemAImpl_bts_u32_locked;
+FNIEMAIMPLBINU64 iemAImpl_bts_u64, iemAImpl_bts_u64_locked;
+/** @}  */
+
 /** @name Exchange memory with register operations.
  * @{ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
@@ -479,6 +505,17 @@ FNIEMAIMPLSHIFTDBLU64 iemAImpl_shld_u64;
 FNIEMAIMPLSHIFTDBLU16 iemAImpl_shrd_u16;
 FNIEMAIMPLSHIFTDBLU32 iemAImpl_shrd_u32;
 FNIEMAIMPLSHIFTDBLU64 iemAImpl_shrd_u64;
+/** @}  */
+
+
+/** @name Bit search operations (thrown in with the binary ops).
+ * @{ */
+FNIEMAIMPLBINU16 iemAImpl_bsf_u16;
+FNIEMAIMPLBINU32 iemAImpl_bsf_u32;
+FNIEMAIMPLBINU64 iemAImpl_bsf_u64;
+FNIEMAIMPLBINU16 iemAImpl_bsr_u16;
+FNIEMAIMPLBINU32 iemAImpl_bsr_u32;
+FNIEMAIMPLBINU64 iemAImpl_bsr_u64;
 /** @}  */
 
 /** @name Signed multiplication operations (thrown in with the binary ops).
