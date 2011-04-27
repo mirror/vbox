@@ -2257,6 +2257,13 @@ typedef const X86DESC *PCX86DESC;
         (  ((uint32_t)((desc).Gen.u4LimitHigh) << 16) \
          | (           (desc).Gen.u16LimitLow       ) )
 
+/** @def X86DESC_GET_HID_ATTR
+ * Get the descriptor attributes for the hidden register.
+ */
+#define X86DESC_GET_HID_ATTR(desc) /*ASM-NOINC*/ \
+        ( (desc.u >> (16+16+8)) & UINT32_C(0xf0ff) ) /** @todo do we have a define for 0xf0ff? */
+
+
 /**
  * 64 bits generic descriptor table entry
  * Note: most of these bits have no meaning in long mode.

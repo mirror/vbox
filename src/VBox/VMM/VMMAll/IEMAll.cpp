@@ -49,6 +49,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #ifdef IEM_VERIFICATION_MODE
 # include <VBox/vmm/rem.h>
@@ -261,6 +262,13 @@ typedef IEMSELDESC *PIEMSELDESC;
  * Tests if an AMD CPUID feature (extended) is marked present - ECX.
  */
 #define IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(a_fEcx)    iemRegIsAmdCpuIdFeaturePresent(pIemCpu, 0, (a_fEcx))
+
+/**
+ * Checks if a intel CPUID feature is present.
+ */
+#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)  \
+    (   ((a_fEdx) & (X86_CPUID_FEATURE_EDX_TSC | 0)) \
+     || iemRegIsIntelCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0) )
 
 /**
  * Check if the address is canonical.
@@ -1201,6 +1209,11 @@ static VBOXSTRICTRC iemRaiseDivideError(PIEMCPU pIemCpu)
     return VERR_NOT_IMPLEMENTED;
 }
 
+static VBOXSTRICTRC iemRaiseDebugException(PIEMCPU pIemCpu)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
 
 static VBOXSTRICTRC iemRaiseUndefinedOpcode(PIEMCPU pIemCpu)
 {
@@ -2088,6 +2101,26 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PCC
 
 
 /**
+ * Checks if an Intel CPUID feature bit is set.
+ *
+ * @returns true / false.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   fEdx                The EDX bit to test, or 0 if ECX.
+ * @param   fEcx                The ECX bit to test, or 0 if EDX.
+ * @remarks Used via IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX,
+ *          IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX and others.
+ */
+static bool iemRegIsIntelCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
+{
+    uint32_t uEax, uEbx, uEcx, uEdx;
+    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x00000001, &uEax, &uEbx, &uEcx, &uEdx);
+    return (fEcx && (uEcx & fEcx))
+        || (fEdx && (uEdx & fEdx));
+}
+
+
+/**
  * Checks if an AMD CPUID feature bit is set.
  *
  * @returns true / false.
@@ -2095,7 +2128,8 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PCC
  * @param   pIemCpu             The IEM per CPU data.
  * @param   fEdx                The EDX bit to test, or 0 if ECX.
  * @param   fEcx                The ECX bit to test, or 0 if EDX.
- * @remarks Used via IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX.
+ * @remarks Used via IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX,
+ *          IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX and others.
  */
 static bool iemRegIsAmdCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
 {
@@ -3623,12 +3657,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         rcStrict = iemMemMap(pIemCpu, (void **)&pu32, 8, UINT8_MAX, GCPtr, IEM_ACCESS_DATA_RW);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-        switch (GCPtr & 3)
+        switch ((uintptr_t)pu32 & 3)
         {
-            case 0: ASMAtomicBitSet(pu32,                         40     ); break;
-            case 1: ASMAtomicBitSet((uint8_t volatile *)pu32 + 3, 40 - 24); break;
-            case 2: ASMAtomicBitSet((uint8_t volatile *)pu32 + 2, 40 - 16); break;
-            case 3: ASMAtomicBitSet((uint8_t volatile *)pu32 + 1, 40 -  8); break;
+            case 0: ASMAtomicBitSet(pu32,                         40 + 0 -  0); break;
+            case 1: ASMAtomicBitSet((uint8_t volatile *)pu32 + 3, 40 + 0 - 24); break;
+            case 2: ASMAtomicBitSet((uint8_t volatile *)pu32 + 2, 40 + 0 - 16); break;
+            case 3: ASMAtomicBitSet((uint8_t volatile *)pu32 + 1, 40 + 0 -  8); break;
         }
     }
 
@@ -4044,9 +4078,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     if (   (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) \
         ||    !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
            != !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit2)) ) {
-#define IEM_MC_IF_EFL_BIT_NOT_SET_OR_BITS_EQ(a_fBit, a_fBit1, a_fBit2) \
+#define IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ(a_fBit, a_fBit1, a_fBit2) \
     if (   !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) \
-        ||    !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
+        &&    !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit1)) \
            == !!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit2)) ) {
 #define IEM_MC_IF_CX_IS_NZ()                            if (pIemCpu->CTX_SUFF(pCtx)->cx != 0) {
 #define IEM_MC_IF_ECX_IS_NZ()                           if (pIemCpu->CTX_SUFF(pCtx)->ecx != 0) {
