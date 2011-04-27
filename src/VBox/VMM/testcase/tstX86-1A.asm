@@ -37,6 +37,7 @@ endstruc
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 BEGINDATA
 extern NAME(g_pbEfPage)
+extern NAME(g_pbEfExecPage)
 
 g_szAlpha:
         db      "abcdefghijklmnopqrstuvwxyz", 0
@@ -52,8 +53,16 @@ GLOBALNAME g_aTrapInfo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;   Defined Constants And Macros                                              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+%define X86_XCPT_UD 6
 %define X86_XCPT_GP 13
 %define X86_XCPT_PF 14
+
+;; Reference a global variable
+%ifdef RT_ARCH_AMD64
+ %define REF_GLOBAL(a_Name)     [NAME(a_Name) wrt rip]
+%else
+ %define REF_GLOBAL(a_Name)     [NAME(a_Name)]
+%endif
 
 ;;
 ; Macro for recording a trapping instruction (simple).
@@ -61,20 +70,20 @@ GLOBALNAME g_aTrapInfo
 ; @param        1       The trap number.
 ; @param        2+      The instruction which should trap.
 %macro ShouldTrap 2+
-..trap:
+%%trap:
         %2
-..trap_end:
+%%trap_end:
         mov     eax, __LINE__
         jmp     .failed
 BEGINDATA
-..trapinfo: istruc TRAPINFO
-        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     ..trap
-        at TRAPINFO.uResumePC,  RTCCPTR_DEF     ..resume
+%%trapinfo: istruc TRAPINFO
+        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
+        at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
         at TRAPINFO.u8TrapNo,   db              %1
-        at TRAPINFO.cbInstr,    db              (..trap_end - ..trap)
+        at TRAPINFO.cbInstr,    db              (%%trap_end - %%trap)
 iend
 BEGINCODE
-..resume:
+%%resume:
 %endmacro
 
 
@@ -299,7 +308,7 @@ BEGINPROC x861_Test1
 
         ; Loading is always a word access.
         mov     eax, __LINE__
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         lea     xDI, [xDI + 0x1000 - 2]
         mov     xDX, es
         mov     [xDI], dx
@@ -307,7 +316,7 @@ BEGINPROC x861_Test1
 
         ; Saving is always a word access.
         mov     eax, __LINE__
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         mov     dword [xDI + 0x1000 - 4], -1
         mov     [xDI + 0x1000 - 2], ss ; Should not crash.
         mov     bx, ss
@@ -319,7 +328,7 @@ BEGINPROC x861_Test1
         ; Check that the rex.R and rex.W bits don't have any influence over a memory write.
         call    x861_ClearRegisters
         mov     eax, __LINE__
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         mov     dword [xDI + 0x1000 - 4], -1
         db 04ah
         mov     [xDI + 0x1000 - 2], ss ; Should not crash.
@@ -383,12 +392,12 @@ BEGINPROC x861_Test1
         cld
         mov     dx, ds
         mov     es, dx
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         xor     eax, eax
         mov     ecx, 01000h
         rep stosb
 
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         mov     ecx, 4
         mov     eax, 0ffh
         db 0f2h                         ; repne
@@ -397,13 +406,13 @@ BEGINPROC x861_Test1
         cmp     ecx, 0
         jne     .failed
         mov     eax, __LINE__
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         cmp     dword [xDI], 0ffffffffh
         jne     .failed
         cmp     dword [xDI+4], 0
         jne     .failed
 
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         mov     ecx, 4
         mov     eax, 0feh
         db 0f3h                         ; repe
@@ -412,7 +421,7 @@ BEGINPROC x861_Test1
         cmp     ecx, 0
         jne     .failed
         mov     eax, __LINE__
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         cmp     dword [xDI], 0fefefefeh
         jne     .failed
         cmp     dword [xDI+4], 0
@@ -425,7 +434,7 @@ BEGINPROC x861_Test1
         cld
         mov     dx, ds
         mov     es, dx
-        mov     xDI, [NAME(g_pbEfPage)]
+        mov     xDI, REF_GLOBAL(g_pbEfPage)
         xor     xCX, xCX
         rep stosb                       ; no trap
 
@@ -451,6 +460,28 @@ BEGINPROC x861_Test1
         test    ebx, X86_CR0_PE
         jz      .failed
 
+        ;
+        ; Will the CPU decode the whole r/m+sib stuff before signalling a lock
+        ; prefix error?  Use the EF exec page and a LOCK ADD CL,[rDI + disp32]
+        ; instruction at the very end of it.
+        ;
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 4h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+3], 000h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 7h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     dword [xDI+3], 000000000h
+        ShouldTrap X86_XCPT_UD, call xDI
 
 
 
