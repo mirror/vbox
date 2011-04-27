@@ -1365,6 +1365,11 @@ Virtual system 0:
       </listitem>
 
       <listitem>
+        <para><computeroutput>screenshotpng</computeroutput> takes a screenshot
+        of the guest display and saves it in PNG format.</para>
+      </listitem>
+
+      <listitem>
         <para>The <computeroutput>setcredentials</computeroutput> operation is
         used for remote logons in Windows guests. For details, please refer to
         <xref linkend="autologon" />.</para>
