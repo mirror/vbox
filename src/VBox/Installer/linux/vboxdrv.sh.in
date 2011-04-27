@@ -208,7 +208,7 @@ start()
     # Create the /dev/vboxusb directory if the host supports that method
     # of USB access.  The USB code checks for the existance of that path.
     if grep -q usb_device /proc/devices; then
-        mkdir -p -m 0640 /dev/vboxusb 2>/dev/null
+        mkdir -p -m 0750 /dev/vboxusb 2>/dev/null
         chown root:vboxusers /dev/vboxusb 2>/dev/null
     fi
     succ_msg
