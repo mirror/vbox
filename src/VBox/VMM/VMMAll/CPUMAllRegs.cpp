@@ -492,8 +492,6 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
-    AssertMsgFailed(("Need to load the hidden bits too!\n"));
-
     pVCpu->cpum.s.Guest.tr  = tr;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS;
