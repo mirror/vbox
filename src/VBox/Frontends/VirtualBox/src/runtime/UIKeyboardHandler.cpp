@@ -1131,7 +1131,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         }
     }
     /* Check if we are currently holding FULL host-combo: */
-    bool fIsFullHostComboPresent = allHostComboKeys == m_pressedHostComboKeys.keys().toSet();
+    bool fIsFullHostComboPresent = !allHostComboKeys.isEmpty() && allHostComboKeys == m_pressedHostComboKeys.keys().toSet();
     /* Check if currently pressed/released key had changed host-combo state: */
     const bool isHostComboStateChanged = (!m_bIsHostComboPressed &&  fIsFullHostComboPresent) ||
                                          ( m_bIsHostComboPressed && !fIsFullHostComboPresent);
