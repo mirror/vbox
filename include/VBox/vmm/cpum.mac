@@ -216,7 +216,7 @@ struc X86FXSTATE
     .FPUIP          resd    1
     ;/** Code selector. */
     .CS             resw    1
-    .Rsvrd1         resw    1
+    .Rsrvd1         resw    1
     ;/* - offset 16 - */
     ;/** Data pointer. */
     .FPUDP          resd    1

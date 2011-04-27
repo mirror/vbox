@@ -2488,7 +2488,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
 
             pHlp->pfnPrintf(pHlp,
                 "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
-                "%sFPUIP=%08x %sCS=%04x %sRsvrd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
+                "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
                 ,
                 pszPrefix, pCtx->fpu.FCW,   pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW, pszPrefix, pCtx->fpu.FOP,
                 pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK,
