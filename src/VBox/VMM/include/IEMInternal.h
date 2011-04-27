@@ -465,6 +465,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32,(uint32_t *pu32Mem, uint32_t *pu32Reg)
 IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *pu64Mem, uint64_t *pu64Reg));
 /** @}  */
 
+/** @name Double precision shifts
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTDBLU16,(uint16_t *pu16Dst, uint16_t u16Src, uint8_t cShift, uint32_t *pEFlags));
+typedef FNIEMAIMPLSHIFTDBLU16  *PFNIEMAIMPLSHIFTDBLU16;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTDBLU32,(uint32_t *pu32Dst, uint32_t u32Src, uint8_t cShift, uint32_t *pEFlags));
+typedef FNIEMAIMPLSHIFTDBLU32  *PFNIEMAIMPLSHIFTDBLU32;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLSHIFTDBLU64,(uint64_t *pu64Dst, uint64_t u64Src, uint8_t cShift, uint32_t *pEFlags));
+typedef FNIEMAIMPLSHIFTDBLU64  *PFNIEMAIMPLSHIFTDBLU64;
+FNIEMAIMPLSHIFTDBLU16 iemAImpl_shld_u16;
+FNIEMAIMPLSHIFTDBLU32 iemAImpl_shld_u32;
+FNIEMAIMPLSHIFTDBLU64 iemAImpl_shld_u64;
+FNIEMAIMPLSHIFTDBLU16 iemAImpl_shrd_u16;
+FNIEMAIMPLSHIFTDBLU32 iemAImpl_shrd_u32;
+FNIEMAIMPLSHIFTDBLU64 iemAImpl_shrd_u64;
+/** @}  */
+
 /** @name Signed multiplication operations (thrown in with the binary ops).
  * @{ */
 FNIEMAIMPLBINU16 iemAImpl_imul_two_u16;
