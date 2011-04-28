@@ -777,6 +777,12 @@ typedef struct {
     } scsi_t;
 #endif
 
+#ifdef VBOX_WITH_BIOS_AHCI
+  typedef struct {
+    Bit16u iobase;
+    } ahci_t;
+#endif
+
   // for access to EBDA area
   //     The EBDA structure should conform to
   //     http://www.frontiernet.net/~fys/rombios.htm document
@@ -804,6 +810,10 @@ typedef struct {
     // SCSI Driver data
     scsi_t scsi;
 # endif
+
+#ifdef VBOX_WITH_BIOS_AHCI
+    ahci_t ahci;
+#endif
 
     unsigned char uForceBootDrive;
     unsigned char uForceBootDevice;
@@ -927,7 +937,13 @@ static Bit8u          inb_cmos();
 static void           outb();
 static void           outb_cmos();
 static Bit16u         inw();
+#ifdef VBOX_WITH_BIOS_AHCI
+static Bit32u         inl();
+#endif
 static void           outw();
+#ifdef VBOX_WITH_BIOS_AHCI
+static void           outl();
+#endif
 static void           init_rtc();
 static bx_bool        rtc_updating();
 
@@ -1264,6 +1280,25 @@ ASM_END
 }
 #endif
 
+#ifdef VBOX_WITH_BIOS_AHCI
+  Bit32u
+inl(port)
+  Bit16u port;
+{
+ASM_START
+  push bp
+  mov  bp, sp
+
+    push dx
+    mov  dx, 4[bp]
+    in   eax, dx
+    pop  dx
+
+  pop  bp
+ASM_END
+}
+#endif
+
   void
 outb(port, val)
   Bit16u port;
@@ -1302,6 +1337,29 @@ ASM_START
     out  dx, ax
     pop  dx
     pop  ax
+
+  pop  bp
+ASM_END
+}
+#endif
+
+#ifdef VBOX_WITH_BIOS_AHCI
+  void
+outl(port, val)
+  Bit16u port;
+  Bit32u  val;
+{
+ASM_START
+  push bp
+  mov  bp, sp
+
+    push eax
+    push dx
+    mov  dx, _outl.port + 2[bp]
+    mov  eax, _outl.val + 2[bp]
+    out  dx, eax
+    pop  dx
+    pop  eax
 
   pop  bp
 ASM_END
@@ -3815,6 +3873,10 @@ cdrom_boot()
 
 #ifdef VBOX_WITH_SCSI
 #  include "scsi.c"
+#endif
+
+#ifdef VBOX_WITH_BIOS_AHCI
+#  include "ahci.c"
 #endif
 
   void
@@ -11656,6 +11718,14 @@ post_default_ints:
   ;; SCSI driver setup
   ;;
   call _scsi_init
+  ;;
+#endif
+
+#ifdef VBOX_WITH_BIOS_AHCI
+  ;;
+  ;; AHCI driver setup
+  ;;
+  call _ahci_init
   ;;
 #endif
 
