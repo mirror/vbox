@@ -225,8 +225,6 @@ typedef struct VBOXNETFLTVNIC
     mac_client_handle_t         hClient;
     /** The unicast address handle.  */
     mac_unicast_handle_t        hUnicast;
-    /** The promiscuous handle (currently unused). */
-    mac_promisc_handle_t        hPromiscuous;
     /* The VNIC name. */
     char                        szName[MAXLINKNAMESPECIFIER];
     /** Handle to the next VNIC in the list. */
@@ -942,7 +940,6 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
     pVNIC->hLinkId         = DATALINK_INVALID_LINKID;
     pVNIC->hClient         = NULL;
     pVNIC->hUnicast        = NULL;
-    pVNIC->hPromiscuous    = NULL;
     RT_ZERO(pVNIC->szName);
     list_link_init(&pVNIC->hNode);
     return pVNIC;
@@ -954,7 +951,7 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
  *
  * @param   pVNIC           Pointer to the VNIC.
  */
-LOCAL void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
+LOCAL inline void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
 {
     if (pVNIC)
         RTMemFree(pVNIC);
@@ -971,12 +968,6 @@ LOCAL void vboxNetFltSolarisDestroyVNIC(PVBOXNETFLTVNIC pVNIC)
 {
     if (pVNIC)
     {
-        if (pVNIC->hPromiscuous)
-        {
-            mac_promisc_remove(pVNIC->hPromiscuous);
-            pVNIC->hPromiscuous = NULL;
-        }
-
         if (pVNIC->hClient)
         {
             if (pVNIC->hUnicast)
@@ -1189,34 +1180,6 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             if (pVNIC->hClient)
                 mac_rx_clear(pVNIC->hClient);
     }
-
-
-#if 0
-    if (fActive)
-    {
-        /*
-         * Activate promiscuous mode.
-         */
-        if (!pThis->u.s.hPromiscuous)
-        {
-            int rc = mac_promisc_add(pThis->u.s.hClient, MAC_CLIENT_PROMISC_ALL, vboxNetFltSolarisRecv, pThis, &pThis->u.s.hPromiscuous,
-                                    MAC_PROMISC_FLAGS_NO_TX_LOOP);
-            if (rc)
-                LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive cannot enable promiscuous mode for '%s' rc=%d\n", pThis->szName, rc));
-        }
-    }
-    else
-    {
-        /*
-         * Deactivate promiscuous mode.
-         */
-        if (pThis->u.s.hPromiscuous)
-        {
-            mac_promisc_remove(pThis->u.s.hPromiscuous);
-            pThis->u.s.hPromiscuous = NULL;
-        }
-    }
-#endif
 }
 
 
