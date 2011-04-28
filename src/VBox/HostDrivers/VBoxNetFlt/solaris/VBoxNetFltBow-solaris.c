@@ -692,7 +692,10 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
      * Active? Retain the instance and increment the busy counter.
      */
     if (!vboxNetFltTryRetainBusyActive(pThis))
+    {
+        freemsgchain(pMsg);
         return;
+    }
 
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
