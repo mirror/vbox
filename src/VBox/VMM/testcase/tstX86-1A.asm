@@ -39,10 +39,10 @@ BEGINDATA
 extern NAME(g_pbEfPage)
 extern NAME(g_pbEfExecPage)
 
-g_szAlpha:
+GLOBALNAME g_szAlpha
         db      "abcdefghijklmnopqrstuvwxyz", 0
 g_szAlpha_end:
-%define g_cchAlpha (g_szAlpha_end - g_szAlpha)
+%define g_cchAlpha (g_szAlpha_end - NAME(g_szAlpha))
         db      0, 0, 0,
 
 ;;
@@ -347,7 +347,7 @@ BEGINPROC x861_Test1
         mov     es, dx
 
         ; check that repne scasb (al=0) behaves like expected.
-        mov     xDI, g_szAlpha
+        lea     xDI, REF_GLOBAL(g_szAlpha)
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         repne scasb
@@ -356,7 +356,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; check that repe scasb (al=0) behaves like expected.
-        mov     xDI, g_szAlpha
+        lea     xDI, REF_GLOBAL(g_szAlpha)
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         repe scasb
@@ -365,7 +365,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; repne is last, it wins.
-        mov     xDI, g_szAlpha
+        lea     xDI, REF_GLOBAL(g_szAlpha)
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         db 0f3h                         ; repe  - ignored
@@ -376,7 +376,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; repe is last, it wins.
-        mov     xDI, g_szAlpha
+        lea     xDI, REF_GLOBAL(g_szAlpha)
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         db 0f2h                         ; repne - ignored
@@ -470,9 +470,9 @@ BEGINPROC x861_Test1
         add     xDI, 1000h - 8h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
-        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+2], 08fh
         mov     dword [xDI+3], 000000000h
-        mov     byte [xDI+7], 0ccFh
+        mov     byte [xDI+7], 0cch
         ShouldTrap X86_XCPT_UD, call xDI
 
         mov     eax, __LINE__
