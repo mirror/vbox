@@ -57,12 +57,13 @@ $$(PcBiosBin_0_OUTDIR)/PcBiosBin.c: $$(PcBiosBin_0_OUTDIR)/pcbios.bin $(VBOX_BIN
 $$(PcBiosBin_0_OUTDIR)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c \
 		$(PATH_SUB_CURRENT)/apmbios.S $(if $(VBOX_WITH_SCSI),$(PATH_SUB_CURRENT)/scsi.c) \
 		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h \
+		$(if $(VBOX_WITH_BIOS_AHCI),$(PATH_SUB_CURRENT)/ahci.c) \
 		$(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E \
 		-I$(PcBiosBin_0_OUTDIR) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) \
 		-DBX_SMP_PROCESSORS=1 -DVBOX -DVBOX_PC_BIOS $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) \
-		$(if $(VBOX_WITH_SCSI),-DVBOX_WITH_SCSI) \
+		$(if $(VBOX_WITH_SCSI),-DVBOX_WITH_SCSI) $(if $(VBOX_WITH_BIOS_AHCI),-DVBOX_WITH_BIOS_AHCI) \
 		-P -o $@ $<
 
 # 2. compile to intermediate asm file.
