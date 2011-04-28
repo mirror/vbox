@@ -1674,6 +1674,8 @@ int main()
     GEN_CHECK_OFF(HpetState, u64HpetConfig);
     GEN_CHECK_OFF(HpetState, u64Isr);
     GEN_CHECK_OFF(HpetState, u64HpetCounter);
+    GEN_CHECK_OFF(HpetState, csLock);
+    GEN_CHECK_OFF(HpetState, fIch9);
 
     GEN_CHECK_SIZE(HpetTimer);
     GEN_CHECK_OFF(HpetTimer, pTimerR3);
