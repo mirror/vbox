@@ -1209,6 +1209,8 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fPortReset);
     GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
+    GEN_CHECK_OFF(AHCIPort, fAsyncIOThreadIdle);
+    GEN_CHECK_OFF(AHCIPort, fRedo);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
@@ -1278,6 +1280,7 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaVs);
     GEN_CHECK_OFF(AHCI, regHbaCccCtl);
     GEN_CHECK_OFF(AHCI, regHbaCccPorts);
+    GEN_CHECK_OFF(AHCI, regIdx);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerR3);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerR0);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerRC);

@@ -579,6 +579,8 @@ typedef struct AHCI
 
     /** Base address of the MMIO region. */
     RTGCPHYS                        MMIOBase;
+    /** Base address of the I/O port region for Idx/Data. */
+    RTIOPORT                        IOPortBase;
 
     /** Global Host Control register of the HBA */
 
@@ -596,6 +598,9 @@ typedef struct AHCI
     uint32_t                        regHbaCccCtl;
     /** Command completion coalescing ports */
     uint32_t                        regHbaCccPorts;
+
+    /** Index register for BIOS access. */
+    uint32_t                        regIdx;
 
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment3;
@@ -2036,44 +2041,27 @@ static void ahciHBAReset(PAHCI pThis)
 #endif
 
 /**
- * Memory mapped I/O Handler for read operations.
+ * Reads from a AHCI controller register.
  *
  * @returns VBox status code.
  *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pAhci       The AHCI instance.
+ * @param   uReg        The register to write.
  * @param   pv          Where to store the result.
  * @param   cb          Number of bytes read.
  */
-PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    int   rc = VINF_SUCCESS;
-
-    /* Break up 64 bits reads into two dword reads. */
-    if (cb == 8)
-    {
-        rc = ahciMMIORead(pDevIns, pvUser, GCPhysAddr, pv, 4);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        return ahciMMIORead(pDevIns, pvUser, GCPhysAddr + 4, (uint8_t *)pv + 4, 4);
-    }
-
-    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
-          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
+    int rc = VINF_SUCCESS;
+    uint32_t iReg;
 
     /*
      * If the access offset is smaller than AHCI_HBA_GLOBAL_SIZE the guest accesses the global registers.
      * Otherwise it accesses the registers of a port.
      */
-    uint32_t uOffset = (GCPhysAddr - pAhci->MMIOBase);
-    uint32_t iReg;
-
-    if (uOffset < AHCI_HBA_GLOBAL_SIZE)
+    if (uReg < AHCI_HBA_GLOBAL_SIZE)
     {
-        iReg = uOffset >> 2;
+        iReg = uReg >> 2;
         Log3(("%s: Trying to read from global register %u\n", __FUNCTION__, iReg));
         if (iReg < RT_ELEMENTS(g_aOpRegs))
         {
@@ -2092,9 +2080,9 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         uint32_t iPort;
 
         /* Calculate accessed port. */
-        uOffset -= AHCI_HBA_GLOBAL_SIZE;
-        iPort = uOffset / AHCI_PORT_REGISTER_SIZE;
-        iRegOffset  = (uOffset % AHCI_PORT_REGISTER_SIZE);
+        uReg -= AHCI_HBA_GLOBAL_SIZE;
+        iPort = uReg / AHCI_PORT_REGISTER_SIZE;
+        iRegOffset  = (uReg % AHCI_PORT_REGISTER_SIZE);
         iReg = iRegOffset >> 2;
 
         Log3(("%s: Trying to read from port %u and register %u\n", __FUNCTION__, iPort, iReg));
@@ -2133,10 +2121,101 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     break;
                 }
                 default:
-                    AssertMsgFailed(("%s: unsupported access width cb=%d uOffset=%x iPort=%x iRegOffset=%x iReg=%x!!!\n", __FUNCTION__, cb, uOffset, iPort, iRegOffset, iReg));
+                    AssertMsgFailed(("%s: unsupported access width cb=%d iPort=%x iRegOffset=%x iReg=%x!!!\n",
+                                     __FUNCTION__, cb, iPort, iRegOffset, iReg));
             }
         }
     }
+
+    return rc;
+}
+
+/**
+ * Writes a value to one of the AHCI controller registers.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pAhci       The AHCI instance.
+ * @param   uReg        The register to write.
+ * @param   pv          Where to fetch the result.
+ * @param   cb          Number of bytes to write.
+ */
+static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t iReg;
+
+    if (uReg < AHCI_HBA_GLOBAL_SIZE)
+    {
+        Log3(("Write global HBA register\n"));
+        iReg = uReg >> 2;
+        if (iReg < RT_ELEMENTS(g_aOpRegs))
+        {
+            const AHCIOPREG *pReg = &g_aOpRegs[iReg];
+            rc = pReg->pfnWrite(pAhci, iReg, *(uint32_t *)pv);
+        }
+        else
+        {
+            Log3(("%s: Trying to write global register %u/%u!!!\n", __FUNCTION__, iReg, RT_ELEMENTS(g_aOpRegs)));
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        uint32_t iPort;
+        Log3(("Write Port register\n"));
+        /* Calculate accessed port. */
+        uReg -= AHCI_HBA_GLOBAL_SIZE;
+        iPort = uReg / AHCI_PORT_REGISTER_SIZE;
+        iReg  = (uReg % AHCI_PORT_REGISTER_SIZE) >> 2;
+        Log3(("%s: Trying to write to port %u and register %u\n", __FUNCTION__, iPort, iReg));
+        if (RT_LIKELY(   iPort < pAhci->cPortsImpl
+                      && iReg < RT_ELEMENTS(g_aPortOpRegs)))
+        {
+            const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
+            rc = pPortReg->pfnWrite(pAhci, &pAhci->ahciPort[iPort], iReg, *(uint32_t *)pv);
+        }
+        else
+        {
+            Log3(("%s: Trying to write port %u register %u/%u!!!\n", __FUNCTION__, iPort, iReg, RT_ELEMENTS(g_aPortOpRegs)));
+            rc = VINF_SUCCESS;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Memory mapped I/O Handler for read operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pv          Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    int   rc = VINF_SUCCESS;
+
+    /* Break up 64 bits reads into two dword reads. */
+    if (cb == 8)
+    {
+        rc = ahciMMIORead(pDevIns, pvUser, GCPhysAddr, pv, 4);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        return ahciMMIORead(pDevIns, pvUser, GCPhysAddr + 4, (uint8_t *)pv + 4, 4);
+    }
+
+    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
+          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
+
+    uint32_t uOffset = (GCPhysAddr - pAhci->MMIOBase);
+    rc = ahciRegisterRead(pAhci, uOffset, pv, cb);
 
     Log2(("#%d ahciMMIORead: return pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
           pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
@@ -2210,43 +2289,7 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
      * Otherwise it accesses the registers of a port.
      */
     uint32_t uOffset = (GCPhysAddr - pAhci->MMIOBase);
-    uint32_t iReg;
-    if (uOffset < AHCI_HBA_GLOBAL_SIZE)
-    {
-        Log3(("Write global HBA register\n"));
-        iReg = uOffset >> 2;
-        if (iReg < RT_ELEMENTS(g_aOpRegs))
-        {
-            const AHCIOPREG *pReg = &g_aOpRegs[iReg];
-            rc = pReg->pfnWrite(pAhci, iReg, *(uint32_t *)pv);
-        }
-        else
-        {
-            Log3(("%s: Trying to write global register %u/%u!!!\n", __FUNCTION__, iReg, RT_ELEMENTS(g_aOpRegs)));
-            rc = VINF_SUCCESS;
-        }
-    }
-    else
-    {
-        uint32_t iPort;
-        Log3(("Write Port register\n"));
-        /* Calculate accessed port. */
-        uOffset -= AHCI_HBA_GLOBAL_SIZE;
-        iPort = uOffset / AHCI_PORT_REGISTER_SIZE;
-        iReg  = (uOffset % AHCI_PORT_REGISTER_SIZE) >> 2;
-        Log3(("%s: Trying to write to port %u and register %u\n", __FUNCTION__, iPort, iReg));
-        if (RT_LIKELY(   iPort < pAhci->cPortsImpl
-                      && iReg < RT_ELEMENTS(g_aPortOpRegs)))
-        {
-            const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnWrite(pAhci, &pAhci->ahciPort[iPort], iReg, *(uint32_t *)pv);
-        }
-        else
-        {
-            Log3(("%s: Trying to write port %u register %u/%u!!!\n", __FUNCTION__, iPort, iReg, RT_ELEMENTS(g_aPortOpRegs)));
-            rc = VINF_SUCCESS;
-        }
-    }
+    rc = ahciRegisterWrite(pAhci, uOffset, pv, cb);
 
     return rc;
 }
@@ -2305,6 +2348,87 @@ PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     AssertMsgFailed(("Should not happen\n"));
     return VINF_SUCCESS;
+}
+
+/**
+ * I/O port handler for writes to the index/data register pair.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   Port        Port address where the write starts.
+ * @param   pv          Where to fetch the result.
+ * @param   cb          Number of bytes to write.
+ */
+PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    int   rc = VINF_SUCCESS;
+
+    if (Port - pAhci->IOPortBase >= 8)
+    {
+        unsigned iReg = (Port - pAhci->IOPortBase - 8) / 4;
+
+        Assert(cb == 4);
+
+        if (iReg == 0)
+        {
+            /* Write the index register. */
+            pAhci->regIdx = u32;
+        }
+        else
+        {
+            Assert(iReg == 1);
+            rc = ahciRegisterWrite(pAhci, pAhci->regIdx, &u32, cb);
+        }
+    }
+    /* else: ignore */
+
+    Log2(("#%d ahciIdxDataWrite: pu32=%p:{%.*Rhxs} cb=%d Port=%#x rc=%Rrc\n",
+          pDevIns->iInstance, &u32, cb, &u32, cb, Port, rc));
+    return rc;
+}
+
+/**
+ * I/O port handler for reads from the index/data register pair.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   Port        Port address where the read starts.
+ * @param   pv          Where to fetch the result.
+ * @param   cb          Number of bytes to write.
+ */
+PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    int   rc = VINF_SUCCESS;
+
+    if (Port - pAhci->IOPortBase >= 8)
+    {
+        unsigned iReg = (Port - pAhci->IOPortBase - 8) / 4;
+
+        Assert(cb == 4);
+
+        if (iReg == 0)
+        {
+            /* Read the index register. */
+            *pu32 = pAhci->regIdx;
+        }
+        else
+        {
+            Assert(iReg == 1);
+            rc = ahciRegisterRead(pAhci, pAhci->regIdx, pu32, cb);
+        }
+    }
+    else
+        *pu32 = UINT32_C(0xffffffff);
+
+    Log2(("#%d ahciIdxDataRead: pu32=%p:{%.*Rhxs} cb=%d Port=%#x rc=%Rrc\n",
+          pDevIns->iInstance, pu32, cb, pu32, cb, Port, rc));
+    return rc;
 }
 
 #ifndef IN_RING0
@@ -2414,6 +2538,45 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsign
             return rc;
     }
 
+    return rc;
+}
+
+/**
+ * Map the BMDMA I/O port range (used for the Index/Data pair register access)
+ */
+static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+{
+    PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
+    PPDMDEVINS pDevIns = pPciDev->pDevIns;
+    int   rc = VINF_SUCCESS;
+
+    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+
+    Assert(enmType == PCI_ADDRESS_SPACE_IO);
+
+    /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
+    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
+                                 ahciIdxDataWrite, ahciIdxDataRead, NULL, NULL, "AHCI IDX/DATA");
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (pThis->fR0Enabled)
+    {
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
+                                       "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    if (pThis->fGCEnabled)
+    {
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
+                                       "ahciIdxDataWrite", "ahciIdxDataRead", NULL, NULL, "AHCI IDX/DATA");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
     return rc;
 }
 
@@ -8046,7 +8209,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetInterruptPin (&pThis->dev, 0x01);
 
     pThis->dev.config[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
-    pThis->dev.config[0x71] = 0x00; /* next */
+    pThis->dev.config[0x71] = 0xa8; /* next */
     pThis->dev.config[0x72] = 0x03; /* version ? */
 
     pThis->dev.config[0x90] = 0x40; /* AHCI mode. */
@@ -8054,6 +8217,11 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->dev.config[0x94] = 0x80;
     pThis->dev.config[0x95] = 0x01;
     pThis->dev.config[0x97] = 0x78;
+
+    pThis->dev.config[0xa8] = 0x12;                /* SATACR capability */
+    pThis->dev.config[0xa9] = 0x00;                /* next */
+    PCIDevSetWord(&pThis->dev, 0xaa, 0x0010);      /* Revision */
+    PCIDevSetDWord(&pThis->dev, 0xac, 0x00000028); /* SATA Capability Register 1 */
 
     /*
      * Register the PCI device, it's I/O regions.
@@ -8107,7 +8275,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI cannot register PCI I/O region"));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ahciR3LegacyFakeIORangeMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ahciR3IdxDataIORangeMap);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI cannot register PCI I/O region for BMDMA"));
