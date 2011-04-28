@@ -308,70 +308,72 @@ private:
  */
 int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    AssertPtr(pBuf);
-    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    if (cParms)
+        AssertPtrReturn(paParms, VERR_INVALID_POINTER);
 
     /* Paranoia. */
     if (cParms > 256)
         cParms = 256;
+
+    int rc = VINF_SUCCESS;
 
     /*
      * Don't verify anything here (yet), because this function only buffers
      * the HGCM data into an internal structure and reaches it back to the guest (client)
      * in an unmodified state.
      */
-    if (RT_SUCCESS(rc))
+    pBuf->uMsg = uMsg;
+    pBuf->uParmCount = cParms;
+    if (pBuf->uParmCount)
     {
-        pBuf->uMsg = uMsg;
-        pBuf->uParmCount = cParms;
         pBuf->pParms = (VBOXHGCMSVCPARM*)RTMemAlloc(sizeof(VBOXHGCMSVCPARM) * pBuf->uParmCount);
         if (NULL == pBuf->pParms)
-        {
             rc = VERR_NO_MEMORY;
-        }
-        else
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        for (uint32_t i = 0; i < pBuf->uParmCount; i++)
         {
-            for (uint32_t i = 0; i < pBuf->uParmCount; i++)
+            pBuf->pParms[i].type = paParms[i].type;
+            switch (paParms[i].type)
             {
-                pBuf->pParms[i].type = paParms[i].type;
-                switch (paParms[i].type)
-                {
-                    case VBOX_HGCM_SVC_PARM_32BIT:
-                        pBuf->pParms[i].u.uint32 = paParms[i].u.uint32;
-                        break;
+                case VBOX_HGCM_SVC_PARM_32BIT:
+                    pBuf->pParms[i].u.uint32 = paParms[i].u.uint32;
+                    break;
 
-                    case VBOX_HGCM_SVC_PARM_64BIT:
-                        /* Not supported yet. */
-                        break;
+                case VBOX_HGCM_SVC_PARM_64BIT:
+                    /* Not supported yet. */
+                    break;
 
-                    case VBOX_HGCM_SVC_PARM_PTR:
-                        pBuf->pParms[i].u.pointer.size = paParms[i].u.pointer.size;
-                        if (pBuf->pParms[i].u.pointer.size > 0)
+                case VBOX_HGCM_SVC_PARM_PTR:
+                    pBuf->pParms[i].u.pointer.size = paParms[i].u.pointer.size;
+                    if (pBuf->pParms[i].u.pointer.size > 0)
+                    {
+                        pBuf->pParms[i].u.pointer.addr = RTMemAlloc(pBuf->pParms[i].u.pointer.size);
+                        if (NULL == pBuf->pParms[i].u.pointer.addr)
                         {
-                            pBuf->pParms[i].u.pointer.addr = RTMemAlloc(pBuf->pParms[i].u.pointer.size);
-                            if (NULL == pBuf->pParms[i].u.pointer.addr)
-                            {
-                                rc = VERR_NO_MEMORY;
-                                break;
-                            }
-                            else
-                                memcpy(pBuf->pParms[i].u.pointer.addr,
-                                       paParms[i].u.pointer.addr,
-                                       pBuf->pParms[i].u.pointer.size);
+                            rc = VERR_NO_MEMORY;
+                            break;
                         }
                         else
-                        {
-                            /* Size is 0 -- make sure we don't have any pointer. */
-                            pBuf->pParms[i].u.pointer.addr = NULL;
-                        }
-                        break;
+                            memcpy(pBuf->pParms[i].u.pointer.addr,
+                                   paParms[i].u.pointer.addr,
+                                   pBuf->pParms[i].u.pointer.size);
+                    }
+                    else
+                    {
+                        /* Size is 0 -- make sure we don't have any pointer. */
+                        pBuf->pParms[i].u.pointer.addr = NULL;
+                    }
+                    break;
 
-                    default:
-                        break;
-                }
-                if (RT_FAILURE(rc))
+                default:
                     break;
             }
+            if (RT_FAILURE(rc))
+                break;
         }
     }
     return rc;
@@ -784,11 +786,9 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
      */
     if (mNumClients == 0)
         return VERR_NOT_FOUND;
-
     HostCmd newCmd;
     int rc = paramBufferAllocate(&newCmd.mParmBuf, eFunction, cParms, paParms);
-    if (   RT_SUCCESS(rc)
-        && newCmd.mParmBuf.uParmCount > 0)
+    if (RT_SUCCESS(rc) && cParms)
     {
         /*
          * Assume that the context ID *always* is the first parameter,
@@ -798,9 +798,10 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
         Assert(newCmd.mContextID > 0);
     }
 
-    bool fProcessed = false;
     if (RT_SUCCESS(rc))
     {
+        bool fProcessed = false;
+
         /* Can we wake up a waiting client on guest? */
         if (!mClientWaiterList.empty())
         {
@@ -813,9 +814,11 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
             mpHelpers->pfnCallComplete(guest.mHandle, rc);
             mClientWaiterList.pop_front();
 
-            /* If we got VERR_TOO_MUCH_DATA we buffer the host command in the next block
-             * and return success to the host. */
-            if (rc == VERR_TOO_MUCH_DATA)
+            /*
+             * If we got back an error (like VERR_TOO_MUCH_DATA or VERR_BUFFER_OVERFLOW)
+             * we buffer the host command in the next block and return success to the host.
+             */
+            if (RT_FAILURE(rc))
             {
                 rc = VINF_SUCCESS;
             }
@@ -931,6 +934,11 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
     {
         switch (eFunction)
         {
+            case HOST_CANCEL_PENDING_WAITS:
+                LogFlowFunc(("HOST_CANCEL_PENDING_WAITS\n"));
+                rc = processHostCmd(eFunction, cParms, paParms);
+                break;
+
             /* The host wants to execute something. */
             case HOST_EXEC_CMD:
                 LogFlowFunc(("HOST_EXEC_CMD\n"));
