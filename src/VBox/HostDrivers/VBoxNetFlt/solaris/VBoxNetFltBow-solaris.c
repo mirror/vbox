@@ -1341,9 +1341,10 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
      * Validate parameters.
      */
     PVBOXNETFLTVNIC pVNIC = pvIfData;
-    AssertMsgReturn(VALID_PTR(pVNIC) && pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
-                    ("Invalid pvIfData=%p magic=%#x (expected %#x)\n", pvIfData, pVNIC ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC),
-                    VERR_INVALID_PARAMETER);
+    AssertReturn(VALID_PTR(pVNIC), VERR_INVALID_POINTER);
+    AssertMsgReturn(pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
+                    ("Invalid magic=%#x (expected %#x)\n", pVNIC->u32Magic, VBOXNETFLTVNIC_MAGIC),
+                    VERR_INVALID_MAGIC);
 
     /*
      * Xmit the packet down the appropriate VNIC interface.
