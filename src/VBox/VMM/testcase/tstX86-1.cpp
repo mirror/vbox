@@ -50,6 +50,7 @@ typedef struct TRAPINFO
 } TRAPINFO;
 typedef TRAPINFO const *PCTRAPINFO;
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -90,54 +91,63 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 
 # if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;
-    uintptr_t   uSP     = pCtx->uc_mcontext->__ss.__rsp;
-    uintptr_t   uTrapNo = ~(uintptr_t)0;
-    uintptr_t   uErr    = ~(uintptr_t)0;
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rsp;
+    uintptr_t   uTrapNo = pCtx->uc_mcontext->__es.__trapno;
+    uintptr_t   uErr    = pCtx->uc_mcontext->__es.__err;
 
 # elif defined(RT_ARCH_AMD64) && defined(RT_OS_FREEBSD)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_rip;
-    uintptr_t   uSP     = pCtx->uc_mcontext.mc_rsp;
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.mc_rsp;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
 
 # elif defined(RT_ARCH_AMD64)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
-    uintptr_t   uSP     = pCtx->uc_mcontext.gregs[REG_RSP];
+    uintptr_t  *puSP    = &pCtx->uc_mcontext.gregs[REG_RSP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
 
 # elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
-    uintptr_t   uSP     = pCtx->uc_mcontext->__ss.__esp;
-    uintptr_t   uTrapNo = ~(uintptr_t)0;
-    uintptr_t   uErr    = ~(uintptr_t)0;
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__esp;
+    uintptr_t   uTrapNo = pCtx->uc_mcontext->__es.__trapno;
+    uintptr_t   uErr    = pCtx->uc_mcontext->__es.__err;
 
 # elif defined(RT_ARCH_X86) && defined(RT_OS_FREEBSD)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_eip;
-    uintptr_t   uSP     = pCtx->uc_mcontext.mc_esp;
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.mc_esp;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
 
 # elif defined(RT_ARCH_X86)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
-    uintptr_t   uSP     = pCtx->uc_mcontext.gregs[REG_ESP];
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_ESP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
 
 # else
     uintptr_t  *puPC    = NULL;
+    uintptr_t  *puSP    = NULL;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
 # endif
     RTAssertMsg2("tstX86-1: Trap #%#04x err=%#06x at %p\n", uTrapNo, uErr, *puPC);
 
-    PCTRAPINFO  pTrapInfo = findTrapInfo(*puPC, uSP);
+    PCTRAPINFO pTrapInfo = findTrapInfo(*puPC, *puSP);
     if (pTrapInfo)
     {
-        /** @todo verify the kind of trap */
-        *puPC = pTrapInfo->uResumePC;
-        return;
+        if (pTrapInfo->u8Trap != uTrapNo && uTrapNo != ~(uintptr_t)0)
+            RTAssertMsg2("tstX86-1: Expected #%#04x, got #%#04x\n", pTrapInfo->u8Trap, uTrapNo);
+        else
+        {
+            if (*puPC != pTrapInfo->uTrapPC)
+                *puSP += sizeof(uintptr_t);
+            *puPC = pTrapInfo->uResumePC;
+            return;
+        }
     }
+    else
+        RTAssertMsg2("tstX86-1: Unexpected trap!\n");
 
     /* die */
     signal(iSig, SIG_IGN);
@@ -182,7 +192,6 @@ int main()
 
     if (!RTTestErrorCount(hTest))
     {
-
         /*
          * Do the testing.
          */

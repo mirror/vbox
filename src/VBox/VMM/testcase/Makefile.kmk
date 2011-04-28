@@ -43,7 +43,7 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
   	tstCompiler \
   	tstVMMR0CallHost-1 \
   	tstVMMR0CallHost-2
-  ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 solaris.x86 solaris.amd64 win.amd64 ) ## TODO: Fix the code.
+  ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64 ) ## TODO: Fix the code.
    PROGRAMS  +=  tstX86-1
   endif
   ifneq ($(KBUILD_TARGET),l4)
