@@ -103,7 +103,7 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 
 # elif defined(RT_ARCH_AMD64)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
-    uintptr_t  *puSP    = &pCtx->uc_mcontext.gregs[REG_RSP];
+    uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RSP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
 
