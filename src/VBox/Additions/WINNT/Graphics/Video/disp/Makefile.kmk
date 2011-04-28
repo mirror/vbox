@@ -1,0 +1,176 @@
+# $Id$
+## @file
+# Makefile for the Windows guest display driver.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+#
+# VBoxDisp - Windows Guest Additions XPDM Display Driver
+#
+# Note. This has to run on NT4!
+#       (VBOX_LIB_IPRT_GUEST_R0_NT4 == VBOX_LIB_IPRT_GUEST_R0 on 64-bit)
+#
+SYSMODS += VBoxDisp
+VBoxDisp_TEMPLATE      = VBOXGUESTR0
+VBoxDisp_SYSSUFF       = .dll
+VBoxDisp_DEFS          = _WIN32_WINNT=0x0501 VBOX_WITH_DDRAW
+VBoxDisp_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
+endif
+#VBoxDisp_DEFS         += VBOX_VBVA_ADJUST_RECT
+VBoxDisp_INCS          = ../../../include ..
+VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
+VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
+VBoxDisp_SOURCES     = \
+	xpdm/VBoxDispDriver.cpp \
+	xpdm/VBoxDispMini.cpp \
+	xpdm/VBoxDispMouse.cpp \
+	xpdm/VBoxDispPalette.cpp \
+	xpdm/VBoxDispVBVA.cpp \
+	xpdm/VBoxDispDrawCmd.cpp \
+	xpdm/VBoxDispVRDP.cpp \
+	xpdm/VBoxDispVrdpBmp.cpp \
+	xpdm/VBoxDispVrdpTxt.cpp \
+	xpdm/VBoxDispDriverDDraw.cpp \
+	xpdm/VBoxDispDDraw.cpp \
+	xpdm/VBoxDisp.def \
+	xpdm/VBoxDisp.rc \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDisp_SOURCES += \
+ 	xpdm/VBoxDispVHWA.cpp \
+ 	xpdm/VBoxDispDDrawVHWA.cpp
+endif
+VBoxDisp_LIBS = \
+	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
+	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+
+# Signing requires both miniport and display drivers
+# so it'd be dealt with in the parent makefile.
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxDisp_NOINST     = true
+ ifdef VBOX_WITH_WDDM
+  VBoxDispD3D_NOINST = true
+ endif
+endif
+
+ifdef VBOX_WITH_WDDM
+#
+# VBoxDispD3D - Windows Guest Additions WDDM R3 Display Driver
+#
+DLLS += VBoxDispD3D
+VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
+VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP LOG_TO_BACKDOOR
+ifdef DEBUG_misha
+VBoxDispD3D_DEFS    += LOG_ENABLED
+endif
+ifdef VBOXWDDM_WITH_VBVA
+VBoxDispD3D_DEFS    += VBOXWDDM_WITH_VBVA
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDispD3D_DEFS   += VBOX_WITH_VIDEOHWACCEL
+endif
+ifdef VBOX_WDDMDISP_WITH_PROFILE
+ VBoxDispD3D_DEFS   += VBOX_WDDMDISP_WITH_PROFILE
+endif
+ifdef VBOXWDDM_TEST_UHGSMI
+ VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
+endif
+VBoxDispD3D_INCS     = ../../../include ..
+VBoxDispD3D_SOURCES  = \
+	wddm/VBoxDispD3D.cpp \
+	wddm/VBoxDispD3DIf.cpp \
+	wddm/VBoxDispCm.cpp \
+	wddm/VBoxDispMp.cpp \
+	wddm/VBoxScreen.cpp \
+	wddm/VBoxDispMpTst.cpp \
+	wddm/VBoxDispKmt.cpp \
+	wddm/VBoxDispDbg.cpp \
+	wddm/VBoxDispD3D.rc \
+	wddm/VBoxDispD3D.def \
+#ifdef VBOX_WITH_CRHGSMI
+#VBoxDispD3D_SOURCES += \
+#    wddm/VBoxUhgsmiDisp.cpp \
+#    wddm/VBoxUhgsmiKmt.cpp
+#VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
+#endif
+VBoxDispD3D_SDKS     = WINDDKWLH
+VBoxDispD3D_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3)
+
+#
+# 64-bit systems needs a 32-bit version of VBoxDispD3D.
+#
+DLLS.amd64 += VBoxDispD3D-x86
+VBoxDispD3D-x86_EXTENDS = VBoxDispD3D
+VBoxDispD3D-x86_BLD_TRG_ARCH = x86
+VBoxDispD3D-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86)
+VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
+
+ifdef VBOX_WITH_CRHGSMI
+#
+# VBoxCrHgsmi - Chromium HGSMI API library
+#
+LIBRARIES += VBoxCrHgsmi
+VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA
+VBoxCrHgsmi_INCS        = ../../../include ..
+VBoxCrHgsmi_SOURCES     = \
+	wddm/VBoxCrHgsmi.cpp \
+	wddm/VBoxDispKmt.cpp \
+	wddm/VBoxDispDbg.cpp \
+	wddm/VBoxUhgsmiKmt.cpp
+VBoxCrHgsmi_SDKS        = WINDDKWLH
+
+#
+# 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
+#
+LIBRARIES.amd64 += VBoxCrHgsmi-x86
+VBoxCrHgsmi-x86_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
+VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
+VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
+endif #VBOX_WITH_CRHGSMI
+
+endif #ifdef VBOX_WITH_WDDM
+
+ifdef VBOXVIDEOWINDBG
+DLLS += vbvdbg
+vbvdbg_TEMPLATE = VBOXR3STATIC
+vbvdbg_DEFS     = UNICODE _UNICODE
+vbvdbg_SOURCES  = \
+	wddm/dbg/VBoxVideoWinDbg.cpp \
+	wddm/dbg/VBoxVideoWinDbg.def
+vbvdbg_SDKS     = WINDDKWLH
+
+PROGRAMS += tstMvWnd
+tstMvWnd_TEMPLATE = VBOXR3EXE
+tstMvWnd_DEFS = UNICODE _UNICODE
+tstMvWnd_SOURCES  = \
+	wddm/dbg/tstMvWnd.cpp
+tstMvWnd_LIBS  = $(LIB_RUNTIME)
+tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
+endif #VBOXVIDEOWINDBG
+
+include	$(KBUILD_PATH)/subfooter.kmk
