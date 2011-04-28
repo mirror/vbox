@@ -467,12 +467,13 @@ BEGINPROC x861_Test1
         ;
         mov     eax, __LINE__
         mov     xDI, REF_GLOBAL(g_pbEfExecPage)
-        add     xDI, 1000h - 4h
+        add     xDI, 1000h - 8h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
         mov     byte [xDI+2], 08Fh
-        mov     byte [xDI+3], 000h
-        ShouldTrap X86_XCPT_PF, call xDI
+        mov     dword [xDI+3], 000000000h
+        mov     byte [xDI+7], 0ccFh
+        ShouldTrap X86_XCPT_UD, call xDI
 
         mov     eax, __LINE__
         mov     xDI, REF_GLOBAL(g_pbEfExecPage)
@@ -482,6 +483,66 @@ BEGINPROC x861_Test1
         mov     byte [xDI+2], 08Fh
         mov     dword [xDI+3], 000000000h
         ShouldTrap X86_XCPT_UD, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 4h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+3], 000h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 6h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+3], 00h
+        mov     byte [xDI+4], 00h
+        mov     byte [xDI+5], 00h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 5h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+3], 00h
+        mov     byte [xDI+4], 00h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 4h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        mov     byte [xDI+3], 00h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 3h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        mov     byte [xDI+2], 08Fh
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 2h
+        mov     byte [xDI+0], 0f0h
+        mov     byte [xDI+1], 002h
+        ShouldTrap X86_XCPT_PF, call xDI
+
+        mov     eax, __LINE__
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, 1000h - 1h
+        mov     byte [xDI+0], 0f0h
+        ShouldTrap X86_XCPT_PF, call xDI
 
 
 
