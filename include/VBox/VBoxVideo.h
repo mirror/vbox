@@ -1070,8 +1070,7 @@ typedef uint64_t VBOXVIDEOOFFSET;
 
 #define VBOXVIDEOOFFSET_VOID ((VBOXVIDEOOFFSET)~0)
 
-#ifdef VBOX_WITH_WDDM
-# pragma pack(1)
+#pragma pack(1)
 
 /*
  * VBOXSHGSMI made on top HGSMI and allows receiving notifications
@@ -1086,6 +1085,22 @@ typedef struct VBOXSHGSMIHEADER
     uint64_t u64Info1;  /*<- contents depends on the fFlags value */
     uint64_t u64Info2;  /*<- contents depends on the fFlags value */
 } VBOXSHGSMIHEADER, *PVBOXSHGSMIHEADER;
+
+typedef enum
+{
+    VBOXVDMACMD_TYPE_UNDEFINED         = 0,
+    VBOXVDMACMD_TYPE_DMA_PRESENT_BLT   = 1,
+    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER,
+    VBOXVDMACMD_TYPE_DMA_BPB_FILL,
+    VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY,
+    VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL,
+    VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP,
+    VBOXVDMACMD_TYPE_DMA_NOP,
+    VBOXVDMACMD_TYPE_CHROMIUM_CMD,
+    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER_VRAMSYS
+} VBOXVDMACMD_TYPE;
+
+#pragma pack()
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
  * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
@@ -1113,6 +1128,7 @@ typedef struct VBOXSHGSMIHEADER
 /* guest expects this command to be completed synchronously */
 #define VBOXSHGSMI_FLAG_GH_SYNCH                0x00000040
 
+
 DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const VBOXSHGSMIHEADER* pHeader)
 {
     return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
@@ -1122,23 +1138,6 @@ DECLINLINE(PVBOXSHGSMIHEADER) VBoxSHGSMIBufferHeader (const void *pvData)
 {
     return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
 }
-
-typedef enum
-{
-    VBOXVDMACMD_TYPE_UNDEFINED         = 0,
-    VBOXVDMACMD_TYPE_DMA_PRESENT_BLT   = 1,
-    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER,
-    VBOXVDMACMD_TYPE_DMA_BPB_FILL,
-    VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY,
-    VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL,
-    VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP,
-    VBOXVDMACMD_TYPE_DMA_NOP,
-    VBOXVDMACMD_TYPE_CHROMIUM_CMD,
-    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER_VRAMSYS
-} VBOXVDMACMD_TYPE;
-
-# pragma pack()
-#endif
 
 #ifdef VBOX_WITH_VDMA
 # pragma pack(1)
