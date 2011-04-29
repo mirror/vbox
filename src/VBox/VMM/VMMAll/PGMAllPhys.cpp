@@ -140,7 +140,6 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
 }
 
 #endif /* IN_RING3 */
-#ifdef PGM_USE_RAMRANGE_TLB
 
 /**
  * Invalidates the RAM range TLBs.
@@ -278,7 +277,6 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
-#endif /* PGM_USE_RAMRANGE_TLB */
 
 /**
  * Checks if Address Gate 20 is enabled or not.

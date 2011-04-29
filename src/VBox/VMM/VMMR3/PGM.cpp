@@ -2236,11 +2236,9 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
                 pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
         pgmR3PhysRelinkRamRanges(pVM);
 
-#ifdef PGM_USE_RAMRANGE_TLB
         /* Flush the RC TLB. */
         for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
             pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
-#endif
     }
 
     /*

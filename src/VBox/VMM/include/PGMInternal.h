@@ -1326,8 +1326,6 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 #define PGM_RAM_RANGE_IS_AD_HOC(pRam) \
     (!!( (pRam)->fFlags & (PGM_RAM_RANGE_FLAGS_AD_HOC_ROM | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2) ) )
 
-/* enable the tlbs. */
-#define PGM_USE_RAMRANGE_TLB
 /** The number of entries in the RAM range TLBs (there is one for each
  *  context).  Must be a power of two. */
 #define PGM_RAMRANGE_TLB_ENTRIES            8
@@ -2962,13 +2960,11 @@ typedef struct PGM
     RTGCPHYS                        GCPhysInvAddrMask;
 
 
+    /** Ram range TLB for R3. */
+    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR3[PGM_RAMRANGE_TLB_ENTRIES];
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangesXR3;
-#ifdef PGM_USE_RAMRANGE_TLB
-    /** Ram range TLB for R3. */
-    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR3[PGM_RAMRANGE_TLB_ENTRIES];
-#endif
     /** PGM offset based trees - R3 Ptr. */
     R3PTRTYPE(PPGMTREES)            pTreesR3;
     /** Caching the last physical handler we looked up in R3. */
@@ -2989,12 +2985,10 @@ typedef struct PGM
     R3PTRTYPE(PPGMMODEDATA)         paModeData;
     /*RTR3PTR                         R3PtrAlignment0;*/
 
-    /** R0 pointer corresponding to PGM::pRamRangesXR3. */
-    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesXR0;
-#ifdef PGM_USE_RAMRANGE_TLB
     /** Ram range TLB for R0. */
     R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
-#endif
+    /** R0 pointer corresponding to PGM::pRamRangesXR3. */
+    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesXR0;
     /** PGM offset based trees - R0 Ptr. */
     R0PTRTYPE(PPGMTREES)            pTreesR0;
     /** Caching the last physical handler we looked up in R0. */
@@ -3009,12 +3003,10 @@ typedef struct PGM
     /*RTR0PTR                         R0PtrAlignment0;*/
 
 
-    /** RC pointer corresponding to PGM::pRamRangesXR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesXRC;
-#ifdef PGM_USE_RAMRANGE_TLB
     /** Ram range TLB for RC. */
     RCPTRTYPE(PPGMRAMRANGE)         apRamRangesTlbRC[PGM_RAMRANGE_TLB_ENTRIES];
-#endif
+    /** RC pointer corresponding to PGM::pRamRangesXR3. */
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesXRC;
     /** PGM offset based trees - RC Ptr. */
     RCPTRTYPE(PPGMTREES)            pTreesRC;
     /** Caching the last physical handler we looked up in RC. */

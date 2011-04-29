@@ -1349,10 +1349,8 @@ static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, R
             pRam->pSelfRC = (RTRCPTR)(GCPtrNew + PAGE_SIZE);
 
             pgmR3PhysRelinkRamRanges(pVM);
-#ifdef PGM_USE_RAMRANGE_TLB
             for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
                 pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
-#endif
 
             pgmUnlock(pVM);
             return true;
@@ -2163,9 +2161,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     PGMPhysInvalidatePageMapTLB(pVM);
-#ifdef PGM_USE_RAMRANGE_TLB
     pgmPhysInvalidRamRangeTlbs(pVM);
-#endif
     return rc;
 }
 
@@ -2674,9 +2670,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     PGMPhysInvalidatePageMapTLB(pVM);
-#ifdef PGM_USE_RAMRANGE_TLB
     pgmPhysInvalidRamRangeTlbs(pVM);
-#endif
     pgmUnlock(pVM);
 
     if (fInformREM)
