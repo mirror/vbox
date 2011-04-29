@@ -1327,7 +1327,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
     (!!( (pRam)->fFlags & (PGM_RAM_RANGE_FLAGS_AD_HOC_ROM | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2) ) )
 
 /* enable the tlbs. */
-//#define PGM_USE_RAMRANGE_TLB
+#define PGM_USE_RAMRANGE_TLB
 /** The number of entries in the RAM range TLBs (there is one for each
  *  context).  Must be a power of two. */
 #define PGM_RAMRANGE_TLB_ENTRIES            8
