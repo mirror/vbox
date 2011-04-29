@@ -411,11 +411,6 @@ const char *g_pcszIUnknown = "IUnknown";
         </xsl:otherwise>
       </xsl:choose>
     </xsl:when>
-    <xsl:when test="//collection[@name=$type]">
-      <xsl:variable name="thatif" select="//collection[@name=$type]" />
-      <xsl:variable name="thatifname" select="$thatif/@name" />
-      <xsl:value-of select="concat('ComPtr&lt;', $thatifname, '&gt;')" />
-    </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
         <xsl:with-param name="msg" select="concat('emitCppTypeForIDLType: Type &quot;', $type, '&quot; in method &quot;', $method, '&quot; is not supported.')" />
@@ -542,7 +537,13 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:value-of select="concat('        // convert input arg ', $name)" />
   <xsl:call-template name="emitNewlineIndent8" />
 
-  <xsl:choose>
+  <xsl:choose>    
+     <xsl:when test="$safearray='yes' and $type='octet'">
+       <xsl:value-of select="concat('com::SafeArray&lt;BYTE&gt; comcall_',$name, ';')" />
+       <xsl:call-template name="emitNewlineIndent8" />
+       <xsl:value-of select="concat('Base64DecodeByteArray(',$structprefix,$name,', ComSafeArrayAsOutParam(comcall_',$name, '));')" />
+    </xsl:when>
+
     <xsl:when test="$safearray='yes'">
       <xsl:value-of select="concat('size_t c', $name, ' = ', $structprefix, $name, '.size();')" />
       <xsl:call-template name="emitNewlineIndent8" />
@@ -597,11 +598,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="//enum[@name=$type]">
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $G_funcPrefixInputEnumConverter, $type, '(', $structprefix, $name, '[i]);')" />
-        </xsl:when>
-         <xsl:when test="$type='octet'">
-          <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $structprefix, $name, '[i];')" />
-        </xsl:when>
+        </xsl:when>        
         <xsl:otherwise>
           <xsl:call-template name="fatalError">
             <xsl:with-param name="msg" select="concat('emitInputArgConverter Type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $method, '&quot; is not yet supported in safearrays.')" />
@@ -994,6 +991,11 @@ const char *g_pcszIUnknown = "IUnknown";
   </xsl:variable>
 
   <xsl:choose>
+    <xsl:when test="$safearray='yes' and $type='octet'">
+      <xsl:value-of select="concat($receiverVariable, ' = Base64EncodeByteArray(ComSafeArrayAsInParam(', $varname,'));')" /> 
+      <xsl:call-template name="emitNewlineIndent8" />
+    </xsl:when>
+
     <xsl:when test="$safearray='yes'">
       <xsl:value-of select="concat('for (size_t i = 0; i &lt; ', $varname, '.size(); ++i)')" />
       <xsl:call-template name="emitNewlineIndent8" />

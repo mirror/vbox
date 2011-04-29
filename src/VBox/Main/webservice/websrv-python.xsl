@@ -63,18 +63,25 @@
   <xsl:param name="value" />
   <xsl:param name="safearray" />
 
-  <xsl:call-template name="emitConvertedType">
-    <xsl:with-param name="ifname" select="$ifname" />
-    <xsl:with-param name="methodname" select="$methodname" />
-    <xsl:with-param name="type" select="$type" />
-  </xsl:call-template>
-  <xsl:text>(</xsl:text>
-   <xsl:text>self.mgr,</xsl:text>
-  <xsl:value-of select="$value"/>
-  <xsl:if test="$safearray='yes'">
-    <xsl:value-of select="', True'"/>
-  </xsl:if>
-  <xsl:text>)</xsl:text>
+  <xsl:choose>
+    <xsl:when test="$type='octet' and $safearray">
+      <xsl:value-of select="concat('self.mgr.decodebase64(',$value,')')" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:call-template name="emitConvertedType">
+        <xsl:with-param name="ifname" select="$ifname" />
+        <xsl:with-param name="methodname" select="$methodname" />
+        <xsl:with-param name="type" select="$type" />
+      </xsl:call-template>
+      <xsl:text>(</xsl:text>
+      <xsl:text>self.mgr,</xsl:text>
+      <xsl:value-of select="$value"/>
+      <xsl:if test="$safearray='yes'">
+        <xsl:value-of select="', True'"/>
+      </xsl:if>
+      <xsl:text>)</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 
@@ -341,11 +348,30 @@ class <xsl:value-of select="$ifname"/>:
 
 </xsl:template>
 
+<xsl:template name="convertInParam">
+  <xsl:param name="type" />
+  <xsl:param name="safearray" />
+  <xsl:param name="arg" />
+  
+   <xsl:choose>
+     <xsl:when test="$type='octet' and $safearray">
+        <xsl:value-of select="concat('self.mgr.encodebase64(',$arg,')')" />
+     </xsl:when>
+     <xsl:otherwise>
+        <xsl:value-of select="$arg" />
+      </xsl:otherwise>
+   </xsl:choose>
+</xsl:template>
+
 <xsl:template name="genreq">
        <xsl:text>req=</xsl:text><xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>RequestMsg()
        req._this=self.handle
        <xsl:for-each select="param[@dir='in']">
-       req._<xsl:value-of select="@name" />=_arg_<xsl:value-of select="@name" />
+       req._<xsl:value-of select="@name" />=<xsl:call-template name="convertInParam">
+           <xsl:with-param name="type" select="@type" />
+           <xsl:with-param name="safearray" select="@safearray" />
+           <xsl:with-param name="arg" select="concat('_arg_', @name)" />
+         </xsl:call-template>
        </xsl:for-each>
        val=self.mgr.getPort().<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>(req)
        <!-- return needs to be the first one -->
@@ -442,7 +468,7 @@ class <xsl:value-of select="@name"/>:
 </xsl:template>
 
 <xsl:template match="/">
-<xsl:text># Copyright (C) 2008-2010 Oracle Corporation
+<xsl:text># Copyright (C) 2008-2011 Oracle Corporation
 #
 # This file is part of a free software library; you can redistribute
 # it and/or modify it under the terms of the GNU Lesser General
@@ -678,26 +704,23 @@ class Number:
        else:
             return self.handle &gt;= other
 
-import struct
-
-class Octet(Number):
+class Octet:
   def __init__(self, mgr, handle, isarray = False):
-       self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
+       if isarray:
+           self.handle = mgr.decodebase64(handle)
+       else:
+           raise TypeError, "only octet arrays"
 
   def __getitem__(self, index):
-      if self.isarray:
-          return Octet(self.mgr, self.handle[index])
-      raise TypeError, "iteration over non-sequence"
+      return self.handle[index]
 
   def __str__(self):
-       if self.isarray:
-           # array of octets is binary data
-           list = map (None, self.handle)
-           return struct.pack("%dB" % (len(list)), *list)
-       else:
-           return str(self.handle)
+       return str(self.handle)
+
+  def __len__(self):
+      return self.handle.__len__()
 
 class UnsignedInt(Number):
   def __init__(self, mgr, handle, isarray = False):
@@ -843,12 +866,11 @@ class IUnknown:
    <xsl:for-each select="//interface[@wsmap='struct']">
        <xsl:call-template name="interfacestruct"/>
   </xsl:for-each>
-  <xsl:for-each select="//collection">
-       <xsl:call-template name="collection"/>
-  </xsl:for-each>
   <xsl:for-each select="//enum">
        <xsl:call-template name="enum"/>
   </xsl:for-each>
+
+import base64
 
 class IWebsessionManager2(IWebsessionManager):
   def __init__(self, url):
@@ -864,6 +886,12 @@ class IWebsessionManager2(IWebsessionManager):
           except:
              self.port = vboxServiceLocator().getvboxServicePort(self.url)
       return self.port
+
+  def decodebase64(self, str):
+      return base64.decodestring(str)
+
+  def encodebase64(self, str):
+      return base64.encodestring(str)
 
 </xsl:template>
 

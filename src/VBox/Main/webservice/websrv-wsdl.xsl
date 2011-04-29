@@ -210,6 +210,14 @@
 
   <xsl:call-template name="debugMsg"><xsl:with-param name="msg" select="concat('....convertTypeAndEmitPartOrElement: arg name: ', $name)" /></xsl:call-template>
   <xsl:choose>
+    <xsl:when test="$safearray='yes' and $type='octet'">
+      <!-- we pass octet arrays as Base64-encoded strings. -->
+       <xsl:element name="{$elname}">
+         <xsl:attribute name="name"><xsl:value-of select="$name" /></xsl:attribute>
+        <xsl:attribute name="type"><xsl:value-of select="'xsd:string'" /></xsl:attribute>
+      </xsl:element>
+    </xsl:when>
+
     <xsl:when test="$safearray='yes'">
       <xsl:element name="{$elname}"> <!-- <part> or <element> -->
         <xsl:attribute name="name"><xsl:value-of select="$name" /></xsl:attribute>

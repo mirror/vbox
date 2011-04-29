@@ -46,6 +46,7 @@
 #include <iprt/time.h>
 #include <iprt/path.h>
 #include <iprt/system.h>
+#include <iprt/base64.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -1187,6 +1188,44 @@ std::string ConvertComString(const com::Guid &uuid)
 {
     com::Utf8Str ustr(uuid.toString());
     return ustr.c_str();        // @todo r=dj since the length is known, we can probably use a better std::string allocator
+}
+
+/** Code to handle string <-> byte arrays base64 conversion. */
+std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
+{
+
+    com::SafeArray<BYTE> sfaData(ComSafeArrayInArg(aData));
+    ssize_t cbData = sfaData.size();
+
+    if (cbData == 0)
+        return "";
+
+    ssize_t cchOut = RTBase64EncodedLength(cbData);
+
+    RTCString aStr;
+
+    aStr.reserve(cchOut+1);
+    int rc = RTBase64Encode(sfaData.raw(), cbData, 
+                            aStr.mutableRaw(), aStr.capacity(),
+                            NULL);
+    AssertRC(rc);
+    aStr.jolt();
+
+    return aStr.c_str(); 
+}
+
+void Base64DecodeByteArray(std::string& aStr, ComSafeArrayOut(BYTE, aData))
+{
+    const char* pszStr = aStr.c_str();
+    ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
+
+    Assert(cbOut > 0);
+
+    com::SafeArray<BYTE> result(cbOut);
+    int rc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
+    AssertRC(rc);
+
+    result.detachTo(ComSafeArrayOutArg(aData));
 }
 
 /**

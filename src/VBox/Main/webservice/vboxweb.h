@@ -96,6 +96,9 @@ std::string ConvertComString(const com::Bstr &bstr);
 
 std::string ConvertComString(const com::Guid &bstr);
 
+std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
+
+void Base64DecodeByteArray(std::string& aStr, ComSafeArrayOut(BYTE, aData));
 /****************************************************************************
  *
  * managed object reference classes
