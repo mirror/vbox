@@ -459,6 +459,8 @@ public:
     STDMETHOD(COMSETTER(IoCacheEnabled)) (BOOL  aEnabled);
     STDMETHOD(COMGETTER(IoCacheSize)) (ULONG *aIoCacheSize);
     STDMETHOD(COMSETTER(IoCacheSize)) (ULONG  aIoCacheSize);
+    STDMETHOD(COMGETTER(PciDeviceAssignments))(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments));
+    STDMETHOD(COMGETTER(BandwidthControl))(IBandwidthControl **aBandwidthControl);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
@@ -526,8 +528,7 @@ public:
     STDMETHOD(ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeArrayOut(BYTE, aData)));
     STDMETHOD(AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL tryToUnbind));
     STDMETHOD(DetachHostPciDevice(LONG hostAddress));
-    STDMETHOD(COMGETTER(PciDeviceAssignments))(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments));
-    STDMETHOD(COMGETTER(BandwidthControl))(IBandwidthControl **aBandwidthControl);
+    STDMETHOD(CloneTo(IMachine *aTarget, BOOL aFullClone, IProgress **aProgress));
     // public methods only for internal purposes
 
     virtual bool isSnapshotMachine() const

@@ -3498,7 +3498,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="662c175e-a69d-40b8-a77a-1d719d0ab062"
+    uuid="59d09c78-2558-45c8-a95e-8761d70fdc95"
     wsmap="managed"
     >
     <desc>
@@ -5916,6 +5916,42 @@
         </desc>
       </param>
     </method>
+
+    <method name="cloneTo">
+      <desc>
+        Creates a clone of this machine, either as a full clone (which means
+        creating independent copies of the hard disk media), or as a linked
+        clone (which uses its own differencing media, sharing the parent media
+        with the source machine).
+
+        The target machine object must have been created previously with
+        <link to="IVirtualBox::createMachine"/>, and all the settings will be
+        transferred except the VM name, hardware UUID and the network card
+        MAC addresses. These can be set after the clone operation if required.
+        The operation is performed asynchronously, so the machine object will
+        be not be usable until the @a progress object signals completion. If
+        any step of the machine clone operation fails this will abort the
+        operation. The result will be a machine which is not a complete clone.
+        It is the responsibility of the caller to delete this incomplete
+        machine if desired with <link to="#unregister"/> and/or
+        <link to="#delete"/>.
+
+        <result name="E_INVALIDARG">
+          @a target is @c null.
+        </result>
+      </desc>
+
+      <param name="target" type="IMachine" dir="in">
+        <desc>Target machine object.</desc>
+      </param>
+      <param name="fullClone" type="boolean" dir="in">
+        <desc>Selects whether a full or linked clone is created.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--
