@@ -56,31 +56,11 @@
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVM pVM, RTGCPHYS GCPhys)
 {
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     if (!pRam || GCPhys - pRam->GCPhys >= pRam->cb)
         pRam = pgmPhysGetRangeSlow(pVM, GCPhys);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     return pRam;
-
-#else
-    /*
-     * Optimize for the first range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb))
-    {
-        do
-        {
-            pRam = pRam->CTX_SUFF(pNext);
-            if (RT_UNLIKELY(!pRam))
-                break;
-            off = GCPhys - pRam->GCPhys;
-        } while (off >= pRam->cb);
-    }
-    return pRam;
-#endif
 }
 
 
@@ -96,20 +76,12 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVM pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVM pVM, RTGCPHYS GCPhys)
 {
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     if (   !pRam
         || (GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetRangeAtOrAboveSlow(pVM, GCPhys);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     return pRam;
-
-#else
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    while (pRam && GCPhys > pRam->GCPhysLast)
-        pRam = pRam->CTX_SUFF(pNext);
-    return pRam;
-#endif
 }
 
 
@@ -125,7 +97,6 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVM pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVM pVM, RTGCPHYS GCPhys)
 {
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS off;
     if (   !pRam
@@ -133,25 +104,6 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVM pVM, RTGCPHYS GCPhys)
         return pgmPhysGetPageSlow(pVM, GCPhys);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     return &pRam->aPages[off >> PAGE_SHIFT];
-
-#else
-    /*
-     * Optimize for the first range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb))
-    {
-        do
-        {
-            pRam = pRam->CTX_SUFF(pNext);
-            if (RT_UNLIKELY(!pRam))
-                return NULL;
-            off = GCPhys - pRam->GCPhys;
-        } while (off >= pRam->cb);
-    }
-    return &pRam->aPages[off >> PAGE_SHIFT];
-#endif
 }
 
 
@@ -170,7 +122,6 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVM pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(int) pgmPhysGetPageEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 {
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS off;
     if (   !pRam
@@ -179,29 +130,6 @@ DECLINLINE(int) pgmPhysGetPageEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
     *ppPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     return VINF_SUCCESS;
-
-#else
-    /*
-     * Optimize for the first range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb))
-    {
-        do
-        {
-            pRam = pRam->CTX_SUFF(pNext);
-            if (RT_UNLIKELY(!pRam))
-            {
-                *ppPage = NULL; /* avoid incorrect and very annoying GCC warnings */
-                return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-            }
-            off = GCPhys - pRam->GCPhys;
-        } while (off >= pRam->cb);
-    }
-    *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-    return VINF_SUCCESS;
-#endif
 }
 
 
@@ -229,30 +157,12 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppP
     if (    !pRam
         ||  RT_UNLIKELY((off = GCPhys - pRam->GCPhys) >= pRam->cb))
     {
-#ifdef PGM_USE_RAMRANGE_TLB
         pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
         if (   !pRam
             || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
             return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRamHint);
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
 
-#else
-        pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-        off = GCPhys - pRam->GCPhys;
-        if (RT_UNLIKELY(off >= pRam->cb))
-        {
-            do
-            {
-                pRam = pRam->CTX_SUFF(pNext);
-                if (RT_UNLIKELY(!pRam))
-                {
-                    *ppPage = NULL; /* Kill the incorrect and extremely annoying GCC warnings. */
-                    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-                }
-                off = GCPhys - pRam->GCPhys;
-            } while (off >= pRam->cb);
-        }
-#endif
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
         *ppRamHint = pRam;
     }
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
@@ -273,35 +183,13 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppP
  */
 DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam)
 {
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS off;
     if (   !pRam
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRam);
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
 
-#else
-    /*
-     * Optimize for the first range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb))
-    {
-        do
-        {
-            pRam = pRam->CTX_SUFF(pNext);
-            if (RT_UNLIKELY(!pRam))
-            {
-                *ppRam = NULL;  /* Shut up silly GCC warnings. */
-                *ppPage = NULL; /* ditto */
-                return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-            }
-            off = GCPhys - pRam->GCPhys;
-        } while (off >= pRam->cb);
-    }
-#endif
+    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
     *ppRam = pRam;
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
     return VINF_SUCCESS;
@@ -387,19 +275,12 @@ DECLINLINE(int) pgmRZDynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
     /*
      * Get the ram range.
      */
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS off;
     if (   !pRam
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb
         /** @todo   || page state stuff */
        )
-#else
-    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS        off  = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb
-        /** @todo   || page state stuff */))
-#endif
     {
         /* This case is not counted into StatRZDynMapGCPageInl. */
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamMisses);
@@ -470,19 +351,12 @@ DECLINLINE(int) pgmRZDynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
      * Get the ram range.
      */
     PVM             pVM  = pVCpu->CTX_SUFF(pVM);
-#ifdef PGM_USE_RAMRANGE_TLB
     PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS        off;
     if (   !pRam
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb
         /** @todo   || page state stuff */
        )
-#else
-    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    RTGCPHYS        off  = GCPhys - pRam->GCPhys;
-    if (RT_UNLIKELY(off >= pRam->cb
-        /** @todo   || page state stuff */))
-#endif
     {
         /* This case is not counted into StatRZDynMapGCPageInl. */
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamMisses);
