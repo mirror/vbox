@@ -188,6 +188,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         dst.sin_addr.s_addr = ip->ip_src.s_addr;
         dst.sin_port = uh->uh_sport;
 
+        slirpMbufTagService(pData, m, CTL_DNS);
         /* udp_output2() expects a pointer to the body of UDP packet. */
         m->m_data += sizeof(struct udpiphdr);
         m->m_len -= sizeof(struct udpiphdr);

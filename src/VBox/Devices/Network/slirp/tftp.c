@@ -144,7 +144,7 @@ static int tftp_send_oack(PNATState pData,
     struct tftp_t *tp;
     int n = 0;
 
-    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
+    m = slirpTftpMbufAlloc(pData);
     if (!m)
         return -1;
 
@@ -180,7 +180,7 @@ static int tftp_send_error(PNATState pData,
     struct tftp_t *tp;
     int nobytes;
 
-    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
+    m = slirpTftpMbufAlloc(pData);
     if (!m)
         return -1;
 
@@ -228,7 +228,7 @@ static int tftp_send_data(PNATState pData,
     if (block_nr < 1)
         return -1;
 
-    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
+    m = slirpTftpMbufAlloc(pData);
     if (!m)
         return -1;
 

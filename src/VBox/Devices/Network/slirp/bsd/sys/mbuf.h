@@ -1042,8 +1042,9 @@ struct mbuf	*m_uiotombuf(struct uio *, int, int, int, int);
 #define	PACKET_TAG_IPOPTIONS			27 /* Saved IP options */
 #define	PACKET_TAG_CARP                         28 /* CARP info */
 #ifdef VBOX
-#define	PACKET_TAG_ALIAS                        0xab01
-#define	PACKET_TAG_ETHER                        0xab02
+# define	PACKET_TAG_ALIAS                        0xab01
+# define	PACKET_TAG_ETHER                        0xab02
+# define        PACKET_SERVICE                          0xab03
 #endif
 
 /* Specific cookies and tags. */
