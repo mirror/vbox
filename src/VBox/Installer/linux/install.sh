@@ -281,6 +281,7 @@ if [ "$ACTION" = "install" ]; then
                 $DKMS remove -m vboxnetadp -v $INSTALL_VER --all > /dev/null 2>&1
             fi
             # OSE doesn't always have the initscript
+            rmmod vboxpci > /dev/null 2>&1
             rmmod vboxnetadp > /dev/null 2>&1
             rmmod vboxnetflt > /dev/null 2>&1
             rmmod vboxdrv > /dev/null 2>&1

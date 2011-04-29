@@ -165,11 +165,17 @@ debian/modules-stamp: debian/build-stamp
 	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
 	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
 	            $(builddir)/bin/src/vboxnetadp/vboxnetadp.ko $(moddir)/$$(basename $$d)/vboxnetadp.ko); \
+	        make -C $(builddir)/bin/src/vboxpci KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
+		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
+	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxpci/vboxpci.ko $(moddir)/$$(basename $$d)/vboxpci.ko); \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
 	make -C $(builddir)/bin/src/vboxnetflt clean
 	make -C $(builddir)/bin/src/vboxnetadp clean
+	make -C $(builddir)/bin/src/vboxpci clean
 	touch debian/modules-stamp
 
 clean:
@@ -259,13 +265,15 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
-	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko ]; then \
+	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko -a -f $$d/vboxpci.ko ]; then \
 	        install -D -g 0 -o 0 -m 0644 \
 		    $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
 	        install -D -g 0 -o 0 -m 0644 \
 		    $$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
 	        install -D -g 0 -o 0 -m 0644 \
 		    $$d/vboxnetadp.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetadp.ko; \
+	        install -D -g 0 -o 0 -m 0644 \
+		    $$d/vboxpci.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxpci.ko; \
 	    fi \
 	    done)
 ifeq ($(ose),)
