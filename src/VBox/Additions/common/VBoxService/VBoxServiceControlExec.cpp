@@ -190,24 +190,24 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
 
 
 /**
- * Handle pending output data or error on standard out, standard error or the
- * test pipe.
+ * Handle pending output data/error on standard out or standard error.
  *
- * @returns IPRT status code from client send.
- * @param   pThread             The thread specific data.
+ * @return  IPRT status code.
  * @param   hPollSet            The polling set.
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
- * @param   phPipeR             The pipe handle.
- * @param   pu32Crc             The current CRC-32 of the stream. (In/Out)
- * @param   uHandleId           The handle ID.
- *
- * @todo    Put the last 4 parameters into a struct!
+ * @param   phPipeR             The pipe to be read from.
+ * @param   uHandleId           Handle ID of the pipe to be read from.
+ * @param   pBuf                Pointer to pipe buffer to store the read data into.
  */
 static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phPipeR,
-                                                       uint32_t uHandleId, PVBOXSERVICECTRLEXECPIPEBUF pStdOutBuf)
+                                                       uint32_t uHandleId, PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
+    AssertPtrReturn(phPipeR, VERR_INVALID_POINTER);
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+
 #ifdef DEBUG
-    VBoxServiceVerbose(4, "ControlExec: HandleOutputEvent: fPollEvt=%#x\n", fPollEvt);
+    VBoxServiceVerbose(4, "ControlExec: HandleOutputEvent: fPollEvt=%#x, uHandle=%u\n",
+                       fPollEvt, uHandleId);
 #endif
 
     /*
@@ -221,7 +221,7 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
     if (RT_SUCCESS(rc2) && cbRead)
     {
         uint32_t cbWritten;
-        rc = VBoxServicePipeBufWriteToBuf(pStdOutBuf, abBuf,
+        rc = VBoxServicePipeBufWriteToBuf(pBuf, abBuf,
                                           cbRead, false /* Pending close */, &cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -375,7 +375,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
                 case VBOXSERVICECTRLPIPEID_STDERR:
                     rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, phStdErrR,
-                                                                     VBOXSERVICECTRLPIPEID_STDERR, &pData->stdOut);
+                                                                     VBOXSERVICECTRLPIPEID_STDERR, &pData->stdErr);
                     break;
 
                 default:
@@ -1347,7 +1347,7 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
                  *       regardless whether we got data or not! Otherwise the progress object
                  *       on the host never will get completed! */
                 /* cbRead now contains actual size. */
-                rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, 0 /* Flags */,
+                rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, uFlags,
                                                 pBuf, cbRead);
             }
             RTMemFree(pBuf);

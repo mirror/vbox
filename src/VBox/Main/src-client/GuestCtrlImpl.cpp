@@ -2030,8 +2030,13 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
     CheckComArgExpr(aPID, aPID > 0);
     if (aSize < 0)
         return setError(E_INVALIDARG, tr("The size argument (%lld) is negative"), aSize);
-    if (aFlags != 0) /* Flags are not supported at the moment. */
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+    if (aFlags)
+    {
+        if (!(aFlags & ProcessOutputFlag_StdErr))
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
+    }
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2059,6 +2064,10 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         /* Adjust timeout. */
         if (aTimeoutMS == 0)
             aTimeoutMS = UINT32_MAX;
+        /* Set handle ID. */
+        uint32_t uHandleID = OUTPUT_HANDLE_ID_STDOUT; /* Default */
+        if (aFlags & ProcessOutputFlag_StdErr)
+            uHandleID = OUTPUT_HANDLE_ID_STDERR;
 
         /* Search for existing PID. */
         PCALLBACKDATAEXECOUT pData = (CALLBACKDATAEXECOUT*)RTMemAlloc(sizeof(CALLBACKDATAEXECOUT));
@@ -2072,14 +2081,14 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                                                      pData, sizeof(CALLBACKDATAEXECOUT), progress);
         Assert(uContextID > 0);
 
-        com::SafeArray<BYTE> outputData((size_t)aSize);
-
         VBOXHGCMSVCPARM paParms[5];
         int i = 0;
         paParms[i++].setUInt32(uContextID);
         paParms[i++].setUInt32(aPID);
-        paParms[i++].setUInt32(aFlags); /** @todo Should represent stdout and/or stderr. */
+        paParms[i++].setUInt32(uHandleID);
+        paParms[i++].setUInt32(0 /* Flags, none set yet */);
 
+        com::SafeArray<BYTE> outputData((size_t)aSize);
         int vrc = VINF_SUCCESS;
 
         {
