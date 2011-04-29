@@ -593,7 +593,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
     else if (    (   pPage->cModifications < 96 /* it's cheaper here. */
-                  || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
+                  || pgmPoolIsPageLocked(pPage)
                   )
              &&  cbBuf <= 4)
     {
@@ -642,7 +642,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
      */
     unsigned cModifiedPages = 0; NOREF(cModifiedPages);
     unsigned cLeft = pPool->cUsedPages;
-    unsigned iPage = pPool->cCurPages;
+    uint32_t iPage = pPool->cCurPages;
     while (--iPage >= PGMPOOL_IDX_FIRST)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[iPage];
@@ -798,7 +798,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {

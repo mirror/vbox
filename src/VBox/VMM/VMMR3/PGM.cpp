@@ -1695,6 +1695,11 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pStats->StatPageMapTlbFlushes,             "/PGM/R3/Page/MapTlbFlushes",         "TLB flushes (all contexts).");
     PGM_REG_COUNTER(&pStats->StatPageMapTlbFlushEntry,          "/PGM/R3/Page/MapTlbFlushEntry",      "TLB entry flushes (all contexts).");
 
+    PGM_REG_COUNTER(&pStats->StatRZRamRangeTlbHits,             "/PGM/RZ/RamRange/TlbHits",           "TLB hits.");
+    PGM_REG_COUNTER(&pStats->StatRZRamRangeTlbMisses,           "/PGM/RZ/RamRange/TlbMisses",         "TLB misses.");
+    PGM_REG_COUNTER(&pStats->StatR3RamRangeTlbHits,             "/PGM/R3/RamRange/TlbHits",           "TLB hits.");
+    PGM_REG_COUNTER(&pStats->StatR3RamRangeTlbMisses,           "/PGM/R3/RamRange/TlbMisses",         "TLB misses.");
+
     PGM_REG_PROFILE(&pStats->StatRZSyncCR3HandlerVirtualUpdate, "/PGM/RZ/SyncCR3/Handlers/VirtualUpdate", "Profiling of the virtual handler updates.");
     PGM_REG_PROFILE(&pStats->StatRZSyncCR3HandlerVirtualReset,  "/PGM/RZ/SyncCR3/Handlers/VirtualReset",  "Profiling of the virtual handler resets.");
     PGM_REG_PROFILE(&pStats->StatR3SyncCR3HandlerVirtualUpdate, "/PGM/R3/SyncCR3/Handlers/VirtualUpdate", "Profiling of the virtual handler updates.");
@@ -2223,13 +2228,19 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Ram ranges.
      */
-    if (pVM->pgm.s.pRamRangesR3)
+    if (pVM->pgm.s.pRamRangesXR3)
     {
         /* Update the pSelfRC pointers and relink them. */
-        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
             if (!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
                 pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
         pgmR3PhysRelinkRamRanges(pVM);
+
+#ifdef PGM_USE_RAMRANGE_TLB
+        /* Flush the RC TLB. */
+        for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
+            pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
+#endif
     }
 
     /*
@@ -2606,7 +2617,7 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
                     sizeof(RTHCPTR) * 2,      "pvHC            ");
 
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
         pHlp->pfnPrintf(pHlp,
                         "%RGp-%RGp %RHv %s\n",
                         pCur->GCPhys,
@@ -2655,7 +2666,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %RGp P=%d U=%d RW=%d G=%d - BIG\n",
                                 iPD,
-                                pgmGstGet4MBPhysPage(&pVM->pgm.s, PdeSrc),
+                                pgmGstGet4MBPhysPage(pVM, PdeSrc),
                                 PdeSrc.b.u1Present, PdeSrc.b.u1User, PdeSrc.b.u1Write, PdeSrc.b.u1Global && fPGE);
             else
                 pHlp->pfnPrintf(pHlp,
@@ -3589,7 +3600,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      */
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (!pVM->pgm.s.pRamRangesRC)
+    if (!pVM->pgm.s.pRamRangesXR3)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no Ram is registered.\n");
 
     /*
@@ -3597,7 +3608,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      */
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "From     - To (incl) pvHC\n");
     PPGMRAMRANGE pRam;
-    for (pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    for (pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
     {
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%RGp - %RGp  %p\n",
@@ -3813,9 +3824,9 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     RT_ZERO(abZeroPg);
 
     pgmLock(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
-          pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc);
-          pRam = pRam->pNextR3)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
+         pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc);
+         pRam = pRam->pNextR3)
     {
         /* fill the gap */
         if (pRam->GCPhys > GCPhys && fIncZeroPgs)

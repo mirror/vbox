@@ -464,8 +464,9 @@ VMMR3DECL(int)      PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pf
 VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
                                       const char **ppszDesc, bool *pfIsMmio);
-VMMR3DECL(int)      PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uint64_t *puTotalFreeSize, uint64_t *puTotalBalloonSize, uint64_t *puTotalSharedSize);
-VMMR3DECL(int)      PGMR3QueryMemoryStats(PVM pVM, uint64_t *pulTotalMem, uint64_t *pulPrivateMem, uint64_t *puTotalSharedMem, uint64_t *puTotalZeroMem);
+VMMR3DECL(int)      PGMR3QueryMemoryStats(PVM pVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem, uint64_t *pcbSharedMem, uint64_t *pcbZeroMem);
+VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem, uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem);
+
 VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
                                           R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                           R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,

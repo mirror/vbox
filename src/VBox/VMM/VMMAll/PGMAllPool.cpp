@@ -264,7 +264,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 #  ifndef IN_RING0
                         if ((uShw.pPDPae->a[iShw + i].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
-                            Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                            Assert(pgmMapAreMappingsEnabled(pVM));
                             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw+i));
                             break;
@@ -291,7 +291,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 #  ifndef IN_RING0
                                 if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                                 {
-                                    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                                    Assert(pgmMapAreMappingsEnabled(pVM));
                                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
                                     break;
@@ -370,7 +370,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 #  ifndef IN_RING0
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                    Assert(pgmMapAreMappingsEnabled(pVM));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
@@ -402,7 +402,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 #  ifndef IN_RING0
                         if (uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                         {
-                            Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                            Assert(pgmMapAreMappingsEnabled(pVM));
                             STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
@@ -448,7 +448,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 #ifndef IN_RING0
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                    Assert(pgmMapAreMappingsEnabled(pVM));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
@@ -485,7 +485,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     if (    iShw2 != iShw
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                        Assert(pgmMapAreMappingsEnabled(pVM));
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                         STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
@@ -526,7 +526,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 # ifndef IN_RING0
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                        Assert(pgmMapAreMappingsEnabled(pVM));
                         STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected pdpt conflict at iShw=%#x!\n", iShw));
@@ -557,7 +557,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 # ifndef IN_RING0
                             if (uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
                             {
-                                Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                                Assert(pgmMapAreMappingsEnabled(pVM));
                                 STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                                 LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
@@ -1124,7 +1124,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         &&  pvFault == (pPage->pvLastAccessHandlerFault + pDis->param1.size)
         &&  pVCpu->pgm.s.cPoolAccessHandler == (pPage->cLastAccessHandlerCount + 1))
     {
-        Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(&pVM->pgm.s, pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
+        Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
         Assert(pPage->cModifications < 32000);
         pPage->cModifications           = pPage->cModifications * 2;
         pPage->pvLastAccessHandlerFault = pvFault;
@@ -1137,7 +1137,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     }
 
     if (pPage->cModifications >= cMaxModifications)
-        Log(("Mod overflow %RGv cMods=%d (locked=%d type=%s)\n", pvFault, pPage->cModifications, pgmPoolIsPageLocked(&pVM->pgm.s, pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
+        Log(("Mod overflow %RGv cMods=%d (locked=%d type=%s)\n", pvFault, pPage->cModifications, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
 
     /*
      * Check if it's worth dealing with.
@@ -1145,7 +1145,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     bool fReused = false;
     bool fNotReusedNotForking = false;
     if (    (   pPage->cModifications < cMaxModifications   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
-             || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
+             || pgmPoolIsPageLocked(pPage)
             )
         &&  !(fReused = pgmPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
@@ -1254,7 +1254,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             )
        )
     {
-        Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
+        Assert(!pgmPoolIsPageLocked(pPage));
         Assert(pPage->fDirty == false);
 
         /* Flush any monitored duplicates as we will disable write protection. */
@@ -2022,7 +2022,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
          * Reject any attempts at flushing the currently active shadow CR3 mapping.
          * Call pgmPoolCacheUsed to move the page to the head of the age list.
          */
-        if (!pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
+        if (!pgmPoolIsPageLocked(pPage))
             break;
         LogFlow(("pgmPoolCacheFreeOne: refuse CR3 mapping\n"));
         pgmPoolCacheUsed(pPool, pPage);
@@ -3450,7 +3450,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
         PPGMPAGE pLargePage;
         if (GCPhysBase != GCPhysPage)
         {
-            pLargePage = pgmPhysGetPage(&pVM->pgm.s, GCPhysBase);
+            pLargePage = pgmPhysGetPage(pVM, GCPhysBase);
             AssertFatal(pLargePage);
         }
         else
@@ -3706,7 +3706,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     LogFlow(("pgmPoolTrackClearPageUser: clear %x in %s (%RGp) (flushing %s)\n", iUserTable, pgmPoolPoolKindToStr(pUserPage->enmKind), pUserPage->Core.Key, pgmPoolPoolKindToStr(pPage->enmKind)));
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
-    Assert(!pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage));
+    Assert(!pgmPoolIsPageLocked(pPage));
 
 #ifdef VBOX_STRICT
     /*
@@ -4147,9 +4147,9 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
 /**
  * Clear references to guest physical memory.
  *
- * This is the same as pgmPoolTracDerefGCPhys except that the guest physical address
- * is assumed to be correct, so the linear search can be skipped and we can assert
- * at an earlier point.
+ * This is the same as pgmPoolTracDerefGCPhysHint except that the guest
+ * physical address is assumed to be correct, so the linear search can be
+ * skipped and we can assert at an earlier point.
  *
  * @param   pPool       The pool.
  * @param   pPage       The page.
@@ -4160,34 +4160,28 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
 static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhys, uint16_t iPte)
 {
     /*
-     * Walk range list.
+     * Lookup the page and check if it checks out before derefing it.
      */
-    PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
-    while (pRam)
+    PPGMPAGE pPhysPage = pgmPhysGetPage(pPool->CTX_SUFF(pVM), GCPhys);
+    if (pPhysPage)
     {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            /* does it match? */
-            const unsigned iPage = off >> PAGE_SHIFT;
-            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
+        Assert(PGM_PAGE_GET_HCPHYS(pPhysPage));
 #ifdef LOG_ENABLED
-            RTHCPHYS HCPhysPage = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]);
-            Log2(("pgmPoolTracDerefGCPhys %RHp vs %RHp\n", HCPhysPage, HCPhys));
+        RTHCPHYS HCPhysPage = PGM_PAGE_GET_HCPHYS(pPhysPage);
+        Log2(("pgmPoolTracDerefGCPhys %RHp vs %RHp\n", HCPhysPage, HCPhys));
 #endif
-            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
-            {
-                Assert(pPage->cPresent);
-                Assert(pPool->cPresent);
-                pPage->cPresent--;
-                pPool->cPresent--;
-                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage], iPte);
-                return;
-            }
-            AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp; found page index %x HCPhys=%RHp\n", HCPhys, GCPhys, iPage, PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage])));
-            break;
+        if (PGM_PAGE_GET_HCPHYS(pPhysPage) == HCPhys)
+        {
+            Assert(pPage->cPresent);
+            Assert(pPool->cPresent);
+            pPage->cPresent--;
+            pPool->cPresent--;
+            pgmTrackDerefGCPhys(pPool, pPage, pPhysPage, iPte);
+            return;
         }
-        pRam = pRam->CTX_SUFF(pNext);
+
+        AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp; found page has HCPhys=%RHp\n",
+                              HCPhys, GCPhys, PGM_PAGE_GET_HCPHYS(pPhysPage)));
     }
     AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp\n", HCPhys, GCPhys));
 }
@@ -4204,42 +4198,35 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
  */
 void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte)
 {
-    RTHCPHYS HCPhysExpected = 0xDEADBEEFDEADBEEFULL;
-
     Log4(("pgmPoolTracDerefGCPhysHint %RHp %RGp\n", HCPhys, GCPhysHint));
 
     /*
-     * Walk range list.
+     * Try the hint first.
      */
-    PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
-    while (pRam)
+    RTHCPHYS HCPhysHinted;
+    PPGMPAGE pPhysPage = pgmPhysGetPage(pPool->CTX_SUFF(pVM), GCPhysHint);
+    if (pPhysPage)
     {
-        RTGCPHYS off = GCPhysHint - pRam->GCPhys;
-        if (off < pRam->cb)
+        HCPhysHinted = PGM_PAGE_GET_HCPHYS(pPhysPage);
+        Assert(HCPhysHinted);
+        if (HCPhysHinted == HCPhys)
         {
-            /* does it match? */
-            const unsigned iPage = off >> PAGE_SHIFT;
-            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
-            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
-            {
-                Assert(pPage->cPresent);
-                Assert(pPool->cPresent);
-                pPage->cPresent--;
-                pPool->cPresent--;
-                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage], iPte);
-                return;
-            }
-            HCPhysExpected = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]);
-            break;
+            Assert(pPage->cPresent);
+            Assert(pPool->cPresent);
+            pPage->cPresent--;
+            pPool->cPresent--;
+            pgmTrackDerefGCPhys(pPool, pPage, pPhysPage, iPte);
+            return;
         }
-        pRam = pRam->CTX_SUFF(pNext);
     }
+    else
+        HCPhysHinted = UINT64_C(0xdeadbeefdeadbeef);
 
     /*
-     * Damn, the hint didn't work. We'll have to do an expensive linear search.
+     * Damn, the hint didn't work.  We'll have to do an expensive linear search.
      */
     STAM_COUNTER_INC(&pPool->StatTrackLinearRamSearches);
-    pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRangesX);
     while (pRam)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
@@ -4260,7 +4247,7 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
         pRam = pRam->CTX_SUFF(pNext);
     }
 
-    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp (Expected HCPhys with hint = %RHp)\n", HCPhys, GCPhysHint, HCPhysExpected));
+    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp (Hinted page has HCPhys = %RHp)\n", HCPhys, GCPhysHint, HCPhysHinted));
 }
 
 
@@ -4777,7 +4764,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (pgmPoolIsPageLocked(&pVM->pgm.s, pPage))
+    if (pgmPoolIsPageLocked(pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
@@ -5183,7 +5170,7 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
                     else
 #endif
                         STAM_COUNTER_INC(&pPool->StatForceFlushPage);
-                    Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
+                    Assert(!pgmPoolIsPageLocked(pPage));
                     pgmPoolMonitorChainFlush(pPool, pPage);
                     return;
                 }
@@ -5327,7 +5314,7 @@ void pgmR3PoolReset(PVM pVM)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {

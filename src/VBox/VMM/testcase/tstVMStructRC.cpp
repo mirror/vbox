@@ -563,9 +563,9 @@ int main()
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
     GEN_CHECK_OFF(PGM, GCPhys4MBPSEMask);
-    GEN_CHECK_OFF(PGM, pRamRangesR3);
-    GEN_CHECK_OFF(PGM, pRamRangesR0);
-    GEN_CHECK_OFF(PGM, pRamRangesRC);
+    GEN_CHECK_OFF(PGM, pRamRangesXR3);
+    GEN_CHECK_OFF(PGM, pRamRangesXR0);
+    GEN_CHECK_OFF(PGM, pRamRangesXRC);
     GEN_CHECK_OFF(PGM, pRomRangesR3);
     GEN_CHECK_OFF(PGM, pRomRangesR0);
     GEN_CHECK_OFF(PGM, pRomRangesRC);

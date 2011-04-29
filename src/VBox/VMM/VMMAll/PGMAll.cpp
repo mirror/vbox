@@ -733,7 +733,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     /*
      * Check for conflicts and pending CR3 monitoring updates.
      */
-    if (pgmMapAreMappingsFloating(&pVM->pgm.s))
+    if (pgmMapAreMappingsFloating(pVM))
     {
         if (    pgmGetMapping(pVM, GCPtrPage)
             &&  PGMGstGetPage(pVCpu, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
@@ -1443,7 +1443,7 @@ int pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAGE_MASK;
     PPGMPAGE    pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
@@ -1485,7 +1485,7 @@ int pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
     PPGMPAGE    pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
@@ -1533,7 +1533,7 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     bool const      fChanged    = pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt] != GCPhys;
 
     PPGMPAGE        pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
         RTRCPTR     RCPtr       = NIL_RTRCPTR;
@@ -1595,7 +1595,7 @@ int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
     PPGMPAGE    pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
@@ -1813,7 +1813,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
-            if (pgmMapAreMappingsFloating(&pVM->pgm.s))
+            if (pgmMapAreMappingsFloating(pVM))
                 pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
         }
         else
@@ -1822,7 +1822,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
             Assert(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
-            if (pgmMapAreMappingsFloating(&pVM->pgm.s))
+            if (pgmMapAreMappingsFloating(pVM))
                 pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
         }
 
@@ -2361,7 +2361,7 @@ int pgmRZDynMapGCPageCommon(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv R
      * Convert it to a writable page and it on to the dynamic mapper.
      */
     int rc;
-    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+    PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
     if (RT_LIKELY(pPage))
     {
         rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
