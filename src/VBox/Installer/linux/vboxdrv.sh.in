@@ -46,12 +46,14 @@ if [ -n "$INSTALL_DIR" ]; then
     BUILDVBOXDRV="$INSTALL_DIR/src/vboxhost/vboxdrv/build_in_tmp"
     BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxhost/vboxnetflt/build_in_tmp"
     BUILDVBOXNETADP="$INSTALL_DIR/src/vboxhost/vboxnetadp/build_in_tmp"
+    BUILDVBOXPCI="$INSTALL_DIR/src/vboxhost/vboxpci/build_in_tmp"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
     DODKMS="/usr/share/%PACKAGE%/src/vboxhost/do_dkms"
     BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxhost/vboxdrv/build_in_tmp"
     BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxhost/vboxnetflt/build_in_tmp"
     BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxhost/vboxnetadp/build_in_tmp"
+    BUILDVBOXPCI="/usr/share/%PACKAGE%/src/vboxhost/vboxpci/build_in_tmp"
 fi
 
 # silently exit if the package was uninstalled but not purged,
@@ -194,6 +196,7 @@ start()
     fi
     # ensure permissions
     if ! chown :%GROUP% $DEVICE 2>/dev/null; then
+        rmmod vboxpci 2>/dev/null
         rmmod vboxnetadp 2>/dev/null
         rmmod vboxnetflt 2>/dev/null
         rmmod vboxdrv 2>/dev/null
@@ -204,6 +207,9 @@ start()
     fi
     if ! $MODPROBE vboxnetadp > /dev/null 2>&1; then
         failure "modprobe vboxnetadp failed. Please use 'dmesg' to find out why"
+    fi
+    if ! $MODPROBE vboxpci > /dev/null 2>&1; then
+        failure "modprobe vboxpci failed. Please use 'dmesg' to find out why"
     fi
     # Create the /dev/vboxusb directory if the host supports that method
     # of USB access.  The USB code checks for the existance of that path.
@@ -217,6 +223,11 @@ start()
 stop()
 {
     begin_msg "Stopping VirtualBox kernel modules"
+    if running vboxpci; then
+        if ! rmmod vboxpci 2>/dev/null; then
+            failure "Cannot unload module vboxpci"
+        fi
+    fi
     if running vboxnetadp; then
         if ! rmmod vboxnetadp 2>/dev/null; then
             failure "Cannot unload module vboxnetadp"
@@ -292,6 +303,11 @@ setup()
     begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
     $DODKMS uninstall > $LOG
     succ_msg
+    if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
+        begin_msg "Removing old VirtualBox pci kernel module"
+        find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi  
     if find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|grep -q vboxnetadp; then
         begin_msg "Removing old VirtualBox netadp kernel module"
         find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -335,15 +351,17 @@ setup()
 dmnstatus()
 {
     if running vboxdrv; then
+        str="vboxdrv"
         if running vboxnetflt; then
+            str="$str, vboxnetflt"
             if running vboxnetadp; then
-                echo "VirtualBox kernel modules (vboxdrv, vboxnetflt and vboxnetadp) are loaded."
-            else
-                echo "VirtualBox kernel modules (vboxdrv and vboxnetflt) are loaded."
+                str="$str, vboxnetadp"
             fi
-        else
-            echo "VirtualBox kernel module is loaded."
         fi
+        if running vboxpci; then
+            str="$str, vboxpci"
+        fi
+        echo "VirtualBox kernel modules ($str) are loaded."
         for i in $SHUTDOWN_USERS; do
             # don't create the ipcd directory with wrong permissions!
             if [ -d /tmp/.vbox-$i-ipc ]; then
