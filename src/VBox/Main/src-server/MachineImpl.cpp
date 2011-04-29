@@ -6026,6 +6026,12 @@ STDMETHODIMP Machine::COMGETTER(BandwidthControl)(IBandwidthControl **aBandwidth
     return S_OK;
 }
 
+STDMETHODIMP Machine::CloneTo(IMachine *aTarget, BOOL aFullClone, IProgress **aProgress)
+{
+    NOREF(aTarget); NOREF(aFullClone); NOREF(aProgress);
+    ReturnComNotImplemented();
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
