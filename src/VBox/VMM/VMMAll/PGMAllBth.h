@@ -549,13 +549,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         Assert(uErr & X86_TRAP_PF_P);
         PPGMPAGE pPage;
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        rc = pgmPhysGetPageEx(&pVM->pgm.s, GstWalk.Core.GCPhys, &pPage);
+        rc = pgmPhysGetPageEx(pVM, GstWalk.Core.GCPhys, &pPage);
         if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken, &GstWalk));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
 #   else
-        rc = pgmPhysGetPageEx(&pVM->pgm.s, (RTGCPHYS)pvFault, &pPage);
+        rc = pgmPhysGetPageEx(pVM, (RTGCPHYS)pvFault, &pPage);
         if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken));
@@ -674,7 +674,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      * us from screwing ourself with MMIO2 pages which have a GC Mapping (VRam).
      * (BTW, it's impossible to have physical access handlers in a mapping.)
      */
-    if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (pgmMapAreMappingsEnabled(pVM))
     {
         PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
         for ( ; pMapping; pMapping = pMapping->CTX_SUFF(pNext))
@@ -686,7 +686,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 /*
                  * The first thing we check is if we've got an undetected conflict.
                  */
-                if (pgmMapAreMappingsFloating(&pVM->pgm.s))
+                if (pgmMapAreMappingsFloating(pVM))
                 {
                     unsigned iPT = pMapping->cb >> GST_PD_SHIFT;
                     while (iPT-- > 0)
@@ -750,7 +750,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     RTGCPHYS GCPhys = (RTGCPHYS)pvFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
     PPGMPAGE pPage;
-    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_FAILURE(rc))
     {
         /*
@@ -1260,7 +1260,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             /*
              * Conflict - Let SyncPT deal with it to avoid duplicate code.
              */
-            Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+            Assert(pgmMapAreMappingsEnabled(pVM));
             Assert(PGMGetGuestMode(pVCpu) <= PGMMODE_PAE);
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
         }
@@ -1372,7 +1372,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         }
         else
         {
-            Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+            Assert(pgmMapAreMappingsEnabled(pVM));
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDMappings));
         }
     }
@@ -1412,7 +1412,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
         pShwPage->cPresent--;
         pPool->cPresent--;
 
-        PPGMPAGE pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysPage);
+        PPGMPAGE pPhysPage = pgmPhysGetPage(pVM, GCPhysPage);
         AssertRelease(pPhysPage);
         pgmTrackDerefGCPhys(pPool, pShwPage, pPhysPage, iPte);
         return;
@@ -1431,7 +1431,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
     /*
      * Find the guest address.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
@@ -1624,7 +1624,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS
          * Find the ram range.
          */
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
+        int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
         if (RT_SUCCESS(rc))
         {
             /* Ignore ballooned pages.
@@ -1982,7 +1982,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                                 if (    ((PdeSrc.u & pPteSrc->u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
                                     ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCurPage)
-                                    ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK))
+                                    ||  (   (pPage = pgmPhysGetPage(pVM, pPteSrc->u & GST_PTE_PG_MASK))
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
 #endif /* else: CSAM not active */
@@ -2029,7 +2029,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc) | (GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
                 /* Find ram range. */
                 PPGMPAGE pPage;
-                int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+                int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
                 if (RT_SUCCESS(rc))
                 {
                     AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhys));
@@ -2441,7 +2441,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
             {
                 if (SHW_PTE_IS_TRACK_DIRTY(*pPteDst))
                 {
-                    PPGMPAGE pPage  = pgmPhysGetPage(&pVM->pgm.s, GST_GET_PTE_GCPHYS(*pPteSrc));
+                    PPGMPAGE pPage  = pgmPhysGetPage(pVM, GST_GET_PTE_GCPHYS(*pPteSrc));
                     SHWPTE   PteDst = *pPteDst;
 
                     LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
@@ -2612,7 +2612,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
      */
     if (PdeDst.u & PGM_PDFLAGS_MAPPING)
     {
-        Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+        Assert(pgmMapAreMappingsEnabled(pVM));
 #  ifndef IN_RING3
         Log(("SyncPT: Conflict at %RGv\n", GCPtrPage));
         STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
@@ -2816,7 +2816,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                         PPGMPAGE pPage;
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
                             ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCur)
-                            ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, GST_GET_PTE_GCPHYS(PteSrc)))
+                            ||  (   (pPage = pgmPhysGetPage(pVM, GST_GET_PTE_GCPHYS(PteSrc)))
                                  &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                            )
 # endif
@@ -2840,7 +2840,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Big page - 2/4MB.
              *
              * We'll walk the ram range list in parallel and optimize lookups.
-             * We will only sync on shadow page table at a time.
+             * We will only sync one shadow page table at a time.
              */
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT4M));
 
@@ -2887,14 +2887,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             Log2(("SyncPT:   BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%RGv GCPhys=%RGp %s\n",
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
-            PPGMRAMRANGE    pRam   = pVM->pgm.s.CTX_SUFF(pRamRanges);
+            PPGMRAMRANGE    pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
             unsigned        iPTDst = 0;
             while (     iPTDst < RT_ELEMENTS(pPTDst->a)
                    &&   !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
             {
-                /* Advance ram range list. */
-                while (pRam && GCPhys > pRam->GCPhysLast)
-                    pRam = pRam->CTX_SUFF(pNext);
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
                     unsigned iHCPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
@@ -2969,6 +2966,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                         iPTDst++;
                     } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys <= pRam->GCPhysLast);
+
+                    /* Advance ram range list. */
+                    while (pRam && GCPhys > pRam->GCPhysLast)
+                        pRam = pRam->CTX_SUFF(pNext);
                 }
                 else if (pRam)
                 {
@@ -3075,7 +3076,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     {
         /* Check if we allocated a big page before for this 2 MB range. */
         PPGMPAGE pPage;
-        rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & X86_PDE2M_PAE_PG_MASK, &pPage);
+        rc = pgmPhysGetPageEx(pVM, GCPtrPage & X86_PDE2M_PAE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
             RTHCPHYS HCPhys = NIL_RTHCPHYS;
@@ -3584,7 +3585,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     /*
      * Nested / EPT - almost no work.
      */
-    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+    Assert(!pgmMapAreMappingsEnabled(pVM));
     return VINF_SUCCESS;
 
 #elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -3592,7 +3593,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
      * AMD64 (Shw & Gst) - No need to check all paging levels; we zero
      * out the shadow parts when the guest modifies its tables.
      */
-    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+    Assert(!pgmMapAreMappingsEnabled(pVM));
     return VINF_SUCCESS;
 
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
@@ -3602,7 +3603,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
      * Check for and resolve conflicts with our guest mappings if they
      * are enabled and not fixed.
      */
-    if (pgmMapAreMappingsFloating(&pVM->pgm.s))
+    if (pgmMapAreMappingsFloating(pVM))
     {
         int rc = pgmMapResolveConflicts(pVM);
         Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
@@ -3613,7 +3614,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
         }
     }
 #  else
-    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+    Assert(!pgmMapAreMappingsEnabled(pVM));
 #  endif
     return VINF_SUCCESS;
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
@@ -3680,7 +3681,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
-    rc = pgmRamGCPhys2HCPhys(&pVM->pgm.s, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
+    rc = pgmRamGCPhys2HCPhys(pVM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     pgmGstGet32bitPDPtr(pVCpu);
@@ -3868,7 +3869,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 # endif
                 if (PdeDst.u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+                    Assert(pgmMapAreMappingsEnabled(pVM));
                     if ((PdeDst.u & X86_PDE_AVL_MASK) != PGM_PDFLAGS_MAPPING)
                     {
                         AssertMsgFailed(("Mapping shall only have PGM_PDFLAGS_MAPPING set! PdeDst.u=%#RX64\n", (uint64_t)PdeDst.u));
@@ -3947,7 +3948,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         cErrors++;
                     }
 
-                    PPGMPAGE pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
+                    PPGMPAGE pPhysPage = pgmPhysGetPage(pVM, GCPhysGst);
                     if (!pPhysPage)
                     {
                         AssertMsgFailed(("Cannot find guest physical address %RGp in the PDE at %RGv! PdeSrc=%#RX64\n",
@@ -4061,7 +4062,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             }
 # endif
 
-                            pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
+                            pPhysPage = pgmPhysGetPage(pVM, GCPhysGst);
                             if (!pPhysPage)
                             {
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
@@ -4293,7 +4294,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                                 continue;
                             }
 # endif
-                            pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
+                            pPhysPage = pgmPhysGetPage(pVM, GCPhysGst);
                             if (!pPhysPage)
                             {
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
@@ -4415,7 +4416,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     RTHCPTR     HCPtrGuestCR3;
     RTHCPHYS    HCPhysGuestCR3;
     pgmLock(pVM);
-    PPGMPAGE    pPageCR3 = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
+    PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_INTERNAL_ERROR_2);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPageCR3);
     /** @todo this needs some reworking wrt. locking?  */
@@ -4463,7 +4464,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pGuestPDPT->a[i].u & X86_PDPE_PG_MASK;
                     pgmLock(pVM);
-                    PPGMPAGE    pPage  = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
                     AssertReturn(pPage, VERR_INTERNAL_ERROR_2);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
 #  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)

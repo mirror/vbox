@@ -159,15 +159,15 @@ void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
  */
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode;
+    PPGMPHYSHANDLER pCur     = (PPGMPHYSHANDLER)pNode;
     PPGMRAMRANGE    pRamHint = NULL;
-    RTGCPHYS        GCPhys = pCur->Core.Key;
-    RTUINT          cPages = pCur->cPages;
-    PPGM            pPGM = &((PVM)pvUser)->pgm.s;
+    RTGCPHYS        GCPhys   = pCur->Core.Key;
+    RTUINT          cPages   = pCur->cPages;
+    PVM             pVM      = (PVM)pvUser;
     for (;;)
     {
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, &pRamHint);
+        int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
         else
@@ -189,16 +189,16 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
  */
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode;
-    unsigned        uState = pgmHandlerPhysicalCalcState(pCur);
+    PPGMPHYSHANDLER pCur     = (PPGMPHYSHANDLER)pNode;
+    unsigned        uState   = pgmHandlerPhysicalCalcState(pCur);
     PPGMRAMRANGE    pRamHint = NULL;
-    RTGCPHYS        GCPhys = pCur->Core.Key;
-    RTUINT          cPages = pCur->cPages;
-    PPGM            pPGM = &((PVM)pvUser)->pgm.s;
+    RTGCPHYS        GCPhys   = pCur->Core.Key;
+    RTUINT          cPages   = pCur->cPages;
+    PVM             pVM      = (PVM)pvUser;
     for (;;)
     {
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, &pRamHint);
+        int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
         else
@@ -470,10 +470,9 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
         /*
          * Reset the flags and remove phys2virt nodes.
          */
-        PPGM pPGM = &pVM->pgm.s;
-        for (unsigned iPage = 0; iPage < pCur->cPages; iPage++)
+        for (uint32_t iPage = 0; iPage < pCur->cPages; iPage++)
             if (pCur->aPhysToVirt[iPage].offNextAlias & PGMPHYS2VIRTHANDLER_IN_TREE)
-                pgmHandlerVirtualClearPage(pPGM, pCur, iPage);
+                pgmHandlerVirtualClearPage(pVM, pCur, iPage);
 
         /*
          * Schedule CR3 sync.

@@ -269,9 +269,9 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
  */
 void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
-    Log4(("pgmMapSetShadowPDEs new pde %x (mappings enabled %d)\n", iNewPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
+    Log4(("pgmMapSetShadowPDEs new pde %x (mappings enabled %d)\n", iNewPDE, pgmMapAreMappingsEnabled(pVM)));
 
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+    if (    !pgmMapAreMappingsEnabled(pVM)
         ||  pVM->cCpus > 1)
         return;
 
@@ -353,7 +353,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                  */
                 PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
-                if (!pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
+                if (!pgmPoolIsPageLocked(pPoolPagePd))
                     pgmPoolLockPage(pPool, pPoolPagePd);
 #ifdef VBOX_STRICT
                 else if (pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING)
@@ -423,12 +423,12 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
  */
 void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3)
 {
-    Log(("pgmMapClearShadowPDEs: old pde %x (cPTs=%x) (mappings enabled %d) fDeactivateCR3=%RTbool\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s), fDeactivateCR3));
+    Log(("pgmMapClearShadowPDEs: old pde %x (cPTs=%x) (mappings enabled %d) fDeactivateCR3=%RTbool\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(pVM), fDeactivateCR3));
 
     /*
      * Skip this if disabled or if it doesn't apply.
      */
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+    if (    !pgmMapAreMappingsEnabled(pVM)
         ||  pVM->cCpus > 1)
         return;
 
@@ -525,7 +525,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 {
                     PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                     AssertFatal(pPoolPagePd);
-                    if (pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
+                    if (pgmPoolIsPageLocked(pPoolPagePd))
                         pgmPoolUnlockPage(pPool, pPoolPagePd);
                 }
                 break;
@@ -629,7 +629,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
     /*
      * Can skip this if mappings are disabled.
      */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (!pgmMapAreMappingsEnabled(pVM))
         return;
 
     /* This only applies to raw mode where we only support 1 VCPU. */
@@ -664,7 +664,7 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Skip this if disabled or if it doesn't apply.
      */
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+    if (    !pgmMapAreMappingsEnabled(pVM)
         ||  pVM->cCpus > 1)
         return VINF_SUCCESS;
 
@@ -701,7 +701,7 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Skip this if disabled or if it doesn't apply.
      */
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+    if (    !pgmMapAreMappingsEnabled(pVM)
         ||  pVM->cCpus > 1)
         return VINF_SUCCESS;
 
@@ -732,7 +732,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
     /*
      * Can skip this if mappings are safely fixed.
      */
-    if (!pgmMapAreMappingsFloating(&pVM->pgm.s))
+    if (!pgmMapAreMappingsFloating(pVM))
         return false;
 
     Assert(pVM->cCpus == 1);

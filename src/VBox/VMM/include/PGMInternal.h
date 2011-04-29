@@ -1326,6 +1326,21 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 #define PGM_RAM_RANGE_IS_AD_HOC(pRam) \
     (!!( (pRam)->fFlags & (PGM_RAM_RANGE_FLAGS_AD_HOC_ROM | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2) ) )
 
+/* enable the tlbs. */
+//#define PGM_USE_RAMRANGE_TLB
+/** The number of entries in the RAM range TLBs (there is one for each
+ *  context).  Must be a power of two. */
+#define PGM_RAMRANGE_TLB_ENTRIES            8
+
+/**
+ * Calculates the RAM range TLB index for the physical address.
+ *
+ * @returns RAM range TLB index.
+ * @param   GCPhys      The guest physical address.
+ */
+#define PGM_RAMRANGE_TLB_IDX(a_GCPhys)      ( ((a_GCPhys) >> 20) & (PGM_RAMRANGE_TLB_ENTRIES - 1) )
+
+
 
 /**
  * Per page tracking structure for ROM image.
@@ -2791,6 +2806,10 @@ typedef struct PGMSTATS
     STAMCOUNTER StatR3ChunkR3MapTlbMisses;          /**< R3: Ring-3/0 chunk mapper TLB misses. */
     STAMCOUNTER StatR3PageMapTlbHits;               /**< R3: Ring-3/0 page mapper TLB hits. */
     STAMCOUNTER StatR3PageMapTlbMisses;             /**< R3: Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatRZRamRangeTlbHits;              /**< RC/R0: RAM range TLB hits. */
+    STAMCOUNTER StatRZRamRangeTlbMisses;            /**< RC/R0: RAM range TLB misses. */
+    STAMCOUNTER StatR3RamRangeTlbHits;              /**< R3: RAM range TLB hits. */
+    STAMCOUNTER StatR3RamRangeTlbMisses;            /**< R3: RAM range TLB misses. */
     STAMPROFILE StatRZSyncCR3HandlerVirtualReset;   /**< RC/R0: Profiling of the virtual handler resets. */
     STAMPROFILE StatRZSyncCR3HandlerVirtualUpdate;  /**< RC/R0: Profiling of the virtual handler updates. */
     STAMPROFILE StatR3SyncCR3HandlerVirtualReset;   /**< R3: Profiling of the virtual handler resets. */
@@ -2945,7 +2964,11 @@ typedef struct PGM
 
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
-    R3PTRTYPE(PPGMRAMRANGE)         pRamRangesR3;
+    R3PTRTYPE(PPGMRAMRANGE)         pRamRangesXR3;
+#ifdef PGM_USE_RAMRANGE_TLB
+    /** Ram range TLB for R3. */
+    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR3[PGM_RAMRANGE_TLB_ENTRIES];
+#endif
     /** PGM offset based trees - R3 Ptr. */
     R3PTRTYPE(PPGMTREES)            pTreesR3;
     /** Caching the last physical handler we looked up in R3. */
@@ -2966,9 +2989,12 @@ typedef struct PGM
     R3PTRTYPE(PPGMMODEDATA)         paModeData;
     /*RTR3PTR                         R3PtrAlignment0;*/
 
-
-    /** R0 pointer corresponding to PGM::pRamRangesR3. */
-    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
+    /** R0 pointer corresponding to PGM::pRamRangesXR3. */
+    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesXR0;
+#ifdef PGM_USE_RAMRANGE_TLB
+    /** Ram range TLB for R0. */
+    R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
+#endif
     /** PGM offset based trees - R0 Ptr. */
     R0PTRTYPE(PPGMTREES)            pTreesR0;
     /** Caching the last physical handler we looked up in R0. */
@@ -2983,8 +3009,12 @@ typedef struct PGM
     /*RTR0PTR                         R0PtrAlignment0;*/
 
 
-    /** RC pointer corresponding to PGM::pRamRangesR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
+    /** RC pointer corresponding to PGM::pRamRangesXR3. */
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesXRC;
+#ifdef PGM_USE_RAMRANGE_TLB
+    /** Ram range TLB for RC. */
+    RCPTRTYPE(PPGMRAMRANGE)         apRamRangesTlbRC[PGM_RAMRANGE_TLB_ENTRIES];
+#endif
     /** PGM offset based trees - RC Ptr. */
     RCPTRTYPE(PPGMTREES)            pTreesRC;
     /** Caching the last physical handler we looked up in RC. */
@@ -3770,8 +3800,8 @@ int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
-int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
-int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysPageLoadIntoTlb(PVM pVM, RTGCPHYS GCPhys);
+int             pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
@@ -3783,6 +3813,12 @@ int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTG
 VMMDECL(int)    pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 VMMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
+void            pgmPhysInvalidRamRangeTlbs(PVM pVM);
+PPGMRAMRANGE    pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys);
+PPGMRAMRANGE    pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys);
+PPGMPAGE        pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys);
+int             pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage);
+int             pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
 
 #ifdef IN_RING3
 void            pgmR3PhysRelinkRamRanges(PVM pVM);

@@ -509,7 +509,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     /*
      * Ignore the additions mapping fix call if disabled.
      */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (!pgmMapAreMappingsEnabled(pVM))
     {
         Assert(HWACCMIsEnabled(pVM));
         return VINF_SUCCESS;
@@ -550,7 +550,7 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(cb && !(cb & X86_PAGE_4M_OFFSET_MASK), ("cb (%#x) is 0 or not aligned on a 4MB address!\n", cb),
                     VERR_INVALID_PARAMETER);
-    AssertReturn(pgmMapAreMappingsEnabled(&pVM->pgm.s), VERR_INTERNAL_ERROR_3);
+    AssertReturn(pgmMapAreMappingsEnabled(pVM), VERR_INTERNAL_ERROR_3);
     AssertReturn(pVM->cCpus == 1, VERR_INTERNAL_ERROR_4);
 
     /*
@@ -725,7 +725,7 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
 VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 {
     Log(("PGMR3MappingsUnfix: fMappingsFixed=%RTbool fMappingsDisabled=%RTbool\n", pVM->pgm.s.fMappingsFixed, pVM->pgm.s.fMappingsDisabled));
-    if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
+    if (   pgmMapAreMappingsEnabled(pVM)
         && (    pVM->pgm.s.fMappingsFixed
             ||  pVM->pgm.s.fMappingsFixedRestored)
        )
@@ -1019,7 +1019,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     pgmLock(pVM);                           /* to avoid assertions */
 
-    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVCpu) <= PGMMODE_PAE_NX);
+    Assert(!pgmMapAreMappingsEnabled(pVM) || PGMGetGuestMode(pVCpu) <= PGMMODE_PAE_NX);
 
     pgmMapSetShadowPDEs(pVM, pMap, iNewPDE);
 

@@ -139,7 +139,7 @@
 # define GST_PDE_BIG_PG_MASK                    X86_PDE4M_PG_MASK
 # define GST_GET_PTE_GCPHYS(Pte)                ((Pte).u & GST_PDE_PG_MASK)
 # define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & GST_PDE_PG_MASK)
-# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       pgmGstGet4MBPhysPage(&(pVM)->pgm.s, Pde)
+# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       pgmGstGet4MBPhysPage((pVM), Pde)
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A))
 # define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde) \
     ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A))

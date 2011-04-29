@@ -382,7 +382,7 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     {
         uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal, uSharedTotal;
         *aMemFreeTotal = 0;
-        int rc = PGMR3QueryVMMMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
+        int rc = PGMR3QueryGlobalMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {

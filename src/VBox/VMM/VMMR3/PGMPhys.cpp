@@ -118,12 +118,9 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
     /*
      * Copy loop on ram ranges.
      */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
     for (;;)
     {
-        /* Find range. */
-        while (pRam && GCPhys > pRam->GCPhysLast)
-            pRam = pRam->CTX_SUFF(pNext);
         /* Inside range or not? */
         if (pRam && GCPhys >= pRam->GCPhys)
         {
@@ -185,9 +182,7 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
             /*
              * Unassigned address space.
              */
-            if (!pRam)
-                break;
-            size_t cb = pRam->GCPhys - GCPhys;
+            size_t cb = pRam ? pRam->GCPhys - GCPhys : ~(size_t)0;
             if (cb >= cbRead)
             {
                 memset(pvBuf, 0xff, cbRead);
@@ -199,6 +194,10 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
             pvBuf   = (char *)pvBuf + cb;
             GCPhys += cb;
         }
+
+        /* Advance range if necessary. */
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = pRam->CTX_SUFF(pNext);
     } /* Ram range walk */
 
     pgmUnlock(pVM);
@@ -249,12 +248,9 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
     /*
      * Copy loop on ram ranges, stop when we hit something difficult.
      */
-    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
     for (;;)
     {
-        /* Find range. */
-        while (pRam && GCPhys > pRam->GCPhysLast)
-            pRam = pRam->CTX_SUFF(pNext);
         /* Inside range or not? */
         if (pRam && GCPhys >= pRam->GCPhys)
         {
@@ -331,6 +327,10 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
             pvBuf   = (const char *)pvBuf + cb;
             GCPhys += cb;
         }
+
+        /* Advance range if necessary. */
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = pRam->CTX_SUFF(pNext);
     } /* Ram range walk */
 
     pgmUnlock(pVM);
@@ -360,7 +360,7 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
     if (RT_SUCCESS(rc))
     {
         PPGMPAGEMAPTLBE pTlbe;
-        int rc2 = pgmPhysPageQueryTlbe(&pVM->pgm.s, *pGCPhys, &pTlbe);
+        int rc2 = pgmPhysPageQueryTlbe(pVM, *pGCPhys, &pTlbe);
         AssertFatalRC(rc2);
         PPGMPAGE pPage = pTlbe->pPage;
         if (PGM_PAGE_IS_MMIO(pPage))
@@ -430,7 +430,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
      * Query the Physical TLB entry for the page (may fail).
      */
     PPGMPAGEMAPTLBE pTlbe;
-    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    rc = pgmPhysPageQueryTlbe(pVM, GCPhys, &pTlbe);
     if (RT_SUCCESS(rc))
     {
         PPGMPAGE pPage = pTlbe->pPage;
@@ -531,7 +531,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
      * Query the Physical TLB entry for the page (may fail).
      */
     PPGMPAGEMAPTLBE pTlbe;
-    rc = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+    rc = pgmPhysPageQueryTlbe(pVM, GCPhys, &pTlbe);
     if (RT_SUCCESS(rc))
     {
         PPGMPAGE pPage = pTlbe->pPage;
@@ -590,7 +590,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     PPGMRAMRANGE pCur;
 
 #ifdef VBOX_STRICT
-    for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+    for (pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
     {
         Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfR0 == MMHyperCCToR0(pVM, pCur));
         Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfRC == MMHyperCCToRC(pVM, pCur));
@@ -598,17 +598,17 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
         Assert((pCur->GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
         Assert((pCur->cb         & PAGE_OFFSET_MASK) == 0);
         Assert(pCur->cb == pCur->GCPhysLast - pCur->GCPhys + 1);
-        for (PPGMRAMRANGE pCur2 = pVM->pgm.s.pRamRangesR3; pCur2; pCur2 = pCur2->pNextR3)
+        for (PPGMRAMRANGE pCur2 = pVM->pgm.s.pRamRangesXR3; pCur2; pCur2 = pCur2->pNextR3)
             Assert(   pCur2 == pCur
                    || strcmp(pCur2->pszDesc, pCur->pszDesc)); /** @todo fix MMIO ranges!! */
     }
 #endif
 
-    pCur = pVM->pgm.s.pRamRangesR3;
+    pCur = pVM->pgm.s.pRamRangesXR3;
     if (pCur)
     {
-        pVM->pgm.s.pRamRangesR0 = pCur->pSelfR0;
-        pVM->pgm.s.pRamRangesRC = pCur->pSelfRC;
+        pVM->pgm.s.pRamRangesXR0 = pCur->pSelfR0;
+        pVM->pgm.s.pRamRangesXRC = pCur->pSelfRC;
 
         for (; pCur->pNextR3; pCur = pCur->pNextR3)
         {
@@ -621,8 +621,8 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     }
     else
     {
-        Assert(pVM->pgm.s.pRamRangesR0 == NIL_RTR0PTR);
-        Assert(pVM->pgm.s.pRamRangesRC == NIL_RTRCPTR);
+        Assert(pVM->pgm.s.pRamRangesXR0 == NIL_RTR0PTR);
+        Assert(pVM->pgm.s.pRamRangesXRC == NIL_RTRCPTR);
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 }
@@ -643,7 +643,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 
     pgmLock(pVM);
 
-    PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesXR3;
     pNew->pNextR3 = pRam;
     pNew->pNextR0 = pRam ? pRam->pSelfR0 : NIL_RTR0PTR;
     pNew->pNextRC = pRam ? pRam->pSelfRC : NIL_RTRCPTR;
@@ -656,9 +656,9 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
     }
     else
     {
-        pVM->pgm.s.pRamRangesR3 = pNew;
-        pVM->pgm.s.pRamRangesR0 = pNew->pSelfR0;
-        pVM->pgm.s.pRamRangesRC = pNew->pSelfRC;
+        pVM->pgm.s.pRamRangesXR3 = pNew;
+        pVM->pgm.s.pRamRangesXR0 = pNew->pSelfR0;
+        pVM->pgm.s.pRamRangesXRC = pNew->pSelfRC;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
     pgmUnlock(pVM);
@@ -674,7 +674,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
  */
 static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pPrev)
 {
-    Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesR3 == pRam);
+    Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesXR3 == pRam);
     Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfR0 == MMHyperCCToR0(pVM, pRam));
     Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfRC == MMHyperCCToRC(pVM, pRam));
 
@@ -689,10 +689,10 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     }
     else
     {
-        Assert(pVM->pgm.s.pRamRangesR3 == pRam);
-        pVM->pgm.s.pRamRangesR3 = pNext;
-        pVM->pgm.s.pRamRangesR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
-        pVM->pgm.s.pRamRangesRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
+        Assert(pVM->pgm.s.pRamRangesXR3 == pRam);
+        pVM->pgm.s.pRamRangesXR3 = pNext;
+        pVM->pgm.s.pRamRangesXR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
+        pVM->pgm.s.pRamRangesXRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
     pgmUnlock(pVM);
@@ -711,7 +711,7 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
 
     /* find prev. */
     PPGMRAMRANGE pPrev = NULL;
-    PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3;
     while (pCur != pRam)
     {
         pPrev = pCur;
@@ -808,7 +808,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
         /* Iterate the pages. */
         for (unsigned i = 0; i < cPages; i++)
         {
-            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
             if (    pPage == NULL
                 ||  pPage->uTypeY != PGMPAGETYPE_RAM)
             {
@@ -849,7 +849,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
         /* Iterate the pages. */
         for (unsigned i = 0; i < cPages; i++)
         {
-            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
             AssertBreak(pPage && pPage->uTypeY == PGMPAGETYPE_RAM);
 
             LogFlow(("Free ballooned page: %RGp\n", paPhysPage[i]));
@@ -959,7 +959,8 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
 }
 
 /**
- * Rendezvous callback used by PGMR3WriteProtectRAM that write protects all physical RAM
+ * Rendezvous callback used by PGMR3WriteProtectRAM that write protects all
+ * physical RAM.
  *
  * This is only called on one of the EMTs while the other ones are waiting for
  * it to complete this function.
@@ -967,11 +968,12 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
- * @param   pvUser      User parameter
+ * @param   pvUser      User parameter, unused.
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     int rc = VINF_SUCCESS;
+    NOREF(pvUser);
 
     pgmLock(pVM);
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
@@ -980,12 +982,12 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
 
     /** @todo pointless to write protect the physical page pointed to by RSP. */
 
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
-        unsigned cPages = pRam->cb >> PAGE_SHIFT;
-        for (unsigned iPage = 0; iPage < cPages; iPage++)
+        uint32_t cPages = pRam->cb >> PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
             PPGMPAGE    pPage = &pRam->aPages[iPage];
             PGMPAGETYPE enmPageType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
@@ -1047,79 +1049,80 @@ VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
 }
 
 /**
- * Enumerate all dirty FT pages
+ * Enumerate all dirty FT pages.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
- * @param   pfnEnum     Enumerate callback handler
- * @param   pvUser      Enumerate callback handler parameter
+ * @param   pfnEnum     Enumerate callback handler.
+ * @param   pvUser      Enumerate callback handler parameter.
  */
 VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
     pgmLock(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
-        unsigned cPages = pRam->cb >> PAGE_SHIFT;
-        for (unsigned iPage = 0; iPage < cPages; iPage++)
+        uint32_t cPages = pRam->cb >> PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
-            PPGMPAGE    pPage = &pRam->aPages[iPage];
+            PPGMPAGE    pPage       = &pRam->aPages[iPage];
             PGMPAGETYPE enmPageType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
 
             if (    RT_LIKELY(enmPageType == PGMPAGETYPE_RAM)
                 ||  enmPageType == PGMPAGETYPE_MMIO2)
             {
                 /*
-                    * A RAM page.
-                    */
+                 * A RAM page.
+                 */
                 switch (PGM_PAGE_GET_STATE(pPage))
                 {
-                case PGM_PAGE_STATE_ALLOCATED:
-                case PGM_PAGE_STATE_WRITE_MONITORED:
-                    if (    !PGM_PAGE_IS_WRITTEN_TO(pPage)  /* not very recently updated? */
-                        &&  PGM_PAGE_IS_FT_DIRTY(pPage))
-                    {
-                        unsigned       cbPageRange = PAGE_SIZE;
-                        unsigned       iPageClean  = iPage + 1;
-                        RTGCPHYS       GCPhysPage  = pRam->GCPhys + iPage * PAGE_SIZE;
-                        uint8_t       *pu8Page     = NULL;
-                        PGMPAGEMAPLOCK Lock;
-
-                        /* Find the next clean page, so we can merge adjacent dirty pages. */
-                        for (; iPageClean < cPages; iPageClean++)
+                    case PGM_PAGE_STATE_ALLOCATED:
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                        if (   !PGM_PAGE_IS_WRITTEN_TO(pPage)  /* not very recently updated? */
+                            && PGM_PAGE_IS_FT_DIRTY(pPage))
                         {
-                            PPGMPAGE pPageNext = &pRam->aPages[iPageClean];
-                            if (    RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPageNext) != PGMPAGETYPE_RAM)
-                                ||  PGM_PAGE_GET_STATE(pPageNext) != PGM_PAGE_STATE_ALLOCATED
-                                ||  PGM_PAGE_IS_WRITTEN_TO(pPageNext)
-                                ||  !PGM_PAGE_IS_FT_DIRTY(pPageNext)
-                                /* Crossing a chunk boundary? */
-                                ||  (GCPhysPage & GMM_PAGEID_IDX_MASK) != ((GCPhysPage + cbPageRange) & GMM_PAGEID_IDX_MASK)
-                                )
-                                break;
+                            unsigned       cbPageRange = PAGE_SIZE;
+                            unsigned       iPageClean  = iPage + 1;
+                            RTGCPHYS       GCPhysPage  = pRam->GCPhys + iPage * PAGE_SIZE;
+                            uint8_t       *pu8Page     = NULL;
+                            PGMPAGEMAPLOCK Lock;
 
-                            cbPageRange += PAGE_SIZE;
+                            /* Find the next clean page, so we can merge adjacent dirty pages. */
+                            for (; iPageClean < cPages; iPageClean++)
+                            {
+                                PPGMPAGE pPageNext = &pRam->aPages[iPageClean];
+                                if (    RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPageNext) != PGMPAGETYPE_RAM)
+                                    ||  PGM_PAGE_GET_STATE(pPageNext) != PGM_PAGE_STATE_ALLOCATED
+                                    ||  PGM_PAGE_IS_WRITTEN_TO(pPageNext)
+                                    ||  !PGM_PAGE_IS_FT_DIRTY(pPageNext)
+                                    /* Crossing a chunk boundary? */
+                                    ||  (GCPhysPage & GMM_PAGEID_IDX_MASK) != ((GCPhysPage + cbPageRange) & GMM_PAGEID_IDX_MASK)
+                                    )
+                                    break;
+
+                                cbPageRange += PAGE_SIZE;
+                            }
+
+                            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysPage, (const void **)&pu8Page, &Lock);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /** @todo this is risky; the range might be changed, but little choice as the sync
+                                 *  costs a lot of time. */
+                                pgmUnlock(pVM);
+                                pfnEnum(pVM, GCPhysPage, pu8Page, cbPageRange, pvUser);
+                                pgmLock(pVM);
+                                PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            }
+
+                            for (iPage; iPage < iPageClean; iPage++)
+                                PGM_PAGE_CLEAR_FT_DIRTY(&pRam->aPages[iPage]);
+
+                            iPage = iPageClean - 1;
                         }
-
-                        rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysPage, (const void **)&pu8Page, &Lock);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /** @todo this is risky; the range might be changed, but little choice as the sync costs a lot of time */
-                            pgmUnlock(pVM);
-                            pfnEnum(pVM, GCPhysPage, pu8Page, cbPageRange, pvUser);
-                            pgmLock(pVM);
-                            PGMPhysReleasePageMappingLock(pVM, &Lock);
-                        }
-
-                        for (iPage; iPage < iPageClean; iPage++)
-                            PGM_PAGE_CLEAR_FT_DIRTY(&pRam->aPages[iPage]);
-
-                        iPage = iPageClean - 1;
-                    }
-                    break;
+                        break;
                 }
             }
         }
@@ -1141,7 +1144,7 @@ VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
 
     pgmLock(pVM);
     uint32_t cRamRanges = 0;
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRanges); pCur; pCur = pCur->CTX_SUFF(pNext))
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext))
         cRamRanges++;
     pgmUnlock(pVM);
     return cRamRanges;
@@ -1167,7 +1170,7 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
 
     pgmLock(pVM);
     uint32_t iCurRange = 0;
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRanges); pCur; pCur = pCur->CTX_SUFF(pNext), iCurRange++)
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext), iCurRange++)
         if (iCurRange == iRange)
         {
             if (pGCPhysStart)
@@ -1190,62 +1193,90 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
  *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
- * @param   puTotalAllocSize    Pointer to total allocated  memory inside VMMR0 (in bytes)
- * @param   puTotalFreeSize     Pointer to total free (allocated but not used yet) memory inside VMMR0 (in bytes)
- * @param   puTotalBalloonSize  Pointer to total ballooned memory inside VMMR0 (in bytes)
- * @param   puTotalSharedSize   Pointer to total shared memory inside VMMR0 (in bytes)
+ * @param   pcbAllocMem         Where to return the amount of memory allocated
+ *                              by VMs.
+ * @param   pcbFreeMem          Where to return the amount of memory that is
+ *                              allocated from the host but not currently used
+ *                              by any VMs.
+ * @param   pcbBallonedMem      Where to return the sum of memory that is
+ *                              currently ballooned by the VMs.
+ * @param   pcbSharedMem        Where to return the amount of memory that is
+ *                              currently shared.
  */
-VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uint64_t *puTotalFreeSize, uint64_t *puTotalBalloonSize, uint64_t *puTotalSharedSize)
+VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem,
+                                           uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem)
 {
-    int rc;
-
-    uint64_t cAllocPages = 0, cFreePages = 0, cBalloonPages = 0, cSharedPages = 0;
-    rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
+    uint64_t cAllocPages   = 0;
+    uint64_t cFreePages    = 0;
+    uint64_t cBalloonPages = 0;
+    uint64_t cSharedPages  = 0;
+    int rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
     AssertRCReturn(rc, rc);
 
-    if (puTotalAllocSize)
-        *puTotalAllocSize = cAllocPages * _4K;
+    if (pcbAllocMem)
+        *pcbAllocMem    = cAllocPages * _4K;
 
-    if (puTotalFreeSize)
-        *puTotalFreeSize = cFreePages * _4K;
+    if (pcbFreeMem)
+        *pcbFreeMem     = cFreePages * _4K;
 
-    if (puTotalBalloonSize)
-        *puTotalBalloonSize = cBalloonPages * _4K;
+    if (pcbBallonedMem)
+        *pcbBallonedMem = cBalloonPages * _4K;
 
-    if (puTotalSharedSize)
-        *puTotalSharedSize = cSharedPages * _4K;
+    if (pcbSharedMem)
+        *pcbSharedMem   = cSharedPages * _4K;
 
-    Log(("PGMR3QueryVMMMemoryStats: all=%x free=%x ballooned=%x shared=%x\n", cAllocPages, cFreePages, cBalloonPages, cSharedPages));
+    Log(("PGMR3QueryVMMMemoryStats: all=%llx free=%llx ballooned=%llx shared=%llx\n",
+         cAllocPages, cFreePages, cBalloonPages, cSharedPages));
     return VINF_SUCCESS;
 }
 
+
 /**
- * Query memory stats for the VM
+ * Query memory stats for the VM.
  *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
- * @param   puTotalAllocSize    Pointer to total allocated  memory inside the VM (in bytes)
- * @param   puTotalFreeSize     Pointer to total free (allocated but not used yet) memory inside the VM (in bytes)
- * @param   puTotalBalloonSize  Pointer to total ballooned memory inside the VM (in bytes)
- * @param   puTotalSharedSize   Pointer to total shared memory inside the VM (in bytes)
+ * @param   pcbTotalMem         Where to return total amount memory the VM may
+ *                              possibly use.
+ * @param   pcbPrivateMem       Where to return the amount of private memory
+ *                              currently allocated.
+ * @param   pcbSharedMem        Where to return the amount of actually shared
+ *                              memory currently used by the VM.
+ * @param   pcbZeroMem          Where to return the amount of memory backed by
+ *                              zero pages.
+ *
+ * @remarks The total mem is normally larger than the sum of the three
+ *          components.  There are two reasons for this, first the amount of
+ *          shared memory is what we're sure is shared instead of what could
+ *          possibly be shared with someone.  Secondly, because the total may
+ *          include some pure MMIO pages that doesn't go into any of the three
+ *          sub-counts.
+ *
+ * @todo Why do we return reused shared pages instead of anything that could
+ *       potentially be shared?  Doesn't this mean the first VM gets a much
+ *       lower number of shared pages?
  */
-VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pulTotalMem, uint64_t *pulPrivateMem, uint64_t *puTotalSharedMem, uint64_t *puTotalZeroMem)
+VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem,
+                                     uint64_t *pcbSharedMem, uint64_t *pcbZeroMem)
 {
-    if (pulTotalMem)
-        *pulTotalMem = (uint64_t)pVM->pgm.s.cAllPages * _4K;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    if (pulPrivateMem)
-        *pulPrivateMem = (uint64_t)pVM->pgm.s.cPrivatePages * _4K;
+    if (pcbTotalMem)
+        *pcbTotalMem    = (uint64_t)pVM->pgm.s.cAllPages            * PAGE_SIZE;
 
-    if (puTotalSharedMem)
-        *puTotalSharedMem = (uint64_t)pVM->pgm.s.cReusedSharedPages * _4K;
+    if (pcbPrivateMem)
+        *pcbPrivateMem  = (uint64_t)pVM->pgm.s.cPrivatePages        * PAGE_SIZE;
 
-    if (puTotalZeroMem)
-        *puTotalZeroMem = (uint64_t)pVM->pgm.s.cZeroPages * _4K;
+    if (pcbSharedMem)
+        *pcbSharedMem   = (uint64_t)pVM->pgm.s.cReusedSharedPages   * PAGE_SIZE;
+
+    if (pcbZeroMem)
+        *pcbZeroMem     = (uint64_t)pVM->pgm.s.cZeroPages           * PAGE_SIZE;
 
     Log(("PGMR3QueryMemoryStats: all=%x private=%x reused=%x zero=%x\n", pVM->pgm.s.cAllPages, pVM->pgm.s.cPrivatePages, pVM->pgm.s.cReusedSharedPages, pVM->pgm.s.cZeroPages));
     return VINF_SUCCESS;
 }
+
 
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
@@ -1307,12 +1338,22 @@ static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, R
     {
         case PGMRELOCATECALL_SUGGEST:
             return true;
+
         case PGMRELOCATECALL_RELOCATE:
         {
-            /* Update myself and then relink all the ranges. */
+            /*
+             * Update myself, then relink all the ranges and flush the RC TLB.
+             */
             pgmLock(pVM);
+
             pRam->pSelfRC = (RTRCPTR)(GCPtrNew + PAGE_SIZE);
+
             pgmR3PhysRelinkRamRanges(pVM);
+#ifdef PGM_USE_RAMRANGE_TLB
+            for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
+                pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
+#endif
+
             pgmUnlock(pVM);
             return true;
         }
@@ -1439,7 +1480,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      * (We don't lock here because the locking by EMT is only required on update.)
      */
     PPGMRAMRANGE    pPrev = NULL;
-    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesXR3;
     while (pRam && GCPhysLast >= pRam->GCPhys)
     {
         if (    GCPhysLast >= pRam->GCPhys
@@ -1562,7 +1603,7 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
     uint64_t cPages = 0;
     uint64_t NanoTS = RTTimeNanoTS();
     pgmLock(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
     {
         PPGMPAGE    pPage  = &pRam->aPages[0];
         RTGCPHYS    GCPhys = pRam->GCPhys;
@@ -1646,7 +1687,7 @@ int pgmR3PhysRamReset(PVM pVM)
     /*
      * Walk the ram ranges.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
     {
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
@@ -1799,7 +1840,7 @@ int pgmR3PhysRamTerm(PVM pVM)
     /*
      * Walk the ram ranges.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
     {
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
@@ -1885,7 +1926,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
     bool fRamExists = false;
     PPGMRAMRANGE pRamPrev = NULL;
-    PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
     while (pRam && GCPhysLast >= pRam->GCPhys)
     {
         if (    GCPhysLast >= pRam->GCPhys
@@ -2027,6 +2068,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
     VM_ASSERT_EMT(pVM);
 
+/** @todo this needs to own the PGM lock! */
     /*
      * First deregister the handler, then check if we should remove the ram range.
      */
@@ -2035,7 +2077,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     {
         RTGCPHYS        GCPhysLast  = GCPhys + (cb - 1);
         PPGMRAMRANGE    pRamPrev    = NULL;
-        PPGMRAMRANGE    pRam        = pVM->pgm.s.pRamRangesR3;
+        PPGMRAMRANGE    pRam        = pVM->pgm.s.pRamRangesXR3;
         while (pRam && GCPhysLast >= pRam->GCPhys)
         {
             /** @todo We're being a bit too careful here. rewrite. */
@@ -2121,6 +2163,9 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     PGMPhysInvalidatePageMapTLB(pVM);
+#ifdef PGM_USE_RAMRANGE_TLB
+    pgmPhysInvalidRamRangeTlbs(pVM);
+#endif
     return rc;
 }
 
@@ -2427,7 +2472,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
      */
     bool fRamExists = false;
     PPGMRAMRANGE pRamPrev = NULL;
-    PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
     while (pRam && GCPhysLast >= pRam->GCPhys)
     {
         if (    GCPhys     <= pRam->GCPhysLast
@@ -2588,7 +2633,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     if (pCur->fOverlapping)
     {
         /* Restore the RAM pages we've replaced. */
-        PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+        PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
         while (pRam->GCPhys > pCur->RamRange.GCPhysLast)
             pRam = pRam->pNextR3;
 
@@ -2629,6 +2674,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     PGMPhysInvalidatePageMapTLB(pVM);
+#ifdef PGM_USE_RAMRANGE_TLB
+    pgmPhysInvalidRamRangeTlbs(pVM);
+#endif
     pgmUnlock(pVM);
 
     if (fInformREM)
@@ -2829,7 +2877,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     bool            fRamExists = false;
     PPGMRAMRANGE    pRamPrev = NULL;
-    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesR3;
+    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesXR3;
     while (pRam && GCPhysLast >= pRam->GCPhys)
     {
         if (    GCPhys     <= pRam->GCPhysLast
@@ -3201,7 +3249,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                 PPGMPAGE pShadowPage = &pRomPage->Shadow;
                 if (!PGMROMPROT_IS_ROM(pRomPage->enmProt))
                 {
-                    pShadowPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    pShadowPage = pgmPhysGetPage(pVM, GCPhys);
                     AssertLogRelReturn(pShadowPage, VERR_INTERNAL_ERROR);
                 }
 
@@ -3412,7 +3460,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
                     fChanges = true;
 
                     /* flush references to the page. */
-                    PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
+                    PPGMPAGE pRamPage = pgmPhysGetPage(pVM, pRom->GCPhys + (iPage << PAGE_SHIFT));
                     int rc2 = pgmPoolTrackUpdateGCPhys(pVM, pRom->GCPhys + (iPage << PAGE_SHIFT), pRamPage,
                                                        true /*fFlushPTEs*/, &fFlushTLB);
                     if (rc2 != VINF_SUCCESS && (rc == VINF_SUCCESS || RT_FAILURE(rc2)))
@@ -3903,7 +3951,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
                 ASMMemZeroPage(pv);
 
                 PPGMPAGE pPage;
-                rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+                rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
                 AssertRC(rc);
 
                 Assert(PGM_PAGE_IS_ZERO(pPage));
@@ -4085,7 +4133,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                 uint32_t const idPage = pVM->pgm.s.aHandyPages[i].idPage;
                 if (idPage != NIL_GMM_PAGEID)
                 {
-                    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+                    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
                          pRam;
                          pRam = pRam->pNextR3)
                     {
@@ -4250,7 +4298,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
-    int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
+    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
     if (RT_SUCCESS(rc))
     {
         if (PGM_PAGE_IS_BALLOONED(pPage))
@@ -4304,7 +4352,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
 
             /* Get a ring-3 mapping of the address. */
             PPGMPAGER3MAPTLBE pTlbe;
-            rc2 = pgmPhysPageQueryTlbe(&pVM->pgm.s, GCPhys, &pTlbe);
+            rc2 = pgmPhysPageQueryTlbe(pVM, GCPhys, &pTlbe);
             AssertLogRelRCReturn(rc2, rc2);
             *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
             /** @todo mapping/locking hell; this isn't horribly efficient since

@@ -300,7 +300,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
      || PGM_SHW_TYPE == PGM_TYPE_EPT
         AssertFailed(); /* can't happen */
 # else
-        Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+        Assert(pgmMapAreMappingsEnabled(pVM));
 
         PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
         AssertMsgReturn(pMap, ("GCPtr=%RGv\n", GCPtr), VERR_INTERNAL_ERROR);
@@ -461,7 +461,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
                     if (RT_SUCCESS(rc))
                     {
                         Assert(fGstPte & X86_PTE_RW);
-                        PPGMPAGE pPage = pgmPhysGetPage(&pVCpu->CTX_SUFF(pVM)->pgm.s, GCPhys);
+                        PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
                         Assert(pPage);
                         if (pPage)
                         {

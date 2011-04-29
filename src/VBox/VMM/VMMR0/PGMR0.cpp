@@ -333,7 +333,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM)
         rc = GPciRawR0GuestPageBeginAssignments(pGVM);
         if (RT_SUCCESS(rc))
         {
-            for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR0; RT_SUCCESS(rc) && pRam; pRam = pRam->pNextR0)
+            for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR0; RT_SUCCESS(rc) && pRam; pRam = pRam->pNextR0)
             {
                 PPGMPAGE    pPage  = &pRam->aPages[0];
                 RTGCPHYS    GCPhys = pRam->GCPhys;
@@ -525,7 +525,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
         PPGMPAGE pPage;
         if (   (   pHandler->cAliasedPages
                 || pHandler->cTmpOffPages)
-            && (   (pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysFault)) == NULL
+            && (   (pPage = pgmPhysGetPage(pVM, GCPhysFault)) == NULL
                 || PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
            )
         {

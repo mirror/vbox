@@ -261,7 +261,7 @@ VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *p
     {
     case VINF_SUCCESS:
     {
-        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+        PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
         if (pPage)
         {
             *pfShared    = PGM_PAGE_IS_SHARED(pPage);
@@ -315,7 +315,7 @@ DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdH
 
     pgmLock(pVM);
 
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
     {
         PPGMPAGE    pPage  = &pRam->aPages[0];
         RTGCPHYS    GCPhys = pRam->GCPhys;

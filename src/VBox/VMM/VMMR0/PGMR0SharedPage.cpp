@@ -60,9 +60,9 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
         Assert((pRegions[idxRegion].cbRegion & 0xfff) == 0);
         Assert((pRegions[idxRegion].GCRegionAddr & 0xfff) == 0);
 
-        RTGCPTR  GCRegion  = pRegions[idxRegion].GCRegionAddr;
+        RTGCPTR  GCRegion = pRegions[idxRegion].GCRegionAddr;
         unsigned cbRegion = pRegions[idxRegion].cbRegion & ~0xfff;
-        unsigned idxPage = 0;
+        unsigned idxPage  = 0;
 
         while (cbRegion)
         {
@@ -74,7 +74,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
             if (    rc == VINF_SUCCESS
                 &&  !(fFlags & X86_PTE_RW)) /* important as we make assumptions about this below! */
             {
-                PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
                 Assert(!pPage || !PGM_PAGE_IS_BALLOONED(pPage));
                 if (    pPage
                     &&  PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
