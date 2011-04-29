@@ -623,7 +623,7 @@ VBoxDrvInterrupt(PVOID  HwDeviceExtension)
     if (VBoxCommonFromDeviceExt(pExt)->hostCtx.pfHostFlags)
     {
         uint32_t flags = VBoxCommonFromDeviceExt(pExt)->hostCtx.pfHostFlags->u32HostFlags;
-        if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
+        if ((flags & HGSMIHOSTFLAGS_IRQ) != 0)
         {
             /* queue a DPC*/
             BOOLEAN bResult = pExt->pPrimary->u.primary.VideoPortProcs.pfnQueueDpc(pExt->pPrimary, VBoxMPHGSMIDpc, NULL);
@@ -632,12 +632,12 @@ VBoxDrvInterrupt(PVOID  HwDeviceExtension)
             {
                 LOG(("VideoPortQueueDpc failed!"));
             }
-        }
 
-        /* clear the IRQ */
-        VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pExt)->hostCtx);
-        //LOGF_LEAVE();
-        return TRUE;
+            /* clear the IRQ */
+            VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pExt)->hostCtx);
+            //LOGF_LEAVE();
+            return TRUE;
+        }
     }
 
     //LOGF_LEAVE();

@@ -80,7 +80,6 @@ vboxCreateSecondaryDisplayVoid(IN PVOID HwDeviceExtension, IN OUT PVOID Secondar
 #define VP_GETPROC(dst, type, name) \
 {                                                                                   \
     pAPI->dst = (type)(pConfigInfo->VideoPortGetProcAddress)(pExt, (PUCHAR)(name)); \
-    Assert(pAPI->dst);                                                              \
 }
 
 /*Query video port for api functions or fill with stubs if those are not supported*/
