@@ -407,7 +407,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
 
     Utf8Str                 Utf8Cmd;
-    uint32_t                fFlags = 0;
+    uint32_t                fExecFlags = ExecuteProcessFlag_None;
+    uint32_t                fOutputFlags = ProcessOutputFlag_None;
     com::SafeArray<IN_BSTR> args;
     com::SafeArray<IN_BSTR> env;
     Utf8Str                 Utf8UserName;
@@ -417,7 +418,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
     bool                    fWaitForStdOut  = false;
-    bool                    fWaitForStdErr  = false;
     bool                    fVerbose        = false;
 
     int                     vrc             = VINF_SUCCESS;
@@ -449,7 +449,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
             }
 
             case GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
-                fFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+                fExecFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 break;
 
             case 'i':
@@ -490,8 +490,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
 
             case GETOPTDEF_EXEC_WAITFORSTDERR:
-                fWaitForExit = true;
-                fWaitForStdErr = true;
+                fWaitForExit = (fOutputFlags |= ProcessOutputFlag_StdErr);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -537,7 +536,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
     rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
-                               fFlags,
+                               fExecFlags,
                                ComSafeArrayAsInParam(args),
                                ComSafeArrayAsInParam(env),
                                Bstr(Utf8UserName).raw(),
@@ -589,8 +588,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
             /*
              * Some data left to output?
              */
-            if (   fWaitForStdOut
-                || fWaitForStdErr)
+            if (fOutputFlags || fWaitForStdOut)
             {
                 /** @todo r=bird: The timeout argument is bogus in several
                  * ways:
@@ -614,10 +612,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                  *     what I can tell, the compiler will treat this as
                  *     unsigned 64-bit and never return 0.
                  */
-                /** @todo r=bird: We must separate stderr and stdout
-                 *        output, seems bunched together here which
-                 *        won't do the trick for unix BOFHs. */
-                rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
+                rc = guest->GetProcessOutput(uPID, fOutputFlags,
                                              RT_MAX(0, cMsTimeout - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
                                              _64K, ComSafeArrayAsOutParam(aOutputData));
                 if (FAILED(rc))

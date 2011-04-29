@@ -75,6 +75,13 @@ enum eProcessStatus
 #define INPUT_FLAG_NONE             0
 #define INPUT_FLAG_EOF              RT_BIT(0)
 
+/**
+ * Pipe handle IDs used internally for referencing to
+ * a certain pipe buffer.
+ */
+#define OUTPUT_HANDLE_ID_STDOUT     1
+#define OUTPUT_HANDLE_ID_STDERR     2
+
 /** @name Internal tools built into VBoxService which are used in order to
  *        accomplish tasks host<->guest.
  * @{
@@ -334,6 +341,10 @@ typedef struct VBoxGuestCtrlHGCMMsgExecIn
 
 } VBoxGuestCtrlHGCMMsgExecIn;
 
+/**
+ * Retrieves ouptut from a previously executed process
+ * from stdout/stderr.
+ */
 typedef struct VBoxGuestCtrlHGCMMsgExecOut
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -350,6 +361,10 @@ typedef struct VBoxGuestCtrlHGCMMsgExecOut
 
 } VBoxGuestCtrlHGCMMsgExecOut;
 
+/**
+ * Reports the current status of a (just) started
+ * or terminated process.
+ */
 typedef struct VBoxGuestCtrlHGCMMsgExecStatus
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -366,6 +381,9 @@ typedef struct VBoxGuestCtrlHGCMMsgExecStatus
 
 } VBoxGuestCtrlHGCMMsgExecStatus;
 
+/**
+ * Reports back the status of data written to a process.
+ */
 typedef struct VBoxGuestCtrlHGCMMsgExecStatusIn
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -391,7 +409,7 @@ typedef struct VBoxGuestCtrlParamBuffer
 {
     uint32_t uMsg;
     uint32_t uParmCount;
-    VBOXHGCMSVCPARM *pParms;
+    PVBOXHGCMSVCPARM pParms;
 } VBOXGUESTCTRPARAMBUFFER;
 typedef VBOXGUESTCTRPARAMBUFFER *PVBOXGUESTCTRPARAMBUFFER;
 

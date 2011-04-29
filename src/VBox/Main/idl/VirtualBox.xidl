@@ -8143,6 +8143,24 @@
   </enum>
 
   <enum
+    name="ProcessOutputFlag"
+    uuid="9979e85a-52bb-40b7-870c-57115e27e0f1"
+    >
+    <desc>
+      Guest process output flags for specifying which
+      type of output to retrieve.
+    </desc>
+
+    <const name="None"                     value="0">
+      <desc>No flags set. Get output from stdout.</desc>
+    </const>
+
+    <const name="StdErr"                   value="1">
+      <desc>Get output from stderr.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="CopyFileFlag"
     uuid="23f79fdf-738a-493d-b80b-42d607c9b916"
     >
@@ -8426,7 +8444,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Flags describing which output to retrieve.
+          <link to="ProcessOutputFlag"/> flags.
         </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
