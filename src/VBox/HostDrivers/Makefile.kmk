@@ -83,6 +83,7 @@ $$(HostDrivers-dkms-src_0_OUTDIR)/dkms.conf: \
 		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
 		-e "s;_OMIT_VBOXNETFLT_;$(if $(VBOX_WITH_NETFLT),,#);g" \
 		-e "s;_OMIT_VBOXNETADP_;$(if $(VBOX_WITH_NETADP),,#);g" \
+		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
 		--output $@ $<
 
 $$(HostDrivers-dkms-sh_0_OUTDIR)/do_dkms: \
