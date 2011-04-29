@@ -279,6 +279,13 @@ typedef struct VGAState {
     R3PTRTYPE(PVBOXVDMAHOST)    pVdma;
 #endif
 
+#if HC_ARCH_BITS == 32
+# if defined(VBOX_WITH_HGSMI) != defined(VBOX_WITH_VDMA)
+    uint32_t                    Padding3;
+# endif
+#endif
+
+
     uint32_t                    cMonitors;
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
@@ -308,7 +315,7 @@ typedef struct VGAState {
     PDMIDISPLAYVBVACALLBACKS    IVBVACallbacks;
 #else
 # if HC_ARCH_BITS == 32
-    uint32_t                    Padding3;
+    uint32_t                    Padding4;
 # endif
 #endif
     /** Pointer to base interface of the driver. */
@@ -344,15 +351,15 @@ typedef struct VGAState {
 # ifdef VBE_NEW_DYN_LIST
     /** VBE Extra Data write address one byte buffer */
     uint8_t                     cbWriteVBEExtraAddress;
-    uint8_t                     Padding4;
+    uint8_t                     Padding5;
 # else
-    uint8_t                     Padding4[2];
+    uint8_t                     Padding5[2];
 # endif
 #endif
 
     /** Retrace emulation state */
     bool                        fRealRetrace;
-    bool                        Padding5[HC_ARCH_BITS == 64 ? 7 : 3];
+    bool                        Padding6[HC_ARCH_BITS == 64 ? 7 : 3];
     vga_retrace_s               retrace_state;
 
 #ifdef VBE_NEW_DYN_LIST
@@ -362,7 +369,7 @@ typedef struct VGAState {
     uint16_t                    cbVBEExtraData;
     /** The VBE BIOS current memory address. */
     uint16_t                    u16VBEExtraAddress;
-    uint16_t                    Padding6[2];
+    uint16_t                    Padding7[2];
 #endif
     /** Current logo data offset. */
     uint32_t                    offLogoData;
@@ -392,7 +399,7 @@ typedef struct VGAState {
     uint16_t                    cLogoPalEntries;
     /** Clear screen flag. */
     uint8_t                     fLogoClearScreen;
-    uint8_t                     Padding7[7];
+    uint8_t                     Padding8[7];
     /** Palette data. */
     uint32_t                    au32LogoPalette[256];
     /** The VGA BIOS ROM data. */
@@ -406,12 +413,12 @@ typedef struct VGAState {
     /** Base port in the assigned PCI I/O space. */
     RTIOPORT                    IOPortBase;
 #ifdef VBOX_WITH_WDDM
-    uint8_t                     Padding8[2];
+    uint8_t                     Padding9[2];
     /* specifies guest driver caps, i.e. whether it can handle IRQs from the adapter,
      * the way it can handle async HGSMI command completion, etc. */
     uint32_t                    fGuestCaps;
 #else
-    uint8_t                     Padding8[6];
+    uint8_t                     Padding10[6];
 #endif
 #endif /* VBOX_WITH_HGSMI */
 } VGAState;
