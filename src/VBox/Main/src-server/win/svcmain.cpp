@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,7 @@
 
 #include <VBox/err.h>
 #include <iprt/initterm.h>
+#include <iprt/path.h>
 
 #include <atlbase.h>
 #include <atlcom.h>
@@ -150,24 +151,48 @@ static int WordCmpI(LPCTSTR psz1, LPCTSTR psz2) throw()
 extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
     HINSTANCE /*hPrevInstance*/, LPTSTR lpCmdLine, int /*nShowCmd*/)
 {
+    lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
+
+    /* Need to parse the command line before initializing the VBox runtime. */
+    TCHAR szTokens[] = _T("-/");
+    LPCTSTR lpszToken = FindOneOf(lpCmdLine, szTokens);
+    while (lpszToken != NULL)
+    {
+        if (WordCmpI(lpszToken, _T("Embedding")) == 0)
+        {
+            /* %HOMEDRIVE%%HOMEPATH% */
+            wchar_t wszHome[RTPATH_MAX];
+            DWORD cEnv = GetEnvironmentVariable(L"HOMEDRIVE", &wszHome[0], RTPATH_MAX);
+            if (cEnv && cEnv < RTPATH_MAX)
+            {
+                DWORD cwc = cEnv; /* doesn't include NUL */
+                cEnv = GetEnvironmentVariable(L"HOMEPATH", &wszHome[cEnv], RTPATH_MAX - cwc);
+                if (cEnv && cEnv < RTPATH_MAX - cwc)
+                {
+                    /* If this fails there is nothing we can do. Ignore. */
+                    SetCurrentDirectory(wszHome);
+                }
+            }
+        }
+
+        lpszToken = FindOneOf(lpszToken, szTokens);
+    }
+
     /*
      * Initialize the VBox runtime without loading
      * the support driver.
      */
     RTR3Init();
 
-    lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
-
     HRESULT hRes = com::Initialize();
 
     _ASSERTE(SUCCEEDED(hRes));
     _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
     _Module.dwThreadID = GetCurrentThreadId();
-    TCHAR szTokens[] = _T("-/");
 
     int nRet = 0;
     BOOL bRun = TRUE;
-    LPCTSTR lpszToken = FindOneOf(lpCmdLine, szTokens);
+    lpszToken = FindOneOf(lpCmdLine, szTokens);
     while (lpszToken != NULL)
     {
         if (WordCmpI(lpszToken, _T("UnregServer")) == 0)
