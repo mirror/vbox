@@ -363,7 +363,7 @@ int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe
  */
 bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pBuf, false);
 
     bool fEnabled = false;
     if (   RTCritSectIsInitialized(&pBuf->CritSect)
@@ -387,7 +387,7 @@ bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
  */
 bool VBoxServicePipeBufIsClosing(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
-    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pBuf, false);
 
     bool fClosing = false;
     if (   RTCritSectIsInitialized(&pBuf->CritSect)
