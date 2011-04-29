@@ -129,6 +129,10 @@ for d in /lib/modules/*; do
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
+    ./src/vboxhost/vboxpci/build_in_tmp \
+      --use-module-symvers /tmp/vboxdrv-Module.symvers \
+      KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
+      %INSTMOD%
   fi
 done
 mv kchmviewer $RPM_BUILD_ROOT/usr/lib/virtualbox
@@ -209,6 +213,7 @@ if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
   find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
   find /lib/modules -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
   find /lib/modules -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
+  find /lib/modules -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2> /dev/null || true
 fi
 
 
@@ -339,6 +344,7 @@ if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
   rm -f /lib/modules/*/misc/vboxdrv.ko
   rm -f /lib/modules/*/misc/vboxnetflt.ko
   rm -f /lib/modules/*/misc/vboxnetadp.ko
+  rm -f /lib/modules/*/misc/vboxpci.ko
 fi
 if [ $BUILD_MODULES -eq 1 ]; then
   /etc/init.d/vboxdrv setup || true
