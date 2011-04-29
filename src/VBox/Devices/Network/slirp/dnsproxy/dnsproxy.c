@@ -132,7 +132,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
             sofree(pData, so1);
             return;
         }
-        m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+        m = slirpDnsMbufAlloc(pData);
         if (m == NULL)
         {
             LogRel(("NAT: Can't allocate mbuf\n"));

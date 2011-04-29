@@ -1434,6 +1434,17 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 {
                     case CTL_DNS:
                     case CTL_ALIAS:
+                    case CTL_TFTP:
+                        if (!slirpMbufTagService(pData, mr, (uint8_t)(htip & ~pData->netmask)))
+                        {
+                            static bool fTagErrorReported;
+                            if (!fTagErrorReported)
+                            {
+                                LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d) to mbuf:%p\n",
+                                            (uint8_t)(htip & ~pData->netmask), m));
+                                fTagErrorReported = true;
+                            }
+                        }
                         rah->ar_sha[5] = (uint8_t)(htip & ~pData->netmask);
                         break;
                     default:;
@@ -1558,6 +1569,8 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
+        struct m_tag *t = m_tag_first(m);
+        uint8_t u8ServiceId = CTL_ALIAS;
         memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
         memcpy(eh->h_source, special_ethaddr, ETH_ALEN);
         Assert(memcmp(eh->h_dest, special_ethaddr, ETH_ALEN) != 0);
@@ -1567,6 +1580,13 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
             m_freem(pData, m);
             goto done;
         }
+        if (   t
+            && (t = m_tag_find(m, PACKET_SERVICE, NULL)))
+        {
+            Assert(t);
+            u8ServiceId = *(uint8_t *)&t[1];
+        }
+        eh->h_source[5] = u8ServiceId;
     }
     /*
      * we're processing the chain, that isn't not expected.
