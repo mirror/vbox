@@ -1071,7 +1071,7 @@ typedef const RTHCPTR      *PCRTHCPTR;
 
 
 /** HC ring-3 pointer. */
-#ifdef  IN_RING3
+#ifdef IN_RING3
 typedef void *              RTR3PTR;
 #else
 typedef RTR3UINTPTR         RTR3PTR;
@@ -1083,7 +1083,11 @@ typedef const RTR3PTR      *PCRTR3PTR;
 /** @def NIL_RTR3PTR
  * NIL HC ring-3 pointer.
  */
-#define NIL_RTR3PTR         ((RTR3PTR)0)
+#ifndef IN_RING3
+# define NIL_RTR3PTR        ((RTR3PTR)0)
+#else
+# define NIL_RTR3PTR        (NULL)
+#endif
 /** Max RTR3PTR value. */
 #define RTR3PTR_MAX         ((RTR3PTR)RTR3UINTPTR_MAX)
 
@@ -1100,7 +1104,11 @@ typedef const RTR0PTR      *PCRTR0PTR;
 /** @def NIL_RTR0PTR
  * NIL HC ring-0 pointer.
  */
-#define NIL_RTR0PTR         ((RTR0PTR)0)
+#ifndef IN_RING0
+# define NIL_RTR0PTR        ((RTR0PTR)0)
+#else
+# define NIL_RTR0PTR        (NULL)
+#endif
 /** Max RTR3PTR value. */
 #define RTR0PTR_MAX         ((RTR0PTR)RTR0UINTPTR_MAX)
 
@@ -1370,7 +1378,11 @@ typedef const RTRCPTR  *PCRTRCPTR;
 /** @def NIL_RTGCPTR
  * NIL RC pointer.
  */
-#define NIL_RTRCPTR    ((RTRCPTR)0)
+#ifndef IN_RC
+# define NIL_RTRCPTR   ((RTRCPTR)0)
+#else
+# define NIL_RTRCPTR   (NULL)
+#endif
 /** @def RTRCPTR_MAX
  * The maximum value a RTRCPTR can have. Mostly used as INVALID value.
  */
