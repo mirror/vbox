@@ -1320,7 +1320,7 @@ typedef struct PGMRAMRANGE
 
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
 #ifdef PGM_USE_RAMRANGE_SEARCH_TREES
-    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 3 : 1];
+    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 3 : 3];
 #else
     uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 1 : 3];
 #endif
