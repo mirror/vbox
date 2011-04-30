@@ -160,6 +160,17 @@ void pgmPhysInvalidRamRangeTlbs(PVM pVM)
 
 
 /**
+ * Tests if a value of type RTGCPHYS is negative if the type had been signed
+ * instead of unsigned.
+ *
+ * @returns @c true if negative, @c false if positive or zero.
+ * @param   a_GCPhys        The value to test.
+ * @todo    Move me to iprt/types.h.
+ */
+#define RTGCPHYS_IS_NEGATIVE(a_GCPhys)  ((a_GCPhys) & ((RTGCPHYS)1 << (sizeof(RTGCPHYS)*8 - 1)))
+
+
+/**
  * Slow worker for pgmPhysGetRange.
  *
  * @copydoc pgmPhysGetRange
@@ -167,6 +178,24 @@ void pgmPhysInvalidRamRangeTlbs(PVM pVM)
 PPGMRAMRANGE pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
+
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
+    while (pRam)
+    {
+        RTGCPHYS off = GCPhys - pRam->GCPhys;
+        if (off < pRam->cb)
+        {
+            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
+            return pRam;
+        }
+        if (RTGCPHYS_IS_NEGATIVE(off))
+            pRam = pRam->CTX_SUFF(pLeft);
+        else
+            pRam = pRam->CTX_SUFF(pRight);
+    }
+    return NULL;
+#else
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
     while (GCPhys > pRam->GCPhysLast)
     {
@@ -179,6 +208,7 @@ PPGMRAMRANGE pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys)
 
     pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
     return pRam;
+#endif
 }
 
 
@@ -190,6 +220,28 @@ PPGMRAMRANGE pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys)
 PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
+
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    PPGMRAMRANGE pLastLeft = NULL;
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
+    while (pRam)
+    {
+        RTGCPHYS off = GCPhys - pRam->GCPhys;
+        if (off < pRam->cb)
+        {
+            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
+            return pRam;
+        }
+        if (RTGCPHYS_IS_NEGATIVE(off))
+        {
+            pLastLeft = pRam;
+            pRam = pRam->CTX_SUFF(pLeft);
+        }
+        else
+            pRam = pRam->CTX_SUFF(pRight);
+    }
+    return pLastLeft;
+#else
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
     while (GCPhys > pRam->GCPhysLast)
     {
@@ -199,6 +251,7 @@ PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys)
     }
     pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
     return pRam;
+#endif
 }
 
 
@@ -210,6 +263,24 @@ PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys)
 PPGMPAGE pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
+
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
+    while (pRam)
+    {
+        RTGCPHYS off = GCPhys - pRam->GCPhys;
+        if (off < pRam->cb)
+        {
+            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
+            return &pRam->aPages[off >> PAGE_SHIFT];
+        }
+
+        if (RTGCPHYS_IS_NEGATIVE(off))
+            pRam = pRam->CTX_SUFF(pLeft);
+        else
+            pRam = pRam->CTX_SUFF(pRight);
+    }
+#else
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -221,6 +292,7 @@ PPGMPAGE pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys)
             return &pRam->aPages[off >> PAGE_SHIFT];
         }
     }
+#endif
     return NULL;
 }
 
@@ -233,6 +305,25 @@ PPGMPAGE pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys)
 int pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
+
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
+    while (pRam)
+    {
+        RTGCPHYS off = GCPhys - pRam->GCPhys;
+        if (off < pRam->cb)
+        {
+            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
+            *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
+            return VINF_SUCCESS;
+        }
+
+        if (RTGCPHYS_IS_NEGATIVE(off))
+            pRam = pRam->CTX_SUFF(pLeft);
+        else
+            pRam = pRam->CTX_SUFF(pRight);
+    }
+#else
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -245,6 +336,8 @@ int pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
             return VINF_SUCCESS;
         }
     }
+#endif
+
     *ppPage = NULL;
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
@@ -258,6 +351,26 @@ int pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
+
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
+    while (pRam)
+    {
+        RTGCPHYS off = GCPhys - pRam->GCPhys;
+        if (off < pRam->cb)
+        {
+            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
+            *ppRam  = pRam;
+            *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
+            return VINF_SUCCESS;
+        }
+
+        if (RTGCPHYS_IS_NEGATIVE(off))
+            pRam = pRam->CTX_SUFF(pLeft);
+        else
+            pRam = pRam->CTX_SUFF(pRight);
+    }
+#else
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -271,6 +384,7 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
             return VINF_SUCCESS;
         }
     }
+#endif
 
     *ppRam  = NULL;
     *ppPage = NULL;

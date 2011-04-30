@@ -1265,8 +1265,10 @@ typedef PGMLIVESAVERAMPAGE *PPGMLIVESAVERAMPAGE;
 #define PGMLIVSAVEPAGE_MAX_DIRTIED 0x00fffff0
 
 
+//#define PGM_USE_RAMRANGE_SEARCH_TREES
+
 /**
- * Ram range for GC Phys to HC Phys conversion.
+ * RAM range for GC Phys to HC Phys conversion.
  *
  * Can be used for HC Virt to GC Phys and HC Virt to HC Phys
  * conversions too, but we'll let MM handle that for now.
@@ -1316,11 +1318,15 @@ typedef struct PGMRAMRANGE
 #endif
 
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 3 : 1];
+#else
     uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 1 : 3];
+#endif
     /** Array of physical guest page tracking structures. */
     PGMPAGE                             aPages[1];
 } PGMRAMRANGE;
-/** Pointer to Ram range for GC Phys to HC Phys conversion. */
+/** Pointer to RAM range for GC Phys to HC Phys conversion. */
 typedef PGMRAMRANGE *PPGMRAMRANGE;
 
 /** @name PGMRAMRANGE::fFlags
@@ -2976,11 +2982,13 @@ typedef struct PGM
     RTGCPHYS                        GCPhysInvAddrMask;
 
 
-    /** Ram range TLB for R3. */
+    /** RAM range TLB for R3. */
     R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR3[PGM_RAMRANGE_TLB_ENTRIES];
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangesXR3;
+    /** Root of the RAM range search tree for ring-3. */
+    R3PTRTYPE(PPGMRAMRANGE)         pRamRangeTreeR3;
     /** PGM offset based trees - R3 Ptr. */
     R3PTRTYPE(PPGMTREES)            pTreesR3;
     /** Caching the last physical handler we looked up in R3. */
@@ -2999,12 +3007,14 @@ typedef struct PGM
     /** Pointer to SHW+GST mode data (function pointers).
      * The index into this table is made up from */
     R3PTRTYPE(PPGMMODEDATA)         paModeData;
-    /*RTR3PTR                         R3PtrAlignment0;*/
+    RTR3PTR                         R3PtrAlignment0;
 
-    /** Ram range TLB for R0. */
+    /** RAM range TLB for R0. */
     R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
     /** R0 pointer corresponding to PGM::pRamRangesXR3. */
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesXR0;
+    /** Root of the RAM range search tree for ring-0. */
+    R0PTRTYPE(PPGMRAMRANGE)         pRamRangeTreeR0;
     /** PGM offset based trees - R0 Ptr. */
     R0PTRTYPE(PPGMTREES)            pTreesR0;
     /** Caching the last physical handler we looked up in R0. */
@@ -3016,13 +3026,15 @@ typedef struct PGM
     R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
     R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
-    /*RTR0PTR                         R0PtrAlignment0;*/
+    RTR0PTR                         R0PtrAlignment0;
 
 
-    /** Ram range TLB for RC. */
+    /** RAM range TLB for RC. */
     RCPTRTYPE(PPGMRAMRANGE)         apRamRangesTlbRC[PGM_RAMRANGE_TLB_ENTRIES];
     /** RC pointer corresponding to PGM::pRamRangesXR3. */
     RCPTRTYPE(PPGMRAMRANGE)         pRamRangesXRC;
+    /** Root of the RAM range search tree for raw-mode context. */
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangeTreeRC;
     /** PGM offset based trees - RC Ptr. */
     RCPTRTYPE(PPGMTREES)            pTreesRC;
     /** Caching the last physical handler we looked up in RC. */
@@ -3034,7 +3046,7 @@ typedef struct PGM
     RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
     /** RC pointer corresponding to PGM::pRomRangesR3. */
     RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
-    /*RTRCPTR                         RCPtrAlignment0;*/
+    RTRCPTR                         RCPtrAlignment0;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */

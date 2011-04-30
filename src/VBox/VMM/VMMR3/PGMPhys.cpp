@@ -577,6 +577,76 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
     return rc;
 }
 
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+
+#define MAKE_LEAF(a_pNode) \
+    do { \
+        (a_pNode)->pLeftR3  = NIL_RTR3PTR; \
+        (a_pNode)->pRightR3 = NIL_RTR3PTR; \
+        (a_pNode)->pLeftR0  = NIL_RTR0PTR; \
+        (a_pNode)->pRightR0 = NIL_RTR0PTR; \
+        (a_pNode)->pLeftRC  = NIL_RTRCPTR; \
+        (a_pNode)->pRightRC = NIL_RTRCPTR; \
+    } while (0)
+
+#define INSERT_LEFT(a_pParent, a_pNode) \
+    do { \
+        (a_pParent)->pLeftR3 = (a_pNode); \
+        (a_pParent)->pLeftR0 = (a_pNode)->pSelfR0; \
+        (a_pParent)->pLeftRC = (a_pNode)->pSelfRC; \
+    } while (0)
+#define INSERT_RIGHT(a_pParent, a_pNode) \
+    do { \
+        (a_pParent)->pRightR3 = (a_pNode); \
+        (a_pParent)->pRightR0 = (a_pNode)->pSelfR0; \
+        (a_pParent)->pRightRC = (a_pNode)->pSelfRC; \
+    } while (0)
+
+
+/**
+ * Recursive tree builder.
+ *
+ * @param   ppRam           Pointer to the iterator variable.
+ * @param   iHeight         The hight about normal leaf nodes.  Inserts a leaf
+ *                          node if 0.
+ */
+static PPGMRAMRANGE pgmR3PhysRebuildRamRangeSearchTreesRecursively(PPGMRAMRANGE *ppRam, int iDepth)
+{
+    PPGMRAMRANGE pRam;
+    if (iDepth <= 0)
+    {
+        /*
+         * Leaf node.
+         */
+        pRam = *ppRam;
+        if (pRam)
+        {
+            *ppRam = pRam->pNextR3;
+            MAKE_LEAF(pRam);
+        }
+    }
+    else
+    {
+
+        /*
+         * Intermediate node.
+         */
+        PPGMRAMRANGE pLeft = pgmR3PhysRebuildRamRangeSearchTreesRecursively(ppRam, iDepth - 1);
+
+        pRam = *ppRam;
+        if (!pRam)
+            return pLeft;
+        *ppRam = pRam->pNextR3;
+        MAKE_LEAF(pRam);
+        INSERT_LEFT(pRam, pLeft);
+
+        PPGMRAMRANGE pRight = pgmR3PhysRebuildRamRangeSearchTreesRecursively(ppRam, iDepth - 1);
+        if (pRight)
+            INSERT_RIGHT(pRam, pRight);
+    }
+    return pRam;
+}
+
 
 /**
  * Rebuilds the RAM range search trees.
@@ -585,21 +655,71 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
  */
 static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
 {
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
+
     /*
-     * Create the three balanced trees by sequentially working the linked list.
+     * Create the reasonably balanced tree in a sequential fashion.
+     * For simplicity (laziness) we use standard recursion here.
      */
+    int             iDepth = 0;
+    PPGMRAMRANGE    pRam   = pVM->pgm.s.pRamRangesXR3;
+    PPGMRAMRANGE    pRoot  = pgmR3PhysRebuildRamRangeSearchTreesRecursively(&pRam, 0);
+    while (pRam)
+    {
+        PPGMRAMRANGE pLeft = pRoot;
 
-    /* Count them and calculate the max depth. */
+        pRoot = pRam;
+        pRam = pRam->pNextR3;
+        MAKE_LEAF(pRoot);
+        INSERT_LEFT(pRoot, pLeft);
+
+        PPGMRAMRANGE pRight = pgmR3PhysRebuildRamRangeSearchTreesRecursively(&pRam, iDepth);
+        if (pRight)
+            INSERT_RIGHT(pRoot, pRight);
+        /** @todo else: rotate the tree. */
+
+        iDepth++;
+    }
+
+    pVM->pgm.s.pRamRangeTreeR3 = pRoot;
+    pVM->pgm.s.pRamRangeTreeR0 = pRoot ? pRoot->pSelfR0 : NIL_RTR0PTR;
+    pVM->pgm.s.pRamRangeTreeRC = pRoot ? pRoot->pSelfRC : NIL_RTRCPTR;
+
+#ifdef VBOX_STRICT
+    /*
+     * Verify that the above code works.
+     */
     unsigned cRanges = 0;
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
+    for (pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
         cRanges++;
+    Assert(cRanges > 0);
 
-    /// contine later
+    unsigned cMaxDepth = ASMBitLastSetU32(cRanges);
+    if ((1U << cMaxDepth) < cRanges)
+        cMaxDepth++;
 
-#endif
+    for (pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
+    {
+        unsigned     cDepth = 0;
+        PPGMRAMRANGE pRam2 = pVM->pgm.s.pRamRangeTreeR3;
+        for (;;)
+        {
+            if (pRam == pRam2)
+                break;
+            Assert(pRam2);
+            if (pRam->GCPhys < pRam2->GCPhys)
+                pRam2 = pRam2->pLeftR3;
+            else
+                pRam2 = pRam2->pRightR3;
+        }
+        AssertMsg(cDepth <= cMaxDepth, ("cDepth=%d cMaxDepth=%d\n", cDepth, cMaxDepth));
+    }
+#endif /* VBOX_STRICT */
 }
 
+#undef MAKE_LEAF
+#undef INSERT_LEFT
+#undef INSERT_RIGHT
+#endif /* PGM_USE_RAMRANGE_SEARCH_TREES */
 
 /**
  * Relinks the RAM ranges using the pSelfRC and pSelfR0 pointers.
@@ -649,8 +769,9 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
-
+#endif
 }
 
 
@@ -688,7 +809,9 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
+#endif
     pgmUnlock(pVM);
 }
 
@@ -724,7 +847,9 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
+#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
+#endif
     pgmUnlock(pVM);
 }
 
