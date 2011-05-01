@@ -335,10 +335,10 @@ RTR3DECL(int) RTPathSetMode(const char *pszPath, RTFMODE fMode)
 static bool rtPathSame(const char *pszNativeSrc, const char *pszNativeDst)
 {
     struct stat SrcStat;
-    if (stat(pszNativeSrc, &SrcStat))
+    if (lstat(pszNativeSrc, &SrcStat))
         return false;
     struct stat DstStat;
-    if (stat(pszNativeDst, &DstStat))
+    if (lstat(pszNativeDst, &DstStat))
         return false;
     Assert(SrcStat.st_dev && DstStat.st_dev);
     Assert(SrcStat.st_ino && DstStat.st_ino);
@@ -380,11 +380,11 @@ DECLHIDDEN(int) rtPathPosixRename(const char *pszSrc, const char *pszDst, unsign
              * We have to check this first to avoid getting errnous VERR_ALREADY_EXISTS
              * errors from the next step.
              *
-             * There are race conditions here (perhaps unlikely ones but still), but I'm
+             * There are race conditions here (perhaps unlikely ones, but still), but I'm
              * afraid there is little with can do to fix that.
              */
             struct stat SrcStat;
-            if (stat(pszNativeSrc, &SrcStat))
+            if (lstat(pszNativeSrc, &SrcStat))
                 rc = RTErrConvertFromErrno(errno);
             else if (!fFileType)
                 rc = VINF_SUCCESS;
@@ -402,7 +402,7 @@ DECLHIDDEN(int) rtPathPosixRename(const char *pszSrc, const char *pszDst, unsign
                  * Another race condition btw.
                  */
                 struct stat DstStat;
-                if (stat(pszNativeDst, &DstStat))
+                if (lstat(pszNativeDst, &DstStat))
                     rc = errno == ENOENT ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
                 else
                 {
@@ -445,7 +445,7 @@ DECLHIDDEN(int) rtPathPosixRename(const char *pszSrc, const char *pszDst, unsign
                         }
                         else
                         {
-                            if (stat(pszNativeDst, &DstStat))
+                            if (lstat(pszNativeDst, &DstStat))
                                 rc = errno != ENOENT ? RTErrConvertFromErrno(errno) : VINF_SUCCESS;
                             else if (S_ISDIR(DstStat.st_mode))
                                 rc = VERR_ALREADY_EXISTS;
