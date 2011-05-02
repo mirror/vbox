@@ -601,8 +601,9 @@ int vboxNetAdpCreate(PINTNETTRUNKFACTORY pIfFactory, PVBOXNETADP *ppNew)
         if (vboxNetAdpCheckAndSetState(pThis, kVBoxNetAdpState_Invalid, kVBoxNetAdpState_Transitional))
         {
             /* Found an empty slot -- use it. */
+            uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+            Assert(cRefs == 1);
             RTMAC Mac;
-            Assert(ASMAtomicIncU32(&pThis->cRefs) == 1);
             vboxNetAdpComposeMACAddress(pThis, &Mac);
             rc = vboxNetAdpOsCreate(pThis, &Mac);
             *ppNew = pThis;
