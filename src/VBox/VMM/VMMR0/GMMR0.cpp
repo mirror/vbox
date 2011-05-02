@@ -621,16 +621,16 @@ static PGMM g_pGMM = NULL;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
-static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pvGMM);
-static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void *pvGVM);
+static DECLCALLBACK(int)     gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
+static DECLCALLBACK(int)     gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pvGMM);
+static DECLCALLBACK(int)     gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void *pvGVM);
 /*static*/ DECLCALLBACK(int) gmmR0CleanupVMDestroyChunk(PAVLU32NODECORE pNode, void *pvGVM);
-DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
-DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk);
-static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
-static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
-static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
-static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
+DECLINLINE(void)             gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
+DECLINLINE(void)             gmmR0UnlinkChunk(PGMMCHUNK pChunk);
+static uint32_t              gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
+static void                  gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
+static void                  gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
+static int                   gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 
 
 
