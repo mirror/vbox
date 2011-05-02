@@ -1128,7 +1128,7 @@ static void patmAddIllegalInstrRecord(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstr
 
     pRec = (PAVLPVNODECORE)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pRec));
     Assert(pRec);
-    pRec->Key = (AVLPVKEY)pInstrGC;
+    pRec->Key = (AVLPVKEY)(uintptr_t)pInstrGC;
 
     bool ret = RTAvlPVInsert(&pPatch->pTempInfo->IllegalInstrTree, pRec);
     Assert(ret); NOREF(ret);
@@ -1139,7 +1139,7 @@ static bool patmIsIllegalInstr(PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     PAVLPVNODECORE pRec;
 
-    pRec = RTAvlPVGet(&pPatch->pTempInfo->IllegalInstrTree, (AVLPVKEY)pInstrGC);
+    pRec = RTAvlPVGet(&pPatch->pTempInfo->IllegalInstrTree, (AVLPVKEY)(uintptr_t)pInstrGC);
     if (pRec)
         return true;
     else

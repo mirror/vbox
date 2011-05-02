@@ -6301,14 +6301,14 @@ DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
             uint64_t u;
             rc = ssmR3DataRead(pSSM, &u, sizeof(u));
             if (RT_SUCCESS(rc))
-                *ppv = (void *)(u ? 1 : 0);
+                *ppv = (void *)(u ? 1UL : 0UL);
         }
         else
         {
             uint32_t u;
             rc = ssmR3DataRead(pSSM, &u, sizeof(u));
             if (RT_SUCCESS(rc))
-                *ppv = (void *)(u ? 1 : 0);
+                *ppv = (void *)(u ? 1UL : 0UL);
         }
     }
     else
@@ -6316,7 +6316,7 @@ DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
         bool f;
         rc = SSMR3GetBool(pSSM, &f);
         if (RT_SUCCESS(rc))
-            *ppv = (void *)(f ? 1 : 0);
+            *ppv = (void *)(f ? 1UL : 0UL);
     }
     return rc;
 }
