@@ -299,7 +299,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                     /* We need to check if VT-x has been properly initialized on all CPUs. Some BIOSes do a lousy job. */
                     HWACCMR0FIRSTRC FirstRc;
                     hwaccmR0FirstRcInit(&FirstRc);
-                    HWACCMR0Globals.lLastError = RTMpOnAll(hwaccmR0InitCpu, (void *)u32VendorEBX, &FirstRc);
+                    HWACCMR0Globals.lLastError = RTMpOnAll(hwaccmR0InitCpu, (void *)(uintptr_t)u32VendorEBX, &FirstRc);
                     if (RT_SUCCESS(HWACCMR0Globals.lLastError))
                         HWACCMR0Globals.lLastError = hwaccmR0FirstRcGetStatus(&FirstRc);
                 }
@@ -443,7 +443,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 /* We need to check if AMD-V has been properly initialized on all CPUs. Some BIOSes might do a poor job. */
                 HWACCMR0FIRSTRC FirstRc;
                 hwaccmR0FirstRcInit(&FirstRc);
-                rc = RTMpOnAll(hwaccmR0InitCpu, (void *)u32VendorEBX, &FirstRc);    AssertRC(rc);
+                rc = RTMpOnAll(hwaccmR0InitCpu, (void *)(uintptr_t)u32VendorEBX, &FirstRc);    AssertRC(rc);
                 if (RT_SUCCESS(rc))
                     rc = hwaccmR0FirstRcGetStatus(&FirstRc);
 #ifndef DEBUG_bird
