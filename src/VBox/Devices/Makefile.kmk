@@ -1127,6 +1127,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ServicesR0_SOURCES   = \
  	Network/SrvIntNetR0.cpp \
         $(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/SrvPciRawR0.cpp,)
+ Network/SrvIntNetR0.cpp_CXXFLAGS := $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
  #
  # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).

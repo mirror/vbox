@@ -1728,7 +1728,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
  */
 int hwaccmR3EnablePatching(PVM pVM, VMCPUID idCpu, RTRCPTR pPatchMem, unsigned cbPatchMem)
 {
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)idCpu);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)(uintptr_t)idCpu);
     AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
@@ -1775,7 +1775,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
 
     /* @todo Potential deadlock when other VCPUs are waiting on the IOM lock (we own it)!! */
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)VMMGetCpuId(pVM));
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)(uintptr_t)VMMGetCpuId(pVM));
     AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = 0;
@@ -2196,7 +2196,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
  */
 VMMR3DECL(int) HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, (pVM->hwaccm.s.pGuestPatchMem) ? hwaccmR3PatchTprInstr : hwaccmR3ReplaceTprInstr, (void *)pVCpu->idCpu);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, (pVM->hwaccm.s.pGuestPatchMem) ? hwaccmR3PatchTprInstr : hwaccmR3ReplaceTprInstr, (void *)(uintptr_t)pVCpu->idCpu);
     AssertRC(rc);
     return rc;
 }

@@ -258,8 +258,8 @@ static void *rtThreadNativeMain(void *pvArgs)
     rc = rtThreadMain(pThread, (uintptr_t)Self, &pThread->szName[0]);
 
     pthread_setspecific(g_SelfKey, NULL);
-    pthread_exit((void *)rc);
-    return (void *)rc;
+    pthread_exit((void *)(intptr_t)rc);
+    return (void *)(intptr_t)rc;
 }
 
 

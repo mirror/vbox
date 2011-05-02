@@ -450,7 +450,7 @@ static void *rtSchedNativeProberThread(void *pvUser)
         &&  !setpriority(PRIO_PROCESS, 0, g_iMinPriority)
         &&  iStart != g_iMinPriority)
     {
-        if (rtSchedRunThread(rtSchedNativeSubProberThread, (void *)iStart) == 0)
+        if (rtSchedRunThread(rtSchedNativeSubProberThread, (void *)(intptr_t)iStart) == 0)
             g_fScrewedUpMaxPriorityLimitInheritance = false;
     }
 
@@ -535,7 +535,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
 
     /* done */
     rtSchedNativeRestore(&SavedPriority);
-    return (void *)rc;
+    return (void *)(intptr_t)rc;
 }
 
 

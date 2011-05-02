@@ -778,7 +778,7 @@ inline int CSAMR3DISInstr(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR InstrGC, uint8_t *
     (pCpu)->pfnReadBytes  = CSAMR3ReadBytes;
     (pCpu)->apvUserData[0] = pVM;
     (pCpu)->apvUserData[1] = InstrHC;
-    (pCpu)->apvUserData[2] = (void *)InstrGC; Assert(sizeof(InstrGC) <= sizeof(pCpu->apvUserData[0]));
+    (pCpu)->apvUserData[2] = (void *)(uintptr_t)InstrGC; Assert(sizeof(InstrGC) <= sizeof(pCpu->apvUserData[0]));
 #ifdef DEBUG
     return DISInstrEx(pCpu, InstrGC, 0, pOpsize, pszOutput, OPTYPE_ALL);
 #else
@@ -1601,7 +1601,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
     if (rc != VERR_PAGE_NOT_PRESENT && rc != VERR_PAGE_TABLE_NOT_PRESENT)
         AssertMsgFailed(("PGMR3GetPage %RRv failed with %Rrc\n", addr, rc));
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)addr);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)addr);
     if (pPageRec)
     {
         if (    GCPhys == pPageRec->page.GCPhys
@@ -1680,7 +1680,7 @@ VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
 
     addr = addr & PAGE_BASE_GC_MASK;
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)addr);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)addr);
     if (pPageRec)
     {
         rc = csamRemovePageRecord(pVM, addr);
@@ -1705,7 +1705,7 @@ int csamR3CheckPageRecord(PVM pVM, RTRCPTR pInstrGC)
 
     pInstrGC = pInstrGC & PAGE_BASE_GC_MASK;
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pInstrGC);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pInstrGC);
     if (pPageRec)
     {
         u64hash = csamR3CalcPageHash(pVM, pInstrGC);
@@ -1763,7 +1763,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     }
     /* Round down to page boundary. */
     GCPtr = (GCPtr & PAGE_BASE_GC_MASK);
-    pPage->Core.Key                  = (AVLPVKEY)GCPtr;
+    pPage->Core.Key                  = (AVLPVKEY)(uintptr_t)GCPtr;
     pPage->page.pPageGC              = GCPtr;
     pPage->page.fCode32              = fCode32;
     pPage->page.fMonitorInvalidation = fMonitorInvalidation;
@@ -1869,7 +1869,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     /** @todo implicit assumption */
     fMonitorInvalidation = (enmTag == CSAM_TAG_PATM);
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pPageAddrGC);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
     if (pPageRec == NULL)
     {
         uint64_t fFlags;
@@ -1886,7 +1886,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 
         csamCreatePageRecord(pVM, pPageAddrGC, enmTag, true /* 32 bits code */, fMonitorInvalidation);
 
-        pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pPageAddrGC);
+        pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
         Assert(pPageRec);
     }
     /** @todo reference count */
@@ -2003,7 +2003,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     Log(("csamRemovePageRecord %RRv\n", GCPtr));
-    pPageRec = (PCSAMPAGEREC)RTAvlPVRemove(&pVM->csam.s.pPageTree, (AVLPVKEY)GCPtr);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVRemove(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)GCPtr);
 
     if (pPageRec)
     {
@@ -2163,7 +2163,7 @@ bool csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage)
         return false;
     }
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pInstr);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pInstr);
     if (pPageRec)
     {
         if (pPage) *pPage= &pPageRec->page;
@@ -2346,7 +2346,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
 
         Log(("CSAMR3FlushDirtyPages: flush %RRv (modifypage rc=%Rrc)\n", pVM->csam.s.pvDirtyBasePage[i], rc));
 
-        pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)GCPtr);
+        pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)GCPtr);
         if (pPageRec && pPageRec->page.enmTag == CSAM_TAG_REM)
         {
             uint64_t fFlags;
