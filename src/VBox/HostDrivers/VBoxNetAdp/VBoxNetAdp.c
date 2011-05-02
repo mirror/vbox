@@ -1087,7 +1087,8 @@ DECLINLINE(int) vboxNetAdpGetNextAvailableUnit(void)
 
 DECLINLINE(void) vboxNetAdpReleaseUnit(int iUnit)
 {
-    Assert(ASMAtomicBitTestAndClear(g_aUnits, iUnit));
+    bool fSet = ASMAtomicBitTestAndClear(g_aUnits, iUnit);
+    Assert(fSet);
 }
 
 /**
