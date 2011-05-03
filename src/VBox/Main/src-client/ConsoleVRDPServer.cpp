@@ -1880,9 +1880,27 @@ void ConsoleVRDPServer::remote3DRedirect(void)
     Assert(p->pThis);
     Assert(p->pThis == pServer);
 
-    // @todo Process u32Id
+    if (u32Id == VRDE_IMAGE_NOTIFY_HANDLE_CREATE)
+    {
+        if (cbData != sizeof(uint32_t))
+        {
+            AssertFailed();
+            return VERR_INVALID_PARAMETER;
+        }
 
-    p->fCreated = true;
+        uint32_t u32StreamId = *(uint32_t *)pvData;
+        LogFlowFunc(("VRDE_IMAGE_NOTIFY_HANDLE_CREATE u32StreamId %d\n",
+                     u32StreamId));
+
+        if (u32StreamId != 0)
+        {
+            p->fCreated = true; // @todo not needed?
+        }
+        else
+        {
+           /* The stream has not been created. */
+        }
+    }
 
     return VINF_SUCCESS;
 }
