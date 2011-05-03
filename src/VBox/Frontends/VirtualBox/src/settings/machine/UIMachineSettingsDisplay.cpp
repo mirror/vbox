@@ -152,23 +152,33 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Fill internal variables with corresponding values: */
-    m_cache.m_iCurrentVRAM = m_machine.GetVRAMSize();
-    m_cache.m_cMonitorCount = m_machine.GetMonitorCount();
-    m_cache.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    m_cache.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
-#endif
-    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
-    m_cache.m_fVRDEServerSupported = !vrdeServer.isNull();
-    m_cache.m_fVRDEServerEnabled = m_cache.m_fVRDEServerSupported && vrdeServer.GetEnabled();
-    m_cache.m_strVRDEPort = vrdeServer.GetVRDEProperty("TCP/Ports");
-    m_cache.m_iVRDEAuthType = vrdeServer.GetAuthType();
-    m_cache.m_uVRDETimeout = vrdeServer.GetAuthTimeout();
-    m_cache.m_fMultipleConnectionsAllowed = vrdeServer.GetAllowMultiConnection();
+    /* Prepare display data: */
+    UIDataSettingsMachineDisplay displayData;
 
-    /* Other variables: */
-    m_initialVRAM = RT_MIN(m_cache.m_iCurrentVRAM, m_maxVRAM);
+    /* Gather display data: */
+    displayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
+    displayData.m_cMonitorCount = m_machine.GetMonitorCount();
+    displayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    displayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+    /* Check if VRDE server is valid: */
+    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
+    displayData.m_fVRDEServerSupported = !vrdeServer.isNull();
+    if (!vrdeServer.isNull())
+    {
+        displayData.m_fVRDEServerEnabled = vrdeServer.GetEnabled();
+        displayData.m_strVRDEPort = vrdeServer.GetVRDEProperty("TCP/Ports");
+        displayData.m_VRDEAuthType = vrdeServer.GetAuthType();
+        displayData.m_uVRDETimeout = vrdeServer.GetAuthTimeout();
+        displayData.m_fMultipleConnectionsAllowed = vrdeServer.GetAllowMultiConnection();
+    }
+
+    /* Initialize other variables: */
+    m_initialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_maxVRAM);
+
+    /* Cache display data: */
+    m_cache.cacheInitialData(displayData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -178,23 +188,26 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsDisplay::getFromCache()
 {
-    /* Apply internal variables data to QWidget(s): */
-    mSlMonitors->setValue(m_cache.m_cMonitorCount);
+    /* Get display data from cache: */
+    const UIDataSettingsMachineDisplay &displayData = m_cache.base();
+
+    /* Load display data to page: */
+    mSlMonitors->setValue(displayData.m_cMonitorCount);
     mCb3D->setEnabled(vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
-    mCb3D->setChecked(m_cache.m_f3dAccelerationEnabled);
+    mCb3D->setChecked(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
-    mCb2DVideo->setChecked(m_cache.m_f2dAccelerationEnabled);
-#endif
+    mCb2DVideo->setChecked(displayData.m_f2dAccelerationEnabled);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
     checkVRAMRequirements();
-    mSlMemory->setValue(m_cache.m_iCurrentVRAM);
-    if (m_cache.m_fVRDEServerSupported)
+    mSlMemory->setValue(displayData.m_iCurrentVRAM);
+    if (displayData.m_fVRDEServerSupported)
     {
-        mCbVRDE->setChecked(m_cache.m_fVRDEServerEnabled);
-        mLeVRDEPort->setText(m_cache.m_strVRDEPort);
-        mCbVRDEMethod->setCurrentIndex(mCbVRDEMethod->findText(vboxGlobal().toString(m_cache.m_iVRDEAuthType)));
-        mLeVRDETimeout->setText(QString::number(m_cache.m_uVRDETimeout));
-        mCbMultipleConn->setChecked(m_cache.m_fMultipleConnectionsAllowed);
+        mCbVRDE->setChecked(displayData.m_fVRDEServerEnabled);
+        mLeVRDEPort->setText(displayData.m_strVRDEPort);
+        mCbVRDEMethod->setCurrentIndex(mCbVRDEMethod->findText(vboxGlobal().toString(displayData.m_VRDEAuthType)));
+        mLeVRDETimeout->setText(QString::number(displayData.m_uVRDETimeout));
+        mCbMultipleConn->setChecked(displayData.m_fMultipleConnectionsAllowed);
     }
     else
         mTwDisplay->removeTab(1);
@@ -207,21 +220,27 @@ void UIMachineSettingsDisplay::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsDisplay::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    m_cache.m_iCurrentVRAM = mSlMemory->value();
-    m_cache.m_cMonitorCount = mSlMonitors->value();
-    m_cache.m_f3dAccelerationEnabled = mCb3D->isChecked();
+    /* Prepare audio data: */
+    UIDataSettingsMachineDisplay displayData = m_cache.base();
+
+    /* Gather display data: */
+    displayData.m_iCurrentVRAM = mSlMemory->value();
+    displayData.m_cMonitorCount = mSlMonitors->value();
+    displayData.m_f3dAccelerationEnabled = mCb3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    m_cache.m_f2dAccelerationEnabled = mCb2DVideo->isChecked();
-#endif
-    if (m_cache.m_fVRDEServerSupported)
+    displayData.m_f2dAccelerationEnabled = mCb2DVideo->isChecked();
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+    if (displayData.m_fVRDEServerSupported)
     {
-        m_cache.m_fVRDEServerEnabled = mCbVRDE->isChecked();
-        m_cache.m_strVRDEPort = mLeVRDEPort->text();
-        m_cache.m_iVRDEAuthType = vboxGlobal().toAuthType(mCbVRDEMethod->currentText());
-        m_cache.m_uVRDETimeout = mLeVRDETimeout->text().toULong();
-        m_cache.m_fMultipleConnectionsAllowed = mCbMultipleConn->isChecked();
+        displayData.m_fVRDEServerEnabled = mCbVRDE->isChecked();
+        displayData.m_strVRDEPort = mLeVRDEPort->text();
+        displayData.m_VRDEAuthType = vboxGlobal().toAuthType(mCbVRDEMethod->currentText());
+        displayData.m_uVRDETimeout = mLeVRDETimeout->text().toULong();
+        displayData.m_fMultipleConnectionsAllowed = mCbMultipleConn->isChecked();
     }
+
+    /* Cache display data: */
+    m_cache.cacheCurrentData(displayData);
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -231,30 +250,39 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    if (isMachineOffline())
+    /* Check if display data was changed: */
+    if (m_cache.wasChanged())
     {
-        /* Video tab: */
-        m_machine.SetVRAMSize(m_cache.m_iCurrentVRAM);
-        m_machine.SetMonitorCount(m_cache.m_cMonitorCount);
-        m_machine.SetAccelerate3DEnabled(m_cache.m_f3dAccelerationEnabled);
+        /* Get display data from cache: */
+        const UIDataSettingsMachineDisplay &displayData = m_cache.data();
+
+        /* Store display data: */
+        if (isMachineOffline())
+        {
+            /* Video tab: */
+            m_machine.SetVRAMSize(displayData.m_iCurrentVRAM);
+            m_machine.SetMonitorCount(displayData.m_cMonitorCount);
+            m_machine.SetAccelerate3DEnabled(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
+            m_machine.SetAccelerate2DVideoEnabled(displayData.m_f2dAccelerationEnabled);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    }
-    /* VRDE tab: */
-    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
-    if (!vrdeServer.isNull())
-    {
-        if (isMachineInValidMode())
-        {
-            vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
-            vrdeServer.SetVRDEProperty("TCP/Ports", m_cache.m_strVRDEPort);
-            vrdeServer.SetAuthType(m_cache.m_iVRDEAuthType);
-            vrdeServer.SetAuthTimeout(m_cache.m_uVRDETimeout);
         }
-        if (isMachineOffline() || isMachineSaved())
+        /* Check if VRDE server still valid: */
+        CVRDEServer vrdeServer = m_machine.GetVRDEServer();
+        if (!vrdeServer.isNull())
         {
-            vrdeServer.SetAllowMultiConnection(m_cache.m_fMultipleConnectionsAllowed);
+            /* Store VRDE data: */
+            if (isMachineInValidMode())
+            {
+                vrdeServer.SetEnabled(displayData.m_fVRDEServerEnabled);
+                vrdeServer.SetVRDEProperty("TCP/Ports", displayData.m_strVRDEPort);
+                vrdeServer.SetAuthType(displayData.m_VRDEAuthType);
+                vrdeServer.SetAuthTimeout(displayData.m_uVRDETimeout);
+            }
+            if (isMachineOffline() || isMachineSaved())
+            {
+                vrdeServer.SetAllowMultiConnection(displayData.m_fMultipleConnectionsAllowed);
+            }
         }
     }
 
