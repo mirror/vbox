@@ -139,22 +139,5 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>mGbUSB</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>mUSBChild</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>233</x>
-     <y>19</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>246</x>
-     <y>177</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
