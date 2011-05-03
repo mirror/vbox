@@ -567,6 +567,6 @@ void UIMachineSettingsSystem::polishPage()
     /* Acceleration tab: */
     mLbVirt->setEnabled(isMachineOffline());
     mCbVirt->setEnabled(isMachineOffline());
-    mCbNestedPaging->setEnabled(isMachineOffline());
+    mCbNestedPaging->setEnabled(mCbVirt->isChecked() && isMachineOffline());
 }
 
