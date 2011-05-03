@@ -27,20 +27,47 @@
 class UIMachineSettingsParallelPage;
 class QITabWidget;
 
-struct UIParallelPortData
+/* Machine settings / Parallel page / Port data: */
+struct UIDataSettingsMachineParallelPort
 {
+    /* Default constructor: */
+    UIDataSettingsMachineParallelPort()
+        : m_iSlot(-1)
+        , m_fPortEnabled(false)
+        , m_uIRQ(0)
+        , m_uIOBase(0)
+        , m_strPath(QString()) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineParallelPort &other) const
+    {
+        return (m_iSlot == other.m_iSlot) &&
+               (m_fPortEnabled == other.m_fPortEnabled) &&
+               (m_uIRQ == other.m_uIRQ) &&
+               (m_uIOBase == other.m_uIOBase) &&
+               (m_strPath == other.m_strPath);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineParallelPort &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineParallelPort &other) const { return !equal(other); }
+    /* Variables: */
     int m_iSlot;
     bool m_fPortEnabled;
     ulong m_uIRQ;
     ulong m_uIOBase;
     QString m_strPath;
 };
+typedef UISettingsCache<UIDataSettingsMachineParallelPort> UICacheSettingsMachineParallelPort;
 
-/* Machine settings / Parallel page / Cache: */
-struct UISettingsCacheMachineParallel
+/* Machine settings / Parallel page / Ports data: */
+struct UIDataSettingsMachineParallel
 {
-    QList<UIParallelPortData> m_items;
+    /* Default constructor: */
+    UIDataSettingsMachineParallel() {}
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineParallel& /* other */) const { return true; }
+    bool operator!=(const UIDataSettingsMachineParallel& /* other */) const { return false; }
 };
+typedef UISettingsCachePool<UIDataSettingsMachineParallel, UICacheSettingsMachineParallelPort> UICacheSettingsMachineParallel;
 
 class UIMachineSettingsParallel : public QIWithRetranslateUI<QWidget>,
                                public Ui::UIMachineSettingsParallel
@@ -53,8 +80,8 @@ public:
 
     void polishTab();
 
-    void fetchPortData(const UIParallelPortData &data);
-    void uploadPortData(UIParallelPortData &data);
+    void fetchPortData(const UICacheSettingsMachineParallelPort &portCache);
+    void uploadPortData(UICacheSettingsMachineParallelPort &portCache);
 
     void setValidator (QIWidgetValidator *aVal);
 
@@ -116,8 +143,8 @@ private:
     QIWidgetValidator *mValidator;
     QITabWidget *mTabWidget;
 
-    /* Internals: */
-    UISettingsCacheMachineParallel m_cache;
+    /* Cache: */
+    UICacheSettingsMachineParallel m_cache;
 };
 
 #endif // __UIMachineSettingsParallel_h__
