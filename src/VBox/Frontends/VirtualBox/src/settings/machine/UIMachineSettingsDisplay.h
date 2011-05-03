@@ -23,20 +23,57 @@
 #include "UISettingsPage.h"
 #include "UIMachineSettingsDisplay.gen.h"
 
-/* Machine settings / Display page / Cache: */
-struct UISettingsCacheMachineDisplay
+/* Machine settings / Display page / Data: */
+struct UIDataSettingsMachineDisplay
 {
+    /* Default constructor: */
+    UIDataSettingsMachineDisplay()
+        : m_iCurrentVRAM(0)
+        , m_cMonitorCount(0)
+        , m_f3dAccelerationEnabled(false)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        , m_f2dAccelerationEnabled(false)
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+        , m_fVRDEServerSupported(false)
+        , m_fVRDEServerEnabled(false)
+        , m_strVRDEPort(QString())
+        , m_VRDEAuthType(KAuthType_Null)
+        , m_uVRDETimeout(0)
+        , m_fMultipleConnectionsAllowed(false) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineDisplay &other) const
+    {
+        return (m_iCurrentVRAM == other.m_iCurrentVRAM) &&
+               (m_cMonitorCount == other.m_cMonitorCount) &&
+               (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled) &&
+#ifdef VBOX_WITH_VIDEOHWACCEL
+               (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled) &&
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+               (m_fVRDEServerSupported == other.m_fVRDEServerSupported) &&
+               (m_fVRDEServerEnabled == other.m_fVRDEServerEnabled) &&
+               (m_strVRDEPort == other.m_strVRDEPort) &&
+               (m_VRDEAuthType == other.m_VRDEAuthType) &&
+               (m_uVRDETimeout == other.m_uVRDETimeout) &&
+               (m_fMultipleConnectionsAllowed == other.m_fMultipleConnectionsAllowed);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
+    /* Variables: */
     int m_iCurrentVRAM;
     int m_cMonitorCount;
     bool m_f3dAccelerationEnabled;
+#ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_f2dAccelerationEnabled;
+#endif /* VBOX_WITH_VIDEOHWACCEL */
     bool m_fVRDEServerSupported;
     bool m_fVRDEServerEnabled;
     QString m_strVRDEPort;
-    KAuthType m_iVRDEAuthType;
+    KAuthType m_VRDEAuthType;
     ulong m_uVRDETimeout;
     bool m_fMultipleConnectionsAllowed;
 };
+typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
 /* Machine settings / Display page: */
 class UIMachineSettingsDisplay : public UISettingsPageMachine,
@@ -109,7 +146,7 @@ private:
 #endif
 
     /* Cache: */
-    UISettingsCacheMachineDisplay m_cache;
+    UICacheSettingsMachineDisplay m_cache;
 };
 
 #endif // __UIMachineSettingsDisplay_h__
