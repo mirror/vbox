@@ -693,35 +693,34 @@ typedef union PGMPAGE
     /** Structured view. */
     struct
     {
-        /** The physical address and the Page ID. */
-        RTHCPHYS    HCPhysAndPageID;
-
-        /** 1:0   - The physical handler state
-         *  (PGM_PAGE_HNDL_PHYS_STATE_*). */
-        uint32_t    u2HandlerPhysStateY : 2;
-        /** 7:2   - Currently unused. */
-        uint32_t    u6Unused1  : 6;
-        /** 9:8   - The physical handler state
-         *  (PGM_PAGE_HNDL_VIRT_STATE_*). */
-        uint32_t    u2HandlerVirtStateY : 2;
-        /** 10    - Indicator of dirty page for fault tolerance
-         *  tracking. */
-        uint32_t    fFTDirtyY   : 1;
-        /** 12:11 - Currently unused. */
-        uint32_t    u2Unused2   : 2;
-        /** 14:13 - Paging structure needed to map the page
+        /** 1:0   - The physical handler state (PGM_PAGE_HNDL_PHYS_STATE_*). */
+        uint64_t    u2HandlerPhysStateY : 2;
+        /** 3:2   - Paging structure needed to map the page
          * (PGM_PAGE_PDE_TYPE_*). */
-        uint32_t    u2PDETypeY  : 2;
-        /** 15    - Flag indicating that a write monitored page was written
-         *  to when set. */
-        uint32_t    fWrittenToY : 1;
-        /** 18:16 - The page state. */
-        uint32_t    uStateY     : 3;
-        /** 21:19 - The page type (PGMPAGETYPE). */
-        uint32_t    uTypeY      : 3;
-        /** 31:22 - PTE index for usage tracking (page pool). */
-        uint32_t    u10PteIdx   : 10;
+        uint64_t    u2PDETypeY          : 2;
+        /** 4     - Indicator of dirty page for fault tolerance tracking. */
+        uint64_t    fFTDirtyY           : 1;
+        /** 5     - Flag indicating that a write monitored page was written to
+         *  when set. */
+        uint64_t    fWrittenToY         : 1;
+        /** 7:6   - Unused. */
+        uint64_t    u2Unused0           : 2;
+        /** 9:8   - The physical handler state (PGM_PAGE_HNDL_VIRT_STATE_*). */
+        uint64_t    u2HandlerVirtStateY : 2;
+        /** 11:10 - Unused. */
+        uint64_t    u2Unused1           : 2;
+        /** 12:48 - The host physical frame number (shift left to get the
+         *  address). */
+        uint64_t    HCPhysFN            : 36;
+        /** 50:48 - The page state. */
+        uint64_t    uStateY             : 3;
+        /** 51:53 - The page type (PGMPAGETYPE). */
+        uint64_t    uTypeY              : 3;
+        /** 63:54 - PTE index for usage tracking (page pool). */
+        uint64_t    u10PteIdx           : 10;
 
+        /** The GMM page ID. */
+        uint32_t    idPage;
         /** Usage tracking (page pool). */
         uint16_t    u16TrackingY;
         /** The number of read locks on this page. */
@@ -764,10 +763,11 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_INIT(a_pPage, a_HCPhys, a_idPage, a_uType, a_uState) \
     do { \
-        (a_pPage)->au64[1]           = 0; \
         RTHCPHYS SetHCPhysTmp = (a_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (a_pPage)->s.HCPhysAndPageID = (SetHCPhysTmp << (28-12)) | ((a_idPage) & UINT32_C(0x0fffffff)); \
+        (a_pPage)->au64[0]           = SetHCPhysTmp; \
+        (a_pPage)->au64[1]           = 0; \
+        (a_pPage)->s.idPage          = (a_idPage); \
         (a_pPage)->s.uStateY         = (a_uState); \
         (a_pPage)->s.uTypeY          = (a_uType); \
     } while (0)
@@ -825,7 +825,11 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(a_pPage)            ( ((a_pPage)->s.HCPhysAndPageID >> 28) << 12 )
+#if 0
+#define PGM_PAGE_GET_HCPHYS(a_pPage)            ( (a_pPage)->s.HCPhysFN << 12 )
+#else
+#define PGM_PAGE_GET_HCPHYS(a_pPage)            ( (a_pPage)->au64[0] & UINT64_C(0x0000fffffffff000) )
+#endif
 
 /**
  * Sets the host physical address of the guest page.
@@ -836,8 +840,7 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { \
         RTHCPHYS const SetHCPhysTmp = (a_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (a_pPage)->s.HCPhysAndPageID = ((a_pPage)->s.HCPhysAndPageID & UINT32_C(0x0fffffff)) \
-                                     | (SetHCPhysTmp << (28-12)); \
+        (a_pPage)->s.HCPhysFN = SetHCPhysTmp >> 12; \
     } while (0)
 
 /**
@@ -845,7 +848,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGEID(a_pPage)            (  (uint32_t)((a_pPage)->s.HCPhysAndPageID & UINT32_C(0x0fffffff)) )
+#define PGM_PAGE_GET_PAGEID(a_pPage)            (  (uint32_t)(a_pPage)->s.idPage )
 
 /**
  * Sets the Page ID.
@@ -854,8 +857,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_SET_PAGEID(a_pPage, a_idPage) \
     do { \
-        (a_pPage)->s.HCPhysAndPageID = (((a_pPage)->s.HCPhysAndPageID) & UINT64_C(0xfffffffff0000000)) \
-                                          | ((a_idPage) & UINT32_C(0x0fffffff)); \
+        (a_pPage)->s.idPage = (a_idPage); \
     } while (0)
 
 /**
@@ -870,7 +872,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page index.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(a_pPage)     ( (uint32_t)((a_pPage)->s.HCPhysAndPageID & GMM_PAGEID_IDX_MASK) )
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(a_pPage)     ( PGM_PAGE_GET_PAGEID(a_pPage) & GMM_PAGEID_IDX_MASK )
 
 /**
  * Gets the page type.
@@ -1110,7 +1112,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
-    ( ((a_pPage)->au32[2] & UINT16_C(0x0303)) != 0 )
+    ( ((a_pPage)->au32[0] & UINT16_C(0x0303)) != 0 )
 #else
 # define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE \
@@ -1124,7 +1126,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
-    ( ((a_pPage)->au32[2] & UINT16_C(0x0202)) != 0 )
+    ( ((a_pPage)->au32[0] & UINT16_C(0x0202)) != 0 )
 #else
 # define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
@@ -1138,7 +1140,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
-    (   ( ((a_pPage)->au8[8] | (a_pPage)->au8[9]) & UINT8_C(0x3) ) \
+    (   ( ((a_pPage)->au8[0] | (a_pPage)->au8[1]) & UINT8_C(0x3) ) \
      == PGM_PAGE_HNDL_PHYS_STATE_ALL )
 #else
 # define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
