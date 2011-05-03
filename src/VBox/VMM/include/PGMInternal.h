@@ -690,13 +690,14 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
  */
 typedef struct PGMPAGE
 {
-    /** The physical address and the Page ID. */
-    RTHCPHYS    HCPhysAndPageID;
     union
     {
         /** Bit field. */
         struct
         {
+            /** The physical address and the Page ID. */
+            RTHCPHYS    HCPhysAndPageID;
+
             /** 7:0   - The physical handler state
              *  (PGM_PAGE_HNDL_PHYS_STATE_*). */
             uint32_t    u2HandlerPhysStateY : 8;
@@ -721,20 +722,24 @@ typedef struct PGMPAGE
             uint32_t    uTypeY      : 3;
             /** 31:22 - PTE index for usage tracking (page pool). */
             uint32_t    u10PteIdx   : 10;
+
+            /** Usage tracking (page pool). */
+            uint16_t    u16TrackingY;
+            /** The number of read locks on this page. */
+            uint8_t     cReadLocksY;
+            /** The number of write locks on this page. */
+            uint8_t     cWriteLocksY;
         } bit;
-        /** 32-bit integer view. */
-        uint32_t    u;
+
+        /** 64-bit integer view. */
+        uint64_t    au64[2];
         /** 16-bit view. */
-        uint16_t    au16[2];
+        uint32_t    au32[4];
+        /** 16-bit view. */
+        uint16_t    au16[8];
         /** 8-bit view. */
-        uint8_t     au8[4];
+        uint8_t     au8[16];
     } u1;
-    /** Usage tracking (page pool). */
-    uint16_t    u16TrackingY;
-    /** The number of read locks on this page. */
-    uint8_t     cReadLocksY;
-    /** The number of write locks on this page. */
-    uint8_t     cWriteLocksY;
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -751,11 +756,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_CLEAR(a_pPage) \
     do { \
-        (a_pPage)->HCPhysAndPageID     = 0; \
-        (a_pPage)->u1.u                = 0; \
-        (a_pPage)->u16TrackingY        = 0; \
-        (a_pPage)->cReadLocksY         = 0; \
-        (a_pPage)->cWriteLocksY        = 0; \
+        (a_pPage)->u1.au64[0] = 0; \
+        (a_pPage)->u1.au64[1] = 0; \
     } while (0)
 
 /**
@@ -766,13 +768,10 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { \
         RTHCPHYS SetHCPhysTmp = (a_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (a_pPage)->u1.u                 = 0; \
-        (a_pPage)->u16TrackingY         = 0; \
-        (a_pPage)->cReadLocksY          = 0; \
-        (a_pPage)->cWriteLocksY         = 0; \
-        (a_pPage)->HCPhysAndPageID      = (SetHCPhysTmp << (28-12)) | ((a_idPage) & UINT32_C(0x0fffffff)); \
-        (a_pPage)->u1.bit.uStateY       = (a_uState); \
-        (a_pPage)->u1.bit.uTypeY        = (a_uType); \
+        (a_pPage)->u1.bit.HCPhysAndPageID = (SetHCPhysTmp << (28-12)) | ((a_idPage) & UINT32_C(0x0fffffff)); \
+        (a_pPage)->u1.au64[1]             = 0; \
+        (a_pPage)->u1.bit.uStateY         = (a_uState); \
+        (a_pPage)->u1.bit.uTypeY          = (a_uType); \
     } while (0)
 
 /**
@@ -828,7 +827,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(a_pPage)            ( ((a_pPage)->HCPhysAndPageID >> 28) << 12 )
+#define PGM_PAGE_GET_HCPHYS(a_pPage)            ( ((a_pPage)->u1.bit.HCPhysAndPageID >> 28) << 12 )
 
 /**
  * Sets the host physical address of the guest page.
@@ -839,8 +838,8 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { \
         RTHCPHYS const SetHCPhysTmp = (a_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (a_pPage)->HCPhysAndPageID = ((a_pPage)->HCPhysAndPageID & UINT32_C(0x0fffffff)) \
-                                   | (SetHCPhysTmp << (28-12)); \
+        (a_pPage)->u1.bit.HCPhysAndPageID = ((a_pPage)->u1.bit.HCPhysAndPageID & UINT32_C(0x0fffffff)) \
+                                          | (SetHCPhysTmp << (28-12)); \
     } while (0)
 
 /**
@@ -848,7 +847,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGEID(a_pPage)            (  (uint32_t)((a_pPage)->HCPhysAndPageID & UINT32_C(0x0fffffff)) )
+#define PGM_PAGE_GET_PAGEID(a_pPage)            (  (uint32_t)((a_pPage)->u1.bit.HCPhysAndPageID & UINT32_C(0x0fffffff)) )
 
 /**
  * Sets the Page ID.
@@ -857,8 +856,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_SET_PAGEID(a_pPage, a_idPage) \
     do { \
-        (a_pPage)->HCPhysAndPageID = (((a_pPage)->HCPhysAndPageID) & UINT64_C(0xfffffffff0000000)) \
-                                   | ((a_idPage) & UINT32_C(0x0fffffff)); \
+        (a_pPage)->u1.bit.HCPhysAndPageID = (((a_pPage)->u1.bit.HCPhysAndPageID) & UINT64_C(0xfffffffff0000000)) \
+                                          | ((a_idPage) & UINT32_C(0x0fffffff)); \
     } while (0)
 
 /**
@@ -873,7 +872,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page index.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(a_pPage)     ( (uint32_t)((a_pPage)->HCPhysAndPageID & GMM_PAGEID_IDX_MASK) )
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(a_pPage)     ( (uint32_t)((a_pPage)->u1.bit.HCPhysAndPageID & GMM_PAGEID_IDX_MASK) )
 
 /**
  * Gets the page type.
@@ -1113,7 +1112,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
-    ( ((a_pPage)->u1.u & UINT16_C(0x0303)) != 0 )
+    ( ((a_pPage)->u1.au32[2] & UINT16_C(0x0303)) != 0 )
 #else
 # define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE \
@@ -1127,7 +1126,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
-    ( ((a_pPage)->u1.u & UINT16_C(0x0202)) != 0 )
+    ( ((a_pPage)->u1.au32[2] & UINT16_C(0x0202)) != 0 )
 #else
 # define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
@@ -1141,7 +1140,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
 # define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
-    (   ( ((a_pPage)->u1.au8[0] | (a_pPage)->u1.au8[1]) & UINT8_C(0x3) ) \
+    (   ( ((a_pPage)->u1.au8[8] | (a_pPage)->u1.au8[9]) & UINT8_C(0x3) ) \
      == PGM_PAGE_HNDL_PHYS_STATE_ALL )
 #else
 # define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
@@ -1155,7 +1154,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns uint16_t containing the data.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_TRACKING(a_pPage)          ( (a_pPage)->u16TrackingY )
+#define PGM_PAGE_GET_TRACKING(a_pPage)          ( (a_pPage)->u1.bit.u16TrackingY )
 
 /** @def PGM_PAGE_SET_TRACKING
  * Sets the packed shadow page pool tracking data associated with a guest page.
@@ -1163,7 +1162,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_u16TrackingData   The tracking data to store.
  */
 #define PGM_PAGE_SET_TRACKING(a_pPage, a_u16TrackingData) \
-    do { (a_pPage)->u16TrackingY = (a_u16TrackingData); } while (0)
+    do { (a_pPage)->u1.bit.u16TrackingY = (a_u16TrackingData); } while (0)
 
 /** @def PGM_PAGE_GET_TD_CREFS
  * Gets the @a cRefs tracking data member.
@@ -1189,33 +1188,33 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns count.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_READ_LOCKS(a_pPage)        ( (a_pPage)->cReadLocksY )
+#define PGM_PAGE_GET_READ_LOCKS(a_pPage)        ( (a_pPage)->u1.bit.cReadLocksY )
 
 /** Get the write lock count.
  * @returns count.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_WRITE_LOCKS(a_pPage)       ( (a_pPage)->cWriteLocksY )
+#define PGM_PAGE_GET_WRITE_LOCKS(a_pPage)       ( (a_pPage)->u1.bit.cWriteLocksY )
 
 /** Decrement the read lock counter.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_DEC_READ_LOCKS(a_pPage)        do { --(a_pPage)->cReadLocksY; } while (0)
+#define PGM_PAGE_DEC_READ_LOCKS(a_pPage)        do { --(a_pPage)->u1.bit.cReadLocksY; } while (0)
 
 /** Decrement the write lock counter.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_DEC_WRITE_LOCKS(a_pPage)       do { --(a_pPage)->cWriteLocksY; } while (0)
+#define PGM_PAGE_DEC_WRITE_LOCKS(a_pPage)       do { --(a_pPage)->u1.bit.cWriteLocksY; } while (0)
 
 /** Increment the read lock counter.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_INC_READ_LOCKS(a_pPage)        do { ++(a_pPage)->cReadLocksY; } while (0)
+#define PGM_PAGE_INC_READ_LOCKS(a_pPage)        do { ++(a_pPage)->u1.bit.cReadLocksY; } while (0)
 
 /** Increment the write lock counter.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_INC_WRITE_LOCKS(a_pPage)       do { ++(a_pPage)->cWriteLocksY; } while (0)
+#define PGM_PAGE_INC_WRITE_LOCKS(a_pPage)       do { ++(a_pPage)->u1.bit.cWriteLocksY; } while (0)
 
 
 #if 0
