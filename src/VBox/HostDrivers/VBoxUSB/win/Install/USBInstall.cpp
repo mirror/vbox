@@ -32,6 +32,28 @@
 #include <VBox/err.h>
 #include <stdio.h>
 
+#include <VBox/VBoxDrvCfg-win.h>
+
+static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * msg, void * pvContext)
+{
+    switch (enmSeverity)
+    {
+        case VBOXDRVCFG_LOG_SEVERITY_FLOW:
+        case VBOXDRVCFG_LOG_SEVERITY_REGULAR:
+            break;
+        case VBOXDRVCFG_LOG_SEVERITY_REL:
+            RTPrintf("%s", msg);
+            break;
+        default:
+            break;
+    }
+}
+
+static DECLCALLBACK(void) vboxUsbPanic(void * pvPanic)
+{
+    AssertFailed();
+}
+
 int usblibOsCreateService(void);
 
 int __cdecl main(int argc, char **argv)
@@ -42,40 +64,35 @@ int __cdecl main(int argc, char **argv)
         return 1;
     }
 
+    VBoxDrvCfgLoggerSet(vboxUsbLog, NULL);
+    VBoxDrvCfgPanicSet(vboxUsbPanic, NULL);
+
     RTPrintf("USB installation\n");
 
     int rc = usblibOsCreateService();
 
     if (RT_SUCCESS(rc))
     {
-        LPSTR  lpszFilePart;
-        TCHAR  szFullPath[MAX_PATH];
-        TCHAR  szCurDir[MAX_PATH];
+        LPWSTR  lpszFilePart;
+        WCHAR  szFullPath[MAX_PATH];
         DWORD  len;
 
-        len = GetFullPathName(".\\VBoxUSB.inf", sizeof(szFullPath), szFullPath, &lpszFilePart);
+        len = GetFullPathNameW(L".\\VBoxUSB.inf", RT_ELEMENTS(szFullPath), szFullPath, &lpszFilePart);
         Assert(len);
 
-        if (GetCurrentDirectory(sizeof(szCurDir), szCurDir) == 0)
+        HRESULT hr = VBoxDrvCfgInfInstall(szFullPath);
+        if (hr == S_OK)
         {
-            rc = RTErrConvertFromWin32(GetLastError());
-            RTPrintf("GetCurrentDirectory failed with rc=%Rrc\n", rc);
+            RTPrintf("Installation successful.\n");
         }
         else
         {
-            /* Copy INF file to Windows\INF, so Windows will automatically install it when our USB device is detected */
-            BOOL b = SetupCopyOEMInf(szFullPath, NULL, SPOST_PATH, 0, NULL, 0, NULL, NULL);
-            if (b == FALSE)
-            {
-                rc = RTErrConvertFromWin32(GetLastError());
-                RTPrintf("SetupCopyOEMInf failed with rc=%Rrc\n", rc);
-            }
-            else
-            {
-                RTPrintf("Installation successful.\n");
-            }
+            rc = -1;
         }
     }
+
+    if (RT_SUCCESS(rc))
+        rc = 0;
 
     /** @todo RTR3Term(); */
     return rc;

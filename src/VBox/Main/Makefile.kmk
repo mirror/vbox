@@ -381,9 +381,6 @@ ifdef VBOX_WITH_NETFLT
 	$(VBoxDrvCfg_1_TARGET) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
- ifdef VBOX_NETFLT_ONDEMAND_BIND
-  VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
- endif
 endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
 

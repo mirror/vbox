@@ -78,7 +78,7 @@ typedef struct VBOXUSBFILTER
     /** The core filter. */
     USBFILTER       Core;
     /** The filter owner. */
-    RTPROCESS       Owner;
+    VBOXUSBFILTER_CONTEXT       Owner;
     /** The filter Id. */
     uintptr_t       uId;
     /** Pointer to the next filter in the list. */
@@ -145,7 +145,7 @@ int VBoxUSBFilterInit(void)
 static void vboxUSBFilterFree(PVBOXUSBFILTER pFilter)
 {
     USBFilterDelete(&pFilter->Core);
-    pFilter->Owner = NIL_RTPROCESS;
+    pFilter->Owner = VBOXUSBFILTER_CONTEXT_NIL;
     pFilter->pNext = NULL;
     RTMemFree(pFilter);
 }
@@ -188,7 +188,7 @@ void VBoxUSBFilterTerm(void)
  * @param   Owner       The filter owner. Must be non-zero.
  * @param   puId        Where to store the filter ID.
  */
-int VBoxUSBFilterAdd(PCUSBFILTER pFilter, RTPROCESS Owner, uintptr_t *puId)
+int VBoxUSBFilterAdd(PCUSBFILTER pFilter, VBOXUSBFILTER_CONTEXT Owner, uintptr_t *puId)
 {
     /*
      * Validate input.
@@ -196,7 +196,7 @@ int VBoxUSBFilterAdd(PCUSBFILTER pFilter, RTPROCESS Owner, uintptr_t *puId)
     int rc = USBFilterValidate(pFilter);
     if (RT_FAILURE(rc))
         return rc;
-    if (!Owner || Owner == NIL_RTPROCESS)
+    if (!Owner || Owner == VBOXUSBFILTER_CONTEXT_NIL)
         return VERR_INVALID_PARAMETER;
     if (!VALID_PTR(puId))
         return VERR_INVALID_POINTER;
@@ -246,14 +246,14 @@ int VBoxUSBFilterAdd(PCUSBFILTER pFilter, RTPROCESS Owner, uintptr_t *puId)
  * @param   uId         The ID of the filter that's to be removed.
  *                      Returned by VBoxUSBFilterAdd().
  */
-int VBoxUSBFilterRemove(RTPROCESS Owner, uintptr_t uId)
+int VBoxUSBFilterRemove(VBOXUSBFILTER_CONTEXT Owner, uintptr_t uId)
 {
     /*
      * Validate input.
      */
     if (!uId)
         return VERR_INVALID_PARAMETER;
-    if (!Owner || Owner == NIL_RTPROCESS)
+    if (!Owner || Owner == VBOXUSBFILTER_CONTEXT_NIL)
         return VERR_INVALID_PARAMETER;
 
     /*
@@ -301,6 +301,41 @@ int VBoxUSBFilterRemove(RTPROCESS Owner, uintptr_t uId)
     return VERR_FILE_NOT_FOUND;
 }
 
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterGetOwner(uintptr_t uId)
+{
+    Assert(uId);
+    /*
+     * Validate input.
+     */
+    if (!uId)
+        return VBOXUSBFILTER_CONTEXT_NIL;
+
+    /*
+     * Result.
+     */
+    VBOXUSBFILTER_CONTEXT Owner = VBOXUSBFILTER_CONTEXT_NIL;
+
+    VBOXUSBFILTERMGR_LOCK();
+
+    for (unsigned i = USBFILTERTYPE_FIRST; i < RT_ELEMENTS(g_aLists); i++)
+    {
+        for (PVBOXUSBFILTER pCur = g_aLists[i].pHead; pCur; pCur = pCur->pNext)
+        {
+            if (pCur->uId == uId)
+            {
+                Owner = pCur->Owner;
+                Assert(Owner != VBOXUSBFILTER_CONTEXT_NIL);
+                break;
+            }
+        }
+    }
+
+    Assert(Owner != VBOXUSBFILTER_CONTEXT_NIL);
+
+    VBOXUSBFILTERMGR_UNLOCK();
+
+    return Owner;
+}
 
 /**
  * Removes all filters belonging to the specified owner.
@@ -310,7 +345,7 @@ int VBoxUSBFilterRemove(RTPROCESS Owner, uintptr_t uId)
  *
  * @param   Owner       The owner
  */
-void VBoxUSBFilterRemoveOwner(RTPROCESS Owner)
+void VBoxUSBFilterRemoveOwner(VBOXUSBFILTER_CONTEXT Owner)
 {
     /*
      * Collect the filters that should be freed.
@@ -361,22 +396,27 @@ void VBoxUSBFilterRemoveOwner(RTPROCESS Owner)
     }
 }
 
-
 /**
  * Match the specified device against the filters.
+ * Unlike the VBoxUSBFilterMatch, returns Owner also if exclude filter is matched
  *
- * @returns Owner on if matched, NIL_RTPROCESS it not matched.
+ * @returns Owner on if matched, VBOXUSBFILTER_CONTEXT_NIL it not matched.
  * @param   pDevice     The device data as a filter structure.
  *                      See USBFilterMatch for how to construct this.
  * @param   puId        Where to store the filter id (optional).
+ * @param   pfFilter    Where to store whether the device must be filtered or not
  */
-RTPROCESS VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId)
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterMatchEx(PCUSBFILTER pDevice, uintptr_t *puId, bool fRemoveFltIfOneShot, bool *pfFilter, bool *pfIsOneShot)
 {
     /*
      * Validate input.
      */
     int rc = USBFilterValidate(pDevice);
-    AssertRCReturn(rc, NIL_RTPROCESS);
+    AssertRCReturn(rc, VBOXUSBFILTER_CONTEXT_NIL);
+
+    *pfFilter = false;
+    if (puId)
+        *puId = 0;
 
     /*
      * Search the lists for a match.
@@ -402,29 +442,43 @@ RTPROCESS VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId)
                  */
                 if (puId)
                     *puId = pCur->uId;
-                RTPROCESS Owner = i != USBFILTERTYPE_IGNORE
-                               && i != USBFILTERTYPE_ONESHOT_IGNORE
-                                ? pCur->Owner
-                                : NIL_RTPROCESS;
+                VBOXUSBFILTER_CONTEXT Owner = pCur->Owner;
+                *pfFilter = !!(i != USBFILTERTYPE_IGNORE
+                            && i != USBFILTERTYPE_ONESHOT_IGNORE);
 
                 if (    i == USBFILTERTYPE_ONESHOT_IGNORE
                     ||  i == USBFILTERTYPE_ONESHOT_CAPTURE)
                 {
-                    /* unlink */
-                    PVBOXUSBFILTER pNext = pCur->pNext;
-                    if (pPrev)
-                        pPrev->pNext = pNext;
-                    else
-                        g_aLists[i].pHead = pNext;
-                    if (!pNext)
-                        g_aLists[i].pTail = pPrev;
+                    if (fRemoveFltIfOneShot)
+                    {
+                        /* unlink */
+                        PVBOXUSBFILTER pNext = pCur->pNext;
+                        if (pPrev)
+                            pPrev->pNext = pNext;
+                        else
+                            g_aLists[i].pHead = pNext;
+                        if (!pNext)
+                            g_aLists[i].pTail = pPrev;
+                    }
                 }
 
                 VBOXUSBFILTERMGR_UNLOCK();
 
                 if (    i == USBFILTERTYPE_ONESHOT_IGNORE
                     ||  i == USBFILTERTYPE_ONESHOT_CAPTURE)
-                    vboxUSBFilterFree(pCur);
+                {
+                    if (fRemoveFltIfOneShot)
+                    {
+                        vboxUSBFilterFree(pCur);
+                    }
+                    if (pfIsOneShot)
+                        *pfIsOneShot = true;
+                }
+                else
+                {
+                    if (pfIsOneShot)
+                        *pfIsOneShot = false;
+                }
                 return Owner;
             }
 
@@ -434,6 +488,28 @@ RTPROCESS VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId)
     }
 
     VBOXUSBFILTERMGR_UNLOCK();
-    return NIL_RTPROCESS;
+    return VBOXUSBFILTER_CONTEXT_NIL;
+}
+
+/**
+ * Match the specified device against the filters.
+ *
+ * @returns Owner on if matched, VBOXUSBFILTER_CONTEXT_NIL it not matched.
+ * @param   pDevice     The device data as a filter structure.
+ *                      See USBFilterMatch for how to construct this.
+ * @param   puId        Where to store the filter id (optional).
+ */
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId)
+{
+    bool fFilter = false;
+    VBOXUSBFILTER_CONTEXT Owner = VBoxUSBFilterMatchEx(pDevice, puId,
+                                    true, /* remove filter is it's a one-shot*/
+                                    &fFilter, NULL /* bool * fIsOneShot */);
+    if (fFilter)
+    {
+        Assert(Owner != VBOXUSBFILTER_CONTEXT_NIL);
+        return Owner;
+    }
+    return VBOXUSBFILTER_CONTEXT_NIL;
 }
 

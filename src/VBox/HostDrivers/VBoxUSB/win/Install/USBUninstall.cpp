@@ -22,41 +22,60 @@
 #include <windows.h>
 #include <setupapi.h>
 #include <newdev.h>
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <VBox/err.h>
+#include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
 
 
 int usblibOsStopService(void);
 int usblibOsDeleteService(void);
 
+static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * msg, void * pvContext)
+{
+    switch (enmSeverity)
+    {
+        case VBOXDRVCFG_LOG_SEVERITY_FLOW:
+        case VBOXDRVCFG_LOG_SEVERITY_REGULAR:
+            break;
+        case VBOXDRVCFG_LOG_SEVERITY_REL:
+            printf("%s", msg);
+            break;
+        default:
+            break;
+    }
+}
+
+static DECLCALLBACK(void) vboxUsbPanic(void * pvPanic)
+{
+    AssertFailed();
+}
+
 
 int __cdecl main(int argc, char **argv)
 {
-    BOOL   rc;
-    TCHAR  szFullPath[MAX_PATH];
-    CHAR  *lpszFilePart;
-    int    len;
-
     printf("USB uninstallation\n");
+
+    VBoxDrvCfgLoggerSet(vboxUsbLog, NULL);
+    VBoxDrvCfgPanicSet(vboxUsbPanic, NULL);
 
     usblibOsStopService();
     usblibOsDeleteService();
 
-    len = GetFullPathName(".\\VBoxUSB.inf", sizeof(szFullPath), szFullPath, &lpszFilePart);
-    Assert(len);
-
-    /* Remove the inf plus all associated files. */
-    rc = SetupUninstallOEMInf(szFullPath, SUOI_FORCEDELETE, NULL);
-    if (rc == FALSE)
+    HRESULT hr = VBoxDrvCfgInfUninstallAllF(L"USB", L"USB\\VID_80EE&PID_CAFE", SUOI_FORCEDELETE);
+    if (hr != S_OK)
     {
-        printf("SetupUninstallOEMInf failed with rc=%x\n", GetLastError());
+        printf("SetupUninstallOEMInf failed with hr=0x%x\n", hr);
         return 1;
     }
+
+    printf("USB uninstallation succeeded!\n");
+
     return 0;
 }
 

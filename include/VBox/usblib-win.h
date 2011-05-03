@@ -41,7 +41,7 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBFLT_NTDEVICE_NAME_STRING      L"\\Device\\VBoxUSBFlt"
 #define USBFLT_SYMBOLIC_NAME_STRING      L"\\DosDevices\\VBoxUSBFlt"
 
-#define USBMON_SERVICE_NAME              "VBoxUSBMon"
+#define USBMON_SERVICE_NAME_W              L"VBoxUSBMon"
 #define USBMON_DEVICE_NAME               "\\\\.\\VBoxUSBMon"
 #define USBMON_DEVICE_NAME_NT            L"\\Device\\VBoxUSBMon"
 #define USBMON_DEVICE_NAME_DOS           L"\\DosDevices\\VBoxUSBMon"
@@ -73,11 +73,11 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBFLT_MAJOR_VERSION              1
 #define USBFLT_MINOR_VERSION              3
 
-#define USBMON_MAJOR_VERSION              1
-#define USBMON_MINOR_VERSION              1
+#define USBMON_MAJOR_VERSION              4
+#define USBMON_MINOR_VERSION              0
 
-#define USBDRV_MAJOR_VERSION              3
-#define USBDRV_MINOR_VERSION              1
+#define USBDRV_MAJOR_VERSION              4
+#define USBDRV_MINOR_VERSION              0
 
 #define SUPUSB_IOCTL_TEST                 CTL_CODE(FILE_DEVICE_UNKNOWN, 0x601, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 #define SUPUSB_IOCTL_GET_DEVICE           CTL_CODE(FILE_DEVICE_UNKNOWN, 0x603, METHOD_BUFFERED, FILE_WRITE_ACCESS)
@@ -102,20 +102,33 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define SUPUSBFLT_IOCTL_REMOVE_FILTER     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x612, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 #define SUPUSBFLT_IOCTL_CAPTURE_DEVICE    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x613, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 #define SUPUSBFLT_IOCTL_RELEASE_DEVICE    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x614, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+#define SUPUSBFLT_IOCTL_RUN_FILTERS       CTL_CODE(FILE_DEVICE_UNKNOWN, 0x615, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+#define SUPUSBFLT_IOCTL_SET_NOTIFY_EVENT  CTL_CODE(FILE_DEVICE_UNKNOWN, 0x616, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+#define SUPUSBFLT_IOCTL_GET_DEVICE        CTL_CODE(FILE_DEVICE_UNKNOWN, 0x617, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 
 #pragma pack(4)
 
 #define MAX_FILTER_NAME                 128
 #define MAX_USB_SERIAL_STRING           64
 
+/* a user-mode handle that could be used for retriving device information
+ * from the monitor driver */
+typedef void* HVBOXUSBDEVUSR;
+
 typedef struct
 {
+    HVBOXUSBDEVUSR  hDevice;
     uint16_t        vid, did, rev;
     char            serial_hash[MAX_USB_SERIAL_STRING];
 
     uint8_t         fAttached;
     uint8_t         fHiSpeed;
 } USBSUP_GETDEV, *PUSBSUP_GETDEV;
+
+typedef struct
+{
+    USBDEVICESTATE enmState;
+} USBSUP_GETDEV_MON, *PUSBSUP_GETDEV_MON;
 
 typedef struct
 {
@@ -230,6 +243,41 @@ typedef struct
     USBSUP_ISOCPKT          aIsoPkts[8];    /* [in/out] isochronous packet descriptors */
 } USBSUP_URB, *PUSBSUP_URB;
 
+typedef struct
+{
+    union
+    {
+        /* in: event handle */
+        void* hEvent;
+        /* out: result */
+        int rc;
+    } u;
+} USBSUP_SET_NOTIFY_EVENT, *PUSBSUP_SET_NOTIFY_EVENT;
+
+typedef struct
+{
+    uint16_t        usVendorId;
+    uint16_t        usProductId;
+    uint16_t        usRevision;
+    uint16_t        usAlignment;
+    char            DrvKeyName[512];
+} USBSUP_DEVID, *PUSBSUP_DEVID;
+
+typedef struct
+{
+	USBSUP_DEVID DevId;
+	char szName[512];
+	USBDEVICESTATE enmState;
+    bool fHiSpeed;
+} USBSUP_DEVINFO, *PUSBSUP_DEVINFO;
+
+typedef struct
+{
+    int rc;
+    uint32_t cDevices;
+    USBSUP_DEVINFO aDevices[1];
+} USBSUP_GET_DEVICES, *PUSBSUP_GET_DEVICES;
+
 #pragma pack()                          /* paranoia */
 
 
@@ -248,34 +296,13 @@ RT_C_DECLS_BEGIN
  * @param ppDevices         Receives pointer to list of devices
  * @param pcbNumDevices     Number of USB devices in the list
  */
-USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices,  uint32_t *pcbNumDevices);
+USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcbNumDevices);
 
-/**
- * Check for USB device arrivals or removals
- *
- * @returns boolean
- */
-USBLIB_DECL(bool) USBLibHasPendingDeviceChanges(void);
+USBLIB_DECL(int) USBLibWaitChange(RTMSINTERVAL cMillies);
 
-/**
- * Capture specified USB device
- *
- * @returns VBox status code
- * @param usVendorId        Vendor id
- * @param usProductId       Product id
- * @param usRevision        Revision
- */
-USBLIB_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
+USBLIB_DECL(int) USBLibInterruptWaitChange();
 
-/**
- * Release specified USB device to the host.
- *
- * @returns VBox status code
- * @param usVendorId        Vendor id
- * @param usProductId       Product id
- * @param usRevision        Revision
- */
-USBLIB_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
+USBLIB_DECL(int) USBLibRunFilters();
 
 /** @} */
 #endif
