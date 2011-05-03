@@ -2035,10 +2035,28 @@ bool UIMachineSettingsStorage::revalidate (QString &aWarning, QString &)
 {
     QModelIndex rootIndex = mStorageModel->root();
     QMap <QString, QString> config;
+    QMap<int, QString> names;
+    /* For each controller: */
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
     {
         QModelIndex ctrIndex = rootIndex.child (i, 0);
         QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+        /* Check for name emptiness: */
+        if (ctrName.isEmpty())
+        {
+            aWarning = tr("no name specified for controller at position <b>%1</b>.").arg(i + 1);
+            return aWarning.isNull();
+        }
+        /* Check for name coincidence: */
+        if (names.values().contains(ctrName))
+        {
+            aWarning = tr("controller at position <b>%1</b> uses the name that is "
+                          "already used by controller at position <b>%2</b>.")
+                          .arg(i + 1).arg(names.key(ctrName) + 1);
+            return aWarning.isNull();
+        }
+        else names.insert(i, ctrName);
+        /* For each attachment: */
         for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
         {
             QModelIndex attIndex = ctrIndex.child (j, 0);
@@ -2049,7 +2067,7 @@ bool UIMachineSettingsStorage::revalidate (QString &aWarning, QString &)
             /* Check for emptiness */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
-                aWarning = tr ("No hard disk is selected for <i>%1</i>.").arg (value);
+                aWarning = tr ("no hard disk is selected for <i>%1</i>.").arg (value);
                 return aWarning.isNull();
             }
             /* Check for coincidence */
