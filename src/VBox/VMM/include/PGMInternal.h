@@ -1059,18 +1059,27 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uType     PGM_PAGE_PDE_TYPE_*.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_SET_PDE_TYPE(a_pPage, a_uType) \
+    do { (a_pPage)->u1.bit.u2PDETypeY = (a_uType); } while (0)
+#else
 #define PGM_PAGE_SET_PDE_TYPE(a_pPage, a_uType) \
     do { \
         (a_pPage)->u1.au8[1] = ((a_pPage)->u1.au8[1] & UINT8_C(0x9f)) \
                              | (((a_uType)           & UINT8_C(0x03)) << 5); \
     } while (0)
+#endif
 
 /**
  * Checks if the page was marked being part of a large page
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_GET_PDE_TYPE(a_pPage)          ( (a_pPage)->u1.bit.u2PDETypeY )
+#else
 #define PGM_PAGE_GET_PDE_TYPE(a_pPage)          ( ((a_pPage)->u1.au8[1] & UINT8_C(0x60)) >> 5)
+#endif
 
 /** Enabled optimized access handler tests.
  * These optimizations makes ASSUMPTIONS about the state values and the s1
