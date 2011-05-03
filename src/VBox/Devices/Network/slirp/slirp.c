@@ -2029,6 +2029,8 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     ahdr->ar_pln = 4;
     ahdr->ar_op = RT_H2N_U16_C(ARPOP_REQUEST);
     memcpy(ahdr->ar_sha, special_ethaddr, ETH_ALEN);
+    /* we assume that this request come from gw, but not from DNS or TFTP */
+    ahdr->ar_sha[5] = CTL_ALIAS;
     *(uint32_t *)ahdr->ar_sip = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
     memset(ahdr->ar_tha, 0xff, ETH_ALEN); /*broadcast*/
     *(uint32_t *)ahdr->ar_tip = dst;
