@@ -692,50 +692,6 @@ typedef struct PGMPAGE
 {
     /** The physical address and the Page ID. */
     RTHCPHYS    HCPhysAndPageID;
-#define PGMPAGE_USE_MORE_BITFIELDS
-#ifndef PGMPAGE_USE_MORE_BITFIELDS
-    /** Combination of:
-     *  - [0-7]: u2HandlerPhysStateY - the physical handler state
-     *    (PGM_PAGE_HNDL_PHYS_STATE_*).
-     *  - [8-9]: u2HandlerVirtStateY - the virtual handler state
-     *    (PGM_PAGE_HNDL_VIRT_STATE_*).
-     *  - [10]:  fFTDirtyY - indicator of dirty page for fault tolerance tracking.
-     *  - [13-14]: u2PDEType  - paging structure needed to map the page (PGM_PAGE_PDE_TYPE_*)
-     *  - [15]:  fWrittenToY - flag indicating that a write monitored page was
-     *    written to when set.
-     *  - [11-13]: 3 unused bits.
-     * @remarks Warning! All accesses to the bits are hardcoded.
-     *
-     * @todo    Change this to a union with both bitfields, u8 and u accessors.
-     *          That'll help deal with some of the hardcoded accesses.
-     *
-     * @todo    Include uStateY and uTypeY as well so it becomes 32-bit.  This
-     *          will make it possible to turn some of the 16-bit accesses into
-     *          32-bit ones, which may be efficient (stalls).
-     */
-    union
-    {
-        struct
-        {
-            uint16_t    u16MiscY;
-            /** The page state.
-             * Only 3 bits are really needed for this. */
-            uint16_t    uStateY   : 3;
-            /** The page type (PGMPAGETYPE).
-             * Only 3 bits are really needed for this. */
-            uint16_t    uTypeY    : 3;
-            /** PTE index for usage tracking (page pool). */
-            uint16_t    u10PteIdx : 10;
-        } bit;
-
-        /** 32-bit integer view. */
-        uint32_t    u;
-        /** 16-bit view. */
-        uint16_t    au16[2];
-        /** 8-bit view. */
-        uint8_t     au8[4];
-    } u1;
-#else
     union
     {
         /** Bit field. */
@@ -744,12 +700,13 @@ typedef struct PGMPAGE
             /** 7:0   - The physical handler state
              *  (PGM_PAGE_HNDL_PHYS_STATE_*). */
             uint32_t    u2HandlerPhysStateY : 8;
+            /*uint32_t    u6Reserved  : 6;*/
             /** 9:8   - The physical handler state
              *  (PGM_PAGE_HNDL_VIRT_STATE_*). */
             uint32_t    u2HandlerVirtStateY : 2;
             /** 10    - Indicator of dirty page for fault tolerance
              *  tracking. */
-            uint32_t    fFTDirtyY  : 1;
+            uint32_t    fFTDirtyY   : 1;
             /** 12:11 - Currently unused. */
             uint32_t    u2Unused2   : 2;
             /** 14:13 - Paging structure needed to map the page
@@ -772,7 +729,6 @@ typedef struct PGMPAGE
         /** 8-bit view. */
         uint8_t     au8[4];
     } u1;
-#endif
     /** Usage tracking (page pool). */
     uint16_t    u16TrackingY;
     /** The number of read locks on this page. */
@@ -992,53 +948,33 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Clears the written-to indicator.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_CLEAR_WRITTEN_TO(a_pPage)      do { (a_pPage)->u1.bit.fWrittenToY = 0; } while (0)
-#else
-#define PGM_PAGE_CLEAR_WRITTEN_TO(a_pPage)      do { (a_pPage)->u1.au8[1] &= UINT8_C(0x7f); } while (0)
-#endif
 
 /**
  * Checks if the page was marked as written-to.
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( (a_pPage)->u1.bit.fWrittenToY )
-#else
-#define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( !!((a_pPage)->u1.au8[1] & UINT8_C(0x80)) )
-#endif
 
 /**
  * Marks the page as dirty for FTM
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_SET_FT_DIRTY(a_pPage)          do { (a_pPage)->u1.bit.fFTDirtyY = 1; } while (0)
-#else
-#define PGM_PAGE_SET_FT_DIRTY(a_pPage)          do { (a_pPage)->u1.au8[1] |= UINT8_C(0x04); } while (0)
-#endif
 
 /**
  * Clears the FTM dirty indicator
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_CLEAR_FT_DIRTY(a_pPage)        do { (a_pPage)->u1.bit.fFTDirtyY = 0; } while (0)
-#else
-#define PGM_PAGE_CLEAR_FT_DIRTY(a_pPage)        do { (a_pPage)->u1.au8[1] &= UINT8_C(0xfb); } while (0)
-#endif
 
 /**
  * Checks if the page was marked as dirty for FTM
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_IS_FT_DIRTY(a_pPage)           ( (a_pPage)->u1.bit.fFTDirtyY )
-#else
-#define PGM_PAGE_IS_FT_DIRTY(a_pPage)           ( !!((a_pPage)->u1.au8[1] & UINT8_C(0x04)) )
-#endif
 
 
 /** @name PT usage values (PGMPAGE::u2PDEType).
@@ -1059,27 +995,15 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uType     PGM_PAGE_PDE_TYPE_*.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_SET_PDE_TYPE(a_pPage, a_uType) \
     do { (a_pPage)->u1.bit.u2PDETypeY = (a_uType); } while (0)
-#else
-#define PGM_PAGE_SET_PDE_TYPE(a_pPage, a_uType) \
-    do { \
-        (a_pPage)->u1.au8[1] = ((a_pPage)->u1.au8[1] & UINT8_C(0x9f)) \
-                             | (((a_uType)           & UINT8_C(0x03)) << 5); \
-    } while (0)
-#endif
 
 /**
  * Checks if the page was marked being part of a large page
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_GET_PDE_TYPE(a_pPage)          ( (a_pPage)->u1.bit.u2PDETypeY )
-#else
-#define PGM_PAGE_GET_PDE_TYPE(a_pPage)          ( ((a_pPage)->u1.au8[1] & UINT8_C(0x60)) >> 5)
-#endif
 
 /** Enabled optimized access handler tests.
  * These optimizations makes ASSUMPTIONS about the state values and the s1
@@ -1108,24 +1032,15 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns PGM_PAGE_HNDL_PHYS_STATE_* value.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage)   ( (a_pPage)->u1.bit.u2HandlerPhysStateY )
-#else
-#define PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage)   ( (a_pPage)->u1.au8[0] )
-#endif
 
 /**
  * Sets the physical access handler state of a page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uState    The new state value.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState) \
     do { (a_pPage)->u1.bit.u2HandlerPhysStateY = (a_uState); } while (0)
-#else
-#define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState) \
-    do { (a_pPage)->u1.au8[0] = (a_uState); } while (0)
-#endif
 
 /**
  * Checks if the page has any physical access handlers, including temporarily disabled ones.
@@ -1163,27 +1078,15 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns PGM_PAGE_HNDL_VIRT_STATE_* value.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage)   ( (a_pPage)->u1.bit.u2HandlerVirtStateY )
-#else
-#define PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage)   ((uint8_t)( (a_pPage)->u1.au8[1] & UINT8_C(0x03) ))
-#endif
 
 /**
  * Sets the virtual access handler state of a page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uState    The new state value.
  */
-#ifdef PGMPAGE_USE_MORE_BITFIELDS
 #define PGM_PAGE_SET_HNDL_VIRT_STATE(a_pPage, a_uState) \
     do { (a_pPage)->u1.bit.u2HandlerVirtStateY = (a_uState); } while (0)
-#else
-#define PGM_PAGE_SET_HNDL_VIRT_STATE(a_pPage, a_uState) \
-    do { \
-        (a_pPage)->u1.au8[1] = ((a_pPage)->u1.au8[1] & UINT8_C(0xfc)) \
-                             | ((a_uState)           & UINT8_C(0x03)); \
-    } while (0)
-#endif
 
 /**
  * Checks if the page has any virtual access handlers.
