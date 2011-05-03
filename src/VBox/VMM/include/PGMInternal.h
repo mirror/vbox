@@ -696,10 +696,11 @@ typedef union PGMPAGE
         /** The physical address and the Page ID. */
         RTHCPHYS    HCPhysAndPageID;
 
-        /** 7:0   - The physical handler state
+        /** 1:0   - The physical handler state
          *  (PGM_PAGE_HNDL_PHYS_STATE_*). */
-        uint32_t    u2HandlerPhysStateY : 8;
-        /*uint32_t    u6Reserved  : 6;*/
+        uint32_t    u2HandlerPhysStateY : 2;
+        /** 7:2   - Currently unused. */
+        uint32_t    u6Unused1  : 6;
         /** 9:8   - The physical handler state
          *  (PGM_PAGE_HNDL_VIRT_STATE_*). */
         uint32_t    u2HandlerVirtStateY : 2;
