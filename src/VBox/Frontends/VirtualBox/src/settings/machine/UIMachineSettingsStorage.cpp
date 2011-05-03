@@ -1783,38 +1783,62 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Fill internal variables with corresponding values: */
-    m_cache.m_strMachineId = m_machine.GetId();
-    /* Load controllers list: */
+    /* Prepare storage data: */
+    UIDataSettingsMachineStorage storageData;
+
+    /* Gather storage data: */
+    storageData.m_strMachineId = m_machine.GetId();
+
+    /* For each controller: */
     const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
     for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
     {
-        /* Prepare controller item: */
+        /* Prepare storage controller data: */
+        UIDataSettingsMachineStorageController storageControllerData;
+
+        /* Check if controller is valid: */
         const CStorageController &controller = controllers[iControllerIndex];
-        UIStorageControllerData controllerData;
-        controllerData.m_strControllerName = controller.GetName();
-        controllerData.m_controllerBus = controller.GetBus();
-        controllerData.m_controllerType = controller.GetControllerType();
-        controllerData.m_fUseHostIOCache = controller.GetUseHostIOCache();
-        /* Load attachments list: */
-        const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(controllerData.m_strControllerName);
-        for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
+        if (!controller.isNull())
         {
-            /* Prepare attachment item: */
-            const CMediumAttachment &attachment = attachments[iAttachmentIndex];
-            UIStorageAttachmentData attachmentData;
-            attachmentData.m_attachmentType = attachment.GetType();
-            attachmentData.m_iAttachmentPort = attachment.GetPort();
-            attachmentData.m_iAttachmentDevice = attachment.GetDevice();
-            attachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
-            CMedium comMedium(attachment.GetMedium());
-            VBoxMedium vboxMedium;
-            vboxGlobal().findMedium(comMedium, vboxMedium);
-            attachmentData.m_strAttachmentMediumId = vboxMedium.id();
-            controllerData.m_items << attachmentData;
+            /* Gather storage controller data: */
+            storageControllerData.m_strControllerName = controller.GetName();
+            storageControllerData.m_controllerBus = controller.GetBus();
+            storageControllerData.m_controllerType = controller.GetControllerType();
+            storageControllerData.m_fUseHostIOCache = controller.GetUseHostIOCache();
+
+            /* For each attachment: */
+            const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(storageControllerData.m_strControllerName);
+            for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
+            {
+                /* Prepare storage attachment data: */
+                UIDataSettingsMachineStorageAttachment storageAttachmentData;
+
+                /* Check if attachment is valid: */
+                const CMediumAttachment &attachment = attachments[iAttachmentIndex];
+                if (!attachment.isNull())
+                {
+                    /* Gather storage attachment data: */
+                    storageAttachmentData.m_attachmentType = attachment.GetType();
+                    storageAttachmentData.m_iAttachmentPort = attachment.GetPort();
+                    storageAttachmentData.m_iAttachmentDevice = attachment.GetDevice();
+                    storageAttachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
+                    CMedium comMedium(attachment.GetMedium());
+                    VBoxMedium vboxMedium;
+                    vboxGlobal().findMedium(comMedium, vboxMedium);
+                    storageAttachmentData.m_strAttachmentMediumId = vboxMedium.id();
+                }
+
+                /* Cache storage attachment data: */
+                m_cache.child(iControllerIndex).child(iAttachmentIndex).cacheInitialData(storageAttachmentData);
+            }
         }
-        m_cache.m_items << controllerData;
+
+        /* Cache storage controller data: */
+        m_cache.child(iControllerIndex).cacheInitialData(storageControllerData);
     }
+
+    /* Cache storage data: */
+    m_cache.cacheInitialData(storageData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1824,21 +1848,36 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsStorage::getFromCache()
 {
-    /* Apply internal variables data to QWidget(s): */
-    mStorageModel->setMachineId(m_cache.m_strMachineId);
-    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size(); ++iControllerIndex)
+    /* Get storage data from cache: */
+    const UIDataSettingsMachineStorage &storageData = m_cache.base();
+
+    /* Load storage data to page: */
+    mStorageModel->setMachineId(storageData.m_strMachineId);
+
+    /* For each storage controller: */
+    for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
     {
-        /* Get iterated controller: */
-        const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
+        /* Get storage controller cache: */
+        const UICacheSettingsMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+        /* Get storage controller data from cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
+
+        /* Load storage controller data to page: */
         QModelIndex controllerIndex = mStorageModel->addController(controllerData.m_strControllerName,
                                                                    controllerData.m_controllerBus,
                                                                    controllerData.m_controllerType);
         QUuid controllerId = QUuid(mStorageModel->data(controllerIndex, StorageModel::R_ItemId).toString());
         mStorageModel->setData(controllerIndex, controllerData.m_fUseHostIOCache, StorageModel::R_CtrIoCache);
-        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size(); ++iAttachmentIndex)
+
+        /* For each storage attachment: */
+        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
         {
-            /* Get iterated attachment: */
-            const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
+            /* Get storage attachment cache: */
+            const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+            /* Get storage controller data from cache: */
+            const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.base();
+
+            /* Load storage attachment data to page: */
             QModelIndex attachmentIndex = mStorageModel->addAttachment(controllerId, attachmentData.m_attachmentType, attachmentData.m_strAttachmentMediumId);
             StorageSlot attachmentStorageSlot(controllerData.m_controllerBus,
                                               attachmentData.m_iAttachmentPort,
@@ -1862,31 +1901,48 @@ void UIMachineSettingsStorage::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsStorage::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    m_cache.m_items.clear();
+    /* Prepare storage data: */
+    UIDataSettingsMachineStorage storageData;
+
+    /* For each storage controller: */
     QModelIndex rootIndex = mStorageModel->root();
     for (int iControllerIndex = 0; iControllerIndex < mStorageModel->rowCount(rootIndex); ++iControllerIndex)
     {
+        /* Prepare storage controller data & key: */
+        UIDataSettingsMachineStorageController controllerData;
+
+        /* Gather storage controller data: */
         QModelIndex controllerIndex = mStorageModel->index(iControllerIndex, 0, rootIndex);
-        UIStorageControllerData controllerData;
         controllerData.m_strControllerName = mStorageModel->data(controllerIndex, StorageModel::R_CtrName).toString();
         controllerData.m_controllerBus = mStorageModel->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
         controllerData.m_controllerType = mStorageModel->data(controllerIndex, StorageModel::R_CtrType).value<KStorageControllerType>();
         controllerData.m_fUseHostIOCache = mStorageModel->data(controllerIndex, StorageModel::R_CtrIoCache).toBool();
+
+        /* For each storage attachment: */
         for (int iAttachmentIndex = 0; iAttachmentIndex < mStorageModel->rowCount(controllerIndex); ++iAttachmentIndex)
         {
+            /* Prepare storage attachment data & key: */
+            UIDataSettingsMachineStorageAttachment attachmentData;
+
+            /* Gather storage controller data: */
             QModelIndex attachmentIndex = mStorageModel->index(iAttachmentIndex, 0, controllerIndex);
-            UIStorageAttachmentData attachmentData;
             attachmentData.m_attachmentType = mStorageModel->data(attachmentIndex, StorageModel::R_AttDevice).value<KDeviceType>();
             StorageSlot attachmentSlot = mStorageModel->data(attachmentIndex, StorageModel::R_AttSlot).value<StorageSlot>();
             attachmentData.m_iAttachmentPort = attachmentSlot.port;
             attachmentData.m_iAttachmentDevice = attachmentSlot.device;
             attachmentData.m_fAttachmentPassthrough = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsPassthrough).toBool();
             attachmentData.m_strAttachmentMediumId = mStorageModel->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
-            controllerData.m_items << attachmentData;
+
+            /* Recache storage attachment data: */
+            m_cache.child(iControllerIndex).child(iAttachmentIndex).cacheCurrentData(attachmentData);
         }
-        m_cache.m_items << controllerData;
+
+        /* Recache storage controller data: */
+        m_cache.child(iControllerIndex).cacheCurrentData(controllerData);
     }
+
+    /* Recache storage data: */
+    m_cache.cacheCurrentData(storageData);
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -1896,131 +1952,8 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Save settings depending on dialog type: */
-    switch (dialogType())
-    {
-        /* Here come the properties which could be changed only in offline state: */
-        case SettingsDialogType_Offline:
-        {
-            /* Remove currently present controllers & attachments */
-            const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
-            for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
-            {
-                /* Get iterated controller: */
-                const CStorageController &controller = controllers[iControllerIndex];
-                QString strControllerName(controller.GetName());
-                const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(strControllerName);
-                /* Remove all the attachments first: */
-                for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
-                {
-                    /* Get iterated attachment: */
-                    const CMediumAttachment &attachment = attachments[iAttachmentIndex];
-                    m_machine.DetachDevice(strControllerName, attachment.GetPort(), attachment.GetDevice());
-                }
-                /* Remove the controller itself finally: */
-                m_machine.RemoveStorageController(strControllerName);
-            }
-            /* Save created controllers: */
-            for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
-            {
-                /* Get iterated controller's data: */
-                const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
-                CStorageController controller = m_machine.AddStorageController(controllerData.m_strControllerName, controllerData.m_controllerBus);
-                controller.SetControllerType(controllerData.m_controllerType);
-                controller.SetUseHostIOCache(controllerData.m_fUseHostIOCache);
-                int cMaxUsedPort = -1;
-                /* Save created attachments: */
-                for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
-                {
-                    /* Get iterated attachment: */
-                    const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
-                    /* Search for newly assigned medium in GUI cache: */
-                    VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
-                    /* Get corresponding COM-wrapped medium object: */
-                    CMedium comMedium = vboxMedium.medium();
-                    /* Add corresponding attachment: */
-                    m_machine.AttachDevice(controllerData.m_strControllerName,
-                                           attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
-                                           attachmentData.m_attachmentType, comMedium);
-                    if (m_machine.isOk())
-                    {
-                        if (attachmentData.m_attachmentType == KDeviceType_DVD)
-                            m_machine.PassthroughDevice(controllerData.m_strControllerName,
-                                                        attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
-                                                        attachmentData.m_fAttachmentPassthrough);
-                        cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
-                    }
-                    else
-                    {
-                        /* Mark the page as failed: */
-                        setFailed(true);
-                        /* Show error message: */
-                        vboxProblem().cannotAttachDevice(m_machine,
-                                                         vboxGlobal().mediumTypeToLocal(attachmentData.m_attachmentType),
-                                                         vboxMedium.location(),
-                                                         StorageSlot(controllerData.m_controllerBus,
-                                                                     attachmentData.m_iAttachmentPort,
-                                                                     attachmentData.m_iAttachmentDevice),
-                                                         this);
-                    }
-                }
-                if (!failed() && controllerData.m_controllerBus == KStorageBus_SATA)
-                {
-                    ULONG uSataPortsCount = cMaxUsedPort + 1;
-                    uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
-                    uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
-                    controller.SetPortCount(uSataPortsCount);
-                }
-            }
-            break;
-        }
-        /* Here come the properties which could be changed at runtime too: */
-        case SettingsDialogType_Online:
-        {
-            /* Iterate all the controllers and update changed CD/DVD and floppy attachments: */
-            for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size() && !failed(); ++iControllerIndex)
-            {
-                /* Get iterated controller: */
-                const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
-                CStorageController controller = m_machine.GetStorageControllerByName(controllerData.m_strControllerName);
-                AssertMsg(!controller.isNull(), ("Corresponding storage controller must be present!\n"));
-                /* Save changed attachments: */
-                for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size() && !failed(); ++iAttachmentIndex)
-                {
-                    /* Get iterated attachment: */
-                    const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
-                    /* Update only DVD and floppy attachments: */
-                    if (attachmentData.m_attachmentType != KDeviceType_DVD &&
-                        attachmentData.m_attachmentType != KDeviceType_Floppy)
-                        continue;
-                    /* Search for newly assigned medium in GUI cache: */
-                    VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
-                    /* Get corresponding COM-wrapped medium object: */
-                    CMedium comMedium = vboxMedium.medium();
-                    /* Update corresponding medium: */
-                    m_machine.MountMedium(controllerData.m_strControllerName,
-                                          attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
-                                          comMedium, true /* may the force be with you */);
-                    if (!m_machine.isOk())
-                    {
-                        /* Mark the page as failed: */
-                        setFailed(true);
-                        /* Show error message: */
-                        vboxProblem().cannotAttachDevice(m_machine,
-                                                         vboxGlobal().mediumTypeToLocal(attachmentData.m_attachmentType),
-                                                         vboxMedium.location(),
-                                                         StorageSlot(controllerData.m_controllerBus,
-                                                                     attachmentData.m_iAttachmentPort,
-                                                                     attachmentData.m_iAttachmentDevice),
-                                                         this);
-                    }
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
+    /* Update storage data, update failing state: */
+    setFailed(!updateStorageData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -3081,6 +3014,411 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, VB
             pChooseRecentMediumAction->setData(QString("%1,%2").arg(recentMediumType).arg(strRecentMediumLocation));
         }
     }
+}
+
+bool UIMachineSettingsStorage::updateStorageData()
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Check if storage data was changed: */
+        if (m_cache.wasChanged())
+        {
+            /* For each controller (removing step): */
+            for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
+            {
+                /* Get controller cache: */
+                const UICacheSettingsMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+
+                /* Remove controllers marked for 'remove' and 'update' (if they can't be updated): */
+                if (controllerCache.wasRemoved() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
+                    fSuccess = removeStorageController(controllerCache);
+
+                /* Update controllers marked for 'update' (if they can be updated): */
+                if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
+                {
+                    /* For each attachment (removing step): */
+                    for (int iAttachmentIndex = 0; iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+                    {
+                        /* Get attachment cache: */
+                        const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+                        /* Remove attachments marked for 'remove' and 'update' (if they can't be updated): */
+                        if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                            fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
+                    }
+                }
+            }
+            /* For each controller (creating step): */
+            for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
+            {
+                /* Get controller cache: */
+                UICacheSettingsMachineStorageController controllerCache = m_cache.child(iControllerIndex);
+
+                /* Create controllers marked for 'create' or 'update' (if they can't be updated): */
+                if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
+                    fSuccess = createStorageController(controllerCache);
+
+                /* Update controllers marked for 'update' (if they can be updated): */
+                if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
+                    fSuccess = updateStorageController(controllerCache);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::removeStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get storage controller data form cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
+
+        /* Get storage controller name: */
+        QString strControllerName = controllerData.m_strControllerName;
+
+        /* Check that storage controller exists: */
+        const CStorageController &controller = m_machine.GetStorageControllerByName(strControllerName);
+        /* Check that machine is OK: */
+        fSuccess = m_machine.isOk();
+        if (fSuccess && !controller.isNull())
+        {
+            /* Remove storage attachments first: */
+            // TODO: Later, it will be possible to remove controller with all the attachments at one shot!
+            /* For each storage attachment: */
+            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+                fSuccess = removeStorageAttachment(controllerCache, controllerCache.child(iAttachmentIndex));
+            /* Remove storage controller finally: */
+            if (fSuccess)
+            {
+                m_machine.RemoveStorageController(strControllerName);
+                /* Check that machine is OK: */
+                fSuccess = m_machine.isOk();
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get controller data form cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+
+        /* Get storage controller attributes: */
+        QString strControllerName = controllerData.m_strControllerName;
+        KStorageBus controllerBus = controllerData.m_controllerBus;
+        KStorageControllerType controllerType = controllerData.m_controllerType;
+        bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
+
+        /* Check that storage controller doesn't exists: */
+        CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
+        /* Check that machine is not OK: */
+        fSuccess = !m_machine.isOk();
+        /* If controller doesn't exists: */
+        if (controller.isNull())
+        {
+            /* Create new storage controller: */
+            controller = m_machine.AddStorageController(strControllerName, controllerBus);
+            /* Check that machine is OK: */
+            fSuccess = m_machine.isOk();
+            if (!controller.isNull())
+            {
+                /* Set storage controller attributes: */
+                controller.SetControllerType(controllerType);
+                controller.SetUseHostIOCache(fUseHostIOCache);
+
+                /* Prepare max used port for SATA controller: */
+                int cMaxUsedPort = -1;
+
+                /* For each storage attachment: */
+                for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+                {
+                    /* Get storage attachment cache: */
+                    const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+                    /* If storage attachment data was not removed: */
+                    if (!attachmentCache.wasRemoved())
+                        fSuccess = createStorageAttachment(controllerCache, attachmentCache);
+
+                    /* Check that machine is OK: */
+                    if (fSuccess)
+                    {
+                        /* Get storage attachment data: */
+                        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+                        /* Calculate the number of used ports: */
+                        cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
+                    }
+                }
+
+                /* Set max used port for SATA controller: */
+                if (fSuccess && controllerData.m_controllerBus == KStorageBus_SATA)
+                {
+                    ULONG uSataPortsCount = cMaxUsedPort + 1;
+                    uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
+                    uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
+                    controller.SetPortCount(uSataPortsCount);
+                }
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get controller data form cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+
+        /* Get storage controller attributes: */
+        QString strControllerName = controllerData.m_strControllerName;
+        KStorageBus controllerBus = controllerData.m_controllerBus;
+        KStorageControllerType controllerType = controllerData.m_controllerType;
+        bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
+
+        /* Check that controller exists: */
+        CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
+        /* Check that machine is OK: */
+        fSuccess = m_machine.isOk();
+        if (!controller.isNull())
+        {
+            /* Set storage controller attributes: */
+            controller.SetControllerType(controllerType);
+            controller.SetUseHostIOCache(fUseHostIOCache);
+
+            /* Prepare max used port for SATA controller: */
+            int cMaxUsedPort = -1;
+
+            /* For each storage attachment: */
+            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+            {
+                /* Get storage attachment cache: */
+                const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+                /* Create attachments marked for 'create' and 'update' (if they can't be updated): */
+                if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                    fSuccess = createStorageAttachment(controllerCache, attachmentCache);
+
+                /* Update attachments marked for 'update' (if they can be updated): */
+                if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
+                    fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
+
+                /* Check that machine is OK: */
+                if (fSuccess && (attachmentCache.wasCreated() || attachmentCache.wasUpdated()))
+                {
+                    /* Get storage attachment data: */
+                    const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+                    /* Calculate the number of used ports: */
+                    cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
+                }
+            }
+
+            /* Set max used port for SATA controller: */
+            if (fSuccess && controllerBus == KStorageBus_SATA)
+            {
+                ULONG uSataPortsCount = cMaxUsedPort + 1;
+                uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
+                uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
+                controller.SetPortCount(uSataPortsCount);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::removeStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get storage controller data from cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
+        /* Get storage attachment data from cache: */
+        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.base();
+
+        /* Get storage controller attributes: */
+        QString strControllerName = controllerData.m_strControllerName;
+        /* Get storage attachment attributes: */
+        int iAttachmentPort = attachmentData.m_iAttachmentPort;
+        int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
+
+        /* Check that storage attachment exists: */
+        const CMediumAttachment &attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
+        /* Check that machine is OK: */
+        fSuccess = m_machine.isOk();
+        if (fSuccess && !attachment.isNull())
+        {
+            /* Remove storage attachment: */
+            m_machine.DetachDevice(strControllerName, iAttachmentPort, iAttachmentDevice);
+            /* Check that machine is OK: */
+            fSuccess = m_machine.isOk();
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get storage controller data from cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+        /* Get storage attachment data from cache: */
+        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+
+        /* Get storage controller attributes: */
+        QString strControllerName = controllerData.m_strControllerName;
+        KStorageBus controllerBus = controllerData.m_controllerBus;
+        /* Get storage attachment attributes: */
+        int iAttachmentPort = attachmentData.m_iAttachmentPort;
+        int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
+        KDeviceType attachmentDeviceType = attachmentData.m_attachmentType;
+        QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
+        bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
+        /* Get GUI medium object: */
+        VBoxMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+        /* Get COM medium object: */
+        CMedium comMedium = vboxMedium.medium();
+
+        /* Check that storage attachment doesn't exists: */
+        const CMediumAttachment &attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
+        /* Check that machine is not OK: */
+        fSuccess = !m_machine.isOk();
+        if (attachment.isNull())
+        {
+            /* Create storage attachment: */
+            m_machine.AttachDevice(strControllerName, iAttachmentPort, iAttachmentDevice, attachmentDeviceType, comMedium);
+            /* Check that machine is OK: */
+            fSuccess = m_machine.isOk();
+            if (fSuccess)
+            {
+                if (attachmentDeviceType == KDeviceType_DVD)
+                {
+                    m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
+                    /* Check that machine is OK: */
+                    fSuccess = m_machine.isOk();
+                }
+            }
+            else
+            {
+                /* Show error message: */
+                vboxProblem().cannotAttachDevice(m_machine, vboxGlobal().mediumTypeToLocal(attachmentDeviceType),
+                                                 vboxMedium.location(),
+                                                 StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+{
+    /* Prepare result: */
+    bool fSuccess = m_machine.isOk();
+    if (fSuccess)
+    {
+        /* Get storage controller data from cache: */
+        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+        /* Get current storage attachment data from cache: */
+        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+
+        /* Get storage controller attributes: */
+        QString strControllerName = controllerData.m_strControllerName;
+        KStorageBus controllerBus = controllerData.m_controllerBus;
+        /* Get storage attachment attributes: */
+        int iAttachmentPort = attachmentData.m_iAttachmentPort;
+        int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
+        QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
+        bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
+        KDeviceType attachmentDeviceType = attachmentData.m_attachmentType;
+
+        /* Check that storage attachment exists: */
+        CMediumAttachment attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
+        /* Check that machine is OK: */
+        fSuccess = m_machine.isOk();
+        if (!attachment.isNull())
+        {
+            /* Get GUI medium object: */
+            VBoxMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+            /* Get COM medium object: */
+            CMedium comMedium = vboxMedium.medium();
+            /* Remount storage attachment: */
+            m_machine.MountMedium(strControllerName, iAttachmentPort, iAttachmentDevice, comMedium, true /* force? */);
+            /* Check that machine is OK: */
+            fSuccess = m_machine.isOk();
+            if (fSuccess)
+            {
+                if (isMachineOffline())
+                {
+                    if (attachmentDeviceType == KDeviceType_DVD)
+                    {
+                        m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
+                        /* Check that machine is OK: */
+                        fSuccess = m_machine.isOk();
+                    }
+                }
+            }
+            else
+            {
+                /* Show error message: */
+                vboxProblem().cannotAttachDevice(m_machine, vboxGlobal().mediumTypeToLocal(attachmentDeviceType),
+                                                 vboxMedium.location(),
+                                                 StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UICacheSettingsMachineStorageController &controllerCache) const
+{
+    /* IController interface doesn't allows to change 'name' and 'bus' attributes.
+     * But those attributes could be changed in GUI directly or indirectly.
+     * For such cases we have to recreate IController instance,
+     * for other cases we will update controller attributes only. */
+    const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
+    const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
+    return newControllerData.m_controllerBus == oldControllerData.m_controllerBus &&
+           newControllerData.m_strControllerName == oldControllerData.m_strControllerName;
+}
+
+bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const
+{
+    /* IMediumAttachment could be indirectly updated through IMachine
+     * only if attachment device type was NOT changed and is one of the next types:
+     * KDeviceType_Floppy or KDeviceType_DVD.
+     * For other cases we will recreate attachment fully: */
+    const UIDataSettingsMachineStorageAttachment &initialAttachmentData = attachmentCache.base();
+    const UIDataSettingsMachineStorageAttachment &currentAttachmentData = attachmentCache.data();
+    KDeviceType initialAttachmentDeviceType = initialAttachmentData.m_attachmentType;
+    KDeviceType currentAttachmentDeviceType = currentAttachmentData.m_attachmentType;
+    return (currentAttachmentDeviceType == initialAttachmentDeviceType) &&
+           (currentAttachmentDeviceType == KDeviceType_Floppy || currentAttachmentDeviceType == KDeviceType_DVD);
 }
 
 void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)

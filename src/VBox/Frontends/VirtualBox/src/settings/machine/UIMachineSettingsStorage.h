@@ -542,32 +542,78 @@ private:
     bool mDisableStaticControls;
 };
 
-/* Machine settings / Storage page / Attachment data: */
-struct UIStorageAttachmentData
+/* Machine settings / Storage page / Storage attachment data: */
+struct UIDataSettingsMachineStorageAttachment
 {
+    /* Default constructor: */
+    UIDataSettingsMachineStorageAttachment()
+        : m_attachmentType(KDeviceType_Null)
+        , m_iAttachmentPort(-1)
+        , m_iAttachmentDevice(-1)
+        , m_strAttachmentMediumId(QString())
+        , m_fAttachmentPassthrough(false) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineStorageAttachment &other) const
+    {
+        return (m_attachmentType == other.m_attachmentType) &&
+               (m_iAttachmentPort == other.m_iAttachmentPort) &&
+               (m_iAttachmentDevice == other.m_iAttachmentDevice) &&
+               (m_strAttachmentMediumId == other.m_strAttachmentMediumId) &&
+               (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineStorageAttachment &other) const { return !equal(other); }
+    /* Variables: */
     KDeviceType m_attachmentType;
     LONG m_iAttachmentPort;
     LONG m_iAttachmentDevice;
     QString m_strAttachmentMediumId;
     bool m_fAttachmentPassthrough;
 };
+typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UICacheSettingsMachineStorageAttachment;
 
-/* Machine settings / Storage page / Controller data: */
-struct UIStorageControllerData
+/* Machine settings / Storage page / Storage controller data: */
+struct UIDataSettingsMachineStorageController
 {
+    /* Default constructor: */
+    UIDataSettingsMachineStorageController()
+        : m_strControllerName(QString())
+        , m_controllerBus(KStorageBus_Null)
+        , m_controllerType(KStorageControllerType_Null)
+        , m_fUseHostIOCache(false) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineStorageController &other) const
+    {
+        return (m_strControllerName == other.m_strControllerName) &&
+               (m_controllerBus == other.m_controllerBus) &&
+               (m_controllerType == other.m_controllerType) &&
+               (m_fUseHostIOCache == other.m_fUseHostIOCache);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineStorageController &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineStorageController &other) const { return !equal(other); }
+    /* Variables: */
     QString m_strControllerName;
     KStorageBus m_controllerBus;
     KStorageControllerType m_controllerType;
     bool m_fUseHostIOCache;
-    QList<UIStorageAttachmentData> m_items;
 };
+typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UICacheSettingsMachineStorageAttachment> UICacheSettingsMachineStorageController;
 
-/* Machine settings / Storage page / Cache: */
-struct UISettingsCacheMachineStorage
+/* Machine settings / Storage page / Storage data: */
+struct UIDataSettingsMachineStorage
 {
+    /* Default constructor: */
+    UIDataSettingsMachineStorage()
+        : m_strMachineId(QString()) {}
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineStorage &other) const { return m_strMachineId == other.m_strMachineId; }
+    bool operator!=(const UIDataSettingsMachineStorage &other) const { return m_strMachineId != other.m_strMachineId; }
+    /* Variables: */
     QString m_strMachineId;
-    QList<UIStorageControllerData> m_items;
 };
+typedef UISettingsCachePool<UIDataSettingsMachineStorage, UICacheSettingsMachineStorageController> UICacheSettingsMachineStorage;
 
 /* Machine settings / Storage page: */
 class UIMachineSettingsStorage : public UISettingsPageMachine,
@@ -672,6 +718,19 @@ private:
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
     void addRecentMediumActions(QMenu *pOpenMediumMenu, VBoxDefs::MediumType recentMediumType);
 
+    bool updateStorageData();
+    bool removeStorageController(const UICacheSettingsMachineStorageController &controllerCache);
+    bool createStorageController(const UICacheSettingsMachineStorageController &controllerCache);
+    bool updateStorageController(const UICacheSettingsMachineStorageController &controllerCache);
+    bool removeStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
+    bool createStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
+    bool updateStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
+                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
+    bool isControllerCouldBeUpdated(const UICacheSettingsMachineStorageController &controllerCache) const;
+    bool isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const;
+
     void setDialogType(SettingsDialogType settingsDialogType);
     void polishPage();
 
@@ -699,7 +758,7 @@ private:
     bool mDisableStaticControls;
 
     /* Cache: */
-    UISettingsCacheMachineStorage m_cache;
+    UICacheSettingsMachineStorage m_cache;
 };
 
 #endif // __UIMachineSettingsStorage_h__
