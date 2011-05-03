@@ -36,7 +36,7 @@
 /* Empty item extra-code: */
 const char *emptyItemCode = "#empty#";
 
-UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent, bool fDisableStaticControls)
+UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent)
     : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_pValidator(0)
@@ -93,104 +93,112 @@ void UIMachineSettingsNetwork::polishTab()
     sltToggleAdvanced();
 }
 
-void UIMachineSettingsNetwork::fetchAdapterData(const UINetworkAdapterData &data)
+void UIMachineSettingsNetwork::fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache)
 {
-    /* Load adapter & slot number: */
-    m_iSlot = data.m_iSlot;
-    m_adapter = data.m_adapter;
+    /* Get adapter data: */
+    const UIDataSettingsMachineNetworkAdapter &adapterData = adapterCache.base();
+
+    /* Load slot number: */
+    m_iSlot = adapterData.m_iSlot;
 
     /* Load adapter activity state: */
-    mCbEnableAdapter->setChecked(data.m_fAdapterEnabled);
+    mCbEnableAdapter->setChecked(adapterData.m_fAdapterEnabled);
 
     /* Load attachment type: */
-    int iAttachmentPos = m_pAttachmentTypeCombo->findData(data.m_attachmentType);
+    int iAttachmentPos = m_pAttachmentTypeCombo->findData(adapterData.m_attachmentType);
     m_pAttachmentTypeCombo->setCurrentIndex(iAttachmentPos == -1 ? 0 : iAttachmentPos);
 
     /* Load alternative name: */
     switch (attachmentType())
     {
         case KNetworkAttachmentType_Bridged:
-            m_strBrgName = data.m_strBridgedAdapterName;
+            m_strBrgName = adapterData.m_strBridgedAdapterName;
             if (m_strBrgName.isEmpty()) m_strBrgName = QString();
             break;
         case KNetworkAttachmentType_Internal:
-            m_strIntName = data.m_strInternalNetworkName;
+            m_strIntName = adapterData.m_strInternalNetworkName;
             if (m_strIntName.isEmpty()) m_strIntName = QString();
             break;
         case KNetworkAttachmentType_HostOnly:
-            m_strHoiName = data.m_strHostInterfaceName;
+            m_strHoiName = adapterData.m_strHostInterfaceName;
             if (m_strHoiName.isEmpty()) m_strHoiName = QString();
             break;
 #ifdef VBOX_WITH_VDE
         case KNetworkAttachmentType_VDE:
-            mVDEName = data.m_strVDENetworkName;
+            mVDEName = adapterData.m_strVDENetworkName;
             if (mVDEName.isEmpty()) mVDEName = QString();
             break;
-#endif
+#endif /* VBOX_WITH_VDE */
         default:
             break;
     }
     sltUpdateAttachmentAlternative();
 
     /* Load adapter type: */
-    int iAdapterPos = m_pAdapterTypeCombo->findData(data.m_adapterType);
+    int iAdapterPos = m_pAdapterTypeCombo->findData(adapterData.m_adapterType);
     m_pAdapterTypeCombo->setCurrentIndex(iAdapterPos == -1 ? 0 : iAdapterPos);
 
     /* Load promiscuous mode type: */
-    int iPromiscuousModePos = m_pPromiscuousModeCombo->findData(data.m_promiscuousMode);
+    int iPromiscuousModePos = m_pPromiscuousModeCombo->findData(adapterData.m_promiscuousMode);
     m_pPromiscuousModeCombo->setCurrentIndex(iPromiscuousModePos == -1 ? 0 : iPromiscuousModePos);
 
     /* Other options: */
-    m_pMACEditor->setText(data.m_strMACAddress);
-    m_pCableConnectedCheckBox->setChecked(data.m_fCableConnected);
+    m_pMACEditor->setText(adapterData.m_strMACAddress);
+    m_pCableConnectedCheckBox->setChecked(adapterData.m_fCableConnected);
 
     /* Load port forwarding rules: */
-    m_portForwardingRules = data.m_redirects;
+    m_portForwardingRules = adapterData.m_redirects;
 }
 
-void UIMachineSettingsNetwork::uploadAdapterData(UINetworkAdapterData &data)
+void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache)
 {
+    /* Prepare adapter data: */
+    UIDataSettingsMachineNetworkAdapter adapterData = adapterCache.base();
+
     /* Save adapter activity state: */
-    data.m_fAdapterEnabled = mCbEnableAdapter->isChecked();
+    adapterData.m_fAdapterEnabled = mCbEnableAdapter->isChecked();
 
     /* Save attachment type & alternative name: */
-    data.m_attachmentType = attachmentType();
-    switch (data.m_attachmentType)
+    adapterData.m_attachmentType = attachmentType();
+    switch (adapterData.m_attachmentType)
     {
         case KNetworkAttachmentType_Null:
             break;
         case KNetworkAttachmentType_NAT:
             break;
         case KNetworkAttachmentType_Bridged:
-            data.m_strBridgedAdapterName = alternativeName();
+            adapterData.m_strBridgedAdapterName = alternativeName();
             break;
         case KNetworkAttachmentType_Internal:
-            data.m_strInternalNetworkName = alternativeName();
+            adapterData.m_strInternalNetworkName = alternativeName();
             break;
         case KNetworkAttachmentType_HostOnly:
-            data.m_strHostInterfaceName = alternativeName();
+            adapterData.m_strHostInterfaceName = alternativeName();
             break;
 #ifdef VBOX_WITH_VDE
         case KNetworkAttachmentType_VDE:
-            data.m_strVDENetworkName = alternativeName();
+            adapterData.m_strVDENetworkName = alternativeName();
             break;
-#endif
+#endif /* VBOX_WITH_VDE */
         default:
             break;
     }
 
     /* Save adapter type: */
-    data.m_adapterType = (KNetworkAdapterType)m_pAdapterTypeCombo->itemData(m_pAdapterTypeCombo->currentIndex()).toInt();
+    adapterData.m_adapterType = (KNetworkAdapterType)m_pAdapterTypeCombo->itemData(m_pAdapterTypeCombo->currentIndex()).toInt();
 
     /* Save promiscuous mode type: */
-    data.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pPromiscuousModeCombo->itemData(m_pPromiscuousModeCombo->currentIndex()).toInt();
+    adapterData.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pPromiscuousModeCombo->itemData(m_pPromiscuousModeCombo->currentIndex()).toInt();
 
     /* Other options: */
-    data.m_strMACAddress = m_pMACEditor->text().isEmpty() ? QString() : m_pMACEditor->text();
-    data.m_fCableConnected = m_pCableConnectedCheckBox->isChecked();
+    adapterData.m_strMACAddress = m_pMACEditor->text().isEmpty() ? QString() : m_pMACEditor->text();
+    adapterData.m_fCableConnected = m_pCableConnectedCheckBox->isChecked();
 
     /* Save port forwarding rules: */
-    data.m_redirects = m_portForwardingRules;
+    adapterData.m_redirects = m_portForwardingRules;
+
+    /* Cache adapter data: */
+    adapterCache.cacheCurrentData(adapterData);
 }
 
 void UIMachineSettingsNetwork::setValidator(QIWidgetValidator *pValidator)
@@ -501,8 +509,7 @@ void UIMachineSettingsNetwork::sltToggleAdvanced()
 
 void UIMachineSettingsNetwork::sltGenerateMac()
 {
-    m_adapter.SetMACAddress(QString::null);
-    m_pMACEditor->setText(m_adapter.GetMACAddress());
+    m_pMACEditor->setText(vboxGlobal().virtualBox().GetHost().GenerateMACAddress());
 }
 
 void UIMachineSettingsNetwork::sltOpenPortForwardingDlg()
@@ -645,12 +652,11 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
 
     /* How many adapters to display: */
     ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
-    /* Add the tab pages to parent tab widget. Needed for space calculations: */
-    for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
+    /* Add corresponding tab pages to parent tab widget: */
+    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
-        /* Creating adapter's page: */
+        /* Creating adapter page: */
         UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this);
-        /* Attach adapter's page to Tab Widget: */
         m_pTwAdapters->addTab(pPage, pPage->pageTitle());
     }
 }
@@ -747,67 +753,71 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     intList(true);
     hoiList(true);
 
-    /* Load adapters data: */
-    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
-    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
+    /* For each network adapter: */
+    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
     {
-        /* Get adapter: */
-        const CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(uSlot);
+        /* Prepare adapter data: */
+        UIDataSettingsMachineNetworkAdapter adapterData;
 
-        /* Prepare adapter's data container: */
-        UINetworkAdapterData data;
-
-        /* Load main options: */
-        data.m_iSlot = uSlot;
-        data.m_adapter = adapter;
-        data.m_fAdapterEnabled = adapter.GetEnabled();
-        data.m_attachmentType = adapter.GetAttachmentType();
-        switch (data.m_attachmentType)
+        /* Check if adapter is valid: */
+        const CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(iSlot);
+        if (!adapter.isNull())
         {
-            case KNetworkAttachmentType_Bridged:
-                data.m_strBridgedAdapterName = adapter.GetHostInterface();
-                if (data.m_strBridgedAdapterName.isEmpty()) data.m_strBridgedAdapterName = QString();
-                break;
-            case KNetworkAttachmentType_Internal:
-                data.m_strInternalNetworkName = adapter.GetInternalNetwork();
-                if (data.m_strInternalNetworkName.isEmpty()) data.m_strInternalNetworkName = QString();
-                break;
-            case KNetworkAttachmentType_HostOnly:
-                data.m_strHostInterfaceName = adapter.GetHostInterface();
-                if (data.m_strHostInterfaceName.isEmpty()) data.m_strHostInterfaceName = QString();
-                break;
+            /* Gather main options: */
+            adapterData.m_iSlot = iSlot;
+            adapterData.m_fAdapterEnabled = adapter.GetEnabled();
+            adapterData.m_attachmentType = adapter.GetAttachmentType();
+            switch (adapterData.m_attachmentType)
+            {
+                case KNetworkAttachmentType_Bridged:
+                    adapterData.m_strBridgedAdapterName = adapter.GetHostInterface();
+                    if (adapterData.m_strBridgedAdapterName.isEmpty())
+                        adapterData.m_strBridgedAdapterName = QString();
+                    break;
+                case KNetworkAttachmentType_Internal:
+                    adapterData.m_strInternalNetworkName = adapter.GetInternalNetwork();
+                    if (adapterData.m_strInternalNetworkName.isEmpty())
+                        adapterData.m_strInternalNetworkName = QString();
+                    break;
+                case KNetworkAttachmentType_HostOnly:
+                    adapterData.m_strHostInterfaceName = adapter.GetHostInterface();
+                    if (adapterData.m_strHostInterfaceName.isEmpty())
+                        adapterData.m_strHostInterfaceName = QString();
+                    break;
 #ifdef VBOX_WITH_VDE
-            case KNetworkAttachmentType_VDE:
-                data.m_strVDENetworkName = adapter.GetVDENetwork();
-                if (data.m_strVDENetworkName.isEmpty()) data.m_strVDENetworkName = QString();
-                break;
-#endif
-            default:
-                break;
+                case KNetworkAttachmentType_VDE:
+                    adapterData.m_strVDENetworkName = adapter.GetVDENetwork();
+                    if (adapterData.m_strVDENetworkName.isEmpty())
+                        adapterData.m_strVDENetworkName = QString();
+                    break;
+#endif /* VBOX_WITH_VDE */
+                default:
+                    break;
+            }
+
+            /* Gather advanced options: */
+            adapterData.m_adapterType = adapter.GetAdapterType();
+            adapterData.m_promiscuousMode = adapter.GetPromiscModePolicy();
+            adapterData.m_strMACAddress = adapter.GetMACAddress();
+            adapterData.m_fCableConnected = adapter.GetCableConnected();
+
+            /* Gather redirect options: */
+            QVector<QString> redirects = adapter.GetNatDriver().GetRedirects();
+            for (int i = 0; i < redirects.size(); ++i)
+            {
+                QStringList redirectData = redirects[i].split(',');
+                AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
+                adapterData.m_redirects << UIPortForwardingData(redirectData[0],
+                                                                (KNATProtocol)redirectData[1].toUInt(),
+                                                                redirectData[2],
+                                                                redirectData[3].toUInt(),
+                                                                redirectData[4],
+                                                                redirectData[5].toUInt());
+            }
         }
 
-        /* Load advanced options: */
-        data.m_adapterType = adapter.GetAdapterType();
-        data.m_promiscuousMode = adapter.GetPromiscModePolicy();
-        data.m_strMACAddress = adapter.GetMACAddress();
-        data.m_fCableConnected = adapter.GetCableConnected();
-
-        /* Load redirect options: */
-        QVector<QString> redirects = adapter.GetNatDriver().GetRedirects();
-        for (int i = 0; i < redirects.size(); ++i)
-        {
-            QStringList redirectData = redirects[i].split(',');
-            AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
-            data.m_redirects << UIPortForwardingData(redirectData[0],
-                                                     (KNATProtocol)redirectData[1].toUInt(),
-                                                     redirectData[2],
-                                                     redirectData[3].toUInt(),
-                                                     redirectData[4],
-                                                     redirectData[5].toUInt());
-        }
-
-        /* Append adapter's data container: */
-        m_cache.m_items << data;
+        /* Cache adapter data: */
+        m_cache.child(iSlot).cacheInitialData(adapterData);
     }
 
     /* Upload machine to data: */
@@ -823,14 +833,14 @@ void UIMachineSettingsNetworkPage::getFromCache()
     setTabOrder(firstWidget(), m_pTwAdapters->focusProxy());
     QWidget *pLastFocusWidget = m_pTwAdapters->focusProxy();
 
-    int uCount = qMin(m_pTwAdapters->count(), m_cache.m_items.size());
-    for (int iSlot = 0; iSlot < uCount; ++iSlot)
+    /* For each network adapter: */
+    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
     {
+        /* Get adapter page: */
         UIMachineSettingsNetwork *pPage = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
-        Assert(pPage);
 
-        /* Loading adapter's data into page: */
-        pPage->fetchAdapterData(m_cache.m_items[iSlot]);
+        /* Load adapter data to page: */
+        pPage->fetchAdapterCache(m_cache.child(iSlot));
 
         /* Setup page validation: */
         pPage->setValidator(m_pValidator);
@@ -850,14 +860,14 @@ void UIMachineSettingsNetworkPage::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsNetworkPage::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    /* For each network adapter: */
+    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
     {
-        /* Getting adapter's page: */
+        /* Get adapter page: */
         UIMachineSettingsNetwork *pPage = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
 
-        /* Loading Adapter's data from page: */
-        pPage->uploadAdapterData(m_cache.m_items[iSlot]);
+        /* Gather & cache adapter data: */
+        pPage->uploadAdapterCache(m_cache.child(iSlot));
     }
 }
 
@@ -868,69 +878,81 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
-    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    /* Check if network data was changed: */
+    if (m_cache.wasChanged())
     {
-        /* Get adapter: */
-        CNetworkAdapter adapter = m_machine.GetNetworkAdapter(iSlot);
-
-        /* Get cached data for this adapter: */
-        const UINetworkAdapterData &data = m_cache.m_items[iSlot];
-
-        if (isMachineOffline())
+        /* For each network adapter: */
+        for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
         {
-            /* Basic attributes: */
-            adapter.SetEnabled(data.m_fAdapterEnabled);
-            adapter.SetAdapterType(data.m_adapterType);
-            adapter.SetMACAddress(data.m_strMACAddress);
-        }
-        if (isMachineInValidMode())
-        {
-            /* Attachment type: */
-            switch (data.m_attachmentType)
+            /* Check if adapter data was changed: */
+            const UICacheSettingsMachineNetworkAdapter &adapterCache = m_cache.child(iSlot);
+            if (adapterCache.wasChanged())
             {
-                case KNetworkAttachmentType_Null:
-                    adapter.Detach();
-                    break;
-                case KNetworkAttachmentType_NAT:
-                    adapter.AttachToNAT();
-                    break;
-                case KNetworkAttachmentType_Bridged:
-                    adapter.SetHostInterface(data.m_strBridgedAdapterName);
-                    adapter.AttachToBridgedInterface();
-                    break;
-                case KNetworkAttachmentType_Internal:
-                    adapter.SetInternalNetwork(data.m_strInternalNetworkName);
-                    adapter.AttachToInternalNetwork();
-                    break;
-                case KNetworkAttachmentType_HostOnly:
-                    adapter.SetHostInterface(data.m_strHostInterfaceName);
-                    adapter.AttachToHostOnlyInterface();
-                    break;
+                /* Check if adapter still valid: */
+                CNetworkAdapter adapter = m_machine.GetNetworkAdapter(iSlot);
+                if (!adapter.isNull())
+                {
+                    /* Get adapter data from cache: */
+                    const UIDataSettingsMachineNetworkAdapter &adapterData = adapterCache.data();
+
+                    /* Store adapter data: */
+                    if (isMachineOffline())
+                    {
+                        /* Basic attributes: */
+                        adapter.SetEnabled(adapterData.m_fAdapterEnabled);
+                        adapter.SetAdapterType(adapterData.m_adapterType);
+                        adapter.SetMACAddress(adapterData.m_strMACAddress);
+                    }
+                    if (isMachineInValidMode())
+                    {
+                        /* Attachment type: */
+                        switch (adapterData.m_attachmentType)
+                        {
+                            case KNetworkAttachmentType_Null:
+                                adapter.Detach();
+                                break;
+                            case KNetworkAttachmentType_NAT:
+                                adapter.AttachToNAT();
+                                break;
+                            case KNetworkAttachmentType_Bridged:
+                                adapter.SetHostInterface(adapterData.m_strBridgedAdapterName);
+                                adapter.AttachToBridgedInterface();
+                                break;
+                            case KNetworkAttachmentType_Internal:
+                                adapter.SetInternalNetwork(adapterData.m_strInternalNetworkName);
+                                adapter.AttachToInternalNetwork();
+                                break;
+                            case KNetworkAttachmentType_HostOnly:
+                                adapter.SetHostInterface(adapterData.m_strHostInterfaceName);
+                                adapter.AttachToHostOnlyInterface();
+                                break;
 #ifdef VBOX_WITH_VDE
-                case KNetworkAttachmentType_VDE:
-                    adapter.SetVDENetwork(data.m_strVDENetworkName);
-                    adapter.AttachToVDE();
-                    break;
+                            case KNetworkAttachmentType_VDE:
+                                adapter.SetVDENetwork(adapterData.m_strVDENetworkName);
+                                adapter.AttachToVDE();
+                                break;
 #endif /* VBOX_WITH_VDE */
-                default:
-                    break;
-            }
-            /* Advanced attributes: */
-            adapter.SetPromiscModePolicy(data.m_promiscuousMode);
-            /* Cable connected flag: */
-            adapter.SetCableConnected(data.m_fCableConnected);
-            /* Redirect options: */
-            QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
-            for (int i = 0; i < oldRedirects.size(); ++i)
-                adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
-            UIPortForwardingDataList newRedirects = data.m_redirects;
-            for (int i = 0; i < newRedirects.size(); ++i)
-            {
-                UIPortForwardingData newRedirect = newRedirects[i];
-                adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                                   newRedirect.hostIp, newRedirect.hostPort.value(),
-                                                   newRedirect.guestIp, newRedirect.guestPort.value());
+                            default:
+                                break;
+                        }
+                        /* Advanced attributes: */
+                        adapter.SetPromiscModePolicy(adapterData.m_promiscuousMode);
+                        /* Cable connected flag: */
+                        adapter.SetCableConnected(adapterData.m_fCableConnected);
+                        /* Redirect options: */
+                        QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
+                        for (int i = 0; i < oldRedirects.size(); ++i)
+                            adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
+                        UIPortForwardingDataList newRedirects = adapterData.m_redirects;
+                        for (int i = 0; i < newRedirects.size(); ++i)
+                        {
+                            UIPortForwardingData newRedirect = newRedirects[i];
+                            adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
+                                                               newRedirect.hostIp, newRedirect.hostPort.value(),
+                                                               newRedirect.guestIp, newRedirect.guestPort.value());
+                        }
+                    }
+                }
             }
         }
     }
@@ -987,14 +1009,12 @@ void UIMachineSettingsNetworkPage::updatePages()
 void UIMachineSettingsNetworkPage::polishPage()
 {
     /* Get the count of network adapter tabs: */
-    int iCount = qMin(m_pTwAdapters->count(), m_cache.m_items.size());
-    for (int iSlot = 0; iSlot < iCount; ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
     {
         m_pTwAdapters->setTabEnabled(iSlot,
                                      isMachineOffline() ||
-                                     (isMachineInValidMode() && m_cache.m_items[iSlot].m_fAdapterEnabled));
+                                     (isMachineInValidMode() && m_cache.child(iSlot).base().m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
-        Assert(pTab);
         pTab->polishTab();
     }
 }
