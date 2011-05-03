@@ -23,13 +23,30 @@
 #include "UIMachineSettingsAudio.gen.h"
 #include "COMDefs.h"
 
-/* Machine settings / Audio page / Cache: */
-struct UISettingsCacheMachineAudio
+/* Machine settings / Audio page / Data: */
+struct UIDataSettingsMachineAudio
 {
+    /* Default constructor: */
+    UIDataSettingsMachineAudio()
+        : m_fAudioEnabled(false)
+        , m_audioDriverType(KAudioDriverType_Null)
+        , m_audioControllerType(KAudioControllerType_AC97) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineAudio &other) const
+    {
+        return (m_fAudioEnabled == other.m_fAudioEnabled) &&
+               (m_audioDriverType == other.m_audioDriverType) &&
+               (m_audioControllerType == other.m_audioControllerType);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineAudio &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineAudio &other) const { return !equal(other); }
+    /* Variables: */
     bool m_fAudioEnabled;
     KAudioDriverType m_audioDriverType;
     KAudioControllerType m_audioControllerType;
 };
+typedef UISettingsCache<UIDataSettingsMachineAudio> UICacheSettingsMachineAudio;
 
 /* Machine settings / Audio page: */
 class UIMachineSettingsAudio : public UISettingsPageMachine,
@@ -68,7 +85,7 @@ private:
     void polishPage();
 
     /* Cache: */
-    UISettingsCacheMachineAudio m_cache;
+    UICacheSettingsMachineAudio m_cache;
 };
 
 #endif // __UIMachineSettingsAudio_h__

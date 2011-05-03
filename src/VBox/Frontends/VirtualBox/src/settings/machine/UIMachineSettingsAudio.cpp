@@ -35,11 +35,21 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Fill internal variables with corresponding values: */
-    const CAudioAdapter &audio = m_machine.GetAudioAdapter();
-    m_cache.m_fAudioEnabled = audio.GetEnabled();
-    m_cache.m_audioDriverType = audio.GetAudioDriver();
-    m_cache.m_audioControllerType = audio.GetAudioController();
+    /* Prepare audio data: */
+    UIDataSettingsMachineAudio audioData;
+
+    /* Check if adapter is valid: */
+    const CAudioAdapter &adapter = m_machine.GetAudioAdapter();
+    if (!adapter.isNull())
+    {
+        /* Gather audio data: */
+        audioData.m_fAudioEnabled = adapter.GetEnabled();
+        audioData.m_audioDriverType = adapter.GetAudioDriver();
+        audioData.m_audioControllerType = adapter.GetAudioController();
+    }
+
+    /* Cache audio data: */
+    m_cache.cacheInitialData(audioData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -49,20 +59,29 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsAudio::getFromCache()
 {
-    /* Apply internal variables data to QWidget(s): */
-    mGbAudio->setChecked(m_cache.m_fAudioEnabled);
-    mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(vboxGlobal().toString(m_cache.m_audioDriverType)));
-    mCbAudioController->setCurrentIndex(mCbAudioController->findText(vboxGlobal().toString(m_cache.m_audioControllerType)));
+    /* Get audio data from cache: */
+    const UIDataSettingsMachineAudio &audioData = m_cache.base();
+
+    /* Load audio data to page: */
+    mGbAudio->setChecked(audioData.m_fAudioEnabled);
+    mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(vboxGlobal().toString(audioData.m_audioDriverType)));
+    mCbAudioController->setCurrentIndex(mCbAudioController->findText(vboxGlobal().toString(audioData.m_audioControllerType)));
 }
 
 /* Save data from corresponding widgets to cache,
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsAudio::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    m_cache.m_fAudioEnabled = mGbAudio->isChecked();
-    m_cache.m_audioDriverType = vboxGlobal().toAudioDriverType(mCbAudioDriver->currentText());
-    m_cache.m_audioControllerType = vboxGlobal().toAudioControllerType(mCbAudioController->currentText());
+    /* Prepare audio data: */
+    UIDataSettingsMachineAudio audioData = m_cache.base();
+
+    /* Gather audio data: */
+    audioData.m_fAudioEnabled = mGbAudio->isChecked();
+    audioData.m_audioDriverType = vboxGlobal().toAudioDriverType(mCbAudioDriver->currentText());
+    audioData.m_audioControllerType = vboxGlobal().toAudioControllerType(mCbAudioController->currentText());
+
+    /* Cache audio data: */
+    m_cache.cacheCurrentData(audioData);
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -72,12 +91,24 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    if (isMachineOffline())
+    /* Check if audio data was changed: */
+    if (m_cache.wasChanged())
     {
-        CAudioAdapter audio = m_machine.GetAudioAdapter();
-        audio.SetEnabled(m_cache.m_fAudioEnabled);
-        audio.SetAudioDriver(m_cache.m_audioDriverType);
-        audio.SetAudioController(m_cache.m_audioControllerType);
+        /* Check if adapter still valid: */
+        CAudioAdapter adapter = m_machine.GetAudioAdapter();
+        if (!adapter.isNull())
+        {
+            /* Get audio data from cache: */
+            const UIDataSettingsMachineAudio &audioData = m_cache.data();
+
+            /* Store audio data: */
+            if (isMachineOffline())
+            {
+                adapter.SetEnabled(audioData.m_fAudioEnabled);
+                adapter.SetAudioDriver(audioData.m_audioDriverType);
+                adapter.SetAudioController(audioData.m_audioControllerType);
+            }
+        }
     }
 
     /* Upload machine to data: */
