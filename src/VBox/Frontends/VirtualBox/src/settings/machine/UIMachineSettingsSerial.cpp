@@ -67,47 +67,60 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
 
 void UIMachineSettingsSerial::polishTab()
 {
+    ulong uIRQ, uIOBase;
+    bool fStd = vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
+    KPortMode mode = vboxGlobal().toPortMode(mCbMode->currentText());
+
     mGbSerial->setEnabled(m_pParent->isMachineOffline());
     mLbNumber->setEnabled(m_pParent->isMachineOffline());
     mCbNumber->setEnabled(m_pParent->isMachineOffline());
     mLbIRQ->setEnabled(m_pParent->isMachineOffline());
-    mLeIRQ->setEnabled(m_pParent->isMachineOffline());
+    mLeIRQ->setEnabled(!fStd && m_pParent->isMachineOffline());
     mLbIOPort->setEnabled(m_pParent->isMachineOffline());
-    mLeIOPort->setEnabled(m_pParent->isMachineOffline());
+    mLeIOPort->setEnabled(!fStd && m_pParent->isMachineOffline());
     mLbMode->setEnabled(m_pParent->isMachineOffline());
     mCbMode->setEnabled(m_pParent->isMachineOffline());
-    mCbPipe->setEnabled(m_pParent->isMachineOffline());
+    mCbPipe->setEnabled(mode == KPortMode_HostPipe && m_pParent->isMachineOffline());
     mLbPath->setEnabled(m_pParent->isMachineOffline());
-    mLePath->setEnabled(m_pParent->isMachineOffline());
+    mLePath->setEnabled(mode != KPortMode_Disconnected && m_pParent->isMachineOffline());
 }
 
-void UIMachineSettingsSerial::fetchPortData(const UISerialPortData &data)
+void UIMachineSettingsSerial::fetchPortData(const UICacheSettingsMachineSerialPort &portCache)
 {
-    /* Load port slot number: */
-    m_iSlot = data.m_iSlot;
+    /* Get port data: */
+    const UIDataSettingsMachineSerialPort &portData = portCache.base();
 
-    /* Fetch port data: */
-    mGbSerial->setChecked(data.m_fPortEnabled);
-    mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(data.m_uIRQ, data.m_uIOBase)));
-    mLeIRQ->setText(QString::number(data.m_uIRQ));
-    mLeIOPort->setText("0x" + QString::number(data.m_uIOBase, 16).toUpper());
-    mCbMode->setCurrentIndex(mCbMode->findText(vboxGlobal().toString(data.m_hostMode)));
-    mCbPipe->setChecked(data.m_fServer);
-    mLePath->setText(data.m_strPath);
+    /* Load port number: */
+    m_iSlot = portData.m_iSlot;
+
+    /* Load port data: */
+    mGbSerial->setChecked(portData.m_fPortEnabled);
+    mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
+    mLeIRQ->setText(QString::number(portData.m_uIRQ));
+    mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
+    mCbMode->setCurrentIndex(mCbMode->findText(vboxGlobal().toString(portData.m_hostMode)));
+    mCbPipe->setChecked(portData.m_fServer);
+    mLePath->setText(portData.m_strPath);
 
     /* Ensure everything is up-to-date */
     mGbSerialToggled(mGbSerial->isChecked());
 }
 
-void UIMachineSettingsSerial::uploadPortData(UISerialPortData &data)
+void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &portCache)
 {
-    /* Upload port data: */
-    data.m_fPortEnabled = mGbSerial->isChecked();
-    data.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
-    data.m_uIOBase = mLeIOPort->text().toULong (NULL, 0);
-    data.m_fServer = mCbPipe->isChecked();
-    data.m_hostMode = vboxGlobal().toPortMode(mCbMode->currentText());
-    data.m_strPath = QDir::toNativeSeparators(mLePath->text());
+    /* Prepare port data: */
+    UIDataSettingsMachineSerialPort portData = portCache.base();
+
+    /* Save port data: */
+    portData.m_fPortEnabled = mGbSerial->isChecked();
+    portData.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
+    portData.m_uIOBase = mLeIOPort->text().toULong (NULL, 0);
+    portData.m_fServer = mCbPipe->isChecked();
+    portData.m_hostMode = vboxGlobal().toPortMode(mCbMode->currentText());
+    portData.m_strPath = QDir::toNativeSeparators(mLePath->text());
+
+    /* Cache port data to port cache: */
+    portCache.cacheCurrentData(portData);
 }
 
 void UIMachineSettingsSerial::setValidator (QIWidgetValidator *aVal)
@@ -205,21 +218,15 @@ UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     layout->setContentsMargins (0, 5, 0, 5);
     layout->addWidget (mTabWidget);
 
-    /* Load port data: */
+    /* How many ports to display: */
     ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-    /* Apply internal variables data to QWidget(s): */
-    for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
+    /* Add corresponding tab pages to parent tab widget: */
+    for (ulong uPort = 0; uPort < uCount; ++uPort)
     {
-        /* Creating port's page: */
+        /* Creating port page: */
         UIMachineSettingsSerial *pPage = new UIMachineSettingsSerial(this);
-
-        /* Attach port's page to Tab Widget: */
         mTabWidget->addTab(pPage, pPage->pageTitle());
-
     }
-
-    /* Applying language settings */
-    retranslateUi();
 }
 
 /* Load data to cashe from corresponding external object(s),
@@ -229,27 +236,28 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Load port data: */
-    ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
+    /* For each serial port: */
+    for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
     {
-        /* Get port: */
-        const CSerialPort &port = m_machine.GetSerialPort(uSlot);
+        /* Prepare port data: */
+        UIDataSettingsMachineSerialPort portData;
 
-        /* Prepare port's data container: */
-        UISerialPortData data;
+        /* Check if port is valid: */
+        const CSerialPort &port = m_machine.GetSerialPort(iSlot);
+        if (!port.isNull())
+        {
+            /* Gather options: */
+            portData.m_iSlot = iSlot;
+            portData.m_fPortEnabled = port.GetEnabled();
+            portData.m_uIRQ = port.GetIRQ();
+            portData.m_uIOBase = port.GetIOBase();
+            portData.m_hostMode = port.GetHostMode();
+            portData.m_fServer = port.GetServer();
+            portData.m_strPath = port.GetPath();
+        }
 
-        /* Load options: */
-        data.m_iSlot = uSlot;
-        data.m_fPortEnabled = port.GetEnabled();
-        data.m_uIRQ = port.GetIRQ();
-        data.m_uIOBase = port.GetIOBase();
-        data.m_hostMode = port.GetHostMode();
-        data.m_fServer = port.GetServer();
-        data.m_strPath = port.GetPath();
-
-        /* Append adapter's data container: */
-        m_cache.m_items << data;
+        /* Cache port data: */
+        m_cache.child(iSlot).cacheInitialData(portData);
     }
 
     /* Upload machine to data: */
@@ -260,19 +268,19 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSerialPage::getFromCache()
 {
+    /* Setup tab order: */
     Assert(firstWidget());
     setTabOrder(firstWidget(), mTabWidget->focusProxy());
     QWidget *pLastFocusWidget = mTabWidget->focusProxy();
 
-    ulong uCount = qMin(mTabWidget->count(), m_cache.m_items.size());
-    /* Apply internal variables data to QWidget(s): */
-    for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
+    /* For each serial port: */
+    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
     {
-        /* Getting adapter's page: */
-        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iSlot));
+        /* Get port page: */
+        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
 
-        /* Loading port's data into page: */
-        pPage->fetchPortData(m_cache.m_items[iSlot]);
+        /* Load port data to page: */
+        pPage->fetchPortData(m_cache.child(iPort));
 
         /* Setup page validation: */
         pPage->setValidator(mValidator);
@@ -292,14 +300,14 @@ void UIMachineSettingsSerialPage::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSerialPage::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    /* For each serial port: */
+    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
     {
-        /* Getting adapter's page: */
-        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iSlot));
+        /* Getting port page: */
+        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
 
-        /* Loading Adapter's data from page: */
-        pPage->uploadPortData(m_cache.m_items[iSlot]);
+        /* Gather & cache port data: */
+        pPage->uploadPortData(m_cache.child(iPort));
     }
 }
 
@@ -310,27 +318,38 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    if (isMachineOffline())
+    /* Check if ports data was changed: */
+    if (m_cache.wasChanged())
     {
-        /* Gather corresponding values from internal variables: */
-        for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+        /* For each serial port: */
+        for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
         {
-            /* Get adapter: */
-            CSerialPort port = m_machine.GetSerialPort(iSlot);
+            /* Check if port data was changed: */
+            const UICacheSettingsMachineSerialPort &portCache = m_cache.child(iPort);
+            if (portCache.wasChanged())
+            {
+                /* Check if port still valid: */
+                CSerialPort port = m_machine.GetSerialPort(iPort);
+                if (!port.isNull())
+                {
+                    /* Get port data: */
+                    const UIDataSettingsMachineSerialPort &portData = portCache.data();
 
-            /* Get cached data for this slot: */
-            const UISerialPortData &data = m_cache.m_items[iSlot];
-
-            /* Save options: */
-            port.SetEnabled(data.m_fPortEnabled);
-            port.SetIRQ(data.m_uIRQ);
-            port.SetIOBase(data.m_uIOBase);
-            port.SetServer(data.m_fServer);
-            port.SetPath(data.m_strPath);
-            /* This *must* be last. The host mode will be changed to disconnected if
-             * some of the necessary settings above will not meet the requirements for
-             * the selected mode. */
-            port.SetHostMode(data.m_hostMode);
+                    /* Store adapter data: */
+                    if (isMachineOffline())
+                    {
+                        port.SetEnabled(portData.m_fPortEnabled);
+                        port.SetIRQ(portData.m_uIRQ);
+                        port.SetIOBase(portData.m_uIOBase);
+                        port.SetServer(portData.m_fServer);
+                        port.SetPath(portData.m_strPath);
+                        /* This *must* be last. The host mode will be changed to disconnected if
+                         * some of the necessary settings above will not meet the requirements for
+                         * the selected mode. */
+                        port.SetHostMode(portData.m_hostMode);
+                    }
+                }
+            }
         }
     }
 
@@ -415,13 +434,12 @@ void UIMachineSettingsSerialPage::retranslateUi()
 void UIMachineSettingsSerialPage::polishPage()
 {
     /* Get the count of serial port tabs: */
-    for (int iTabIndex = 0; iTabIndex < mTabWidget->count(); ++iTabIndex)
+    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
     {
-        mTabWidget->setTabEnabled(iTabIndex,
+        mTabWidget->setTabEnabled(iPort,
                                   isMachineOffline() ||
-                                  (isMachineInValidMode() && m_cache.m_items[iTabIndex].m_fPortEnabled));
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iTabIndex));
-        Assert(pTab);
+                                  (isMachineInValidMode() && m_cache.child(iPort).base().m_fPortEnabled));
+        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
         pTab->polishTab();
     }
 }
