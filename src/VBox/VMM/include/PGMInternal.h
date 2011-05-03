@@ -692,13 +692,14 @@ typedef struct PGMPAGE
 {
     /** The physical address and the Page ID. */
     RTHCPHYS    HCPhysAndPageID;
+#define PGMPAGE_USE_MORE_BITFIELDS
 #ifndef PGMPAGE_USE_MORE_BITFIELDS
     /** Combination of:
      *  - [0-7]: u2HandlerPhysStateY - the physical handler state
      *    (PGM_PAGE_HNDL_PHYS_STATE_*).
      *  - [8-9]: u2HandlerVirtStateY - the virtual handler state
      *    (PGM_PAGE_HNDL_VIRT_STATE_*).
-     *  - [10]:  u1FTDirty - indicator of dirty page for fault tolerance tracking
+     *  - [10]:  fFTDirtyY - indicator of dirty page for fault tolerance tracking.
      *  - [13-14]: u2PDEType  - paging structure needed to map the page (PGM_PAGE_PDE_TYPE_*)
      *  - [15]:  fWrittenToY - flag indicating that a write monitored page was
      *    written to when set.
@@ -748,7 +749,7 @@ typedef struct PGMPAGE
             uint32_t    u2HandlerVirtStateY : 2;
             /** 10    - Indicator of dirty page for fault tolerance
              *  tracking. */
-            uint32_t    u1FTDirtyY  : 1;
+            uint32_t    fFTDirtyY  : 1;
             /** 12:11 - Currently unused. */
             uint32_t    u2Unused2   : 2;
             /** 14:13 - Paging structure needed to map the page
@@ -991,33 +992,53 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Clears the written-to indicator.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_CLEAR_WRITTEN_TO(a_pPage)      do { (a_pPage)->u1.bit.fWrittenToY = 0; } while (0)
+#else
 #define PGM_PAGE_CLEAR_WRITTEN_TO(a_pPage)      do { (a_pPage)->u1.au8[1] &= UINT8_C(0x7f); } while (0)
+#endif
 
 /**
  * Checks if the page was marked as written-to.
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( (a_pPage)->u1.bit.fWrittenToY )
+#else
 #define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( !!((a_pPage)->u1.au8[1] & UINT8_C(0x80)) )
+#endif
 
 /**
  * Marks the page as dirty for FTM
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_SET_FT_DIRTY(a_pPage)          do { (a_pPage)->u1.bit.fFTDirtyY = 1; } while (0)
+#else
 #define PGM_PAGE_SET_FT_DIRTY(a_pPage)          do { (a_pPage)->u1.au8[1] |= UINT8_C(0x04); } while (0)
+#endif
 
 /**
  * Clears the FTM dirty indicator
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_CLEAR_FT_DIRTY(a_pPage)        do { (a_pPage)->u1.bit.fFTDirtyY = 0; } while (0)
+#else
 #define PGM_PAGE_CLEAR_FT_DIRTY(a_pPage)        do { (a_pPage)->u1.au8[1] &= UINT8_C(0xfb); } while (0)
+#endif
 
 /**
  * Checks if the page was marked as dirty for FTM
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_IS_FT_DIRTY(a_pPage)           ( (a_pPage)->u1.bit.fFTDirtyY )
+#else
 #define PGM_PAGE_IS_FT_DIRTY(a_pPage)           ( !!((a_pPage)->u1.au8[1] & UINT8_C(0x04)) )
+#endif
 
 
 /** @name PT usage values (PGMPAGE::u2PDEType).
