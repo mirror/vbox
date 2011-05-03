@@ -2549,16 +2549,20 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
 int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     pDisplay->vbvaLock();
+
+    DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
+
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
+        if (pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+        {
+            rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
+        }
     }
     else if (aScreenId < pDisplay->mcMonitors)
     {
-        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
-
         /* Copy the bitmap to the guest VRAM. */
         const uint8_t *pu8Src       = address;
         int32_t xSrc                = 0;
