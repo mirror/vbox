@@ -74,19 +74,25 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Fill internal variables with corresponding values: */
-    m_cache.m_strName = m_machine.GetName();
-    m_cache.m_strGuestOsTypeId = m_machine.GetOSTypeId();
+    /* Prepare general data: */
+    UIDataSettingsMachineGeneral generalData;
+
+    /* Gather general data: */
+    generalData.m_strName = m_machine.GetName();
+    generalData.m_strGuestOsTypeId = m_machine.GetOSTypeId();
     QString strSaveMountedAtRuntime = m_machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
-    m_cache.m_fSaveMountedAtRuntime = strSaveMountedAtRuntime != "no";
+    generalData.m_fSaveMountedAtRuntime = strSaveMountedAtRuntime != "no";
     QString strShowMiniToolBar = m_machine.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar);
-    m_cache.m_fShowMiniToolBar = strShowMiniToolBar != "no";
+    generalData.m_fShowMiniToolBar = strShowMiniToolBar != "no";
     QString strMiniToolBarAlignment = m_machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment);
-    m_cache.m_fMiniToolBarAtTop = strMiniToolBarAlignment == "top";
-    m_cache.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
-    m_cache.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
-    m_cache.m_clipboardMode = m_machine.GetClipboardMode();
-    m_cache.m_strDescription = m_machine.GetDescription();
+    generalData.m_fMiniToolBarAtTop = strMiniToolBarAlignment == "top";
+    generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
+    generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
+    generalData.m_clipboardMode = m_machine.GetClipboardMode();
+    generalData.m_strDescription = m_machine.GetDescription();
+
+    /* Cache general data: */
+    m_cache.cacheInitialData(generalData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -96,17 +102,20 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsGeneral::getFromCache()
 {
-    /* Apply internal variables data to QWidget(s): */
-    mLeName->setText(m_cache.m_strName);
-    mOSTypeSelector->setType(vboxGlobal().vmGuestOSType(m_cache.m_strGuestOsTypeId));
-    mCbSaveMounted->setChecked(m_cache.m_fSaveMountedAtRuntime);
-    mCbShowToolBar->setChecked(m_cache.m_fShowMiniToolBar);
-    mCbToolBarAlignment->setChecked(m_cache.m_fMiniToolBarAtTop);
+    /* Get general data from cache: */
+    const UIDataSettingsMachineGeneral &generalData = m_cache.base();
+
+    /* Load general data to page: */
+    mLeName->setText(generalData.m_strName);
+    mOSTypeSelector->setType(vboxGlobal().vmGuestOSType(generalData.m_strGuestOsTypeId));
+    mCbSaveMounted->setChecked(generalData.m_fSaveMountedAtRuntime);
+    mCbShowToolBar->setChecked(generalData.m_fShowMiniToolBar);
+    mCbToolBarAlignment->setChecked(generalData.m_fMiniToolBarAtTop);
     mCbToolBarAlignment->setEnabled(mCbShowToolBar->isChecked());
-    mPsSnapshot->setPath(m_cache.m_strSnapshotsFolder);
-    mPsSnapshot->setHomeDir(m_cache.m_strSnapshotsHomeDir);
-    mCbClipboard->setCurrentIndex(m_cache.m_clipboardMode);
-    mTeDescription->setPlainText(m_cache.m_strDescription);
+    mPsSnapshot->setPath(generalData.m_strSnapshotsFolder);
+    mPsSnapshot->setHomeDir(generalData.m_strSnapshotsHomeDir);
+    mCbClipboard->setCurrentIndex(generalData.m_clipboardMode);
+    mTeDescription->setPlainText(generalData.m_strDescription);
 
     /* Revalidate if possible: */
     if (mValidator) mValidator->revalidate();
@@ -116,16 +125,22 @@ void UIMachineSettingsGeneral::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsGeneral::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
-    m_cache.m_strName = mLeName->text();
-    m_cache.m_strGuestOsTypeId = mOSTypeSelector->type().GetId();
-    m_cache.m_fSaveMountedAtRuntime = mCbSaveMounted->isChecked();
-    m_cache.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
-    m_cache.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
-    m_cache.m_strSnapshotsFolder = mPsSnapshot->path();
-    m_cache.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
-    m_cache.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
-                               QString::null : mTeDescription->toPlainText();
+    /* Prepare general data: */
+    UIDataSettingsMachineGeneral generalData = m_cache.base();
+
+    /* Gather general data: */
+    generalData.m_strName = mLeName->text();
+    generalData.m_strGuestOsTypeId = mOSTypeSelector->type().GetId();
+    generalData.m_fSaveMountedAtRuntime = mCbSaveMounted->isChecked();
+    generalData.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
+    generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
+    generalData.m_strSnapshotsFolder = mPsSnapshot->path();
+    generalData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
+    generalData.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
+                                   QString::null : mTeDescription->toPlainText();
+
+    /* Cache general data: */
+    m_cache.cacheCurrentData(generalData);
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -135,26 +150,34 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    if (isMachineInValidMode())
+    /* Check if general data was changed: */
+    if (m_cache.wasChanged())
     {
-        /* Advanced tab: */
-        m_machine.SetClipboardMode(m_cache.m_clipboardMode);
-        m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
-        m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
-        m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
-        /* Description tab: */
-        m_machine.SetDescription(m_cache.m_strDescription);
-    }
-    if (isMachineOffline())
-    {
-        /* Basic tab: */
-        m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
-        /* Advanced tab: */
-        m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
-        /* Basic (again) tab: */
-        /* VM name must be last as otherwise its VM rename magic can collide with other settings in the config,
-         * especially with the snapshot folder: */
-        m_machine.SetName(m_cache.m_strName);
+        /* Get general data from cache: */
+        const UIDataSettingsMachineGeneral &generalData = m_cache.data();
+
+        /* Store general data: */
+        if (isMachineInValidMode())
+        {
+            /* Advanced tab: */
+            m_machine.SetClipboardMode(generalData.m_clipboardMode);
+            m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, generalData.m_fSaveMountedAtRuntime ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, generalData.m_fShowMiniToolBar ? "yes" : "no");
+            m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, generalData.m_fMiniToolBarAtTop ? "top" : "bottom");
+            /* Description tab: */
+            m_machine.SetDescription(generalData.m_strDescription);
+        }
+        if (isMachineOffline())
+        {
+            /* Basic tab: */
+            m_machine.SetOSTypeId(generalData.m_strGuestOsTypeId);
+            /* Advanced tab: */
+            m_machine.SetSnapshotFolder(generalData.m_strSnapshotsFolder);
+            /* Basic (again) tab: */
+            /* VM name must be last as otherwise its VM rename magic can collide with other settings in the config,
+             * especially with the snapshot folder: */
+            m_machine.SetName(generalData.m_strName);
+        }
     }
 
     /* Upload machine to data: */
