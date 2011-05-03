@@ -218,6 +218,6 @@ void UIMachineSettingsGeneral::polishPage()
     mCbSaveMounted->setEnabled(isMachineInValidMode());
     mLbToolBar->setEnabled(isMachineInValidMode());
     mCbShowToolBar->setEnabled(isMachineInValidMode());
-    mCbToolBarAlignment->setEnabled(isMachineInValidMode());
+    mCbToolBarAlignment->setEnabled(mCbShowToolBar->isChecked() && isMachineInValidMode());
 }
 
