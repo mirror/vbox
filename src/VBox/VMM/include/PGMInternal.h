@@ -1108,15 +1108,24 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns PGM_PAGE_HNDL_PHYS_STATE_* value.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage)   ( (a_pPage)->u1.bit.u2HandlerPhysStateY )
+#else
 #define PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage)   ( (a_pPage)->u1.au8[0] )
+#endif
 
 /**
  * Sets the physical access handler state of a page.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  * @param   a_uState    The new state value.
  */
+#ifdef PGMPAGE_USE_MORE_BITFIELDS
+#define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState) \
+    do { (a_pPage)->u1.bit.u2HandlerPhysStateY = (a_uState); } while (0)
+#else
 #define PGM_PAGE_SET_HNDL_PHYS_STATE(a_pPage, a_uState) \
     do { (a_pPage)->u1.au8[0] = (a_uState); } while (0)
+#endif
 
 /**
  * Checks if the page has any physical access handlers, including temporarily disabled ones.
