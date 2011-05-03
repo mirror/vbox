@@ -30,11 +30,47 @@ class UIMachineSettingsNetworkPage;
 class QITabWidget;
 
 /* Machine settings / Network page / Adapter data: */
-struct UINetworkAdapterData
+struct UIDataSettingsMachineNetworkAdapter
 {
+    /* Default constructor: */
+    UIDataSettingsMachineNetworkAdapter()
+        : m_iSlot(0)
+        , m_fAdapterEnabled(false)
+        , m_adapterType(KNetworkAdapterType_Null)
+        , m_attachmentType(KNetworkAttachmentType_Null)
+        , m_promiscuousMode(KNetworkAdapterPromiscModePolicy_Deny)
+        , m_strBridgedAdapterName(QString())
+        , m_strInternalNetworkName(QString())
+        , m_strHostInterfaceName(QString())
+#ifdef VBOX_WITH_VDE
+        , m_strVDENetworkName(QString())
+#endif /* VBOX_WITH_VDE */
+        , m_strMACAddress(QString())
+        , m_fCableConnected(false)
+        , m_redirects(UIPortForwardingDataList()) {}
+    /* Functions: */
+    bool equal(const UIDataSettingsMachineNetworkAdapter &other) const
+    {
+        return (m_iSlot == other.m_iSlot) &&
+               (m_fAdapterEnabled == other.m_fAdapterEnabled) &&
+               (m_adapterType == other.m_adapterType) &&
+               (m_attachmentType == other.m_attachmentType) &&
+               (m_promiscuousMode == other.m_promiscuousMode) &&
+               (m_strBridgedAdapterName == other.m_strBridgedAdapterName) &&
+               (m_strInternalNetworkName == other.m_strInternalNetworkName) &&
+               (m_strHostInterfaceName == other.m_strHostInterfaceName) &&
+#ifdef VBOX_WITH_VDE
+               (m_strVDENetworkName == other.m_strVDENetworkName) &&
+#endif /* VBOX_WITH_VDE */
+               (m_strMACAddress == other.m_strMACAddress) &&
+               (m_fCableConnected == other.m_fCableConnected) &&
+               (m_redirects == other.m_redirects);
+    }
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineNetworkAdapter &other) const { return equal(other); }
+    bool operator!=(const UIDataSettingsMachineNetworkAdapter &other) const { return !equal(other); }
+    /* Variables: */
     int m_iSlot;
-    /* CNetworkAdapter used only for Generate MAC ability! */
-    CNetworkAdapter m_adapter;
     bool m_fAdapterEnabled;
     KNetworkAdapterType m_adapterType;
     KNetworkAttachmentType m_attachmentType;
@@ -49,12 +85,18 @@ struct UINetworkAdapterData
     bool m_fCableConnected;
     UIPortForwardingDataList m_redirects;
 };
+typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UICacheSettingsMachineNetworkAdapter;
 
-/* Machine settings / Network page / Cache: */
-struct UISettingsCacheMachineNetwork
+/* Machine settings / Network page / Network data: */
+struct UIDataSettingsMachineNetwork
 {
-    QList<UINetworkAdapterData> m_items;
+    /* Default constructor: */
+    UIDataSettingsMachineNetwork() {}
+    /* Operators: */
+    bool operator==(const UIDataSettingsMachineNetwork& /* other */) const { return true; }
+    bool operator!=(const UIDataSettingsMachineNetwork& /* other */) const { return false; }
 };
+typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UICacheSettingsMachineNetworkAdapter> UICacheSettingsMachineNetwork;
 
 /* Machine settings / Network page / Adapter tab: */
 class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
@@ -64,12 +106,12 @@ class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
 
 public:
 
-    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent, bool fDisableStaticControls = false);
+    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
 
     void polishTab();
 
-    void fetchAdapterData(const UINetworkAdapterData &data);
-    void uploadAdapterData(UINetworkAdapterData &data);
+    void fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache);
+    void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
 
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
@@ -101,9 +143,8 @@ private:
 
     UIMachineSettingsNetworkPage *m_pParent;
     QIWidgetValidator *m_pValidator;
-    int m_iSlot;
-    CNetworkAdapter m_adapter;
 
+    int m_iSlot;
     QString m_strBrgName;
     QString m_strIntName;
     QString m_strHoiName;
@@ -166,7 +207,7 @@ private:
     QStringList m_hoiList;
 
     /* Cache: */
-    UISettingsCacheMachineNetwork m_cache;
+    UICacheSettingsMachineNetwork m_cache;
 };
 
 #endif // __UIMachineSettingsNetwork_h__

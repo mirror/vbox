@@ -58,6 +58,7 @@ public:
     PortData() : m_uValue(0) {}
     PortData(ushort uValue) : m_uValue(uValue) {}
     PortData(const PortData &other) : m_uValue(other.value()) {}
+    bool operator==(const PortData &other) { return m_uValue == other.m_uValue; }
     ushort value() const { return m_uValue; }
 
 private:
@@ -75,6 +76,15 @@ struct UIPortForwardingData
         : name(strName), protocol(eProtocol)
         , hostIp(strHostIp), hostPort(uHostPort)
         , guestIp(strGuestIp), guestPort(uGuestPort) {}
+    bool operator==(const UIPortForwardingData &other)
+    {
+        return name == other.name &&
+               protocol == other.protocol &&
+               hostIp == other.hostIp &&
+               hostPort == other.hostPort &&
+               guestIp == other.guestIp &&
+               guestPort == other.guestPort;
+    }
     NameData name;
     KNATProtocol protocol;
     IpData hostIp;
