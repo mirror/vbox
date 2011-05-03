@@ -176,6 +176,9 @@ typedef struct VRDEIMAGEINTERFACE
      * @param cbValueIn   The size of pszValue buffer.
      * @param pcbValueOut The length of data returned in pszValue buffer.
      *
+     * Properties names:
+     * "ID" - an unique string for this hImage.
+     *
      * @return IPRT status code.
      */
     DECLR3CALLBACKMEMBER(int, VRDEImagePropertyQuery, (HVRDEIMAGE hImage,
