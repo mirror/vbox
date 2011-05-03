@@ -636,7 +636,7 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
     if (hInf == INVALID_HANDLE_VALUE)
     {
         winEr = GetLastError();
-        Assert(winEr == ERROR_CLASS_MISMATCH);
+//        Assert(winEr == ERROR_CLASS_MISMATCH);
         if (winEr != ERROR_CLASS_MISMATCH)
         {
             Log((__FUNCTION__ ": SetupOpenInfFileW err winEr (%d)\n", winEr));
@@ -713,3 +713,100 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWS
 
 }
 
+/* time intervals in milliseconds */
+/* max time to wait for the service to startup */
+#define VBOXDRVCFG_SVC_WAITSTART_TIME 10000
+/* sleep time before service status polls */
+#define VBOXDRVCFG_SVC_WAITSTART_TIME_PERIOD 100
+/* number of service start polls */
+#define VBOXDRVCFG_SVC_WAITSTART_RETRIES (VBOXDRVCFG_SVC_WAITSTART_TIME/VBOXDRVCFG_SVC_WAITSTART_TIME_PERIOD)
+
+VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
+{
+    SC_HANDLE hMgr = OpenSCManager(NULL, NULL, SERVICE_QUERY_STATUS | SERVICE_START);
+    if (hMgr == NULL)
+    {
+        DWORD winEr = GetLastError();
+        LogRel((__FUNCTION__": OpenSCManager failed, winEr (%d)\n", winEr));
+        return HRESULT_FROM_WIN32(winEr);
+    }
+
+    HRESULT hr = S_OK;
+    SC_HANDLE hSvc = OpenServiceW(hMgr, lpszSvcName, SERVICE_QUERY_STATUS | SERVICE_START);
+    if (hSvc)
+    {
+        do
+        {
+            SERVICE_STATUS Status;
+            BOOL fRc = QueryServiceStatus(hSvc, &Status);
+            if (!fRc)
+            {
+                DWORD winEr = GetLastError();
+                LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                hr = HRESULT_FROM_WIN32(winEr);
+                break;
+            }
+
+            if (Status.dwCurrentState != SERVICE_RUNNING && Status.dwCurrentState != SERVICE_START_PENDING)
+            {
+                LogRel(("Starting service (%S)\n", lpszSvcName));
+
+                fRc = StartService(hSvc, 0, NULL);
+                if (!fRc)
+                {
+                    DWORD winEr = GetLastError();
+                    LogRel((__FUNCTION__": StartService failed winEr (%d)\n", winEr));
+                    hr = HRESULT_FROM_WIN32(winEr);
+                    break;
+                }
+            }
+
+            fRc = QueryServiceStatus(hSvc, &Status);
+            if (!fRc)
+            {
+                DWORD winEr = GetLastError();
+                LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                hr = HRESULT_FROM_WIN32(winEr);
+                break;
+            }
+
+            if (Status.dwCurrentState == SERVICE_START_PENDING)
+            {
+                for (int i = 0; i < VBOXDRVCFG_SVC_WAITSTART_RETRIES; ++i)
+                {
+                    Sleep(VBOXDRVCFG_SVC_WAITSTART_TIME_PERIOD);
+                    fRc = QueryServiceStatus(hSvc, &Status);
+                    if (!fRc)
+                    {
+                        DWORD winEr = GetLastError();
+                        LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                        hr = HRESULT_FROM_WIN32(winEr);
+                        break;
+                    }
+                    else if (Status.dwCurrentState != SERVICE_START_PENDING)
+                        break;
+                }
+            }
+
+            if (hr != S_OK || Status.dwCurrentState != SERVICE_RUNNING)
+            {
+                LogRel((__FUNCTION__": Failed to start the service\n"));
+                hr = E_FAIL;
+                break;
+            }
+
+        } while (0);
+
+        CloseServiceHandle(hSvc);
+    }
+    else
+    {
+        DWORD winEr = GetLastError();
+        LogRel((__FUNCTION__": OpenServiceW failed, winEr (%d)\n", winEr));
+        hr = HRESULT_FROM_WIN32(winEr);
+    }
+
+    CloseServiceHandle(hMgr);
+
+    return hr;
+}

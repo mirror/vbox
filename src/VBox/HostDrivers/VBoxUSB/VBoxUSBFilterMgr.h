@@ -22,12 +22,22 @@
 
 RT_C_DECLS_BEGIN
 
+#if defined(RT_OS_WINDOWS)
+typedef struct VBOXUSBFLTCTX *VBOXUSBFILTER_CONTEXT;
+#define VBOXUSBFILTER_CONTEXT_NIL NULL
+#else
+typedef RTPROCESS VBOXUSBFILTER_CONTEXT;
+#define VBOXUSBFILTER_CONTEXT_NIL NIL_RTPROCESS
+#endif
+
 int     VBoxUSBFilterInit(void);
 void    VBoxUSBFilterTerm(void);
-void    VBoxUSBFilterRemoveOwner(RTPROCESS Owner);
-int     VBoxUSBFilterAdd(PCUSBFILTER pFilter, RTPROCESS Owner, uintptr_t *puId);
-int     VBoxUSBFilterRemove(RTPROCESS Owner, uintptr_t uId);
-RTPROCESS VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId);
+void    VBoxUSBFilterRemoveOwner(VBOXUSBFILTER_CONTEXT Owner);
+int     VBoxUSBFilterAdd(PCUSBFILTER pFilter, VBOXUSBFILTER_CONTEXT Owner, uintptr_t *puId);
+int     VBoxUSBFilterRemove(VBOXUSBFILTER_CONTEXT Owner, uintptr_t uId);
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId);
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterMatchEx(PCUSBFILTER pDevice, uintptr_t *puId, bool fRemoveFltIfOneShot, bool *pfFilter, bool *pfIsOneShot);
+VBOXUSBFILTER_CONTEXT VBoxUSBFilterGetOwner(uintptr_t uId);
 
 RT_C_DECLS_END
 

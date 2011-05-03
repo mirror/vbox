@@ -142,49 +142,64 @@ void USBProxyServiceWindows::removeFilter(void *aID)
 
 int USBProxyServiceWindows::captureDevice(HostUSBDevice *aDevice)
 {
-    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+    /*
+     * Create a one-shot ignore filter for the device
+     * and trigger a re-enumeration of it.
+     */
+    USBFILTER Filter;
+    USBFilterInit(&Filter, USBFILTERTYPE_ONESHOT_CAPTURE);
+    initFilterFromDevice(&Filter, aDevice);
+    Log(("USBFILTERIDX_PORT=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_PORT)));
+    Log(("USBFILTERIDX_BUS=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_BUS)));
 
-/** @todo pass up a one-shot filter like on darwin?  */
-    USHORT vendorId, productId, revision;
+    void *pvId = USBLibAddFilter(&Filter);
+    if (!pvId)
+    {
+        AssertMsgFailed(("Add one-shot Filter failed\n"));
+        return VERR_GENERAL_FAILURE;
+    }
 
-    HRESULT rc;
+    int rc = USBLibRunFilters();
+    if (!RT_SUCCESS(rc))
+    {
+        AssertMsgFailed(("Run Filters failed\n"));
+        USBLibRemoveFilter(pvId);
+        return rc;
+    }
 
-    rc = aDevice->COMGETTER(VendorId)(&vendorId);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
-
-    rc = aDevice->COMGETTER(ProductId)(&productId);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
-
-    rc = aDevice->COMGETTER(Revision)(&revision);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
-
-    return USBLibCaptureDevice(vendorId, productId, revision);
+    return VINF_SUCCESS;
 }
 
 
 int USBProxyServiceWindows::releaseDevice(HostUSBDevice *aDevice)
 {
-    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
-    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
+    /*
+     * Create a one-shot ignore filter for the device
+     * and trigger a re-enumeration of it.
+     */
+    USBFILTER Filter;
+    USBFilterInit(&Filter, USBFILTERTYPE_ONESHOT_IGNORE);
+    initFilterFromDevice(&Filter, aDevice);
+    Log(("USBFILTERIDX_PORT=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_PORT)));
+    Log(("USBFILTERIDX_BUS=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_BUS)));
 
-/** @todo pass up a one-shot filter like on darwin?  */
-    USHORT vendorId, productId, revision;
-    HRESULT rc;
+    void *pvId = USBLibAddFilter(&Filter);
+    if (!pvId)
+    {
+        AssertMsgFailed(("Add one-shot Filter failed\n"));
+        return VERR_GENERAL_FAILURE;
+    }
 
-    rc = aDevice->COMGETTER(VendorId)(&vendorId);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
+    int rc = USBLibRunFilters();
+    if (!RT_SUCCESS(rc))
+    {
+        AssertMsgFailed(("Run Filters failed\n"));
+        USBLibRemoveFilter(pvId);
+        return rc;
+    }
 
-    rc = aDevice->COMGETTER(ProductId)(&productId);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
 
-    rc = aDevice->COMGETTER(Revision)(&revision);
-    AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
-
-    Log(("USBProxyServiceWindows::releaseDevice\n"));
-    return USBLibReleaseDevice(vendorId, productId, revision);
+    return VINF_SUCCESS;
 }
 
 
@@ -222,40 +237,14 @@ bool USBProxyServiceWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVIC
 
 int USBProxyServiceWindows::wait(unsigned aMillies)
 {
-    DWORD rc;
-
-    /* Not going to do something fancy where we block in the filter
-     * driver and are woken up when the state has changed.
-     * Would be better, but this is good enough.
-     */
-    do
-    {
-        rc = WaitForSingleObject(mhEventInterrupt, RT_MIN(aMillies, 100));
-        if (rc == WAIT_OBJECT_0)
-            return VINF_SUCCESS;
-        /** @todo handle WAIT_FAILED here */
-
-        if (USBLibHasPendingDeviceChanges() == true)
-        {
-            Log(("wait thread detected usb change\n"));
-            return VINF_SUCCESS;
-        }
-
-        if (aMillies > 100)
-            aMillies -= 100;
-    }
-    while (aMillies > 100);
-
-    return VERR_TIMEOUT;
+    return USBLibWaitChange(aMillies);
 }
 
 
 int USBProxyServiceWindows::interruptWait(void)
 {
-    SetEvent(mhEventInterrupt);
-    return VINF_SUCCESS;
+    return USBLibInterruptWaitChange();
 }
-
 
 /**
  * Gets a list of all devices the VM can grab

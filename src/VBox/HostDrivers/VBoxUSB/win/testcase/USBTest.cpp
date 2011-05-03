@@ -30,6 +30,7 @@
 #include <VBox/err.h>
 #include <stdio.h>
 #include <VBox/usblib.h>
+#include <VBox/VBoxDrvCfg-win.h>
 
 /** Handle to the open device. */
 static HANDLE   g_hUSBMonitor = INVALID_HANDLE_VALUE;
@@ -45,87 +46,13 @@ static bool     g_fStartedService = false;
  */
 int usbMonStartService(void)
 {
-    /*
-     * Check if the driver service is there.
-     */
-    SC_HANDLE hSMgr = OpenSCManager(NULL, NULL, SERVICE_QUERY_STATUS | SERVICE_START);
-    if (hSMgr == NULL)
+    HRESULT hr = VBoxDrvCfgSvcStart(USBMON_SERVICE_NAME_W);
+    if (hr != S_OK)
     {
-        AssertMsgFailed(("couldn't open service manager in SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS mode!\n"));
+        AssertMsgFailed(("couldn't start service, hr (0x%x)\n", hr));
         return -1;
     }
-
-    /*
-     * Try open our service to check it's status.
-     */
-    SC_HANDLE hService = OpenService(hSMgr, USBMON_SERVICE_NAME, SERVICE_QUERY_STATUS | SERVICE_START);
-    if (!hService)
-        return -1;
-
-    /*
-     * Check if open and on demand create succeeded.
-     */
-    int rc = -1;
-    if (hService)
-    {
-
-        /*
-         * Query service status to see if we need to start it or not.
-         */
-        SERVICE_STATUS  Status;
-        BOOL fRc = QueryServiceStatus(hService, &Status);
-        Assert(fRc);
-        if (    Status.dwCurrentState != SERVICE_RUNNING
-            &&  Status.dwCurrentState != SERVICE_START_PENDING)
-        {
-            /*
-             * Start it.
-             */
-            printf("usbMonStartService -> start it\n");
-
-            fRc = StartService(hService, 0, NULL);
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsg(fRc, ("StartService failed with LastError=%Rwa\n", LastError));
-            if (fRc)
-                g_fStartedService = true;
-        }
-
-        /*
-         * Wait for the service to finish starting.
-         * We'll wait for 10 seconds then we'll give up.
-         */
-        QueryServiceStatus(hService, &Status);
-        if (Status.dwCurrentState == SERVICE_START_PENDING)
-        {
-            int iWait;
-            for (iWait = 100; iWait > 0 && Status.dwCurrentState == SERVICE_START_PENDING; iWait--)
-            {
-                Sleep(100);
-                QueryServiceStatus(hService, &Status);
-            }
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsg(Status.dwCurrentState != SERVICE_RUNNING,
-                      ("Failed to start. LastError=%Rwa iWait=%d status=%d\n",
-                       LastError, iWait, Status.dwCurrentState));
-        }
-
-        if (Status.dwCurrentState == SERVICE_RUNNING)
-            rc = 0;
-
-        /*
-         * Close open handles.
-         */
-        CloseServiceHandle(hService);
-    }
-    else
-    {
-        DWORD LastError = GetLastError(); NOREF(LastError);
-        AssertMsgFailed(("OpenService failed! LastError=%Rwa\n", LastError));
-    }
-    if (!CloseServiceHandle(hSMgr))
-        AssertFailed();
-
-    return rc;
+    return 0;
 }
 
 /**
@@ -146,7 +73,7 @@ int usbMonStopService(void)
     AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", LastError));
     if (hSMgr)
     {
-        SC_HANDLE hService = OpenService(hSMgr, USBMON_SERVICE_NAME, SERVICE_STOP | SERVICE_QUERY_STATUS);
+        SC_HANDLE hService = OpenServiceW(hSMgr, USBMON_SERVICE_NAME_W, SERVICE_STOP | SERVICE_QUERY_STATUS);
         if (hService)
         {
             /*

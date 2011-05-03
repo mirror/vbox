@@ -41,32 +41,14 @@ VBoxUSB_DEFS        = IN_RT_R0 IN_SUP_R0
 VBoxUSB_LDFLAGS.x86 = -Entry:DriverEntry@8
 VBoxUSB_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxUSB_SOURCES     = \
-	Device/vboxusb.cpp \
-	Device/vboxdev.cpp \
-	Device/vboxpnp.cpp \
-	Device/vboxpwr.cpp \
-	Device/vboxrwr.cpp \
-	Device/vboxusb.rc
+	dev/VBoxUsbDev.cpp \
+	dev/VBoxUsbRt.cpp \
+	dev/VBoxUsbPnP.cpp \
+	dev/VBoxUsbPwr.cpp \
+	cmn/VBoxUsbTool.cpp \
+	cmn/VBoxDrvTool.cpp \
+	dev/VBoxUsbDev.rc
 VBoxUSB_LIBS        = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
-	$(TARGET_usbd)
-
-#
-# VBoxUSBFlt
-#
-VBoxUSBFlt_TEMPLATE    = VBOXR0DRV
-VBoxUSBFlt_SDKS        = W2K3DDK WINPSDKINCS
-VBoxUSBFlt_DEFS        = IN_SUP_R0 i386=1 STD_CALL CONDITION_HANDLING=1 NT_INST=0 \
-	WIN32=100 _NT1X_=100 WINNT=1 _WIN32_WINNT=0x0501 WINVER=0x0501 _WIN32_IE=0x0600 WIN32_LEAN_AND_MEAN=1
-VBoxUSBFlt_LDFLAGS.x86 = -Entry:DriverEntry@8
-VBoxUSBFlt_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxUSBFlt_SOURCES     = \
-	Filter/USBFilter.c  \
-	Filter/USBFilt-win32.cpp  \
-	Filter/USBFilter.rc
-VBoxUSBFlt_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
@@ -86,12 +68,18 @@ VBoxUSBMon_DEFS        = IN_RT_R0 IN_SUP_R0 i386=1 STD_CALL CONDITION_HANDLING=1
 	VBOXUSBFILTERMGR_USB_SPINLOCK
 VBoxUSBMon_LDFLAGS.x86 = -Entry:DriverEntry@8
 VBoxUSBMon_LDFLAGS.amd64 = -Entry:DriverEntry
+ifdef VBOX_USBMON_WITH_FILTER_AUTOAPPLY
+ VBoxUSBMon_DEFS      += VBOX_USBMON_WITH_FILTER_AUTOAPPLY
+endif
 VBoxUSBMon_SOURCES     = \
-	Monitor/USBMon.cpp  \
-	Monitor/USBMonFlt.cpp  \
+	mon/VBoxUsbMon.cpp  \
+	mon/VBoxUsbFlt.cpp  \
+	mon/VBoxUsbHook.cpp \
+	cmn/VBoxUsbTool.cpp \
+	cmn/VBoxDrvTool.cpp \
 	../USBFilter.cpp \
 	../VBoxUSBFilterMgr.cpp \
-	Monitor/USBMon.rc
+	mon/VBoxUsbMon.rc
 VBoxUSBMon_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
@@ -111,7 +99,9 @@ USBInstall_SOURCES  = \
 USBInstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+	$(TARGET_VBoxDrvCfg)
+	
 
 #
 # USBUninstall
@@ -126,7 +116,8 @@ USBUninstall_SOURCES  = \
 USBUninstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+    $(TARGET_VBoxDrvCfg)
 
 #
 # USBTest
@@ -141,8 +132,9 @@ USBTest_SOURCES  = \
 USBTest_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB)
-
+	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+	$(TARGET_VBoxDrvCfg)
+	
 #
 # Install the INF files.
 #
@@ -156,15 +148,11 @@ install-infs_BLDDIRS = \
 	$(PATH_TARGET)/VBoxUSBCat.dir \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf: $(PATH_SUB_CURRENT)/Device/VBoxUSB.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf: $(PATH_SUB_CURRENT)/dev/VBoxUSB.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,install-infs,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/Monitor/VBoxUSBMon.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,install-infs,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@)
-
-$(PATH_TARGET)/VBoxUSBFltCat.dir/VBoxUSBFlt.inf: $(PATH_SUB_CURRENT)/Filter/VBoxUSBFlt.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/mon/VBoxUSBMon.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,install-infs,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 

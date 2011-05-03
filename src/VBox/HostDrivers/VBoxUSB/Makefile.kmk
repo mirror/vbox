@@ -46,8 +46,7 @@ USBLib_SOURCES.os2 = \
 USBLib_SOURCES.solaris = \
 	solaris/USBLib-solaris.cpp
 USBLib_SOURCES.win = \
-	win/USBLib-win.cpp
-
+	win/lib/VBoxUsbLib-win.cpp
 
 #
 # USBFilter testcase.
