@@ -133,7 +133,7 @@
  *
  *
  *
- * @section sec_gmm_numa  NUMA
+ * @section sec_gmm_numa        NUMA
  *
  * NUMA considerations will be designed and implemented a bit later.
  *
