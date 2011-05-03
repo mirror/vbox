@@ -44,6 +44,30 @@
  *
  * To be written.
  *
+ *
+ * @sections sec_vmm_limits     VMM Limits
+ *
+ * There are various resource limits imposed by the VMM and it's
+ * sub-components.  We'll list some of them here.
+ *
+ * On 64-bit hosts:
+ *      - Max 1023 VMs.  Imposed by GVMM's handle allocation
+ *        (GVMM_MAX_HANDLES), can be increased up to 64K.
+ *      - Max 16TB - 64KB of the host memory can be used for backing VM RAM and
+ *        ROM pages.  The limit is imposed by the 32-bit page ID used by GMM.
+ *      - A VM can be assigned all the memory we can use (16TB), however, the
+ *        Main API will restrict this to 2TB (MM_RAM_MAX_IN_MB).
+ *      - Max 32 virtual CPUs (VMM_MAX_CPU_COUNT).
+ *
+ * On 32-bit hosts:
+ *      - Max 127 VMs.  Imposed by GMM's per page structure.
+ *      - Max 64GB - 64KB of the host memory can be used for backing VM RAM and
+ *        ROM pages.  The limit is imposed by the 28-bit page ID used
+ *        internally in GMM.  It is also limited by PAE.
+ *      - A VM can be assigned all the memory GMM can allocate, however, the
+ *        Main API will restrict this to 3584MB (MM_RAM_MAX_IN_MB).
+ *      - Max 32 virtual CPUs (VMM_MAX_CPU_COUNT).
+ *
  */
 
 /*******************************************************************************
