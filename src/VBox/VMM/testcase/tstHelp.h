@@ -147,5 +147,18 @@ RT_C_DECLS_END
         } \
     } while (0)
 
+/**
+ * Checks that an expression is true.
+ */
+#define CHECK_EXPR(expr) \
+    do \
+    { \
+        if (!(expr)) \
+        { \
+            printf("error! '%s' failed! (line %d)\n", #expr, __LINE__); \
+            rc++; \
+        } \
+    } while (0)
+
 
 #endif
