@@ -894,6 +894,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                 }
                                 else
                                 {
+                                    LogFlow(("Queuing request %d\n", idx));
                                     switch (paIoReq[idx].enmTxDir)
                                     {
                                         case VDIOREQTXDIR_READ:
@@ -923,12 +924,11 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                     }
                                     else if (rc == VINF_VD_ASYNC_IO_FINISHED)
                                     {
+                                        LogFlow(("Request %d completed\n", idx));
                                         switch (paIoReq[idx].enmTxDir)
                                         {
                                             case VDIOREQTXDIR_READ:
                                             {
-                                                rc = VDAsyncRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
-                                                                 tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
                                                 if (pDisk->pMemDiskVerify)
                                                 {
                                                     RTCritSectEnter(&pDisk->CritSectVerify);
@@ -942,12 +942,10 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                                     }
                                                     RTCritSectLeave(&pDisk->CritSectVerify);
                                                 }
+                                                break;
                                             }
                                             case VDIOREQTXDIR_WRITE:
                                             {
-                                                rc = VDAsyncWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
-                                                                  tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
-
                                                 if (pDisk->pMemDiskVerify)
                                                 {
                                                     RTCritSectEnter(&pDisk->CritSectVerify);
@@ -2241,6 +2239,8 @@ static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
     PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
     RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
     PVDDISK pDisk = (PVDDISK)pIoReq->pvUser;
+
+    LogFlow(("Request %d completed\n", pIoReq->idx));
 
     if (pDisk->pMemDiskVerify)
     {
