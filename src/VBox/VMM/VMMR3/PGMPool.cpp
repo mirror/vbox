@@ -134,6 +134,8 @@ static const DBGCCMD    g_aCmds[] =
  */
 int pgmR3PoolInit(PVM pVM)
 {
+    int rc;
+
     AssertCompile(NIL_PGMPOOL_IDX == 0);
     /* pPage->cLocked is an unsigned byte. */
     AssertCompile(VMM_MAX_CPU_COUNT <= 255);
@@ -143,41 +145,42 @@ int pgmR3PoolInit(PVM pVM)
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM/Pool");
 
-    /* Default pgm pool size equals 1024 pages. */
-    uint16_t cMaxPages = 4*_1M >> PAGE_SHIFT;
+    /* Default pgm pool size is 1024 pages (4MB). */
+    uint16_t cMaxPages = 1024;
 
-#if HC_ARCH_BITS == 64
-    uint64_t cbRam = 0;
-    CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+    /* Adjust it up relative to the RAM size, using the nested paging formula. */
+    uint64_t cbRam;
+    rc = CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0); AssertRCReturn(rc, rc);
+    uint64_t u64MaxPages = (cbRam >> 9)
+                         + (cbRam >> 18)
+                         + (cbRam >> 27)
+                         + 32 * PAGE_SIZE;
+    u64MaxPages >>= PAGE_SHIFT;
+    if (u64MaxPages > PGMPOOL_IDX_LAST)
+        cMaxPages = PGMPOOL_IDX_LAST;
+    else
+        cMaxPages = (uint16_t)u64MaxPages;
 
-    /* We should increase the pgm pool size for guests with more than 2 GB of ram */
-    if (cbRam >= UINT64_C(2) * _1G)
-    {
-        /* In the nested paging case we require 2 + 513 * (cbRam/1GB) pages to
-         * store all page table descriptors.
-         */
-        uint64_t u64MaxPages = cbRam  / (_1G / UINT64_C(512));
-        if (u64MaxPages > PGMPOOL_IDX_LAST)
-            cMaxPages = PGMPOOL_IDX_LAST;
-        else
-            cMaxPages = (uint16_t)u64MaxPages;
-    }
-#endif
-
-    /** @cfgm{/PGM/Pool/MaxPages, uint16_t, #pages, 16, 0x3fff, 1024}
+    /** @cfgm{/PGM/Pool/MaxPages, uint16_t, #pages, 16, 0x3fff, F(ram-size)}
      * The max size of the shadow page pool in pages. The pool will grow dynamically
      * up to this limit.
      */
-    int rc = CFGMR3QueryU16Def(pCfg, "MaxPages", &cMaxPages, cMaxPages);
+    rc = CFGMR3QueryU16Def(pCfg, "MaxPages", &cMaxPages, cMaxPages);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelMsgReturn(cMaxPages <= PGMPOOL_IDX_LAST && cMaxPages >= RT_ALIGN(PGMPOOL_IDX_FIRST, 16),
                           ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
     cMaxPages = RT_ALIGN(cMaxPages, 16);
+    if (cMaxPages > PGMPOOL_IDX_LAST)
+        cMaxPages = PGMPOOL_IDX_LAST;
+    LogRel(("PGMPool: cMaxPages=%u (u64MaxPages=%llu)\n", cMaxPages, u64MaxPages));
 
     /** todo:
      * We need to be much more careful with our allocation strategy here.
-     * For nested paging we don't need pool user info nor extents at all, but we can't check for nested paging here (too early during init to get a confirmation it can be used)
-     * The default for large memory configs is a bit large for shadow paging, so I've restricted the extent maximum to 2k (2k * 16 = 32k of hyper heap)
+     * For nested paging we don't need pool user info nor extents at all, but
+     * we can't check for nested paging here (too early during init to get a
+     * confirmation it can be used).  The default for large memory configs is a
+     * bit large for shadow paging, so I've restricted the extent maximum to 8k
+     * (8k * 16 = 128k of hyper heap).
      *
      * Also when large page support is enabled, we typically don't need so much,
      * although that depends on the availability of 2 MB chunks on the host.
@@ -195,13 +198,14 @@ int pgmR3PoolInit(PVM pVM)
     AssertLogRelMsgReturn(cMaxUsers >= cMaxPages && cMaxPages <= _32K,
                           ("cMaxUsers=%u (%#x)\n", cMaxUsers, cMaxUsers), VERR_INVALID_PARAMETER);
 
-    /** @cfgm{/PGM/Pool/MaxPhysExts, uint16_t, #extents, 16, MaxPages * 2, MAX(MaxPages*2,0x3fff)}
+    /** @cfgm{/PGM/Pool/MaxPhysExts, uint16_t, #extents, 16, MaxPages * 2, MIN(MaxPages*2,8192)}
      * The max number of extents for tracking aliased guest pages.
      */
     uint16_t cMaxPhysExts;
-    rc = CFGMR3QueryU16Def(pCfg, "MaxPhysExts", &cMaxPhysExts, RT_MAX(cMaxPages * 2, 2048 /* 2k max as this eat too much hyper heap */));
+    rc = CFGMR3QueryU16Def(pCfg, "MaxPhysExts", &cMaxPhysExts,
+                           RT_MIN(cMaxPages * 2, 8192 /* 8Ki max as this eat too much hyper heap */));
     AssertLogRelRCReturn(rc, rc);
-    AssertLogRelMsgReturn(cMaxPhysExts >= 16 && cMaxPages <= PGMPOOL_IDX_LAST,
+    AssertLogRelMsgReturn(cMaxPhysExts >= 16 && cMaxPhysExts <= PGMPOOL_IDX_LAST,
                           ("cMaxPhysExts=%u (%#x)\n", cMaxPhysExts, cMaxPhysExts), VERR_INVALID_PARAMETER);
 
     /** @cfgm{/PGM/Pool/ChacheEnabled, bool, true}
