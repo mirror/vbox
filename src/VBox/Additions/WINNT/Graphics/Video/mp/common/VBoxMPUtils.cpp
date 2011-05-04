@@ -26,6 +26,14 @@ RT_C_DECLS_END
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
+#ifdef DEBUG_misha
+/* specifies whether the vboxVDbgBreakF should break in the debugger
+ * windbg seems to have some issues when there is a lot ( >~50) of sw breakpoints defined
+ * to simplify things we just insert breaks for the case of intensive debugging WDDM driver*/
+bool g_bVBoxVDbgBreakF = false;
+bool g_bVBoxVDbgBreakFv = false;
+#endif
+
 #pragma alloc_text(PAGE, VBoxQueryWinVersion)
 #pragma alloc_text(PAGE, VBoxGetHeightReduction)
 #pragma alloc_text(PAGE, VBoxLikesVideoMode)
@@ -39,7 +47,7 @@ vboxWinVersion_t VBoxQueryWinVersion()
     ULONG major, minor, build;
     BOOLEAN checkedBuild;
     static vboxWinVersion_t s_WinVersion = UNKNOWN_WINVERSION;
-    
+
     if (s_WinVersion != UNKNOWN_WINVERSION)
     {
         return s_WinVersion;
