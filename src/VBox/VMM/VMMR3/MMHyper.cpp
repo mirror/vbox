@@ -44,32 +44,56 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
-DECLINLINE(uint32_t) mmR3ComputeHyperHeapSize(PVM pVM, bool fCanUseLargerHeap)
+/**
+ * Determin the default heap size.
+ *
+ * @returns The heap size in bytes.
+ * @param   pVM     The VM handle.
+ */
+static uint32_t mmR3ComputeHyperHeapSize(PVM pVM)
 {
-    bool fHwVirtExtForced = VMMIsHwVirtExtForced(pVM);
+    /*
+     * Gather parameters.
+     */
+    bool const  fHwVirtExtForced = VMMIsHwVirtExtForced(pVM)
+                                || pVM->cCpus > 1;
 
-    /* Newer chipset allows for much more devices, putting additional pressure on hyperheap */
-    /* @todo: maybe base hyperheap size upon number of devices attached too */
+    bool        fCanUseLargerHeap;
+    int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "CanUseLargerHeap", &fCanUseLargerHeap, false);
+    AssertStmt(RT_SUCCESS(rc), fCanUseLargerHeap = false);
+
+    uint64_t    cbRam;
+    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    AssertStmt(RT_SUCCESS(rc), cbRam = _1G);
+
+    /*
+     * We need to keep saved state compatibility if raw-mode is an option,
+     * so lets filter out that case first.
+     */
+    if (   !fCanUseLargerHeap
+        && !fHwVirtExtForced
+        && cbRam < 16*_1G64)
+        return 1280 * _1K;
+
+    /*
+     * Calculate the heap size.
+     */
+    uint32_t cbHeap = _1M;
+
+    /* The newer chipset may have more devices attached, putting additional
+       pressure on the heap. */
     if (fCanUseLargerHeap)
-        return _2M + pVM->cCpus * 2 * _64K;
+        cbHeap += _1M;
 
+    /* More CPUs means some extra memory usage. */
     if (pVM->cCpus > 1)
-        return _1M + pVM->cCpus * 2 * _64K;
+        cbHeap += pVM->cCpus * _64K;
 
-    if (fHwVirtExtForced)
-    {
-        uint64_t cbRam = 0;
-        CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    /* Lots of memory means extra memory consumption as well (pool). */
+    if (cbRam > 16*_1G64)
+        cbHeap += _2M; /** @todo figure out extactly how much */
 
-        /* Need a bit more space for large memory guests. (@todo: only for shadow paging!) */
-        if (cbRam >= _4G)
-            return _1M;
-        else
-            return 640 * _1K;
-    }
-    else
-        /* Size must be kept like this for saved state compatibility (only for raw mode though). */
-        return 1280*_1K;
+    return RT_ALIGN(cbHeap, _256K);
 }
 
 
@@ -100,10 +124,8 @@ int mmR3HyperInit(PVM pVM)
      *        precious kernel space on heap for the PATM.
      */
     PCFGMNODE pMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
-    bool fCanUseLargerHeap = false;
-    int rc = CFGMR3QueryBoolDef(pMM, "CanUseLargerHeap", &fCanUseLargerHeap, false);
-    uint32_t cbHyperHeap = mmR3ComputeHyperHeapSize(pVM, fCanUseLargerHeap);
-    rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, cbHyperHeap);
+    uint32_t cbHyperHeap;
+    int rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, mmR3ComputeHyperHeapSize(pVM));
     AssertLogRelRCReturn(rc, rc);
 
     cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);

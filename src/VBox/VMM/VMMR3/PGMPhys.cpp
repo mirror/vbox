@@ -3995,6 +3995,8 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     }
     else
     {
+        /** @todo this may fail because of /proc/sys/vm/max_map_count, so we
+         *        should probably restrict ourselves on linux. */
         AssertRC(rc);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         MMR3HeapFree(pChunk);
