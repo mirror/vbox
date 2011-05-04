@@ -127,24 +127,28 @@ int main()
             RTPrintf (", description: %s", it->mDescription.c_str());
         RTPrintf ("\n");
     }
-    PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(false);
-    if (pcLocation && !pcLocation->fUseSysfs)
+    RTPrintf("NOTE: checking for usbfs at /dev/bus/usb, not /proc/bus/usb!!!\n");
+    if (USBProxyLinuxCheckDeviceRoot("/dev/bus/usb", false))
     {
-        PUSBDEVICE pDevice = USBProxyLinuxGetDevices(pcLocation->szDevicesRoot,
+        PUSBDEVICE pDevice = USBProxyLinuxGetDevices("/dev/bus/usb",
                                                      false);
-        printDevices(pDevice, pcLocation->szDevicesRoot, "usbfs");
+        printDevices(pDevice, "/dev/bus/usb", "usbfs");
         freeDevices(pDevice);
     }
+    else
+        RTPrintf("-> not found\n");
 #ifdef VBOX_USB_WITH_SYSFS
-    pcLocation = USBProxyLinuxGetDeviceRoot(true);
-    if (pcLocation && pcLocation->fUseSysfs)
+    RTPrintf("Testing for USB devices at /dev/vboxusb\n");
+    if (USBProxyLinuxCheckDeviceRoot("/dev/vboxusb", true))
     {
-        PUSBDEVICE pDevice = USBProxyLinuxGetDevices(pcLocation->szDevicesRoot,
+        PUSBDEVICE pDevice = USBProxyLinuxGetDevices("/dev/vboxusb",
                                                      true);
-        printDevices(pDevice, pcLocation->szDevicesRoot, "sysfs");
+        printDevices(pDevice, "/dev/vboxusb", "sysfs");
         freeDevices(pDevice);
     }
-    VBoxMainHotplugWaiter waiter(pcLocation->szDevicesRoot);
+    else
+        RTPrintf("-> not found\n");
+    VBoxMainHotplugWaiter waiter("/dev/vboxusb");
     RTPrintf ("Waiting for a hotplug event for five seconds...\n");
     doHotplugEvent(&waiter, 5000);
     RTPrintf ("Waiting for a hotplug event, Ctrl-C to abort...\n");

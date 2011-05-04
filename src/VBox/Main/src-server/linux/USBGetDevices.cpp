@@ -94,15 +94,6 @@ static const USBSUFF s_aIntervalSuff[] =
     { "",   0,    0,       0 }  /* term */
 };
 
-/**
- * List of well-known USB device tree locations.
- */
-static const USBDEVTREELOCATION s_aTreeLocations[] =
-{
-    { "/dev/vboxusb",  true },
-    { "/proc/bus/usb", false },
-};
-
 
 /**
  * "reads" the number suffix. It's more like validating it and
@@ -1400,7 +1391,6 @@ static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot, bool testfs)
 
 /** Is inotify available and working on this system?  This is a requirement
  * for using USB with sysfs */
-/** @todo test the "inotify in glibc but not in the kernel" case. */
 static bool inotifyAvailable(void)
 {
     int (*inotify_init)(void);
@@ -1415,38 +1405,29 @@ static bool inotifyAvailable(void)
     return true;
 }
 
-PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs)
+bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 {
-    PCUSBDEVTREELOCATION pcBestUsbfs = NULL;
-    PCUSBDEVTREELOCATION pcBestSysfs = NULL;
+    bool fOK = false;
+    if (!fIsDeviceNodes)  /* usbfs */
+    {
+        PUSBDEVICE pDevices;
 
-    bool fHaveInotify = inotifyAvailable();
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aTreeLocations); ++i)
-        if (!s_aTreeLocations[i].fUseSysfs)
+        pDevices = getDevicesFromUsbfs(pcszRoot, true);
+        if (pDevices)
         {
-            if (!pcBestUsbfs)
-            {
-                PUSBDEVICE pDevices;
-
-                pDevices = getDevicesFromUsbfs(s_aTreeLocations[i].szDevicesRoot,
-                                               true);
-                if (pDevices)
-                {
-                    pcBestUsbfs = &s_aTreeLocations[i];
-                    deviceListFree(&pDevices);
-                }
-            }
+            PUSBDEVICE pDevice;
+            
+            fOK = true;
+            for (pDevice = pDevices; pDevice && fOK; pDevice = pDevice->pNext)
+                if (access(pDevice->pszAddress, R_OK | W_OK))
+                    fOK = false;
+            deviceListFree(&pDevices);
         }
-        else
-        {
-            if (   fHaveInotify
-                && !pcBestSysfs
-                && RTPathExists(s_aTreeLocations[i].szDevicesRoot))
-                pcBestSysfs = &s_aTreeLocations[i];
-        }
-    if (pcBestUsbfs && !fPreferSysfs)
-        return pcBestUsbfs;
-    return pcBestSysfs;
+    }
+    else  /* device nodes */
+        if (inotifyAvailable() && !access(pcszRoot, R_OK | X_OK))
+            fOK = true;
+    return fOK;
 }
 
 

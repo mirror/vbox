@@ -74,29 +74,20 @@ static inline void deviceListFree(PUSBDEVICE *ppHead)
 
 RT_C_DECLS_BEGIN
 
-/** List of well-known USB device tree locations */
-typedef struct USBDEVTREELOCATION
-{
-    /** The root of the device tree for this location. */
-    char szDevicesRoot[256];
-    /** Whether this location requires device enumeration using sysfs. */
-    bool fUseSysfs;
-} USBDEVTREELOCATION, *PUSBDEVTREELOCATION;
-typedef const USBDEVTREELOCATION *PCUSBDEVTREELOCATION;
-
 /**
- * Get the USB device tree root
- * @param  fPreferSysfs  whether we wish to use sysfs over usbfs for
- *                       enumeration if we have the choice
- * @note   returns a pointer into a static array so it will stay valid
+ * Check whether a USB device tree root is usable
+ * @param pcszRoot        the path to the root of the device tree
+ * @param fIsDeviceNodes  whether this is a device node (or usbfs) tree
+ * @note  returns a pointer into a static array so it will stay valid
  */
-extern PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs);
+extern bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot,
+                                         bool fIsDeviceNodes);
 
 /**
  * Get the list of USB devices supported by the system.  Should be freed using
  * @a deviceFree or something equivalent.
  * @param pcszDevicesRoot  the path to the root of the device tree
- * @param fUseSysfs       whether to use sysfs (or usbfs) for enumeration
+ * @param fUseSysfs        whether to use sysfs (or usbfs) for enumeration
  */
 extern PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
                                           bool fUseSysfs);
