@@ -239,11 +239,25 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     }
     else
     {
-        if (cb <= PAGE_SIZE || (fFlags & RTMEMHDR_FLAG_ANY_CTX))
+        if (
+#if 1 /* vmalloc has serious performance issues, avoid it. */
+               cb <= PAGE_SIZE*16 - sizeof(*pHdr)
+#else
+               cb <= PAGE_SIZE
+#endif
+            || (fFlags & RTMEMHDR_FLAG_ANY_CTX)
+           )
         {
             fFlags |= RTMEMHDR_FLAG_KMALLOC;
             pHdr = kmalloc(cb + sizeof(*pHdr),
                            (fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC) ? GFP_ATOMIC : GFP_KERNEL);
+            if (RT_UNLIKELY(   !pHdr
+                            && cb > PAGE_SIZE
+                            && !(fFlags & RTMEMHDR_FLAG_ANY_CTX) ))
+            {
+                fFlags &= ~RTMEMHDR_FLAG_KMALLOC;
+                pHdr = vmalloc(cb + sizeof(*pHdr));
+            }
         }
         else
             pHdr = vmalloc(cb + sizeof(*pHdr));
