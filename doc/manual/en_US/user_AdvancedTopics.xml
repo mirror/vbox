@@ -588,8 +588,8 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
             <computeroutput>CONFIG_DMAR</computeroutput> kernel compilation option).
         </listitem>
         <listitem>
-            Your Linux kernel recognizes and uses IOMMU unit (<computeroutput>intel-iommu=on</computeroutput>
-            boot option could be needed). Search for DMAR in kernel boot log.
+            Your Linux kernel recognizes and uses IOMMU unit (<computeroutput>intel_iommu=on</computeroutput>
+            boot option could be needed). Search for DMAR and PCI-DMA in kernel boot log.
         </listitem>
       </orderedlist>
     </para>
