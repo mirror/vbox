@@ -73,7 +73,7 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBFLT_MAJOR_VERSION              1
 #define USBFLT_MINOR_VERSION              3
 
-#define USBMON_MAJOR_VERSION              4
+#define USBMON_MAJOR_VERSION              5
 #define USBMON_MINOR_VERSION              0
 
 #define USBDRV_MAJOR_VERSION              4
@@ -118,9 +118,6 @@ typedef void* HVBOXUSBDEVUSR;
 typedef struct
 {
     HVBOXUSBDEVUSR  hDevice;
-    uint16_t        vid, did, rev;
-    char            serial_hash[MAX_USB_SERIAL_STRING];
-
     uint8_t         fAttached;
     uint8_t         fHiSpeed;
 } USBSUP_GETDEV, *PUSBSUP_GETDEV;
