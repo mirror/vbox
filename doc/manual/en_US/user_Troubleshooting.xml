@@ -710,9 +710,10 @@
       before version 1.6.0. For Windows Vista guests, VirtualBox now uses an
       Intel E1000 card by default.</para>
 
-      <para>If, for some reason, you still want to use the AMD card,
-      VirtualBox ships a 32-bit driver for that card with the Windows Guest
-      Additions; see <xref linkend="vista_networking" />.</para>
+      <para>If, for some reason, you still want to use the AMD card, you need
+      to download the PCNet driver from the AMD website (available for 32-bit
+      Windows only). You can transfer it into the virtual machine using a
+      shared folder, see (see <xref linkend="sharedfolders" />).</para>
     </sect2>
 
     <sect2>
