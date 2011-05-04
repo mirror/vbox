@@ -141,7 +141,7 @@ HRESULT USBProxyServiceLinux::init(void)
     }
     else
         /** @todo fix this, preferably in the next fifteen minutes. */
-        mLastError =   RTDirExists("/dev/vboxusb") ? VERR_PERMISSION_DENIED
+        mLastError =   RTDirExists("/dev/vboxusb") ? VERR_VUSB_USB_DEVICE_PERMISSION
                      : RTFileExists("/proc/bus/usb/devices") ? VERR_VUSB_USBFS_PERMISSION
                      : VERR_NOT_FOUND;
     return S_OK;

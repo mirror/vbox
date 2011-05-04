@@ -1373,6 +1373,9 @@
 /** The requested operation cannot be performed because the device
  * is currently suspended. */
 #define VERR_VUSB_DEVICE_IS_SUSPENDED               (-3407)
+/** Not permitted to open the USB device.
+ * The user doesn't have access to the device node, check group memberships. */
+#define VERR_VUSB_USB_DEVICE_PERMISSION             (-3408)
 /** @} */
 
 
