@@ -187,8 +187,10 @@ typedef struct VBOXNETFLTINS
             uint64_t uInstance;
             /** The MAC address of the host interface. */
             RTMAC MacAddr;
-            /** Whether required capabilities have been reported. */
-            bool fReportedInfo;
+            /** Handle of this interface (lower MAC). */
+            mac_handle_t hInterface;
+            /** Handle to link state notifier. */
+            mac_notify_handle_t hNotify;
 #  else
             /** Pointer to the bound IPv4 stream. */
             struct vboxnetflt_stream_t * volatile pIp4Stream;
