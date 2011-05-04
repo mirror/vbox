@@ -62,15 +62,12 @@
     all operating systems out of the box, as well as the GNU GRUB boot
     manager. As an exception, the Intel PRO/1000 family adapters are chosen
     for some guest operating system types that no longer ship with drivers for
-    the PCNet card, such as Windows Vista; see <xref
-    linkend="vista_networking" /> for details.<footnote>
-        <para>Support for the Intel PRO/1000 MT Desktop type was added with
-        VirtualBox 1.6. The T Server variant of the Intel PRO/1000 card was
-        added with VirtualBox 1.6.2 because this one is recognized by Windows
-        XP guests without additional driver installation. The MT Server
-        variant was added with VirtualBox 2.2 to facilitate OVF imports from
-        other platforms.</para>
-      </footnote></para>
+    the PCNet card, such as Windows Vista.</para>
+
+    <para>The Intel PRO/1000 MT Desktop type works with Windows Vista and later
+    versions. The T Server variant of the Intel PRO/1000 card is recognized by
+    Windows XP guests without additional driver installation. The MT Server
+    variant facilitates OVF imports from other platforms.</para>
 
     <para>The <emphasis role="bold">"Paravirtualized network adapter
     (virtio-net)"</emphasis> is special. If you select this, then VirtualBox

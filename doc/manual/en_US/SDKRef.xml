@@ -1745,19 +1745,18 @@ IFoo *foo;
 rc = object-&gt;vtbl-&gt;Method(object, args, ..., &amp;foo);</screen>
 
           <para>As a real-world example of a method invocation, let's call
-          <xref linkend="IVirtualBox__openRemoteSession"
-          xreflabel="IVirtualBox::openRemoteSession" /> which returns an
+          <xref linkend="IMachine__launchVMProcess"
+          xreflabel="IMachine::launchVMProcess" /> which returns an
           IProgress object. Note again that the method name is
           capitalized.</para>
 
           <screen>IProgress *progress;
 ...
-rc = vbox-&gt;vtbl-&gt;OpenRemoteSession(
-    vbox,          /* this  */
+rc = vbox-&gt;vtbl-&gt;LaunchVMProcess(
+    machine,       /* this  */
     session,       /* arg 1 */
-    id,            /* arg 2 */
-    sessionType,   /* arg 3 */
-    env,           /* arg 4 */
+    sessionType,   /* arg 2 */
+    env,           /* arg 3 */
     &amp;progress      /* Out   */
 );
 </screen>
@@ -3450,17 +3449,17 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>This version introduces the guest facilities concept. A guest
           facility either represents a module or feature the guest is running or
-          offering, which is defined by <xref linked="AdditionsFacilityType"
+          offering, which is defined by <xref linkend="AdditionsFacilityType"
           xreflabel="AdditionsFacilityType"/>. Each facility is member of a
-          <xref linked="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/>
-          and has a current status indicated by <xref linked="AdditionsFacilityStatus"
+          <xref linkend="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/>
+          and has a current status indicated by <xref linkend="AdditionsFacilityStatus"
           xreflabel="AdditionsFacilityStatus"/>, together with a timestamp (in ms) of
           the last status update.</para>
           <para>To address the above concept, the following changes were made:
             <itemizedlist>
               <listitem>
                 <para>
-                  In the <xref linked="IGuest" xreflabel="IGuest"/> interface, the following were removed:
+                  In the <xref linkend="IGuest" xreflabel="IGuest"/> interface, the following were removed:
                   <itemizedlist>
                     <listitem>
                       <para>the <computeroutput>supportsSeamless</computeroutput> attribute;</para>
@@ -3473,14 +3472,14 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
               <listitem>
                 <para>
-                  The function <xref linked="IGuest__getFacilityStatus" xreflabel="IGuest::getFacilityStatus()"/>
+                  The function <xref linkend="IGuest__getFacilityStatus" xreflabel="IGuest::getFacilityStatus()"/>
                   was added. It quickly provides a facility's status without the need to get the facility
-                  collection with <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                  collection with <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  The attribute <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>
+                  The attribute <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>
                   was added to provide an easy to access collection of all currently known guest
                   facilities, that is, it contains all facilies where at least one status update was
                   made since the guest was started.
@@ -3488,21 +3487,21 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
               <listitem>
                 <para>
-                  The interface <xref linked="IAdditionsFacility" xreflabel="IAdditionsFacility"/>
+                  The interface <xref linkend="IAdditionsFacility" xreflabel="IAdditionsFacility"/>
                   was added to represent a single facility returned by
-                  <xref linked="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                  <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  <xref linked="AdditionsFacilityStatus" xreflabel="AdditionsFacilityStatus"/>
+                  <xref linkend="AdditionsFacilityStatus" xreflabel="AdditionsFacilityStatus"/>
                   was added to represent a facility's overall status.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  <xref linked="AdditionsFacilityType" xreflabel="AdditionsFacilityType"/> and
-                  <xref linked="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/> were
+                  <xref linkend="AdditionsFacilityType" xreflabel="AdditionsFacilityType"/> and
+                  <xref linkend="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/> were
                   added to represent the facility's type and class.
                 </para>
               </listitem>
@@ -4070,20 +4069,20 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>The <xref linkend="IVRDPServer" xreflabel="IVRDPServer" />,
-          <xref linkend="IRemoteDisplayInfo" xreflabel="IRemoteDisplayInfo" />
-          and IConsoleCallback interfaces were changed to reflect VRDP server
-          ability to bind to one of available ports from a list of
-          ports.</para>
+          <para>The <computeroutput>IVRDPServer</computeroutput>,
+          <computeroutput>IRemoteDisplayInfo"</computeroutput> and
+          <computeroutput>IConsoleCallback</computeroutput> interfaces were
+          changed to reflect VRDP server ability to bind to one of available
+          ports from a list of ports.</para>
 
           <para>The <computeroutput>IVRDPServer::port</computeroutput>
-          attribute has been replaced with <xref linkend="IVRDPServer__ports"
-          xreflabel="IVRDPServer::ports" />, which is a comma-separated list
-          of ports or ranges of ports.</para>
+          attribute has been replaced with
+          <computeroutput>IVRDPServer::ports</computeroutput>, which is a
+          comma-separated list of ports or ranges of ports.</para>
 
-          <para>An <xref linkend="IRemoteDisplayInfo__port"
-          xreflabel="IRemoteDisplayInfo::port" /> attribute has been added for
-          querying the actual port VRDP server listens on.</para>
+          <para>An <computeroutput>IRemoteDisplayInfo::port"</computeroutput>
+          attribute has been added for querying the actual port VRDP server
+          listens on.</para>
 
           <para>An IConsoleCallback::onRemoteDisplayInfoChange() notification
           callback has been added.</para>

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -508,11 +508,15 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 		$(foreach f,$(VBOX_MANUAL_LANGUAGES),\
 		  $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) | $$(dir $$@)
 # PDF generation via Latex: generate the .tex file
-	$(call MSG_L1,pdflatex $< (three passes) -> $@)
+	$(call MSG_L1,pdflatex $< (four passes) -> $@)
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(SED) -n \
+        -e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+        $(basename $@).log
+
 ##@todo restore this when above has been converted to INSTALLS target.	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 # generate temporary LaTeX source from processed XML
@@ -553,6 +557,9 @@ $(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
+	$(QUIET)$(SED) -n \
+        -e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+        $(basename $<).log
 	$(QUIET)$(CP) $(<D)/SDKRef.pdf $@
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
