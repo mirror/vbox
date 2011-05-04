@@ -91,7 +91,9 @@ static bool             g_frtThreadInitialized;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void rtThreadDestroy(PRTTHREADINT pThread);
+#ifdef IN_RING3
 static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName);
+#endif
 static void rtThreadRemoveLocked(PRTTHREADINT pThread);
 static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName);
 
@@ -236,8 +238,6 @@ DECLINLINE(void) rtThreadUnLockRD(void)
     AssertReleaseRC(rc);
 }
 
-#endif /* IN_RING3 */
-
 
 /**
  * Adopts the calling thread.
@@ -270,8 +270,6 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFla
     }
     return rc;
 }
-
-#ifdef IN_RING3
 
 /**
  * Adopts a non-IPRT thread.

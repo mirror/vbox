@@ -361,6 +361,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 # else  /* older kernels */
 #  error oops
 # endif /* older kernels */
+    NOREF(rc);
     Assert(rc == 0);
     return VINF_SUCCESS;
 
