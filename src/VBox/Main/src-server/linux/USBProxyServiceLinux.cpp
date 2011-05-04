@@ -82,11 +82,9 @@ HRESULT USBProxyServiceLinux::init(void)
 
     /*
      * We have two methods available for getting host USB device data - using
-     * USBFS and using sysfs.  The default choice depends on build-time
-     * settings and an environment variable; if the default is not available
-     * we fall back to the second.
-     * In the event of both failing, the error from the second method tried
-     * will be presented to the user.
+     * USBFS and using sysfs.  The default choice is sysfs; if that is not
+     * available we fall back to USBFS.
+     * In the event of both failing, an appropriate error will be returned.
      */
     bool fUseSysfs;
     const char *pcszUsbFromEnv = RTEnvGet("VBOX_USB");
