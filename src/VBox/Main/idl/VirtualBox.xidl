@@ -559,7 +559,7 @@
       executed), only a few machine settings can be modified. Methods working
       with such settings contain an explicit note about that. An attempt to
       change any oter setting or perform a modifying operation during this time
-      will result in the <link to="VBOX_E_INVALID_VM_STATE"/> error.
+      will result in the @c VBOX_E_INVALID_VM_STATE error.
 
       All online states except Running, Paused and Stuck are transitional: they
       represent temporary conditions of the virtual machine that will last as
