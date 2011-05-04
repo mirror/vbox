@@ -31,6 +31,7 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -81,17 +82,13 @@ HRESULT USBProxyServiceLinux::init(void)
 
     /*
      * We have two methods available for getting host USB device data - using
-     * USBFS and using sysfs/hal.  The default choice depends on build-time
+     * USBFS and using sysfs.  The default choice depends on build-time
      * settings and an environment variable; if the default is not available
      * we fall back to the second.
      * In the event of both failing, the error from the second method tried
      * will be presented to the user.
      */
-#ifdef VBOX_WITH_SYSFS_BY_DEFAULT
-    bool fUseSysfs = true;
-#else
-    bool fUseSysfs = false;
-#endif
+    bool fUseSysfs;
     const char *pcszUsbFromEnv = RTEnvGet("VBOX_USB");
     const char *pcszUsbRoot = NULL;
     if (pcszUsbFromEnv)
@@ -120,12 +117,15 @@ HRESULT USBProxyServiceLinux::init(void)
     }
     if (!pcszUsbRoot)
     {
-        PCUSBDEVTREELOCATION pLocation;
-        pLocation = USBProxyLinuxGetDeviceRoot(fUseSysfs);
-        if (pLocation)
+        if (USBProxyLinuxCheckDeviceRoot("/dev/vboxusb", true))
         {
-            pcszUsbRoot = pLocation->szDevicesRoot;
-            fUseSysfs = pLocation->fUseSysfs;
+            fUseSysfs = true;
+            pcszUsbRoot = "/dev/vboxusb";
+        }
+        else if (USBProxyLinuxCheckDeviceRoot("/proc/bus/usb", false))
+        {
+            fUseSysfs = false;
+            pcszUsbRoot = "/proc/bus/usb";
         }
     }
     if (pcszUsbRoot)
@@ -140,7 +140,10 @@ HRESULT USBProxyServiceLinux::init(void)
         mLastError = rc;
     }
     else
-        mLastError = VERR_NOT_FOUND;
+        /** @todo fix this, preferably in the next fifteen minutes. */
+        mLastError =   RTDirExists("/dev/vboxusb") ? VERR_PERMISSION_DENIED
+                     : RTFileExists("/proc/bus/usb/devices") ? VERR_VUSB_USBFS_PERMISSION
+                     : VERR_NOT_FOUND;
     return S_OK;
 }
 

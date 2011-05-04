@@ -887,9 +887,17 @@ rdpusb_check_fds(fd_set * rfds, fd_set * wfds)
 RD_BOOL
 rdpusb_init(void)
 {
-	PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(false);
-	g_fUseSysfs       = pcLocation->fUseSysfs;
-	g_pcszDevicesRoot = pcLocation->szDevicesRoot;
+    /** @todo re-use the proxy service code */
+	if (USBProxyLinuxCheckDeviceRoot("/dev/vboxusb", true))
+	{
+	    g_fUseSysfs       = true;
+	    g_pcszDevicesRoot = "/dev/vboxusb";
+	}
+	else
+	{
+	    g_fUseSysfs       = false;
+	    g_pcszDevicesRoot = "/proc/bus/usb";
+	}
 	rdpusb_channel =
 		channel_register("vrdpusb", CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP,
 				 rdpusb_process);
