@@ -763,7 +763,7 @@ AssertCompileSize(SGLEntry, 16);
 
 #define AHCI_PORT_CLB_RESERVED 0xfffffc00 /* For masking out the reserved bits. */
 
-#define AHCI_PORT_FB_RESERVED  0x7fffff00 /* For masking out the reserved bits. */
+#define AHCI_PORT_FB_RESERVED  0xffffff00 /* For masking out the reserved bits. */
 
 #define AHCI_PORT_IS_CPDS      RT_BIT(31)
 #define AHCI_PORT_IS_TFES      RT_BIT(30)
