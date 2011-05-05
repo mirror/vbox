@@ -2012,7 +2012,7 @@ static void patmPatchAddDisasmJump(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 
     pRec = (PAVLPVNODECORE)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pRec));
     Assert(pRec);
-    pRec->Key = (AVLPVKEY)pInstrGC;
+    pRec->Key = (AVLPVKEY)(uintptr_t)pInstrGC;
 
     int ret = RTAvlPVInsert(&pPatch->pTempInfo->DisasmJumpTree, pRec);
     Assert(ret);
@@ -2030,7 +2030,7 @@ static bool patmIsKnownDisasmJump(PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     PAVLPVNODECORE pRec;
 
-    pRec = RTAvlPVGet(&pPatch->pTempInfo->DisasmJumpTree, (AVLPVKEY)pInstrGC);
+    pRec = RTAvlPVGet(&pPatch->pTempInfo->DisasmJumpTree, (AVLPVKEY)(uintptr_t)pInstrGC);
     if (pRec)
         return true;
     return false;

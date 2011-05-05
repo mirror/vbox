@@ -1983,7 +1983,7 @@ VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 #ifdef VBOX_STRICT
     PCSAMPAGEREC pPageRec;
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pPageAddrGC);
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
     Assert(pPageRec && pPageRec->page.enmTag == enmTag);
 #endif
     return CSAMR3RemovePage(pVM, pPageAddrGC);
