@@ -7000,7 +7000,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         // save the settings
         GuidList llRegistriesThatNeedSaving;
         addToRegistryIDList(llRegistriesThatNeedSaving);
-        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        HRESULT rc1 = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
 
     /* Everything is explicitly unlocked when the task exits,
@@ -7764,7 +7764,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
         // save the settings
         GuidList llRegistriesThatNeedSaving;
         addToRegistryIDList(llRegistriesThatNeedSaving);
-        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        HRESULT rc1 = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
 
     /* Everything is explicitly unlocked when the task exits,
