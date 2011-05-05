@@ -94,15 +94,15 @@
 #define HPET_TN_ROUTE            0x010
 #define HPET_CFG_WRITE_MASK      0x3
 
-#define HPET_TN_INT_TYPE                      (1 << 1)
-#define HPET_TN_ENABLE                        (1 << 2)
-#define HPET_TN_PERIODIC                      (1 << 3)
-#define HPET_TN_PERIODIC_CAP                  (1 << 4)
-#define HPET_TN_SIZE_CAP                      (1 << 5)
-#define HPET_TN_SETVAL                        (1 << 6)
-#define HPET_TN_32BIT                         (1 << 8)
-#define HPET_TN_INT_ROUTE_MASK                0x3e00
-#define HPET_TN_CFG_WRITE_MASK                0x3f4e
+#define HPET_TN_INT_TYPE                      RT_BIT_64(1)
+#define HPET_TN_ENABLE                        RT_BIT_64(2)
+#define HPET_TN_PERIODIC                      RT_BIT_64(3)
+#define HPET_TN_PERIODIC_CAP                  RT_BIT_64(4)
+#define HPET_TN_SIZE_CAP                      RT_BIT_64(5)
+#define HPET_TN_SETVAL                        RT_BIT_64(6)
+#define HPET_TN_32BIT                         RT_BIT_64(8)
+#define HPET_TN_INT_ROUTE_MASK                UINT64_C(0x3e00)
+#define HPET_TN_CFG_WRITE_MASK                UINT64_C(0x3e46)
 #define HPET_TN_INT_ROUTE_SHIFT               9
 #define HPET_TN_INT_ROUTE_CAP_SHIFT           32
 #define HPET_TN_CFG_BITS_READONLY_OR_RESERVED 0xffff80b1U
@@ -190,8 +190,7 @@ typedef struct HpetState
     /* Global device lock. */
     PDMCRITSECT          csLock;
 
-    /* If we emulate ICH9 HPET (different frequency and counter rollover behavior
-       in 32-bit mode). */
+    /* If we emulate ICH9 HPET (different frequency). */
     uint8_t              fIch9;
     uint8_t              padding0[7];
 } HpetState;
@@ -232,27 +231,39 @@ DECLINLINE(void) hpetUnlock(HpetState* pThis)
     PDMCritSectLeave(&pThis->csLock);
 }
 
-static uint32_t hpetTimeAfter32(uint64_t a, uint64_t b)
+DECLINLINE(bool) hpet32bitTimer(HpetTimer *pTimer)
+{
+    uint64_t u64Cfg = pTimer->u64Config;
+
+    return ((u64Cfg & HPET_TN_SIZE_CAP) == 0) || ((u64Cfg & HPET_TN_32BIT) != 0);
+}
+
+DECLINLINE(uint64_t) hpetInvalidValue(HpetTimer *pTimer)
+{
+    return hpet32bitTimer(pTimer) ? ~0U : ~0ULL;
+}
+
+DECLINLINE(uint32_t) hpetTimeAfter32(uint64_t a, uint64_t b)
 {
     return ((int32_t)(b) - (int32_t)(a) <= 0);
 }
 
-static uint32_t hpetTimeAfter64(uint64_t a, uint64_t b)
+DECLINLINE(uint32_t) hpetTimeAfter64(uint64_t a, uint64_t b)
 {
     return ((int64_t)(b) - (int64_t)(a) <= 0);
 }
 
-static uint64_t hpetTicksToNs(HpetState* pThis, uint64_t value)
+DECLINLINE(uint64_t) hpetTicksToNs(HpetState* pThis, uint64_t value)
 {
     return (ASMMultU64ByU32DivByU32(value,  (uint32_t)(pThis->u64Capabilities >> 32), FS_PER_NS));
 }
 
-static uint64_t nsToHpetTicks(HpetState* pThis, uint64_t u64Value)
+DECLINLINE(uint64_t) nsToHpetTicks(HpetState* pThis, uint64_t u64Value)
 {
     return (ASMMultU64ByU32DivByU32(u64Value, FS_PER_NS, (uint32_t)(pThis->u64Capabilities >> 32)));
 }
 
-static uint64_t hpetGetTicks(HpetState* pThis)
+DECLINLINE(uint64_t) hpetGetTicks(HpetState* pThis)
 {
     /*
      * We can use any timer to get current time, they all go
@@ -262,25 +273,25 @@ static uint64_t hpetGetTicks(HpetState* pThis)
                                 pThis->u64HpetOffset);
 }
 
-static uint64_t hpetUpdateMasked(uint64_t u64NewValue,
-                                 uint64_t u64OldValue,
-                                 uint64_t u64Mask)
+DECLINLINE(uint64_t) hpetUpdateMasked(uint64_t u64NewValue,
+                                      uint64_t u64OldValue,
+                                      uint64_t u64Mask)
 {
     u64NewValue &= u64Mask;
     u64NewValue |= (u64OldValue & ~u64Mask);
     return u64NewValue;
 }
 
-static bool hpetBitJustSet(uint64_t u64OldValue,
-                           uint64_t u64NewValue,
-                           uint64_t u64Mask)
+DECLINLINE(bool) hpetBitJustSet(uint64_t u64OldValue,
+                                uint64_t u64NewValue,
+                                uint64_t u64Mask)
 {
     return (!(u64OldValue & u64Mask) && !!(u64NewValue & u64Mask));
 }
 
-static bool hpetBitJustCleared(uint64_t u64OldValue,
-                               uint64_t u64NewValue,
-                               uint64_t u64Mask)
+DECLINLINE(bool) hpetBitJustCleared(uint64_t u64OldValue,
+                                    uint64_t u64NewValue,
+                                    uint64_t u64Mask)
 {
     return (!!(u64OldValue & u64Mask) && !(u64NewValue & u64Mask));
 }
@@ -289,7 +300,7 @@ DECLINLINE(uint64_t) hpetComputeDiff(HpetTimer* pTimer,
                                      uint64_t   u64Now)
 {
 
-    if (pTimer->u64Config & HPET_TN_32BIT)
+    if (hpet32bitTimer(pTimer))
     {
         uint32_t u32Diff;
 
@@ -316,7 +327,7 @@ static void hpetAdjustComparator(HpetTimer* pTimer,
       && (u64Period != 0))
   {
       /* While loop is suboptimal */
-      if (pTimer->u64Config & HPET_TN_32BIT)
+      if (hpet32bitTimer(pTimer))
       {
           while (hpetTimeAfter32(u64Now, pTimer->u64Cmp))
               pTimer->u64Cmp = (uint32_t)(pTimer->u64Cmp + u64Period);
@@ -342,23 +353,20 @@ static void hpetProgramTimer(HpetTimer *pTimer)
 
     u64Diff = hpetComputeDiff(pTimer, u64Ticks);
 
-    /* HPET spec says in one-shot 32-bit mode, generate an interrupt when
+    /*
+     * HPET spec says in one-shot 32-bit mode, generate an interrupt when
      * counter wraps in addition to an interrupt with comparator match.
-     *
-     * ICH9 spec doesn't mention that, so we disable wraparound behavior for ICH9,
-     * see public trac defect #8707.
      */
-    if (!pTimer->CTX_SUFF(pHpet)->fIch9)
+    if (    hpet32bitTimer(pTimer)
+        && !(pTimer->u64Config & HPET_TN_PERIODIC))
     {
-        if (    (pTimer->u64Config & HPET_TN_32BIT)
-            && !(pTimer->u64Config & HPET_TN_PERIODIC))
+        u32TillWrap = 0xffffffff - (uint32_t)u64Ticks + 1;
+        if (u32TillWrap < (uint32_t)u64Diff)
         {
-            u32TillWrap = 0xffffffff - (uint32_t)u64Ticks;
-            if (u32TillWrap < (uint32_t)u64Diff)
-            {
-                u64Diff = u32TillWrap;
-                pTimer->u8Wrap = 1;
-            }
+            Log(("wrap on timer %d: till=%u ticks=%lld diff64=%lld\n", 
+                 pTimer->u8TimerNumber, u32TillWrap, u64Ticks, u64Diff));
+            u64Diff = u32TillWrap;
+            pTimer->u8Wrap = 1;
         }
     }
 
@@ -387,7 +395,7 @@ static uint32_t getTimerIrq(struct HpetTimer *pTimer)
     if (   (pTimer->u8TimerNumber <= 1)
         && (pTimer->CTX_SUFF(pHpet)->u64HpetConfig & HPET_CFG_LEGACY))
         return (pTimer->u8TimerNumber == 0) ? 0 : 8;
-        
+
     return (pTimer->u64Config & HPET_TN_INT_ROUTE_MASK) >> HPET_TN_INT_ROUTE_SHIFT;
 }
 
@@ -510,11 +518,22 @@ static int hpetTimerRegWrite32(HpetState* pThis,
     {
         case HPET_TN_CFG:
         {
+            uint64_t u64Mask = HPET_TN_CFG_WRITE_MASK;
+
             Log(("write HPET_TN_CFG: %d: %x\n", iTimerNo, iNewValue));
+
+            if ((pTimer->u64Config & HPET_TN_PERIODIC_CAP) != 0)
+                u64Mask |= HPET_TN_PERIODIC;
+
+            if ((pTimer->u64Config & HPET_TN_SIZE_CAP) != 0)
+                u64Mask |= HPET_TN_32BIT;
+            else
+                iNewValue &= ~HPET_TN_32BIT;
+
             if ((iNewValue & HPET_TN_32BIT) != 0)
             {
-                Log(("setting timer to 32-bit mode\n"));
-                pTimer->u64Cmp = (uint32_t)pTimer->u64Cmp;
+                Log(("setting timer %d to 32-bit mode\n", iTimerNo));
+                pTimer->u64Cmp    = (uint32_t)pTimer->u64Cmp;
                 pTimer->u64Period = (uint32_t)pTimer->u64Period;
             }
             if ((iNewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
@@ -524,7 +543,7 @@ static int hpetTimerRegWrite32(HpetState* pThis,
             }
             /** We only care about lower 32-bits so far */
             pTimer->u64Config =
-                    hpetUpdateMasked(iNewValue, iOldValue, HPET_TN_CFG_WRITE_MASK);
+                    hpetUpdateMasked(iNewValue, iOldValue, u64Mask);
             break;
         }
         case HPET_TN_CFG + 4: /* Interrupt capabilities */
@@ -535,18 +554,9 @@ static int hpetTimerRegWrite32(HpetState* pThis,
         case HPET_TN_CMP: /* lower bits of comparator register */
         {
             Log(("write HPET_TN_CMP on %d: %x\n", iTimerNo, iNewValue));
-            if (pTimer->u64Config & HPET_TN_32BIT)
-                iNewValue = (uint32_t)iNewValue;
-
-            if (pTimer->u64Config & HPET_TN_SETVAL)
+            if (pTimer->u64Config & HPET_TN_PERIODIC)
             {
-                /* HPET_TN_SETVAL allows to adjust comparator w/o updating period, and it's cleared on access */
-                if (pTimer->u64Config & HPET_TN_32BIT)
-                    pTimer->u64Config &= ~HPET_TN_SETVAL;
-            }
-            else if (pTimer->u64Config & HPET_TN_PERIODIC)
-            {
-                iNewValue &= (pTimer->u64Config & HPET_TN_32BIT ? ~0U : ~0ULL) >> 1;
+                iNewValue &= hpetInvalidValue(pTimer) >> 1;
                 pTimer->u64Period = (pTimer->u64Period & 0xffffffff00000000ULL)
                                   | iNewValue;
             }
@@ -554,6 +564,7 @@ static int hpetTimerRegWrite32(HpetState* pThis,
             pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffff00000000ULL)
                            | iNewValue;
 
+            pTimer->u64Config &= ~HPET_TN_SETVAL;
             Log2(("after HPET_TN_CMP cmp=%llx per=%llx\n", pTimer->u64Cmp, pTimer->u64Period));
 
             if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
@@ -563,24 +574,21 @@ static int hpetTimerRegWrite32(HpetState* pThis,
         case HPET_TN_CMP + 4: /* upper bits of comparator register */
         {
             Log(("write HPET_TN_CMP + 4 on %d: %x\n", iTimerNo, iNewValue));
-            if (pTimer->u64Config & HPET_TN_32BIT)
+            if (hpet32bitTimer(pTimer))
                 break;
 
-            if (pTimer->u64Config & HPET_TN_SETVAL)
+            if (pTimer->u64Config & HPET_TN_PERIODIC)
             {
-                /* HPET_TN_SETVAL allows to adjust comparator w/o updating period, and it's cleared on access */
-                pTimer->u64Config &= ~HPET_TN_SETVAL;
-            }
-            else if (pTimer->u64Config & HPET_TN_PERIODIC)
-            {
-                 pTimer->u64Period = (pTimer->u64Period & 0xffffffffULL)
+                pTimer->u64Period = (pTimer->u64Period & UINT64_C(0xffffffff))
                                    | ((uint64_t)iNewValue << 32);
             }
 
-            pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffffULL)
+            pTimer->u64Cmp = (pTimer->u64Cmp & UINT64_C(0xffffffff))
                            | ((uint64_t)iNewValue << 32);
 
             Log2(("after HPET_TN_CMP+4 cmp=%llx per=%llx\n", pTimer->u64Cmp, pTimer->u64Period));
+
+            pTimer->u64Config &= ~HPET_TN_SETVAL;
 
             if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
                 hpetProgramTimer(pTimer);
@@ -664,7 +672,7 @@ static int hpetConfigRegWrite32(HpetState* pThis,
                 pThis->u64HpetOffset = hpetTicksToNs(pThis, pThis->u64HpetCounter)
                         - TMTimerGet(pThis->aTimers[0].CTX_SUFF(pTimer));
                 for (i = 0; i < HPET_NUM_TIMERS; i++)
-                    if (pThis->aTimers[i].u64Cmp != ~0ULL)
+                    if (pThis->aTimers[i].u64Cmp != hpetInvalidValue(&pThis->aTimers[i]))
                         hpetProgramTimer(&pThis->aTimers[i]);
             }
             else if (hpetBitJustCleared(iOldValue, iNewValue, HPET_CFG_ENABLE))
@@ -1075,7 +1083,7 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns,
         Log4(("HPET: periodical: next in %lld\n",  hpetTicksToNs(pThis, u64Diff)));
         TMTimerSetNano(pTmTimer, hpetTicksToNs(pThis, u64Diff));
     }
-    else if (    (pTimer->u64Config & HPET_TN_32BIT)
+    else if (    hpet32bitTimer(pTimer)
              && !(pTimer->u64Config & HPET_TN_PERIODIC))
     {
         if (pTimer->u8Wrap)
@@ -1135,14 +1143,21 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     {
         HpetTimer *pTimer = &pThis->aTimers[i];
         pTimer->u8TimerNumber = i;
-        pTimer->u64Cmp = ~0ULL;
         /* capable of periodic operations and 64-bits */
-        pTimer->u64Config =  HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP;
+        if (pThis->fIch9)
+            pTimer->u64Config = (i == 0) ?  
+                    (HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP) 
+                    : 
+                    0;
+        else
+            pTimer->u64Config = HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP;
+        
         /* We can do all IRQs */
         uint32_t u32RoutingCap = 0xffffffff;
         pTimer->u64Config |= ((uint64_t)u32RoutingCap) << 32;
         pTimer->u64Period = 0ULL;
         pTimer->u8Wrap = 0;
+        pTimer->u64Cmp = hpetInvalidValue(pTimer);
     }
     pThis->u64HpetCounter = 0ULL;
     pThis->u64HpetOffset = 0ULL;
