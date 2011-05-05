@@ -281,7 +281,15 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
 send_or_free:
         {
-            /* We're aliasing all fragments */
+            /* @todo: We can't alias all fragments because the way libalias processing
+             * the fragments brake the sequence. libalias put alias_address to the source
+             * address of IP header of fragment, while IP header of the first packet is
+             * is unmodified. That confuses guest's TCP/IP stack and guest drop the sequence.
+             * Here we're letting libalias to process the first packet and send the rest as is,
+             * it's exactly the way in of packet are processing in proxyonly way.
+             * Here we need investigate what should be done to avoid such behavior and find right
+             * solution.
+             */
             struct m_tag *t;
             int rcLa;
             if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
