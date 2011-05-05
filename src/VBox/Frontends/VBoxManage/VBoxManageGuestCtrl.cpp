@@ -924,7 +924,7 @@ static int ctrlCopyConstructDestinations(SOURCEFILEENTRY &sourceEntry, uint32_t 
  * Determines the destination root for a specified source entry.
  *
  * @return  IPRT status code.
- * @param   ppszDestRoot           	Receives pointer of allocated destination root.
+ * @param   ppszDestRoot            Receives pointer of allocated destination root.
  * @param   sourceEntry             Source entry to determine the destination root for.
  * @param   pszDest                 Original destination string to use.
  */
@@ -1249,7 +1249,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg)
                 if (   fVerbose
                     && vrc == VERR_FILE_NOT_FOUND)
                 {
-                    RTPrintf("Warning: Source \"\%s\" does not exist, skipping!\n",
+                    RTPrintf("Warning: Source \"%s\" does not exist, skipping!\n",
                              vecSources[s].mSource.c_str());
                 }
             }
