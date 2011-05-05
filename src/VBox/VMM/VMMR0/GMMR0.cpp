@@ -361,9 +361,9 @@ AssertCompile(GMM_PAGE_PFN_UNSHAREABLE == (GMM_GCPHYS_UNSHAREABLE >> PAGE_SHIFT)
 typedef struct GMMCHUNKMAP
 {
     /** The mapping object. */
-    RTR0MEMOBJ      MapObj;
+    RTR0MEMOBJ          MapObj;
     /** The VM owning the mapping. */
-    PGVM            pGVM;
+    PGVM                pGVM;
 } GMMCHUNKMAP;
 /** Pointer to a GMM allocation chunk mapping. */
 typedef struct GMMCHUNKMAP *PGMMCHUNKMAP;
@@ -425,9 +425,9 @@ typedef struct GMMCHUNK
 typedef struct GMMCHUNKTLBE
 {
     /** The chunk id. */
-    uint32_t        idChunk;
+    uint32_t            idChunk;
     /** Pointer to the chunk. */
-    PGMMCHUNK       pChunk;
+    PGMMCHUNK           pChunk;
 } GMMCHUNKTLBE;
 /** Pointer to an allocation chunk TLB entry. */
 typedef GMMCHUNKTLBE *PGMMCHUNKTLBE;
@@ -463,9 +463,9 @@ typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 typedef struct GMMCHUNKFREESET
 {
     /** The number of free pages in the set. */
-    uint64_t        cFreePages;
+    uint64_t            cFreePages;
     /** Chunks ordered by increasing number of free pages. */
-    PGMMCHUNK       apLists[GMM_CHUNK_FREE_SET_LISTS];
+    PGMMCHUNK           apLists[GMM_CHUNK_FREE_SET_LISTS];
 } GMMCHUNKFREESET;
 
 
@@ -1068,7 +1068,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
     for (unsigned i = 0; i < pChunk->cMappings; i++)
     {
         if (pChunk->paMappings[i].pGVM != pGVM)
-            SUPR0Printf("gmmR0CleanupVMDestroyChunk: %p/%#x: mapping #%x: pGVM=%p exepcted %p\n", pChunk,
+            SUPR0Printf("gmmR0CleanupVMDestroyChunk: %p/%#x: mapping #%x: pGVM=%p expected %p\n", pChunk,
                         pChunk->Core.Key, i, pChunk->paMappings[i].pGVM, pGVM);
         int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings (NA) */);
         if (RT_FAILURE(rc))
@@ -2528,7 +2528,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
     if (pChunk->cMappings)
     {
         /** @todo R0 -> VM request */
-        /* The chunk can be owned by more than one VM if fBoundMemoryMode is false! */
+        /* The chunk can be mapped by more than one VM if fBoundMemoryMode is false! */
         Log(("gmmR0FreeChunk: chunk still has %d mappings; don't free!\n", pChunk->cMappings));
     }
     else
@@ -3277,10 +3277,15 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
     int rc = RTR0MemObjMapUser(&MapObj, pChunk->MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        /* reallocate the array? */
-        if ((pChunk->cMappings & 1 /*7*/) == 0)
+        /* reallocate the array? assumes few users per chunk (usually one). */
+        if (   pChunk->cMappings <= 3
+            || (pChunk->cMappings & 3) == 0)
         {
-            void *pvMappings = RTMemRealloc(pChunk->paMappings, (pChunk->cMappings + 2 /*8*/) * sizeof(pChunk->paMappings[0]));
+            unsigned cNewSize = pChunk->cMappings <= 3
+                              ? pChunk->cMappings + 1
+                              : pChunk->cMappings + 4;
+            Assert(cNewSize < 4 || RT_ALIGN_32(cNewSize, 4) == cNewSize);
+            void *pvMappings = RTMemRealloc(pChunk->paMappings, cNewSize * sizeof(pChunk->paMappings[0]));
             if (RT_UNLIKELY(!pvMappings))
             {
                 rc = RTR0MemObjFree(MapObj, false /* fFreeMappings (NA) */);
@@ -3292,7 +3297,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
 
         /* insert new entry */
         pChunk->paMappings[pChunk->cMappings].MapObj = MapObj;
-        pChunk->paMappings[pChunk->cMappings].pGVM = pGVM;
+        pChunk->paMappings[pChunk->cMappings].pGVM   = pGVM;
         pChunk->cMappings++;
 
         *ppvR3 = RTR0MemObjAddressR3(MapObj);
@@ -3300,6 +3305,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
 
     return rc;
 }
+
 
 /**
  * Check if a chunk is mapped into the specified VM
@@ -3326,6 +3332,7 @@ static int gmmR0IsChunkMapped(PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
     *ppvR3 = NULL;
     return false;
 }
+
 
 /**
  * Map a chunk and/or unmap another chunk.
@@ -3848,8 +3855,8 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
     return GMMR0UnregisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule);
 }
 
-
 #ifdef VBOX_WITH_PAGE_SHARING
+
 /**
  * Checks specified shared module range for changes
  *
@@ -4056,7 +4063,8 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
     RTMemFree(pRecVM);
     return 0;
 }
-#endif
+
+#endif /* VBOX_WITH_PAGE_SHARING */
 
 /**
  * Removes all shared modules for the specified VM
@@ -4102,6 +4110,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
 }
 
 #ifdef VBOX_WITH_PAGE_SHARING
+
 typedef struct
 {
     PGVM                    pGVM;
@@ -4128,9 +4137,10 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
     }
     return 0;
 }
-#endif
 
+#endif /* VBOX_WITH_PAGE_SHARING */
 #ifdef DEBUG_sandervl
+
 /**
  * Setup for a GMMR0CheckSharedModules call (to allow log flush jumps back to ring 3)
  *
@@ -4175,7 +4185,8 @@ GMMR0DECL(int) GMMR0CheckSharedModulesEnd(PVM pVM)
     RTSemFastMutexRelease(pGMM->Mtx);
     return VINF_SUCCESS;
 }
-#endif
+
+#endif /* DEBUG_sandervl */
 
 /**
  * Check all shared modules for the specified VM
@@ -4234,6 +4245,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 }
 
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+
 typedef struct
 {
     PGVM                    pGVM;
@@ -4289,6 +4301,7 @@ end:
     else
         return 0;
 }
+
 
 /**
  * Find a duplicate of the specified page in other active VMs
