@@ -1,0 +1,168 @@
+/* $Id$ */
+/** @file
+ * Windows Driver R0 Tooling.
+ */
+
+/*
+ * Copyright (C) 2011 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+#include "VBoxDrvTool.h"
+
+#include <iprt/assert.h>
+
+#define VBOXDRVTOOL_MEMTAG 'TDBV'
+
+static PVOID vboxDrvToolMemAlloc(SIZE_T cbBytes)
+{
+    PVOID pvMem = ExAllocatePoolWithTag(NonPagedPool, cbBytes, VBOXDRVTOOL_MEMTAG);
+    Assert(pvMem);
+    return pvMem;
+}
+
+static PVOID vboxDrvToolMemAllocZ(SIZE_T cbBytes)
+{
+    PVOID pvMem = vboxDrvToolMemAlloc(cbBytes);
+    if (pvMem)
+    {
+        RtlZeroMemory(pvMem, cbBytes);
+    }
+    return pvMem;
+}
+
+static VOID vboxDrvToolMemFree(PVOID pvMem)
+{
+    ExFreePoolWithTag(pvMem, VBOXDRVTOOL_MEMTAG);
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegOpenKeyU(OUT PHANDLE phKey, IN PUNICODE_STRING pName, IN ACCESS_MASK fAccess)
+{
+    OBJECT_ATTRIBUTES ObjAttr;
+
+    InitializeObjectAttributes(&ObjAttr, pName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    return ZwOpenKey(phKey, fAccess, &ObjAttr);
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+{
+    UNICODE_STRING RtlStr;
+    RtlInitUnicodeString(&RtlStr, pName);
+
+    return VBoxDrvToolRegOpenKeyU(phKey, &RtlStr, fAccess);
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegCloseKey(IN HANDLE hKey)
+{
+    return ZwClose(hKey);
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PULONG pDword)
+{
+    struct
+    {
+        KEY_VALUE_PARTIAL_INFORMATION Info;
+        UCHAR Buf[32]; /* should be enough */
+    } Buf;
+    ULONG cbBuf;
+    UNICODE_STRING RtlStr;
+    RtlInitUnicodeString(&RtlStr, pName);
+    NTSTATUS Status = ZwQueryValueKey(hKey,
+                &RtlStr,
+                KeyValuePartialInformation,
+                &Buf.Info,
+                sizeof(Buf),
+                &cbBuf);
+    if (Status == STATUS_SUCCESS)
+    {
+        if (Buf.Info.Type == REG_DWORD)
+        {
+            Assert(Buf.Info.DataLength == 4);
+            *pDword = *((PULONG)Buf.Info.Data);
+            return STATUS_SUCCESS;
+        }
+    }
+
+    return STATUS_INVALID_PARAMETER;
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT ULONG val)
+{
+    UNICODE_STRING RtlStr;
+    RtlInitUnicodeString(&RtlStr, pName);
+    return ZwSetValueKey(hKey, &RtlStr,
+            NULL, /* IN ULONG  TitleIndex  OPTIONAL, reserved */
+            REG_DWORD,
+            &val,
+            sizeof(val));
+}
+
+static NTSTATUS vboxDrvToolIoCompletionSetEvent(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN PVOID pvContext)
+{
+    PKEVENT pEvent = (PKEVENT)pvContext;
+    KeSetEvent(pEvent, 0, FALSE);
+    return STATUS_MORE_PROCESSING_REQUIRED;
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolIoPostAsync(PDEVICE_OBJECT pDevObj, PIRP pIrp, PKEVENT pEvent)
+{
+    IoSetCompletionRoutine(pIrp, vboxDrvToolIoCompletionSetEvent, pEvent, TRUE, TRUE, TRUE);
+    return IoCallDriver(pDevObj, pIrp);
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolIoPostSync(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    KEVENT Event;
+    KeInitializeEvent(&Event, NotificationEvent, FALSE);
+    NTSTATUS Status = VBoxDrvToolIoPostAsync(pDevObj, pIrp, &Event);
+    if (Status == STATUS_PENDING)
+    {
+        KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+        Status = pIrp->IoStatus.Status;
+    }
+    return Status;
+}
+
+VBOXDRVTOOL_DECL(VOID) VBoxDrvToolRefWaitEqual(PVBOXDRVTOOL_REF pRef, uint32_t u32Val)
+{
+    LARGE_INTEGER Interval;
+    Interval.QuadPart = -(int64_t) 2 /* ms */ * 10000;
+    uint32_t cRefs;
+
+    while ((cRefs = ASMAtomicReadU32(&pRef->cRefs)) != u32Val)
+    {
+        Assert(cRefs >= u32Val);
+        Assert(cRefs < UINT32_MAX/2);
+
+        KeDelayExecutionThread(KernelMode, TRUE, &Interval);
+    }
+}
+
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolStrCopy(PUNICODE_STRING pDst, CONST PUNICODE_STRING pSrc)
+{
+    USHORT cbLength = pSrc->Length + sizeof (pDst->Buffer[0]);
+    pDst->Buffer = (PWCHAR)vboxDrvToolMemAlloc(cbLength);
+    Assert(pDst->Buffer);
+    if (pDst->Buffer)
+    {
+        RtlMoveMemory(pDst->Buffer, pSrc->Buffer, pSrc->Length);
+        pDst->Buffer[pSrc->Length / sizeof (pDst->Buffer[0])] = L'\0';
+        pDst->Length = pSrc->Length;
+        pDst->MaximumLength = cbLength;
+        return STATUS_SUCCESS;
+    }
+    return STATUS_NO_MEMORY;
+}
+
+VBOXDRVTOOL_DECL(VOID) VBoxDrvToolStrFree(PUNICODE_STRING pStr)
+{
+    vboxDrvToolMemFree(pStr->Buffer);
+}
