@@ -238,7 +238,7 @@ public:
 
     PVDINTERFACE mVDOperationIfaces;
 
-    // Whether the caller needs to call VirtualBox::saveSettings() after
+    // Whether the caller needs to call VirtualBox::saveRegistries() after
     // the task function returns. Only used in synchronous (wait) mode;
     // otherwise the task will save the settings itself.
     GuidList *m_pllRegistriesThatNeedSaving;
@@ -1311,8 +1311,6 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (FAILED(rc)) return rc;
     m->strDescription = aDescription;
 
-/// @todo generate uuid (similarly to host network interface uuid) from location and device type
-
     autoInitSpan.setSucceeded();
     return S_OK;
 }
@@ -2256,11 +2254,11 @@ STDMETHODIMP Medium::Close()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
     GuidList llRegistriesThatNeedSaving;
-    HRESULT rc = close(&llRegistriesThatNeedSaving, autoCaller);
+    MultiResult mrc = close(&llRegistriesThatNeedSaving, autoCaller);
+    /* Must save the registries, since an entry was most likely removed. */
+    mrc = pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
-    pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
-
-    return rc;
+    return mrc;
 }
 
 STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
@@ -2475,15 +2473,16 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
     ComObjPtr<Progress> pProgress;
 
     GuidList llRegistriesThatNeedSaving;
-    HRESULT rc = deleteStorage(&pProgress,
-                               false /* aWait */,
-                               &llRegistriesThatNeedSaving);
-    m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+    MultiResult mrc = deleteStorage(&pProgress,
+                                    false /* aWait */,
+                                    &llRegistriesThatNeedSaving);
+    /* Must save the registries in any case, since an entry was removed. */
+    mrc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(mrc))
         pProgress.queryInterfaceTo(aProgress);
 
-    return rc;
+    return mrc;
 }
 
 STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
@@ -3791,7 +3790,7 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
  * @param aWait             @c true if this method should block instead of
  *                          creating an asynchronous thread.
  * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs that will receive the registry IDs that need saving.
- *                          This only works in "wait" mode; otherwise saveSettings is called automatically by the thread that
+ *                          This only works in "wait" mode; otherwise saveRegistries is called automatically by the thread that
  *                          was created, and this parameter is ignored.
  *
  * @note Locks this object and @a aTarget for writing.
@@ -3928,7 +3927,7 @@ Utf8Str Medium::getPreferredDiffFormat()
 
 /**
  * Implementation for the public Medium::Close() with the exception of calling
- * VirtualBox::saveSettings(), in case someone wants to call this for several
+ * VirtualBox::saveRegistries(), in case someone wants to call this for several
  * media.
  *
  * After this returns with success, uninit() has been called on the medium, and
@@ -4012,8 +4011,8 @@ HRESULT Medium::close(GuidList *pllRegistriesThatNeedSaving,
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
  * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
- *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
+ *                by this function if the caller should invoke VirtualBox::saveRegistries() because the global settings have changed.
+ *                This only works in "wait" mode; otherwise saveRegistries gets called automatically by the thread that was created,
  *                and this parameter is ignored.
  *
  * @note Locks mVirtualBox and this object for writing. Locks medium tree for
@@ -4630,8 +4629,8 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
  * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
- *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
+ *                by this function if the caller should invoke VirtualBox::saveRegistries() because the global settings have changed.
+ *                This only works in "wait" mode; otherwise saveRegistries gets called automatically by the thread that was created,
  *                and this parameter is ignored.
  *
  * @note Locks the tree lock for writing. Locks the media from the chain
@@ -4844,10 +4843,10 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
         catch (HRESULT aRC) { rc = aRC; }
         catch (int aVRC)
         {
-            throw setError(E_FAIL,
-                            tr("Could not update medium UUID references to parent '%s' (%s)"),
-                            m->strLocationFull.c_str(),
-                            vdError(aVRC).c_str());
+            rc = setError(E_FAIL,
+                          tr("Could not update medium UUID references to parent '%s' (%s)"),
+                          m->strLocationFull.c_str(),
+                          vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
@@ -6273,7 +6272,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
  */
 HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 {
-    HRESULT rc = S_OK;
+    HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
@@ -6356,7 +6355,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             /* ensure the target directory exists */
             if (capabilities & VD_CAP_FILE)
             {
-                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -6383,13 +6382,15 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             if (RT_SUCCESS(vrc))
                 variant = (MediumVariant_T)uImageFlags;
         }
-        catch (HRESULT aRC) { rc = aRC; }
+        catch (HRESULT aRC) { rcTmp = aRC; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC) { rcTmp = aRC; }
 
-    if (SUCCEEDED(rc))
+    MultiResult mrc(rcTmp);
+
+    if (SUCCEEDED(mrc))
     {
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
@@ -6407,16 +6408,16 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         /* register with mVirtualBox as the last step and move to
          * Created state only on success (leaving an orphan file is
          * better than breaking media registry consistency) */
-        rc = m->pVirtualBox->registerHardDisk(pTarget, &llRegistriesThatNeedSaving);
+        mrc = m->pVirtualBox->registerHardDisk(pTarget, &llRegistriesThatNeedSaving);
 
-        if (FAILED(rc))
+        if (FAILED(mrc))
             /* break the parent association on failure to register */
             deparent();
     }
 
     AutoMultiWriteLock2 mediaLock(this, pTarget COMMA_LOCKVAL_SRC_POS);
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(mrc))
     {
         pTarget->m->state = MediumState_Created;
 
@@ -6443,7 +6444,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     if (task.isAsync())
     {
         mediaLock.release();
-        m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        mrc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
     }
     else
         // synchronous mode: report save settings result to caller
@@ -6453,7 +6454,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     /* Note that in sync mode, it's the caller's responsibility to
      * unlock the medium. */
 
-    return rc;
+    return mrc;
 }
 
 /**
@@ -6470,7 +6471,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
  */
 HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 {
-    HRESULT rc = S_OK;
+    HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
@@ -6597,23 +6598,25 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                 }
             }
         }
-        catch (HRESULT aRC) { rc = aRC; }
+        catch (HRESULT aRC) { rcTmp = aRC; }
         catch (int aVRC)
         {
-            throw setError(VBOX_E_FILE_ERROR,
-                            tr("Could not merge the medium '%s' to '%s'%s"),
-                            m->strLocationFull.c_str(),
-                            pTarget->m->strLocationFull.c_str(),
-                            vdError(aVRC).c_str());
+            rcTmp = setError(VBOX_E_FILE_ERROR,
+                             tr("Could not merge the medium '%s' to '%s'%s"),
+                             m->strLocationFull.c_str(),
+                             pTarget->m->strLocationFull.c_str(),
+                             vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC) { rcTmp = aRC; }
 
+    ErrorInfoKeeper eik;
+    MultiResult mrc(rcTmp);
     HRESULT rc2;
 
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(mrc))
     {
         /* all media but the target were successfully deleted by
          * VDMerge; reparent the last one and uninitialize deleted media. */
@@ -6730,19 +6733,22 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         // in asynchronous mode, save settings now
         GuidList llRegistriesThatNeedSaving;
         addToRegistryIDList(llRegistriesThatNeedSaving);
-        rc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        /* collect multiple errors */
+        eik.restore();
+        mrc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        eik.fetch();
     }
     else
         // synchronous mode: report save settings result to caller
         if (task.m_pllRegistriesThatNeedSaving)
             pTarget->addToRegistryIDList(*task.m_pllRegistriesThatNeedSaving);
 
-    if (FAILED(rc))
+    if (FAILED(mrc))
     {
         /* Here we come if either VDMerge() failed (in which case we
          * assume that it tried to do everything to make a further
          * retry possible -- e.g. not deleted intermediate media
-         * and so on) or VirtualBox::saveSettings() failed (where we
+         * and so on) or VirtualBox::saveRegistries() failed (where we
          * should have the original tree but with intermediate storage
          * units deleted by VDMerge()). We have to only restore states
          * (through the MergeChain dtor) unless we are run synchronously
@@ -6756,7 +6762,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         }
     }
 
-    return rc;
+    return mrc;
 }
 
 /**
@@ -6770,7 +6776,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
  */
 HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 {
-    HRESULT rc = S_OK;
+    HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
     const ComObjPtr<Medium> &pParent = task.mParent;
@@ -6852,7 +6858,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             /* ensure the target directory exists */
             if (capabilities & VD_CAP_FILE)
             {
-                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -6931,18 +6937,21 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 if (RT_SUCCESS(vrc))
                     variant = (MediumVariant_T)uImageFlags;
             }
-            catch (HRESULT aRC) { rc = aRC; }
+            catch (HRESULT aRC) { rcTmp = aRC; }
 
             VDDestroy(targetHdd);
         }
-        catch (HRESULT aRC) { rc = aRC; }
+        catch (HRESULT aRC) { rcTmp = aRC; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC) { rcTmp = aRC; }
+
+    ErrorInfoKeeper eik;
+    MultiResult mrc(rcTmp);
 
     /* Only do the parent changes for newly created media. */
-    if (SUCCEEDED(rc) && fCreatingTarget)
+    if (SUCCEEDED(mrc) && fCreatingTarget)
     {
         /* we set mParent & children() */
         AutoWriteLock alock2(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -6959,16 +6968,20 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             /* register with mVirtualBox as the last step and move to
              * Created state only on success (leaving an orphan file is
              * better than breaking media registry consistency) */
-            rc = pParent->m->pVirtualBox->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+            eik.restore();
+            mrc = pParent->m->pVirtualBox->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+            eik.fetch();
 
-            if (FAILED(rc))
+            if (FAILED(mrc))
                 /* break parent association on failure to register */
                 pTarget->deparent();     // removes target from parent
         }
         else
         {
             /* just register  */
-            rc = m->pVirtualBox->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+            eik.restore();
+            mrc = m->pVirtualBox->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+            eik.fetch();
         }
     }
 
@@ -6976,7 +6989,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
     {
         AutoWriteLock mLock(pTarget COMMA_LOCKVAL_SRC_POS);
 
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(mrc))
         {
             pTarget->m->state = MediumState_Created;
 
@@ -7000,7 +7013,10 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         // save the settings
         GuidList llRegistriesThatNeedSaving;
         addToRegistryIDList(llRegistriesThatNeedSaving);
-        HRESULT rc1 = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        /* collect multiple errors */
+        eik.restore();
+        mrc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        eik.fetch();
     }
 
     /* Everything is explicitly unlocked when the task exits,
@@ -7011,7 +7027,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
      * is called & the source chain is released at the same time. */
     task.mpSourceMediumLockList->Clear();
 
-    return rc;
+    return mrc;
 }
 
 /**
@@ -7552,7 +7568,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
  */
 HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
 {
-    HRESULT rc = S_OK;
+    HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pParent = task.mParent;
 
@@ -7616,7 +7632,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
             /* ensure the target directory exists */
             if (capabilities & VD_CAP_FILE)
             {
-                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7695,18 +7711,21 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
                 if (RT_SUCCESS(vrc))
                     variant = (MediumVariant_T)uImageFlags;
             }
-            catch (HRESULT aRC) { rc = aRC; }
+            catch (HRESULT aRC) { rcTmp = aRC; }
 
             VDDestroy(targetHdd);
         }
-        catch (HRESULT aRC) { rc = aRC; }
+        catch (HRESULT aRC) { rcTmp = aRC; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC) { rcTmp = aRC; }
+
+    ErrorInfoKeeper eik;
+    MultiResult mrc(rcTmp);
 
     /* Only do the parent changes for newly created media. */
-    if (SUCCEEDED(rc) && fCreatingTarget)
+    if (SUCCEEDED(mrc) && fCreatingTarget)
     {
         /* we set mParent & children() */
         AutoWriteLock alock2(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -7723,16 +7742,20 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
             /* register with mVirtualBox as the last step and move to
              * Created state only on success (leaving an orphan file is
              * better than breaking media registry consistency) */
-            rc = pParent->m->pVirtualBox->registerHardDisk(this, NULL /* llRegistriesThatNeedSaving */);
+            eik.restore();
+            mrc = pParent->m->pVirtualBox->registerHardDisk(this, NULL /* llRegistriesThatNeedSaving */);
+            eik.fetch();
 
-            if (FAILED(rc))
+            if (FAILED(mrc))
                 /* break parent association on failure to register */
                 this->deparent();     // removes target from parent
         }
         else
         {
             /* just register  */
-            rc = m->pVirtualBox->registerHardDisk(this, NULL /* pllRegistriesThatNeedSaving */);
+            eik.restore();
+            mrc = m->pVirtualBox->registerHardDisk(this, NULL /* pllRegistriesThatNeedSaving */);
+            eik.fetch();
         }
     }
 
@@ -7740,7 +7763,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
     {
         AutoWriteLock mLock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(mrc))
         {
             m->state = MediumState_Created;
 
@@ -7764,7 +7787,10 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
         // save the settings
         GuidList llRegistriesThatNeedSaving;
         addToRegistryIDList(llRegistriesThatNeedSaving);
-        HRESULT rc1 = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        /* collect multiple errors */
+        eik.restore();
+        mrc = m->pVirtualBox->saveRegistries(llRegistriesThatNeedSaving);
+        eik.fetch();
     }
 
     /* Everything is explicitly unlocked when the task exits,
@@ -7774,7 +7800,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
      * lead to deadlocks with concurrent IAppliance activities. */
     task.mpTargetMediumLockList->Clear();
 
-    return rc;
+    return mrc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
