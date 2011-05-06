@@ -523,9 +523,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                if (!strlen(ValueUnion.psz))
-                    continue;
-
                 if (args.size() == 0 && Utf8Cmd.isEmpty())
                     Utf8Cmd = ValueUnion.psz;
                 else
