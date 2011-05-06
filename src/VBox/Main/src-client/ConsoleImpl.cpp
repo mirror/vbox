@@ -8012,10 +8012,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                             ErrorInfoKeeper eik;
                             setVMRuntimeErrorCallbackF(pVM, pConsole, 0, "BrokenSharedFolder",
                                                        N_("The shared folder '%s' could not be set up: %ls.\n"
-                                                          "The shared folder setup will not be complete. It is recommended to power down the virtual machine and "
-                                                          "fix the shared folder settings while the machine is not running."),
+                                                          "The shared folder setup will not be complete. It is recommended to power down the virtual machine and fix the shared folder settings while the machine is not running"),
                                                        it->first.c_str(), eik.getText().raw());
-                            break;
                         }
                     }
                     if (FAILED(rc))
