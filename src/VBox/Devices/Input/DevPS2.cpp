@@ -266,12 +266,24 @@ typedef struct KBDState {
     } Mouse;
 } KBDState;
 
-/* Table to convert from PC scancodes to raw scancodes.  */
-static const unsigned char ps2_raw_keycode[128] = {
+/* Table to convert from PC scancodes to scan code set 2. */
+static const unsigned char ps2_raw_keycode_set2[128] = {
       0,118, 22, 30, 38, 37, 46, 54, 61, 62, 70, 69, 78, 85,102, 13,
      21, 29, 36, 45, 44, 53, 60, 67, 68, 77, 84, 91, 90, 20, 28, 27,
      35, 43, 52, 51, 59, 66, 75, 76, 82, 14, 18, 93, 26, 34, 33, 42,
      50, 49, 58, 65, 73, 74, 89,124, 17, 41, 88,  5,  6,  4, 12,  3,
+     11,  2, 10,  1,  9,119,126,108,117,125,123,107,115,116,121,105,
+    114,122,112,113,127, 96, 97,120,  7, 15, 23, 31, 39, 47, 55, 63,
+     71, 79, 86, 94,  8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 87,111,
+     19, 25, 57, 81, 83, 92, 95, 98, 99,100,101,103,104,106,109,110
+};
+
+/* Table to convert from PC scancodes to scan code set 3. */
+static const unsigned char ps2_raw_keycode_set3[128] = {
+      0,118, 22, 30, 38, 37, 46, 54, 61, 62, 70, 69, 78, 85,102, 13,
+     21, 29, 36, 45, 44, 53, 60, 67, 68, 77, 84, 91, 90, 17, 28, 27,
+     35, 43, 52, 51, 59, 66, 75, 76, 82, 14, 18, 92, 26, 34, 33, 42,
+     50, 49, 58, 65, 73, 74, 89,124, 25, 41, 20,  5,  6,  4, 12,  3,
      11,  2, 10,  1,  9,119,126,108,117,125,123,107,115,116,121,105,
     114,122,112,113,127, 96, 97,120,  7, 15, 23, 31, 39, 47, 55, 63,
      71, 79, 86, 94,  8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 87,111,
@@ -378,11 +390,14 @@ static void pc_kbd_put_keycode(void *opaque, int keycode)
     KBDState *s = (KBDState*)opaque;
 
     /* XXX: add support for scancode sets 1 and 3 */
-    if (!s->translate && keycode < 0xe0 && s->scancode_set == 2)
+    if (!s->translate && keycode < 0xe0 && s->scancode_set >= 2)
     {
         if (keycode & 0x80)
            kbd_queue(s, 0xf0, 0);
-        keycode = ps2_raw_keycode[keycode & 0x7f];
+        if (s->scancode_set == 2)
+            keycode = ps2_raw_keycode_set2[keycode & 0x7f];
+        else if (s->scancode_set == 3)
+            keycode = ps2_raw_keycode_set3[keycode & 0x7f];
     }
     kbd_queue(s, keycode, 0);
 }
@@ -637,8 +652,10 @@ static int  kbd_write_keyboard(KBDState *s, int val)
             else if (s->scancode_set == 3)
                 pc_kbd_put_keycode(s, 0x3f);
         } else {
-            if (val >= 1 && val <= 3)
+            if (val >= 1 && val <= 3) {
+                LogRel(("kbd: scan code set %d selected\n", val));
                 s->scancode_set = val;
+            }
             kbd_queue(s, KBD_REPLY_ACK, 0);
         }
 #else
