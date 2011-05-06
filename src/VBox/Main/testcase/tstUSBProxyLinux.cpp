@@ -90,8 +90,7 @@ static struct
     { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
     /* "sysfs" and root in the environment, method-specific init failed */
     { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
-    /* "sysfs" and bad root in the environment (should succeed as we don't
-     * do checks if the user specifies everything) */
+    /* "sysfs" and bad root in the environment (should succeed as we don't do checks if the user specifies everything) */
     { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
     /* "sysfs" and bad root in the environment, method-specific init failed */
     { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
@@ -101,19 +100,30 @@ static struct
     { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
     /* "usbfs" and root in the environment, method-specific init failed */
     { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
-    /* "usbfs" and bad root in the environment (should succeed as we don't
-     * do checks if the user specifies everything) */
+    /* "usbfs" and bad root in the environment (should succeed as we don't do checks if the user specifies everything) */
     { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
     /* "usbfs" and bad root in the environment, method-specific init failed */
     { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
     /* "usbfs" and no root in the environment */
     { "usbfs", NULL, NULL, false, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
-    /* No environment, sysfs and usbfs available but without access
-     * permissions. */
+    /* invalid method in the environment, sysfs available */
+    { "invalid", "/dev/bus/usb", "/dev/vboxusb", true, NULL, false, VINF_SUCCESS, "/dev/vboxusb", false, VINF_SUCCESS },
+    /* invalid method in the environment, usbfs available */
+    { "invalid", "/dev/bus/usb", NULL, true, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
+    /* invalid method in the environment, sysfs inaccessible */
+    { "invalid", "/dev/bus/usb", "/dev/vboxusb", false, NULL, false, VINF_SUCCESS, "", true, VERR_VUSB_USB_DEVICE_PERMISSION },
+    /* invalid method in the environment, usbfs inaccessible */
+    { "invalid", "/dev/bus/usb", NULL, false, "/proc/bus/usb", false, VINF_SUCCESS, "", true, VERR_VUSB_USBFS_PERMISSION },
+    /* No environment, sysfs and usbfs available but without access permissions. */
     { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", false, VERR_NO_MEMORY, "", true, VERR_VUSB_USB_DEVICE_PERMISSION },
-    /* No environment, sysfs and usbfs available, access permissions for sysfs,
-     * method-specific init failed. */
-    { NULL, NULL, "/dev/vboxusb", true, "/proc/bus/usb", false, VERR_NO_MEMORY, "/dev/vboxusb", false, VERR_NO_MEMORY },
+    /* No environment, sysfs and usbfs available, access permissions for sysfs. */
+    { NULL, NULL, "/dev/vboxusb", true, "/proc/bus/usb", false, VINF_SUCCESS, "/dev/vboxusb", false, VINF_SUCCESS },
+    /* No environment, sysfs and usbfs available, access permissions for usbfs. */
+    { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
+    /* No environment, sysfs available but without access permissions. */
+    { NULL, NULL, "/dev/vboxusb", false, NULL, false, VERR_NO_MEMORY, "", true, VERR_VUSB_USB_DEVICE_PERMISSION },
+    /* No environment, sysfs available with access permissions, method-specific init failed. */
+    { NULL, NULL, "/dev/vboxusb", true, NULL, false, VERR_NO_MEMORY, "/dev/vboxusb", false, VERR_NO_MEMORY },
     /* No environment, usbfs available but without access permissions. */
     { NULL, NULL, NULL, false, "/proc/bus/usb", false, VERR_NO_MEMORY, "", true, VERR_VUSB_USBFS_PERMISSION },
     /* No environment, usbfs available with access permissions, method-specific
