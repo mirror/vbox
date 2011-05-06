@@ -171,7 +171,8 @@ tstHostHardwareLinux_LIBS     += \
 tstUSBProxyLinux_TEMPLATE  = VBOXR3TSTNPEXE
 tstUSBProxyLinux_SOURCES   = \
 	tstUSBProxyLinux.cpp \
-	../src-server/linux/USBProxyServiceLinux.cpp
+	../src-server/linux/USBProxyServiceLinux.cpp \
+	../src-server/linux/USBGetDevices.cpp
 tstUSBProxyLinux_INCS      = \
 	. \
 	../include \
@@ -179,12 +180,14 @@ tstUSBProxyLinux_INCS      = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom
 tstUSBProxyLinux_DEFS      = \
-	TESTCASE \
+	UNIT_TEST \
+	VBOX_WITH_USB \
 	VBOX_USB_WITH_SYSFS \
-	VBOX_WITH_SYSFS_BY_DEFAULT \
 	VBOX_WITH_XPCOM
 tstUSBProxyLinux_DEPS     = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+tstUSBProxyLinux_LIBS     += \
+	$(PATH_OUT)/lib/USBLib.a
 
 
 # generate rules.

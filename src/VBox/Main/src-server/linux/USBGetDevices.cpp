@@ -1389,6 +1389,34 @@ static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot, bool testfs)
 #endif  /* !VBOX_USB_WITH_SYSFS */
 }
 
+#ifdef UNIT_TEST
+/* Set up mock functions for USBProxyLinuxCheckDeviceRoot - here dlsym and close
+ * for the inotify presence check. */
+static int testInotifyInitGood(void) { return 0; }
+static int testInotifyInitBad(void) { return -1; }
+static bool s_fHaveInotifyLibC = true;
+static bool s_fHaveInotifyKernel = true;
+
+static void *testDLSym(void *handle, const char *symbol)
+{
+    Assert(handle == RTLD_DEFAULT);
+    Assert(!RTStrCmp(symbol, "inotify_init"));
+    if (!s_fHaveInotifyLibC)
+        return NULL;
+    if (s_fHaveInotifyKernel)
+        return (void *)testInotifyInitGood;
+    return (void *)testInotifyInitBad;
+}
+
+void TestUSBSetInotifyAvailable(bool fHaveInotifyLibC, bool fHaveInotifyKernel)
+{
+    s_fHaveInotifyLibC = fHaveInotifyLibC;
+    s_fHaveInotifyKernel = fHaveInotifyKernel;
+}
+# define dlsym testDLSym
+# define close(a) do {} while(0)
+#endif
+
 /** Is inotify available and working on this system?  This is a requirement
  * for using USB with sysfs */
 static bool inotifyAvailable(void)
@@ -1404,6 +1432,64 @@ static bool inotifyAvailable(void)
     close(fd);
     return true;
 }
+
+#ifdef UNIT_TEST
+# undef dlsym
+# undef close
+#endif
+
+#ifdef UNIT_TEST
+/** Unit test list of usbfs addresses of connected devices. */
+static const char **s_pacszUsbfsDeviceAddresses = NULL;
+
+static PUSBDEVICE testGetUsbfsDevices(const char *pcszUsbfsRoot, bool testfs)
+{
+    const char **pcsz;
+    PUSBDEVICE pList = NULL, pTail = NULL;
+    for (pcsz = s_pacszUsbfsDeviceAddresses; pcsz && *pcsz; ++pcsz)
+    {
+        PUSBDEVICE pNext = (PUSBDEVICE)RTMemAllocZ(sizeof(USBDEVICE));
+        if (pNext)
+            pNext->pszAddress = RTStrDup(*pcsz);
+        if (!pNext || !pNext->pszAddress)
+        {
+            deviceListFree(&pList);
+            return NULL;
+        }
+        if (pTail)
+            pTail->pNext = pNext;
+        else
+            pList = pNext;
+        pTail = pNext;
+    }
+    return pList;
+}
+# define getDevicesFromUsbfs testGetUsbfsDevices
+
+void TestUSBSetAvailableUsbfsDevices(const char **pacszDeviceAddresses)
+{
+    s_pacszUsbfsDeviceAddresses = pacszDeviceAddresses;
+}
+
+/** Unit test list of files reported as accessible by access(3).  We only do
+ * accessible or not accessible. */
+static const char **s_pacszAccessibleFiles = NULL;
+
+static int testAccess(const char *pcszPath, int mode)
+{
+    const char **pcsz;
+    for (pcsz = s_pacszAccessibleFiles; pcsz && *pcsz; ++pcsz)
+        if (!RTStrCmp(pcszPath, *pcsz))
+            return 0;
+    return -1;
+}
+# define access testAccess
+
+void TestUSBSetAccessibleFiles(const char **pacszAccessibleFiles)
+{
+    s_pacszAccessibleFiles = pacszAccessibleFiles;
+}
+#endif
 
 bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 {
@@ -1430,6 +1516,10 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
     return fOK;
 }
 
+#ifdef UNIT_TEST
+# undef getDevicesFromUsbfs
+# undef access
+#endif
 
 PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
                                    bool fUseSysfs)
