@@ -99,6 +99,9 @@ typedef struct GVMHANDLE
     uint16_t volatile   iNext;
     /** Our own index / handle value. */
     uint16_t            iSelf;
+    /** The process ID of the handle owner.
+     * This is used for access checks. */
+    RTPROCESS           ProcId;
     /** The pointer to the ring-0 only (aka global) VM structure. */
     PGVM                pGVM;
     /** The ring-0 mapping of the shared VM instance data. */
@@ -111,16 +114,13 @@ typedef struct GVMHANDLE
      * This is used for ownership checks as well as looking up a VM handle by thread
      * at times like assertions. */
     RTNATIVETHREAD      hEMT0;
-    /** The process ID of the handle owner.
-     * This is used for access checks. */
-    RTPROCESS           ProcId;
 } GVMHANDLE;
 /** Pointer to a global VM handle. */
 typedef GVMHANDLE *PGVMHANDLE;
 
 /** Number of GVM handles (including the NIL handle). */
 #if HC_ARCH_BITS == 64
-# define GVMM_MAX_HANDLES   1024
+# define GVMM_MAX_HANDLES   8192
 #else
 # define GVMM_MAX_HANDLES   128
 #endif
