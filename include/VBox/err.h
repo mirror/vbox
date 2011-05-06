@@ -1502,9 +1502,11 @@
 #define VERR_GMM_CHUNK_ALREADY_MAPPED               (-3812)
 /** The chunk to be unmapped isn't actually mapped into the process. */
 #define VERR_GMM_CHUNK_NOT_MAPPED                   (-3813)
+/** The chunk has been mapped too many times already (impossible). */
+#define VERR_GMM_TOO_MANY_CHUNK_MAPPINGS            (-3814)
 /** The reservation or reservation update was declined - too many VMs, too
  * little memory, and/or too low GMM configuration. */
-#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-3814)
+#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-3815)
 /** @} */
 
 
