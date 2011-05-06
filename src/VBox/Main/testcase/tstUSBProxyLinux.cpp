@@ -81,25 +81,44 @@ static struct
     const char *pcszUsbfsRoot;
     bool fUsbfsAccessible;
     int rcMethodInit;
-    int rcExpected;
     const char *pcszDevicesRootExpected;
     bool fUsingUsbfsExpected;
+    int rcExpected;
 } s_testEnvironment[] =
 {
-    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", false },
-    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", false },
-    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", false },
-    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", false },
-    { "sysfs", NULL, "/dev/vboxusb", true, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/vboxusb", false },
-    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", true },
-    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", true },
-    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", true },
-    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", true },
-    { "usbfs", NULL, NULL, false, "/proc/bus/usb", true, VINF_SUCCESS, VINF_SUCCESS, "/proc/bus/usb", true },
-    { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_VUSB_USB_DEVICE_PERMISSION, "", true },
-    { NULL, NULL, "/dev/vboxusb", true, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/vboxusb", false },
-    { NULL, NULL, NULL, false, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_VUSB_USBFS_PERMISSION, "", true },
-    { NULL, NULL, NULL, false, "/proc/bus/usb", true, VERR_NO_MEMORY, VERR_NO_MEMORY, "/proc/bus/usb", true }
+    /* "sysfs" and root in the environment */
+    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
+    /* "sysfs" and root in the environment, method-specific init failed */
+    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
+    /* "sysfs" and bad root in the environment (should succeed as we don't
+     * do checks if the user specifies everything) */
+    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
+    /* "sysfs" and bad root in the environment, method-specific init failed */
+    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
+    /* "sysfs" and no root in the environment */
+    { "sysfs", NULL, "/dev/vboxusb", true, NULL, false, VINF_SUCCESS, "/dev/vboxusb", false, VINF_SUCCESS },
+    /* "usbfs" and root in the environment */
+    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
+    /* "usbfs" and root in the environment, method-specific init failed */
+    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
+    /* "usbfs" and bad root in the environment (should succeed as we don't
+     * do checks if the user specifies everything) */
+    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
+    /* "usbfs" and bad root in the environment, method-specific init failed */
+    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
+    /* "usbfs" and no root in the environment */
+    { "usbfs", NULL, NULL, false, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
+    /* No environment, sysfs and usbfs available but without access
+     * permissions. */
+    { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", false, VERR_NO_MEMORY, "", true, VERR_VUSB_USB_DEVICE_PERMISSION },
+    /* No environment, sysfs and usbfs available, access permissions for sysfs,
+     * method-specific init failed. */
+    { NULL, NULL, "/dev/vboxusb", true, "/proc/bus/usb", false, VERR_NO_MEMORY, "/dev/vboxusb", false, VERR_NO_MEMORY },
+    /* No environment, usbfs available but without access permissions. */
+    { NULL, NULL, NULL, false, "/proc/bus/usb", false, VERR_NO_MEMORY, "", true, VERR_VUSB_USBFS_PERMISSION },
+    /* No environment, usbfs available with access permissions, method-specific
+     * init failed. */
+    { NULL, NULL, NULL, false, "/proc/bus/usb", true, VERR_NO_MEMORY, "/proc/bus/usb", true, VERR_NO_MEMORY }
 };
 
 static void testInit(RTTEST hTest)
@@ -117,21 +136,21 @@ static void testInit(RTTEST hTest)
                            s_testEnvironment[i].rcMethodInit);
         HRESULT hrc = test.init();
         RTTESTI_CHECK_MSG(hrc == S_OK,
-                           ("init() returned 0x%x on line %i!\n", hrc, i));
+                           ("init() returned 0x%x (test index %i)!\n", hrc, i));
         int rc = test.getLastError();
         RTTESTI_CHECK_MSG(rc == s_testEnvironment[i].rcExpected,
-                          ("getLastError() returned %Rrc on line %i instead of %Rrc!\n",
+                          ("getLastError() returned %Rrc (test index %i) instead of %Rrc!\n",
                            rc, i, s_testEnvironment[i].rcExpected));
         const char *pcszDevicesRoot = test.testGetDevicesRoot();
         RTTESTI_CHECK_MSG(!RTStrCmp(pcszDevicesRoot,
                                s_testEnvironment[i].pcszDevicesRootExpected),
-                          ("testGetDevicesRoot() returned %s on line %i instead of %s!\n",
+                          ("testGetDevicesRoot() returned %s (test index %i) instead of %s!\n",
                            pcszDevicesRoot, i,
                            s_testEnvironment[i].pcszDevicesRootExpected));
         bool fUsingUsbfs = test.testGetUsingUsbfs();
         RTTESTI_CHECK_MSG(   fUsingUsbfs
                           == s_testEnvironment[i].fUsingUsbfsExpected,
-                          ("testGetUsingUsbfs() returned %RTbool on line %i instead of %RTbool!\n",
+                          ("testGetUsingUsbfs() returned %RTbool (test index %i) instead of %RTbool!\n",
                            fUsingUsbfs, i,
                            s_testEnvironment[i].fUsingUsbfsExpected));
     }
@@ -146,12 +165,23 @@ static struct
     bool fAvailableExpected;
 } s_testCheckDeviceRoot[] =
 {
+    /* /dev/vboxusb accessible -> device nodes method available */
     { { NULL }, { "/dev/vboxusb" }, "/dev/vboxusb", true, true },
+    /* /dev/vboxusb present but not accessible -> device nodes method not
+     * available */
     { { NULL }, { NULL }, "/dev/vboxusb", true, false },
+    /* /proc/bus/usb available but empty -> usbfs method available (we can't
+     * really check in this case) */
     { { NULL }, { NULL }, "/proc/bus/usb", false, true },
+    /* /proc/bus/usb available, one inaccessible device -> usbfs method not
+     * available */
     { { "/proc/bus/usb/001/001" }, { NULL }, "/proc/bus/usb", false, false },
+    /* /proc/bus/usb available, one device of two inaccessible -> usbfs method
+     * not available */
     { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
       { "/proc/bus/usb/001/001" }, "/proc/bus/usb", false, false },
+    /* /proc/bus/usb available, two accessible devices -> usbfs method
+     * available */
     { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
       { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
       "/proc/bus/usb", false, true }
@@ -171,7 +201,7 @@ static void testCheckDeviceRoot(RTTEST hTest)
                                    s_testCheckDeviceRoot[i].fIsDeviceNodes);
         RTTESTI_CHECK_MSG(   fAvailable
                           == s_testCheckDeviceRoot[i].fAvailableExpected,
-                           ("USBProxyLinuxCheckDeviceRoot() returned %RTbool on line %i instead of %RTbool!\n",
+                           ("USBProxyLinuxCheckDeviceRoot() returned %RTbool (test index %i) instead of %RTbool!\n",
                             fAvailable, i,
                             s_testCheckDeviceRoot[i].fAvailableExpected));
     }
