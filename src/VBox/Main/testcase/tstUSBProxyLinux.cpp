@@ -22,9 +22,10 @@
 #include "USBProxyService.h"
 #include "USBGetDevices.h"
 
+#include <VBox/err.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
 #include <iprt/env.h>
+#include <iprt/string.h>
 #include <iprt/test.h>
 
 /*** BEGIN STUBS ***/
@@ -61,28 +62,9 @@ com::Utf8Str HostUSBDevice::getName()
     return Utf8Str();
 }
 
-static const char *s_pcszDeviceRoot = "";
-static bool s_fIsDeviceNodes = false;
-
-bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot,
-                                  bool fIsDeviceNodes)
+int USBProxyService::getLastError(void)
 {
-    return (   (!strcmp(s_pcszDeviceRoot, pcszRoot))
-            && (s_fIsDeviceNodes == fIsDeviceNodes));
-}
-
-static struct
-{
-    const char *pcszDevicesRoot;
-    bool fUseSysfs;
-} s_getDevices;
-
-PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
-                                   bool fUseSysfs)
-{
-    s_getDevices.pcszDevicesRoot = pcszDevicesRoot;
-    s_getDevices.fUseSysfs = fUseSysfs;
-    return NULL;
+    return mLastError;
 }
 
 void SysFreeString(BSTR bstr)
@@ -90,81 +72,108 @@ void SysFreeString(BSTR bstr)
     Assert(0);
 }
 
-/*** END STUBS ***/
-
-class tstUSBProxyLinux : public USBProxyServiceLinux
+static struct 
 {
-protected:
-    virtual int initUsbfs(void) { return VINF_SUCCESS; }
-    virtual int initSysfs(void) { return VINF_SUCCESS; }
-public:
-    tstUSBProxyLinux(void) : USBProxyServiceLinux(NULL) {}
-    PUSBDEVICE getDevices(void)
-    {
-        return USBProxyServiceLinux::getDevices();
-    }
+    const char *pcszEnvUsb;
+    const char *pcszEnvUsbRoot;
+    const char *pcszDevicesRoot;
+    bool fDevicesAccessible;
+    const char *pcszUsbfsRoot;
+    bool fUsbfsAccessible;
+    int rcMethodInit;
+    int rcExpected;
+    const char *pcszDevicesRootExpected;
+    bool fUsingUsbfsExpected;
+} s_testEnvironment[] =
+{
+    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", false },
+    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", false },
+    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", false },
+    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", false },
+    { "sysfs", NULL, "/dev/usbvbox", true, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/vboxusb", false },
+    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", true },
+    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", true },
+    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, VINF_SUCCESS, "/dev/bus/usb", true },
+    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/bus/usb", true },
+    { "usbfs", NULL, NULL, false, "/proc/bus/usb", true, VINF_SUCCESS, VINF_SUCCESS, "/proc/bus/usb", true },
+    { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_VUSB_USB_DEVICE_PERMISSION, "", true },
+    { NULL, NULL, "/dev/vboxusb", true, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_NO_MEMORY, "/dev/vboxusb", false },
+    { NULL, NULL, NULL, false, "/proc/bus/usb", false, VERR_NO_MEMORY, VERR_VUSB_USBFS_PERMISSION, "", true },
+    { NULL, NULL, NULL, false, "/proc/bus/usb", true, VERR_NO_MEMORY, VERR_NO_MEMORY, "/proc/bus/usb", true }
 };
+
+static void testInit(RTTEST hTest)
+{
+    RTTestSub(hTest, "Testing USBProxyServiceLinux initialisation");
+    for (unsigned i = 0; i < RT_ELEMENTS(s_testEnvironment); ++i)
+    {
+        USBProxyServiceLinux test(NULL);
+        test.testSetEnv(s_testEnvironment[i].pcszEnvUsb,
+                        s_testEnvironment[i].pcszEnvUsbRoot);
+        test.testSetupInit(s_testEnvironment[i].pcszUsbfsRoot,
+                           s_testEnvironment[i].fUsbfsAccessible,
+                           s_testEnvironment[i].pcszDevicesRoot,
+                           s_testEnvironment[i].fDevicesAccessible,
+                           s_testEnvironment[i].rcMethodInit);
+        HRESULT hrc = test.init();
+        RTTESTI_CHECK_MSG(hrc == S_OK,
+                           ("init() returned 0x%x on line %i!\n", hrc, i));
+        int rc = test.getLastError();
+        RTTESTI_CHECK_MSG(rc == s_testEnvironment[i].rcExpected,
+                          ("getLastError() returned %Rrc on line %i instead of %Rrc!\n",
+                           rc, i, s_testEnvironment[i].rcExpected));
+        const char *pcszDevicesRoot = test.testGetDevicesRoot();
+        RTTESTI_CHECK_MSG(!RTStrCmp(pcszDevicesRoot,
+                               s_testEnvironment[i].pcszDevicesRootExpected),
+                          ("testGetDevicesRoot() returned %s on line %i instead of %s!\n",
+                           pcszDevicesRoot, i,
+                           s_testEnvironment[i].pcszDevicesRootExpected));
+        bool fUsingUsbfs = test.testGetUsingUsbfs();
+        RTTESTI_CHECK_MSG(   fUsingUsbfs
+                          == s_testEnvironment[i].fUsingUsbfsExpected,
+                          ("testGetUsingUsbfs() returned %RTbool on line %i instead of %RTbool!\n",
+                           fUsingUsbfs, i,
+                           s_testEnvironment[i].fUsingUsbfsExpected));
+    }
+}
 
 static struct 
 {
-    const char *pcszVBOX_USB;
-    const char *pcszVBOX_USB_ROOT;
-    const char *pcszReturnedRoot;
-    bool fReturnedUseSysfs;
-    bool fRequestedUseSysfs;
-    const char *pcszFinalRoot;
-    bool fFinalUseSysfs;
-} s_testEnvironment[] =
+    const char *pacszDeviceAddresses[16];
+    const char *pacszAccessibleFiles[16];
+    const char *pcszRoot;
+    bool fIsDeviceNodes;
+    bool fAvailableExpected;
+} s_testCheckDeviceRoot[] =
 {
-    { "sysfs", "/dev/bus/usb", "/proc/bus/usb", false, true, "/dev/bus/usb", true },
-    { "sysfs", "/dev/bus/usb", "/dev/vboxusb", true, true, "/dev/bus/usb", true },
-    { "sysfs", NULL, "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { "sysfs", NULL, "/dev/vboxusb", true, true, "/dev/vboxusb", true },
-    { "usbfs", "/dev/bus/usb", "/proc/bus/usb", false, false, "/dev/bus/usb", false },
-    { "usbfs", "/dev/bus/usb", "/dev/vboxusb", true, false, "/dev/bus/usb", false },
-    { "usbfs", NULL, "/proc/bus/usb", false, false, "/proc/bus/usb", false },
-    { "usbfs", NULL, "/dev/vboxusb", true, false, "/dev/vboxusb", true },
-    { "nofs", "/dev/bus/usb", "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { "nofs", "/dev/bus/usb", "/dev/vboxusb", true, true, "/dev/vboxusb", true },
-    { "nofs", NULL, "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { "nofs", NULL, "/dev/vboxusb", true, true, "/dev/vboxusb", true },
-    { "", "/dev/bus/usb", "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { "", "/dev/bus/usb", "/dev/vboxusb", true, true, "/dev/vboxusb", true },
-    { "", NULL, "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { "", NULL, "/dev/vboxusb", true, true, "/dev/vboxusb", true },
-    { NULL, "/dev/bus/usb", "/proc/bus/usb", false, true, "/proc/bus/usb", false },
-    { NULL, "/dev/bus/usb", "/dev/vboxusb", true, true, "/dev/vboxusb", true }
+    { { NULL }, { "/dev/vboxusb" }, "/dev/vboxusb", true, true },
+    { { NULL }, { NULL }, "/dev/vboxusb", true, false },
+    { { NULL }, { NULL }, "/proc/bus/usb", false, true },
+    { { "/proc/bus/usb/001/001" }, { NULL }, "/proc/bus/usb", false, false },
+    { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
+      { "/proc/bus/usb/001/001" }, "/proc/bus/usb", false, false },
+    { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
+      { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
+      "/proc/bus/usb", false, true }
 };
 
-/** @note Fiddling with the real environment for this is not nice, in my
- * opinion at least. */
-static void testEnvironment(RTTEST hTest)
+static void testCheckDeviceRoot(RTTEST hTest)
 {
-    RTTestSub(hTest, "Testing environment variable handling");
-    for (unsigned i = 0; i < RT_ELEMENTS(s_testEnvironment); ++i)
+    RTTestSub(hTest, "Testing the USBProxyLinuxCheckDeviceRoot API");
+    for (unsigned i = 0; i < RT_ELEMENTS(s_testCheckDeviceRoot); ++i)
     {
-        tstUSBProxyLinux test;
-        if (s_testEnvironment[i].pcszVBOX_USB)
-            RTEnvSet("VBOX_USB", s_testEnvironment[i].pcszVBOX_USB);
-        else
-            RTEnvUnset("VBOX_USB");
-        if (s_testEnvironment[i].pcszVBOX_USB_ROOT)
-            RTEnvSet("VBOX_USB_ROOT",
-                     s_testEnvironment[i].pcszVBOX_USB_ROOT);
-        else
-            RTEnvUnset("VBOX_USB_ROOT");
-        s_pcszDeviceRoot = s_testEnvironment[i].pcszReturnedRoot;
-        s_fIsDeviceNodes = s_testEnvironment[i].fReturnedUseSysfs;
-        RTTESTI_CHECK(test.init() == S_OK);
-        test.getDevices();
-        RTTESTI_CHECK_MSG(!strcmp(s_getDevices.pcszDevicesRoot,
-                          s_testEnvironment[i].pcszFinalRoot),
-                          ("i=%u: %s, %s\n", i, s_getDevices.pcszDevicesRoot,
-                          s_testEnvironment[i].pcszFinalRoot));
-        RTTESTI_CHECK_MSG(   s_getDevices.fUseSysfs
-                          == s_testEnvironment[i].fFinalUseSysfs,
-                          ("i=%u, %d, %d\n", i, s_getDevices.fUseSysfs,
-                          s_testEnvironment[i].fFinalUseSysfs));
+        TestUSBSetAvailableUsbfsDevices(s_testCheckDeviceRoot[i]
+                                                .pacszDeviceAddresses);
+        TestUSBSetAccessibleFiles(s_testCheckDeviceRoot[i]
+                                                .pacszAccessibleFiles);
+        bool fAvailable = USBProxyLinuxCheckDeviceRoot
+                                  (s_testCheckDeviceRoot[i].pcszRoot,
+                                   s_testCheckDeviceRoot[i].fIsDeviceNodes);
+        RTTESTI_CHECK_MSG(   fAvailable
+                          == s_testCheckDeviceRoot[i].fAvailableExpected,
+                           ("USBProxyLinuxCheckDeviceRoot() returned %RTbool on line %i instead of %RTbool!\n",
+                            fAvailable, i,
+                            s_testCheckDeviceRoot[i].fAvailableExpected));
     }
 }
 
@@ -182,11 +191,11 @@ int main(void)
     /*
      * Run the tests.
      */
-    testEnvironment(hTest);
+    testInit(hTest);
+    testCheckDeviceRoot(hTest);
 
     /*
      * Summary
      */
     return RTTestSummaryAndDestroy(hTest);
 }
-

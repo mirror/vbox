@@ -210,14 +210,37 @@ public:
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
 
+#  ifdef UNIT_TEST
+    /* Functions for setting our unit test mock functions.  Not quite sure if
+     * it is good form to mix test and production code like this, but it seems
+     * cleaner to me than tying the unit test to implementation details of the
+     * class. */
+    /** Select which access methods will be available to the @a init method
+     * during unit testing, and (hack!) what return code it will see from
+     * the access method-specific initialisation. */
+    void testSetupInit(const char *pcszUsbfsRoot, bool fUsbfsAccessible,
+                       const char *pcszDevicesRoot, bool fDevicesAccessible,
+                       int rcMethodInitResult)
+    {
+        mpcszTestUsbfsRoot = pcszUsbfsRoot;
+        mfTestUsbfsAccessible = fUsbfsAccessible;
+        mpcszTestDevicesRoot = pcszDevicesRoot;
+        mfTestDevicesAccessible = fDevicesAccessible;
+        mrcTestMethodInitResult = rcMethodInitResult;
+    }
+    /** Specify the environment that the @a init method will see during unit
+     * testing. */
+    void testSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot)
+    {
+        mpcszTestEnvUsb = pcszEnvUsb;
+        mpcszTestEnvUsbRoot = pcszEnvUsbRoot;
+    }
+    bool testGetUsingUsbfs(void) { return mUsingUsbfsDevices; }
+    const char *testGetDevicesRoot(void) { return mDevicesRoot.c_str(); }
+#  endif
+
 protected:
-#ifdef TESTCASE
-    virtual
-#endif
     int initUsbfs(void);
-#ifdef TESTCASE
-    virtual
-#endif
     int initSysfs(void);
     void doUsbfsCleanupAsNeeded(void);
     virtual int wait(RTMSINTERVAL aMillies);
@@ -246,6 +269,22 @@ private:
 #  ifdef VBOX_USB_WITH_SYSFS
     /** Object used for polling for hotplug events from hal. */
     VBoxMainHotplugWaiter *mpWaiter;
+#  endif
+#  ifdef UNIT_TEST
+    /** The path we pretend the usbfs root is located at, or NULL. */
+    const char *mpcszTestUsbfsRoot;
+    /** Should usbfs be accessible to the current user? */
+    bool mfTestUsbfsAccessible;
+    /** The path we pretend the device node tree root is located at, or NULL. */
+    const char *mpcszTestDevicesRoot;
+    /** Should the device node tree be accessible to the current user? */
+    bool mfTestDevicesAccessible;
+    /** The result of the usbfs/inotify-specific init */
+    int mrcTestMethodInitResult;
+    /** The value of the VBOX_USB environment variable. */
+    const char *mpcszTestEnvUsb;
+    /** The value of the VBOX_USB_ROOT environment variable. */
+    const char *mpcszTestEnvUsbRoot;
 #  endif
 };
 # endif /* RT_OS_LINUX */

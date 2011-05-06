@@ -83,6 +83,23 @@ RT_C_DECLS_BEGIN
 extern bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot,
                                          bool fIsDeviceNodes);
 
+#ifdef UNIT_TEST
+/**
+ * Specify the list of devices that will appear to be available through
+ * usbfs during unit testing (of USBProxyLinuxGetDevices)
+ * @param  pacszDeviceAddresses  NULL terminated array of usbfs device addresses
+ */
+extern void TestUSBSetAvailableUsbfsDevices(const char **pacszDeviceAddresses);
+/**
+ * Specify the list of files that access will report as accessible (at present
+ * we only do accessible or not accessible) during unit testing (of
+ * USBProxyLinuxGetDevices)
+ * @param  pacszAccessibleFiles  NULL terminated array of file paths to be
+ *                               reported accessible
+ */
+extern void TestUSBSetAccessibleFiles(const char **pacszAccessibleFiles);
+#endif
+
 /**
  * Get the list of USB devices supported by the system.  Should be freed using
  * @a deviceFree or something equivalent.

@@ -62,10 +62,38 @@ USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost)
     : USBProxyService(aHost), mFile(NIL_RTFILE), mWakeupPipeR(NIL_RTFILE),
       mWakeupPipeW(NIL_RTFILE), mUsingUsbfsDevices(true /* see init */),
       mUdevPolls(0), mpWaiter(NULL)
+#ifdef UNIT_TEST
+      , mpcszTestUsbfsRoot(NULL), mfTestUsbfsAccessible(false),
+      mpcszTestDevicesRoot(NULL), mfTestDevicesAccessible(false),
+      mrcTestMethodInitResult(VINF_SUCCESS), mpcszTestEnvUsb(NULL),
+      mpcszTestEnvUsbRoot(NULL)
+#endif
 {
     LogFlowThisFunc(("aHost=%p\n", aHost));
 }
 
+#ifdef UNIT_TEST
+/* For testing we redefine anything that accesses the outside world to
+ * return test values. */
+# define RTEnvGet(a) \
+    (  !RTStrCmp(a, "VBOX_USB") ? mpcszTestEnvUsb \
+     : !RTStrCmp(a, "VBOX_USB_ROOT") ? mpcszTestEnvUsbRoot \
+     : NULL)
+# define USBProxyLinuxCheckDeviceRoot(pcszPath, fUseNodes) \
+    (   ((fUseNodes) && mfTestDevicesAccessible \
+                     && !RTStrCmp(pcszPath, mpcszTestDevicesRoot)) \
+     || (!(fUseNodes) && mfTestUsbfsAccessible \
+                      && !RTStrCmp(pcszPath, mpcszTestUsbfsRoot)))
+# define RTDirExists(pcszDir) \
+    (   (pcszDir) \
+     && (   !RTStrCmp(pcszDir, mpcszTestDevicesRoot) \
+         || !RTStrCmp(pcszDir, mpcszTestUsbfsRoot)))
+# define RTFileExists(pcszFile) \
+    (   (pcszFile) \
+     && mpcszTestUsbfsRoot \
+     && !RTStrNCmp(pcszFile, mpcszTestUsbfsRoot, strlen(mpcszTestUsbfsRoot)) \
+     && !RTStrCmp(pcszFile + strlen(mpcszTestUsbfsRoot), "/devices"))
+#endif
 
 /**
  * Initializes the object (called right after construction).
@@ -130,7 +158,11 @@ HRESULT USBProxyServiceLinux::init(void)
     {
         mUsingUsbfsDevices = !fUseSysfs;
         mDevicesRoot = pcszUsbRoot;
+#ifndef UNIT_TEST /* Hack for now */
         int rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
+#else
+        int rc = mrcTestMethodInitResult;
+#endif
         /* For the day when we have VBoxSVC release logging... */
         LogRel((RT_SUCCESS(rc) ? "Successfully initialised host USB using %s\n"
                                : "Failed to initialise host USB using %s\n",
@@ -144,6 +176,12 @@ HRESULT USBProxyServiceLinux::init(void)
     return S_OK;
 }
 
+#ifdef UNIT_TEST
+# undef RTEnvGet
+# undef USBProxyLinuxCheckDeviceRoot
+# undef RTDirExists
+# undef RTFileExists
+#endif
 
 /**
  * Initialization routine for the usbfs based operation.
