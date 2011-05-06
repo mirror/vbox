@@ -68,6 +68,9 @@ using namespace com;
 /** Set by the signal handler. */
 static volatile bool    g_fGuestCtrlCanceled = false;
 
+/**
+ * An entry for a source element, including an optional filter.
+ */
 typedef struct SOURCEFILEENTRY
 {
     SOURCEFILEENTRY(const char *pszSource, const char *pszFilter)
@@ -95,11 +98,18 @@ typedef struct SOURCEFILEENTRY
 } SOURCEFILEENTRY, *PSOURCEFILEENTRY;
 typedef std::vector<SOURCEFILEENTRY> SOURCEVEC, *PSOURCEVEC;
 
+/**
+ * An entry for an element which needs to be copied to the guest.
+ */
 typedef struct DESTFILEENTRY
 {
     DESTFILEENTRY(Utf8Str strFileName) : mFileName(strFileName) {}
     Utf8Str mFileName;
 } DESTFILEENTRY, *PDESTFILEENTRY;
+/*
+ * Map for holding destination entires, whereas the key is the destination
+ * directory and the mapped value is a vector holding all elements for this directoy.
+ */
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> > DESTDIRMAP, *PDESTDIRMAP;
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> >::iterator DESTDIRMAPITER, *PDESTDIRMAPITER;
 
@@ -989,9 +999,7 @@ static int ctrlCopyPrepareDestDirectory(IGuest *pGuest, DESTDIRMAPITER itDest, c
         if (!pszDestFinal)
             rc = VERR_NO_MEMORY;
     }
-    /* @todo Skip creating empty directories (or directories where a file filter (e.g. *.dll)
-     * did not find any files to copy. Make this configurable later! */
-    else if (itDest->second.size())
+    else /* Create sub-directories, also empty ones. */
     {
         if (!RTStrAPrintf(&pszDestFinal, "%s/%s", pszDestRoot, itDest->first.c_str()))
             rc = VERR_NO_MEMORY;
