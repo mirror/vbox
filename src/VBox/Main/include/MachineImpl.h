@@ -637,6 +637,7 @@ public:
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
     virtual HRESULT onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
+    virtual HRESULT onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */) { return S_OK; }
 
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -832,6 +833,7 @@ protected:
     void rollback(bool aNotify);
     void commit();
     void copyFrom(Machine *aThat);
+    bool isControllerHotplugCapable(StorageControllerType_T enmCtrlType);
 
     struct DeleteTask;
     static DECLCALLBACK(int) deleteThread(RTTHREAD Thread, void *pvUser);
@@ -1004,6 +1006,7 @@ public:
                               IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
+    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove);
 
     bool hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 

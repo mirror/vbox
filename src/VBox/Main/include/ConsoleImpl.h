@@ -190,6 +190,7 @@ public:
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
+    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove);
     HRESULT getGuestProperty(IN_BSTR aKey, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties(IN_BSTR aPatterns,
@@ -504,6 +505,7 @@ private:
                                HRESULT *phrc,
                                bool fAttachDetach,
                                bool fForceUnmount,
+                               bool fHotplug,
                                PVM pVM,
                                DeviceType_T *paLedDevType);
     int configMedium(PCFGMNODE pLunL0,
@@ -569,6 +571,22 @@ private:
                        bool aRemote, const char *aAddress, ULONG aMaskedIfs);
     static DECLCALLBACK(int) usbDetachCallback(Console *that, PVM pVM, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
 #endif
+
+    static DECLCALLBACK(int) attachStorageDevice(Console *pThis,
+                                                 PVM pVM,
+                                                 const char *pcszDevice,
+                                                 unsigned uInstance,
+                                                 StorageBus_T enmBus,
+                                                 bool fUseHostIOCache,
+                                                 IMediumAttachment *aMediumAtt);
+    static DECLCALLBACK(int) detachStorageDevice(Console *pThis,
+                                                 PVM pVM,
+                                                 const char *pcszDevice,
+                                                 unsigned uInstance,
+                                                 StorageBus_T enmBus,
+                                                 IMediumAttachment *aMediumAtt);
+    HRESULT doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PVM pVM);
+    HRESULT doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PVM pVM);
 
     static DECLCALLBACK(int)    fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
 

@@ -1650,6 +1650,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                                             NULL /* phrc */,
                                             false /* fAttachDetach */,
                                             false /* fForceUnmount */,
+                                            false /* fHotplug */,
                                             pVM,
                                             paLedDevType);
                 if (RT_FAILURE(rc))
@@ -2812,6 +2813,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                     HRESULT *phrc,
                                     bool fAttachDetach,
                                     bool fForceUnmount,
+                                    bool fHotplug,
                                     PVM pVM,
                                     DeviceType_T *paLedDevType)
 {
@@ -2869,7 +2871,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     }
                 }
 
-                rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRCReturn(rc, rc);
@@ -3108,7 +3110,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         {
             /* Attach the new driver. */
             rc = PDMR3DeviceAttach(pVM, pcszDevice, uInstance, uLUN,
-                                PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
+                                fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             AssertRCReturn(rc, rc);
 
             /* There is no need to handle removable medium mounting, as we
