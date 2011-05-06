@@ -1126,6 +1126,10 @@ static int PortSError_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t
         pAhciPort->regTFD &= ~(ATA_STAT_DRQ | ATA_STAT_BUSY);
     }
 
+    if (   (u32Value & AHCI_PORT_SERR_N)
+        && (pAhciPort->regSERR & AHCI_PORT_SERR_N))
+        ASMAtomicAndU32(&pAhciPort->regIS, ~AHCI_PORT_IS_PRCS);
+
     pAhciPort->regSERR &= ~u32Value;
 
     return VINF_SUCCESS;
@@ -1373,7 +1377,8 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
         u32Value |= AHCI_PORT_CMD_FR;
 
         /* Send the first D2H FIS only if it wasn't already send. */
-        if (!pAhciPort->fFirstD2HFisSend)
+        if (   !pAhciPort->fFirstD2HFisSend
+            && pAhciPort->pDrvBase)
         {
 #ifndef IN_RING3
             return VINF_IOM_HC_MMIO_WRITE;
