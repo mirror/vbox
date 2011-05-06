@@ -86,24 +86,20 @@ static struct
     int rcExpected;
 } s_testEnvironment[] =
 {
-    /* "sysfs" and root in the environment */
-    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
-    /* "sysfs" and root in the environment, method-specific init failed */
-    { "sysfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
-    /* "sysfs" and bad root in the environment (should succeed as we don't do checks if the user specifies everything) */
-    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
-    /* "sysfs" and bad root in the environment, method-specific init failed */
-    { "sysfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
+    /* "sysfs" and valid root in the environment */
+    { "sysfs", "/dev/bus/usb", "/dev/bus/usb", true, NULL, false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
+    /* "sysfs" and valid root in the environment, method-specific init failed */
+    { "sysfs", "/dev/bus/usb",  "/dev/bus/usb", true, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
+    /* "sysfs" and bad root in the environment */
+    { "sysfs", "/dev/bus/usb", "/dev/vboxusb", false, "/proc/usb/bus", false, VINF_SUCCESS, "", true, VERR_NOT_FOUND },
     /* "sysfs" and no root in the environment */
     { "sysfs", NULL, "/dev/vboxusb", true, NULL, false, VINF_SUCCESS, "/dev/vboxusb", false, VINF_SUCCESS },
-    /* "usbfs" and root in the environment */
-    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
-    /* "usbfs" and root in the environment, method-specific init failed */
-    { "usbfs", "/dev/bus/usb", NULL, false, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
-    /* "usbfs" and bad root in the environment (should succeed as we don't do checks if the user specifies everything) */
-    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
-    /* "usbfs" and bad root in the environment, method-specific init failed */
-    { "usbfs", "/dev/bus/usb", "/dev/usbvbox", false, "/proc/usb/bus", false, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
+    /* "usbfs" and valid root in the environment */
+    { "usbfs", "/dev/bus/usb", NULL, false, "/dev/bus/usb", true, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
+    /* "usbfs" and valid root in the environment, method-specific init failed */
+    { "usbfs", "/dev/bus/usb", NULL, false, "/dev/bus/usb", true, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
+    /* "usbfs" and bad root in the environment */
+    { "usbfs", "/dev/bus/usb", "/dev/vboxusb", false, "/proc/usb/bus", false, VINF_SUCCESS, "", true, VERR_NOT_FOUND },
     /* "usbfs" and no root in the environment */
     { "usbfs", NULL, NULL, false, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
     /* invalid method in the environment, sysfs available */
