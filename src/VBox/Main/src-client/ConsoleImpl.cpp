@@ -3555,6 +3555,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                              NULL /* phrc */,
                                              true /* fAttachDetach */,
                                              fForce /* fForceUnmount */,
+                                             false  /* fHotplug */,
                                              pVM,
                                              NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
@@ -3590,6 +3591,500 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
     return rcRet;
 }
 
+
+/**
+ * Attach a new storage device to the VM.
+ *
+ * @param aMediumAttachment The medium attachmentwhich is added.
+ * @param pVM               Safe VM handle.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PVM pVM)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* We will need to release the write lock before calling EMT */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    const char *pszDevice = NULL;
+
+    SafeIfaceArray<IStorageController> ctrls;
+    rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
+    AssertComRC(rc);
+    IMedium *pMedium;
+    rc = aMediumAttachment->COMGETTER(Medium)(&pMedium);
+    AssertComRC(rc);
+    Bstr mediumLocation;
+    if (pMedium)
+    {
+        rc = pMedium->COMGETTER(Location)(mediumLocation.asOutParam());
+        AssertComRC(rc);
+    }
+
+    Bstr attCtrlName;
+    rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
+    AssertComRC(rc);
+    ComPtr<IStorageController> pStorageController;
+    for (size_t i = 0; i < ctrls.size(); ++i)
+    {
+        Bstr ctrlName;
+        rc = ctrls[i]->COMGETTER(Name)(ctrlName.asOutParam());
+        AssertComRC(rc);
+        if (attCtrlName == ctrlName)
+        {
+            pStorageController = ctrls[i];
+            break;
+        }
+    }
+    if (pStorageController.isNull())
+        return setError(E_FAIL,
+                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
+
+    StorageControllerType_T enmCtrlType;
+    rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
+    AssertComRC(rc);
+    pszDevice = convertControllerTypeToDev(enmCtrlType);
+
+    StorageBus_T enmBus;
+    rc = pStorageController->COMGETTER(Bus)(&enmBus);
+    AssertComRC(rc);
+    ULONG uInstance;
+    rc = pStorageController->COMGETTER(Instance)(&uInstance);
+    AssertComRC(rc);
+    BOOL fUseHostIOCache;
+    rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+    AssertComRC(rc);
+
+    /*
+     * Call worker in EMT, that's faster and safer than doing everything
+     * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+     * here to make requests from under the lock in order to serialize them.
+     */
+    PVMREQ pReq;
+    int vrc = VMR3ReqCall(pVM,
+                          VMCPUID_ANY,
+                          &pReq,
+                          0 /* no wait! */,
+                          VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::attachStorageDevice,
+                          7,
+                          this,
+                          pVM,
+                          pszDevice,
+                          uInstance,
+                          enmBus,
+                          fUseHostIOCache,
+                          aMediumAttachment);
+
+    /* leave the lock before waiting for a result (EMT will call us back!) */
+    alock.leave();
+
+    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
+    {
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        AssertRC(vrc);
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->iStatus;
+    }
+    VMR3ReqFree(pReq);
+
+    if (RT_SUCCESS(vrc))
+    {
+        LogFlowThisFunc(("Returns S_OK\n"));
+        return S_OK;
+    }
+
+    if (!pMedium)
+        return setError(E_FAIL,
+                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
+                        mediumLocation.raw(), vrc);
+
+    return setError(E_FAIL,
+                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
+                    vrc);
+}
+
+
+/**
+ * Performs the storage attach operation in EMT.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pThis           Pointer to the Console object.
+ * @param   pVM             The VM handle.
+ * @param   pcszDevice      The PDM device name.
+ * @param   uInstance       The PDM device instance.
+ *
+ * @thread  EMT
+ */
+DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
+                                               PVM pVM,
+                                               const char *pcszDevice,
+                                               unsigned uInstance,
+                                               StorageBus_T enmBus,
+                                               bool fUseHostIOCache,
+                                               IMediumAttachment *aMediumAtt)
+{
+    LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p\n",
+                 pConsole, uInstance, pcszDevice, pcszDevice, enmBus, aMediumAtt));
+
+    AssertReturn(pConsole, VERR_INVALID_PARAMETER);
+
+    AutoCaller autoCaller(pConsole);
+    AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
+
+    /*
+     * Suspend the VM first.
+     *
+     * The VM must not be running since it might have pending I/O to
+     * the drive which is being changed.
+     */
+    bool fResume;
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    switch (enmVMState)
+    {
+        case VMSTATE_RESETTING:
+        case VMSTATE_RUNNING:
+        {
+            LogFlowFunc(("Suspending the VM...\n"));
+            /* disable the callback to prevent Console-level state change */
+            pConsole->mVMStateChangeCallbackDisabled = true;
+            int rc = VMR3Suspend(pVM);
+            pConsole->mVMStateChangeCallbackDisabled = false;
+            AssertRCReturn(rc, rc);
+            fResume = true;
+            break;
+        }
+
+        case VMSTATE_SUSPENDED:
+        case VMSTATE_CREATED:
+        case VMSTATE_OFF:
+            fResume = false;
+            break;
+
+        case VMSTATE_RUNNING_LS:
+        case VMSTATE_RUNNING_FT:
+            return setErrorInternal(VBOX_E_INVALID_VM_STATE,
+                                    COM_IIDOF(IConsole),
+                                    getStaticComponentName(),
+                                    (enmVMState == VMSTATE_RUNNING_LS) ? Utf8Str(tr("Cannot change drive during live migration")) : Utf8Str(tr("Cannot change drive during fault tolerant syncing")),
+                                    false /*aWarning*/,
+                                    true /*aLogIt*/);
+
+        default:
+            AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
+    }
+
+    /* Determine the base path for the device instance. */
+    PCFGMNODE pCtlInst;
+    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, uInstance);
+    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
+
+    int rc = VINF_SUCCESS;
+    int rcRet = VINF_SUCCESS;
+
+    rcRet = pConsole->configMediumAttachment(pCtlInst,
+                                             pcszDevice,
+                                             uInstance,
+                                             enmBus,
+                                             fUseHostIOCache,
+                                             false /* fSetupMerge */,
+                                             false /* fBuiltinIoCache */,
+                                             0 /* uMergeSource */,
+                                             0 /* uMergeTarget */,
+                                             aMediumAtt,
+                                             pConsole->mMachineState,
+                                             NULL /* phrc */,
+                                             true /* fAttachDetach */,
+                                             false /* fForceUnmount */,
+                                             true   /* fHotplug */,
+                                             pVM,
+                                             NULL /* paLedDevType */);
+    /** @todo this dumps everything attached to this device instance, which
+     * is more than necessary. Dumping the changed LUN would be enough. */
+    CFGMR3Dump(pCtlInst);
+
+    /*
+     * Resume the VM if necessary.
+     */
+    if (fResume)
+    {
+        LogFlowFunc(("Resuming the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        pConsole->mVMStateChangeCallbackDisabled = true;
+        rc = VMR3Resume(pVM);
+        pConsole->mVMStateChangeCallbackDisabled = false;
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            /* too bad, we failed. try to sync the console state with the VMM state */
+            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
+        }
+        /** @todo: if we failed with drive mount, then the VMR3Resume
+         * error (if any) will be hidden from the caller. For proper reporting
+         * of such multiple errors to the caller we need to enhance the
+         * IVirtualBoxError interface. For now, give the first error the higher
+         * priority.
+         */
+        if (RT_SUCCESS(rcRet))
+            rcRet = rc;
+    }
+
+    LogFlowFunc(("Returning %Rrc\n", rcRet));
+    return rcRet;
+}
+
+/**
+ * Attach a new storage device to the VM.
+ *
+ * @param aMediumAttachment The medium attachmentwhich is added.
+ * @param pVM               Safe VM handle.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PVM pVM)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* We will need to release the write lock before calling EMT */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    const char *pszDevice = NULL;
+
+    SafeIfaceArray<IStorageController> ctrls;
+    rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
+    AssertComRC(rc);
+    IMedium *pMedium;
+    rc = aMediumAttachment->COMGETTER(Medium)(&pMedium);
+    AssertComRC(rc);
+    Bstr mediumLocation;
+    if (pMedium)
+    {
+        rc = pMedium->COMGETTER(Location)(mediumLocation.asOutParam());
+        AssertComRC(rc);
+    }
+
+    Bstr attCtrlName;
+    rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
+    AssertComRC(rc);
+    ComPtr<IStorageController> pStorageController;
+    for (size_t i = 0; i < ctrls.size(); ++i)
+    {
+        Bstr ctrlName;
+        rc = ctrls[i]->COMGETTER(Name)(ctrlName.asOutParam());
+        AssertComRC(rc);
+        if (attCtrlName == ctrlName)
+        {
+            pStorageController = ctrls[i];
+            break;
+        }
+    }
+    if (pStorageController.isNull())
+        return setError(E_FAIL,
+                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
+
+    StorageControllerType_T enmCtrlType;
+    rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
+    AssertComRC(rc);
+    pszDevice = convertControllerTypeToDev(enmCtrlType);
+
+    StorageBus_T enmBus;
+    rc = pStorageController->COMGETTER(Bus)(&enmBus);
+    AssertComRC(rc);
+    ULONG uInstance;
+    rc = pStorageController->COMGETTER(Instance)(&uInstance);
+    AssertComRC(rc);
+
+    /*
+     * Call worker in EMT, that's faster and safer than doing everything
+     * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+     * here to make requests from under the lock in order to serialize them.
+     */
+    PVMREQ pReq;
+    int vrc = VMR3ReqCall(pVM,
+                          VMCPUID_ANY,
+                          &pReq,
+                          0 /* no wait! */,
+                          VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::detachStorageDevice,
+                          6,
+                          this,
+                          pVM,
+                          pszDevice,
+                          uInstance,
+                          enmBus,
+                          aMediumAttachment);
+
+    /* leave the lock before waiting for a result (EMT will call us back!) */
+    alock.leave();
+
+    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
+    {
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        AssertRC(vrc);
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->iStatus;
+    }
+    VMR3ReqFree(pReq);
+
+    if (RT_SUCCESS(vrc))
+    {
+        LogFlowThisFunc(("Returns S_OK\n"));
+        return S_OK;
+    }
+
+    if (!pMedium)
+        return setError(E_FAIL,
+                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
+                        mediumLocation.raw(), vrc);
+
+    return setError(E_FAIL,
+                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
+                    vrc);
+}
+
+/**
+ * Performs the storage detach operation in EMT.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pThis           Pointer to the Console object.
+ * @param   pVM             The VM handle.
+ * @param   pcszDevice      The PDM device name.
+ * @param   uInstance       The PDM device instance.
+ *
+ * @thread  EMT
+ */
+DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
+                                               PVM pVM,
+                                               const char *pcszDevice,
+                                               unsigned uInstance,
+                                               StorageBus_T enmBus,
+                                               IMediumAttachment *pMediumAtt)
+{
+    LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, pMediumAtt=%p\n",
+                 pConsole, uInstance, pcszDevice, pcszDevice, enmBus, pMediumAtt));
+
+    AssertReturn(pConsole, VERR_INVALID_PARAMETER);
+
+    AutoCaller autoCaller(pConsole);
+    AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
+
+    /*
+     * Suspend the VM first.
+     *
+     * The VM must not be running since it might have pending I/O to
+     * the drive which is being changed.
+     */
+    bool fResume;
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    switch (enmVMState)
+    {
+        case VMSTATE_RESETTING:
+        case VMSTATE_RUNNING:
+        {
+            LogFlowFunc(("Suspending the VM...\n"));
+            /* disable the callback to prevent Console-level state change */
+            pConsole->mVMStateChangeCallbackDisabled = true;
+            int rc = VMR3Suspend(pVM);
+            pConsole->mVMStateChangeCallbackDisabled = false;
+            AssertRCReturn(rc, rc);
+            fResume = true;
+            break;
+        }
+
+        case VMSTATE_SUSPENDED:
+        case VMSTATE_CREATED:
+        case VMSTATE_OFF:
+            fResume = false;
+            break;
+
+        case VMSTATE_RUNNING_LS:
+        case VMSTATE_RUNNING_FT:
+            return setErrorInternal(VBOX_E_INVALID_VM_STATE,
+                                    COM_IIDOF(IConsole),
+                                    getStaticComponentName(),
+                                    (enmVMState == VMSTATE_RUNNING_LS) ? Utf8Str(tr("Cannot change drive during live migration")) : Utf8Str(tr("Cannot change drive during fault tolerant syncing")),
+                                    false /*aWarning*/,
+                                    true /*aLogIt*/);
+
+        default:
+            AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
+    }
+
+    /* Determine the base path for the device instance. */
+    PCFGMNODE pCtlInst;
+    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, uInstance);
+    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
+
+#define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
+
+    HRESULT hrc;
+    int rc = VINF_SUCCESS;
+    int rcRet = VINF_SUCCESS;
+    unsigned uLUN;
+    LONG lDev;
+    LONG lPort;
+    DeviceType_T lType;
+    PCFGMNODE pLunL0 = NULL;
+    PCFGMNODE pCfg = NULL;
+
+    hrc = pMediumAtt->COMGETTER(Device)(&lDev);                             H();
+    hrc = pMediumAtt->COMGETTER(Port)(&lPort);                              H();
+    hrc = pMediumAtt->COMGETTER(Type)(&lType);                              H();
+    hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);    H();
+
+#undef H
+
+    /* First check if the LUN really exists. */
+    pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
+    if (pLunL0)
+    {
+            rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, 0);
+            if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+                rc = VINF_SUCCESS;
+            AssertRCReturn(rc, rc);
+            CFGMR3RemoveNode(pLunL0);
+    }
+    else
+        AssertFailedReturn(VERR_INTERNAL_ERROR);
+
+    CFGMR3Dump(pCtlInst);
+
+    /*
+     * Resume the VM if necessary.
+     */
+    if (fResume)
+    {
+        LogFlowFunc(("Resuming the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        pConsole->mVMStateChangeCallbackDisabled = true;
+        rc = VMR3Resume(pVM);
+        pConsole->mVMStateChangeCallbackDisabled = false;
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            /* too bad, we failed. try to sync the console state with the VMM state */
+            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
+        }
+        /** @todo: if we failed with drive mount, then the VMR3Resume
+         * error (if any) will be hidden from the caller. For proper reporting
+         * of such multiple errors to the caller we need to enhance the
+         * IVirtualBoxError interface. For now, give the first error the higher
+         * priority.
+         */
+        if (RT_SUCCESS(rcRet))
+            rcRet = rc;
+    }
+
+    LogFlowFunc(("Returning %Rrc\n", rcRet));
+    return rcRet;
+}
 
 /**
  * Called by IInternalSessionControl::OnNetworkAdapterChange().
@@ -4506,6 +5001,41 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
         fireBandwidthGroupChangedEvent(mEventSource, aBandwidthGroup);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
+ * Called by IInternalSessionControl::OnStorageDeviceChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger medium change if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        if (aRemove)
+            rc = doStorageDeviceDetach(aMediumAttachment, ptrVM);
+        else
+            rc = doStorageDeviceAttach(aMediumAttachment, ptrVM);
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+        fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -8331,6 +8861,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                           phrc,
                                           true /* fAttachDetach */,
                                           false /* fForceUnmount */,
+                                          false /* fHotplug */,
                                           pVM,
                                           NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which

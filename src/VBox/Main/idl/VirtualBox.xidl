@@ -13548,7 +13548,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="a2fbf834-149d-41da-ae52-0dc3b0f032b3"
+    uuid="3a975b65-27e7-42fa-9176-d097d7bd78d4"
     internal="yes"
     wsmap="suppress"
     >
@@ -13714,6 +13714,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
       <param name="force" type="boolean" dir="in"/>
+    </method>
+
+    <method name="onStorageDeviceChange">
+      <desc>
+        Triggered when attached storage devices of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
+      <param name="remove" type="boolean" dir="in">
+        <desc>TRUE if the device is removed, FALSE if it was added.</desc>
+      </param>
     </method>
 
     <method name="onCPUChange">
@@ -15436,7 +15456,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="e71c487f-755e-46e9-a476-dd6a5d134597"
+    uuid="cce48db6-8561-479d-8d46-1358bab45d4e"
     >
 
     <desc>
@@ -15689,9 +15709,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestMonitorChangedEvent">IGuestMonitorChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnStorageDeviceChanged" value="71">
+      <desc>
+        See <link to="IStorageDeviceChangedEvent">IStorageDeviceChangedEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="71">
+    <const name="Last" value="72">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -17085,6 +17110,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+  </interface>
+
+  <interface
+    name="IStorageDeviceChangedEvent" extends="IEvent"
+    uuid="8a5c2dce-e341-49d4-afce-c95979f7d70c"
+    wsmap="managed" autogen="VBoxEvent" id="OnStorageDeviceChanged"
+    >
+    <desc>
+      Notification when a
+      <link to="IMachine::mediumAttachments">storage device</link>
+      is attached or removed.
+    </desc>
+    <attribute name="storageDevice" type="IMediumAttachment" readonly="yes">
+      <desc>
+        Storage device that is subject to change.
+      </desc>
+    </attribute>
+    <attribute name="removed" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the device was removed or added to the VM.
+      </desc>
+    </attribute>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

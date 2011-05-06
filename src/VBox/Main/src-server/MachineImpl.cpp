@@ -3403,15 +3403,27 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
-    if (Global::IsOnlineOrTransient(mData->mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Invalid machine state: %s"),
-                        Global::stringifyMachineState(mData->mMachineState));
-
     /* Check for an existing controller. */
     ComObjPtr<StorageController> ctl;
     rc = getStorageControllerByName(aControllerName, ctl, true /* aSetError */);
     if (FAILED(rc)) return rc;
+
+    StorageControllerType_T ctrlType;
+    rc = ctl->COMGETTER(ControllerType)(&ctrlType);
+    if (FAILED(rc))
+        return setError(E_FAIL,
+                        tr("Could not get type of controller '%ls'"),
+                        aControllerName);
+
+    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    bool fHotplug = false;
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        fHotplug = true;
+
+    if (fHotplug && !isControllerHotplugCapable(ctrlType))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
 
     // check that the port and device are not out of range
     rc = ctl->checkPortAndDeviceValid(aControllerPort, aDevice);
@@ -3783,6 +3795,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     treeLock.leave();
     alock.release();
 
+    if (fHotplug)
+        rc = onStorageDeviceChange(attachment, FALSE /* aRemove */);
+
     mParent->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
@@ -3808,7 +3823,24 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
+    /* Check for an existing controller. */
+    ComObjPtr<StorageController> ctl;
+    rc = getStorageControllerByName(aControllerName, ctl, true /* aSetError */);
+    if (FAILED(rc)) return rc;
+
+    StorageControllerType_T ctrlType;
+    rc = ctl->COMGETTER(ControllerType)(&ctrlType);
+    if (FAILED(rc))
+        return setError(E_FAIL,
+                        tr("Could not get type of controller '%ls'"),
+                        aControllerName);
+
+    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    bool fHotplug = false;
     if (Global::IsOnlineOrTransient(mData->mMachineState))
+        fHotplug = true;
+
+    if (fHotplug && !isControllerHotplugCapable(ctrlType))
         return setError(VBOX_E_INVALID_VM_STATE,
                         tr("Invalid machine state: %s"),
                         Global::stringifyMachineState(mData->mMachineState));
@@ -3822,6 +3854,19 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
+    /*
+     * The VM has to detach the device before we delete any implicit diffs.
+     * If this fails we can roll back without loosing data.
+     */
+    if (fHotplug)
+    {
+        alock.leave();
+        rc = onStorageDeviceChange(pAttach, TRUE /* aRemove */);
+        alock.enter();
+    }
+    if (FAILED(rc)) return rc;
+
+    /* If we are here everything went well and we can delete the implicit now. */
     rc = detachDevice(pAttach, alock, NULL /* pSnapshot */, &llRegistriesThatNeedSaving);
 
     alock.release();
@@ -10117,6 +10162,31 @@ void Machine::copyFrom(Machine *aThat)
         mParallelPorts[slot]->copyFrom(aThat->mParallelPorts[slot]);
 }
 
+/**
+ * Returns whether the given storage controller is hotplug capable.
+ *
+ * @returns true if the controller supports hotplugging
+ *          false otherwise.
+ * @param   enmCtrlType    The controller type to check for.
+ */
+bool Machine::isControllerHotplugCapable(StorageControllerType_T enmCtrlType)
+{
+    switch (enmCtrlType)
+    {
+        case StorageControllerType_IntelAhci:
+            return true;
+        case StorageControllerType_LsiLogic:
+        case StorageControllerType_LsiLogicSas:
+        case StorageControllerType_BusLogic:
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
+        case StorageControllerType_I82078:
+        default:
+            return false;
+    }
+}
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 
 void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
@@ -11832,6 +11902,29 @@ HRESULT SessionMachine::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
         return S_OK;
 
     return directControl->OnBandwidthGroupChange(aBandwidthGroup);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onStorageDeviceChange(IMediumAttachment *aAttachment, BOOL aRemove)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnStorageDeviceChange(aAttachment, aRemove);
 }
 
 /**
