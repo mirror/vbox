@@ -1498,12 +1498,12 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
     {
         PUSBDEVICE pDevices;
 
+        fOK = true;
         pDevices = getDevicesFromUsbfs(pcszRoot, true);
         if (pDevices)
         {
             PUSBDEVICE pDevice;
-            
-            fOK = true;
+
             for (pDevice = pDevices; pDevice && fOK; pDevice = pDevice->pNext)
                 if (access(pDevice->pszAddress, R_OK | W_OK))
                     fOK = false;
