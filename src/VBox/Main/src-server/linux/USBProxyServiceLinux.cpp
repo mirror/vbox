@@ -114,7 +114,7 @@ HRESULT USBProxyServiceLinux::init(void)
      * available we fall back to USBFS.
      * In the event of both failing, an appropriate error will be returned.
      */
-    bool fUseSysfs;
+    bool fUsbfsChosen = false, fSysfsChosen = false;
     const char *pcszUsbFromEnv = RTEnvGet("VBOX_USB");
     const char *pcszUsbRoot = NULL;
     if (pcszUsbFromEnv)
@@ -125,12 +125,12 @@ HRESULT USBProxyServiceLinux::init(void)
         if (!RTStrICmp(pcszUsbFromEnv, "USBFS"))
         {
             LogRel(("Default USB access method set to \"usbfs\" from environment\n"));
-            fUseSysfs = false;
+            fUsbfsChosen = true;
         }
         else if (!RTStrICmp(pcszUsbFromEnv, "SYSFS"))
         {
             LogRel(("Default USB method set to \"sysfs\" from environment\n"));
-            fUseSysfs = true;
+            fSysfsChosen = true;
         }
         else
         {
@@ -143,20 +143,22 @@ HRESULT USBProxyServiceLinux::init(void)
     }
     if (!pcszUsbRoot)
     {
-        if (USBProxyLinuxCheckDeviceRoot("/dev/vboxusb", true))
+        if (   !fUsbfsChosen
+            && USBProxyLinuxCheckDeviceRoot("/dev/vboxusb", true))
         {
-            fUseSysfs = true;
+            fSysfsChosen = true;
             pcszUsbRoot = "/dev/vboxusb";
         }
-        else if (USBProxyLinuxCheckDeviceRoot("/proc/bus/usb", false))
+        else if (   !fSysfsChosen
+                 && USBProxyLinuxCheckDeviceRoot("/proc/bus/usb", false))
         {
-            fUseSysfs = false;
+            fUsbfsChosen = true;
             pcszUsbRoot = "/proc/bus/usb";
         }
     }
     if (pcszUsbRoot)
     {
-        mUsingUsbfsDevices = !fUseSysfs;
+        mUsingUsbfsDevices = fUsbfsChosen;
         mDevicesRoot = pcszUsbRoot;
 #ifndef UNIT_TEST /* Hack for now */
         int rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
