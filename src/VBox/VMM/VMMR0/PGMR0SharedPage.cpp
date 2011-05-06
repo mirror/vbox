@@ -142,5 +142,5 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
 
     return rc;
 }
-#endif
+#endif /* VBOX_WITH_PAGE_SHARING */
 
