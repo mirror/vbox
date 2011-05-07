@@ -37,7 +37,7 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext);
 int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId);
 int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId);
 NTSTATUS VBoxUsbFltSetNotifyEvent(PVBOXUSBFLTCTX pContext, HANDLE hEvent);
-NTSTATUS VBoxUsbFltFilterCheck();
+NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext);
 
 NTSTATUS VBoxUsbFltGetDevice(PVBOXUSBFLTCTX pContext, HVBOXUSBDEVUSR hDevice, PUSBSUP_GETDEV_MON pInfo);
 

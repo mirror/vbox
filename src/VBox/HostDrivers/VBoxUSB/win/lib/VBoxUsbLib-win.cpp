@@ -353,8 +353,10 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     *plpszName = NULL;
     if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME, &Name, sizeof (Name), &Name, sizeof (Name), &cbReturned, NULL))
     {
+#ifdef DEBUG_misha
         DWORD winEr = GetLastError();
         AssertMsgFailed((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
+#endif
         return VERR_GENERAL_FAILURE;
     }
 
@@ -760,7 +762,6 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
     rc = usbLibDevStrDriverKeyGet(hHub, iPort, &lpszName);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed((__FUNCTION__": usbLibDevStrDriverKeyGet failed\n"));
         return rc;
     }
 
@@ -888,9 +889,10 @@ static int usbLibMonDevicesCmp(PUSBDEVICE pDev, PVBOXUSB_DEV pDevInfo)
 
 static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs, uint32_t cDevs, PVBOXUSB_DEV pDevInfos, uint32_t cDevInfos)
 {
+    PUSBDEVICE pDevsHead = pDevs;
     for (; pDevInfos; pDevInfos = pDevInfos->pNext)
     {
-        for (; pDevs; pDevs = pDevs->pNext)
+        for (pDevs = pDevsHead; pDevs; pDevs = pDevs->pNext)
         {
             if (usbLibMonDevicesCmp(pDevs, pDevInfos))
                 continue;
