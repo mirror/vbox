@@ -861,7 +861,7 @@ static int VBoxUsbMonFltRemove(PVBOXUSBMONCTX pContext, uintptr_t uId)
 
 static NTSTATUS VBoxUsbMonRunFilters(PVBOXUSBMONCTX pContext)
 {
-    NTSTATUS Status = VBoxUsbFltFilterCheck();
+    NTSTATUS Status = VBoxUsbFltFilterCheck(&pContext->FltCtx);
     return Status;
 }
 

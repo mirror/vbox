@@ -458,11 +458,21 @@ static void vboxUsbFltSignalChangeLocked()
     }
 }
 
-static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice)
+static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice, PVBOXUSBFLTCTX pContext)
 {
+    Assert(pContext);
+
+    /* check if device is already replugging */
     if (pDevice->enmState <= VBOXUSBFLT_DEVSTATE_ADDED)
     {
+        /* it is, do nothing */
         Assert(pDevice->enmState == VBOXUSBFLT_DEVSTATE_REPLUGGING);
+        return false;
+    }
+
+    if (pDevice->pOwner && pContext != pDevice->pOwner)
+    {
+        /* this device is owned by another context, we're not allowed to do anything */
         return false;
     }
 
@@ -473,9 +483,9 @@ static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice)
     PVBOXUSBFLTCTX pNewOwner = vboxUsbFltDevMatchLocked(pDevice, &uId,
             false, /* do not remove a one-shot filter */
             &fFilter, &fIsOneShot);
-    if (pDevice->pOwner && pDevice->uFltId && pNewOwner != pDevice->pOwner)
+    if (pDevice->pOwner && pNewOwner && pDevice->pOwner != pNewOwner)
     {
-        /* the device is owned by another context by a valid filter */
+        /* the device is owned by another owner, we can not change the owner here */
         return false;
     }
 
@@ -487,24 +497,36 @@ static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice)
             /* no changes */
             if (fIsOneShot)
             {
+                Assert(pNewOwner);
                 /* remove a one-shot filter and keep the original filter data */
                 int tmpRc = VBoxUSBFilterRemove(pNewOwner, uId);
                 AssertRC(tmpRc);
+                if (!pDevice->pOwner)
+                {
+                    /* update owner for one-shot if the owner is changed (i.e. assigned) */
+                    vboxUsbFltDevOwnerUpdateLocked(pDevice, pNewOwner, uId, true);
+                }
             }
             else
             {
-                vboxUsbFltDevOwnerUpdateLocked(pDevice, pNewOwner, uId, false);
+                if (pNewOwner)
+                {
+                    vboxUsbFltDevOwnerUpdateLocked(pDevice, pNewOwner, uId, false);
+                }
             }
         }
         else
         {
-            /* the device is currently filtered, while it should not, replug needed */
-            bNeedReplug = true;
+            /* the device is currently filtered, we should release it only if it is NOT grabbed by a one-shot filter */
+            if (!pDevice->pOwner || !pDevice->fIsFilterOneShot)
+            {
+                bNeedReplug = true;
+            }
         }
     }
     else
     {
-        /* the device should NOT be filtered, check the current state  */
+        /* the device should be filtered, check the current state  */
         Assert(uId);
         Assert(pNewOwner);
         if (vboxUsbFltDevStateIsFiltered(pDevice))
@@ -526,14 +548,18 @@ static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice)
             }
             else
             {
+                Assert(!pDevice->pOwner);
                 /* the device needs to be filtered, but the owner changes, replug needed */
                 bNeedReplug = true;
             }
         }
         else
         {
-            /* the device is currently NOT filtered, while it should, replug needed */
-            bNeedReplug = true;
+            /* the device is currently NOT filtered, we should replug it only if it is NOT grabbed by a one-shot filter */
+            if (!pDevice->pOwner || !pDevice->fIsFilterOneShot)
+            {
+                bNeedReplug = true;
+            }
         }
     }
 
@@ -563,7 +589,7 @@ static void vboxUsbFltReplugList(PLIST_ENTRY pList)
     }
 }
 
-NTSTATUS VBoxUsbFltFilterCheck()
+NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
 {
     NTSTATUS Status;
     UNICODE_STRING szStandardControllerName[RT_ELEMENTS(lpszStandardControllerName)];
@@ -634,7 +660,7 @@ NTSTATUS VBoxUsbFltFilterCheck()
                                 PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pDevRelations->Objects[k]);
                                 if (pDevice)
                                 {
-                                    bool bReplug = vboxUsbFltDevCheckReplugLocked(pDevice);
+                                    bool bReplug = vboxUsbFltDevCheckReplugLocked(pDevice, pContext);
                                     if (bReplug)
                                     {
                                         InsertHeadList(&ReplugDevList, &pDevice->RepluggingLe);
@@ -756,7 +782,7 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
 
         vboxUsbFltDevOwnerClearLocked(pDevice);
 
-        if (vboxUsbFltDevCheckReplugLocked(pDevice))
+        if (vboxUsbFltDevCheckReplugLocked(pDevice, pContext))
         {
             InsertHeadList(&ReplugDevList, &pDevice->RepluggingLe);
             /* retain to ensure the device is not removed before we issue a replug */
@@ -855,9 +881,14 @@ int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId)
         if (pDevice->uFltId != uId)
             continue;
 
-        Assert(pDevice->pOwner);
+        Assert(pDevice->pOwner == pContext);
+        if (pDevice->pOwner != pContext)
+            continue;
+
         Assert(!pDevice->fIsFilterOneShot);
         pDevice->uFltId = 0;
+        /* clear the fIsFilterOneShot flag to ensure the device is replugged on the next VBoxUsbFltFilterCheck call */
+        pDevice->fIsFilterOneShot = false;
     }
     VBOXUSBFLT_LOCK_RELEASE();
 

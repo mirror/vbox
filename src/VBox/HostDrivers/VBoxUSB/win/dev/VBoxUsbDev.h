@@ -27,11 +27,6 @@ typedef struct VBOXUSB_GLOBALS
 
 extern VBOXUSB_GLOBALS g_VBoxUsbGlobals;
 
-typedef struct VBOXUSB_IOSTATE
-{
-    volatile uint32_t cRefs;
-} VBOXUSB_IOSTATE, *PVBOXUSB_IOSTATE;
-
 /* pnp state decls */
 typedef enum
 {
