@@ -1163,7 +1163,7 @@ static void usbLibOnDeviceChange()
         if (!DeleteTimerQueueTimer(g_VBoxUsbGlobal.hTimerQueue, g_VBoxUsbGlobal.hTimer, NULL))
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
+            AssertMsg(winEr == ERROR_IO_PENDING, (__FUNCTION__": DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
         }
     }
 
