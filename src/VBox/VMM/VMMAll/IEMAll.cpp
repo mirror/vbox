@@ -902,13 +902,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PIEMCPU pIemCpu, uint8_t *pu8)
 /**
  * Fetches the next opcode byte, returns automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   a_pu8               Where to return the opcode byte.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_BYTE(a_pIemCpu, a_pu8) \
+#define IEM_OPCODE_GET_NEXT_U8(a_pu8) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU8((a_pIemCpu), (a_pu8)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU8(pIemCpu, (a_pu8)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -930,13 +930,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PIEMCPU pIemCpu, int8_t *pi8)
  * Fetches the next signed byte from the opcode stream, returning automatically
  * on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   pi8                 Where to return the signed byte.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_S8(a_pIemCpu, a_pi8) \
+#define IEM_OPCODE_GET_NEXT_S8(a_pi8) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8((a_pIemCpu), (a_pi8)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8(pIemCpu, (a_pi8)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -966,13 +966,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PIEMCPU pIemCpu, uint16_t *pu16
  * Fetches the next signed byte from the opcode stream and sign-extending it to
  * a word, returning automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   pu16                Where to return the word.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pIemCpu, a_pu16) \
+#define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU16((a_pIemCpu), (a_pu16)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU16(pIemCpu, (a_pu16)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -999,13 +999,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PIEMCPU pIemCpu, uint16_t *pu16)
 /**
  * Fetches the next opcode word, returns automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   a_pu16              Where to return the opcode word.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_U16(a_pIemCpu, a_pu16) \
+#define IEM_OPCODE_GET_NEXT_U16(a_pu16) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16((a_pIemCpu), (a_pu16)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16(pIemCpu, (a_pu16)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -1063,13 +1063,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PIEMCPU pIemCpu, uint32_t *pu32)
 /**
  * Fetches the next opcode dword, returns automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   a_u32               Where to return the opcode dword.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_U32(a_pIemCpu, a_pu32) \
+#define IEM_OPCODE_GET_NEXT_U32(a_pu32) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32((a_pIemCpu), (a_pu32)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32(pIemCpu, (a_pu32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -1129,13 +1129,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PIEMCPU pIemCpu, uint64_t *pu6
  * Fetches the next opcode double word and sign extends it to a quad word,
  * returns automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
  * @param   a_pu64              Where to return the opcode quad word.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pIemCpu, a_pu64) \
+#define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS32SxU64((a_pIemCpu), (a_pu64)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS32SxU64(pIemCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -1167,15 +1167,15 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PIEMCPU pIemCpu, uint64_t *pu64)
 }
 
 /**
- * Fetches the next opcode word, returns automatically on failure.
+ * Fetches the next opcode quad word, returns automatically on failure.
  *
- * @param   pIemCpu             The IEM state.
- * @param   a_pu64              Where to return the opcode qword.
+ * @param   a_pu64              Where to return the opcode quad word.
+ * @remark Implicitly references pIemCpu.
  */
-#define IEM_OPCODE_GET_NEXT_U64(a_pIemCpu, a_pu64) \
+#define IEM_OPCODE_GET_NEXT_U64(a_pu64) \
     do \
     { \
-        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU64((a_pIemCpu), (a_pu64)); \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU64(pIemCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -3721,6 +3721,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
    do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u = (a_EFlags); Assert((pIemCpu)->CTX_SUFF(pCtx)->eflags.u & X86_EFL_1); } while (0)
 
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (a_CVariableOrConst)
+#define IEM_MC_ASSIGN_TO_SMALLER                        IEM_MC_ASSIGN
 
 #define IEM_MC_FETCH_GREG_U8(a_u8Dst, a_iGReg)          (a_u8Dst)  = iemGRegFetchU8(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U8_ZX_U16(a_u16Dst, a_iGReg)  (a_u16Dst) = iemGRegFetchU8(pIemCpu, (a_iGReg))
@@ -3751,6 +3752,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (a_u16Value)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (uint32_t)(a_u32Value) /* clear high bits. */
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (a_u64Value)
+#define IEM_MC_STORE_GREG_U8_CONST                      IEM_MC_STORE_GREG_U8
+#define IEM_MC_STORE_GREG_U16_CONST                     IEM_MC_STORE_GREG_U16
+#define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
+#define IEM_MC_STORE_GREG_U64_CONST                     IEM_MC_STORE_GREG_U64
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) &= UINT32_MAX
 
 #define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst) = iemGRegRefU8(pIemCpu, (a_iGReg))
@@ -4174,15 +4179,15 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
 
             /* Handle the disp16 form with no registers first. */
             if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 6)
-                IEM_OPCODE_GET_NEXT_U16(pIemCpu, &u16EffAddr);
+                IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);
             else
             {
                 /* Get the displacment. */
                 switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
                 {
-                    case 0:  u16EffAddr = 0;                                       break;
-                    case 1:  IEM_OPCODE_GET_NEXT_S8_SX_U16(pIemCpu, &u16EffAddr);  break;
-                    case 2:  IEM_OPCODE_GET_NEXT_U16(pIemCpu, &u16EffAddr);        break;
+                    case 0:  u16EffAddr = 0;                             break;
+                    case 1:  IEM_OPCODE_GET_NEXT_S8_SX_U16(&u16EffAddr); break;
+                    case 2:  IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);       break;
                     default: AssertFailedReturn(VERR_INTERNAL_ERROR_2); /* (caller checked for these) */
                 }
 
@@ -4211,7 +4216,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
 
             /* Handle the disp32 form with no registers first. */
             if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
-                IEM_OPCODE_GET_NEXT_U32(pIemCpu, &u32EffAddr);
+                IEM_OPCODE_GET_NEXT_U32(&u32EffAddr);
             else
             {
                 /* Get the register (or SIB) value. */
@@ -4223,7 +4228,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                     case 3: u32EffAddr = pCtx->ebx; break;
                     case 4: /* SIB */
                     {
-                        uint8_t bSib; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bSib);
+                        uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
 
                         /* Get the index and scale it. */
                         switch ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
@@ -4257,7 +4262,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                                 else
                                 {
                                     uint32_t u32Disp;
-                                    IEM_OPCODE_GET_NEXT_U32(pIemCpu, &u32Disp);
+                                    IEM_OPCODE_GET_NEXT_U32(&u32Disp);
                                     u32EffAddr += u32Disp;
                                 }
                                 break;
@@ -4280,15 +4285,13 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                         break;
                     case 1:
                     {
-                        int8_t i8Disp;
-                        IEM_OPCODE_GET_NEXT_S8(pIemCpu, &i8Disp);
+                        int8_t i8Disp; IEM_OPCODE_GET_NEXT_S8(&i8Disp);
                         u32EffAddr += i8Disp;
                         break;
                     }
                     case 2:
                     {
-                        uint32_t u32Disp;
-                        IEM_OPCODE_GET_NEXT_U32(pIemCpu, &u32Disp);
+                        uint32_t u32Disp; IEM_OPCODE_GET_NEXT_U32(&u32Disp);
                         u32EffAddr += u32Disp;
                         break;
                     }
@@ -4315,7 +4318,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
             /* Handle the rip+disp32 form with no registers first. */
             if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
             {
-                IEM_OPCODE_GET_NEXT_S32_SX_U64(pIemCpu, &u64EffAddr);
+                IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64EffAddr);
                 u64EffAddr += pCtx->rip + pIemCpu->offOpcode;
             }
             else
@@ -4341,7 +4344,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                     case 4:
                     case 12:
                     {
-                        uint8_t bSib; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &bSib);
+                        uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
 
                         /* Get the index and scale it. */
                         switch (((bSib & X86_SIB_INDEX_SHIFT) >> X86_SIB_INDEX_SMASK) | pIemCpu->uRexIndex)
@@ -4398,7 +4401,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                                 else
                                 {
                                     uint32_t u32Disp;
-                                    IEM_OPCODE_GET_NEXT_U32(pIemCpu, &u32Disp);
+                                    IEM_OPCODE_GET_NEXT_U32(&u32Disp);
                                     u64EffAddr += (int32_t)u32Disp;
                                 }
                                 break;
@@ -4416,14 +4419,14 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                     case 1:
                     {
                         int8_t i8Disp;
-                        IEM_OPCODE_GET_NEXT_S8(pIemCpu, &i8Disp);
+                        IEM_OPCODE_GET_NEXT_S8(&i8Disp);
                         u64EffAddr += i8Disp;
                         break;
                     }
                     case 2:
                     {
                         uint32_t u32Disp;
-                        IEM_OPCODE_GET_NEXT_U32(pIemCpu, &u32Disp);
+                        IEM_OPCODE_GET_NEXT_U32(&u32Disp);
                         u64EffAddr += (int32_t)u32Disp;
                         break;
                     }
@@ -5238,7 +5241,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    uint8_t b; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &b);
+    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
     rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
     if (rcStrict == VINF_SUCCESS)
         pIemCpu->cInstructions++;
@@ -5255,7 +5258,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
         if (rcStrict == VINF_SUCCESS)
         {
-            b; IEM_OPCODE_GET_NEXT_BYTE(pIemCpu, &b);
+            b; IEM_OPCODE_GET_NEXT_U8(&b);
             rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
             if (rcStrict == VINF_SUCCESS)
                 pIemCpu->cInstructions++;
