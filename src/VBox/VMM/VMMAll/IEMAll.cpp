@@ -3739,6 +3739,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_GREG_U32_ZX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U32_SX_U64(a_u64Dst, a_iGReg) (a_u64Dst) = (int32_t)iemGRegFetchU32(pIemCpu, (a_iGReg))
 #define IEM_MC_FETCH_GREG_U64(a_u64Dst, a_iGReg)        (a_u64Dst) = iemGRegFetchU64(pIemCpu, (a_iGReg))
+#define IEM_MC_FETCH_GREG_U64_ZX_U64                    IEM_MC_FETCH_GREG_U64
 #define IEM_MC_FETCH_SREG_U16(a_u16Dst, a_iSReg)        (a_u16Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_SREG_ZX_U32(a_u32Dst, a_iSReg)     (a_u32Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
 #define IEM_MC_FETCH_SREG_ZX_U64(a_u64Dst, a_iSReg)     (a_u64Dst) = iemSRegFetchU16(pIemCpu, (a_iSReg))
@@ -3766,7 +3767,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 
-#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u16Value)         *(uint8_t *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u8Value)
+#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u8Value)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u16Value)
 #define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value) \
     do { \
@@ -3786,10 +3787,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     } while (0)
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) -= (a_u64Value)
 
-#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   (a_u8Value)  += iemGRegFetchU8( pIemCpu, (a_iGReg))
-#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  (a_u16Value) += iemGRegFetchU16(pIemCpu, (a_iGReg))
-#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  (a_u32Value) += iemGRegFetchU32(pIemCpu, (a_iGReg))
-#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  (a_u64Value) += iemGRegFetchU64(pIemCpu, (a_iGReg))
+#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u8Value, a_iGReg)    do { (a_u8Value)  += iemGRegFetchU8( pIemCpu, (a_iGReg)); } while (0)
+#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += iemGRegFetchU16(pIemCpu, (a_iGReg)); } while (0)
+#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += iemGRegFetchU32(pIemCpu, (a_iGReg)); } while (0)
+#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += iemGRegFetchU64(pIemCpu, (a_iGReg)); } while (0)
 #define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) do { (a_EffAddr) += (a_i16); } while (0)
 #define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) do { (a_EffAddr) += (a_i32); } while (0)
 #define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) do { (a_EffAddr) += (a_i64); } while (0)
