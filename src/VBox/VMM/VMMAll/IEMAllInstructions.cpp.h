@@ -7742,10 +7742,10 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 #define IEM_MOVS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
-        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xSI); \
+        IEM_MC_LOCAL(RTGCPTR,           uAddr); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
         IEM_MC_FETCH_MEM_U##ValBits(uValue, pIemCpu->iEffSeg, uAddr); \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xDI); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xDI); \
         IEM_MC_STORE_MEM_U##ValBits(X86_SREG_ES, uAddr, uValue); \
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \
             IEM_MC_SUB_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
@@ -7884,11 +7884,11 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
         IEM_MC_ARG(uint##ValBits##_t,   uValue2,  1); \
         IEM_MC_ARG(uint32_t *,          pEFlags,  2); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue1); \
-        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
+        IEM_MC_LOCAL(RTGCPTR,           uAddr); \
         \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xSI); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
         IEM_MC_FETCH_MEM_U##ValBits(uValue1, pIemCpu->iEffSeg, uAddr); \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xDI); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xDI); \
         IEM_MC_FETCH_MEM_U##ValBits(uValue2, X86_SREG_ES, uAddr); \
         IEM_MC_REF_LOCAL(puValue1, uValue1); \
         IEM_MC_REF_EFLAGS(pEFlags); \
@@ -8094,9 +8094,9 @@ FNIEMOP_DEF(iemOp_test_eAX_Iz)
 #define IEM_STOS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
-        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
+        IEM_MC_LOCAL(RTGCPTR, uAddr); \
         IEM_MC_FETCH_GREG_U##ValBits(uValue, X86_GREG_xAX); \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr,  X86_GREG_xDI); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr,  X86_GREG_xDI); \
         IEM_MC_STORE_MEM_U##ValBits(X86_SREG_ES, uAddr, uValue); \
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \
             IEM_MC_SUB_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
@@ -8230,8 +8230,8 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
 #define IEM_LODS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
-        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xSI); \
+        IEM_MC_LOCAL(RTGCPTR, uAddr); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
         IEM_MC_FETCH_MEM_U##ValBits(uValue, pIemCpu->iEffSeg, uAddr); \
         IEM_MC_STORE_GREG_U##ValBits(X86_GREG_xAX, uValue); \
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \
@@ -8368,9 +8368,9 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
         IEM_MC_ARG(uint##ValBits##_t *, puRax,   0); \
         IEM_MC_ARG(uint##ValBits##_t,   uValue,  1); \
         IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
-        IEM_MC_LOCAL(uint##AddrBits##_t, uAddr); \
+        IEM_MC_LOCAL(RTGCPTR,           uAddr); \
         \
-        IEM_MC_FETCH_GREG_U##AddrBits(uAddr, X86_GREG_xDI); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xDI); \
         IEM_MC_FETCH_MEM_U##ValBits(uValue, X86_SREG_ES, uAddr); \
         IEM_MC_REF_GREG_U##ValBits(puRax, X86_GREG_xAX); \
         IEM_MC_REF_EFLAGS(pEFlags); \
