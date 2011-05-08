@@ -642,6 +642,86 @@ FNIEMAIMPLMULDIVU64 iemAImpl_div_u64, iemAImpl_idiv_u64;
 /** @} */
 
 
+/** @name Function tables.
+ * @{
+ */
+
+/**
+ * Function table for a binary operator providing implementation based on
+ * operand size.
+ */
+typedef struct IEMOPBINSIZES
+{
+    PFNIEMAIMPLBINU8  pfnNormalU8,    pfnLockedU8;
+    PFNIEMAIMPLBINU16 pfnNormalU16,   pfnLockedU16;
+    PFNIEMAIMPLBINU32 pfnNormalU32,   pfnLockedU32;
+    PFNIEMAIMPLBINU64 pfnNormalU64,   pfnLockedU64;
+} IEMOPBINSIZES;
+/** Pointer to a binary operator function table. */
+typedef IEMOPBINSIZES const *PCIEMOPBINSIZES;
+
+
+/**
+ * Function table for a unary operator providing implementation based on
+ * operand size.
+ */
+typedef struct IEMOPUNARYSIZES
+{
+    PFNIEMAIMPLUNARYU8  pfnNormalU8,    pfnLockedU8;
+    PFNIEMAIMPLUNARYU16 pfnNormalU16,   pfnLockedU16;
+    PFNIEMAIMPLUNARYU32 pfnNormalU32,   pfnLockedU32;
+    PFNIEMAIMPLUNARYU64 pfnNormalU64,   pfnLockedU64;
+} IEMOPUNARYSIZES;
+/** Pointer to a unary operator function table. */
+typedef IEMOPUNARYSIZES const *PCIEMOPUNARYSIZES;
+
+
+/**
+ * Function table for a shift operator providing implementation based on
+ * operand size.
+ */
+typedef struct IEMOPSHIFTSIZES
+{
+    PFNIEMAIMPLSHIFTU8  pfnNormalU8;
+    PFNIEMAIMPLSHIFTU16 pfnNormalU16;
+    PFNIEMAIMPLSHIFTU32 pfnNormalU32;
+    PFNIEMAIMPLSHIFTU64 pfnNormalU64;
+} IEMOPSHIFTSIZES;
+/** Pointer to a shift operator function table. */
+typedef IEMOPSHIFTSIZES const *PCIEMOPSHIFTSIZES;
+
+
+/**
+ * Function table for a multiplication or division operation.
+ */
+typedef struct IEMOPMULDIVSIZES
+{
+    PFNIEMAIMPLMULDIVU8  pfnU8;
+    PFNIEMAIMPLMULDIVU16 pfnU16;
+    PFNIEMAIMPLMULDIVU32 pfnU32;
+    PFNIEMAIMPLMULDIVU64 pfnU64;
+} IEMOPMULDIVSIZES;
+/** Pointer to a multiplication or division operation function table. */
+typedef IEMOPMULDIVSIZES const *PCIEMOPMULDIVSIZES;
+
+
+/**
+ * Function table for a double precision shift operator providing implementation
+ * based on operand size.
+ */
+typedef struct IEMOPSHIFTDBLSIZES
+{
+    PFNIEMAIMPLSHIFTDBLU16 pfnNormalU16;
+    PFNIEMAIMPLSHIFTDBLU32 pfnNormalU32;
+    PFNIEMAIMPLSHIFTDBLU64 pfnNormalU64;
+} IEMOPSHIFTDBLSIZES;
+/** Pointer to a double precision shift function table. */
+typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
+
+
+/** @} */
+
+
 /** @name C instruction implementations for anything slightly complicated.
  * @{ */
 
