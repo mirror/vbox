@@ -113,79 +113,6 @@ typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
 
 
 /**
- * Function table for a binary operator providing implementation based on
- * operand size.
- */
-typedef struct IEMOPBINSIZES
-{
-    PFNIEMAIMPLBINU8  pfnNormalU8,    pfnLockedU8;
-    PFNIEMAIMPLBINU16 pfnNormalU16,   pfnLockedU16;
-    PFNIEMAIMPLBINU32 pfnNormalU32,   pfnLockedU32;
-    PFNIEMAIMPLBINU64 pfnNormalU64,   pfnLockedU64;
-} IEMOPBINSIZES;
-/** Pointer to a binary operator function table. */
-typedef IEMOPBINSIZES const *PCIEMOPBINSIZES;
-
-
-/**
- * Function table for a unary operator providing implementation based on
- * operand size.
- */
-typedef struct IEMOPUNARYSIZES
-{
-    PFNIEMAIMPLUNARYU8  pfnNormalU8,    pfnLockedU8;
-    PFNIEMAIMPLUNARYU16 pfnNormalU16,   pfnLockedU16;
-    PFNIEMAIMPLUNARYU32 pfnNormalU32,   pfnLockedU32;
-    PFNIEMAIMPLUNARYU64 pfnNormalU64,   pfnLockedU64;
-} IEMOPUNARYSIZES;
-/** Pointer to a unary operator function table. */
-typedef IEMOPUNARYSIZES const *PCIEMOPUNARYSIZES;
-
-
-/**
- * Function table for a shift operator providing implementation based on
- * operand size.
- */
-typedef struct IEMOPSHIFTSIZES
-{
-    PFNIEMAIMPLSHIFTU8  pfnNormalU8;
-    PFNIEMAIMPLSHIFTU16 pfnNormalU16;
-    PFNIEMAIMPLSHIFTU32 pfnNormalU32;
-    PFNIEMAIMPLSHIFTU64 pfnNormalU64;
-} IEMOPSHIFTSIZES;
-/** Pointer to a shift operator function table. */
-typedef IEMOPSHIFTSIZES const *PCIEMOPSHIFTSIZES;
-
-
-/**
- * Function table for a multiplication or division operation.
- */
-typedef struct IEMOPMULDIVSIZES
-{
-    PFNIEMAIMPLMULDIVU8  pfnU8;
-    PFNIEMAIMPLMULDIVU16 pfnU16;
-    PFNIEMAIMPLMULDIVU32 pfnU32;
-    PFNIEMAIMPLMULDIVU64 pfnU64;
-} IEMOPMULDIVSIZES;
-/** Pointer to a multiplication or division operation function table. */
-typedef IEMOPMULDIVSIZES const *PCIEMOPMULDIVSIZES;
-
-
-/**
- * Function table for a double precision shift operator providing implementation
- * based on operand size.
- */
-typedef struct IEMOPSHIFTDBLSIZES
-{
-    PFNIEMAIMPLSHIFTDBLU16 pfnNormalU16;
-    PFNIEMAIMPLSHIFTDBLU32 pfnNormalU32;
-    PFNIEMAIMPLSHIFTDBLU64 pfnNormalU64;
-} IEMOPSHIFTDBLSIZES;
-/** Pointer to a double precision shift function table. */
-typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
-
-
-/**
  * Selector descriptor table entry as fetched by iemMemFetchSelDesc.
  */
 typedef union IEMSELDESC
@@ -1085,6 +1012,34 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PIEMCPU pIemCpu, uint16_t *pu16)
 
 
 /**
+ * Fetches the next signed word from the opcode stream.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pi16                Where to return the signed word.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PIEMCPU pIemCpu, int16_t *pi16)
+{
+    return iemOpcodeGetNextU16(pIemCpu, (uint16_t *)pi16);
+}
+
+/**
+ * Fetches the next signed word from the opcode stream, returning automatically
+ * on failure.
+ *
+ * @param   pi16                Where to return the signed word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_S16(a_pi16) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS16(pIemCpu, (a_pi16)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
  * Fetches the next opcode dword.
  *
  * @returns Strict VBox status code.
@@ -1115,6 +1070,34 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PIEMCPU pIemCpu, uint32_t *pu32)
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32((a_pIemCpu), (a_pu32)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
+ * Fetches the next signed double word from the opcode stream.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pi32                Where to return the signed double word.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PIEMCPU pIemCpu, int32_t *pi32)
+{
+    return iemOpcodeGetNextU32(pIemCpu, (uint32_t *)pi32);
+}
+
+/**
+ * Fetches the next signed double word from the opcode stream, returning
+ * automatically on failure.
+ *
+ * @param   pi32                Where to return the signed double word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_S32(a_pi32) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS32(pIemCpu, (a_pi32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
