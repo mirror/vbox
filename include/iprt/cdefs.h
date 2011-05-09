@@ -817,7 +817,7 @@
 #ifdef __GNUC__
 # define DECL_NO_INLINE(scope,type) __attribute__((noinline)) scope type
 #elif defined(_MSC_VER)
-# define DECL_NO_INLINE(scope,type) __declspec(noline) scope type
+# define DECL_NO_INLINE(scope,type) __declspec(noinline) scope type
 #else
 # define DECL_NO_INLINE(scope,type) scope type
 #endif
