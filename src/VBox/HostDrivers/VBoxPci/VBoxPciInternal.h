@@ -141,6 +141,7 @@ typedef struct VBOXRAWPCIGLOBALS
     /** The SUPDRV IDC handle (opaque struct). */
     SUPDRVIDCHANDLE SupDrvIDC;
 #ifdef RT_OS_LINUX
+    bool fPciStubModuleAvail;
     struct module    * pciStubModule;
 #endif
 } VBOXRAWPCIGLOBALS;
