@@ -44,7 +44,7 @@ uint8_t volatile    g_bRandom;
 
 #define CHK_CONST(a_ExpectedType, a_Const) \
     do { \
-        AssertCompile((a_Const) / 2 == (a_Const) / 2); \
+        AssertCompile(((a_Const) >> 1) == ((a_Const) >> 1)); \
         AssertCompile((a_ExpectedType)(a_Const) == (a_Const)); \
     } while (0)
 
@@ -57,6 +57,10 @@ uint8_t volatile    g_bRandom;
 #define CHK_GCPTR(a_EffAddr) \
     CHK_TYPE(RTGCPTR, a_EffAddr)
 
+#define CHK_SEG_IDX(a_iSeg) \
+    do { \
+        uint8_t iMySeg = (a_iSeg); NOREF(iMySeg); /** @todo const or variable. grr. */ \
+    } while (0)
 
 
 /** @name Other stubs.
@@ -256,11 +260,23 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { CHK_SINGLE_BIT(uint32_t, a_fBit); } while (0)
 #define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { CHK_SINGLE_BIT(uint32_t, a_fBit); } while (0)
 
-#define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem)                do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem)              do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem)              do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_FETCH_MEM_S32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
+#define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem)                do { CHK_GCPTR(a_GCPtrMem); } while (0)
+#define IEM_MC_FETCH_MEM16_U8(a_u8Dst, a_iSeg, a_GCPtrMem16)            do { CHK_TYPE(uint16_t, a_GCPtrMem16); } while (0)
+#define IEM_MC_FETCH_MEM32_U8(a_u8Dst, a_iSeg, a_GCPtrMem32)            do { CHK_TYPE(uint32_t, a_GCPtrMem32); } while (0)
+#define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
+#define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
+#define IEM_MC_FETCH_MEM_S32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
+
+#define IEM_MC_FETCH_MEM_U8_DISP(a_u8Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint8_t, a_u8Dst); } while (0)
+#define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint16_t, a_u16Dst); } while (0)
+#define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint32_t, a_u32Dst); } while (0)
+#define IEM_MC_FETCH_MEM_U64_DISP(a_u64Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint64_t, a_u64Dst); } while (0)
+
 #define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U8_ZX_U32(a_u32Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U8_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
@@ -273,10 +289,11 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FETCH_MEM_U16_SX_U32(a_u32Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U16_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
-#define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value)              do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Value)            do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_STORE_MEM_U32(a_iSeg, a_GCPtrMem, a_u32Value)            do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
-#define IEM_MC_STORE_MEM_U64(a_iSeg, a_GCPtrMem, a_u64Value)            do { /*CHK_GCPTR(a_GCPtrMem);*/ } while (0)
+#define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint8_t,  a_u8Value);  CHK_SEG_IDX(a_iSeg); } while (0)
+#define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Value)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint16_t, a_u16Value); } while (0)
+#define IEM_MC_STORE_MEM_U32(a_iSeg, a_GCPtrMem, a_u32Value)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_STORE_MEM_U64(a_iSeg, a_GCPtrMem, a_u64Value)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_STORE_MEM_U8_CONST(a_iSeg, a_GCPtrMem, a_u8C)            do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_u8C);      } while (0)
 
 #define IEM_MC_PUSH_U16(a_u16Value)                                     do {} while (0)
 #define IEM_MC_PUSH_U32(a_u32Value)                                     do {} while (0)
