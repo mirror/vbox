@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -128,7 +128,7 @@ public:
     virtual int run(bool fDaemonised /* = false */)
     {
         int rc;
-        LogRelFlowFunc(("\n"));
+        LogFlowFunc(("\n"));
 
         /* Because we need desktop notifications to be displayed, wait
          * some time to make the desktop environment load (as a work around). */
@@ -149,7 +149,7 @@ public:
         {
             rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
             if (RT_FAILURE(rc))
-                LogRel(("Cannot connect to guest property service! rc = %Rrc\n", rc));
+                LogRel(("VBoxClient: Cannot connect to guest property service while chcking for host version! rc = %Rrc\n", rc));
         }
 
         if (RT_SUCCESS(rc))
@@ -186,7 +186,7 @@ public:
             VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
         }
 # endif /* VBOX_WITH_GUEST_PROPS */
-        LogRelFlowFunc(("returning %Rrc\n", rc));
+        LogFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }
 
@@ -201,3 +201,4 @@ VBoxClient::Service *VBoxClient::GetHostVersionService()
 {
     return new HostVersionService;
 }
+
