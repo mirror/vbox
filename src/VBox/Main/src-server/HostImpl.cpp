@@ -2738,20 +2738,20 @@ HRESULT Host::checkUSBProxyService()
         switch (m->pUSBProxyService->getLastError())
         {
             case VERR_FILE_NOT_FOUND:  /** @todo what does this mean? */
-                return setError(E_FAIL,
-                                tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer"));
+                return setWarning(E_FAIL,
+                                  tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer"));
             case VERR_VUSB_USB_DEVICE_PERMISSION:
-                return setError(E_FAIL,
-                                tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation"));
+                return setWarning(E_FAIL,
+                                  tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation"));
             case VERR_VUSB_USBFS_PERMISSION:
-                return setError(E_FAIL,
-                                tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation"));
+                return setWarning(E_FAIL,
+                                  tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation"));
             case VINF_SUCCESS:
-                return setError(E_FAIL,
-                                tr("The USB Proxy Service has not yet been ported to this host"));
+                return setWarning(E_FAIL,
+                                  tr("The USB Proxy Service has not yet been ported to this host"));
             default:
-                return setError(E_FAIL, "%s: %Rrc",
-                                tr ("Could not load the Host USB Proxy service"),
+                return setWarning (E_FAIL, "%s: %Rrc",
+                                   tr ("Could not load the Host USB Proxy service"),
                                    m->pUSBProxyService->getLastError());
         }
     }
