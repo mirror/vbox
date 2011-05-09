@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -139,7 +139,12 @@ static nsresult vboxsvcSpawnDaemon(void)
     memset(msg, '\0', sizeof(msg));
     if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
         || strcmp(msg, "READY"))
+    {
+        /* If several clients start VBoxSVC simultaneously only one can
+         * succeed. So treat this as success as well. */
+        rv = NS_OK;
         goto end;
+    }
 
     rv = NS_OK;
 
