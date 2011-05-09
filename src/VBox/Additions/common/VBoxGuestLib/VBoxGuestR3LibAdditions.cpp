@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +42,7 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
 {
     if (ppszVer)
     {
-        *ppszVer = RTStrDup(VBOX_VERSION_STRING);
+        *ppszVer = RTStrDup(VBOX_VERSION_STRING_RAW);
         if (!*ppszVer)
             return VERR_NO_STR_MEMORY;
     }

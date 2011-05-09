@@ -2,7 +2,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2006-2010 Oracle Corporation
+    Copyright (C) 2006-2011 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,8 @@
 -->
 
 <?define Property_RegKey ="Software\$(env.VBOX_VENDOR_SHORT)\VirtualBox" ?>
-<?define Property_Version = "$(env.VBOX_VERSION_STRING)" ?>
+<?define Property_Version = "$(env.VBOX_VERSION_STRING_RAW)" ?>
+<?define Property_VersionExt = "$(env.VBOX_VERSION_STRING)" ?>
 <?define Property_Upgrade = "yes" ?>
 
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
@@ -73,7 +74,7 @@
 
         <!-- Package GUIDs must be different for each package. The "???" directs WiX to create one. -->
         <Package Id="????????-????-????-????-????????????" Keywords="Installer"
-                 Description="$(env.VBOX_PRODUCT) $(var.Property_Version) installation package"
+                 Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) installation package"
                  Comments="$(env.VBOX_PRODUCT) installation package"
                  Manufacturer="$(env.VBOX_VENDOR)"
                  InstallerVersion="200"
