@@ -267,7 +267,7 @@ void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
     mIsBasicAvailable = gotSomething;
     mIsFullAvailable = gotAll;
 
-    mIsNull = gotSomething;
+    mIsNull = !gotSomething;
 
     AssertMsg (gotSomething, ("Nothing to fetch!\n"));
 }
@@ -281,7 +281,7 @@ void COMErrorInfo::copyFrom(const COMErrorInfo &x)
     mResultCode = x.mResultCode;
     mInterfaceID = x.mInterfaceID;
     mComponent = x.mComponent;
-    mText = mText;
+    mText = x.mText;
 
     if (x.m_pNext)
         m_pNext = new COMErrorInfo(*x.m_pNext);
@@ -362,7 +362,7 @@ void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeII
             if (gotSomething)
                 mIsBasicAvailable = true;
 
-            mIsNull = gotSomething;
+            mIsNull = !gotSomething;
 
             AssertMsg (gotSomething, ("Nothing to fetch!\n"));
         }
@@ -406,7 +406,7 @@ void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeII
                     if (gotSomething)
                         mIsBasicAvailable = true;
 
-                    mIsNull = gotSomething;
+                    mIsNull = !gotSomething;
 
                     AssertMsg (gotSomething, ("Nothing to fetch!\n"));
                 }
