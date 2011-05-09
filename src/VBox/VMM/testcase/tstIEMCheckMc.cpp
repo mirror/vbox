@@ -170,14 +170,17 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do {} while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO()              do {} while (0)
 
-#define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
-#define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value)
+#define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name; NOREF(a_Name)
+#define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value); NOREF(a_Name)
 #define IEM_MC_REF_LOCAL(a_pRefArg, a_Local)            (a_pRefArg) = &(a_Local)
-#define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name
-#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)   a_Type const a_Name = (a_Value)
+#define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name; NOREF(a_Name)
+#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg) \
+    a_Type const a_Name = (a_Value); \
+    NOREF(a_Name)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
-    uint32_t *a_pName = &a_Name
+    uint32_t *a_pName = &a_Name; \
+    NOREF(a_pName)
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags)                  CHK_TYPE(uint32_t, a_EFlags)
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (0)
 #define IEM_MC_ASSIGN_TO_SMALLER                        IEM_MC_ASSIGN
@@ -288,7 +291,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)                     do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3)                 do {} while (0)
-#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)                do {} while (0)
+#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)                do { (a_rc) = VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 return VINF_SUCCESS
 #define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0)                             return VINF_SUCCESS
 #define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1)                         return VINF_SUCCESS
