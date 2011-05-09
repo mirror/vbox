@@ -4527,11 +4527,46 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     PVMCPU pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     if (   pOrgCtx->eflags.Bits.u1IF
         && TRPMHasTrap(pVCpu)
-        //&& TRPMIsSoftwareInterrupt(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pOrgCtx->rip)
     {
-        Log(("Injecting trap %#x\n", TRPMGetTrapNo(pVCpu)));
-        iemCImpl_int(pIemCpu, 0, TRPMGetTrapNo(pVCpu), false);
+        uint8_t     u8TrapNo;
+        TRPMEVENT   enmType;
+        RTGCUINT    uErrCode;
+        RTGCPTR     uCr2;
+        int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2); AssertRC(rc2);
+        Log(("Injecting trap %#x\n", u8TrapNo));
+
+        uint32_t    fFlags;
+        switch (enmType)
+        {
+            case TRPM_HARDWARE_INT:
+                fFlags = IEM_XCPT_FLAGS_T_EXT_INT;
+                uErrCode = uCr2 = 0;
+                break;
+            case TRPM_SOFTWARE_INT:
+                fFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
+                uErrCode = uCr2 = 0;
+                break;
+            case TRPM_TRAP:
+                fFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
+                if (u8TrapNo == X86_XCPT_PF)
+                    fFlags |= IEM_XCPT_FLAGS_CR2;
+                switch (u8TrapNo)
+                {
+                    case X86_XCPT_DF:
+                    case X86_XCPT_TS:
+                    case X86_XCPT_NP:
+                    case X86_XCPT_SS:
+                    case X86_XCPT_PF:
+                    case X86_XCPT_AC:
+                        fFlags |= IEM_XCPT_FLAGS_ERR;
+                        break;
+                }
+                TRPMHasTrap(pVCpu)
+                break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        iemCImpl_RaiseXcptOrInt(pIemCpu, 0, u8TrapNo, fFlags, (uint16_t)uErrCode, uCr2);
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
