@@ -565,8 +565,10 @@ VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC
 #
 if1of ($(KBUILD_TARGET), win)
 #VMMAll/IEMAll.cpp_CXXFLAGS = TODO
+#else if1of ($(KBUILD_TARGET_ARCH), amd64)
+# VMMAll/IEMAll.cpp_CXXFLAGS = -O2 -fomit-frame-pointer
 else
-VMMAll/IEMAll.cpp_CXXFLAGS = -O2 #-fomit-frame-pointer - latter causes trouble on mac.
+ VMMAll/IEMAll.cpp_CXXFLAGS = -O2 #-fomit-frame-pointer - latter causes trouble on mac.
 endif
 
 

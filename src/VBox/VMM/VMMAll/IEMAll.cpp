@@ -87,9 +87,9 @@ typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOP)(PIEMCPU pIemCpu)
 # define FNIEMOP_DEF(a_Name) \
     static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name (PIEMCPU pIemCpu)
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
-    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0) RT_NO_THROW
+    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
 # define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
-    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW
+    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
 
 #elif defined(_MSC_VER) && defined(RT_ARCH_X86)
 typedef VBOXSTRICTRC (__fastcall * PFNIEMOP)(PIEMCPU pIemCpu);
@@ -99,6 +99,15 @@ typedef VBOXSTRICTRC (__fastcall * PFNIEMOP)(PIEMCPU pIemCpu);
     static /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0) RT_NO_THROW
 # define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
     static /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW
+
+#elif defined(__GNUC__)
+typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
+# define FNIEMOP_DEF(a_Name) \
+    static VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PIEMCPU pIemCpu)
+# define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
+    static VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
+# define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
+    static VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
 
 #else
 typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
@@ -748,7 +757,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
  * @param   pIemCpu             The IEM state.
  * @param   pb                  Where to return the opcode byte.
  */
-static VBOXSTRICTRC iemOpcodeGetNextByteSlow(PIEMCPU pIemCpu, uint8_t *pb)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextByteSlow(PIEMCPU pIemCpu, uint8_t *pb)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 1);
     if (rcStrict == VINF_SUCCESS)
@@ -770,7 +779,7 @@ static VBOXSTRICTRC iemOpcodeGetNextByteSlow(PIEMCPU pIemCpu, uint8_t *pb)
  * @param   pIemCpu             The IEM state.
  * @param   pu16                Where to return the opcode dword.
  */
-static VBOXSTRICTRC iemOpcodeGetNextS8SxU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS8SxU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
 {
     uint8_t     u8;
     VBOXSTRICTRC rcStrict = iemOpcodeGetNextByteSlow(pIemCpu, &u8);
@@ -787,7 +796,7 @@ static VBOXSTRICTRC iemOpcodeGetNextS8SxU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
  * @param   pIemCpu             The IEM state.
  * @param   pu16                Where to return the opcode word.
  */
-static VBOXSTRICTRC iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 2);
     if (rcStrict == VINF_SUCCESS)
@@ -809,7 +818,7 @@ static VBOXSTRICTRC iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
  * @param   pIemCpu             The IEM state.
  * @param   pu32                Where to return the opcode dword.
  */
-static VBOXSTRICTRC iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
     if (rcStrict == VINF_SUCCESS)
@@ -834,7 +843,7 @@ static VBOXSTRICTRC iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
  * @param   pIemCpu             The IEM state.
  * @param   pu64                Where to return the opcode qword.
  */
-static VBOXSTRICTRC iemOpcodeGetNextS32SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS32SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
     if (rcStrict == VINF_SUCCESS)
@@ -859,7 +868,7 @@ static VBOXSTRICTRC iemOpcodeGetNextS32SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64
  * @param   pIemCpu             The IEM state.
  * @param   pu64                Where to return the opcode qword.
  */
-static VBOXSTRICTRC iemOpcodeGetNextU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 8);
     if (rcStrict == VINF_SUCCESS)
