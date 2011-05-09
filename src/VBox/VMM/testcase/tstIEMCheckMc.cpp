@@ -155,11 +155,33 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 /** @}  */
 
 
+#define IEM_REPEAT_0(a_Callback, a_User)    do { } while (0)
+#define IEM_REPEAT_1(a_Callback, a_User)                                      a_Callback##_CALLBACK(0, a_User)
+#define IEM_REPEAT_2(a_Callback, a_User)    IEM_REPEAT_1(a_Callback, a_User); a_Callback##_CALLBACK(1, a_User)
+#define IEM_REPEAT_3(a_Callback, a_User)    IEM_REPEAT_2(a_Callback, a_User); a_Callback##_CALLBACK(2, a_User)
+#define IEM_REPEAT_4(a_Callback, a_User)    IEM_REPEAT_3(a_Callback, a_User); a_Callback##_CALLBACK(3, a_User)
+#define IEM_REPEAT_5(a_Callback, a_User)    IEM_REPEAT_4(a_Callback, a_User); a_Callback##_CALLBACK(4, a_User)
+#define IEM_REPEAT_6(a_Callback, a_User)    IEM_REPEAT_5(a_Callback, a_User); a_Callback##_CALLBACK(5, a_User)
+#define IEM_REPEAT_7(a_Callback, a_User)    IEM_REPEAT_6(a_Callback, a_User); a_Callback##_CALLBACK(6, a_User)
+#define IEM_REPEAT_8(a_Callback, a_User)    IEM_REPEAT_7(a_Callback, a_User); a_Callback##_CALLBACK(7, a_User)
+#define IEM_REPEAT_9(a_Callback, a_User)    IEM_REPEAT_8(a_Callback, a_User); a_Callback##_CALLBACK(8, a_User)
+#define IEM_REPEAT(a_cTimes, a_Callback, a_User) RT_CONCAT(IEM_REPEAT_,a_cTimes)(a_Callback, a_User)
+
+
+
 /** @name Microcode test stubs
  * @{  */
 
-#define IEM_MC_BEGIN(cArgs, cLocals)                    {
-#define IEM_MC_END()                                    }
+#define IEM_ARG_CHECK_CALLBACK(a_idx, a_User) int RT_CONCAT(iArgCheck_,a_idx)
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals) \
+    { \
+        const uint8_t cArgs   = (a_cArgs); NOREF(cArgs); \
+        const uint8_t cLocals = (a_cArgs); NOREF(cLocals); \
+        IEM_REPEAT(a_cArgs, IEM_ARG_CHECK, 0); \
+
+#define IEM_MC_END() \
+    }
+
 #define IEM_MC_PAUSE()                                  do {} while (0)
 #define IEM_MC_CONTINUE()                               do {} while (0)
 #define IEM_MC_ADVANCE_RIP()                            do {} while (0)
@@ -174,17 +196,34 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do {} while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO()              do {} while (0)
 
-#define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name; NOREF(a_Name)
-#define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value); NOREF(a_Name)
-#define IEM_MC_REF_LOCAL(a_pRefArg, a_Local)            (a_pRefArg) = &(a_Local)
-#define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name; NOREF(a_Name)
+#define IEM_MC_LOCAL(a_Type, a_Name) \
+    a_Type a_Name; NOREF(a_Name)
+#define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value) \
+    a_Type const a_Name = (a_Value); \
+    NOREF(a_Name)
+#define IEM_MC_REF_LOCAL(a_pRefArg, a_Local) \
+    (a_pRefArg) = &(a_Local)
+
+#define IEM_MC_ARG(a_Type, a_Name, a_iArg) \
+    RT_CONCAT(iArgCheck_,a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
+    AssertCompile((a_iArg) < cArgs); \
+    a_Type a_Name; \
+    NOREF(a_Name)
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg) \
+    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
+    AssertCompile((a_iArg) < cArgs); \
     a_Type const a_Name = (a_Value); \
     NOREF(a_Name)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
+    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
+    AssertCompile((a_iArg) < cArgs); \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name; \
     NOREF(a_pName)
+
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags)                  CHK_TYPE(uint32_t, a_EFlags)
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (0)
 #define IEM_MC_ASSIGN_TO_SMALLER                        IEM_MC_ASSIGN
@@ -238,10 +277,17 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value)        do { CHK_CONST(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        do { CHK_CONST(uint64_t, a_u64Value); } while (0)
 
+#ifdef _MSC_VER
+#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; /*CHK_CONST(uint8_t,  a_u8Value); */ } while (0)
+#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; /*CHK_CONST(uint16_t, a_u16Value);*/ } while (0)
+#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += 1; /*CHK_CONST(uint32_t, a_u32Value);*/ } while (0)
+#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += 1; /*CHK_CONST(uint64_t, a_u64Value);*/ } while (0)
+#else
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; CHK_CONST(uint8_t,  a_u8Value);  } while (0)
 #define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; CHK_CONST(uint16_t, a_u16Value); } while (0)
 #define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += 1; CHK_CONST(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += 1; CHK_CONST(uint64_t, a_u64Value); } while (0)
+#endif
 #define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) do { (a_EffAddr) += (a_i16); CHK_GCPTR(a_EffAddr); } while (0)
 #define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) do { (a_EffAddr) += (a_i32); CHK_GCPTR(a_EffAddr); } while (0)
 #define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) do { (a_EffAddr) += (a_i64); CHK_GCPTR(a_EffAddr); } while (0)

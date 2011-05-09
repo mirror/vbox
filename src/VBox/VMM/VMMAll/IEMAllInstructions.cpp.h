@@ -8364,7 +8364,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 
 /** Macro used by iemOp_scasb_AL_Xb and iemOp_scaswd_eAX_Xv */
 #define IEM_SCAS_CASE(ValBits, AddrBits) \
-        IEM_MC_BEGIN(1, 2); \
+        IEM_MC_BEGIN(3, 2); \
         IEM_MC_ARG(uint##ValBits##_t *, puRax,   0); \
         IEM_MC_ARG(uint##ValBits##_t,   uValue,  1); \
         IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
@@ -10609,7 +10609,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_16BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 1);
+                IEM_MC_BEGIN(4, 1);
                 IEM_MC_ARG(uint16_t *,      pu16AX,     0);
                 IEM_MC_ARG(uint16_t *,      pu16DX,     1);
                 IEM_MC_ARG(uint16_t,        u16Value,   2);
@@ -10634,7 +10634,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_32BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 1);
+                IEM_MC_BEGIN(4, 1);
                 IEM_MC_ARG(uint32_t *,      pu32AX,     0);
                 IEM_MC_ARG(uint32_t *,      pu32DX,     1);
                 IEM_MC_ARG(uint32_t,        u32Value,   2);
@@ -10659,7 +10659,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_64BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 1);
+                IEM_MC_BEGIN(4, 1);
                 IEM_MC_ARG(uint64_t *,      pu64AX,     0);
                 IEM_MC_ARG(uint64_t *,      pu64DX,     1);
                 IEM_MC_ARG(uint64_t,        u64Value,   2);
@@ -10692,7 +10692,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_16BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 2);
+                IEM_MC_BEGIN(4, 2);
                 IEM_MC_ARG(uint16_t *,      pu16AX,     0);
                 IEM_MC_ARG(uint16_t *,      pu16DX,     1);
                 IEM_MC_ARG(uint16_t,        u16Value,   2);
@@ -10719,7 +10719,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_32BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 2);
+                IEM_MC_BEGIN(4, 2);
                 IEM_MC_ARG(uint32_t *,      pu32AX,     0);
                 IEM_MC_ARG(uint32_t *,      pu32DX,     1);
                 IEM_MC_ARG(uint32_t,        u32Value,   2);
@@ -10746,7 +10746,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
             case IEMMODE_64BIT:
             {
                 IEMOP_HLP_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(3, 2);
+                IEM_MC_BEGIN(4, 2);
                 IEM_MC_ARG(uint64_t *,      pu64AX,     0);
                 IEM_MC_ARG(uint64_t *,      pu64DX,     1);
                 IEM_MC_ARG(uint64_t,        u64Value,   2);
