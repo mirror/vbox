@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +96,7 @@ int main()
         { "3.1.0_BETA1-r12345",         "3.1.0_BETA1-r12345",                0 },
         { "3.1.0_BETA2-r12345",         "3.1.0_BETA1-r12345",                1 },
         { "3.1.0_BETA2-r12345",         "3.1.0_BETA999-r12345",             -1 },
-        { "3.1.0_BETA2",                "3.1.0_ABC",                        -1 }, /* ABC isn't indicating a prerelease, BETA does */
+        { "3.1.0_BETA2",                "3.1.0_ABC",                        -1 }, /* ABC isn't indicating a prerelease, BETA does. */
         { "3.1.0_BETA",                 "3.1.0_ATEB",                       -1 },
         { "4.0.0_ALPHAr68482",          "4.0.0_ALPHAr68483",                -1 },
         { "4.0.0_ALPHA1r68482",         "4.0.0_ALPHAr68482",                 0 },
@@ -105,6 +105,8 @@ int main()
         { "4.0.0_ALPHAr68483",          "4.0.0_BETA1r68783",                -1 },
         { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68783",                -1 },
         { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68784",                -1 },
+        { "4.0.6",                      "4.0.6_Ubuntu",                     -1 }, /* Without stripped guest OS string (Ubuntu). */
+        { "4.0.6_Windows",              "4.0.6",                             1 }  /* Without stripped guest OS string (Windows). */
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
