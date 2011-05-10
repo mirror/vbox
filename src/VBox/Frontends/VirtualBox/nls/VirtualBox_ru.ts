@@ -8890,6 +8890,26 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
         <translation>&lt;p&gt;В настоящий момент, поддержка USB 2.0 включена для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished">Не удалось загрузить USB Proxy службу хоста (VERR_FILE_NOT_FOUND). Возможно, данная служба не установлена на данном компьютере</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished">В данный момент VirtualBox не может использовать устройства USB. Вы можете исправить данную проблему, добавив текущего пользователя в группу &apos;vboxusers&apos;. Для получения более детальных объяснений следуйте указаниям руководства пользователя</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished">В данный момент VirtualBox не может использовать устройства USB. Вы можете исправить данную проблему, открыв текущему пользователю доступ к файлам и папкам &apos;usbfs&apos;. Для получения более детальных объяснений следуйте указаниям руководства пользователя</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished">Служба USB Proxy ещё не была портирована на данный хост</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished">Не удалось загрузить USB Proxy службу хоста</translation>
+    </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
