@@ -582,9 +582,9 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             uint8_t szBuf[_64K];
             uint32_t cbOffset = 0;
             uint32_t cbRead, cbLeft;
-            while (RT_SUCCESS(   VBoxServicePipeBufPeek(&pData->stdOut, szBuf, sizeof(szBuf),
+            while (   RT_SUCCESS(VBoxServicePipeBufPeek(&pData->stdOut, szBuf, sizeof(szBuf),
                                                         cbOffset, &cbRead, &cbLeft))
-                              && cbRead)
+                   && cbRead)
             {
                 VBoxServiceVerbose(5, "[%u]: %s\n", pData->uPID, szBuf);
                 cbOffset += cbRead;
