@@ -24,6 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -76,20 +80,22 @@ typedef RTDVMVOLUMEINTERNAL *PRTDVMVOLUMEINTERNAL;
 /*******************************************************************************
 *  Global variables                                                            *
 *******************************************************************************/
-extern RTDVMFMTOPS g_DvmFmtMbr;
-extern RTDVMFMTOPS g_DvmFmtGpt;
+extern RTDVMFMTOPS g_rtDvmFmtMbr;
+extern RTDVMFMTOPS g_rtDvmFmtGpt;
 
 /**
  * Supported volume formats.
  */
 static PCRTDVMFMTOPS g_aDvmFmts[] =
 {
-    &g_DvmFmtMbr,
-    &g_DvmFmtGpt
+    &g_rtDvmFmtMbr,
+    &g_rtDvmFmtGpt
 };
 
 /**
  * Descriptions of the volume types.
+ *
+ * This is indexed by RTDVMVOLTYPE.
  */
 static const char * g_apcszDvmVolTypes[] =
 {
@@ -467,7 +473,7 @@ RTDECL(int) RTDvmVolumeWrite(RTDVMVOLUME hVol, uint64_t off, const void *pvBuf, 
 
 RTDECL(const char *) RTDvmVolumeTypeGetDescr(RTDVMVOLTYPE enmVolType)
 {
-    AssertReturn(enmVolType >= RTDVMVOLTYPE_INVALID && enmVolType < RTDVMVOLTYPE_32BIT_HACK, NULL);
+    AssertReturn(enmVolType >= RTDVMVOLTYPE_INVALID && enmVolType < RTDVMVOLTYPE_END, NULL);
 
     return g_apcszDvmVolTypes[enmVolType];
 }

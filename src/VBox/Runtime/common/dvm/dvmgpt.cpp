@@ -24,6 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -32,6 +36,10 @@
 #include <iprt/uuid.h>
 #include "internal/dvm.h"
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /** The GPT signature. */
 #define RTDVM_GPT_SIGNATURE "EFI PART"
 
@@ -177,6 +185,10 @@ typedef RTDVMGPTPARTTYPE2VOLTYPE *PRTDVMGPTPARTTYPE2VOLTYPE;
 /** Converts a Byte offset to the LBA number. */
 #define RTDVM_GPT_BYTE2LBA(lba, disk) ((lba) / (disk)->cbSector)
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /**
  * Mapping of partition types to DVM volume types.
  *
@@ -215,17 +227,17 @@ static const RTDVMGPTPARTTYPE2VOLTYPE g_aPartType2DvmVolTypes[] =
     {"6A9283A5-1DD2-11B2-99A6-080020736631", RTDVMVOLTYPE_SOLARIS}, /* Alternate sector */
 };
 
-DECLCALLBACK(int) dvmFmtGptProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
+static DECLCALLBACK(int) rtDvmFmtGptProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
 {
     int rc = VINF_SUCCESS;
     GptHdr Hdr;
 
     *puScore = RTDVM_MATCH_SCORE_UNSUPPORTED;
 
-    if (dvmDiskGetSectors(pDisk) >= 2)
+    if (rtDvmDiskGetSectors(pDisk) >= 2)
     {
         /* Read from the disk and check for the signature. */
-        rc = dvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &Hdr, sizeof(GptHdr));
+        rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &Hdr, sizeof(GptHdr));
         if (   RT_SUCCESS(rc)
             && !strncmp(&Hdr.abSignature[0], RTDVM_GPT_SIGNATURE, RT_ELEMENTS(Hdr.abSignature))
             && RT_LE2H_U32(Hdr.u32Revision) == 0x00010000
@@ -236,7 +248,7 @@ DECLCALLBACK(int) dvmFmtGptProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = NULL;
@@ -248,7 +260,7 @@ DECLCALLBACK(int) dvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
         pThis->cPartitions = 0;
 
         /* Read the complete GPT header and convert to host endianess. */
-        rc = dvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &pThis->HdrRev1, sizeof(pThis->HdrRev1));
+        rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &pThis->HdrRev1, sizeof(pThis->HdrRev1));
         if (RT_SUCCESS(rc))
         {
             pThis->HdrRev1.Hdr.u32Revision        = RT_LE2H_U32(pThis->HdrRev1.Hdr.u32Revision);
@@ -269,7 +281,7 @@ DECLCALLBACK(int) dvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
                 pThis->paGptEntries = (PGptEntry)RTMemAllocZ(pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry);
                 if (VALID_PTR(pThis->paGptEntries))
                 {
-                    rc = dvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(pThis->HdrRev1.u64LbaPartitionEntries, pDisk),
+                    rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(pThis->HdrRev1.u64LbaPartitionEntries, pDisk),
                                      pThis->paGptEntries, pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry);
                     if (RT_SUCCESS(rc))
                     {
@@ -310,12 +322,12 @@ DECLCALLBACK(int) dvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtGptInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtGptInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-DECLCALLBACK(void) dvmFmtGptClose(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(void) rtDvmFmtGptClose(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
@@ -327,14 +339,14 @@ DECLCALLBACK(void) dvmFmtGptClose(RTDVMFMT hVolMgrFmt)
     RTMemFree(pThis);
 }
 
-DECLCALLBACK(uint32_t) dvmFmtGptGetValidVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtGptGetValidVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
     return pThis->cPartitions;
 }
 
-DECLCALLBACK(uint32_t) dvmFmtGptGetMaxVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtGptGetMaxVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
@@ -350,7 +362,7 @@ DECLCALLBACK(uint32_t) dvmFmtGptGetMaxVolumes(RTDVMFMT hVolMgrFmt)
  * @param   idx           The index in the partition array.
  * @param   phVolFmt      Where to store the volume data on success.
  */
-static int dvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, PGptEntry pGptEntry,
+static int rtDvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, PGptEntry pGptEntry,
                                  uint32_t idx, PRTDVMVOLUMEFMT phVolFmt)
 {
     int rc = VINF_SUCCESS;
@@ -372,7 +384,7 @@ static int dvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, PGptEntry pGptEntry,
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtGptQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
+static DECLCALLBACK(int) rtDvmFmtGptQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -386,7 +398,7 @@ DECLCALLBACK(int) dvmFmtGptQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT
         {
             if (!RTUuidIsNull(&pGptEntry->UuidType))
             {
-                rc = dvmFmtMbrVolumeCreate(pThis, pGptEntry, i, phVolFmt);
+                rc = rtDvmFmtMbrVolumeCreate(pThis, pGptEntry, i, phVolFmt);
                 break;
             }
             pGptEntry++;
@@ -398,7 +410,7 @@ DECLCALLBACK(int) dvmFmtGptQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtGptQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
+static DECLCALLBACK(int) rtDvmFmtGptQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
 {
     int rc = VERR_DVM_MAP_NO_VOLUME;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -409,7 +421,7 @@ DECLCALLBACK(int) dvmFmtGptQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT h
     {
         if (!RTUuidIsNull(&pGptEntry->UuidType))
         {
-            rc = dvmFmtMbrVolumeCreate(pThis, pGptEntry, i, phVolFmtNext);
+            rc = rtDvmFmtMbrVolumeCreate(pThis, pGptEntry, i, phVolFmtNext);
             break;
         }
         pGptEntry++;
@@ -418,7 +430,7 @@ DECLCALLBACK(int) dvmFmtGptQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT h
     return rc;
 }
 
-DECLCALLBACK(void) dvmFmtGptVolumeClose(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(void) rtDvmFmtGptVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
@@ -430,14 +442,14 @@ DECLCALLBACK(void) dvmFmtGptVolumeClose(RTDVMVOLUMEFMT hVolFmt)
     RTMemFree(pVol);
 }
 
-DECLCALLBACK(uint64_t) dvmFmtGptVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtGptVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
     return pVol->cbVolume;
 }
 
-DECLCALLBACK(int) dvmFmtGptVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
+static DECLCALLBACK(int) rtDvmFmtGptVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     int rc = VINF_SUCCESS;
@@ -449,7 +461,7 @@ DECLCALLBACK(int) dvmFmtGptVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVo
     return rc;
 }
 
-DECLCALLBACK(RTDVMVOLTYPE) dvmFmtGptVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(RTDVMVOLTYPE) rtDvmFmtGptVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
 {
     RTDVMVOLTYPE enmVolType = RTDVMVOLTYPE_UNKNOWN;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -464,61 +476,61 @@ DECLCALLBACK(RTDVMVOLTYPE) dvmFmtGptVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
     return enmVolType;
 }
 
-DECLCALLBACK(uint64_t) dvmFmtGptVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtGptVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 {
     NOREF(hVolFmt); /* No supported flags for now. */
     return 0;
 }
 
-DECLCALLBACK(int) dvmFmtGptVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) rtDvmFmtGptVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbRead <= pVol->cbVolume, VERR_INVALID_PARAMETER);
 
-    return dvmDiskRead(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbRead);
+    return rtDvmDiskRead(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbRead);
 }
 
-DECLCALLBACK(int) dvmFmtGptVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) rtDvmFmtGptVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbWrite <= pVol->cbVolume, VERR_INVALID_PARAMETER);
 
-    return dvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
+    return rtDvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
 }
 
-RTDVMFMTOPS g_DvmFmtGpt = 
+RTDVMFMTOPS g_rtDvmFmtGpt =
 {
     /* pcszFmt */
     "GPT",
     /* pfnProbe */
-    dvmFmtGptProbe,
+    rtDvmFmtGptProbe,
     /* pfnOpen */
-    dvmFmtGptOpen,
+    rtDvmFmtGptOpen,
     /* pfnInitialize */
-    dvmFmtGptInitialize,
+    rtDvmFmtGptInitialize,
     /* pfnClose */
-    dvmFmtGptClose,
+    rtDvmFmtGptClose,
     /* pfnGetValidVolumes */
-    dvmFmtGptGetValidVolumes,
+    rtDvmFmtGptGetValidVolumes,
     /* pfnGetMaxVolumes */
-    dvmFmtGptGetMaxVolumes,
+    rtDvmFmtGptGetMaxVolumes,
     /* pfnQueryFirstVolume */
-    dvmFmtGptQueryFirstVolume,
+    rtDvmFmtGptQueryFirstVolume,
     /* pfnQueryNextVolume */
-    dvmFmtGptQueryNextVolume,
+    rtDvmFmtGptQueryNextVolume,
     /* pfnVolumeClose */
-    dvmFmtGptVolumeClose,
+    rtDvmFmtGptVolumeClose,
     /* pfnVolumeGetSize */
-    dvmFmtGptVolumeGetSize,
+    rtDvmFmtGptVolumeGetSize,
     /* pfnVolumeQueryName */
-    dvmFmtGptVolumeQueryName,
+    rtDvmFmtGptVolumeQueryName,
     /* pfnVolumeGetType */
-    dvmFmtGptVolumeGetType,
+    rtDvmFmtGptVolumeGetType,
     /* pfnVolumeGetFlags */
-    dvmFmtGptVolumeGetFlags,
+    rtDvmFmtGptVolumeGetFlags,
     /* pfnVolumeRead */
-    dvmFmtGptVolumeRead,
+    rtDvmFmtGptVolumeRead,
     /* pfnVolumeWrite */
-    dvmFmtGptVolumeWrite
+    rtDvmFmtGptVolumeWrite
 };
 
