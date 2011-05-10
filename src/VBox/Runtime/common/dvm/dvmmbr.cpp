@@ -88,6 +88,10 @@ typedef struct RTDVMMBRFS2VOLTYPE
 /** Pointer to a MBR FS Type to volume type mapping entry. */
 typedef RTDVMMBRFS2VOLTYPE *PRTDVMMBRFS2VOLTYPE;
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /**
  * Mapping of FS types to DVM volume types.
  *
@@ -110,7 +114,7 @@ static const RTDVMMBRFS2VOLTYPE g_aFs2DvmVolTypes[] =
     { 0xfd, RTDVMVOLTYPE_LINUX_SOFTRAID }
 };
 
-DECLCALLBACK(int) dvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
+static DECLCALLBACK(int) rtDvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
 {
     int rc = VINF_SUCCESS;
     uint8_t abMbr[512];
@@ -120,7 +124,7 @@ DECLCALLBACK(int) dvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
     if (pDisk->cbDisk >= 512)
     {
         /* Read from the disk and check for the 0x55aa signature at the end. */
-        rc = dvmDiskRead(pDisk, 0, &abMbr[0], sizeof(abMbr));
+        rc = rtDvmDiskRead(pDisk, 0, &abMbr[0], sizeof(abMbr));
         if (   RT_SUCCESS(rc)
             && abMbr[510] == 0x55
             && abMbr[511] == 0xaa)
@@ -130,7 +134,7 @@ DECLCALLBACK(int) dvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = NULL;
@@ -142,7 +146,7 @@ DECLCALLBACK(int) dvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
         pThis->cPartitions = 0;
 
         /* Read the MBR and count the valid partition entries. */
-        rc = dvmDiskRead(pDisk, 0, &pThis->abMbr[0], sizeof(pThis->abMbr));
+        rc = rtDvmDiskRead(pDisk, 0, &pThis->abMbr[0], sizeof(pThis->abMbr));
         if (RT_SUCCESS(rc))
         {
             uint8_t *pbMbrEntry = &pThis->abMbr[446];
@@ -167,7 +171,7 @@ DECLCALLBACK(int) dvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
+static DECLCALLBACK(int) rtDvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = NULL;
@@ -180,7 +184,7 @@ DECLCALLBACK(int) dvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
         pThis->abMbr[510] = 0x55;
         pThis->abMbr[511] = 0xaa;
 
-        rc = dvmDiskWrite(pDisk, 0, &pThis->abMbr[0], sizeof(pThis->abMbr));
+        rc = rtDvmDiskWrite(pDisk, 0, &pThis->abMbr[0], sizeof(pThis->abMbr));
 
         if (RT_SUCCESS(rc))
         {
@@ -197,7 +201,7 @@ DECLCALLBACK(int) dvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
     return rc;
 }
 
-DECLCALLBACK(void) dvmFmtMbrClose(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(void) rtDvmFmtMbrClose(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
@@ -207,14 +211,14 @@ DECLCALLBACK(void) dvmFmtMbrClose(RTDVMFMT hVolMgrFmt)
     RTMemFree(pThis);
 }
 
-DECLCALLBACK(uint32_t) dvmFmtMbrGetValidVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetValidVolumes(RTDVMFMT hVolMgrFmt)
 {
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
     return pThis->cPartitions;
 }
 
-DECLCALLBACK(uint32_t) dvmFmtMbrGetMaxVolumes(RTDVMFMT hVolMgrFmt)
+static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetMaxVolumes(RTDVMFMT hVolMgrFmt)
 {
     NOREF(hVolMgrFmt);
     return 4; /** @todo: Add support for EBR? */
@@ -229,7 +233,7 @@ DECLCALLBACK(uint32_t) dvmFmtMbrGetMaxVolumes(RTDVMFMT hVolMgrFmt)
  * @param   idx           The index in the partition table.
  * @param   phVolFmt      Where to store the volume data on success.
  */
-static int dvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, uint8_t *pbMbrEntry,
+static int rtDvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, uint8_t *pbMbrEntry,
                                  uint32_t idx, PRTDVMVOLUMEFMT phVolFmt)
 {
     int rc = VINF_SUCCESS;
@@ -251,7 +255,7 @@ static int dvmFmtMbrVolumeCreate(PRTDVMFMTINTERNAL pThis, uint8_t *pbMbrEntry,
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtMbrQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
+static DECLCALLBACK(int) rtDvmFmtMbrQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt)
 {
     int rc = VINF_SUCCESS;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -265,7 +269,7 @@ DECLCALLBACK(int) dvmFmtMbrQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT
         {
             if (pbMbrEntry[0x04] != 0x00)
             {
-                rc = dvmFmtMbrVolumeCreate(pThis, pbMbrEntry, i, phVolFmt);
+                rc = rtDvmFmtMbrVolumeCreate(pThis, pbMbrEntry, i, phVolFmt);
                 break;
             }
             pbMbrEntry += 16;
@@ -277,7 +281,7 @@ DECLCALLBACK(int) dvmFmtMbrQueryFirstVolume(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT
     return rc;
 }
 
-DECLCALLBACK(int) dvmFmtMbrQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
+static DECLCALLBACK(int) rtDvmFmtMbrQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext)
 {
     int rc = VERR_DVM_MAP_NO_VOLUME;
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
@@ -288,7 +292,7 @@ DECLCALLBACK(int) dvmFmtMbrQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT h
     {
         if (pbMbrEntry[0x04] != 0x00)
         {
-            rc = dvmFmtMbrVolumeCreate(pThis, pbMbrEntry, i, phVolFmtNext);
+            rc = rtDvmFmtMbrVolumeCreate(pThis, pbMbrEntry, i, phVolFmtNext);
             break;
         }
         pbMbrEntry += 16;
@@ -297,7 +301,7 @@ DECLCALLBACK(int) dvmFmtMbrQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT h
     return rc;
 }
 
-DECLCALLBACK(void) dvmFmtMbrVolumeClose(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(void) rtDvmFmtMbrVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
@@ -309,20 +313,20 @@ DECLCALLBACK(void) dvmFmtMbrVolumeClose(RTDVMVOLUMEFMT hVolFmt)
     RTMemFree(pVol);
 }
 
-DECLCALLBACK(uint64_t) dvmFmtMbrVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
     return pVol->cbVolume;
 }
 
-DECLCALLBACK(int) dvmFmtMbrVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
 {
     NOREF(hVolFmt);
     return VERR_NOT_SUPPORTED;
 }
 
-DECLCALLBACK(RTDVMVOLTYPE) dvmFmtMbrVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(RTDVMVOLTYPE) rtDvmFmtMbrVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
 {
     RTDVMVOLTYPE enmVolType = RTDVMVOLTYPE_UNKNOWN;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -337,7 +341,7 @@ DECLCALLBACK(RTDVMVOLTYPE) dvmFmtMbrVolumeGetType(RTDVMVOLUMEFMT hVolFmt)
     return enmVolType;
 }
 
-DECLCALLBACK(uint64_t) dvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
+static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 {
     uint64_t fFlags = 0;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -348,55 +352,55 @@ DECLCALLBACK(uint64_t) dvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
     return fFlags;
 }
 
-DECLCALLBACK(int) dvmFmtMbrVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbRead <= pVol->cbVolume, VERR_INVALID_PARAMETER);
 
-    return dvmDiskRead(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbRead);
+    return rtDvmDiskRead(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbRead);
 }
 
-DECLCALLBACK(int) dvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbWrite <= pVol->cbVolume, VERR_INVALID_PARAMETER);
 
-    return dvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
+    return rtDvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
 }
 
-RTDVMFMTOPS g_DvmFmtMbr =
+RTDVMFMTOPS g_rtDvmFmtMbr =
 {
     /* pcszFmt */
     "MBR",
     /* pfnProbe */
-    dvmFmtMbrProbe,
+    rtDvmFmtMbrProbe,
     /* pfnOpen */
-    dvmFmtMbrOpen,
+    rtDvmFmtMbrOpen,
     /* pfnInitialize */
-    dvmFmtMbrInitialize,
+    rtDvmFmtMbrInitialize,
     /* pfnClose */
-    dvmFmtMbrClose,
+    rtDvmFmtMbrClose,
     /* pfnGetValidVolumes */
-    dvmFmtMbrGetValidVolumes,
+    rtDvmFmtMbrGetValidVolumes,
     /* pfnGetMaxVolumes */
-    dvmFmtMbrGetMaxVolumes,
+    rtDvmFmtMbrGetMaxVolumes,
     /* pfnQueryFirstVolume */
-    dvmFmtMbrQueryFirstVolume,
+    rtDvmFmtMbrQueryFirstVolume,
     /* pfnQueryNextVolume */
-    dvmFmtMbrQueryNextVolume,
+    rtDvmFmtMbrQueryNextVolume,
     /* pfnVolumeClose */
-    dvmFmtMbrVolumeClose,
+    rtDvmFmtMbrVolumeClose,
     /* pfnVolumeGetSize */
-    dvmFmtMbrVolumeGetSize,
+    rtDvmFmtMbrVolumeGetSize,
     /* pfnVolumeQueryName */
-    dvmFmtMbrVolumeQueryName,
+    rtDvmFmtMbrVolumeQueryName,
     /* pfnVolumeGetType */
-    dvmFmtMbrVolumeGetType,
+    rtDvmFmtMbrVolumeGetType,
     /* pfnVolumeGetFlags */
-    dvmFmtMbrVolumeGetFlags,
+    rtDvmFmtMbrVolumeGetFlags,
     /* pfnVolumeRead */
-    dvmFmtMbrVolumeRead,
+    rtDvmFmtMbrVolumeRead,
     /* pfnVolumeWrite */
-    dvmFmtMbrVolumeWrite
+    rtDvmFmtMbrVolumeWrite
 };
 

@@ -232,7 +232,7 @@ typedef const RTDVMFMTOPS *PCRTDVMFMTOPS;
  * @returns Number of sectors.
  * @param   pDisk   The disk descriptor.
  */
-DECLINLINE(uint64_t) dvmDiskGetSectors(PCRTDVMDISK pDisk)
+DECLINLINE(uint64_t) rtDvmDiskGetSectors(PCRTDVMDISK pDisk)
 {
     return pDisk->cbDisk / pDisk->cbSector;
 }
@@ -246,7 +246,7 @@ DECLINLINE(uint64_t) dvmDiskGetSectors(PCRTDVMDISK pDisk)
  * @param   pvBuf    Destination buffer.
  * @param   cbRead   How much to read.
  */
-DECLINLINE(int) dvmDiskRead(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
+DECLINLINE(int) rtDvmDiskRead(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
 {
     AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
@@ -265,7 +265,7 @@ DECLINLINE(int) dvmDiskRead(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t
  * @param   pvBuf    Source buffer.
  * @param   cbWrite  How much to write.
  */
-DECLINLINE(int) dvmDiskWrite(PCRTDVMDISK pDisk, uint64_t off, const void *pvBuf, size_t cbWrite)
+DECLINLINE(int) rtDvmDiskWrite(PCRTDVMDISK pDisk, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);

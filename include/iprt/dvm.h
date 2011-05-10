@@ -70,6 +70,8 @@ typedef enum RTDVMVOLTYPE
     RTDVMVOLTYPE_MAC_OSX_HFS,
     /** Volume hosts a Solaris volume. */
     RTDVMVOLTYPE_SOLARIS,
+    /** End of the valid values. */
+    RTDVMVOLTYPE_END,
     /** Usual 32bit hack. */
     RTDVMVOLTYPE_32BIT_HACK = 0x7fffffff
 } RTDVMVOLTYPE;

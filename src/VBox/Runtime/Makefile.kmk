@@ -2295,8 +2295,6 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 				-e '/^g_u64ProgramStart/d'\
 				-e '/^g_enmProcessPriority/d'\
 				-e '/^g_hDbgModStrCache/d'\
-				-e '/^g_DvmFmtGpt/d'\
-				-e '/^g_DvmFmtMbr/d'\
 				\
 				-e '/^RTDBusLoadLib/d' \
 				\
