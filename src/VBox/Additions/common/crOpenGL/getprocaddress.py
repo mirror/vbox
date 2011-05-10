@@ -88,6 +88,14 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
     if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXBindTexImageEXT);
     if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXReleaseTexImageEXT);
 
+#if defined(Linux) && defined(CR_EXT_framebuffer_blit)
+    /* Hacky way to make gnome3 happy on ubuntu 11.04, even though glBlitFramebuffer is part of OpenGL 3.0 spec,
+     * it expects to find glBlitFramebuffer and not glBlitFramebufferEXT after checking for EXT_framebuffer_blit support.
+     * Untill 3.0 support, it's better to go this way instead of adding an alias to src/VBox/GuestHost/OpenGL/glapi_parser/apispec.txt.
+     */
+    if (!crStrcmp(name, "glBlitFramebuffer")) return crGetProcAddress("glBlitFramebufferEXT");
+#endif
+
     if (name) crDebug("Returning NULL for %s", name);
 	return NULL;
 }
