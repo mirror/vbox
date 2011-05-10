@@ -63,6 +63,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed Gnome3 rendering under Ubuntu 11.04</para>
+      </listitem>
+
+      <listitem>
         <para>Webservice: use own log file, with log rotation to limit size</para>
       </listitem>
 
