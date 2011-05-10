@@ -6293,32 +6293,36 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
  */
 DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
 {
-    int rc;
+    uintptr_t uPtrNI;
     if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
     {
         if (ssmR3GetHostBits(pSSM) == 64)
         {
             uint64_t u;
-            rc = ssmR3DataRead(pSSM, &u, sizeof(u));
-            if (RT_SUCCESS(rc))
-                *ppv = (void *)(u ? 1UL : 0UL);
+            int rc = ssmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_FAILURE(rc))
+                return rc;
+            uPtrNI = u ? 1 : 0;
         }
         else
         {
             uint32_t u;
-            rc = ssmR3DataRead(pSSM, &u, sizeof(u));
-            if (RT_SUCCESS(rc))
-                *ppv = (void *)(u ? 1UL : 0UL);
+            int rc = ssmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_FAILURE(rc))
+                return rc;
+            uPtrNI = u ? 1 : 0;
         }
     }
     else
     {
         bool f;
-        rc = SSMR3GetBool(pSSM, &f);
-        if (RT_SUCCESS(rc))
-            *ppv = (void *)(f ? 1UL : 0UL);
+        int rc = SSMR3GetBool(pSSM, &f);
+        if (RT_FAILURE(rc))
+            return rc;
+        uPtrNI = f ? 1 : 0;
     }
-    return rc;
+    *ppv = (void *)uPtrNI;
+    return VINF_SUCCESS;
 }
 
 
