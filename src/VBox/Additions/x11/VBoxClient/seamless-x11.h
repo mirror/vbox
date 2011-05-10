@@ -245,11 +245,7 @@ public:
 
     ~VBoxGuestSeamlessX11()
     {
-        try
-        {
-            uninit();
-        }
-        catch(...) {}
+        uninit();
         if (mDisplay)
             XCloseDisplay(mDisplay);
     }
