@@ -1256,6 +1256,13 @@ static VBOXSTRICTRC iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSeg
 }
 
 
+static VBOXSTRICTRC iemRaiseSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr)
+{
+    AssertFailed(/** @todo implement this */);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 static VBOXSTRICTRC iemRaiseSelectorNotPresentBySegReg(PIEMCPU pIemCpu, uint32_t iSegReg)
 {
     AssertFailed(/** @todo implement this */);
@@ -4534,39 +4541,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
         RTGCUINT    uErrCode;
         RTGCPTR     uCr2;
         int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2); AssertRC(rc2);
-        Log(("Injecting trap %#x\n", u8TrapNo));
-
-        uint32_t    fFlags;
-        switch (enmType)
-        {
-            case TRPM_HARDWARE_INT:
-                fFlags = IEM_XCPT_FLAGS_T_EXT_INT;
-                uErrCode = uCr2 = 0;
-                break;
-            case TRPM_SOFTWARE_INT:
-                fFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
-                uErrCode = uCr2 = 0;
-                break;
-            case TRPM_TRAP:
-                fFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
-                if (u8TrapNo == X86_XCPT_PF)
-                    fFlags |= IEM_XCPT_FLAGS_CR2;
-                switch (u8TrapNo)
-                {
-                    case X86_XCPT_DF:
-                    case X86_XCPT_TS:
-                    case X86_XCPT_NP:
-                    case X86_XCPT_SS:
-                    case X86_XCPT_PF:
-                    case X86_XCPT_AC:
-                        fFlags |= IEM_XCPT_FLAGS_ERR;
-                        break;
-                }
-                TRPMHasTrap(pVCpu)
-                break;
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
-        iemCImpl_RaiseXcptOrInt(pIemCpu, 0, u8TrapNo, fFlags, (uint16_t)uErrCode, uCr2);
+        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2);
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
@@ -5335,5 +5310,60 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     iemExecVerificationModeCheck(pIemCpu);
 #endif
     return rcStrict;
+}
+
+
+/**
+ * Injects a trap, fault, abort, software interrupt or external interrupt.
+ *
+ * The parameter list matches TRPMQueryTrapAll pretty closely.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The current virtual CPU.
+ * @param   u8TrapNo            The trap number.
+ * @param   enmType             What type is it (trap/fault/abort), software
+ *                              interrupt or hardware interrupt.
+ * @param   uErrCode            The error code if applicable.
+ * @param   uCr2                The CR2 value if applicable.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2)
+{
+    uint32_t fFlags;
+    switch (enmType)
+    {
+        case TRPM_HARDWARE_INT:
+            Log(("IEMInjectTrap: %#4x ext\n", u8TrapNo));
+            fFlags = IEM_XCPT_FLAGS_T_EXT_INT;
+            uErrCode = uCr2 = 0;
+            break;
+
+        case TRPM_SOFTWARE_INT:
+            Log(("IEMInjectTrap: %#4x soft\n", u8TrapNo));
+            fFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
+            uErrCode = uCr2 = 0;
+            break;
+
+        case TRPM_TRAP:
+            Log(("IEMInjectTrap: %#4x trap err=%#x cr2=%#RGv\n", u8TrapNo, uErrCode, uCr2));
+            fFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
+            if (u8TrapNo == X86_XCPT_PF)
+                fFlags |= IEM_XCPT_FLAGS_CR2;
+            switch (u8TrapNo)
+            {
+                case X86_XCPT_DF:
+                case X86_XCPT_TS:
+                case X86_XCPT_NP:
+                case X86_XCPT_SS:
+                case X86_XCPT_PF:
+                case X86_XCPT_AC:
+                    fFlags |= IEM_XCPT_FLAGS_ERR;
+                    break;
+            }
+            break;
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+
+    return iemCImpl_RaiseXcptOrInt(&pVCpu->iem.s, 0, u8TrapNo, fFlags, uErrCode, uCr2);
 }
 

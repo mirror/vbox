@@ -27,6 +27,7 @@
 #define ___VBox_vmm_iem_h
 
 #include <VBox/types.h>
+#include <VBox/vmm/trpm.h>
 
 
 RT_C_DECLS_BEGIN
@@ -37,7 +38,8 @@ RT_C_DECLS_BEGIN
 
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu);
+VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2);
 
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
 VMM_INT_DECL(void)   IEMNotifyMMIORead(PVM pVM, RTGCPHYS GCPhys, size_t cbValue);
