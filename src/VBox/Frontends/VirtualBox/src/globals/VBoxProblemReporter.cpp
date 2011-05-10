@@ -625,22 +625,6 @@ void VBoxProblemReporter::cannotAccessUSB (const COMBaseWithEI &aObj)
     if (res.rc() == E_NOTIMPL)
         return;
 
-#ifdef RT_OS_LINUX
-    /* xxx There is no macro to turn an error into a warning, but we need
-     *     to do that here. */
-    if (res.rc() == (VBOX_E_HOST_ERROR & ~0x80000000))
-    {
-        message (mainWindowShown(), VBoxProblemReporter::Warning,
-                 tr ("Could not access USB on the host system, because "
-                     "neither the USB file system (usbfs) nor the DBus "
-                     "and hal services are currently available. If you "
-                     "wish to use host USB devices inside guest systems, "
-                     "you must correct this and restart VirtualBox."),
-                 formatErrorInfo (res),
-                 "cannotAccessUSB" /* aAutoConfirmId */);
-        return;
-    }
-#endif
     message (mainWindowShown(), res.isWarning() ? Warning : Error,
              tr ("Failed to access the USB subsystem."),
              formatErrorInfo (res),
@@ -2955,6 +2939,14 @@ VBoxProblemReporter::VBoxProblemReporter()
             this, SLOT(sltRemindAboutWrongColorDepth(ulong, ulong)), Qt::QueuedConnection);
     connect(this, SIGNAL(sigRemindAboutUnsupportedUSB2(const QString&, QWidget*)),
             this, SLOT(sltRemindAboutUnsupportedUSB2(const QString&, QWidget*)), Qt::QueuedConnection);
+
+    /* Translations for Main.
+     * Please make sure they corresponds to the strings coming from Main one-by-one symbol! */
+    tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer");
+    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation");
+    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation");
+    tr("The USB Proxy Service has not yet been ported to this host");
+    tr("Could not load the Host USB Proxy service");
 }
 
 /* Returns a reference to the global VirtualBox problem reporter instance: */
@@ -2972,8 +2964,17 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
      * be used separately in QIMessageBox */
     QString formatted;
 
-    if (!aInfo.text().isEmpty())
-        formatted += QString ("<p>%1.</p>").arg (vboxGlobal().emphasize (aInfo.text()));
+    /* Check if details text is NOT empty: */
+    QString strDetailsInfo = aInfo.text();
+    if (!strDetailsInfo.isEmpty())
+    {
+        /* Check if details text written in English (latin1) and translated: */
+        if (strDetailsInfo == QString::fromLatin1(strDetailsInfo.toLatin1()) &&
+            strDetailsInfo != tr(strDetailsInfo.toLatin1().constData()))
+            formatted += QString("<p>%1.</p>").arg(vboxGlobal().emphasize(tr(strDetailsInfo.toLatin1().constData())));
+        else
+            formatted += QString("<p>%1.</p>").arg(vboxGlobal().emphasize(strDetailsInfo));
+    }
 
     formatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=0 "
                  "cellpadding=0 width=100%>";
