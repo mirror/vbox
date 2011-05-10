@@ -13,6 +13,7 @@
 #include "stub.h"
 #include "dri_glx.h"
 #include "GL/internal/glcore.h"
+#include "cr_glstate.h"
 
 #include <X11/Xregion.h>
 
@@ -2218,6 +2219,38 @@ static void stubCheckXDamageCB(unsigned long key, void *data1, void *data2)
     }
 }
 
+static const CRPixelPackState defaultPacking =
+{
+    0,          /*rowLength*/
+    0,          /*skipRows*/
+    0,          /*skipPixels*/
+    1,          /*alignment*/
+    0,          /*imageHeight*/
+    0,          /*skipImages*/
+    GL_FALSE,   /*swapBytes*/
+    GL_FALSE    /*lsbFirst*/
+};
+
+static void stubGetUnpackState(CRPixelPackState *pUnpackState)
+{
+    stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_ROW_LENGTH, &pUnpackState->rowLength);
+    stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_SKIP_ROWS, &pUnpackState->skipRows);
+    stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_SKIP_PIXELS, &pUnpackState->skipPixels);
+    stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_ALIGNMENT, &pUnpackState->alignment);
+    stub.spu->dispatch_table.GetBooleanv(GL_UNPACK_SWAP_BYTES, &pUnpackState->swapBytes);
+    stub.spu->dispatch_table.GetBooleanv(GL_UNPACK_LSB_FIRST, &pUnpackState->psLSBFirst);
+}
+
+static void stubSetUnpackState(const CRPixelPackState *pUnpackState)
+{
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_ROW_LENGTH, pUnpackState->rowLength);
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_SKIP_ROWS, pUnpackState->skipRows);
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_SKIP_PIXELS, pUnpackState->skipPixels);
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_ALIGNMENT, pUnpackState->alignment);
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_SWAP_BYTES, pUnpackState->swapBytes);
+    stub.spu->dispatch_table.PixelStorei(GL_UNPACK_LSB_FIRST, pUnpackState->psLSBFirst);
+}
+
 static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display *dpy, GLXDrawable draw, ContextInfo *pContext)
 {
     int x, y;
@@ -2354,14 +2387,20 @@ static void stubXshmUpdateWholeImage(Display *dpy, GLXDrawable draw, GLX_Pixmap_
     }
     else
     {
+        CRPixelPackState unpackState;
+
         XLOCK(dpy);
         XCopyArea(dpy, (Pixmap)draw, pGlxPixmap->hShmPixmap, pGlxPixmap->gc, 
                   pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, 0, 0);
         /* Have to make sure XCopyArea is processed */
         XSync(dpy, False);
         XUNLOCK(dpy);
+        
+        stubGetUnpackState(&unpackState);
+        stubSetUnpackState(&defaultPacking);
         stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
+        stubSetUnpackState(&unpackState);
         /*crDebug("Sync texture for drawable 0x%x(dmg handle 0x%x) [%i,%i,%i,%i]", 
                   (unsigned int) draw, (unsigned int)pGlxPixmap->hDamage, 
                   pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h);*/
@@ -2396,7 +2435,7 @@ static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t
     }
     else
     {
-        GLint origUnpackRowLength;
+        CRPixelPackState unpackState;
 
         XLOCK(dpy);
         XCopyArea(dpy, (Pixmap)draw, pGlxPixmap->hShmPixmap, pGlxPixmap->gc, 
@@ -2405,19 +2444,15 @@ static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t
         XSync(dpy, False);
         XUNLOCK(dpy);
 
-        /* Save original value, doesn't cause sync as it's reported by state tracker*/
+        stubGetUnpackState(&unpackState);
+        stubSetUnpackState(&defaultPacking);
         if (pRect->width!=pGlxPixmap->w)
         {
-            stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_ROW_LENGTH, &origUnpackRowLength);
             stub.spu->dispatch_table.PixelStorei(GL_UNPACK_ROW_LENGTH, pGlxPixmap->w);
         }
         stub.spu->dispatch_table.TexSubImage2D(pGlxPixmap->target, 0, pRect->x, pRect->y, pRect->width, pRect->height, 
                                                GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
-        if (pRect->width!=pGlxPixmap->w)
-        {
-            /* Restore original value*/
-            stub.spu->dispatch_table.PixelStorei(GL_UNPACK_ROW_LENGTH, origUnpackRowLength);
-        }
+        stubSetUnpackState(&unpackState);
 
         /*crDebug("Region sync texture for drawable 0x%x(dmg handle 0x%x) [%i,%i,%i,%i]", 
                 (unsigned int) draw, (unsigned int)pGlxPixmap->hDamage, 
@@ -2502,6 +2537,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     {
         /*@todo add damage support here too*/
         XImage *pxim;
+        CRPixelPackState unpackState;
 
         XLOCK(dpy);
         pxim = XGetImage(dpy, (Pixmap)draw, pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, AllPlanes, ZPixmap);
@@ -2531,8 +2567,11 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
             return;
         }
 
+        stubGetUnpackState(&unpackState);
+        stubSetUnpackState(&defaultPacking);
         stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pxim->width, pxim->height, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, (void*)(&(pxim->data[0])));
+        stubSetUnpackState(&unpackState);
         XDestroyImage(pxim);
     }
     else /* Use shm to get pixmap data */

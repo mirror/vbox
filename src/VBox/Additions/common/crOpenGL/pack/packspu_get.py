@@ -19,6 +19,34 @@ print """
 #include "packspu_proto.h"
 """
 
+print """
+GLboolean crPackIsPixelStoreParm(GLenum pname)
+{
+    if (pname == GL_UNPACK_ALIGNMENT
+        || pname == GL_UNPACK_ROW_LENGTH
+        || pname == GL_UNPACK_SKIP_PIXELS
+        || pname == GL_UNPACK_LSB_FIRST
+        || pname == GL_UNPACK_SWAP_BYTES
+#ifdef CR_OPENGL_VERSION_1_2
+        || pname == GL_UNPACK_IMAGE_HEIGHT
+#endif
+        || pname == GL_UNPACK_SKIP_ROWS
+        || pname == GL_PACK_ALIGNMENT
+        || pname == GL_PACK_ROW_LENGTH
+        || pname == GL_PACK_SKIP_PIXELS
+        || pname == GL_PACK_LSB_FIRST
+        || pname == GL_PACK_SWAP_BYTES
+#ifdef CR_OPENGL_VERSION_1_2
+        || pname == GL_PACK_IMAGE_HEIGHT
+#endif
+        || pname == GL_PACK_SKIP_ROWS)
+    {
+        return GL_TRUE;
+    }
+    return GL_FALSE;
+}
+"""
+
 from get_sizes import *
 from get_components import *
 
@@ -70,24 +98,7 @@ for func_name in keys:
         print '\t}'
         if func_name in simple_funcs:
             print """
-    if (pname == GL_UNPACK_ALIGNMENT
-        || pname == GL_UNPACK_ROW_LENGTH
-        || pname == GL_UNPACK_SKIP_PIXELS
-        || pname == GL_UNPACK_LSB_FIRST
-        || pname == GL_UNPACK_SWAP_BYTES
-#ifdef CR_OPENGL_VERSION_1_2
-        || pname == GL_UNPACK_IMAGE_HEIGHT
-#endif
-        || pname == GL_UNPACK_SKIP_ROWS
-        || pname == GL_PACK_ALIGNMENT
-        || pname == GL_PACK_ROW_LENGTH
-        || pname == GL_PACK_SKIP_PIXELS
-        || pname == GL_PACK_LSB_FIRST
-        || pname == GL_PACK_SWAP_BYTES
-#ifdef CR_OPENGL_VERSION_1_2
-        || pname == GL_PACK_IMAGE_HEIGHT
-#endif
-        || pname == GL_PACK_SKIP_ROWS
+    if (crPackIsPixelStoreParm(pname)
         || pname == GL_DRAW_BUFFER
 #ifdef CR_OPENGL_VERSION_1_3
         || pname == GL_ACTIVE_TEXTURE
@@ -105,31 +116,36 @@ for func_name in keys:
 #endif
         )
         {
-#ifndef DEBUG
-            crState%s( pname, params );
-            return;
-#else
-            %s localparams;
-            localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));
-            crState%s(pname, localparams);
-            crPack%s(%s, &writeback);
-            packspuFlush( (void *) thread );
-            while (writeback)
-                crNetRecv();
-            for (i=0; i<__numValues(pname); ++i)
+#ifdef DEBUG
+            if (!crPackIsPixelStoreParm(pname))
             {
-                if (localparams[i] != params[i])
+                %s localparams;
+                localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));
+                crState%s(pname, localparams);
+                crPack%s(%s, &writeback);
+                packspuFlush( (void *) thread );
+                while (writeback)
+                    crNetRecv();
+                for (i=0; i<__numValues(pname); ++i)
                 {
-                    crWarning("Incorrect local state in %s for %%x param %%i", pname, i);
-                    crWarning("Expected %%i but got %%i", (int)localparams[i], (int)params[i]);
+                    if (localparams[i] != params[i])
+                    {
+                        crWarning("Incorrect local state in %s for %%x param %%i", pname, i);
+                        crWarning("Expected %%i but got %%i", (int)localparams[i], (int)params[i]);
+                    }
                 }
+                crFree(localparams);
+                return;
             }
-            crFree(localparams);
-            return;
+            else
 #endif
+            {
+                crState%s(pname, params);
+                return;
+            }
             
         }
-            """ % (func_name, params[-1][1], params[-1][1], func_name, func_name, apiutil.MakeCallString(params), func_name)
+            """ % (params[-1][1], params[-1][1], func_name, func_name, apiutil.MakeCallString(params), func_name, func_name)
         params.append( ("&writeback", "foo", 0) )
         print '\tif (pack_spu.swap)'
         print '\t{'
