@@ -146,8 +146,12 @@ typedef struct IEMCPU
     /** Whether to bypass access handlers or not. */
     bool                    fByPassHandlers;
     /** Explicit alignment padding. */
-    bool                    afAlignment0[6];
+    bool                    afAlignment0[4];
 
+    /** Exception / interrupt recursion depth. */
+    int8_t                  cXcptRecursions;
+    /** The current exception / interrupt . */
+    uint8_t                 uCurXcpt;
     /** The CPL. */
     uint8_t                 uCpl;
     /** The current CPU execution mode (CS). */
