@@ -29,7 +29,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
-#include <iprt/stream.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
