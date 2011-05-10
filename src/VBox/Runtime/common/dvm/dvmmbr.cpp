@@ -24,12 +24,17 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/dvm.h>
 #include <iprt/string.h>
 #include "internal/dvm.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -90,19 +95,19 @@ typedef RTDVMMBRFS2VOLTYPE *PRTDVMMBRFS2VOLTYPE;
  */
 static const RTDVMMBRFS2VOLTYPE g_aFs2DvmVolTypes[] =
 {
-    {0x06, RTDVMVOLTYPE_FAT16},
-    {0x07, RTDVMVOLTYPE_NTFS}, /* Used for exFAT too but NTFS is more common. */
-    {0x0b, RTDVMVOLTYPE_FAT32},
-    {0x0c, RTDVMVOLTYPE_FAT32},
-    {0x82, RTDVMVOLTYPE_LINUX_SWAP},
-    {0x83, RTDVMVOLTYPE_LINUX_NATIVE},
-    {0x8e, RTDVMVOLTYPE_LINUX_LVM},
-    {0xa5, RTDVMVOLTYPE_FREEBSD},
-    {0xa9, RTDVMVOLTYPE_NETBSD},
-    {0xa6, RTDVMVOLTYPE_OPENBSD},
-    {0xaf, RTDVMVOLTYPE_MAC_OSX_HFS},
-    {0xbf, RTDVMVOLTYPE_SOLARIS},
-    {0xfd, RTDVMVOLTYPE_LINUX_SOFTRAID}
+    { 0x06, RTDVMVOLTYPE_FAT16 },
+    { 0x07, RTDVMVOLTYPE_NTFS }, /* Simplification: Used for HPFS, exFAT, ++, too but NTFS is the more common one. */
+    { 0x0b, RTDVMVOLTYPE_FAT32 },
+    { 0x0c, RTDVMVOLTYPE_FAT32 },
+    { 0x82, RTDVMVOLTYPE_LINUX_SWAP },
+    { 0x83, RTDVMVOLTYPE_LINUX_NATIVE },
+    { 0x8e, RTDVMVOLTYPE_LINUX_LVM },
+    { 0xa5, RTDVMVOLTYPE_FREEBSD },
+    { 0xa9, RTDVMVOLTYPE_NETBSD },
+    { 0xa6, RTDVMVOLTYPE_OPENBSD },
+    { 0xaf, RTDVMVOLTYPE_MAC_OSX_HFS },
+    { 0xbf, RTDVMVOLTYPE_SOLARIS },
+    { 0xfd, RTDVMVOLTYPE_LINUX_SOFTRAID }
 };
 
 DECLCALLBACK(int) dvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
@@ -359,7 +364,7 @@ DECLCALLBACK(int) dvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, con
     return dvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
 }
 
-RTDVMFMTOPS g_DvmFmtMbr = 
+RTDVMFMTOPS g_DvmFmtMbr =
 {
     /* pcszFmt */
     "MBR",
