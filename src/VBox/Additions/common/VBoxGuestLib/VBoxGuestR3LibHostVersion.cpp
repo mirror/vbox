@@ -128,7 +128,8 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
         /* Look up guest version */
         if (RT_SUCCESS(rc))
         {
-            rc = VbglR3GetAdditionsVersion(ppszGuestVersion, NULL /* Revision not needed here */);
+            rc = VbglR3GetAdditionsVersion(ppszGuestVersion, NULL /* Extended version not needed here */,
+                                           NULL /* Revision not needed here */);
             if (RT_FAILURE(rc))
                 LogFlow(("Could not read VBox guest version! rc = %Rrc\n", rc));
         }

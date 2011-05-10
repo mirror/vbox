@@ -38,12 +38,21 @@
 /**
  * Fallback for vbglR3GetAdditionsVersion.
  */
-static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
+static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
 {
+    /* Raw version string: major.minor.build. */
     if (ppszVer)
     {
         *ppszVer = RTStrDup(VBOX_VERSION_STRING_RAW);
         if (!*ppszVer)
+            return VERR_NO_STR_MEMORY;
+    }
+
+    /* Extended version string: major.minor.build (+ vendor [suffix(es)]). */
+    if (ppszVerEx)
+    {
+        *ppszVerEx = RTStrDup(VBOX_VERSION_STRING);
+        if (!*ppszVerEx)
             return VERR_NO_STR_MEMORY;
     }
 
@@ -168,14 +177,18 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
  * Retrieves the installed Guest Additions version and/or revision.
  *
  * @returns IPRT status value
- * @param   ppszVer     Receives pointer of allocated version string. NULL is
+ * @param   ppszVer     Receives pointer of allocated raw version string
+ *                      (major.minor.build). NULL is accepted. The returned
+ *                      pointer must be freed using RTStrFree().*
+ * @param   ppszVerEx   Receives pointer of allocated full version string
+ *                      (raw version + vendor suffix(es)). NULL is
  *                      accepted. The returned pointer must be freed using
  *                      RTStrFree().
  * @param   ppszRev     Receives pointer of allocated revision string. NULL is
  *                      accepted. The returned pointer must be freed using
  *                      RTStrFree().
  */
-VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
+VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
 {
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
@@ -197,6 +210,29 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
                 {
                     if (dwType == REG_SZ)
                         rc = RTStrDupEx(ppszVer, pszTmp);
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    rc = RTErrConvertFromWin32(l);
+                }
+                RTMemFree(pszTmp);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        if (ppszVerEx)
+        {
+            dwSize = 32; /* Reset */
+            pszTmp = (char*)RTMemAlloc(dwSize);
+            if (pszTmp)
+            {
+                l = RegQueryValueEx(hKey, "VersionEx", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+                if (l == ERROR_SUCCESS)
+                {
+                    if (dwType == REG_SZ)
+                        rc = RTStrDupEx(ppszVerEx, pszTmp);
                     else
                         rc = VERR_INVALID_PARAMETER;
                 }
@@ -247,7 +283,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
          * No registry entries found, return the version string compiled
          * into this binary.
          */
-        rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
+        rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerEx, ppszRev);
     }
     return rc;
 
@@ -255,7 +291,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     /*
      * On non-Windows platforms just return the compile-time version string.
      */
-    return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
+    return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerEx, ppszRev);
 #endif /* !RT_OS_WINDOWS */
 }
 
