@@ -4250,7 +4250,6 @@ TEMPLATE_VBOXLNXHOSTR3LIB_INST              = $(INST_LIB)
 
 #
 # Template for building R3 programs for the guest additions.
-# Note: Make sure you don't break VBOXGUESTR3CPPEXE when changing this.
 #
 TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(KBUILD_TARGET),win)
@@ -4406,19 +4405,6 @@ TEMPLATE_VBOXGUESTR3XORGMOD_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI)
 TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.freebsd += \
 	iconv
-
-#
-# Template for guest stuff that makes use of the C++ library and features.
-# (This is mostly about undoing what was done to C++ for VBOXGUESTR3EXE.)
-#
-TEMPLATE_VBOXGUESTR3CPPEXE           = VBox Guest Program with C++ library dependencies
-TEMPLATE_VBOXGUESTR3CPPEXE_EXTENDS   = VBOXGUESTR3EXE
-ifeq ($(KBUILD_TARGET),win)
- # later if necessary
-else
- TEMPLATE_VBOXGUESTR3CPPEXE_TOOL     = $(TEMPLATE_VBOXR3EXE_TOOL)
- TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
-endif
 
 
 #

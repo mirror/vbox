@@ -118,9 +118,7 @@ public:
     {
         LogRelFlowFunc(("\n"));
         if (mInit)
-            try {
-                uninit(2000);
-            } catch (...) { }
+            uninit(2000);
         LogRelFlowFunc(("returning\n"));
     }
 };

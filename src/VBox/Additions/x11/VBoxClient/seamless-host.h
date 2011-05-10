@@ -164,11 +164,7 @@ public:
         if (mRunning)  /* Assertion */
         {
             LogRel(("VBoxClient: seamless host object still running!  Stopping...\n"));
-            try
-            {
-                stop(2000);
-            }
-            catch(...) {}
+            stop(2000);
         }
         LogRelFlowFunc(("returning\n"));
     }
