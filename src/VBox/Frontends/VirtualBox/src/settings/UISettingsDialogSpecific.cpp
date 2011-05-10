@@ -1021,7 +1021,7 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             /* Get the USB controller object: */
             CUSBController controller = m_machine.GetUSBController();
             /* Show the machine error message if any: */
-            if (!m_machine.isReallyOk())
+            if (!m_machine.isReallyOk() && !controller.isNull() && controller.GetEnabled())
                 vboxProblem().cannotAccessUSB(m_machine);
             /* Check if USB is implemented: */
             if (controller.isNull() || !controller.GetProxyAvailable())
