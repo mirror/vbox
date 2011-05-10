@@ -3592,7 +3592,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Void pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton corréspontand.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton correspondant.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
