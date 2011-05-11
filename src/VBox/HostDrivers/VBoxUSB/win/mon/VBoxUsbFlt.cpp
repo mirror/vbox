@@ -666,9 +666,34 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                             InitializeListHead(&ReplugDevList);
                             for (ULONG k = 0; k < pDevRelations->Count; ++k)
                             {
-                                Log(("Found existing USB PDO %p\n", pDevRelations->Objects[k]));
+                                PDEVICE_OBJECT pDevObj = pDevRelations->Objects[k];
+                                if (!pDevObj->DriverObject
+                                        || !pDevObj->DriverObject->DriverName.Buffer
+                                        || !pDevObj->DriverObject->DriverName.Length)
+                                {
+                                    AssertFailed();
+                                    continue;
+                                }
+
+                                bool fIsHub = false;
+                                for (int z = 0; z < RT_ELEMENTS(lpszStandardControllerName); ++z)
+                                {
+                                    if (!RtlCompareUnicodeString(&szStandardControllerName[z], &pDevObj->DriverObject->DriverName, TRUE /* case insensitive */))
+                                    {
+                                        fIsHub = true;
+                                        break;
+                                    }
+                                }
+
+                                if (fIsHub)
+                                {
+                                    Log(("Found sub-hub, PDO 0x%p\n", pDevObj));
+                                    continue;
+                                }
+
+                                Log(("Found existing USB PDO 0x%p\n", pDevObj));
                                 VBOXUSBFLT_LOCK_ACQUIRE();
-                                PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pDevRelations->Objects[k]);
+                                PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pDevObj);
                                 if (pDevice)
                                 {
                                     bool bReplug = vboxUsbFltDevCheckReplugLocked(pDevice, pContext);
