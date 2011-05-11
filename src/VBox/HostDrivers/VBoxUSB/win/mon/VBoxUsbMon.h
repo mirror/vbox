@@ -23,6 +23,13 @@
 #include <iprt/asm.h>
 #include <VBox/log.h>
 
+#ifdef DEBUG
+/* disables filters */
+//#define VBOXUSBMON_DBG_NO_FILTERS
+/* disables pnp hooking */
+//#define VBOXUSBMON_DBG_NO_PNPHOOK
+#endif
+
 #include "../cmn/VBoxDrvTool.h"
 
 #ifdef Log

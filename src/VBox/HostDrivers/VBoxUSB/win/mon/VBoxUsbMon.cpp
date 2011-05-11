@@ -646,12 +646,20 @@ static NTSTATUS vboxUsbMonHookCheckInit()
 
 static NTSTATUS vboxUsbMonHookInstall()
 {
+#ifdef VBOXUSBMON_DBG_NO_PNPHOOK
+    return STATUS_SUCCESS;
+#else
     return VBoxUsbHookInstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
+#endif
 }
 
 static NTSTATUS vboxUsbMonHookUninstall()
 {
+#ifdef VBOXUSBMON_DBG_NO_PNPHOOK
+    return STATUS_SUCCESS;
+#else
     return VBoxUsbHookUninstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
+#endif
 }
 
 
@@ -849,14 +857,25 @@ static int VBoxUsbMonSetNotifyEvent(PVBOXUSBMONCTX pContext, HANDLE hEvent)
 
 static int VBoxUsbMonFltAdd(PVBOXUSBMONCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
 {
+#ifdef VBOXUSBMON_DBG_NO_FILTERS
+    static uintptr_t idDummy = 1;
+    *pId = idDummy;
+    ++idDummy;
+    return VINF_SUCCESS;
+#else
     int rc = VBoxUsbFltAdd(&pContext->FltCtx, pFilter, pId);
     return rc;
+#endif
 }
 
 static int VBoxUsbMonFltRemove(PVBOXUSBMONCTX pContext, uintptr_t uId)
 {
+#ifdef VBOXUSBMON_DBG_NO_FILTERS
+    return VINF_SUCCESS;
+#else
     int rc = VBoxUsbFltRemove(&pContext->FltCtx, uId);
     return rc;
+#endif
 }
 
 static NTSTATUS VBoxUsbMonRunFilters(PVBOXUSBMONCTX pContext)
