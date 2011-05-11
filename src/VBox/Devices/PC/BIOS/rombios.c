@@ -2630,7 +2630,7 @@ void ata_detect( )
           sum = 0;
           for (i = 0; i < 0xf; i++)
               sum += read_byte(ebda_seg, fdpt + i);
-          sum = 1 - sum;
+          sum = -sum;
           write_byte(ebda_seg, fdpt + 0x0f, sum);
       }
 #else /* !VBOX */
