@@ -69,5 +69,6 @@ NTSTATUS VBoxUsbHookRequestPassDownHookCompletion(PVBOXUSBHOOK_ENTRY pHook, PDEV
 NTSTATUS VBoxUsbHookRequestPassDownHookSkip(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OBJECT pDevObj, PIRP pIrp);
 NTSTATUS VBoxUsbHookRequestMoreProcessingRequired(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVBOXUSBHOOK_REQUEST pRequest);
 NTSTATUS VBoxUsbHookRequestComplete(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVBOXUSBHOOK_REQUEST pRequest);
+VOID VBoxUsbHookVerifyCompletion(PVBOXUSBHOOK_ENTRY pHook, PVBOXUSBHOOK_REQUEST pRequest, PIRP pIrp);
 
 #endif /* #ifndef ___VBoxUsbHook_h___ */

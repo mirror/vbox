@@ -667,29 +667,6 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                             for (ULONG k = 0; k < pDevRelations->Count; ++k)
                             {
                                 PDEVICE_OBJECT pDevObj = pDevRelations->Objects[k];
-                                if (!pDevObj->DriverObject
-                                        || !pDevObj->DriverObject->DriverName.Buffer
-                                        || !pDevObj->DriverObject->DriverName.Length)
-                                {
-                                    AssertFailed();
-                                    continue;
-                                }
-
-                                bool fIsHub = false;
-                                for (int z = 0; z < RT_ELEMENTS(lpszStandardControllerName); ++z)
-                                {
-                                    if (!RtlCompareUnicodeString(&szStandardControllerName[z], &pDevObj->DriverObject->DriverName, TRUE /* case insensitive */))
-                                    {
-                                        fIsHub = true;
-                                        break;
-                                    }
-                                }
-
-                                if (fIsHub)
-                                {
-                                    Log(("Found sub-hub, PDO 0x%p\n", pDevObj));
-                                    continue;
-                                }
 
                                 Log(("Found existing USB PDO 0x%p\n", pDevObj));
                                 VBOXUSBFLT_LOCK_ACQUIRE();
@@ -705,7 +682,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                                     }
                                     else
                                     {
-                                        ObDereferenceObject(pDevRelations->Objects[k]);
+                                        ObDereferenceObject(pDevObj);
                                     }
 
                                     VBOXUSBFLT_LOCK_RELEASE();
@@ -718,7 +695,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                                 VBOXUSBFLT_LOCK_RELEASE();
 
                                 VBOXUSBFLT_DEVICE Device;
-                                Status = vboxUsbFltDevPopulate(&Device, pDevRelations->Objects[k] /*, FALSE /* only need filter properties */);
+                                Status = vboxUsbFltDevPopulate(&Device, pDevObj /*, FALSE /* only need filter properties */);
                                 if (NT_SUCCESS(Status))
                                 {
                                     uintptr_t uId = 0;
@@ -732,7 +709,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                                     if (!fFilter)
                                     {
                                         /* this device should not be filtered, and it's not */
-                                        ObDereferenceObject(pDevRelations->Objects[k]);
+                                        ObDereferenceObject(pDevObj);
                                         pDevRelations->Objects[k] = NULL;
                                         --cReplugPdos;
                                         Assert((uint32_t)cReplugPdos < UINT32_MAX/2);
