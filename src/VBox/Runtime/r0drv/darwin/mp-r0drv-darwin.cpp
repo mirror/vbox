@@ -41,12 +41,6 @@
 
 
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-#define MY_DARWIN_MAX_CPUS      (0xf + 1) /* see MAX_CPUS */
-
-
-/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static int32_t volatile g_cMaxCpus = -1;
@@ -60,7 +54,7 @@ static int rtMpDarwinInitMaxCpus(void)
     if (rc)
     {
         printf("IPRT: sysctlbyname(hw.ncpu) failed with rc=%d!\n", rc);
-        cCpus = MY_DARWIN_MAX_CPUS;
+        cCpus = 64; /* whatever */
     }
 
     ASMAtomicWriteS32(&g_cMaxCpus, cCpus);
@@ -85,13 +79,13 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < RTCPUSET_MAX_CPUS && idCpu < MY_DARWIN_MAX_CPUS ? (int)idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return (unsigned)iCpu < MY_DARWIN_MAX_CPUS ? (RTCPUID)iCpu : NIL_RTCPUID;
+    return (unsigned)iCpu < RTCPUSET_MAX_CPUS ? (RTCPUID)iCpu : NIL_RTCPUID;
 }
 
 
@@ -103,7 +97,7 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
-    return idCpu < MY_DARWIN_MAX_CPUS
+    return idCpu < RTCPUSET_MAX_CPUS
         && idCpu < (RTCPUID)rtMpDarwinMaxCpus();
 }
 
