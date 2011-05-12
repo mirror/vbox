@@ -23,6 +23,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/env.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -69,6 +70,7 @@ int
 main(int argc, char **argv)
 {
     int rc;
+    RTR3Init();
 
     for (int i = 1; i < argc; i++)
     {
