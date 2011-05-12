@@ -82,9 +82,6 @@ public:
     /* Set current cache item data: */
     void cacheCurrentData(const CacheData &currentData) { m_value.second = currentData; }
 
-    /* Reset the current data to be empty: */
-    void reset() { m_value.second = CacheData(); }
-
     /* Reset the initial and the current data to be both empty: */
     void clear() { m_value.first = CacheData(); m_value.second = CacheData(); }
 
@@ -140,22 +137,12 @@ public:
         return fWasUpdated;
     }
 
-    /* Reset the current data to be empty.
-     * Perform the same for all the children: */
-    void reset()
-    {
-        UISettingsCache<ParentCacheData>::reset();
-        for (int iChildIndex = 0; iChildIndex < childCount(); ++iChildIndex)
-            child(iChildIndex).reset();
-    }
-
     /* Reset the initial and the current data to be both empty.
-     * Perform the same for all the children: */
+     * Removes all the children: */
     void clear()
     {
         UISettingsCache<ParentCacheData>::clear();
-        for (int iChildIndex = 0; iChildIndex < childCount(); ++iChildIndex)
-            child(iChildIndex).clear();
+        m_children.clear();
     }
 
 private:

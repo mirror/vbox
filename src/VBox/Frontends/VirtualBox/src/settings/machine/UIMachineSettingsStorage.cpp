@@ -1424,6 +1424,16 @@ void StorageModel::setDialogType(SettingsDialogType dialogType)
     m_dialogType = dialogType;
 }
 
+void StorageModel::clear()
+{
+    while (mRootItem->childCount())
+    {
+        beginRemoveRows(root(), 0, 0);
+        delete mRootItem->childByPos(0);
+        endRemoveRows();
+    }
+}
+
 QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
 {
     QMap<KStorageBus, int> currentMap;
@@ -1783,6 +1793,9 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
+    /* Clear cache initially: */
+    m_cache.clear();
+
     /* Prepare storage data: */
     UIDataSettingsMachineStorage storageData;
 
@@ -1848,6 +1861,9 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsStorage::getFromCache()
 {
+    /* Clear model initially: */
+    mStorageModel->clear();
+
     /* Get storage data from cache: */
     const UIDataSettingsMachineStorage &storageData = m_cache.base();
 
@@ -3423,8 +3439,12 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsM
 
 void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)
 {
+    /* Update 'settings dialog type' of base class: */
     UISettingsPageMachine::setDialogType(settingsDialogType);
+    /* Update model 'settings dialog type': */
     mStorageModel->setDialogType(dialogType());
+    /* Update action states: */
+    updateActionsState();
 }
 
 void UIMachineSettingsStorage::polishPage()

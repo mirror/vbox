@@ -99,7 +99,7 @@ public:
 
     /* Settings dialog type stuff: */
     SettingsDialogType dialogType() const { return m_dialogType; }
-    virtual void setDialogType(SettingsDialogType settingsDialogType) { m_dialogType = settingsDialogType; }
+    virtual void setDialogType(SettingsDialogType settingsDialogType) { m_dialogType = settingsDialogType; polishPage(); }
     bool isMachineOffline() const { return dialogType() == SettingsDialogType_Offline; }
     bool isMachineSaved() const { return dialogType() == SettingsDialogType_Saved; }
     bool isMachineOnline() const { return dialogType() == SettingsDialogType_Online; }

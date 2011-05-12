@@ -152,6 +152,9 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings or machine: */
     fetchData(data);
 
+    /* Clear cache initially: */
+    m_cache.clear();
+
     /* Depending on page type: */
     switch (pageType())
     {
@@ -256,6 +259,10 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsUSB::getFromCache()
 {
+    /* Clear list initially: */
+    mTwFilters->clear();
+    m_filters.clear();
+
     /* Depending on page type: */
     switch (pageType())
     {

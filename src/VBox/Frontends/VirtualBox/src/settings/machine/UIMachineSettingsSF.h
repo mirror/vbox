@@ -129,6 +129,8 @@ private:
     void updateRootItemsVisibility();
     void setRootItemVisible(UISharedFolderType sharedFolderType, bool fVisible);
 
+    void polishPage();
+
     CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
 
     bool removeSharedFolder(const UICacheSettingsSharedFolder &folderCache);

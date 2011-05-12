@@ -748,6 +748,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
+    /* Clear cache initially: */
+    m_cache.clear();
+
     /* Cache names lists: */
     brgList(true);
     intList(true);
