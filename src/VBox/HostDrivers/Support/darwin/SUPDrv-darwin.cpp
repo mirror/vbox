@@ -28,6 +28,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP_DRV
+#if 1
+# include "../../../Runtime/r0drv/darwin/the-darwin-kernel.h"
+#endif
 /*
  * Deal with conflicts first.
  * PVM - BSD mess, that FreeBSD has correct a long time ago.
@@ -264,6 +267,32 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                         if (g_pSleepNotifier == NULL)
                             LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
 
+#ifdef RT_ARCH_AMD64
+
+                        struct my_cpu_data_x86 *cpu;
+                        __asm__ volatile("movq %%gs:%P1,%0\n\t" : "=r" (cpu) : "i" (0): );
+                        printf("VBoxDrv AST debug begin - cpu=%p\n", cpu);
+# define DUMP_IT(memb, fmt)  printf("  %2x - " #memb "=" fmt "\n", RT_OFFSETOF(struct my_cpu_data_x86, memb), cpu->memb)
+                        DUMP_IT(cpu_active_thread, "     0x%p");
+                        DUMP_IT(cpu_int_state, "         0x%p");
+                        DUMP_IT(cpu_active_stack, "      0x%lx");
+                        DUMP_IT(cpu_kernel_stack, "      0x%lx");
+                        DUMP_IT(cpu_int_stack_top, "     0x%lx");
+                        DUMP_IT(cpu_preemption_level, "  0x%x");
+                        DUMP_IT(cpu_simple_lock_count, " 0x%x");
+                        DUMP_IT(cpu_number, "            0x%x");
+                        DUMP_IT(cpu_phys_number, "       0x%x");
+                        DUMP_IT(cpu_id, "                0x%p");
+                        DUMP_IT(cpu_signals, "           0x%x");
+                        DUMP_IT(cpu_mcount_off, "        0x%x");
+                        DUMP_IT(cpu_pending_ast, "       0x%x");
+                        DUMP_IT(cpu_type, "              0x%x");
+                        DUMP_IT(cpu_subtype, "           0x%x");
+                        DUMP_IT(cpu_threadtype, "        0x%x");
+                        DUMP_IT(cpu_running, "           0x%x");
+                        printf("VBoxDrv AST debug end\n");
+# undef DUMP_IT
+#endif
                         return KMOD_RETURN_SUCCESS;
                     }
 
