@@ -33,7 +33,6 @@ VBoxInstallHelper_SOURCES  = \
 ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
 endif
-
 VBoxInstallHelper_SDKS     = WINPSDK W2K3DDK
 VBoxInstallHelper_LIBS     = $(PATH_SDK_W2K3DDK_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
