@@ -661,11 +661,11 @@ Function ${un}W2K_Uninstall
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxService"
   Delete /REBOOTOK "$g_strSystemDir\VBoxService.exe"
 
-  ; GINA
+  ; VBoxGINA
   Delete /REBOOTOK "$g_strSystemDir\VBoxGINA.dll"
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 == "VBoxGINA.dll"
-    DetailPrint "Removing GINA ..."
+    DetailPrint "Removing auto-logon support ..."
     DeleteRegValue HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${EndIf}
 

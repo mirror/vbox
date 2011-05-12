@@ -548,7 +548,7 @@ Function CheckForInstalledComponents
   ; regardless whether the user used "/with_autologon" or not
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 == "VBoxGINA.dll"
-    DetailPrint "Found installed VBoxGINA"
+    DetailPrint "Found already installed auto-logon support ..."
     StrCpy $g_bWithAutoLogon "true"
   ${EndIf}
 
@@ -705,24 +705,28 @@ Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
   ${If} $0 != ""
     ${If} $0 != "VBoxGINA.dll"
       MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON1 $(VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY) /SD IDYES IDYES install
-      goto exit
+      goto skip
     ${EndIf}
   ${EndIf}
 
 install:
 
   ; Do we need VBoxCredProv or VBoxGINA?
-  ${If}   $R0 == 'Vista'
+  ${If}   $R0 == 'Vista' ; Use VBoxCredProv on newer Windows OSes (>= Vista)
   ${OrIf} $R0 == '7'
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxCredProv.dll" "$g_strSystemDir\VBoxCredProv.dll" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" "" "VBoxCredProv" ; adding to (default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" "" "VBoxCredProv"                       ; adding to (Default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32" "" "VBoxCredProv.dll"    ; adding to (Default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32" "ThreadingModel" "Apartment"
-  ${Else}
+  ${Else} ; Use VBoxGINA on older Windows OSes (< Vista)
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxGINA.dll" "$g_strSystemDir\VBoxGINA.dll" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL" "VBoxGINA.dll"
   ${EndIf}
+
+skip:
+
+  ; Nothing to do here right now
 
 exit:
 

@@ -69,6 +69,7 @@ FunctionEnd
 Function ${un}Vista_Uninstall
 
    ; Remove credential provider
+   DetailPrint "Removing auto-logon support ..."
    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    DeleteRegKey HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    Delete /REBOOTOK "$g_strSystemDir\VBoxCredProv.dll"
