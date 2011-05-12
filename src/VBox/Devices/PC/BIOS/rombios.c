@@ -7503,13 +7503,13 @@ floppy_media_sense(drive)
   if ( drive_type == 1 ) {
     // 360K 5.25" drive
     config_data = 0x00; // 0000 0000
-    media_state = 0x25; // 0010 0101
+    media_state = 0x15; // 0001 0101
     retval = 1;
     }
   else if ( drive_type == 2 ) {
     // 1.2 MB 5.25" drive
     config_data = 0x00; // 0000 0000
-    media_state = 0x25; // 0010 0101   // need double stepping??? (bit 5)
+    media_state = 0x35; // 0011 0101   // need double stepping??? (bit 5)
     retval = 1;
     }
   else if ( drive_type == 3 ) {
@@ -7579,9 +7579,9 @@ floppy_media_sense(drive)
   }
 
   if (drive == 0)
-    media_state_offset = 0x90;
+    media_state_offset = 0x0090;
   else
-    media_state_offset = 0x91;
+    media_state_offset = 0x0091;
   write_byte(0x0040, 0x008B, config_data);
   write_byte(0x0040, media_state_offset, media_state);
 
