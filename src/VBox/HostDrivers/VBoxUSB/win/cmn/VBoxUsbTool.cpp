@@ -84,12 +84,14 @@ VBOXUSBTOOL_DECL(VOID) VBoxUsbToolUrbFree(PURB pUrb)
     vboxUsbToolMemFree(pUrb);
 }
 
-VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolUrbPost(PDEVICE_OBJECT pDevObj, PURB pUrb)
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolUrbPost(PDEVICE_OBJECT pDevObj, PURB pUrb, ULONG dwTimeoutMs)
 {
-    return VBoxUsbToolIoInternalCtlSendSync(pDevObj, IOCTL_INTERNAL_USB_SUBMIT_URB, pUrb, NULL);
+    if (dwTimeoutMs == RT_INDEFINITE_WAIT)
+        return VBoxUsbToolIoInternalCtlSendSync(pDevObj, IOCTL_INTERNAL_USB_SUBMIT_URB, pUrb, NULL);
+    return VBoxUsbToolIoInternalCtlSendSyncWithTimeout(pDevObj, IOCTL_INTERNAL_USB_SUBMIT_URB, pUrb, NULL, dwTimeoutMs);
 }
 
-VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void *pvBuffer, int cbBuffer, int Type, int iIndex, int LangId)
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void *pvBuffer, int cbBuffer, int Type, int iIndex, int LangId, ULONG dwTimeoutMs)
 {
     NTSTATUS Status;
     USHORT cbUrb = sizeof (struct _URB_CONTROL_DESCRIPTOR_REQUEST);
@@ -100,6 +102,10 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
+    PUSB_COMMON_DESCRIPTOR pCmn = (PUSB_COMMON_DESCRIPTOR)pvBuffer;
+    pCmn->bLength = cbBuffer;
+    pCmn->bDescriptorType = Type;
+
     pUrb->UrbHeader.Function = URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE;
     pUrb->UrbHeader.Length = sizeof(struct _URB_CONTROL_DESCRIPTOR_REQUEST);
     pUrb->UrbControlDescriptorRequest.TransferBufferLength = cbBuffer;
@@ -108,7 +114,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void
     pUrb->UrbControlDescriptorRequest.DescriptorType       = (UCHAR)Type;
     pUrb->UrbControlDescriptorRequest.LanguageId           = (USHORT)LangId;
 
-    Status = VBoxUsbToolUrbPost(pDevObj, pUrb);
+    Status = VBoxUsbToolUrbPost(pDevObj, pUrb, dwTimeoutMs);
 #ifdef DEBUG_misha
     Assert(Status == STATUS_SUCCESS);
 #endif
@@ -128,7 +134,7 @@ VBOXUSBTOOL_DECL(VOID) VBoxUsbToolStringDescriptorToUnicodeString(PUSB_STRING_DE
     pUnicode->Length = pUnicode->MaximumLength = pDr->bLength - RT_OFFSETOF(USB_STRING_DESCRIPTOR, bString);
 }
 
-VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptorA(PDEVICE_OBJECT pDevObj, char *pResult, ULONG cbResult, int iIndex, int LangId)
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptorA(PDEVICE_OBJECT pDevObj, char *pResult, ULONG cbResult, int iIndex, int LangId, ULONG dwTimeoutMs)
 {
     char aBuf[MAXIMUM_USB_STRING_LENGTH];
     AssertCompile(sizeof (aBuf) <= UINT8_MAX);
@@ -142,7 +148,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptorA(PDEVICE_OBJECT pDevOb
     pDr->bLength = cbBuf;
     pDr->bDescriptorType = USB_STRING_DESCRIPTOR_TYPE;
 
-    NTSTATUS Status = VBoxUsbToolGetDescriptor(pDevObj, pDr, cbBuf, USB_STRING_DESCRIPTOR_TYPE, iIndex, LangId);
+    NTSTATUS Status = VBoxUsbToolGetDescriptor(pDevObj, pDr, cbBuf, USB_STRING_DESCRIPTOR_TYPE, iIndex, LangId, dwTimeoutMs);
     if (NT_SUCCESS(Status))
     {
         if (pDr->bLength >= sizeof (USB_STRING_DESCRIPTOR))
@@ -174,7 +180,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetStringDescriptorA(PDEVICE_OBJECT pDevOb
     return Status;
 }
 
-VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetLangID(PDEVICE_OBJECT pDevObj, int *pLangId)
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetLangID(PDEVICE_OBJECT pDevObj, int *pLangId, ULONG dwTimeoutMs)
 {
     char aBuf[MAXIMUM_USB_STRING_LENGTH];
     AssertCompile(sizeof (aBuf) <= UINT8_MAX);
@@ -188,7 +194,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetLangID(PDEVICE_OBJECT pDevObj, int *pLa
     pDr->bLength = cbBuf;
     pDr->bDescriptorType = USB_STRING_DESCRIPTOR_TYPE;
 
-    NTSTATUS Status = VBoxUsbToolGetDescriptor(pDevObj, pDr, cbBuf, USB_STRING_DESCRIPTOR_TYPE, 0, 0);
+    NTSTATUS Status = VBoxUsbToolGetDescriptor(pDevObj, pDr, cbBuf, USB_STRING_DESCRIPTOR_TYPE, 0, 0, dwTimeoutMs);
     if (NT_SUCCESS(Status))
     {
         /* Just grab the first lang ID if available. In 99% cases, it will be US English (0x0409).*/
@@ -259,7 +265,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolPipeClear(PDEVICE_OBJECT pDevObj, HANDLE h
     pUrb->UrbPipeRequest.PipeHandle = hPipe;
     pUrb->UrbPipeRequest.Reserved = 0;
 
-    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, pUrb);
+    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, pUrb, RT_INDEFINITE_WAIT);
     if (!NT_SUCCESS(Status) || !USBD_SUCCESS(pUrb->UrbHeader.Status))
     {
         AssertMsgFailed((__FUNCTION__": vboxUsbToolRequest failed with %x (%x)\n", Status, pUrb->UrbHeader.Status));
@@ -286,7 +292,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolCurrentFrame(PDEVICE_OBJECT pDevObj, PIRP 
     pSl->Parameters.Others.Argument1 = (PVOID)&Urb;
     pSl->Parameters.Others.Argument2 = NULL;
 
-    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, (PURB)&Urb);
+    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, (PURB)&Urb, RT_INDEFINITE_WAIT);
     Assert(NT_SUCCESS(Status));
     if (NT_SUCCESS(Status))
     {
@@ -306,10 +312,48 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolDevUnconfigure(PDEVICE_OBJECT pDevObj)
 
     UsbBuildSelectConfigurationRequest(pUrb, (USHORT)cbUrb, NULL);
 
-    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, pUrb);
+    NTSTATUS Status = VBoxUsbToolUrbPost(pDevObj, pUrb, RT_INDEFINITE_WAIT);
     Assert(NT_SUCCESS(Status));
 
     VBoxUsbToolUrbFree(pUrb);
+
+    return Status;
+}
+
+VBOXUSBTOOL_DECL(PIRP) VBoxUsbToolIoBuildAsyncInternalCtl(PDEVICE_OBJECT pDevObj, ULONG uCtl, void *pvArg1, void *pvArg2)
+{
+    PIRP pIrp = IoAllocateIrp(pDevObj->StackSize, FALSE);
+    Assert(pIrp);
+    if (!pIrp)
+    {
+        return NULL;
+    }
+
+    pIrp->IoStatus.Status = STATUS_SUCCESS;
+    pIrp->IoStatus.Information = NULL;
+
+    PIO_STACK_LOCATION pSl = IoGetNextIrpStackLocation(pIrp);
+    pSl->MajorFunction = IRP_MJ_INTERNAL_DEVICE_CONTROL;
+    pSl->MinorFunction = 0;
+    pSl->Parameters.DeviceIoControl.IoControlCode = uCtl;
+    pSl->Parameters.Others.Argument1 = pvArg1;
+    pSl->Parameters.Others.Argument2 = pvArg2;
+    return pIrp;
+}
+
+VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolIoInternalCtlSendSyncWithTimeout(PDEVICE_OBJECT pDevObj, ULONG uCtl, void *pvArg1, void *pvArg2, ULONG dwTimeoutMs)
+{
+    /* since we're going to cancel the irp on timeout, we should allocate our own IRP rather than using the threaded one
+     * */
+    PIRP pIrp = VBoxUsbToolIoBuildAsyncInternalCtl(pDevObj, uCtl, pvArg1, pvArg2);
+    if (!pIrp)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    NTSTATUS Status = VBoxDrvToolIoPostSyncWithTimeout(pDevObj, pIrp, dwTimeoutMs);
+
+    IoFreeIrp(pIrp);
 
     return Status;
 }
