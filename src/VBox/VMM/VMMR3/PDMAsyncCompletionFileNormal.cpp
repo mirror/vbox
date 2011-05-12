@@ -16,6 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
+#define RT_STRICT
 #include <iprt/types.h>
 #include <iprt/asm.h>
 #include <iprt/file.h>
