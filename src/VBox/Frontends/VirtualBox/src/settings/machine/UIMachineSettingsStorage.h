@@ -502,7 +502,9 @@ public:
     KChipsetType chipsetType() const;
     void setChipsetType(KChipsetType type);
 
-    void setDialogType(SettingsDialogType dialogType);
+    void setDialogType(SettingsDialogType settingsDialogType);
+
+    void clear();
 
     QMap<KStorageBus, int> currentControllerTypes() const;
     QMap<KStorageBus, int> maximumControllerTypes() const;

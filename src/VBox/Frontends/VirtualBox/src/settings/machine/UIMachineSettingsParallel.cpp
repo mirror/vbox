@@ -202,6 +202,9 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
+    /* Clear cache initially: */
+    m_cache.clear();
+
     /* For each parallel port: */
     for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
     {

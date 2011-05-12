@@ -152,6 +152,9 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
+    /* Clear cache initially: */
+    m_cache.clear();
+
     /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData;
 
